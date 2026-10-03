@@ -1,0 +1,93 @@
+# Fixed defect 166's cause, 2026-10-03, panel 187's R4 (the local route of
+# its Q3, built by the sitting's compiler engineer). Symptom: a failed arm
+# whose line the lexer joined to the next one, or whose pattern opened a
+# bracket the next line closes, was told its mistake twice at one place, or
+# once per line of the bracket: `1 |` over `x => "one"` read
+# `expected_pattern` twice at the `x`. Cause: the failed arm's drop,
+# `opening.drop_line`, stopped at the first word of a line of the text inside
+# a line the lexer joined, a stop defect 131 had added for a tab margin the
+# lexer has laid out since ruling 5, and the part below was read again as an
+# arm. The drop is `cursor.drop_rest_of_line`; the lines apart are
+# `parse/apart`'s, which tells the lower line's own mistakes. The last four
+# functions are the shapes beside it (lane rec187's first pass): a statement
+# `match`, a `match` in an arm, a returned one and a chain of three lines.
+
+function a_name_below_a_pipe(n: i64)
+    k = match n
+        #~v continuation_outside_brackets
+        1 | x => "one"  #~ expected_pattern
+        _ => "many"
+    print(k)
+
+function a_float_below_a_pipe(n: f64)
+    k = match n
+        #~v continuation_outside_brackets
+        1 |
+        1.5 => "one"  #~ expected_pattern
+        _ => "many"
+    print(k)
+
+function a_name_below_a_pipe_on_a_string(n: str)
+    k = match n
+        #~v continuation_outside_brackets
+        "a" |
+        x => "one"  #~ expected_pattern
+        _ => "many"
+    print(k)
+
+function a_name_below_a_signed_pipe(n: i64)
+    k = match n
+        #~v continuation_outside_brackets
+        1 | - x => "one"  #~ expected_pattern
+        _ => "many"
+    print(k)
+
+function a_call_written_as_a_pattern_over_two_lines(n: i64)
+    k = match n
+        f(1,  #~ expected_pattern
+        2) => "one"
+        _ => "many"
+    print(k)
+
+function a_call_written_as_a_pattern_over_three_lines(n: i64)
+    k = match n
+        f(1,  #~ expected_pattern
+        2,
+        3) => "one"
+        _ => "many"
+    print(k)
+
+function a_statement_match(n: i64)
+    match n
+        #~v continuation_outside_brackets
+        1 |
+        x => print(1)  #~ expected_pattern
+        _ => print(2)
+
+function a_match_in_an_arm(n: i64)
+    k = match n
+        0 => match n
+            #~v continuation_outside_brackets
+            1 | x => "one"  #~ expected_pattern
+            _ => "two"
+        _ => "many"
+    print(k)
+
+function a_returned_match(n: i64) -> str
+    return match n
+        #~v continuation_outside_brackets
+        1 | x => "one"  #~ expected_pattern
+        _ => "many"
+
+function a_chain_of_three_lines(n: i64)
+    k = match n
+        #~v continuation_outside_brackets
+        1 | 2 |
+        #~v continuation_outside_brackets
+        3 |
+        x => "one"  #~ expected_pattern
+        _ => "many"
+    print(k)
+
+function main()
+    print(1)

@@ -1,0 +1,4 @@
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:11:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:13:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:15:13: error[expected_end_of_line]: expected the end of the line, found `:` — the `function` `f`'s body goes on the lines below its head, one level deeper
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:18:13: error[missing_body]: the `function` `g` needs an indented body — one level deeper, exactly 4 spaces (found `:`)

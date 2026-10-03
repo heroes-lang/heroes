@@ -154,7 +154,7 @@ function test_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], te
         tails.owed_body(@c, @a, text: text, owner: "a `test`", head: began)
         return
     name = named.must()
-    b = braces.body_or_block(@c, @a, text: text, owner: "a `test`", head: began)
+    b = braces.body_or_block(@c, @a, text: text, owner: heads.whose(text, name, .kw_test), head: began)
 
     if b.is_err()
         cursor.recover_to_next_decl(@c)

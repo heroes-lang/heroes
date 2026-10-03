@@ -21,12 +21,13 @@
 # and only its own mistakes are told. Joined, `+` over `1 => 1` was told
 # `expected_pattern` at the `+` the refusal already names (defect 165); and
 # `-` over `x => 1`, read as `-x`, was told `expected_pattern` twice at the
-# name (defect 166), because a failed arm's recovery drops no further than
-# its line of the text (`opening.drop_line`) and read the part below the
-# break again as an arm. Where both readings stand, the stream is the join,
-# as for every refused break (`open_line`). The arm is read at the margin
-# the operator's line laid out, which is the arm's own wherever the operator
-# stands at it; at another margin a block was opened or closed there.
+# name (defect 166), because a failed arm's recovery dropped no further
+# than its line of the text (`opening.drop_line`, gone since panel 187) and
+# read the part below the break again as an arm. Where both readings stand,
+# the stream is the join, as for every refused break (`open_line`). The arm
+# is read at the margin the operator's line laid out, which is the arm's own
+# wherever the operator stands at it; at another margin a block was opened
+# or closed there.
 #
 # The deletion takes the operator's whole line, so the arm keeps its own
 # margin. A comment after the operator on its line stays where the operator

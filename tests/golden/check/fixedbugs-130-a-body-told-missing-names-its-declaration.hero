@@ -1,0 +1,39 @@
+# Fixed 2026-10-03, panel 187's R5 (V5, built by the sitting's compiler
+# engineer and widened by lane rec187's first pass): the shape `g2/r09`
+# beside defect 130. Symptom: a declaration whose body is missing is told at
+# the next line, the convention of every missing body, and the message named
+# only the kind, *a `function` needs an indented body*, its excerpt under
+# another declaration that has its body, `function main()`. Cause: the
+# owner handed to the body's reader was the keyword's phrase alone. A head
+# read up to its name hands that name on: *the `function` `f` needs an
+# indented body*, a constant by its name and a test by its title, at the top
+# level and among a record's fields, and where the signature or the type
+# failed after the name was read. Codes and places stand.
+
+record Q
+    x: i64
+    function f() -> i64  #~ expected_field
+
+#~v missing_body
+function main()
+    print(1)
+
+record Two
+    x: i64
+    function f() -> i64  #~ expected_field
+    function g()  #~ missing_body
+
+#~v missing_body
+function before_another() -> i64
+
+#~v missing_body
+function a_signature_that_failed(x i64) -> i64  #~ expected_parameter_type
+
+#~v missing_body
+constant LIMIT: i64
+
+#~v missing_body
+test "a title"
+
+#~v missing_body
+function last() -> i64  #~v missing_body

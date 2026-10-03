@@ -1,0 +1,1 @@
+tests/golden/check/panel-187-a-failed-heads-rest-is-dropped-as-debris.hero:12:13: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

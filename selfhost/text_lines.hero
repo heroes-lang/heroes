@@ -83,6 +83,70 @@ function lines_above(text: str, comment: i64, decl: i64) -> i64
         return 0
     return newlines_between(text: text, from: comment, to: decl)
 
+## Margins
+
+# Whether `at` begins its line of the text and that line's margin holds a tab.
+function margin_has_tab(text: str, at: i64) -> bool
+    width = margin_width(text, at: at)
+
+    if width < 0
+        return false
+    i: i64 @ at - width
+
+    while i < at
+        if text[i] == '\t'
+            return true
+        i @ i + 1
+
+    return false
+
+# The width of the blank margin of the line that holds byte `at`, wherever on
+# its line `at` stands (`parse/unclosed.swallows_the_body`).
+function line_margin(text: str, at: i64) -> i64
+    start: i64 @ at
+
+    while start > 0 && text[start - 1] != '\n'
+        start @ start - 1
+
+    i: i64 @ start
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i - start
+
+# How many bytes of blank margin stand before `at` on its line, or -1 where
+# something else does and `at` does not begin its line.
+function margin_width(text: str, at: i64) -> i64
+    i: i64 @ at - 1
+
+    while i >= 0 && text[i] != '\n'
+        if text[i] != ' ' && text[i] != '\t'
+            return -1
+        i @ i - 1
+
+    return at - 1 - i
+
+## Where one offset stands, said from another
+
+# Where the byte `at` stands, said from the line of the byte `from` at or
+# below it: "at column 9 of this line", "on the line above, at column 9",
+# "3 lines above, at column 9". A distance between two offsets of one file
+# is true in whichever file of a compilation it is read, where a line counted
+# from the joined text's first byte would name the first file's line (panel
+# 187's R6). The column counts characters, as a caret does (`source.line_col`).
+function place_above(text: str, at: i64, from: i64) -> str
+    start = at - column_of(text, at) + 1
+    column = "column " + (text.slice(from: start, to: at).chars().len() + 1).to_str()
+    above = newlines_between(text: text, from: at, to: from)
+
+    if above == 0
+        return "at " + column + " of this line"
+
+    if above == 1
+        return "on the line above, at " + column
+    return above.to_str() + " lines above, at " + column
+
 test "line and column are 1-based and count the newline"
     text = "ab\ncd"
     assert line_col(text, 0).line == 1
@@ -119,3 +183,24 @@ test "lines above is a distance, and a comment at or past the declaration is non
     # A trailing note sits at or past the declaration's own offset.
     assert lines_above(text: text, comment: 14, decl: 14) == 0
     assert lines_above(text: text, comment: 20, decl: 14) == 0
+
+test "a place above is a distance in lines, its column counted in characters"
+    # Same line, the line above, three lines above across a blank line.
+    assert place_above("ab[c)", at: 2, from: 4) == "at column 3 of this line"
+    assert place_above("a[\nb)", at: 1, from: 4) == "on the line above, at column 2"
+    assert place_above("  [\n1\n\nb)", at: 2, from: 8) == "3 lines above, at column 3"
+
+    # `é` is two bytes and one character, and a caret counts characters.
+    assert place_above("é[\n)", at: 2, from: 4) == "on the line above, at column 2"
+
+test "a margin is measured to the line's start, and a tab in it is seen"
+    text = "a\n    b\n\tc\n  x y\n"
+    assert margin_width(text, at: 0) == 0
+    assert margin_width(text, at: 6) == 4
+    assert !margin_has_tab(text, at: 6)
+    assert margin_width(text, at: 9) == 1
+    assert margin_has_tab(text, at: 9)
+
+    # `y` does not begin its line.
+    assert margin_width(text, at: 15) == -1
+    assert !margin_has_tab(text, at: 15)

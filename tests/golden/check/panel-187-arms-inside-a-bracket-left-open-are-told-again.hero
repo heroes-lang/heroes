@@ -1,0 +1,29 @@
+# Pinned 2026-10-03 by lane rec187 under panel 187's R1 and R5: a known
+# cost, not an intent; a change in either direction turns this case red.
+# Defect 177, class (a), adjacent: a `match` whose arms fall inside a
+# bracket left open has each arm told after the bracket's own message,
+# `line_end_before_continuation` at a `.case` or `expected_end_of_line` at
+# a `=>` (`parse/line_end.hero:242`). Not repaired inline: where the reach
+# of a bracket left open ends over a match's arms is panel 183's R1 and R2,
+# ratified, which the lexer and `parse/unclosed` apply.
+
+function describe(scores: {str: i64}, name: str) -> str
+    return match scores[name  #~ unclosed_bracket
+        .ok v  => v.to_str()  #~ line_end_before_continuation
+        .err e => e.code  #~ line_end_before_continuation
+
+function grouped()
+    n = 5
+    x = match (n  #~ unclosed_bracket
+        .ok v => 1  #~ line_end_before_continuation
+    print(x)
+
+function below_a_list(n: i64) -> i64
+    x = [n, 1  #~ unclosed_bracket
+    y = match n
+        0 => 1  #~ expected_end_of_line
+        _ => 2  #~ expected_end_of_line
+    return y
+
+function main()
+    print(1)

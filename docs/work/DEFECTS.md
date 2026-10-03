@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 33**
+**OPEN: 46**
 
 - [ ] **130 — after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported** | in `function main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` over `z = 4 )`, reports the second line and not the first, where the same two lines after no `match` report both | `selfhost/grammar_expr.hero` (`match_expr`) · the enclosing statement's recovery · **class: systemic**
 
@@ -323,6 +323,26 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     gated by its own cases; the round's gate is the commit carrying this
     line.
 
+    **2026-10-03, lane rec187, panel 187's R1: the shapes beside the item
+    close into items and repairs** (the compiler engineer's § 1, each item
+    carrying its pin under `tests/golden/check/panel-187-*`): `g4/ti` into
+    defect 199, `g2/r12` into 200, `g1/a11` into 195; `hc/h09` and `g1/b07`
+    are one message per mistake (class (f), the sitting's F3); `g2/r09` is
+    repaired by the sitting's R5 and row 130-34a by its R6, each recorded
+    below as it lands. The item stays `- [ ]` here; the round's gate closes
+    it.
+
+    **2026-10-03, lane rec187, panel 187's R5: a body told missing names its
+    declaration** (`g2/r09`; beside it with its cause, a constant's and a
+    test's, and a head whose signature or type failed after its name):
+    repaired at `eddb0a7c`, gated by its own cases; the rest is owed at the
+    round's gate. Beside it with another cause, a body written at its head's
+    margin is defect 202.
+
+    **2026-10-03, lane rec187, panel 187's R6: row 130-34a** filed as defect
+    203 and repaired at `97008231`, gated by its own cases; the rest is owed
+    at the round's gate.
+
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): six batches on the
     trunk's record (recovery-b1 to b6) and a seventh in lane recovery-b8, which
@@ -528,6 +548,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     2026-10-02. The item stays open for the shapes `scratchpad/lane-recovery-b5-items.md`
     § Queued and `scratchpad/close/next-batches-1001.md` name.
 
+    **2026-10-03, lane rec187, panel 187's R1: the fifteen rows close into
+    six items and a pin** (the compiler engineer's § 1, each item carrying
+    its pin under `tests/golden/check/panel-187-*`): 131-33a, 54a and 54b
+    into defect 194; 131-55a and 55b into 195; 131-56a and 56b into 196;
+    131-41a into 197; 131-16a, 16b, 53a and 53b into 198; 131-32 into 201.
+    131-52a is three messages for three edits by ruling 1, pinned by
+    `panel-187-a-variants-cases-in-braces-cost-three-edits`; 131-22 is two
+    messages for two mistakes in the normal arm, its control-arm message,
+    which quotes `record x` across the break, unpinnable while no golden
+    form runs `--permissive` (the sitting's R3). The item stays `- [ ]` here;
+    the round's gate closes it.
+
     **Class: systemic**, 2026-10-02 (the author's *D1a*,
     `.claude/rules/verification.md` § Bounded discovery): four batches
     (recovery-b1, b2, b4, b5) and 15 rows open on `2bb45a96` by lane
@@ -727,6 +759,14 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     so it goes with 130 and 131 to the sitting on what a finished recovery
     is.
 
+    **2026-10-03, lane rec187, panel 187's R4: `opening.drop_line` deleted,
+    a failed arm's line dropped whole, a line the lexer joined to it
+    included** (the four shapes above and nine beside them with its cause, a
+    statement `match`, a `match` in an arm, a returned one and a chain of
+    lines among them): repaired at `29425af6`, gated by its own cases; the
+    rest is owed at the round's gate. The five control-arm messages the
+    drop no longer tells are defect 193.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` §
     Bounded discovery): a second message for one mistake.
 
@@ -815,11 +855,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane 135c's report and lane recovery-b4's (*one extra message per arm*), queued under recovery-b5, 2026-10-02 (`scratchpad/lane-135c/shapes/P6/`, 2026-10-02); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/open-bracket-arms/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The certain fix lane recovery-b4 saw inside a `[` left open is a guess today, and `check --apply` leaves the text as it is.
 
+    **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-arms-inside-a-bracket-left-open-are-told-again.hero`, a known cost under the sitting's R1**, not repaired inline: where the reach of a bracket left open ends over a match's arms is panel 183's R1 and R2, ratified, which the lexer and `parse/unclosed` apply. The item stays open.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake; no wrong value, no false message, no certain fix. The recovery cluster's, beside 130 and 131.
 
 - [ ] **178 — a separator habit on every line of a block is told once per line: a `,` after each statement or each arm, a `;` after each field** | `x = 1,`, `y = 2,`, `print(x + y),` in a function: three `expected_end_of_line`; arms `0 => 1,`, `1 => 2,`, `_ => 3,`: three; `record P` over `x: i64;`, `y: i64;`, `z: i64;`: three `unexpected_character`; a `,` after every member of a declaration is one message since `68e46a13` | `selfhost/parse/member_lines.hero` (the members' rule, `68e46a13`) · the line end of a statement and of an arm · the lexer's `;` · **class: adjacent**
 
     **Origin:** lane recovery-b4's report (*the per-line `,` and `;` habits, one message per run with a certain deletion*), queued under recovery-b5, 2026-10-02; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/habit-every-line/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
+
+    **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-separator-habit-on-every-line-is-told-once-a-line.hero`, a known cost under the sitting's R1**, not repaired inline: one message for a run of lines is a reading of its own, as ruling 5's is for an indentation habit, and the `;` is the lexer's (`selfhost/scan.hero:299`). The item stays open.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
@@ -827,11 +871,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane recovery-b4's report (*`@return 1`: two messages*), queued under recovery-b5, 2026-10-02; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/at-return/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`).
 
+    **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-sigil-before-return-is-told-twice.hero`, a known cost under the sitting's R1**, not repaired inline: the statement's start is `selfhost/grammar_expr.hero`'s, at its `DECIDED` ceiling of 1085 with no line of room, so a repair first moves code out of that knot. The item stays open.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
 - [ ] **180 — a range written `1..2` is told twice as a field access** | `x = 1..2`: `expected_field_name` at 3:11, *found `.`*, and again at 3:12, *found a number (`2`)*; `x = 0x1..5` the same at 3:13 and 3:14 | `selfhost/grammar_expr.hero:343` · **class: adjacent**
 
     **Origin:** lane arm's first pass for defect 154, 2026-10-02 (`scratchpad/lane-arm/pass1/n154/e20.hero`, 2026-10-02), queued as *a range habit, recovery's file*; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/range-dots-twice/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). The recovery instrument counts its `range-dots` operator at 12 EXTRA.
+
+    **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-range-written-with-two-dots-is-told-twice.hero`, a known cost under the sitting's R1**, not repaired inline: its site is `selfhost/grammar_expr.hero`'s `after_dot`, at its `DECIDED` ceiling of 1085 with no line of room, and the range's right operand can be read only inside that knot, so no module of `parse/` can carry the repair; a `for i in 0..10` head costs the same two. The item stays open.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
@@ -839,11 +887,15 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane arm's first pass for defect 154, 2026-10-02 (`scratchpad/lane-arm/pass1/n154/e08.hero`, 2026-10-02), named *Left, queued* in `docs/records/done/2026-10-02-1415-defect-154-closed-a-based-literal-with-a-fraction-is-told-as-the-number-it-is.md` and on no open list; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/float-second-point/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). Lane arm: no existing code covers it, so a new one is a sitting's.
 
+    **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-a-number-with-a-second-point-is-told-as-a-field.hero`, a known cost under the sitting's R1**, not repaired inline: its site is `selfhost/grammar_expr.hero`'s `after_dot`, beside 180's, at its `DECIDED` ceiling with no line of room. The item stays open.
+
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be. The recovery cluster's.
 
 - [ ] **182 — an operator alone on a line deeper than a `match`'s arms costs `continuation_outside_brackets` and `unexpected_block`** | `k = match n` over `1 => "one"`, then a line holding only `+` (or `-`) one level deeper, then `_ => "many"`: two messages on line 5; the `certain` deletion of the operator, applied, checks clean | `selfhost/open_line.hero` · `selfhost/sign_above.hero` (the deletion, defect 165's `8cb4ba6c`) · the orphan block's `unexpected_block` · **class: adjacent**
 
     **Origin:** lane h158's pass for defects 165 and 166, 2026-10-02 (`scratchpad/lane-h158/d166/q1_plus_deeper.hero`, `q2_minus_deeper_wild.hero`, 2026-10-02); reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/operator-deeper-line/`), where the one fix was a guess, and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`), where it is the `certain` deletion 165's repair brought; the second message stands.
+
+    **2026-10-03, lane rec187, panel 187's R5: measured as filed on the lane's compiler at `97008231` (V1, V5 and R6 landed), its reproducers reading as on the head's; pinned by `tests/golden/check/panel-187-an-operator-alone-deeper-than-the-arms-costs-two.hero`, a known cost under the sitting's R1**, not repaired inline: the deeper margin is laid out by the lexer before `selfhost/sign_above.hero` leaves the operator out of the stream, in `selfhost/open_line.hero`, two lines under its ceiling, and only the lexer's indent stack can take the block back. The item stays open.
 
     **Class: adjacent**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake. The recovery cluster's.
 
@@ -904,6 +956,100 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+- [ ] **193 — an arm whose pattern failed hides the mistakes in its body: on one line in both arms, and, joined below the failed line, under `--permissive` since panel 187's V1** | `k = match n` over `x | 2 => f(1 +)`: `expected_pattern` at the `x` and the `1 +` untold, in both arms, on the head's compiler and on `29425af6`; `x |` over `2 => f(1 +)`: the normal arm tells the `1 +` from the lines apart, and `check --permissive` told it, `expected_expression`, until `29425af6` and not since; the same over `1 | +`, `x ==`, `1 -> 2 |` and an arm one level deeper | `selfhost/grammar_expr.hero` (`arms_of`'s `.err` branch: the failed arm's line goes with `cursor.drop_rest_of_line`, its body with it) · panel 187's R4 · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, 2026-10-02, on its V1 probes `h01`, `h05`, `h14`, `h16`, `h17` and their one-line twins `h02`, `h06` (`scratchpad/187-compiler-engineer-work/probes2/`, 2026-10-02); filed by lane rec187 at the sitting's R4, reproduced on the head's compiler and on `29425af6` (2026-10-03, `scratchpad/lane-rec187/pass1/k-166-control.txt` and `v1-vs-k.txt`). No golden form runs `--permissive` (the sitting's R3), so the control arm's half cannot be pinned; the one-line half can.
+
+    **Why it is a defect.** A mistake told only once another is fixed: design.md §4.17's measure counts an exchange more.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only once another is fixed; no false message, no wrong certain fix.
+
+- [ ] **194 — C's three-clause loop header costs three messages: the lexer tells each `;` and the loop habit the `for (`** | `for (i = 0; i < 3; i++)` over its body: `unexpected_character` at each `;` and `for_missing_in` at the `(`, three messages for one habit; `for (;;)` the same; a `{` after the header adds `missing_body`, ruling 4's | `selfhost/scan.hero:299` (the lexer's `;`) · `selfhost/parse/loop_habit.hero:58` (`for_missing_in`) · pinned by `tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause A1 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's rows 131-33a, 131-54a and 131-54b and the recovery instrument's `c-for`, 52 of its 439 EXTRA; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a second message for one mistake, class (a).
+
+- [ ] **195 — a line a recovery hands on to the statement reader is told a second time, by the expression's `primary`** | an arm's `0` over a `=> 5` two dedents out: `expected_arm_arrow` at the `0` and `expected_expression` at the `=>`; `use geom` over an indented `function g()`: `expected_declaration` at the block and `expected_expression` at the `function` | `selfhost/grammar_expr.hero:429` (`primary`'s message), after `selfhost/parse/broken_arm.hero:55` or `selfhost/parse/top_level.hero:82` · pinned by `tests/golden/check/panel-187-a-line-a-recovery-hands-on-is-told-again-by-the-expression.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause A2 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's rows 131-55a and 131-55b and lane recovery-b8's shape `g1/a11`; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a second message for one mistake, class (a).
+
+- [ ] **196 — the colon habit is told once a line, and the next head's `:` on the same line is named a missing body** | `if n > 0: if n > 1: print(1)`: `trailing_colon` at the first `:`, whose `certain` fix rewrites the whole line and checks clean, then `missing_body` at the second, *found `:`*; three heads on one line cost the same two | `selfhost/parse/colon_habit.hero:98` · `selfhost/parse/opening.hero:274` (`absent`) · pinned by `tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero` and its `.fixed` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause A3 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's rows 131-56a and 131-56b; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a second message for one mistake, class (a).
+
+- [ ] **197 — one `)` left out of a function type costs four messages: the lexer names two openers, and the type reader asks for the `)` and the `->` it was owed** | `function f(g: (function(i64 -> i64)` over its body: `unclosed_bracket` at each `(`, *never closed* at the file's end and *still open at line N* where a declaration below ends the reach, then `expected_function_type_params_close` at the `->` and `expected_function_type_arrow` at the line's end | `selfhost/closers.hero` (`never_closed` at `:151`, `still_open` at `:169`) · `selfhost/parse/type.hero:307` and `:229` · pinned by `tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause A4 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's row 131-41a; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03). The row's own file ends below the head, so it reads *never closed* (`scratchpad/audit-130-133/cases/131-41a/`, 2026-09-30, re-run by the lane on `29425af6`); the pin has a declaration below, so *still open*.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a second message for one mistake, class (a).
+
+- [ ] **198 — a head whose line goes on past it is told by one message and the rest of its line dropped, so a stray closer on it is told only once the first is repaired** | `variant T )` and `record Point )` with nothing below: `empty_variant` and `empty_record`, the `)` untold; `function f(): i64 )` over its body: `expected_end_of_line` at the `:`, the `)` untold until `->` replaces the `:`; with no body, `missing_body` (found `:`) and the `)` untold | `selfhost/parse/members_below.hero:87` (`skip_line` after a record's or a variant's head) · `selfhost/parse/opening.hero:192` (`drop_rest_of_line` after a function's) · pinned by `tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause B1 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's rows 131-16a, 131-16b, 131-53a and 131-53b; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+- [ ] **199 — a head that refused something drops the rest of its line as debris, a stray closer in it with it** | `if f(1 +) )` over its body: `expected_expression` at the call's `)`, and the stray `)` after it told only once the operand is written | `selfhost/parse/opening.hero:147` (`drop_rest_of_line` after a failed head) · pinned by `tests/golden/check/panel-187-a-failed-heads-rest-is-dropped-as-debris.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause B2 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on lane recovery-b8's shape `g4/ti`, one of the six beside item 130; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+- [ ] **200 — a `function` among a variant's cases is told once and dropped with its block, so a mistake inside it waits until it moves out** | `variant V` over `red` and `function f()` over `print(1 +)`: `expected_case` at the `function`, and the `1 +` untold; among a record's fields the same function is read as the function it is since `26358f9c` | `selfhost/parse/member_lines.hero:205` (`skip_line`) and `:202` (`balanced_block`) · pinned by `tests/golden/check/panel-187-a-function-among-a-variants-cases-is-dropped.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause B3 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on lane recovery-b8's shape `g2/r12`, one of the six beside item 130; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+- [ ] **201 — in a braced body, the rest of the line past an inner closing brace is not read** | `function main() {` over `do {`, a body and `} while (1 == 1)`: `missing_body` at the `{`, `expected_end_of_line` at the `do {` and in the body, and `while (1 == 1)` untold until the braces are gone | `selfhost/parse/braced_lines.hero:154` (`brace_habit.pass`, which passes the function's braces after its lines are read, the inner `}`'s line with them) · pinned by `tests/golden/check/panel-187-a-line-past-an-inner-closing-brace-is-dropped.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause B4 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's row 131-32, where `heroes lex --dump-tokens` shows the lexer hands the parser every token of that line; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+- [ ] **202 — a body written at its head's margin is told twice at its first line, and once more for each line after** | `function main()` over `print(1)` at column 0: `missing_body` and `expected_declaration`, both at 2:1, for the one indentation left out; `function f(x: i64) -> i64` over `y = x + 1` and `return y` at column 0: a third, `expected_declaration` at the second line; the same under a `test` and a `constant` | `selfhost/parse/top_level.hero:82` (`expected_declaration`, at the line the missing body was just told at) · `selfhost/parse/opening.hero:274` (`absent`) · **class: adjacent**
+
+    **Origin:** lane rec187's first pass beside panel 187's R5, 2026-10-03, on the head's compiler and on `eddb0a7c` (`scratchpad/lane-rec187/pass1/v5/v24*.hero` and `k-v24.txt`, 2026-10-03). No golden pins the two at one place (every `check` case's `.expected` read for a `missing_body` and an `expected_declaration` at one line and column), and the recovery instrument plants no body dedented to its head (its operators in `scratchpad/instrument/tool/ops.py`, read 2026-10-03), so no count has seen it.
+
+    **Why it is a defect.** One mistake, the body's indentation, told twice at one place (design.md §4.17).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, class (a); both messages true.
+
+- [ ] **203 — a closer of another kind where a literal's separator goes is told in words that name neither the opener nor its closer** | `x = [1, 2` over `print(x) )` in a function: `expected_separator` at the `)`, *expected `,` or a new line between one element and the next, found `)`*, no `[` and no `]` in it; the `)` deleted, a second run tells `unclosed_bracket` at the `[`; the same on one line, `[1, 2)` and `{1: 2]`, and for a `}` in a list | `selfhost/parse/list_line.hero:223-228` (`separator`'s message) · panel 187's Q2 and R6 · **class: adjacent**
+
+    **Origin:** the audit's row 130-34a (`scratchpad/audit-130-133/cases/130-34a/`, 2026-09-30), the one row of item 130 open at panel 187; its R6 rewords the message to name the `[` left open, at its line and column, and both edits, the sitting's pin `tests/golden/check/panel-187-a-closer-of-another-kind-inside-a-list-is-one-message.hero` holding it meanwhile. Filed by lane rec187 before its repair, the shapes beside it read on the head's compiler (2026-10-03, `scratchpad/lane-rec187/pass1/k-r6.txt`).
+
+    **Why it is a defect.** Both readings of the program stand (the grammar's, the line a third element and the `)` its `]`; and the `]` left out above, the `)` a stray), and the message serves the first alone: under the second the repair costs a run more (design.md §4.17's measure).
+
+    **2026-10-03, lane rec187, panel 187's R6: the message names the opener
+    still open, where it stands as a distance from the caret's line with its
+    column in characters, and both edits** (the row and six shapes beside it
+    with its cause, a second module among them): repaired at `97008231`,
+    gated by its own cases; the rest is owed at the round's gate.
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+- [ ] **204 — inside a list whose `[` the lexer paired with a closer of another kind further down, a binding is read as an element and told without the `[`, and the stray closer waits for the `]`** | `x = [1, 2` over `print(x)` over `y = 3 )`: one message, `expected_separator` at the `=` two lines below the `[`, *found `=`*, naming no `[`; with the `]` written, the `)` is told, `expected_end_of_line`, on a second run | `selfhost/parse/unclosed.hero` (panel 183's R1, a binding below a `[` ends its reach only where the lexer named the `[` never closed) · `selfhost/closers.hero` (the closer of another kind paired with the `[`) · **class: adjacent**
+
+    **Origin:** lane rec187's first pass beside defect 203, 2026-10-03, on the head's compiler and on the lane's (`scratchpad/lane-rec187/pass1/r6/r16_closer_two_below.hero` and `r16b_bracket_written.hero`, 2026-10-03). Another cause than 203's: the found token is no closer, and the reach rule is not asked.
+
+    **Why it is a defect.** The `]` left out is told nowhere and the stray `)` only on a second run (design.md §4.17's measure).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only once another is fixed, class (b).
+
+- [ ] **205 — a closer of another kind where a map entry's `:` goes is told without the `{` or its closer** | `m = {1: 2` over `print(x) )`: `expected_map_entry_colon` at the `)`, *expected `:` between a map's key and its value, found `)`*, naming no `{` and no `}`; `{1: 2` over `y]` the same | `selfhost/grammar_expr.hero:567` (`map_literal`'s `line_end.expect_after` for the `:`) · defect 203's message, the separator's, which names them (`selfhost/parse/list_line.hero`, `another_kind`) · **class: adjacent**
+
+    **Origin:** lane rec187's first pass beside defect 203, 2026-10-03, on the head's compiler and on the lane's (`scratchpad/lane-rec187/pass1/r6/r04_map_paren.hero` and `r12_map_bracket.hero`, 2026-10-03). The same reading as 203's at another site: the line is read as the map's next key, and the closer stands where its `:` goes.
+
+    **Why it is a defect.** As 203: one reading served, the other's repair a run more (design.md §4.17's measure).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
 
 - [ ] **206 — on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`** | `docs/panel/186-briefs/probes/coordinator/fw/` built with `PKG_CONFIG_PATH` at its `pc/` in the Linux arm64 container (Debian clang 22.1.8): `clang: warning: argument unused during compilation: '-F.../fw/pc/../frameworks' [-Wunused-command-line-argument]`, then the program prints `7` at exit 0; this Mac prints no such line; on this Mac `clang --target=aarch64-linux-gnu -F/tmp/fwdir x.o -o x.bin` prints the same warning and the same flag with `-c` prints nothing | `selfhost/cli/libraries.hero` (the words a package gives the compile and the link) · `selfhost/cli/units.hero` (the link line) · defect 160's closed record · **class: blocking**
 

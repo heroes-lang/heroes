@@ -1,0 +1,21 @@
+# Pinned 2026-10-02 by panel 187's compiler engineer, route (1f): a known
+# cost, not an intent; a change in either direction turns this case red.
+# A head whose line goes on past it: what goes on is told by one message and
+# the rest of the line dropped, by `parse/members_below.hero:87` for a
+# `record` or a `variant` and `parse/opening.hero:192` for a function. With
+# nothing below, the empty block or the missing body is told instead and the
+# junk not at all. Rows 131-16a, 131-16b, 131-53b (the `)` untold) and
+# 131-53a (the `)` told only once `->` replaces the `:`). Class (b), a
+# mistake told only once another is fixed: `adjacent`.
+
+variant T )  #~ empty_variant
+
+record Point )  #~ empty_record
+
+function f(): i64 )  #~ expected_end_of_line
+    return 1
+
+function g(): i64 )  #~ missing_body
+
+function main()
+    print(1)

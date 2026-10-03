@@ -1,0 +1,3 @@
+tests/golden/check/panel-187-a-line-past-an-inner-closing-brace-is-dropped.hero:9:17: error[missing_body]: the `function` `main` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/panel-187-a-line-past-an-inner-closing-brace-is-dropped.hero:10:8: error[expected_end_of_line]: expected the end of the line, found `{` — one statement per line, no semicolons
+tests/golden/check/panel-187-a-line-past-an-inner-closing-brace-is-dropped.hero:11:15: error[expected_end_of_line]: expected the end of the line, found a number (`4`) — one statement per line, no semicolons

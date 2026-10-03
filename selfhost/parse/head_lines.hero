@@ -10,7 +10,9 @@
 # - where the lexer **joined** two of its lines (`continuation_outside_brackets`):
 #   two adjacent tokens on two lines with no line end between them;
 # - what a line's **margin** holds: how wide it is, and whether a tab is in
-#   it, which the lexer refuses and opens no block for.
+#   it, which the lexer refuses and opens no block for. That third fact reads
+#   the text and no token, and since 2026-10-03 it is `text_lines.hero`'s,
+#   where every line of a text is read (panel 187's R9, the parser's budget).
 #
 # A leaf: it reads the tokens and the text, and nothing that reads the
 # parser. Moved out of `parse/opening.hero` on 2026-09-29, when that module
@@ -82,66 +84,10 @@ function before_the_break(c: cursor.Cursor, from: i64, at: i64) -> i64
 function is_line_end(kind: token.TokenKind) -> bool
     return kind == .terminator || kind == .indent || kind == .dedent
 
-## Margins
-
-# Whether `at` begins its line of the text and that line's margin holds a tab.
-function margin_has_tab(text: str, at: i64) -> bool
-    width = margin_width(text, at: at)
-
-    if width < 0
-        return false
-    i: i64 @ at - width
-
-    while i < at
-        if text[i] == '\t'
-            return true
-        i @ i + 1
-
-    return false
-
-# The width of the blank margin of the line that holds byte `at`, wherever on
-# its line `at` stands (`parse/unclosed.swallows_the_body`).
-function line_margin(text: str, at: i64) -> i64
-    start: i64 @ at
-
-    while start > 0 && text[start - 1] != '\n'
-        start @ start - 1
-
-    i: i64 @ start
-
-    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
-        i @ i + 1
-
-    return i - start
-
-# How many bytes of blank margin stand before `at` on its line, or -1 where
-# something else does and `at` does not begin its line.
-function margin_width(text: str, at: i64) -> i64
-    i: i64 @ at - 1
-
-    while i >= 0 && text[i] != '\n'
-        if text[i] != ' ' && text[i] != '\t'
-            return -1
-        i @ i - 1
-
-    return at - 1 - i
-
 ## Tests
 
 function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
     return token.Token(kind: kind, span: token.Span(start: start, end: end))
-
-test "a margin is measured to the line's start, and a tab in it is seen"
-    text = "a\n    b\n\tc\n  x y\n"
-    assert margin_width(text, at: 0) == 0
-    assert margin_width(text, at: 6) == 4
-    assert !margin_has_tab(text, at: 6)
-    assert margin_width(text, at: 9) == 1
-    assert margin_has_tab(text, at: 9)
-
-    # `y` does not begin its line.
-    assert margin_width(text, at: 15) == -1
-    assert !margin_has_tab(text, at: 15)
 
 test "a join is two tokens on two lines with no line end between them"
     # if n >  /  print(1): the lexer planted no line end at the break.
