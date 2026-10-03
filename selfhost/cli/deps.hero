@@ -201,8 +201,12 @@ function rows_of(depfile: str, skip: str, @memo: {str: str}) -> str?
         return fail(code: "failed", msg: "clang wrote no dependency listing at " + depfile)
     rows: [str] @ []
 
+    # On Windows a listing's separators are `\` whatever the words said, and
+    # `skip` is written with `/` (`under`).
+    either = process.exe_suffix() == ".exe"
+
     for path in paths_of(listing.must())
-        if under(path: path, prefix: skip)
+        if under(path: path, prefix: skip, either: either)
             continue
         rows @ rows.push(digest_of(path, @memo) + " " + path)
 
@@ -251,17 +255,32 @@ function is_digest(text: str, length: i64) -> bool
 # `slice` aborts where it would split a character (spec § 10 Strings, arrays, maps), so cutting
 # a path at the prefix's length is a crash waiting for a directory with
 # an accent in its name. Comparing bytes cannot abort.
-function under(path: str, prefix: str) -> bool
+#
+# **`either` makes a `\` and a `/` one separator** (defect 214,
+# 2026-10-03), and `rows_of` passes it on Windows alone. clang there writes
+# every separator of a dependency listing as `\`, those it was given as `/`
+# among them, so a prefix written with `/` matched no path and every record
+# listed the file its key already names: measured on the box, a unit's
+# record listed its own `build\tu-0b52ebf10bd34d86\library.c`. Neither byte
+# can be part of a name there. Elsewhere `\` IS a byte of a name, and a
+# prefix test that read it as a separator would leave a real dependency out
+# of a record, the stale object this file exists to refuse. The platform is
+# asked once, by the caller, so both readings are tested on every platform.
+function under(path: str, prefix: str, either: bool) -> bool
     if path.len() < prefix.len()
         return false
     index: i64 @ 0
 
     while index < prefix.len()
-        if path[index] != prefix[index]
+        if path[index] != prefix[index] && !(either && separator(path[index]) && separator(prefix[index]))
             return false
         index @ index + 1
 
     return true
+
+# A byte that separates a path's parts on some platform, `/` or `\`.
+function separator(b: u8) -> bool
+    return b == '/' || b == '\\'
 
 # Whether every file a record's rows name still says the same thing. False
 # means recompile.
@@ -383,15 +402,42 @@ test "a record goes stale when what it recorded changes, and names its artifacts
     assert second != first
 
 test "a prefix test on a path with an accent in it does not abort"
-    assert under(path: "build/tu-1/x.c", prefix: "build/tu-1/")
-    assert !under(path: "build/tu-2/x.c", prefix: "build/tu-1/")
-    assert !under(path: "/a", prefix: "/abc")
+    for either in [false, true]
+        assert under(path: "build/tu-1/x.c", prefix: "build/tu-1/", either: either)
+        assert !under(path: "build/tu-2/x.c", prefix: "build/tu-1/", either: either)
+        assert !under(path: "/a", prefix: "/abc", either: either)
 
-    # A genuine prefix that stops mid-`à`, and two paths that differ
-    # INSIDE a multi-byte character. Cutting either with `slice` at the
-    # prefix's length would abort (spec § 10 Strings, arrays, maps); comparing bytes answers.
-    assert under(path: "/Cartellà/x.h", prefix: "/Cartel")
-    assert !under(path: "/Cartellá/x.h", prefix: "/Cartellà/")
+        # A genuine prefix that stops mid-`à`, and two paths that differ
+        # INSIDE a multi-byte character. Cutting either with `slice` at the
+        # prefix's length would abort (spec § 10 Strings, arrays, maps); comparing bytes answers.
+        assert under(path: "/Cartellà/x.h", prefix: "/Cartel", either: either)
+        assert !under(path: "/Cartellá/x.h", prefix: "/Cartellà/", either: either)
+
+# Defect 214: the Windows box's clang wrote `build\tu-…\library.c` for a
+# unit compiled as `build/tu-…/library.c`. Both readings are asked here, on
+# every platform; which one `rows_of` takes is the test below.
+test "with either, a backslash and a slash are one separator, and without it a backslash is a byte of a name (defect 214)"
+    assert !under(path: "build\\tu-1\\x.c", prefix: "build/tu-1/", either: false)
+    assert under(path: "build\\tu-1\\x.c", prefix: "build/tu-1/", either: true)
+    assert under(path: "build/tu-1\\x.c", prefix: "build\\tu-1/", either: true)
+    assert !under(path: "build\\tu-2\\x.c", prefix: "build/tu-1/", either: true)
+    assert !under(path: "build\\tu-1", prefix: "build/tu-1/", either: true)
+
+    # A letter is never a separator, either way.
+    assert !under(path: "buildxtu-1/x.c", prefix: "build/tu-1/", either: true)
+
+# The listing as the box's clang writes it, every separator a `\` and every
+# line ending `\r\n`: its two files are the key's, left out where a `\` is a
+# separator; elsewhere they are two names holding backslashes, files that are
+# not there, so two `absent` rows and never a silent skip (defect 214).
+test "a listing written the Windows way leaves the key's own files out exactly where a backslash is a separator (defect 214)"
+    dir = "build/selftest-deps-windows"
+    assert !process.mkdir_all(dir).is_err()
+    native = "build\\selftest-deps-windows\\"
+    assert !write_file(path: dir + "/listing.d", text: "dep: " + native + "unit.c \\\r\n  " + native + "watched.h\r\n").is_err()
+    memo: {str: str} @ {}
+    rows = rows_of(depfile: dir + "/listing.d", skip: dir + "/", @memo).must()
+    assert rows.len() == 0 == (process.exe_suffix() == ".exe")
 
 test "what the key already names is not recorded"
     dir = "build/selftest-deps-own"
