@@ -121,12 +121,12 @@ function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
 
     while i < c.pos && i < c.tokens.len() - 1 && text_lines.line_margin(text, at: c.tokens[i].span.start) == text_lines.line_margin(text, at: c.tokens[from].span.start) && !below_the_line(c, text, from: from, at: i)
         k = c.tokens[i].kind
-        close = pairing.paired_closer(c, text, open: i)
 
-        if (k == .lparen || k == .lbracket) && close > i
+        if k == .lparen || k == .lbracket
+            close = pairing.paired_closer(c, text, open: i)
             start = first_below(c, text, open: i)
 
-            if start < close && told_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0
+            if close > i && start < close && told_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0
                 return Spilled(start: start, close: close + 1)
         i @ i + 1
 

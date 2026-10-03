@@ -10,7 +10,8 @@
 # got `while {`, a map literal that refused the body inside it. The fix is
 # certain now only where the `while` it writes is a loop, and that is asked
 # of the `while` itself: the rest of the line is read as its condition, on a
-# copy of the cursor, by `grammar_expr.for_stmt`, and the fix is certain where
+# copy of the cursor without its reports, by `grammar_expr.for_stmt`, so the
+# head's own report is said in place (defect 184), and the fix is certain where
 # that reading refused nothing, held nothing back, and ended where the head's
 # line ends or at a `{` that ends it, where a body begins; and where what it
 # read is a `bool` by its shape (`a_condition`, defect 135), since a list, a
@@ -59,13 +60,14 @@ function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.
         span: cursor.current_span(c)
     )
     d.fixes @ d.fixes.push(diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty))
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
 
 # Whether `read`, the cursor `c` after the condition a `while` would read,
 # read one: it moved, refused nothing, held nothing back, and stands where
-# the head's line ends or on a `{` that ends it.
+# the head's line ends or on a `{` that ends it. `read` is a `cursor.trial`,
+# so every report it holds is its own.
 function a_loop(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
-    if read.pos == c.pos || cursor.refused_since(read, c.diagnostics.len()) || read.held.len() != c.held.len()
+    if read.pos == c.pos || cursor.refused_since(read, 0) || read.held.len() != c.held.len()
         return false
     k = cursor.current_kind(read)
     return k == .terminator || k == .indent || k == .dedent || k == .eof || brace_habit.opens_here(read, text)

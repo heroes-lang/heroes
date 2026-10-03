@@ -10,12 +10,16 @@
 # read as arms, a `,` between them Rust's separator; an arm's braces are its
 # body, said once as the missing body they stand for, unless their first line
 # is a map's entry (`selfhost/parse/braced_arms.hero`).
+#
+# Moved 2026-10-03 with defect 178's repair (lane b8-recovery): a `,` that
+# ends each arm's line is one run, told once, every `,` of it a certain
+# deletion of that report (`selfhost/separator_runs.hero`).
 
 function arms_in_braces(n: i64)
     match n {  #~ missing_match_arms
         0 => print(0 +)  #~ expected_expression
         1 => print(1),  #~ expected_end_of_line
-        _ => print(2),  #~ expected_end_of_line
+        _ => print(2),
     }
 
 function a_body_in_braces(n: i64)

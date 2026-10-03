@@ -198,7 +198,7 @@ function arms_below(c: cursor.Cursor) -> bool
     while i < c.tokens.len()
         k = c.tokens[i].kind
 
-        if depth == 0 && ends_a_line(k)
+        if depth == 0 && token.ends_a_line(k)
             return false
 
         if k == .lparen || k == .lbracket || k == .lbrace
@@ -273,7 +273,7 @@ function field_shaped(tokens: [token.Token], start: i64) -> bool
         return false
     i: i64 @ start
 
-    while i < tokens.len() && !ends_a_line(tokens[i].kind)
+    while i < tokens.len() && !token.ends_a_line(tokens[i].kind)
         if tokens[i].kind == .at || tokens[i].kind == .eq
             return false
         i @ i + 1
@@ -282,7 +282,7 @@ function field_shaped(tokens: [token.Token], start: i64) -> bool
 
 # A name alone on its line: what follows it ends the line.
 function case_shaped(tokens: [token.Token], start: i64) -> bool
-    return tokens[start].kind == .ident && ends_a_line(next_kind(tokens, start))
+    return tokens[start].kind == .ident && token.ends_a_line(next_kind(tokens, start))
 
 # The kind of the first token after `at` that is not a comment.
 function next_kind(tokens: [token.Token], at: i64) -> token.TokenKind
@@ -294,9 +294,6 @@ function next_kind(tokens: [token.Token], at: i64) -> token.TokenKind
     if i >= tokens.len()
         return .eof
     return tokens[i].kind
-
-function ends_a_line(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
 
 ## Tests
 

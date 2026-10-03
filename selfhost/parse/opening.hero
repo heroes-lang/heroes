@@ -200,7 +200,7 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
 # as the missing body it stands for, unless the head refused that very token
 # (`for {`). The cursor is left on the `{`.
 function braced(@c: cursor.Cursor, text: str, head: Mark, failed: bool, brace: i64, missing: Missing) -> Body
-    if !failed && !is_line_end(cursor.current_kind(c)) && c.pos < brace
+    if !failed && !token.is_line_end(cursor.current_kind(c)) && c.pos < brace
         junk(@c, text, missing: missing)
 
     while c.pos < brace
@@ -232,7 +232,7 @@ function body_below(c: cursor.Cursor, text: str) -> bool
         i @ i + 1
 
     k = c.tokens[i].kind
-    return k == .indent || !is_line_end(k) && k != .eof && text_lines.margin_has_tab(text, at: c.tokens[i].span.start)
+    return k == .indent || !token.is_line_end(k) && k != .eof && text_lines.margin_has_tab(text, at: c.tokens[i].span.start)
 
 # An indent, or a line with a tab in its margin, under the cursor. The second
 # holds back the report of a missing body, placed by `parse` against the
@@ -295,7 +295,7 @@ function refused_here(c: cursor.Cursor, head: Mark) -> bool
 function tabbed_line(c: cursor.Cursor, text: str) -> bool
     k = cursor.current_kind(c)
 
-    if k == .eof || is_line_end(k)
+    if k == .eof || token.is_line_end(k)
         return false
     return text_lines.margin_has_tab(text, at: cursor.current_span(c).start)
 
@@ -324,6 +324,3 @@ function at_elif(c: cursor.Cursor, text: str) -> bool
         return false
     swap = swap_reading.swap_at(c, text, cursor.current_span(c))
     return !swap.is_err() && swap.must() == "else if"
-
-function is_line_end(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent

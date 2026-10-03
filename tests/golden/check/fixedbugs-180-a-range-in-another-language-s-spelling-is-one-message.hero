@@ -1,0 +1,45 @@
+# Fixed defect 180, 2026-10-03. Symptom: Rust's, Swift's and Kotlin's range,
+# `1..2`, was told twice as a field access, `expected_field_name` at each of
+# its dots, three times with `0...5`, once more at its closer inside a
+# bracket, and no message named `range(from:, to:)`; `..2`, with no start,
+# was told as a case and then as a field. Cause: each `.` of the operator was
+# read by a reader of its own, `after_dot` or `case_expr`, and the right
+# operand was left where the next `.` or the closer was asked for. Repair:
+# the first refusal tells the range, in words that name how this language
+# writes one (`dot_words`), passes the rest of the operator, `=` or `<`
+# included, and reads its right operand (`grammar_expr.past_a_range`). One
+# message for each range below; a mistake inside the operand is its own.
+
+function in_bindings(a: i64, b: i64)
+    x = 1..2  #~ expected_field_name
+    y = 0x1..5  #~ expected_field_name
+    z = a..b  #~ expected_field_name
+    w = 0...5  #~ expected_field_name
+    v = 0..=5  #~ expected_field_name
+    u = 0..<5  #~ expected_field_name
+    t = 1 .. 2  #~ expected_field_name
+    s = 1.5..2  #~ expected_field_name
+    print(x + y + z + w + v + u + t + s)
+
+function in_brackets(xs: [i64])
+    print(xs[1..3])  #~ expected_field_name
+    print(f(0..5))  #~ expected_field_name
+    print((0..5))  #~ expected_field_name
+    print([0..5])  #~ expected_field_name
+    print(xs[..2])  #~ expected_case_name
+
+function in_loop_heads(n: i64)
+    for i in 0..10  #~ expected_field_name
+        print(i)
+
+    for i in 0..n - 1  #~ expected_field_name
+        print(i)
+
+    for i in 0..g(1 +)  #~ expected_field_name expected_expression
+        print(i)
+
+function g(n: i64) -> i64
+    return n
+
+function main()
+    in_bindings(1, b: 2)

@@ -1,0 +1,73 @@
+# Fixed defect 177, 2026-10-03. Symptom: a `match` whose arms fell inside a
+# bracket left open had each arm told again after the bracket's own message:
+# `line_end_before_continuation` at an arm's `.` below `match scores[name` or
+# `match (n`, `expected_end_of_line` at its `=>` below a `match` under a list
+# left open, three messages for one closer; a mistake inside an arm went
+# untold. Cause: a line going on inside the bracket was asked only whether its
+# first token could go on (`unclosed.past_what_goes_on`), and a `match` under
+# a bracket on a line above was taken for one inside a closed bracket, its
+# arms read as statements (`margin_arms.inside_a_bracket`). Repair: a line
+# that holds an arm's `=>` goes on with nothing, since no line inside brackets
+# holds one in a program that compiles; an opener the lexer named never
+# closed hides no arms. The arms its reach took in are read as arms, so the
+# bracket's report is the mistake's one and an arm's own mistake is told.
+
+function index_left_open(scores: {str: i64}, name: str) -> str
+    return match scores[name  #~ unclosed_bracket
+        .ok v  => v.to_str()
+        .err e => e.code
+
+function group_left_open(n: i64?) -> i64
+    return match (n  #~ unclosed_bracket
+        .ok v  => v
+        .err _ => 0
+
+function below_a_list_left_open(n: i64) -> i64
+    x = [n, 1  #~ unclosed_bracket
+    y = match n
+        0 => 1
+        _ => 2
+    return y
+
+function case_arms_below_a_list(r: i64?) -> i64
+    x = [1, 2  #~ unclosed_bracket
+    y = match r
+        .ok v  => v
+        .err e => 0
+    return y
+
+function a_comment_above_the_arms(scores: {str: i64}, name: str) -> str
+    return match scores[name  #~ unclosed_bracket
+        # the two outcomes
+        .ok v  => v.to_str()
+        .err e => e.code
+
+function an_arm_with_a_block(scores: {str: i64}, name: str) -> str
+    return match scores[name  #~ unclosed_bracket
+        .ok v =>
+            return v.to_str()
+        .err e => e.code
+
+function an_arm_s_own_mistake(scores: {str: i64}, name: str) -> str
+    return match scores[name  #~ unclosed_bracket
+        .ok v  => v.to_str(1 +)  #~ expected_expression
+        .err e => e.code
+
+function an_arm_s_own_mistake_below_a_list(n: i64) -> i64
+    x = [n, 1  #~ unclosed_bracket
+    y = match n
+        0 => g(1 +)  #~ expected_expression
+        _ => 2
+    return y
+
+function g(n: i64) -> i64
+    return n
+
+# The boundary: a line that goes on with no `=>` is still the line end's
+# mistake, told and offered its guesses.
+function a_line_that_goes_on(xs: [i64])
+    print(f(xs  #~ unclosed_bracket
+        .len())  #~ line_end_before_continuation
+
+function main()
+    print(1)

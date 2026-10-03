@@ -58,7 +58,7 @@ use parse/pairing
 function ending(c: cursor.Cursor, text: str) -> i64
     i: i64 @ c.pos
 
-    while !ends_a_line(c.tokens[i].kind)
+    while !token.ends_a_line(c.tokens[i].kind)
         if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span) && !opens_a_value(c, at: i)
             return i
         i @ i + 1
@@ -187,7 +187,7 @@ function pass(@c: cursor.Cursor)
     while c.pos < close && !cursor.at(c, .eof)
         _ = cursor.bump(@c)
 
-    if c.pos == close && cursor.at(c, .rbrace) && (!laid || !ends_a_line(cursor.peek(c, 1)))
+    if c.pos == close && cursor.at(c, .rbrace) && (!laid || !token.ends_a_line(cursor.peek(c, 1)))
         _ = cursor.bump(@c)
 
         if !laid
@@ -202,32 +202,26 @@ function after_a_close(c: cursor.Cursor, text: str) -> bool
     at = c.tokens[c.pos - 1].span.start
     return word_place.only_margin(text, from: word_place.line_start(text, at: at), to: at)
 
-function ends_a_line(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent || kind == .eof
-
 ## Tests
-
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
 
 test "a brace that ends the head's line opens its body, and the one it closes with is found by depth"
     # if x {  /  y = {1: 2}  /  }
     text = "if x {\n    y = {1: 2}\n}\n"
     tokens = [
-        tok(.kw_if, start: 0, end: 2)
-        tok(.ident, start: 3, end: 4)
-        tok(.lbrace, start: 5, end: 6)
-        tok(.ident, start: 11, end: 12)
-        tok(.eq, start: 13, end: 14)
-        tok(.lbrace, start: 15, end: 16)
-        tok(.int_lit, start: 16, end: 17)
-        tok(.colon, start: 17, end: 18)
-        tok(.int_lit, start: 19, end: 20)
-        tok(.rbrace, start: 20, end: 21)
-        tok(.terminator, start: 21, end: 21)
-        tok(.rbrace, start: 22, end: 23)
-        tok(.terminator, start: 23, end: 23)
-        tok(.eof, start: 24, end: 24)
+        token.made(.kw_if, start: 0, end: 2)
+        token.made(.ident, start: 3, end: 4)
+        token.made(.lbrace, start: 5, end: 6)
+        token.made(.ident, start: 11, end: 12)
+        token.made(.eq, start: 13, end: 14)
+        token.made(.lbrace, start: 15, end: 16)
+        token.made(.int_lit, start: 16, end: 17)
+        token.made(.colon, start: 17, end: 18)
+        token.made(.int_lit, start: 19, end: 20)
+        token.made(.rbrace, start: 20, end: 21)
+        token.made(.terminator, start: 21, end: 21)
+        token.made(.rbrace, start: 22, end: 23)
+        token.made(.terminator, start: 23, end: 23)
+        token.made(.eof, start: 24, end: 24)
     ]
     c: cursor.Cursor @ cursor.new_cursor(tokens)
     c.pos @ 2
@@ -242,14 +236,14 @@ test "a brace alone on the line below a head that ended opens its body, and one 
     # f()  /  {  /  }   and   f()  /  { g()
     text = "f()\n{\n}\n"
     tokens = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lparen, start: 1, end: 2)
-        tok(.rparen, start: 2, end: 3)
-        tok(.terminator, start: 3, end: 3)
-        tok(.lbrace, start: 4, end: 5)
-        tok(.rbrace, start: 6, end: 7)
-        tok(.terminator, start: 7, end: 7)
-        tok(.eof, start: 8, end: 8)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lparen, start: 1, end: 2)
+        token.made(.rparen, start: 2, end: 3)
+        token.made(.terminator, start: 3, end: 3)
+        token.made(.lbrace, start: 4, end: 5)
+        token.made(.rbrace, start: 6, end: 7)
+        token.made(.terminator, start: 7, end: 7)
+        token.made(.eof, start: 8, end: 8)
     ]
     c: cursor.Cursor @ cursor.new_cursor(tokens)
     c.pos @ 3
@@ -257,13 +251,13 @@ test "a brace alone on the line below a head that ended opens its body, and one 
 
     shared = "f()\n{ g()\n"
     more = [
-        tok(.ident, start: 0, end: 1)
-        tok(.lparen, start: 1, end: 2)
-        tok(.rparen, start: 2, end: 3)
-        tok(.terminator, start: 3, end: 3)
-        tok(.lbrace, start: 4, end: 5)
-        tok(.ident, start: 6, end: 7)
-        tok(.eof, start: 10, end: 10)
+        token.made(.ident, start: 0, end: 1)
+        token.made(.lparen, start: 1, end: 2)
+        token.made(.rparen, start: 2, end: 3)
+        token.made(.terminator, start: 3, end: 3)
+        token.made(.lbrace, start: 4, end: 5)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.eof, start: 10, end: 10)
     ]
     d: cursor.Cursor @ cursor.new_cursor(more)
     d.pos @ 3

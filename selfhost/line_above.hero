@@ -90,16 +90,13 @@ function line_head(tokens: [token.Token], breaks: [state.Break], at: i64) -> i64
         floor @ breaks[breaks.len() - 1].after
     i: i64 @ at
 
-    while i > floor && !is_line_end(tokens[i - 1].kind)
+    while i > floor && !token.is_line_end(tokens[i - 1].kind)
         i @ i - 1
 
     while i < at && tokens[i].kind == .comment
         i @ i + 1
 
     return i
-
-function is_line_end(kind: token.TokenKind) -> bool
-    return kind == .terminator || kind == .indent || kind == .dedent
 
 ## A line that opens an arm or the arms
 
@@ -137,7 +134,7 @@ function opens_an_arm(tokens: [token.Token], breaks: [state.Break], at: i64) -> 
 function heads_a_declaration(tokens: [token.Token]) -> bool
     i: i64 @ tokens.len() - 1
 
-    while i > 0 && !is_line_end(tokens[i - 1].kind)
+    while i > 0 && !token.is_line_end(tokens[i - 1].kind)
         i @ i - 1
 
     while i < tokens.len() - 1 && tokens[i].kind == .comment
@@ -154,7 +151,7 @@ function opens_a_line(tokens: [token.Token], at: i64) -> bool
     while i >= 0 && tokens[i].kind == .comment
         i @ i - 1
 
-    return i < 0 || is_line_end(tokens[i].kind)
+    return i < 0 || token.is_line_end(tokens[i].kind)
 
 # Is the token at `at` the colon of a statement's `name:`, which the next
 # line's type and binding complete?
@@ -164,4 +161,4 @@ function names_a_declaration(tokens: [token.Token], at: i64) -> bool
 
     if at == 1
         return true
-    return is_line_end(tokens[at - 2].kind)
+    return token.is_line_end(tokens[at - 2].kind)

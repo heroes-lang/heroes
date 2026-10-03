@@ -1,0 +1,67 @@
+# Fixed defect 182, 2026-10-03. Symptom: an operator alone on a line deeper
+# than a `match`'s arms cost two messages, the lexer's
+# `continuation_outside_brackets` with its certain deletion and the parser's
+# `unexpected_block` at that line; two levels deeper, `indentation_jump` as
+# well, three for the one line the deletion removes. Cause: the lexer laid
+# out the operator's line, an indent, before leaving the operator out of the
+# stream (`sign_above.leave_out`), and joined the arm below into that block.
+# Repair: the operator's line goes with its margin, the indent or dedents it
+# laid out and the reports its margin said taken back, and the arm's line is
+# laid out on its own margin, as the deletion writes the text; that refusal
+# is no break. One message each below, and the deletion checks clean.
+
+function plus_deeper(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+        _ => "many"
+    return k
+
+function minus_deeper(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+        _ => "many"
+    return k
+
+function star_deeper(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+        _ => "many"
+    return k
+
+function two_levels_deeper(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+        _ => "many"
+    return k
+
+function before_the_first_arm(n: i64) -> str
+    k = match n  #~v continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+    return k
+
+function a_comment_after_it(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+            # stray
+        _ => "many"
+    return k
+
+function in_a_nested_match(n: i64) -> str
+    k = match n
+        1 =>
+            match n
+                1 => "a"  #~v continuation_outside_brackets
+                _ => "b"
+        _ => "many"
+    return k
+
+function at_the_match_margin(n: i64) -> str
+    k = match n
+        1 => "one"  #~v continuation_outside_brackets
+        _ => "many"
+    return k
+
+function main()
+    print(plus_deeper(1) + minus_deeper(2) + star_deeper(3) + two_levels_deeper(4))
+    print(before_the_first_arm(1) + a_comment_after_it(2) + in_a_nested_match(1) + at_the_match_margin(3))

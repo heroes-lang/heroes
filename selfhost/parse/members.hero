@@ -263,9 +263,6 @@ function read_marks(@c: cursor.Cursor, text: str, in_group: bool, on_result: boo
 
 ## Tests
 
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
-
 # The tokens of one line, as the lexer cuts them, for the mark tests: what is
 # at issue there is which WORD comes next, and the lexer's cut is the fact.
 function tokens_of(text: str) -> cursor.Cursor
@@ -273,12 +270,12 @@ function tokens_of(text: str) -> cursor.Cursor
 
 test "generics are names and nothing else"
     stream: [token.Token] = [
-        tok(.lt, start: 0, end: 1)
-        tok(.ident, start: 1, end: 2)
-        tok(.comma, start: 2, end: 3)
-        tok(.ident, start: 4, end: 5)
-        tok(.gt, start: 5, end: 6)
-        tok(.eof, start: 6, end: 6)
+        token.made(.lt, start: 0, end: 1)
+        token.made(.ident, start: 1, end: 2)
+        token.made(.comma, start: 2, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.gt, start: 5, end: 6)
+        token.made(.eof, start: 6, end: 6)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     names = generics(@c, "<A, B>")
@@ -286,7 +283,7 @@ test "generics are names and nothing else"
     assert c.diagnostics.len() == 0
 
     # No `<` means no generics, and nothing is consumed.
-    plain: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.eof, start: 1, end: 1)]
+    plain: [token.Token] = [token.made(.lparen, start: 0, end: 1), token.made(.eof, start: 1, end: 1)]
     d: cursor.Cursor @ cursor.new_cursor(plain)
     assert generics(@d, "(").len() == 0
     assert cursor.current_kind(d) == .lparen
@@ -294,17 +291,17 @@ test "generics are names and nothing else"
 test "a signature is always parenthesised, and @ marks in-out"
     # (a: i64, @l: Lex)
     stream: [token.Token] = [
-        tok(.lparen, start: 0, end: 1)
-        tok(.ident, start: 1, end: 2)
-        tok(.colon, start: 2, end: 3)
-        tok(.ident, start: 4, end: 7)
-        tok(.comma, start: 7, end: 8)
-        tok(.at, start: 9, end: 10)
-        tok(.ident, start: 10, end: 11)
-        tok(.colon, start: 11, end: 12)
-        tok(.ident, start: 13, end: 16)
-        tok(.rparen, start: 16, end: 17)
-        tok(.eof, start: 17, end: 17)
+        token.made(.lparen, start: 0, end: 1)
+        token.made(.ident, start: 1, end: 2)
+        token.made(.colon, start: 2, end: 3)
+        token.made(.ident, start: 4, end: 7)
+        token.made(.comma, start: 7, end: 8)
+        token.made(.at, start: 9, end: 10)
+        token.made(.ident, start: 10, end: 11)
+        token.made(.colon, start: 11, end: 12)
+        token.made(.ident, start: 13, end: 16)
+        token.made(.rparen, start: 16, end: 17)
+        token.made(.eof, start: 17, end: 17)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
@@ -315,14 +312,18 @@ test "a signature is always parenthesised, and @ marks in-out"
     assert c.diagnostics.len() == 0
 
 test "an empty parameter list is () and not nothing"
-    empty: [token.Token] = [tok(.lparen, start: 0, end: 1), tok(.rparen, start: 1, end: 2), tok(.eof, start: 2, end: 2)]
+    empty: [token.Token] = [
+        token.made(.lparen, start: 0, end: 1)
+        token.made(.rparen, start: 1, end: 2)
+        token.made(.eof, start: 2, end: 2)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(empty)
     a: ast.Ast @ ast.new_ast()
     assert params(@c, @a, "()", in_group: false).len() == 0
     assert c.diagnostics.len() == 0
 
     # A missing `(` says so rather than guessing.
-    missing: [token.Token] = [tok(.arrow, start: 0, end: 2), tok(.eof, start: 2, end: 2)]
+    missing: [token.Token] = [token.made(.arrow, start: 0, end: 2), token.made(.eof, start: 2, end: 2)]
     d: cursor.Cursor @ cursor.new_cursor(missing)
     b: ast.Ast @ ast.new_ast()
     _ = params(@d, @b, "->", in_group: false)
@@ -332,17 +333,17 @@ test "a signature may break across lines because the separator stays the comma"
     # (a: i64,
     #  b: i64)   — the lexer plants a terminator after the comma
     stream: [token.Token] = [
-        tok(.lparen, start: 0, end: 1)
-        tok(.ident, start: 1, end: 2)
-        tok(.colon, start: 2, end: 3)
-        tok(.ident, start: 4, end: 7)
-        tok(.comma, start: 7, end: 8)
-        tok(.terminator, start: 8, end: 8)
-        tok(.ident, start: 9, end: 10)
-        tok(.colon, start: 10, end: 11)
-        tok(.ident, start: 12, end: 15)
-        tok(.rparen, start: 15, end: 16)
-        tok(.eof, start: 16, end: 16)
+        token.made(.lparen, start: 0, end: 1)
+        token.made(.ident, start: 1, end: 2)
+        token.made(.colon, start: 2, end: 3)
+        token.made(.ident, start: 4, end: 7)
+        token.made(.comma, start: 7, end: 8)
+        token.made(.terminator, start: 8, end: 8)
+        token.made(.ident, start: 9, end: 10)
+        token.made(.colon, start: 10, end: 11)
+        token.made(.ident, start: 12, end: 15)
+        token.made(.rparen, start: 15, end: 16)
+        token.made(.eof, start: 16, end: 16)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()

@@ -295,11 +295,12 @@ function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
 
 ## Tests
 
-function tok(kind: token.TokenKind, start: i64, end: i64) -> token.Token
-    return token.Token(kind: kind, span: token.Span(start: start, end: end))
-
 test "the happy path is one identifier"
-    stream: [token.Token] = [tok(.kw_use, start: 0, end: 3), tok(.ident, start: 4, end: 8), tok(.eof, start: 8, end: 8)]
+    stream: [token.Token] = [
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 8)
+        token.made(.eof, start: 8, end: 8)
+    ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
     declaration(@c, @uses, "use geom")
@@ -311,9 +312,9 @@ test "the happy path is one identifier"
 test "a quoted module is met with the repair, not a lecture"
     text = "use \"geom\""
     stream: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.str_lit, start: 4, end: 10)
-        tok(.eof, start: 10, end: 10)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.str_lit, start: 4, end: 10)
+        token.made(.eof, start: 10, end: 10)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
@@ -332,9 +333,9 @@ test "a quoted PATH now earns the certain fix too"
     # repair would be the compiler knowing the answer and not saying it.
     text = "use \"shapes/geom\""
     stream: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.str_lit, start: 4, end: 17)
-        tok(.eof, start: 17, end: 17)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.str_lit, start: 4, end: 17)
+        token.made(.eof, start: 17, end: 17)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
@@ -349,9 +350,9 @@ test "the fix is still withheld where applying it would not parse"
     # shapes that stay broken are the ones with an empty part.
     text = "use \"shapes//geom\""
     stream: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.str_lit, start: 4, end: 18)
-        tok(.eof, start: 18, end: 18)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.str_lit, start: 4, end: 18)
+        token.made(.eof, start: 18, end: 18)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
@@ -362,11 +363,11 @@ test "the fix is still withheld where applying it would not parse"
 test "a dot is not the separator, and the second token is where you find out"
     text = "use geom.shapes"
     stream: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.ident, start: 4, end: 8)
-        tok(.dot, start: 8, end: 9)
-        tok(.ident, start: 9, end: 15)
-        tok(.eof, start: 15, end: 15)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 8)
+        token.made(.dot, start: 8, end: 9)
+        token.made(.ident, start: 9, end: 15)
+        token.made(.eof, start: 15, end: 15)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
@@ -379,11 +380,11 @@ test "a slashed path is the spelling, and the whole path is the name"
     # by name until M-package-layout and is the language now. The `name`
     # span covers the WHOLE path, which is what makes it the identity.
     slashed: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.ident, start: 4, end: 10)
-        tok(.slash, start: 10, end: 11)
-        tok(.ident, start: 11, end: 15)
-        tok(.eof, start: 15, end: 15)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 10)
+        token.made(.slash, start: 10, end: 11)
+        token.made(.ident, start: 11, end: 15)
+        token.made(.eof, start: 15, end: 15)
     ]
     d: cursor.Cursor @ cursor.new_cursor(slashed)
     more: [ast.Use] @ []
@@ -395,13 +396,13 @@ test "a slashed path is the spelling, and the whole path is the name"
 
 test "three parts, and a space in a path is not a path"
     deep: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.ident, start: 4, end: 5)
-        tok(.slash, start: 5, end: 6)
-        tok(.ident, start: 6, end: 7)
-        tok(.slash, start: 7, end: 8)
-        tok(.ident, start: 8, end: 9)
-        tok(.eof, start: 9, end: 9)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.slash, start: 5, end: 6)
+        token.made(.ident, start: 6, end: 7)
+        token.made(.slash, start: 7, end: 8)
+        token.made(.ident, start: 8, end: 9)
+        token.made(.eof, start: 9, end: 9)
     ]
     c: cursor.Cursor @ cursor.new_cursor(deep)
     uses: [ast.Use] @ []
@@ -412,11 +413,11 @@ test "three parts, and a space in a path is not a path"
     # `use a / b` lexes as the same three tokens. Adjacency is what tells
     # the two lines apart, and the path stops at the name that touches.
     spaced: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.ident, start: 4, end: 5)
-        tok(.slash, start: 6, end: 7)
-        tok(.ident, start: 8, end: 9)
-        tok(.eof, start: 9, end: 9)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 5)
+        token.made(.slash, start: 6, end: 7)
+        token.made(.ident, start: 8, end: 9)
+        token.made(.eof, start: 9, end: 9)
     ]
     d: cursor.Cursor @ cursor.new_cursor(spaced)
     more: [ast.Use] @ []
@@ -428,12 +429,12 @@ test "a path cannot climb, and one message answers all four spellings"
     # Panel 099 R4. `..`, `.`, `./x` and `../x` are four spellings of one
     # intent, so the sentence that answers the intent answers all four.
     climb: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.dot, start: 4, end: 5)
-        tok(.dot, start: 5, end: 6)
-        tok(.slash, start: 6, end: 7)
-        tok(.ident, start: 7, end: 12)
-        tok(.eof, start: 12, end: 12)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.dot, start: 4, end: 5)
+        token.made(.dot, start: 5, end: 6)
+        token.made(.slash, start: 6, end: 7)
+        token.made(.ident, start: 7, end: 12)
+        token.made(.eof, start: 12, end: 12)
     ]
     c: cursor.Cursor @ cursor.new_cursor(climb)
     uses: [ast.Use] @ []
@@ -446,12 +447,12 @@ test "a path cannot climb, and one message answers all four spellings"
     # And mid-path, which is the shape a canonicaliser would have had to
     # answer and this language never has to.
     inner: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.ident, start: 4, end: 7)
-        tok(.slash, start: 7, end: 8)
-        tok(.dot, start: 8, end: 9)
-        tok(.dot, start: 9, end: 10)
-        tok(.eof, start: 10, end: 10)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 7)
+        token.made(.slash, start: 7, end: 8)
+        token.made(.dot, start: 8, end: 9)
+        token.made(.dot, start: 9, end: 10)
+        token.made(.eof, start: 10, end: 10)
     ]
     d: cursor.Cursor @ cursor.new_cursor(inner)
     more: [ast.Use] @ []
@@ -461,10 +462,10 @@ test "a path cannot climb, and one message answers all four spellings"
 
 test "a separator with nothing after it names the two modules it is between"
     dangling: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.ident, start: 4, end: 10)
-        tok(.slash, start: 10, end: 11)
-        tok(.eof, start: 11, end: 11)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.ident, start: 4, end: 10)
+        token.made(.slash, start: 10, end: 11)
+        token.made(.eof, start: 11, end: 11)
     ]
     c: cursor.Cursor @ cursor.new_cursor(dangling)
     uses: [ast.Use] @ []
@@ -479,9 +480,9 @@ test "a bare use blames its own keyword, never the next line"
     # on the keyword and recovery must not run.
     text = "use\nfunction f()"
     stream: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.kw_function, start: 4, end: 12)
-        tok(.eof, start: 15, end: 15)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.kw_function, start: 4, end: 12)
+        token.made(.eof, start: 15, end: 15)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []
@@ -496,9 +497,9 @@ test "a bare use blames its own keyword, never the next line"
 test "a use whose mistake IS on its line quotes what it found"
     text = "use 42"
     stream: [token.Token] = [
-        tok(.kw_use, start: 0, end: 3)
-        tok(.int_lit, start: 4, end: 6)
-        tok(.eof, start: 6, end: 6)
+        token.made(.kw_use, start: 0, end: 3)
+        token.made(.int_lit, start: 4, end: 6)
+        token.made(.eof, start: 6, end: 6)
     ]
     c: cursor.Cursor @ cursor.new_cursor(stream)
     uses: [ast.Use] @ []

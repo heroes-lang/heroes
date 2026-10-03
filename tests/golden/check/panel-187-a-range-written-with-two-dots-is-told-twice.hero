@@ -5,9 +5,14 @@
 # alike, and no message names `range(from:, to:)`. Not repaired inline: the
 # site is `grammar_expr.hero`'s `after_dot`, at its ceiling with no line of
 # room, and the range's right operand is read only inside that knot.
+#
+# Moved 2026-10-03 with defect 180's repair (lane b8-recovery): the range
+# is told once, at its second dot, in words that name `range(from:, to:)`,
+# the rest of its operator passed and its right operand read; it pins that
+# one message now.
 
 function main()
-    x = 1..2  #~ expected_field_name expected_field_name
-    y = 0x1..5  #~ expected_field_name expected_field_name
-    for i in 0..10  #~ expected_field_name expected_field_name
+    x = 1..2  #~ expected_field_name
+    y = 0x1..5  #~ expected_field_name
+    for i in 0..10  #~ expected_field_name
         print(i)

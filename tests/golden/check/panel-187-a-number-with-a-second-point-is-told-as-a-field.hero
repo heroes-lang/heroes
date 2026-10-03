@@ -4,6 +4,10 @@
 # access, found a number, true and less exact than it could be. Not
 # repaired inline: the site is `grammar_expr.hero`'s `after_dot`, at its
 # ceiling, beside defect 180's.
+#
+# Moved 2026-10-03 with defect 181's repair (lane b8-recovery): the message
+# keeps its code and words and names the number that already holds its
+# point, `1.5`; it pins those words now.
 
 function main()
     x = 1.5.2  #~ expected_field_name
