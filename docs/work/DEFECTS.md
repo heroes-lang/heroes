@@ -18,7 +18,7 @@ number since 2026-09-08, and why 014 exists twice, is
 Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to look>`
 
 *******************************************************************************
-**OPEN: 47**
+**OPEN: 48**
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
 
@@ -325,5 +325,11 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
     **Origin:** panel 188's completeness critic, 2026-10-03, in its third pass over stage D (F1 ran `a'b.h` only with its header present), and the compiler-engineer building stage E for the escaped code points; the quote reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told. Panel 188's R4 and R5 refuse `'`, U+2028 and U+2029 at `check`, so once they land a program `check` passes reaches this reader with a private-use, unassigned or noncharacter code point only; R4 is a thesis rule the author may turn, so the reader is repaired on its own, reading clang's line against each declared header as stage C did for the linker's.
+
+- [ ] **233 — the route `machine_locked_path` names for a library is `LIBRARY_PATH`, which lld-link ignores, so the advice fails on Windows** | `extern "stdio.h" link "/opt/foo/lib/libfoo.a"`: `check` exit 1, `machine_locked_path`, *set `LIBRARY_PATH` to the directory holding it* (`tests/golden/check/ffi-a-group-head-names-not-locates`); on the Windows box (clang 23.1.1, `lld-link`) `extern "lp.h" link "lp188"` over a library only in a side directory, built with `LIBRARY_PATH` naming that directory, stops at *could not open 'lp188.lib'*, exit 2, where `--library <dir>` builds and prints 7 and `LIB` fails too (the compiler-engineer's `libprobe.sh`, 2026-10-03, panel 188's Windows leg, its report's § 22.4) | the leaf's message (`selfhost/head_names.hero` after stage E, `route`) · `ffi_missing_library`'s note (`selfhost/emit/ffi_build.hero`), which already names `--library <dir>` · **class: blocking**
+
+    **Origin:** the compiler-engineer's Windows leg of 2026-10-03 (`docs/panel/188-reports/compiler-engineer.md` § 22.4), panel 188 R12's platform facts; filed by the coordinator's instruction into batch 8's FFI lane, which repairs it.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a false message, a route that fails on Windows where the compiler's own `--library <dir>` works on every platform measured.
 
 *******************************************************************************
