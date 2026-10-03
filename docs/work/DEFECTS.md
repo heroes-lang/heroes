@@ -320,6 +320,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a cost past panel 184's R6 floor, which the shapes meet.
 
+    **2026-10-03, lane b8-emit, the ownership pass costs a block's length**: repaired at `23579605`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The per-load walk was one of three costs of the square, and counted on the item's own shapes not the largest: rule 5's pushes copied the whole output block (a `.must()` in the pushed instruction kept the place store from growing it), 17,961,115 instructions copied on one-return-many-800 and 72,133,964 on record-literal-2000, now 58,870 and 90,479; `writes_root` 1,598,832 calls to 6.
+
 - [ ] **231 — every return sweeps every owned slot, so a function of many returns and many slots grows its IR and its C as their product** | lane irverify: `slots-returns-400` builds in 64.57 s after defect 218's repair, and at 800 clang does not finish in 300 s (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/` (the sweep at a return) · panel 106's design · **class: adjacent**
 
     **Origin:** lane irverify, 2026-10-03, beside defect 218, reported to the coordinator; not yet run by the coordinator.
