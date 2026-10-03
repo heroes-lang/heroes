@@ -1006,6 +1006,18 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Origin:** lane round1003b's gate, 2026-10-03, seeing it in the net's own tests' build and in the last gate's (`scratchpad/lane-round1003b/progress.md`, 2026-10-03); measured by the coordinator on the trunk at `e5893696` before 08:00 by `date` (`scratchpad/file-r5/tri.hero`, 2026-10-03).
 
+    **2026-10-03, lane warn, every text the emitter writes into C is spelled
+    for where C reads it (`selfhost/emit/c_text.hero`): a literal or a
+    `#line` name writes a `?` that would end a trigraph as `\?`, a header
+    name is split by a line splice, and the comment opening a unit neither
+    closes nor opens one; the shapes beside it with its cause included, the
+    four `#line` writers that escaped nothing (a directory `a\q` or `a"b`), a
+    line end in a path and a directory `a*` (both exit 2), a header named
+    `h??).h`**: repaired at `ed776fb2`, gated by its own cases on this Mac;
+    the rest is owed at the round's gate, and the platform legs before the
+    push (the two spellings were measured on Debian clang 22.1.8 and 18.1.8
+    in the arm64 container; the repair itself is unrun there and on Windows).
+
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
 
 - [ ] **208 — a dead `break` after a `return` inside `while true` is told twice, `unreachable_statement` and `missing_return`** | `while true` over `if m > 3`, `return m`, `break`, in a `function f(n: i64) -> i64`: `unreachable_statement` at the `break` and `missing_return` on `f`, both gone once the `break` is deleted | `selfhost/check/flow.hero` (panel 184's R4: a `while true` with a `break` of its own does not end a path, read by syntax) · **class: adjacent**
