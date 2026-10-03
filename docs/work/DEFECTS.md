@@ -780,6 +780,8 @@ Format: `- [ ] **NNN — <title>** | <what it does, in one line> | <where to loo
 
     **Why it is a defect.** `check --apply` applies a `certain` fix without asking, and this one writes a binding that says something else than the header in every case the instrument planted.
 
+    **2026-10-03, lane ffimsg**: repaired at `c53ce231`, gated by its own cases; the rest is owed at the round's gate, and so is the recovery instrument's `int` row re-read there (`scratchpad/inst-187/run.sh` over lane recovery-b6's `rGate` plan, APPLY-OTHER 20 and APPLY-NEW 19 before). In a group `int` is a guess now, `i64` where a result or a constant may be wider and `i32` elsewhere; outside one it keeps its certain `i64`.
+
     **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program meaning something else; `build` refuses that program, so no wrong value runs.
 
 - [ ] **177 — a `match` whose arms fall inside a bracket left open has each arm told again after the bracket's own message** | `return match scores[name` over `.ok v  => v.to_str()` and `.err e => e.code`: `unclosed_bracket` at the `[`, then `line_end_before_continuation` at each arm, three messages for one missing `]`; `x = match (n` over `.ok v => 1` the same; `y = match n` below `x = [n, 1` gets `expected_end_of_line` at each arm's `=>` | the reach of a bracket left open (panel 183's R1 and R2) over a `match`'s arms · `selfhost/parse/line_end.hero:242` · **class: adjacent**
