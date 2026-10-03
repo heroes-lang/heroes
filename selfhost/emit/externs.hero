@@ -23,6 +23,7 @@
 use token
 use ast
 use source
+use escape
 use head_names
 use ir/containers
 use check/state
@@ -59,12 +60,17 @@ function is_extern_constant(decls: [ast.Decl], f: containers.Function) -> bool
 
     return false
 
-# The quotes stripped from a span's text.
+# A group head's string as its VALUE, its escapes decoded as spec § 2
+# defines them (`escape.unescape`), since the value is what reaches C: the
+# `#include <...>` line, the linker's `-l`, the word `pkg-config` is asked
+# about, and the names read back from what clang says. Until panel 188 the
+# quotes were cut and the spelling kept, so `extern "a\\b.h"` asked clang
+# for two backslashes, and a missing header was reported where it stood.
 function unquoted(s: source.Source, span: token.Span) -> str
     text = source.span_text(s, span)
 
-    if text.len() >= 2 && text.slice(from: 0, to: 1) == "\"" && text.slice(from: text.len() - 1, to: text.len()) == "\""
-        return text.slice(from: 1, to: text.len() - 1)
+    if text.len() >= 2 && text[0] == '"' && text[text.len() - 1] == '"'
+        return escape.unescape(text)
     return text
 
 # Every header a group named, without its quotes, deduplicated and in
@@ -229,6 +235,12 @@ test "headers seed math and os, dedupe, and see a record-only group"
     assert pkgs.len() == 1
     assert pkgs[0] == "raylib"
     assert unjudged(low.program, s, parsed.decls) == ""
+
+test "a group head's string reaches C as its value, its escapes decoded (panel 188)"
+    s = source.new_source(name: "t.hero", text: "\"a\\tb.h\" \"q\\\\r\" plain")
+    assert unquoted(s, span: token.Span(start: 0, end: 8)) == "a\tb.h"
+    assert unquoted(s, span: token.Span(start: 9, end: 15)) == "q\\r"
+    assert unquoted(s, span: token.Span(start: 16, end: 21)) == "plain"
 
 test "a name no tool carries is found again before any tool is handed it (panel 188)"
     text = "extern \"a>b.h\" link \"\"\n    function seven() -> i32\n\nextern \"stdio.h\" package \"\"\n    function puts(s: cstr lent) -> i32\n\nfunction main()\n    print(seven())\n"
