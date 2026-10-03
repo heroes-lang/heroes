@@ -1,0 +1,18 @@
+# Defect 216 (panel 188, 2026-10-03): C's own `#include` spelling carried
+# into a header's string. `extern "<stdio.h>"` passed `check` and stopped
+# `build` at exit 2 with an internal error, clang reading `#include
+# <<stdio.h>>`; `extern "\"string.h\""` was refused as an absolute path,
+# because the panel 055 check read the spelling's first byte, a `\`, as a
+# Windows root. Dropping C's brackets or quotes is the repair of exactly
+# the mistake the message names, and what it leaves is a name C reads as
+# itself, so the fix is certain (`.claude/rules/diagnostics-and-goldens.md`).
+
+extern "stdio.h"    #~ unwritable_name
+    function puts(s: cstr lent) -> i32
+
+extern "string.h"    #~ undefined_header_name
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    _ = puts("hi".cstr())
+    print(strlen("abc".cstr()))

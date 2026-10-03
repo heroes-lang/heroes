@@ -22,6 +22,7 @@ use modules
 use emit/ffi
 use emit/ffi_tag
 use emit/ffi_asked
+use emit/externs as emit_externs
 use cli/io
 use cli/compile
 use cli/toolchain
@@ -99,6 +100,13 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if art.must().stopped
         none_t: [str] = []
         return ok(Produced(binary: "", tests: none_t, stopped: true))
+
+    # Panel 188's guard: a group head's name no tool carries is the compiler's.
+    unjudged = emit_externs.unjudged(art.must().program, s, art.must().decls)
+
+    if unjudged.len() > 0
+        io.eprint(text: "internal error: a group head's name was never judged\n  " + unjudged)
+        return fail(code: "failed", msg: "a group head's name reached the tools unjudged")
     is_tests: bool @ false
 
     match options.target

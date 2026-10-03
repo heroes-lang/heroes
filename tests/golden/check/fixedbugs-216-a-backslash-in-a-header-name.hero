@@ -1,0 +1,41 @@
+# Defect 216 (panel 188, stage D, 2026-10-03): a `\` in a header's name. C11
+# 6.4.7p3 leaves it undefined, and clang's lexer reads it as escaping the
+# character after it, so a `\` before the closing `>` makes clang read on
+# past the name and rebuild it from tokens. Measured by the sitting's
+# completeness critic and again by its compiler-engineer, with both candidate
+# files on disk: once the string's value is what is written (spec § 2),
+# `"a  b\\"` and `"a\tb\\"` build and bind ANOTHER header, `a b\`, silently;
+# `"d//b\\"` gets a false *clang read the header*; `"e/*b\\"` exits 2. In the
+# middle of a name clang carries it, which is why its code is its own and
+# not `unwritable_name`; and why it is no thesis rule: without it the
+# program means another header, or none. A `\` in a name that is also a path
+# from a root, `"\\b.h"` or `"C:\\x.h"`, is told as both in one message,
+# routed past both (stage E): the advice to write `/` led to `/b.h`, which the
+# panel 055 check refused next.
+
+extern "ab\\"    #~ escape_in_header_name
+    function b1() -> i32
+
+extern "a  b\\"    #~ escape_in_header_name
+    function b2() -> i32
+
+extern "a\tb\\"    #~ escape_in_header_name
+    function b3() -> i32
+
+extern "d//b\\"    #~ escape_in_header_name
+    function b4() -> i32
+
+extern "e/*b\\"    #~ escape_in_header_name
+    function b5() -> i32
+
+extern "a\\b.h"    #~ escape_in_header_name
+    function b6() -> i32
+
+extern "\\b.h"    #~ escape_in_header_name
+    function b7() -> i32
+
+extern "C:\\x.h"    #~ escape_in_header_name
+    function b8() -> i32
+
+function main()
+    print(b1() + b2() + b3() + b4() + b5() + b6() + b7() + b8())

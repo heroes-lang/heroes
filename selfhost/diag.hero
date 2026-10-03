@@ -117,6 +117,12 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # 2026-10-03): without it a line after a `return` still has a meaning, a
 # statement that never runs, which is the silent program the rule exists to
 # refuse (the sitting's blind reading: a loop that never advances).
+# undefined_header_name and unshowable_name joined by panel 188: clang reads
+# `'`, `"`, `//` or `/*` in a header's name as itself, and the tools carry a
+# control character in any name, so without the rule the program has the
+# tool's meaning. Their siblings are not: unwritable_name (nothing carries
+# it) and escape_in_header_name (clang reads a `\` as an escape and opens
+# another header).
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
@@ -138,6 +144,8 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "spaced_minus_element"
         "continuation_outside_brackets"
         "unreachable_statement"
+        "undefined_header_name"
+        "unshowable_name"
     ]
 
     for one in codes

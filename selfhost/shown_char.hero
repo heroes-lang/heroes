@@ -132,6 +132,62 @@ function u_plus(code: i64) -> str
 
     return "U+" + out
 
+# **Unicode's Default_Ignorable_Code_Point**, as ranges, first and last
+# included: the property Unicode gives the characters a renderer shows as
+# nothing when it does not support them (DerivedCoreProperties.txt). Read
+# for panel 188 from Unicode 15.0.0, as the Linux arm64 image's perl 5.40.1
+# carries it (this Mac's perl, at 13.0.0, lacks U+180F): 17 ranges, 4,174 code
+# points, every Bidi_Control code point among them. `UNSEEN` is the wider list
+# for NAMING a character; this one is the property a group head's name is
+# refused by (`head_names`), and a renderer's own reason, not this compiler's.
+constant DEFAULT_IGNORABLE: [i64]
+    [
+        173
+        173
+        847
+        847
+        1564
+        1564
+        4447
+        4448
+        6068
+        6069
+        6155
+        6159
+        8203
+        8207
+        8234
+        8238
+        8288
+        8303
+        12644
+        12644
+        65024
+        65039
+        65279
+        65279
+        65440
+        65440
+        65520
+        65528
+        113824
+        113827
+        119155
+        119162
+        917504
+        921599
+    ]
+
+function default_ignorable(code: i64) -> bool
+    at: i64 @ 0
+
+    while at + 1 < DEFAULT_IGNORABLE.len()
+        if code >= DEFAULT_IGNORABLE[at] && code <= DEFAULT_IGNORABLE[at + 1]
+            return true
+        at @ at + 2
+
+    return false
+
 ## Tests
 
 test "a visible ASCII character is itself, as the message always showed it"
@@ -163,3 +219,20 @@ test "the code is read from every length of UTF-8"
     assert u_plus(1) == "U+0001"
     assert u_plus(127) == "U+007F"
     assert u_plus(128512) == "U+1F600"
+
+test "Unicode's default-ignorable code points, Bidi_Control's twelve among them, and not a visible space (panel 188)"
+    assert DEFAULT_IGNORABLE.len() == 34
+    assert default_ignorable(173)
+    assert default_ignorable(8203)
+    assert default_ignorable(65279)
+    assert default_ignorable(6159)
+    assert default_ignorable(921599)
+
+    for bidi in [1564, 8206, 8207, 8234, 8235, 8236, 8237, 8238, 8294, 8295, 8296, 8297]
+        assert default_ignorable(bidi)
+
+    assert !default_ignorable(160)
+    assert !default_ignorable(8232)
+    assert !default_ignorable(8233)
+    assert !default_ignorable(8364)
+    assert !default_ignorable(921600)
