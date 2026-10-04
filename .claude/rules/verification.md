@@ -183,7 +183,7 @@ and every bracket broken after every token, over every file. So:
 > --family single` and `--family bracket` over `selfhost`, `tests` and
 > `examples`, and `heroes probe` over the fixtures with no stride, and push
 > only over exit 0**, or over exit 2 on the failures `suite_probe`'s rows
-> name as an open defect's. A failure is a finding for `docs/work/DEFECTS.md`
+> name as an open defect's. A failure is a finding for `docs/work/defects/`
 > or a repair in the same lane, never a reason to skip the run.
 
 Its cost, measured 2026-09-28 on one module and carried to the tree by
@@ -405,7 +405,7 @@ commits, 11 merges each with a coordinator's gate, 10 repair commits, 8 gates of
   million lines of churn, about 21 whole-file rewrites, and **21 of 58 merges
   carried a seed conflict**, every one settled by rebuilding. A repair commit's
   body says *seed not regenerated, awaiting the batch gate*, in about fifteen
-  lines: the class, the cases, the gate line. Its `docs/work/DEFECTS.md` item
+  lines: the class, the cases, the gate line. Its file in `docs/work/defects/`
   stays `- [ ]` and gains one dated body line, *Repaired at `<hash>`, gated by
   its cases and the compiler's own tests; the net is owed at the batch's
   close*, so that no sentence says closed before the net has said it.
@@ -431,8 +431,8 @@ the same defect. Two rules that are each right multiplied: the shapes beside
 a repair are attacked (CL-061, CL-078), and every one of them became the
 same lane's item and blocked the tag.
 
-**Every item of `docs/work/DEFECTS.md` carries one class**, at the end of its
-line, ` · **class: <name>**`, and its body one line opening
+**Every defect carries one class**, its file's item ending its
+line ` · **class: <name>**`, and its body one line opening
 `**Class: <name>**, YYYY-MM-DD` with the reason after the day
 (`.claude/rules/records.md` § The lists):
 
@@ -509,8 +509,11 @@ between the batch's base and head, at each step the compiler rebuilt from
 five steps. The culprit
 alone is redone, with the other repairs' cases in view; where the culprit is
 the interaction of two repairs, the later one is redone and the record says so.
-**Green**: the items are ticked and moved to `docs/records/done/`, one file
-each, the banner moves, the closing commit carries the counts.
+**Green**: each repaired defect's file is moved by `git mv` to
+`docs/records/done/` as `YYYY-MM-DD-HHMM-defect-NNN-<slug>.md`, ticked and
+given its *The repair* section (`docs/work/DEFECTS.md`, since 2026-10-04), the
+ROADMAP's count moves with the files, and the closing commit carries the
+counts.
 
 **CL-054 is discharged at the batch, not per repair**: *run the suite you did
 not expect to move* is what the full net is, and a repair defers it knowingly,

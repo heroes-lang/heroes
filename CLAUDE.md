@@ -137,7 +137,7 @@ the recommended resolution as the default, say which way it went once (CL-002).
 
 **Five lists.** `docs/work/DECIDE.md` holds what should be true,
 `docs/work/milestones/` work inside the file of the milestone that will do it,
-`docs/work/DEFECTS.md` what is broken, `docs/learn/` what is true, and
+`docs/work/defects/` what is broken, `docs/learn/` what is true, and
 `docs/records/done/` is the record. A list holds only OPEN items and a ticked one
 moves to the record at once. Notation is `- [ ]` and `- [x]` only, because a
 bare bullet is invisible to every count here (CL-032); the item shape and its
@@ -321,7 +321,7 @@ CL-060.
   (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes).
 - **A milestone is tagged only over a clean list** (author instruction
   2026-09-08, amended 2026-10-02): zero `blocking` or `systemic` items in
-  `docs/work/DEFECTS.md` (`.claude/rules/verification.md` § Bounded
+  `docs/work/defects/` (`.claude/rules/verification.md` § Bounded
   discovery), and nothing open in
   `docs/work/DECIDE.md` that is not a `panel NNN` ratification. The author asked
   for zero of both; a pending sitting is **waiting on the author rather than

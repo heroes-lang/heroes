@@ -32,6 +32,14 @@ about it. One `**OPEN**` row at a time is still enforced by
 `site/src/lib/chain.ts`, which is the open decision this milestone filed rather
 than settled.
 
+**Since 2026-10-04 that sentence is false for the defects**, by the author's
+*5a* (meant as: *one defect one file, so that we have no conflicts*): each open
+defect is a file of `docs/work/defects/`, `docs/work/DEFECTS.md` is its front
+page, and `records/tagged` reads the directory at a tag that has it and the
+single file at one that has not. Not a rotation: no map stays behind, the
+items being open work and not a record
+(`docs/records/log/2026-10-04-0206-the-defect-list-becomes-one-file-per-defect.md`).
+
 *******************************************************************************
 **OPEN: 0**
 
