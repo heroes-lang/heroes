@@ -6,8 +6,14 @@
 # `=>` missing two dedents out (rows 131-55a, 131-55b), and after
 # `parse/top_level.hero:82` names a block under `use` (shape `g1/a11`).
 # Class (a): `adjacent`.
+#
+# Moved 2026-10-04 with defect 195's repair (lane b9-recovery): the block
+# under `use` is read by its lines' shape, `function g()` as the declaration
+# it is (`parse/head_kind.named_by`), and an arm's `=>` broken out past its
+# block is passed at the line it begins, its value read
+# (`parse/broken_arm.told_above`); it pins that now, one message a mistake.
 use geom
-    function g()  #~ expected_declaration expected_expression
+    function g()  #~ expected_declaration
         y = 4 )  #~ expected_end_of_line
 
 function an_arrow_past_two_dedents()
@@ -15,7 +21,7 @@ function an_arrow_past_two_dedents()
     if n > 0
         k = match n
             0  #~ expected_arm_arrow
-    => 5  #~ expected_expression
+    => 5
     print(k)
 
 function the_same_with_a_closer_after()
@@ -23,7 +29,7 @@ function the_same_with_a_closer_after()
     if n > 0
         k = match n
             0  #~ expected_arm_arrow
-    => 5 )  #~ expected_expression expected_end_of_line
+    => 5 )  #~ expected_end_of_line
     print(k)
 
 function main()
