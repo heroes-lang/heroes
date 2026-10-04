@@ -4,10 +4,14 @@
 # (`parse/opening.hero:147`), a stray closer in it with it. Shape `g4/ti`:
 # the `)` after the condition is told only once the operand is written.
 # Class (b): `adjacent`.
+#
+# Moved 2026-10-04 with defect 199's repair (lane b9-recovery): the stray `)`
+# is told in the same run, `expected_end_of_line`, as past a failed statement
+# (`parse/brace_habit.drop_told`); it pins that now, one message a mistake.
 
 function f(a: i64) -> i64
     return a
 
 function main()
-    if f(1 +) )  #~ expected_expression
+    if f(1 +) )  #~ expected_expression expected_end_of_line
         print(1)

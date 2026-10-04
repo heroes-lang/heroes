@@ -62,6 +62,7 @@ use parse/refused_literal
 use parse/opening
 use token
 use separator_runs
+use line_opens
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below
@@ -81,8 +82,7 @@ variant Below
 # hangs below it.
 function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
     if failed && !brace_habit.after_a_close(c, text)
-        a_closer_too_many(@c, text, from: from)
-        brace_habit.drop_rest_of_line(@c, text, from: from)
+        brace_habit.drop_told(@c, text, from: from)
         return hangs_below(@c, text, from: from)
     ended = c.pos > from && cursor.at_fresh_line(c)
 
@@ -126,60 +126,6 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         _ = cursor.balanced_block(@c)
     return .nothing
 
-# A closer one too many on the rest of the failed line begun at token `from`,
-# `x = f(0X10 + ) )`: past where the statement stopped, the first closer on
-# its line that closes no opener of its kind the line opened, with no report
-# standing on it, is a mistake of its own, told as past a statement that did
-# not fail (the audit's row 130-28, lane recovery-b8): until 2026-10-02 it
-# went with the debris, told only once the first mistake was repaired. A
-# closer of another kind inside an opener is that list's junk, its own
-# report's or none, so `[0X20, )]` keeps its `]`. **Only a closer the drop
-# takes** (the round's gate of 2026-10-02, redoing `ce5caf89`): past a
-# statement that ended with its own block, `k = match n` over a failed arm,
-# the drop takes nothing and the line under the cursor is the next
-# statement's, which tells its own `)`; read to its line end, the scan told
-# that `)` a second time at the same column.
-function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
-    dropped: cursor.Cursor @ c
-    brace_habit.drop_rest_of_line(@dropped, text, from: from)
-    open: [token.TokenKind] @ []
-    i: i64 @ from
-
-    while i < dropped.pos
-        k = c.tokens[i].kind
-
-        if k == .lparen || k == .lbracket || k == .lbrace
-            open @ open.push(k)
-        else if k == .rparen || k == .rbracket || k == .rbrace
-            at: i64 @ open.len() - 1
-
-            while at >= 0 && !pairs(opener: open[at], closer: k)
-                at @ at - 1
-
-            if at >= 0
-                open @ open.slice(from: 0, to: at)
-            else if open.len() == 0 && i >= c.pos && !told_at(c, at: i)
-                cursor.error(
-                    @c,
-                    code: "expected_end_of_line",
-                    message: "expected the end of the line, found `" + cursor.slice_of(text, c.tokens[i].span) + "` — one statement per line, no semicolons",
-                    span: c.tokens[i].span
-                )
-                return
-        i @ i + 1
-
-# Whether the opener `opener` is closed by the closer `closer`.
-function pairs(opener: token.TokenKind, closer: token.TokenKind) -> bool
-    return opener == .lparen && closer == .rparen || opener == .lbracket && closer == .rbracket || opener == .lbrace && closer == .rbrace
-
-# Whether a report stands on the token at `at`.
-function told_at(c: cursor.Cursor, at: i64) -> bool
-    for d in c.diagnostics
-        if d.span.start == c.tokens[at].span.start
-            return true
-
-    return false
-
 # What hangs below the line begun at token `from`, which said what is wrong:
 # a block it can open none of is an orphan, named here (`parse/orphans`),
 # and either is read by the grammar.
@@ -197,8 +143,10 @@ function hangs_below(@c: cursor.Cursor, text: str, from: i64) -> Below
 # A line that holds, at its own depth, a name and then a value no suffix of
 # the name's joins to it may be a misspelled head, `iff x > 1`, `whlie x`,
 # `x = mtch n`, and may open the block, as one with a keyword that heads a
-# block does (`heads_a_block`). Any other line opens none: a binding, a
-# mutation, a call, a `return` or an `assert` is one line.
+# block does, a declaration's or a control form's (`line_opens.heads_a_block`,
+# the lexer's own list, where this module kept a copy until defect 199). Any
+# other line opens none: a binding, a mutation, a call, a `return` or an
+# `assert` is one line.
 function orphan_below(c: cursor.Cursor, text: str, from: i64) -> bool
     if c.tokens[from].kind == .error
         return !refused_heads.opens_a_block(c, text, at: from)
@@ -212,27 +160,11 @@ function orphan_below(c: cursor.Cursor, text: str, from: i64) -> bool
             depth @ depth + 1
         else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
             depth @ depth - 1
-        else if depth == 0 && (heads_a_block(k) || k == .ident && worded(c, at: i))
+        else if depth == 0 && (line_opens.heads_a_block(k) || k == .ident && worded(c, at: i))
             return false
         i @ i + 1
 
     return true
-
-# Whether a keyword heads a block: a declaration's, `function inner()` in a
-# body, which is told as a declaration in a body is, its body below it; or a
-# control form's, whose own reader takes its block, here where its head failed.
-function heads_a_block(kind: token.TokenKind) -> bool
-    return match kind
-        .kw_function | .kw_record | .kw_variant | .kw_constant | .kw_test | .kw_extern => true
-        .kw_if | .kw_else | .kw_for | .kw_while | .kw_match                            => true
-        .kw_use | .kw_in | .kw_return | .kw_break | .kw_continue | .kw_assert          => false
-        .kw_true | .kw_false | .kw_nullptr | .kw_fail | .ident | .int_lit              => false
-        .float_lit | .str_lit | .str_piece | .char_lit | .hole | .question             => false
-        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow        => false
-        .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace          => false
-        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le     => false
-        .gt | .ge | .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr   => false
-        .comment | .terminator | .indent | .dedent | .eof | .error                     => false
 
 # Whether the statement begun at token `from` failed at the block under the
 # cursor, `{` alone on its line over it: what it said is the block's report.
