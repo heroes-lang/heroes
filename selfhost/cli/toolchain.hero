@@ -38,7 +38,6 @@ use cli/publish
 use cli/runtime_key
 use cli/strings
 use cli/clang_died
-use module/reading
 use cli/runtime_places
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
@@ -83,29 +82,41 @@ record Toolchain
 # under an ancestor of the executable, nearest first, which until defect 277
 # was never looked in, so an installed compiler found none without the
 # variable while its help said *beside the compiler*.
+#
+# **A hint the author set is the one place looked in, and one naming no
+# runtime is refused, saying so** (defect 276), as defect 243 refuses one that
+# is not UTF-8: it was passed over in silence for the next place, so a
+# `runtime/` beside the program, or above the compiler, built the program
+# against a runtime the author did not name. What `HEROES_RUNTIME` is for is
+# saying which runtime; a search that goes on past it decides otherwise, the
+# decoy panel 020's ABI stamp was written against.
 function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
-    candidates: [str] @ []
-
     if hint.len() > 0
-        candidates @ candidates.push(hint)
-    candidates @ candidates.push("runtime")
+        missing = runtime_places.missing_at(hint)
+
+        if missing.len() > 0
+            return fail(code: "hint", msg: runtime_places.unheld(hint: hint, missing: missing))
+        return toolchain_at(runtime: hint, fingerprint: fingerprint)
+    candidates: [str] @ ["runtime"]
     beside = runtime_places.beside_the_compiler()
 
     for above in beside.above
         candidates @ candidates.push(above + "/runtime")
 
     for candidate in candidates
-        # Present is what is asked, and a C source that is not UTF-8 is present:
-        # it was *cannot find the Heroes runtime* (panel 189).
-        if !reading.source_text(candidate + "/heroes_runtime.h").is_err() && !reading.source_text(candidate + "/runtime.c").is_err()
-            gathered = runtime_key.each_file(candidate)?
-            said = clang_floor.identity(build_dir: "build", runtime: candidate, words: flags.flags())
+        if runtime_places.missing_at(candidate).len() == 0
+            return toolchain_at(runtime: candidate, fingerprint: fingerprint)
 
-            return ok(
-                Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
-            )
+    return fail(code: "failed", msg: runtime_places.not_found(beside))
 
-    return fail(code: "failed", msg: runtime_places.not_found(hint: hint, beside: beside))
+# The toolchain over the runtime at `runtime`, whose two files read.
+function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
+    gathered = runtime_key.each_file(runtime)?
+    said = clang_floor.identity(build_dir: "build", runtime: runtime, words: flags.flags())
+
+    return ok(
+        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
+    )
 
 # What the key is given for clang's answer: the answer, or what was said
 # instead. A clang that did not answer keys apart from one that did, and the
@@ -268,6 +279,19 @@ test "digesting and probing — the shell spoken safely"
     assert !process.is_directory(path: "runtime/runtime.c")
     assert process.path_exists(path: "runtime/heroes_runtime.h")
     assert !process.path_exists(path: "runtime/no_such_file.h")
+
+# Defect 276: a hint naming no runtime is refused with what it names, where
+# a `./runtime` the search would have reached next stands in this directory;
+# a hint naming one is the runtime used.
+test "a HEROES_RUNTIME that names no runtime is refused, never passed over (defect 276)"
+    match locate_toolchain(hint: "build/selftest-no-runtime-276", fingerprint: "port-test")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "hint"
+            assert e.msg == "`HEROES_RUNTIME` is set to `build/selftest-no-runtime-276`, and no Heroes runtime is there: no file at `build/selftest-no-runtime-276/heroes_runtime.h`; no file at `build/selftest-no-runtime-276/runtime.c`\n  set HEROES_RUNTIME to the directory holding heroes_runtime.h and runtime.c, or unset it to look in ./runtime and beside the compiler"
+
+    assert process.is_directory(path: "runtime")
+    assert locate_toolchain(hint: "runtime", fingerprint: "port-test").must().runtime == "runtime"
 
 test "the toolchain finds the real runtime and compiles it through system()"
     found = locate_toolchain(hint: "", fingerprint: "port-test")
