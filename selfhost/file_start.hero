@@ -23,6 +23,7 @@
 
 use token
 use diag
+use state
 use byte_evidence
 
 # How many bytes of byte-order marks, U+FEFF as UTF-8 writes it, open the
@@ -74,6 +75,22 @@ function utf16_told(text: str) -> [diag.Diagnostic]
     d.notes @ d.notes.push(byte_evidence.utf16_said(order))
     d.notes @ d.notes.push("nothing else in this file is read until it is UTF-8")
     return out.push(d)
+
+# The breaks a text's lexing refused, each naming its diagnostic by its
+# place among the text's (`state.Break`), moved `by` places: the marks'
+# message stands before the rest, and `parse/apart` reads a break's
+# diagnostic at that place.
+function behind(breaks: [state.Break], by: i64) -> [state.Break]
+    out: [state.Break] @ []
+
+    for b in breaks
+        moved: state.Break @ b
+
+        if b.diagnostic >= 0
+            moved.diagnostic @ b.diagnostic + by
+        out @ out.push(moved)
+
+    return out
 
 ## Tests
 
