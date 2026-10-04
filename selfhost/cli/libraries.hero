@@ -27,6 +27,7 @@ use cli/process
 use cli/publish
 use cli/strings
 use cli/shell_split
+use cli/package_answer
 
 # Whether this platform's C runtime already contains a library, so
 # naming it is correct and passing it on would be an error (Zig's
@@ -296,8 +297,11 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
             out: answer_path,
             err: err_path
         )
-        answered = read_file(answer_path)
-        complained = read_file(err_path)
+
+        # Read as text where they are text, and never taken for nothing where
+        # they are not (defect 241, `cli/package_answer.hero`).
+        answered = package_answer.answer(path: answer_path, package: package)
+        complained = package_answer.complaint(err_path)
         publish.discard(answer_path)
         publish.discard(err_path)
 
@@ -312,19 +316,11 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
             )
 
         if ran.code != 0
-            said: str @ ""
-
-            if !complained.is_err()
-                said @ strings.trimmed(complained.must())
             return fail(
                 code: "failed",
-                msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + shell_split.shown(said, keep_lines: true) + "\n  install its development files, or name the library directly with `link`"
+                msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + shell_split.shown(strings.trimmed(complained), keep_lines: true) + "\n  install its development files, or name the library directly with `link`"
             )
-        said: str @ ""
-
-        if !answered.is_err()
-            said @ answered.must()
-        filtered = filter_words(package: package, said: said)
+        filtered = filter_words(package: package, said: answered?)
 
         if filtered.is_err()
             _ = filtered?

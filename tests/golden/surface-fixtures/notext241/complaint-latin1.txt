@@ -1,0 +1,2 @@
+Package caféx was not found in the pkg-config search path.
+Package 'caféx', required by 'u3', not found
