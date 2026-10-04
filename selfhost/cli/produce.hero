@@ -197,11 +197,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # the second round's object is cached under its own text so a warm build
     # pays only the first.
     struct_tags: {str: bool} @ {}
+    told: {str: bool} @ {}
     linked: ()? @ ok()
     binary: str @ ""
 
     while true
-        went = assemble.round(t, options, art.must(), s, site, answered: @answered, struct_tags: struct_tags)
+        went = assemble.round(t, options, art.must(), s, site, @answered, struct_tags: struct_tags, told: @told)
         linked @ went.verdict
         binary @ went.binary
 

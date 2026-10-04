@@ -66,7 +66,10 @@ record Round
     refusals: [str]
     binary: str
 
-function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], struct_tags: {str: bool}) -> Round
+# `told` is what clang said that this build has printed, across its rounds
+# (defect 327, `cli/clang_told.hero`): the second round compiles again what
+# the first did, and replays it where it is warm.
+function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], struct_tags: {str: bool}, @told: {str: bool}) -> Round
     # What both checks ask with, asked of clang once: the probe's words and
     # what the program's headers resolve to under them (`cli/compiling`).
     probe = compiling.probe(
@@ -94,8 +97,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         return Round(verdict: laid, refusals: messages_of(laid), binary: "")
 
     if site.is_tests
-        return fused(t, options, art, s, site, struct_tags)
-    return per_module(t, options, art, s, site, struct_tags)
+        return fused(t, options, art, s, site, struct_tags: struct_tags, told: @told)
+    return per_module(t, options, art, s, site, struct_tags: struct_tags, told: @told)
 
 # What every probe of this build compiles the program's headers under
 # (`cli/compiling`): the level, the sanitizers, the `--include`
@@ -124,7 +127,7 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
 # another build's clang read it, and its object and binary were staged under
 # one name each. Through `units.tu_object` the text names its own directory
 # and the object is cached like every other, a warm `heroes test` included.
-function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}) -> Round
+function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, @told: {str: bool}) -> Round
     none: [str] = []
     text: str @ art.c
 
@@ -141,7 +144,8 @@ function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         package_flags: site.package_flags,
         source_dir: site.source_dir,
         search_include: options.headers_from,
-        @memo
+        @memo,
+        @told
     )
 
     if made.is_err()
@@ -155,7 +159,7 @@ function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 # One .c per module (panel 093): each TU compiled to its own cached object,
 # every dirty TU before any verdict (R5), one link over all of them re-run
 # every build.
-function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}) -> Round
+function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, @told: {str: bool}) -> Round
     root = module_names.module_of(s.name)
     objects: [str] @ [site.object]
     stopped: ()? @ ok()
@@ -195,7 +199,8 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             package_flags: site.package_flags,
             source_dir: site.source_dir,
             search_include: options.headers_from,
-            @memo
+            @memo,
+            @told
         )
 
         if made.is_err()
