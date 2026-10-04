@@ -1,0 +1,70 @@
+# Fixed defect 204, 2026-10-04 (lane b9-recovery; found by lane rec187 beside
+# defect 203). Symptom: inside a list whose `[` the lexer paired with a closer
+# of another kind further down, `x = [1, 2` over `print(x)` over `y = 3 )`, the
+# binding was read as an element and told `expected_separator` at its `=`,
+# naming no `[`, and the stray `)` waited for the `]`. Cause: panel 183's R1
+# ends a list's reach at a binding below its `[` only where the lexer named the
+# `[` never closed; this one it closed, with the `)`. A binding, a declaration
+# or a mutation on a line below such a `[` ends the list above it now, told at
+# its `=`, `:` or `@` with the `[` and where its `]` goes, and the line is read
+# as the statement it is, its own mistakes told (`list_line.ended_at_a_binding`).
+# The shapes: a line between, none, a declaration, a mutation, a `}` for the
+# closer, two lists, a list in a call (whose own `)` is then told owed); and
+# the `]` written, and no closer at all, as before.
+
+function f(a: [i64]) -> i64
+    return 1
+
+function a_line_between()
+    x = [1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function right_below()
+    x = [1, 2
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_declaration()
+    x = [1, 2
+    print(x)
+    z: i64 @ 3 )  #~ expected_separator expected_end_of_line
+    print(z)
+
+function a_mutation()
+    z: i64 @ 0
+    x = [1, 2
+    print(x)
+    z @ 3 )  #~ expected_separator expected_end_of_line
+    print(z)
+
+function a_brace_for_the_closer()
+    x = [1, 2
+    print(x)
+    y = 3 }  #~ expected_separator expected_end_of_line
+    print(y)
+
+function two_lists()
+    x = [[1, 2
+    print(x)
+    y = 3 ))  #~ expected_separator expected_separator expected_end_of_line
+    print(y)
+
+function in_a_call()
+    k = f([1, 2
+    print(k)
+    y = 3 ))  #~ expected_separator expected_args_close
+    print(y)
+
+function the_bracket_written()
+    x = [1, 2]
+    print(x)
+    y = 3 )  #~ expected_end_of_line
+    print(y)
+
+function main()
+    #~v unclosed_bracket
+    x = [1, 2
+    print(x)
+    y = 3
