@@ -1,0 +1,22 @@
+# Defect 282, 2026-10-04. Symptom: a character the language refuses was told
+# once for each byte with no bound, so 32 KB of control bytes drew 31,600
+# messages, each carrying its line, and 4,000 on one line wrote that line
+# 4,000 times. A run of one character that cannot be seen is told once now,
+# at its first, the run counted in a note, and past eight such messages in
+# a file the rest are counted on the last one told. Below, a run of five
+# U+0001, then nine lines of one U+0002: the last two are counted, not told.
+# This file holds those control characters on purpose.
+
+function main()
+    x = 1
+      #~ unexpected_character
+      #~ unexpected_character
+      #~ unexpected_character
+      #~ unexpected_character
+      #~ unexpected_character
+      #~ unexpected_character
+      #~ unexpected_character
+      #~ unexpected_character
+    
+    
+    print(x)
