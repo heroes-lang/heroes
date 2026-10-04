@@ -3,3 +3,5 @@
     **Origin:** lane b10-cli, 2026-10-04, reproduced on its compiler at `86b29733` (its final reply's *Found beside*).
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be: the note should say pkg-config gave no reason.
+
+    Repaired at `98d01442`, 2026-10-04 (lane b11-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The shape beside with this cause was repaired with it: clang refusing a link, a unit or the runtime with no word, which read `linking failed:` over an empty line.
