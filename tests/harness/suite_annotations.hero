@@ -256,7 +256,7 @@ function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str])
 
 # The floor, and what a machine that cannot ask owes it.
 #
-# **A mark stepped aside does not count toward the floor**, the coordinator's
+# **A mark stepped aside did not count toward the floor**, the coordinator's
 # ruling on defect 246 (2026-10-04): a skip is not a pass. Until then the floor
 # read the marks asked plus the marks stepped aside, and the comment above that
 # call said a machine skipping everything still went red here; the sum said
@@ -269,13 +269,23 @@ function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str])
 # the run roots also answer to the rule the `unsupported` form keeps
 # (`suite_golden.hero`): a third of their marks stepped aside is a machine not
 # asking them, red, each skip named all the same.
+#
+# **Revised the same day, at batch 9's Windows leg: the floor reads the walk's
+# reach, every mark found, asked or stepped aside.** The floor was raised to
+# this Mac's 3581 at batch 9's gate, where nothing is stepped aside; the
+# Windows box steps aside the six marks of programs binding headers it lacks,
+# read 3575 asked, and the asked-only floor called a walk that reached every
+# file one that did not. A floor exists to catch a walk that stops reaching
+# the tree, and a mark stepped aside was reached, so it counts as reached and
+# never as passed: the third above is what judges the skips, as the
+# `unsupported` form's floor is the tree's count, the same on every platform.
 function floored(@r: report.Report, expected: i64, run: Asked, floor: i64)
     floors.check(
         @r,
         label: "annotations",
-        found: expected + run.marks,
+        found: expected + run.marks + run.stepped,
         floor: floor,
-        what: "annotated diagnostics asked (" + run.stepped.to_str() + " more stepped aside for a library this machine lacks, which no floor counts)"
+        what: "annotated diagnostics found (" + run.stepped.to_str() + " of them stepped aside for a library this machine lacks, which the third below judges)"
     )
     held = run.marks + run.stepped
 
@@ -716,8 +726,10 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
 # The ruling on defect 246's floor (the coordinator, 2026-10-04): a mark
 # stepped aside is not a pass. Measured on this Mac the same day, the
 # expectation half alone (3228) clears the floor (2779), so a machine stepping
-# aside every run-root program is red only by the third `floored` keeps.
-test "fixedbugs: a machine stepping every run-root program aside reads red, and no skip counts toward the floor"
+# aside every run-root program is red only by the third `floored` keeps. Revised
+# at batch 9's Windows leg the same day: a mark stepped aside counts toward the
+# floor as a mark the walk reached, never as a pass, and the third judges it.
+test "fixedbugs: a machine stepping every run-root program aside reads red, and a skip counts toward the floor as reached"
     if !shell.can_run_scripts()
         return
     scratch = "build/harness-selftest"
@@ -748,18 +760,24 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     assert all_aside.failed == 1
     assert strings.contains(text: all_aside.failures[0], needle: "this machine is not asking them")
 
-    # A floor the asked marks miss is red, where the old sum, asked and
-    # stepped aside together (10 + 9 + 1), read it green.
-    ruled: report.Report @ report.empty()
-    floored(@ruled, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20)
-    assert ruled.failed == 1
+    # A floor the marks found miss is red; one they reach is green, the mark
+    # stepped aside counted as reached (10 expected, 9 asked, 1 stepped aside).
+    short: report.Report @ report.empty()
+    floored(@short, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 21)
+    assert short.failed == 1
+    reached: report.Report @ report.empty()
+    floored(@reached, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20)
+    assert reached.failed == 0
 
-    # A machine that lacks a library or two is green, each skip named where it
-    # is made: this Mac's counts, six marks moved from asked to stepped aside.
-    few: report.Report @ report.empty()
-    floored(@few, expected: 3228, run: Asked(marks: 127, stepped: 6), floor: 2779)
-    assert few.failed == 0
-    assert few.passed == 1
+    # The Windows box's counts at batch 9's leg: 3575 asked and six run-root
+    # marks stepped aside for headers it lacks (its report), against the floor
+    # of 3581 the walk reaches whole; the split of the 3575 is this Mac's 133
+    # run-root marks less those six. Green, where the asked-only floor read it
+    # red.
+    box: report.Report @ report.empty()
+    floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581)
+    assert box.failed == 0
+    assert box.passed == 1
 
 # A program for the tests above: one group binding `header`, `on_head` after
 # its head and `on_function` after its function, each a mark or nothing.
