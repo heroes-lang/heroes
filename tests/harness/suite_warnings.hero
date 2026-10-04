@@ -76,8 +76,10 @@ function judge(@r: report.Report, scratch: str, compiler: str, label: str, main:
             words: [compiler, verb, main]
         )
 
+        # The refusal's own words (defect 317): it names the compiler and
+        # why there is no verdict, a stream that is not UTF-8 among them.
         if said.is_err()
-            report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + main)
+            report.keep_failure(@r, label: label, detail: "  `" + verb + " " + main + "`: " + shell.refusal(said))
             return
 
         # A program this machine cannot build for a library it lacks says

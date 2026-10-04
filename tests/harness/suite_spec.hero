@@ -594,8 +594,9 @@ function real_of(scratch: str, compiler: str, path: str) -> i64?
 function spendable(@r: report.Report, scratch: str, compiler: str)
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", SPEC])
 
+    # The refusal's own words, here and below (defect 317).
     if said.is_err()
-        report.keep_failure(@r, label: "spec/spendable", detail: "  cannot run `measure " + SPEC + "`")
+        report.keep_failure(@r, label: "spec/spendable", detail: "  `measure " + SPEC + "`: " + shell.refusal(said))
         return
     want = "is " + (REAL_TOKENS + FFI_FLOOR).to_str() + " and the check goes red at " + CEILING.to_str()
 
@@ -615,7 +616,7 @@ function spendable(@r: report.Report, scratch: str, compiler: str)
     told = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", CONTRACT])
 
     if told.is_err()
-        report.keep_failure(@r, label: "spec/spendable", detail: "  cannot run `measure " + CONTRACT + "`")
+        report.keep_failure(@r, label: "spec/spendable", detail: "  `measure " + CONTRACT + "`: " + shell.refusal(told))
         return
     owns = "against the contract's own " + CONTRACT_CEILING.to_str()
 
@@ -1138,7 +1139,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", SPEC])
 
     if said.is_err()
-        report.keep_failure(@r, label: "spec/real", detail: "  cannot run `measure " + SPEC + "`")
+        report.keep_failure(@r, label: "spec/real", detail: "  `measure " + SPEC + "`: " + shell.refusal(said))
         return
     row = REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
 
@@ -1165,7 +1166,7 @@ function recorded(@r: report.Report, scratch: str, compiler: str)
     told = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", CONTRACT])
 
     if told.is_err()
-        report.keep_failure(@r, label: "spec/real", detail: "  cannot run `measure " + CONTRACT + "`")
+        report.keep_failure(@r, label: "spec/real", detail: "  `measure " + CONTRACT + "`: " + shell.refusal(told))
         return
     contract_row = CONTRACT_REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + CONTRACT_REAL_TAKEN
 

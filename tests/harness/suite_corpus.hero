@@ -166,8 +166,14 @@ function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: r
             words: [compiler, "test", main, level]
         )
 
+        # The refusal's own words (defect 317): it names the compiler and why
+        # there is no verdict, a capture that is not UTF-8 among the reasons.
         if said.is_err()
-            report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at " + level,
+                detail: "  `test " + main + "`: " + shell.refusal(said)
+            )
             return false
 
         # A program this machine cannot build for a library it lacks is
@@ -238,11 +244,7 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     )
 
     if built.is_err() || built.must().code != 0
-        report.keep_failure(
-            @r,
-            label: "corpus/" + name,
-            detail: "  did not build:\n" + shell.complaint(built)
-        )
+        report.keep_failure(@r, label: "corpus/" + name, detail: "  building " + main + ": " + shell.ending(built))
         return
     at_o0 = ran(scratch: scratch, dir: dir, words: shell.both(first: [binary], second: passed))
 
@@ -263,7 +265,11 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     )
 
     if sanitised.is_err()
-        report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
+        report.keep_failure(
+            @r,
+            label: "corpus/" + name + " at --sanitize",
+            detail: "  `run " + main + " --sanitize`: " + shell.refusal(sanitised)
+        )
         return
 
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
@@ -297,7 +303,7 @@ function ran(scratch: str, dir: str, words: [str]) -> shell.Run?
 
 function judged(@r: report.Report, name: str, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
     if said.is_err()
-        report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot execute at " + level)
+        report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: "  " + shell.refusal(said))
         return true
     wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
 

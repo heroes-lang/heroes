@@ -39,8 +39,14 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", "examples/gallery/00-first.hero"])
 
+    # How the run ended, in its own words (defect 317): *the build did not
+    # run* was written here of a build that ran and exited 1 as well.
     if said.is_err() || said.must().code != 0
-        report.keep_failure(@r, label: "special/build says where", detail: "  the build did not run")
+        report.keep_failure(
+            @r,
+            label: "special/build says where",
+            detail: "  `build examples/gallery/00-first.hero`: " + shell.ending(said)
+        )
         return
 
     if said.must().out.len() > 0
@@ -94,8 +100,16 @@ function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, c
     )
     after = read_file("examples/gallery/00-first.hero")
 
-    if said.is_err() || before.is_err() || after.is_err()
-        report.keep_failure(@r, label: "special/a retired flag", detail: "  cannot run the compiler or read the file")
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/a retired flag",
+            detail: "  `fmt --write examples/gallery/00-first.hero`: " + shell.refusal(said)
+        )
+        return
+
+    if before.is_err() || after.is_err()
+        report.keep_failure(@r, label: "special/a retired flag", detail: "  cannot read examples/gallery/00-first.hero")
         return
 
     if said.must().code != 2
@@ -127,8 +141,20 @@ function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, s
     split = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", "examples/calculator/main.hero"])
     whole = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", "examples/calculator/whole.hero"])
 
-    if split.is_err() || whole.is_err()
-        report.keep_failure(@r, label: "special/split and whole", detail: "  cannot run the compiler")
+    if split.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/split and whole",
+            detail: "  `run examples/calculator/main.hero`: " + shell.refusal(split)
+        )
+        return
+
+    if whole.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/split and whole",
+            detail: "  `run examples/calculator/whole.hero`: " + shell.refusal(whole)
+        )
         return
 
     if split.must().code != 0
@@ -155,8 +181,12 @@ function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compil
     asked = shell.run(scratch: scratch, program: compiler, words: [compiler, "--help"])
     bare = shell.run(scratch: scratch, program: compiler, words: [compiler])
 
-    if asked.is_err() || bare.is_err()
-        report.keep_failure(@r, label: "special/the bare invocation", detail: "  cannot run the compiler")
+    if asked.is_err()
+        report.keep_failure(@r, label: "special/the bare invocation", detail: "  `--help`: " + shell.refusal(asked))
+        return
+
+    if bare.is_err()
+        report.keep_failure(@r, label: "special/the bare invocation", detail: "  no words: " + shell.refusal(bare))
         return
 
     if asked.must().out != bare.must().out
@@ -184,8 +214,20 @@ function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, comp
         words: [compiler, "build", "examples/gallery/00-first.hero", "-O0"]
     )
 
-    if at_o2.is_err() || at_o0.is_err()
-        report.keep_failure(@r, label: "special/the levels differ", detail: "  cannot run the compiler")
+    if at_o2.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/the levels differ",
+            detail: "  `build examples/gallery/00-first.hero -O2`: " + shell.refusal(at_o2)
+        )
+        return
+
+    if at_o0.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/the levels differ",
+            detail: "  `build examples/gallery/00-first.hero -O0`: " + shell.refusal(at_o0)
+        )
         return
 
     if at_o2.must().code != 0 || at_o0.must().code != 0
@@ -228,7 +270,11 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", path])
 
     if said.is_err()
-        report.keep_failure(@r, label: "special/a failing test", detail: "  cannot run the compiler")
+        report.keep_failure(
+            @r,
+            label: "special/a failing test",
+            detail: "  `test " + path + "`: " + shell.refusal(said)
+        )
         return
     wrong: [str] @ []
 
@@ -336,7 +382,11 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
     said = shell.run_guarded(scratch: scratch, words: [compiler, "run", path])
 
     if said.is_err()
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot run the compiler")
+        report.keep_failure(
+            @r,
+            label: "special/the spec's example",
+            detail: "  `run " + path + "`: " + shell.refusal(said)
+        )
         return
 
     # A machine with no sqlite cannot open the spec's database, and that says
@@ -392,7 +442,11 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
     )
 
     if said.is_err()
-        report.keep_failure(@r, label: "special/one argv word", detail: "  cannot run the compiler")
+        report.keep_failure(
+            @r,
+            label: "special/one argv word",
+            detail: "  `build examples/gallery/00-first.hero --include " + hostile + "`: " + shell.refusal(said)
+        )
         return
 
     if said.must().code != 0
@@ -426,7 +480,11 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
         )
 
         if said.is_err()
-            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  cannot run the compiler")
+            report.keep_failure(
+                @r,
+                label: "special/a path that names nothing",
+                detail: "  `build examples/gallery/00-first.hero " + flag + " /no/such/directory`: " + shell.refusal(said)
+            )
             return
 
         if said.must().code != 2
@@ -600,7 +658,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     )
 
     if checked.is_err()
-        report.keep_failure(@r, label: label, detail: "  the checked program could not run at all")
+        report.keep_failure(@r, label: label, detail: "  the checked program: " + shell.refusal(checked))
         return
 
     # The comment above promises this and the code did not keep the promise:
@@ -634,7 +692,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     )
 
     if plain.is_err()
-        report.keep_failure(@r, label: label, detail: "  the plain program could not run at all")
+        report.keep_failure(@r, label: label, detail: "  the plain program: " + shell.refusal(plain))
         return
 
     if plain.must().code != 134

@@ -118,11 +118,14 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
         words: [compiler, "build", item.source, "--emit-c"]
     )
 
+    # The refusal alone says what happened (defect 317): *the compiler never
+    # ran on* stood here before it, of a compiler that had run and written
+    # bytes that are not UTF-8.
     if said.is_err()
         report.keep_failure(
             @r,
             label: "lines/" + item.name,
-            detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(said)
+            detail: "  `build " + item.source + " --emit-c`: " + shell.refusal(said)
         )
         return
 

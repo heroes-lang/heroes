@@ -237,11 +237,14 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
 
             said = shell.run(scratch: scratch, program: compiler, words: line)
 
+            # The refusal's own words, never a sentence of this suite's: until
+            # defect 317 this said *cannot run the compiler on* of a compiler
+            # that ran and wrote bytes that are not UTF-8.
             if said.is_err()
                 report.keep_failure(
                     @r,
                     label: shape.name + "/" + item.name,
-                    detail: "  cannot run the compiler on " + item.source
+                    detail: "  " + item.source + ": " + shell.refusal(said)
                 )
             else if shape.library_skip
                 judged_or_skipped(
@@ -477,6 +480,31 @@ test "fixedbugs: the control arm's form runs check with --brief and --permissive
     other = run_all(scratch: scratch, compiler: path, shape: plain, only: "")
     assert !other.is_err()
     assert other.must().failed == 1
+
+# DEFECT 317 at the forms (2026-10-04): a compiler that writes bytes that are
+# not UTF-8 on stderr RAN, and its case fails in the refusal's words, naming
+# the byte, where it said *cannot run the compiler on*.
+test "fixedbugs: a compiler that writes bytes that are not UTF-8 is told as one that ran (defect 317)"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = one_case_tree(scratch: scratch, name: "not-text-317", expectation: SAID)
+    assert !tree.is_err()
+    path = scratch + "/stub-latin.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf 'x.hero:1:1: error[boom]: caf\\351\\n' 1>&2\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
+    assert !made.is_err()
+    form: Shape @ shape_check()
+    form.dir @ tree.must()
+    form.least @ 1
+    form.watched @ false
+    got = run_all(scratch: scratch, compiler: path, shape: form, only: "")
+    assert !got.is_err()
+    assert got.must().failed == 1
+    failure = got.must().failures[0]
+    assert strings.contains(text: failure, needle: tree.must() + "/x.hero: " + path + " ran and exited 1")
+    assert strings.contains(text: failure, needle: "on stderr 1 byte is not, in `x.hero:1:1: error[boom]: caf<0xE9>`")
+    assert !strings.contains(text: failure, needle: "cannot run")
 
 test "a refusal that writes an artifact fails, and so does a suite below its floor"
     # POSIX is this case's subject, and this machine answers for itself

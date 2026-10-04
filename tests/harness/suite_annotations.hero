@@ -464,12 +464,11 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
         if strings.contains(text: texts[at - 1], needle: "function main")
             asked = provoked(scratch: scratch, compiler: compiler, path: path)
 
+            # The refusal alone says what happened (defect 317): *the
+            # compiler never ran on* stood here before it, of a compiler that
+            # had run and written bytes that are not UTF-8.
             if asked.is_err()
-                report.keep_failure(
-                    @r,
-                    label: label,
-                    detail: "  the compiler never ran on " + path + ":\n    " + why_not(asked)
-                )
+                report.keep_failure(@r, label: label, detail: "  " + path + ": " + why_not(asked))
                 return 0
             out = asked.must()
 
