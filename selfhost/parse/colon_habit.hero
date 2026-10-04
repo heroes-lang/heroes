@@ -44,6 +44,7 @@ use diag
 use cursor
 use parse/line_end
 use word_place
+use text_lines
 use lexer
 
 ## The `:` that ends its line
@@ -82,28 +83,64 @@ function read_below(@c: cursor.Cursor, text: str)
         return
     colon = c.pos
     first = line_head(c, colon: colon)
-    end = line_end_after(c, colon: colon)
+    nested = first > 0 && c.tokens[first - 1].kind == .indent && c.tokens[first - 1].span.start == c.tokens[first].span.start
+    end = line_end_after(c, colon: colon, nested: nested)
 
     if first < 0 || end < 0 || inside_a_bracket(c, at: first) || block_below(c, end: end)
         return
     rest = c.tokens[colon + 1].span
     start = word_place.line_start(text, at: c.tokens[first].span.start)
     margin = text.slice(from: start, to: c.tokens[first].span.start)
-
-    if !word_place.only_margin(text, from: start, to: c.tokens[first].span.start)
-        return
     written = token.Span(start: c.tokens[colon].span.start, end: rest.start)
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "trailing_colon",
-        message: "a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)",
-        span: c.tokens[colon].span
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "write it on the line below, one level deeper", replacement: line_break(text, at: rest.start) + margin + "    ", span: written, certainty: .certain)
-    )
-    cursor.push_diagnostic(@c.diagnostics, d)
+
+    # A suite inside the one laid out on its line, `if a: if b: x`: told by
+    # that suite's report, one more certain fix of it one level deeper, the
+    # line end it made a dedent ending both blocks (`suite_ended`, defect
+    # 196), where the inner `:` was named a missing body.
+    if nested && !deeper(@c.diagnostics, written: written, at: c.tokens[first].span.start)
+        return
+
+    if !nested && !word_place.only_margin(text, from: start, to: c.tokens[first].span.start)
+        return
+
+    if !nested
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "trailing_colon",
+            message: "a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)",
+            span: c.tokens[colon].span
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write it on the line below, one level deeper", replacement: text_lines.line_break(text, at: rest.start) + margin + "    ", span: written, certainty: .certain)
+        )
+        cursor.push_diagnostic(@c.diagnostics, d)
+        c.tokens[end] @ token.Token(kind: .dedent, span: c.tokens[end].span)
     c.tokens[colon] @ token.Token(kind: .indent, span: token.Span(start: rest.start, end: rest.start))
-    c.tokens[end] @ token.Token(kind: .dedent, span: c.tokens[end].span)
+
+# The report of the suite whose block begins at `at`, given one more certain
+# fix, for the `:` at `written`, one level deeper than its own; false where
+# no report wrote a suite there.
+function deeper(@said: [diag.Diagnostic], written: token.Span, at: i64) -> bool
+    i: i64 @ said.len() - 1
+
+    while i >= 0
+        for fix in said[i].fixes
+            if said[i].code == "trailing_colon" && fix.span.end == at
+                said[i].fixes @ said[i].fixes.push(
+                    diag.Fix(title: fix.title, replacement: fix.replacement + "    ", span: written, certainty: .certain)
+                )
+                return true
+
+        i @ i - 1
+
+    return false
+
+# Whether the block whose indent is the token at `open` is one a suite laid
+# out on its head's line (`read_below`) and the cursor stands on a line below
+# it: the suite inside it took the dedent they shared (defect 196).
+function suite_ended(c: cursor.Cursor, text: str, open: i64) -> bool
+    at = c.tokens[open].span.start
+    on_its_line = open > 0 && at == c.tokens[open].span.end && text_lines.newlines_between(text, from: c.tokens[open - 1].span.end, to: at) == 0
+    return on_its_line && text_lines.newlines_between(text, from: at, to: cursor.current_span(c).start) > 0
 
 # The index of the first token of the line the `:` at `colon` stands on,
 # walking back over the brackets closed before it and past a line the lexer
@@ -157,8 +194,9 @@ function past_comments(c: cursor.Cursor, at: i64) -> i64
     return i
 
 # The index of the line end that ends what follows the `:` at `colon`, outside
-# its brackets; -1 where a block's edge or the stream's end comes first.
-function line_end_after(c: cursor.Cursor, colon: i64) -> i64
+# its brackets; -1 where a block's edge or the stream's end comes first. In a
+# suite `nested` in one on its line, the dedent that suite made of the end.
+function line_end_after(c: cursor.Cursor, colon: i64, nested: bool) -> i64
     depth: i64 @ 0
     i: i64 @ colon + 1
 
@@ -169,6 +207,8 @@ function line_end_after(c: cursor.Cursor, colon: i64) -> i64
             depth @ depth + 1
         else if k == .rparen || k == .rbracket || k == .rbrace
             depth @ depth - 1
+        else if nested && depth == 0 && k == .dedent
+            return i
         else if k == .indent || k == .dedent
             return -1
         else if depth == 0 && k == .terminator
@@ -185,17 +225,6 @@ function block_below(c: cursor.Cursor, end: i64) -> bool
         i @ i + 1
 
     return c.tokens[i].kind == .indent
-
-# The line break the text uses on the line that holds `at`.
-function line_break(text: str, at: i64) -> str
-    i: i64 @ at
-
-    while i < text.len() && text[i] != '\n'
-        i @ i + 1
-
-    if i > 0 && i < text.len() && text[i - 1] == '\r'
-        return "\r\n"
-    return "\n"
 
 ## Tests
 

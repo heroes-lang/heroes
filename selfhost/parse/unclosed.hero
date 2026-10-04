@@ -109,7 +109,7 @@ function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
 # ends before it, the outer construct's to take.
 function named_here(c: cursor.Cursor) -> bool
     at = cursor.current_span(c).start
-    return pairing.is_closer(cursor.current_kind(c)) && pairing.close_after(c, at: at - 1) == at
+    return token.is_closer(cursor.current_kind(c)) && pairing.close_after(c, at: at - 1) == at
 
 # Whether a head's line, from token `from` to the cursor, holds an opener the
 # lexer named never closed, and the cursor stands on a line below still in
@@ -225,7 +225,7 @@ function end_literal(@c: cursor.Cursor, text: str, open: i64)
     if c.tokens[open].kind == .lbracket
         what @ "`]` to close the list"
         code @ "expected_array_close"
-    closer = closer_of(c.tokens[open].kind)
+    closer = token.closer_of(c.tokens[open].kind)
 
     if line_end.said_here(c) || !cursor.expect(@c, text: text, kind: closer, code: code, what: what)
         recover_past_pair(@c, text, open: open)
@@ -279,7 +279,7 @@ function end_index(@c: cursor.Cursor, text: str, open: i64) -> token.Span
 function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
     if never_closed(c, text, open: open)
         return cursor.previous_significant_span(c)
-    kind = closer_of(c.tokens[open].kind)
+    kind = token.closer_of(c.tokens[open].kind)
     what: str @ "`)` to close the function type"
     code: str @ "expected_function_type_close"
 
@@ -320,15 +320,6 @@ function spoken_at(said: [diag.Diagnostic], at: i64) -> bool
             return true
 
     return false
-
-# The closer an opener owes.
-function closer_of(opener: token.TokenKind) -> token.TokenKind
-    if opener == .lbracket
-        return .rbracket
-
-    if opener == .lbrace
-        return .rbrace
-    return .rparen
 
 ## Tests
 
