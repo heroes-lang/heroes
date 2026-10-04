@@ -1,0 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-09-03
+commit: b084c2c8845acbd3ed8b4f6730b939141655aa58
+github: none
+---
+
+2026-09-03 | **Panels 103 and 104 ratified** (author instruction, *"confermo la ratifica dei 2 in decide"*, given the same afternoon: the FFI sitting while its step was being built, the stack sitting before its step opened). Both verdict sections read *Ratified*, the two items leave `docs/work/DECIDE.md` for the record, and nothing in either resolution changes — the predictions stay predictions, scored at the milestone's close. The clang 18 floor and the `-Wno-` exclusion, both given mid-sitting, are ratified with them | CLAUDE.md §4 | 103, 104

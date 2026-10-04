@@ -106,8 +106,3 @@ which engine; whether a wasm build of `heroes` is a second binary under §10 or
 the same program for another target; and whether the allow-list is a property of
 the playground or a `heroes` flag, which is §10's stopping rule asked about a
 capability with no other caller.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

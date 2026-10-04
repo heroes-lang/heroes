@@ -1,0 +1,26 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-10-02
+commit: 7c05e64d218b798153172684967b46b7ae8d6459
+github: none
+---
+
+# Defect 191 closed: a record named after a typedef of a struct the header keeps opaque, with fields, stops `build` at exit 2 under clang 18, whose refusal of a member read through it does not name the typedef
+
+- [x] **191 — a record named after a typedef of a struct the header keeps opaque, with fields, stops `build` at exit 2 under clang 18, whose refusal of a member read through it does not name the typedef** | `tests/golden/unsupported/fixedbugs-145-a-typedef-of-an-opaque-struct-bound-with-fields`, `ffi_unknown_tag` expected: on the public CI's Linux x86-64 leg (Ubuntu clang 18.1.3), `internal error: compiling the generated C failed`, clang's *incomplete definition of type 'struct opaque_s'* three times at the field assertions, exit 2; Apple clang 21 on this Mac words it *'opaque_t' (aka 'struct opaque_s')* and the case passes | `selfhost/emit/ffi_incomplete.hero` (`incomplete_typedef`, which finds the record by the typedef's name in clang's words) · `f2a08f13` (panel 186's layout route, which removed the unit's positional completeness probe) · **class: blocking** · **closed 2026-10-03**
+
+    **Origin:** the public CI on `07ccb72a`, run 37065944766, read by the coordinator (2026-10-02, `scratchpad/ci-x86-07ccb72a.log`, lines 1726 to 1763); reproduced by the coordinator under clang 18 in the arm64 container (Debian clang 18.1.8): `unsupported fixedbugs-145` 8 passed and 1 failed on `07ccb72a` and on `b48d02b8`, 9 and 0 on `8b98bcc7` (the last green CI) and on `415c0a14`, so the round merged at `b48d02b8` brought it; this Mac's clang, Debian clang 22.1.8 and Windows' clang 23.1.1 pass it. Reproduced by lane cb4 on `c2b3f3a1` under Debian clang 18.1.8, the same 8 and 1, and measured on both clangs beside it (2026-10-03, `scratchpad/lane-cb4/d191/words/`): the member read is the one refusal worded apart, a variable of the type, `sizeof` of it and a typedef of `void` are worded alike on both, and every position is the same. The positional probe `f2a08f13` removed was a variable of the record's type, which is why the case passed under clang 18 before it.
+
+    **2026-10-03, lane cb4, the layout check asks a record named after a
+    typedef, by where clang errs and never by what it says, whether its name
+    is a type and whether that type has a layout, and refuses it before any
+    unit compiles, the type behind its name read from clang's JSON**:
+    repaired at `7c05e64d`, gated by its own cases under Debian clang 18.1.8
+    and this Mac's clang; the rest is owed at the round's gate, and the
+    platform legs before the push.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, and a red CI.
+
+    **Closed 2026-10-03** after the push of `64befd50`. Repaired at `7c05e64d` in lane cb4, it entered the trunk at the round of 2026-10-03's gate, `b43d224d` (lanes fbrace, flow4, rec187 and cb4): the seed regenerated once, 39,266,477 bytes, SHA-256 beginning `bdf53918a7df9c36`, its fixpoint by `cmp`; the compiler's own tests 1,079 and the net's own 200, all passed; the full net, 26 suites, 4,901 passed and 0 failed; the censuses of `check --brief` over 1,876 files and of `--emit-c` over 576, every move attributed to its lane. Its cases read one by one at `02e507bc`, whose compiler is the one `64befd50` carries (the seeds differ in `#line` numbers alone, and the compiler built from each is the same binary on this Mac and in the Linux arm64 container under clang 22.1.8 and 18.1.8 by `cmp`, the same assembly on the Windows box): on this Mac (Apple clang 21), in the Linux arm64 container under Debian clang 22.1.8 and again under 18.1.8, and on the Windows box (clang 23.1.1), `unsupported/fixedbugs-191-*` 3 of 3 passed on each, none skipped, Debian clang 18.1.8 among them, the major it was found under; its three compiler tests read `ok` on each, and in the CI's Linux x86-64 log under Ubuntu clang 18.1.3, the job that was red on `07ccb72a` (run 37065944766) and is green on `64befd50`. The push's legs at `02e507bc`: Linux arm64, the compiler's own tests 1,083 all passed and 20 suites at 0 failed under each clang; the Windows box, 20 suites at 0 failed. Linux x86-64, the CI's job on `64befd50` (run 37118626800, Ubuntu clang 18.1.3): the compiler's own tests 1,083 all passed and 26 suites at 0 failed; which of its golden cases that job ran, its log does not say, so Linux arm64 under the same clang major is the nearest measurement of them, an inference for x86-64. It closes after the push's platform legs ran its cases (`.claude/rules/verification.md` § The batch).

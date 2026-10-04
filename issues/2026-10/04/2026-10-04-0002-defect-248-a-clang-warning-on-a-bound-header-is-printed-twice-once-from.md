@@ -1,0 +1,16 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-04
+commit: 50aaac0bf6ea2ec14178ca58e66baad96ec42a97
+github: none
+---
+
+- [ ] **248 — a clang warning on a bound header is printed twice, once from the program's unit and once from the pointee probe's file the author never wrote** | `extern "lib.h"` over `constant ANSWER: i64`, `lib.h` holding `return "Jos<e9>";`: `build` exit 0, clang's `warning: illegal character encoding in string literal [-Winvalid-source-encoding]` printed twice, the second naming `build/pointee-<key>/check-<key>.c` (the trunk's compiler at `7d9f2e8f` on this Mac, Linux arm64 and the Windows box, 2026-10-04, panel 189's ffi-pragmatist); the object a second build rewrites with nothing edited is 227's header digest, not this item | `selfhost/cli/pointee.hero` (the pointee probe) and how its clang output reaches the author · **class: adjacent**
+
+    **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:25 to 00:31 (`docs/panel/189-reports/ffi-pragmatist.md`, *A C header's digest*); filed apart by the coordinator.
+
+    **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): one warning, two copies, one naming an internal file.
+
+    Repaired at `50aaac0b`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `cli/pointee_wants.hero` was not needed.

@@ -1,0 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-04
+commit: 04badae322181b73774428f10376bed4554fe6be
+github: none
+---
+
+2026-08-04 | `???` reaching `build`: the file lowers, `--dump-ir` prints `= ???`, and the summary says "no binary while the file has holes"; exit stays 0 | §4.16 makes a hole *not an error* ("type-checks everything else but produces no binary") and design.md says nothing about what a build does with one. Decided by default so M4 could land, and queued: the hole is the thesis's own construct and the IR is the first pass that cannot represent it | §4.16 | 019 |

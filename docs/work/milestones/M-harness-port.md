@@ -16,8 +16,3 @@ knot rule or go red on day one. And a directory walk had no sound cheap route:
 entries at exit 0**, measured, which §1.12 forbids — so it is
 `popen`/`fgets`/`pclose`, measured working on both compilers, with the wait
 status from `pclose`.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

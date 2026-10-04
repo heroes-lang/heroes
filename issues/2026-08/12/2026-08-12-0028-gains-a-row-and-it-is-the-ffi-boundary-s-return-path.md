@@ -1,0 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-12
+commit: c93a3ff2a402fd2fc4936221ca31c4ffec268f4d
+github: none
+---
+
+2026-08-12 | **`to_str` gains a `cstr` row, and it is the FFI boundary's return path.** `.cstr()` lends a `str` to C; `to_str(c)` copies one back through `hero_str_from_cstr`. §4.20 says those primitives exist for exactly this — *"without them no `extern function` may return `str` and §4.19's ladder is unwritable at step 3, read a result, because every C library returns strings as borrowed pointers"* — and panel 036's ffi-pragmatist predicted the need before the ladder reached a library that returns one. Zero spec tokens: a fifth entry point under a name the spec already lists, rather than a conversion of its own | the boundary has two directions and only one of them had a spelling; a new name would have cost tokens for a shape the three existing conversions already teach | §4.19, §4.20 | 036 |

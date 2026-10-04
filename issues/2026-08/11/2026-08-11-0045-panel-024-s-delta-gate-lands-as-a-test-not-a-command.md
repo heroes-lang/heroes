@@ -1,0 +1,10 @@
+---
+kind: decision
+area: process
+milestone: none
+filed: 2026-08-11
+commit: 25e35a3735cf222dbaffffbd9cc333f812533fc9
+github: none
+---
+
+2026-08-11 | **Panel 024's delta gate lands as a test, not a command** — one test asserting the spec's measured size against a recorded constant, so any spec change must update that number in the same commit, which is exactly when panel 012's rule asks for a named removal or a registered prediction. CLAUDE.md §10's stopping rule refuses it as a subcommand or flag (it types no fixpoint invocation, no golden harness, no Part 11 harness — the refusal that struck `outline` and `explain`), and the golden harness types it as a test. Nothing pins that number today | a budget whose veto is out of reach is decoration; the cheapest instrument that makes it fire is not always a capability | §1.6, CLAUDE.md §9, §10 | 031, 024 |

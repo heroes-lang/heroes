@@ -1,0 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-04
+commit: 7a6349595c3a891402fab1f9c5dabf9ca776f030
+github: none
+---
+
+2026-08-04 | `hero_str_from_bytes` / `hero_str_from_cstr` enter the runtime surface — the ffi veto. Without them **no `extern function` may have return type `str`**, and §4.19's own acceptance ladder is unwritable at step 3 ("open a database, run a query, **read a result**, close"), because every C library returns strings as borrowed pointers | one primitive, and the founding constraint keeps its acceptance test | §1.11, §4.19, §4.20 | 021 |

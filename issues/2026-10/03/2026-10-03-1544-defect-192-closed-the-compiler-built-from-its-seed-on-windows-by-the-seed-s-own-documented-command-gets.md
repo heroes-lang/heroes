@@ -1,0 +1,33 @@
+---
+kind: defect
+area: seed
+milestone: none
+filed: 2026-10-02
+commit: dc23c4a869fba8be97dbe94a7438e13c892ed46b
+github: none
+---
+
+# Defect 192 closed: the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers
+
+- [x] **192 — the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers** | `clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes` (`seed/README.md`'s Windows line) on the Windows box: *'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead*, at `seed/heroes.c:50` and, through `#line`, `selfhost/cli/process.hero:64` and `:209`, then *3 warnings generated*; `heroes build` passes `-D_CRT_SECURE_NO_WARNINGS` to every unit it compiles (`selfhost/cli/flags.hero:96`) and `runtime/runtime.c:75` defines it for its own unit, so only a unit compiled outside `heroes build` gets the warnings | `runtime/heroes_runtime.h`, the first include of every emitted unit (`seed/heroes.c:2`) · `seed/README.md` · **class: blocking** · **closed 2026-10-03**
+
+    **Origin:** the coordinator, 2026-10-02, reading the Windows leg's log on `6bec7c8c` (`scratchpad/platforms/win-6bec7c8c.log`, 2026-10-02); the same three warnings stand in every Windows leg's log read that day (`b48d02b8`, `2bb45a96`, `8b98bcc7`, `e252fda4`), and `docs/ref/environment/windows/WINDOWS-MACHINE.md:493-497` records them since 2026-09-21 as warnings *whether they are new is unrun*, never filed.
+
+    **Why it is a defect.** The emitted C is C11 that clang type-checks clean (CLAUDE.md § 7), and this unit is the compiler itself built by its own first command; any `--emit-c` output compiled by hand on Windows gets the same advice. The runtime already says why the switch is the documented one and not a workaround (`runtime/runtime.c:65-74`).
+
+    **2026-10-03, lane warn, the two macros `heroes build` passes for
+    Windows are `runtime/heroes_runtime.h`'s own, defined on `_WIN32` before
+    its first system include, each under a guard; `_USE_MATH_DEFINES` beside
+    `_CRT_SECURE_NO_WARNINGS`, the same shape (`M_PI`, which
+    `tests/golden/run/ffi-constant.hero` binds)**: repaired at `dc23c4a8`,
+    gated by its own case, a compiler test preprocessing for
+    `x86_64-pc-windows-msvc`, on this Mac and on Linux arm64 under Debian
+    clang 22.1.8 and 18.1.8; the rest is owed at the round's gate, and the
+    Windows box before the push, where the seed's documented line is the
+    proof, unrun (the box offline on 2026-10-03). On this Mac a stub
+    `stdlib.h` deprecating `getenv` as the box's UCRT does warned under
+    `02e507bc`'s header and not under this one.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+    **Closed 2026-10-03** after the push of `e339ece9`. Repaired at `dc23c4a8` in lane warn, it entered the trunk at the round of 2026-10-03's sixth gate, `da3e29af` (lanes warn, ffimsg, depth, twin156 and win214): the seed regenerated once, 39,690,755 bytes, SHA-256 beginning `2c809845ed0f7ba8`, its fixpoint by `cmp`; the compiler's own tests 1,099 and the net's own 200, all passed; the full net, 26 suites, 5,033 passed and 0 failed; the censuses of `check --brief` over 1,905 files and of `--emit-c` over 595, every move attributed to its lane. Its cases read one by one at `da3e29af`, whose compiler `e339ece9` carries unchanged (no file under `selfhost/`, `seed/`, `runtime/` or `tests/` moved between them): on this Mac (Apple clang 21), in the Linux arm64 container under Debian clang 22.1.8 and again under 18.1.8, and on the Windows box (clang 23.1.1): the seed built by its documented line, the Windows one with its stack flag, with 0 warnings on each (on the Windows box `02e507bc`'s seed had drawn three, `getenv` deprecated), and its compiler test `ok` on each. The push's legs: Linux arm64, its suites four at a time, the compiler's own tests 1,099 all passed and 20 suites at 0 failed under each clang; the Windows box, the compiler's own tests 1,099 all passed and nine of its 20 suites at 0 failed before it went offline at about 14:47 (Tailscale, read at 15:41: last seen 54 minutes before), every case above already read there; and the CI's run 37124159403 on `e339ece9`: Linux x86-64 (Ubuntu clang 18.1.3), the compiler's own tests 1,099 all passed and 26 suites, 4,993 passed and 0 failed; Windows x86-64 (clang 20.1.8), 1,099 and 26 suites, 4,932 passed and 0 failed, the box's eleven unrun suites among them; Linux arm64 and Darwin arm64 green. Which golden cases those jobs ran their logs do not say, so the readings above are the measurement of them, and x86-64's an inference from Linux arm64 under the same clang major. It closes after the push's platform legs ran its cases (`.claude/rules/verification.md` § The batch).

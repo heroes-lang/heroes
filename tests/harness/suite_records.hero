@@ -10,6 +10,7 @@
 # the rename bought is an invariant, and without these checks it is a
 # one-time cleanup that rots on the next commit.
 
+use cards
 use report
 use floors
 use shell
@@ -57,6 +58,13 @@ constant SITTINGS: str
 # was written. A record does not follow a tree that moves; that is the whole
 # reason §14 forbids rewriting one, and an instrument that asks it to is asking
 # for the contract to be broken.
+#
+# **`docs/records/log` and `docs/records/done` left this list on 2026-10-04**,
+# the day every item moved into `issues/` (`.claude/rules/records.md` § The
+# issues). A tree no longer says whether a file is a record: a CLOSED issue is
+# one, and an OPEN issue is a living item somebody is about to act on, and the
+# two stand side by side in the folder of one day. So `run_all` asks the file,
+# and this list keeps the trees that are records all the way down.
 constant RECORD: [str]
     [
         "docs/panel"
@@ -66,9 +74,7 @@ constant RECORD: [str]
         "tests/golden"
         "tests/emission"
         "docs/design/DESIGN-LOG.md"
-        "docs/records/log"
         "docs/work/DONE.md"
-        "docs/records/done"
         "docs/records/contract"
         "vendor"
         "editors/vscode/icons"
@@ -528,8 +534,11 @@ constant REFUSED: [str]
 # because neither was ever written into a record — the first claims the
 # mechanism a sitting has yet to choose, the second describes only half of what
 # the row closes, the other half being a fixed-array literal of 256 elements.
+# **86 -> 87 on 2026-10-04**, `M-issue-files`, opened by author instruction at
+# row 83: every item one file of `issues/`. Its plan was written as
+# `M-issue-cards` and never committed under it, so no record carries that name.
 constant ROWS: i64
-    86
+    87
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -818,30 +827,43 @@ function run_all(scratch: str) -> report.Report?
     # 2026-08-19 — a milestone identifier, in a file nobody wrote and git already
     # knew to ignore.
     walked = shell.project_files(scratch)?
+
+    # **Every issue is read once, here**, and handed to the checks that ask
+    # about issues: ten of them do, and two thousand files read ten times is
+    # the cost of not saying so. A closed issue is a record and leaves the
+    # living walk; an open one stays in it, because it is a list's item.
+    issues = read_issues(walked)?
+    closed: {str: bool} @ {}
+
+    for issue in issues
+        if !issue.open
+            closed[issue.path] @ true
+
     living: [str] @ []
 
     for path in walked
-        if !quoting(path) && !is_record(path) && !is_generated(path)
+        if !quoting(path) && !is_record(path) && !is_generated(path) && closed[path].is_err()
             living @ living.push(path)
 
     numbered(@r, living: living)
     named(@r, living: living)
     sections(@r, living: living)
     c_files(@r, living: living)
-    citations(@r, scratch: scratch, present: walked)
-    english(@r, present: walked)
+    citations(@r, scratch: scratch, present: walked, closed: closed)
+    english(@r, present: walked, closed: closed)
     exemptions(@r, present: walked)
     redirects(@r, present: walked)
     rules(@r, present: walked)
     expectations(@r, scratch: scratch)
     boundary(@r)
-    verdicts(@r, present: walked)
+    verdicts(@r, present: walked, issues: issues)
     where_we_are(@r)
-    counts(@r, present: walked)
-    homed(@r, present: walked)
-    lists(@r, present: walked)
-    defect_register(@r, present: walked)
-    tagged(@r, scratch: scratch, present: walked)
+    counts(@r, issues: issues)
+    homed(@r, present: walked, issues: issues)
+    carded(@r, scratch: scratch, present: walked, issues: issues)
+    lists(@r, present: walked, issues: issues)
+    defect_register(@r, issues: issues)
+    tagged(@r, scratch: scratch, present: walked, issues: issues)
     appended(@r, scratch: scratch)
     numbering(@r, present: walked)
     unmerged(@r, scratch: scratch)
@@ -883,7 +905,7 @@ function run_all(scratch: str) -> report.Report?
 # excuses, `TAGGED_OVER` and `CARRIED_OVER`, are asked of the items that
 # count, which at every tag placed before that day is every open item, so
 # neither row reads differently; an item a tag may stand over needs none.
-function tagged(@r: report.Report, scratch: str, present: [str])
+function tagged(@r: report.Report, scratch: str, present: [str], issues: [cards.Issue])
     listed = shell.run(
         scratch: scratch,
         program: "git",
@@ -952,7 +974,7 @@ function tagged(@r: report.Report, scratch: str, present: [str])
             rows @ rows.push(one.row)
             told @ told.push(one.row + "\n      " + one.why)
 
-        refusal: str @ tag_is_excused(tag: newest, open_rows: rows, present: present)
+        refusal: str @ tag_is_excused(tag: newest, open_rows: rows, present: present, issues: issues)
 
         if refusal != ""
             carried = tag_is_carried(
@@ -975,10 +997,14 @@ function tagged(@r: report.Report, scratch: str, present: [str])
                 detail: "  " + newest + " was placed over " + standing.len().to_str() + " open defect(s) that count against a tag:\n    " + told.join("\n    ") + "\n  " + refusal + "\n  A milestone is tagged over zero `blocking` and zero `systemic` items (CLAUDE.md § Verification;\n  .claude/rules/verification.md § Bounded discovery). An item with no class counts\n  as `blocking`, and an `adjacent` one counts as `blocking` from the second tag\n  placed since it was filed."
             )
             return
-    open_decisions = open_items_at(scratch: scratch, tag: newest, path: "docs/work/DECIDE.md")
+    open_decisions = decision_rows_at(scratch: scratch, tag: newest)
 
     if open_decisions.is_err()
-        report.keep_failure(@r, label: "records/tagged", detail: "  cannot read DECIDE.md at " + newest)
+        report.keep_failure(
+            @r,
+            label: "records/tagged",
+            detail: "  cannot read the open decisions at " + newest + ": " + failure_of(open_decisions)
+        )
         return
     strict = carried_the_rule(scratch: scratch, tag: newest)
 
@@ -1023,7 +1049,7 @@ function tagged(@r: report.Report, scratch: str, present: [str])
 # written for two others; every done record it names must exist; and not one of
 # those defects may be open TODAY. That last one is what keeps this from being an
 # amnesty: reopen 061 and the row stops working.
-function tag_is_excused(tag: str, open_rows: [str], present: [str]) -> str
+function tag_is_excused(tag: str, open_rows: [str], present: [str], issues: [cards.Issue]) -> str
     numbers: [str] @ []
 
     for row in open_rows
@@ -1050,9 +1076,9 @@ function tag_is_excused(tag: str, open_rows: [str], present: [str]) -> str
 
     for entry in strings.words(strings.trimmed(parts[3]))
         if !record_is_present(entry: entry, present: present)
-            return "TAGGED_OVER names the done record " + entry + ", and no such file is under docs/records/done/."
+            return "TAGGED_OVER names the done record " + entry + ", and no issue file in " + ISSUES + " is named so."
 
-    reopened = still_open(numbers: numbers, present: present)
+    reopened = still_open(numbers: numbers, issues: issues)
 
     if reopened != ""
         return "TAGGED_OVER excuses " + tag + " only because those defects are CLOSED, and " + reopened + " is open in the working tree today."
@@ -1077,9 +1103,11 @@ function same_numbers(listed: [str], numbers: [str]) -> bool
 
     return true
 
+# A record named by its file's name, which it kept when it moved into
+# `ISSUES` on 2026-10-04: the folder is its day's, so the name is the key.
 function record_is_present(entry: str, present: [str]) -> bool
     for path in present
-        if strings.ends_with(text: path, suffix: "docs/records/done/" + entry)
+        if strings.starts_with(text: path, prefix: ISSUES + "/") && strings.base_name(path) == entry
             return true
 
     return false
@@ -1090,14 +1118,12 @@ function record_is_present(entry: str, present: [str]) -> bool
 # caller's, so the excuse's test holds it to the tree it names rather than to
 # whatever the list holds on the day it runs; and a file this cannot read is
 # never read as a defect closed.
-function still_open(numbers: [str], present: [str]) -> str
-    for path in defect_files(present)
-        text = read_file(path)
+function still_open(numbers: [str], issues: [cards.Issue]) -> str
+    for issue in issues
+        if !issue.open || issue.card.kind != "defect"
+            continue
 
-        if text.is_err()
-            return path + " cannot be read, so whether they are closed"
-
-        for row in strings.lines(text.must())
+        for row in strings.lines(issue.body)
             n = defect_number(strings.trimmed(row))
 
             if n == "" || !strings.starts_with(text: strings.trimmed(row), prefix: "- [ ] ")
@@ -1161,7 +1187,47 @@ function defect_rows_at(scratch: str, tag: str) -> [str]?
 # which on 2026-10-04 is every one of the fifty `m-*` tags. Both are plumbing,
 # whose output no porcelain setting of the machine reshapes.
 function list_text_at(scratch: str, tag: str) -> str?
-    listed = shell.run(scratch: scratch, program: "git", words: ["git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", tag, "--", DEFECT_FILES, DEFECTS])?
+    paths = listed_at(scratch: scratch, tag: tag, roots: [ISSUES, DEFECT_FILES, DEFECTS])?
+    shape = shape_listed(paths)
+
+    if !shape.directory && shape.files.len() == 0
+        return fail(
+            code: "no_such_file",
+            msg: "neither " + ISSUES + ", " + DEFECT_FILES + " nor " + DEFECTS + " exists at " + tag
+        )
+
+    if shape.files.len() == 0
+        return ok("")
+    texts = blobs_at(scratch: scratch, tag: tag, paths: shape.files)?
+
+    if !shape.issues
+        return ok(joined_files(texts))
+
+    # **The third shape, since 2026-10-04**: the open defects are the issues
+    # whose card says `defect` and whose item is unticked, read below their
+    # cards, so that every reader after this one meets the text it always
+    # met: a body ends at the next item, and no card falls into the item
+    # before it.
+    kept: [str] @ []
+    i: i64 @ 0
+
+    while i < texts.len()
+        issue = cards.issue_of(path: shape.files[i], text: texts[i])
+
+        if issue.open && issue.card.kind == "defect"
+            kept @ kept.push(issue.body)
+        i @ i + 1
+
+    return ok(joined_files(kept))
+
+# The paths under `roots` in a tag's tree, as `git ls-tree` names them.
+function listed_at(scratch: str, tag: str, roots: [str]) -> [str]?
+    words: [str] @ ["git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", tag, "--"]
+
+    for root in roots
+        words @ words.push(root)
+
+    listed = shell.run(scratch: scratch, program: "git", words: words)?
 
     if listed.code != 0
         return fail(
@@ -1174,16 +1240,14 @@ function list_text_at(scratch: str, tag: str) -> str?
         if piece.len() > 0
             paths @ paths.push(piece)
 
-    shape = shape_listed(paths)
+    return ok(paths)
 
-    if !shape.directory && shape.files.len() == 0
-        return fail(code: "no_such_file", msg: "neither " + DEFECT_FILES + " nor " + DEFECTS + " exists at " + tag)
-
-    if shape.files.len() == 0
-        return ok("")
+# The texts of `paths` at a tag, in the order asked, read by ONE `git cat-file
+# --batch` whatever their number.
+function blobs_at(scratch: str, tag: str, paths: [str]) -> [str]?
     asked: [str] @ []
 
-    for path in shape.files
+    for path in paths
         asked @ asked.push(tag + ":" + path)
 
     names = scratch + "/defect-objects"
@@ -1198,23 +1262,51 @@ function list_text_at(scratch: str, tag: str) -> str?
         )
     texts = blobs_in(shown.out)?
 
-    if texts.len() != shape.files.len()
+    if texts.len() != paths.len()
         return fail(
             code: "shape",
-            msg: "asked git for " + shape.files.len().to_str() + " files at " + tag + " and read " + texts.len().to_str()
+            msg: "asked git for " + paths.len().to_str() + " files at " + tag + " and read " + texts.len().to_str()
         )
 
-    return ok(joined_files(texts))
+    return ok(texts)
 
-# What `git ls-tree` names at a tag, read: whether `DEFECT_FILES` was there,
-# and the files that hold the list, its defect files where it was, the keeper
-# aside, `DEFECTS.md` where it was not, and none where neither was. A directory
-# holding only its keeper is the goal's shape at a tag, and reads as no item.
+# The open decisions' lines AS THEY WERE at a tag: the open `decision` issues'
+# items where the tag's tree holds `ISSUES`, and `DECIDE.md`'s where it does
+# not, which is every tag placed before 2026-10-04.
+function decision_rows_at(scratch: str, tag: str) -> [str]?
+    paths = issue_files(listed_at(scratch: scratch, tag: tag, roots: [ISSUES])?)
+
+    if paths.len() == 0
+        return open_items_at(scratch: scratch, tag: tag, path: DECISIONS)
+    texts = blobs_at(scratch: scratch, tag: tag, paths: paths)?
+    rows: [str] @ []
+    i: i64 @ 0
+
+    while i < texts.len()
+        issue = cards.issue_of(path: paths[i], text: texts[i])
+
+        if issue.open && issue.card.kind == "decision"
+            for row in open_rows_in(issue.body)
+                rows @ rows.push(row)
+        i @ i + 1
+
+    return ok(rows)
+
+# What `git ls-tree` names at a tag, read: whether the list was a directory,
+# and the files that hold it. `ISSUES` where the tag has it, every issue file;
+# else `DEFECT_FILES`' defect files, the keeper aside; else `DEFECTS.md`; and
+# none where none was. A directory holding only its keeper is the goal's shape
+# at a tag, and reads as no item.
 record ListAt
     directory: bool
+    issues: bool
     files: [str]
 
 function shape_listed(paths: [str]) -> ListAt
+    for path in paths
+        if strings.starts_with(text: path, prefix: ISSUES + "/")
+            return ListAt(directory: true, issues: true, files: issue_files(paths))
+
     directory: bool @ false
 
     for path in paths
@@ -1222,14 +1314,14 @@ function shape_listed(paths: [str]) -> ListAt
             directory @ true
 
     if directory
-        return ListAt(directory: true, files: defect_files(paths))
+        return ListAt(directory: true, issues: false, files: defect_files(paths))
     files: [str] @ []
 
     for path in paths
         if path == DEFECTS
             files @ files.push(path)
 
-    return ListAt(directory: false, files: files)
+    return ListAt(directory: false, issues: false, files: files)
 
 # `git cat-file --batch`'s answer as the texts it holds, in the order asked:
 # each object is `<name> blob <size>`, a line end, exactly `<size>` bytes and
@@ -1346,7 +1438,8 @@ constant RATIFICATION_MARKER: str
 #
 #   - the defects it names are EXACTLY the ones open at that tag, so a later
 #     mistake cannot shelter behind a row written for two others;
-#   - every done record it names exists under `docs/records/done/`;
+#   - every done record it names exists, under `docs/records/done/` until
+#     2026-10-04 and in `ISSUES` by the same name since;
 #   - not one of those defects is open TODAY, read from the working tree.
 #
 # So the row fails loudly the day somebody reopens 061 or deletes the record
@@ -1377,7 +1470,8 @@ constant TAGGED_OVER: [str]
 #
 #   - the numbers are EXACTLY the ones open at that tag, so a defect the tag
 #     forgot cannot shelter behind a row written for the ones it carried;
-#   - the log entry exists under `docs/records/log/`;
+#   - the log entry exists, under `docs/records/log/` until 2026-10-04 and in
+#     `ISSUES` by the same name since;
 #   - each defect's own item, in the list AS IT WAS at the tag, says
 #     `CARRIED_MARKER` and names that entry, so the carrying is written where
 #     the defect is and not only here.
@@ -1428,7 +1522,7 @@ function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str], r
     entry = strings.trimmed(parts[3])
 
     if !log_is_present(entry: entry, present: present)
-        return "CARRIED_OVER names the log entry " + entry + ", and no such file is under docs/records/log/."
+        return "CARRIED_OVER names the log entry " + entry + ", and no issue file in " + ISSUES + " is named so."
 
     for n in numbers
         body = item_region(text: text, number: n)
@@ -1439,11 +1533,7 @@ function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str], r
     return ""
 
 function log_is_present(entry: str, present: [str]) -> bool
-    for path in present
-        if strings.ends_with(text: path, suffix: "docs/records/log/" + entry)
-            return true
-
-    return false
+    return record_is_present(entry: entry, present: present)
 
 # Defect `number`'s item in a list's text, its item line and its body, up to
 # the next item or the list's closing fence; empty where no item is numbered so.
@@ -1498,7 +1588,7 @@ function placed_tags(out: str) -> [Placed]?
     for row in strings.lines(out)
         if strings.trimmed(row) == ""
             continue
-        day = day_of(row)
+        day = cards.day_of(row)
 
         if day.is_err() || row.len() < 12 || row[10] != ' '
             return fail(code: "shape", msg: "`" + head_of(row) + "` does not open with a day as YYYY-MM-DD and a space")
@@ -1584,7 +1674,7 @@ function counts_because(item: Classed, number: str, at: Placed, before: [Placed]
         return "`" + item.kind + "`"
 
     if item.day > at.day
-        return "`adjacent`, classed " + day_text(item.day) + ", after " + at.name + "'s own day " + day_text(at.day) + ", which no item standing at it can be: it counts as `blocking`"
+        return "`adjacent`, classed " + cards.day_text(item.day) + ", after " + at.name + "'s own day " + cards.day_text(at.day) + ", which no item standing at it can be: it counts as `blocking`"
     since: [str] @ [at.name]
 
     for tag in before
@@ -1594,7 +1684,7 @@ function counts_because(item: Classed, number: str, at: Placed, before: [Placed]
     if since.len() < AGED_AT
         return ""
 
-    return "`adjacent`, classed " + day_text(item.day) + ", with " + since.len().to_str() + " tags placed since it was filed (" + since.join(" ") + "), the tag judged among them, and an `adjacent` item counts as `blocking` once " + AGED_AT.to_str() + " have been"
+    return "`adjacent`, classed " + cards.day_text(item.day) + ", with " + since.len().to_str() + " tags placed since it was filed (" + since.join(" ") + "), the tag judged among them, and an `adjacent` item counts as `blocking` once " + AGED_AT.to_str() + " have been"
 
 function holds(numbers: [str], number: str) -> bool
     if number == ""
@@ -1780,7 +1870,7 @@ function exemptions(@r: report.Report, present: [str])
         if !selects_exactly(entry: entry, present: present)
             dead @ dead.push("    APPENDED: " + entry)
 
-    for entry in [DECISIONS, DEFECTS, DEFECT_FILES, LEARNING, RECORD_LIST, RECORD_TREE, MILESTONES]
+    for entry in [ISSUES, ISSUES_PAGE, RECORD_LIST, MILESTONES]
         if !selects_tree(entry: entry, present: present)
             dead @ dead.push("    a named list: " + entry)
 
@@ -1996,6 +2086,27 @@ function appended(@r: report.Report, scratch: str)
         for row in removed_below(text: diffed.must().out, floor: floor)
             offences @ offences.push("    " + fields[0] + ": " + row)
 
+    # **A CLOSED ISSUE IS A RECORD BELOW ITS CARD**, since 2026-10-04: the card
+    # is metadata and may be corrected where it stands, and the item under it
+    # keeps the words it closed with. An open issue is a living item and may be
+    # edited, ticked included. So each file the working tree changes in
+    # `ISSUES` is asked as HEAD holds it: closed there, no line below its card
+    # may go.
+    tree_diff = shell.run(scratch: scratch, program: "git", words: ["git", "diff", "HEAD", "--", ISSUES])
+
+    if tree_diff.is_err()
+        offences @ offences.push("    cannot ask git what the working tree changed in " + ISSUES)
+    else
+        floors_at: {str: i64} @ {}
+
+        for removal in removed_by_file(tree_diff.must().out)
+            if floors_at[removal.path].is_err()
+                floors_at[removal.path] @ closed_floor_at_head(scratch: scratch, path: removal.path)
+            closed_floor = floors_at[removal.path].must()
+
+            if closed_floor > 0 && removal.line >= closed_floor
+                offences @ offences.push("    " + removal.path + ": " + removal.row)
+
     if offences.len() > 0
         report.keep_failure(
             @r,
@@ -2004,6 +2115,57 @@ function appended(@r: report.Report, scratch: str)
         )
     else
         report.keep_pass(@r)
+
+# One line a diff removes: the file, its line in the old file, and the line.
+record Removal
+    path: str
+    line: i64
+    row: str
+
+# Every line a diff of MANY files removes, each with its file. A file's own
+# header opens a new file and ends the last one's hunks, which is the one thing
+# `removed_below` never had to know: it reads a diff of one file, and there
+# `--- a/x` comes before the first `@@`. Here it comes after another file's.
+function removed_by_file(text: str) -> [Removal]
+    out: [Removal] @ []
+    path: str @ ""
+    old: i64 @ 0
+    started: bool @ false
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "diff --git ")
+            started @ false
+            at = strings.index_of(text: row, needle: " b/")
+
+            if at.is_err()
+                path @ ""
+            else
+                path @ row.slice(from: at.must() + 3, to: row.len())
+        else if strings.starts_with(text: row, prefix: "@@ -")
+            old @ hunk_start(row)
+            started @ true
+        else if started
+            if strings.starts_with(text: row, prefix: "-")
+                out @ out.push(Removal(path: path, line: old, row: strings.trimmed(row)))
+                old @ old + 1
+            else if !strings.starts_with(text: row, prefix: "+")
+                old @ old + 1
+
+    return out
+
+# The first line below the card of the file as HEAD holds it, when it was a
+# CLOSED issue there; 0 when it was open, or new. The caller asks once a file.
+function closed_floor_at_head(scratch: str, path: str) -> i64
+    shown = shell.run(scratch: scratch, program: "git", words: ["git", "show", "HEAD:" + path])
+
+    if shown.is_err() || shown.must().code != 0
+        return 0
+    issue = cards.issue_of(path: path, text: shown.must().out)
+
+    if issue.open
+        return 0
+
+    return issue.first
 
 # The lines a working-tree diff removes at or below `floor`, read out of the
 # hunk headers rather than out of the file. A unified diff carries its own
@@ -2071,10 +2233,12 @@ function hunk_start(row: str) -> i64
 # two lanes that each take the next number write two files whose NAMES differ,
 # so the merge makes no conflict at all. This check reads the two item lines
 # and `records/defects` the two names.
+#
+# **Since 2026-10-04 one tree issues every number**, `ISSUES`, open and closed
+# defects side by side, so this reads the item lines of every issue file.
 constant DEFECT_NUMBERED: [str]
     [
-        "docs/work/defects"
-        "docs/records/done"
+        "issues"
     ]
 
 # The one number this record carries twice, named and dated instead of letting
@@ -2307,9 +2471,15 @@ function unmerged(@r: report.Report, scratch: str)
 constant ROTATED: [str]
     [
         "docs/records/book/beats.md 140 docs/records/book/beats"
-        "docs/design/DESIGN-LOG.md 1119 docs/records/log"
-        "docs/work/DONE.md 4071 docs/records/done"
+        "docs/design/DESIGN-LOG.md 1119 issues"
+        "docs/work/DONE.md 4071 issues"
     ]
+
+# **Both maps name `ISSUES` since 2026-10-04**, the day the entries of the log
+# and of the record moved there, each keeping its name: every row was repointed
+# to the file's new folder and no row was added or removed, so the maps keep
+# the heights they were rotated at and every `<map>:NNN` citation lands where
+# it did.
 
 function rotated(@r: report.Report, present: [str])
     offences: [str] @ []
@@ -2344,7 +2514,7 @@ function rotated(@r: report.Report, present: [str])
         held: i64 @ 0
 
         for path in present
-            if strings.starts_with(text: path, prefix: tree + "/")
+            if strings.starts_with(text: path, prefix: tree + "/") && path != ISSUES_PAGE
                 held @ held + 1
 
                 if !is_entry_name(strings.base_name(path))
@@ -2370,7 +2540,7 @@ function rotated(@r: report.Report, present: [str])
 #
 # A PATH HAS NO SPACE IN IT, and that sentence is the whole function. The first
 # draft took everything from the tree's name to the first `.md`, and the map's
-# own preamble then read as a path: it names the tree, says `docs/records/log/`, and
+# own preamble then read as a path: it names the tree, said `docs/records/log/` on 2026-09-12, and
 # mentions `design.md` nine words later, so the two were sewn into one name that
 # git does not track and the check reported the preamble as a missing entry. It
 # was right to fire and wrong about what it had found. So the name ends where a
@@ -2855,8 +3025,8 @@ test "a C file is claimed by an `extern` at column zero in a program beside it, 
 # the right side must be present, or the row points at nothing.
 constant MOVED: [str]
     [
-        "docs/work/learn -> docs/learn"
-        "docs/learn/LEARN.md -> docs/learn"
+        "docs/work/learn -> issues"
+        "docs/learn/LEARN.md -> issues"
         "design.md -> docs/design/design.md"
         "DESIGN-LOG.md -> docs/design/DESIGN-LOG.md"
         "docs/ROADMAP.md § The names -> docs/roadmap/names.md"
@@ -2866,12 +3036,19 @@ constant MOVED: [str]
         "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/decisions.md"
         "docs/ROADMAP.md § Who scheduled what -> docs/roadmap/scheduling.md"
         "docs/ref/environment/linux/Dockerfile -> docs/ref/environment/linux/Dockerfile.amd64"
+        "docs/work/DECIDE.md -> issues/README.md"
+        "docs/work/DEFECTS.md -> issues/README.md"
+        "docs/learn/README.md -> issues/README.md"
+        "docs/work/defects -> issues"
+        "docs/learn -> issues"
+        "docs/records/done -> issues"
+        "docs/records/log -> issues"
     ]
 
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    10
+    17
 
 constant RETIRED_ROOTS: [str]
     [
@@ -2879,6 +3056,10 @@ constant RETIRED_ROOTS: [str]
         "docs/debrief"
         "docs/defects"
         "docs/reasoning"
+        "docs/learn"
+        "docs/records/done"
+        "docs/records/log"
+        "docs/work/defects"
     ]
 
 # Where this repository's prose puts a module when it writes the SHORT name.
@@ -3054,7 +3235,9 @@ function moved_to(part: str) -> str
         if !mark.is_err()
             head @ strings.trimmed(written.slice(from: 0, to: mark.must()))
 
-        if head == part
+        # A directory is cited with its slash as often as without, and a row
+        # names it without: `docs/records/done/` is the row `docs/records/done`.
+        if head == part || head + "/" == part
             return strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
 
     return ""
@@ -3072,6 +3255,15 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
     # for nothing a reader gains, so the table answers instead and the citation
     # stays as it was written.
     if moved_to(part).len() > 0
+        return true
+
+    # **A file of a tree that moved into `ISSUES` resolves by the rule**,
+    # since 2026-10-04: it kept its name and stands in the folder of its
+    # name's day, so `docs/records/done/<name>` is followed to that file and
+    # stays a claim that can die, rather than a path nothing checks.
+    moved_issue = issue_redirect(part: part, known: known)
+
+    if moved_issue != ""
         return true
 
     for home in HOMES
@@ -3096,6 +3288,35 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
     # its number alone, `docs/panel/042`. Everything above is a map lookup,
     # because `known` carries every directory as well as every file.
     return exists_or_prefixes(token: part, known: known)
+
+# Where a file of a retired tree went, by the rule
+# `.claude/rules/records.md` § The issues gives, or the empty string where
+# `part` is no such file or the file it names is not there. A log entry and a record shared one name, and
+# the log's took `-decided` (`SHARED_NAME`).
+function issue_redirect(part: str, known: {str: bool}) -> str
+    name = strings.base_name(part)
+
+    for root in ["docs/records/done/", "docs/records/log/", "docs/learn/", "docs/done/", "docs/log/"]
+        if strings.starts_with(text: part, prefix: root) && strings.without_prefix(text: part, prefix: root) == name
+            landed: str @ issue_home(name)
+
+            if part == SHARED_NAME
+                landed @ issue_home(strings.without_suffix(text: name, suffix: ".md") + "-decided.md")
+
+            if landed != "" && !known[landed].is_err()
+                return landed
+
+    if strings.starts_with(text: part, prefix: "docs/work/defects/") && strings.without_prefix(text: part, prefix: "docs/work/defects/") == name
+        for path in keys(known)
+            if strings.starts_with(text: path, prefix: ISSUES + "/") && strings.ends_with(text: path, suffix: "-defect-" + name)
+                return path
+
+    return ""
+
+# The one name two trees shared when they moved into `ISSUES`: the same
+# decision written as a closed item and as a log entry.
+constant SHARED_NAME: str
+    "docs/records/log/2026-09-23-1215-a-seats-copy-is-its-own.md"
 
 function last_slash(text: str) -> i64?
     at: i64? @ fail(code: "none", msg: "no slash")
@@ -3304,7 +3525,7 @@ function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
 
     return out
 
-function citations(@r: report.Report, scratch: str, present: [str])
+function citations(@r: report.Report, scratch: str, present: [str], closed: {str: bool})
     known: {str: bool} @ {}
     roots: {str: bool} @ {}
 
@@ -3337,7 +3558,7 @@ function citations(@r: report.Report, scratch: str, present: [str])
     tokens: [str] @ []
 
     for document in present
-        if is_record(document) || is_generated(document)
+        if is_record(document) || is_generated(document) || !closed[document].is_err()
             continue
         text = read_file(document)
 
@@ -3427,11 +3648,11 @@ function read_the_line(@dead: [str], @tokens: [str], row: str, found: [str], doc
 # citing one, a gloss nobody translated. A file-wide ratio drowns one sentence in
 # four hundred English ones, which is exactly the case that got past every reader
 # for a month.
-function english(@r: report.Report, present: [str])
+function english(@r: report.Report, present: [str], closed: {str: bool})
     found: [str] @ []
 
     for path in present
-        if is_record(path) || is_generated(path) || is_appended(path)
+        if is_record(path) || is_generated(path) || is_appended(path) || !closed[path].is_err()
             continue
 
         if quotes_the_italian(path)
@@ -3707,7 +3928,7 @@ function expectations(@r: report.Report, scratch: str)
 # its own sitting, and rather than teach the check about retro-records it was
 # given a verdict section saying so — a rule with an exception is a rule the next
 # exception breaks.
-function verdicts(@r: report.Report, present: [str])
+function verdicts(@r: report.Report, present: [str], issues: [cards.Issue])
     offenders: [str] @ []
     seen: i64 @ 0
 
@@ -3731,9 +3952,9 @@ function verdicts(@r: report.Report, present: [str])
             )
             continue
 
-        if opens_pending(text: pieces[1]) && !queued(path: path)
+        if opens_pending(text: pieces[1]) && !queued(path: path, issues: issues)
             offenders @ offenders.push(
-                "    " + path + ": the verdict reads `Pending` and no open item in " + DECISIONS + " names it"
+                "    " + path + ": the verdict reads `Pending` and no open decision in " + ISSUES + " names it"
             )
 
     if seen == 0
@@ -3911,9 +4132,9 @@ constant OPEN_LINE_PREFIX: str
 # replaces it: the number is now DERIVED by walking this directory, so it cannot
 # drift the way a written one can, and nothing has to be edited to keep it true.
 # What a derived count still needs is a floor, because an empty walk passes.
-constant LEARNING: str
-    "docs/learn"
-
+#
+# **Since 2026-10-04 the questions are issues of the kind `learn`**, in
+# `ISSUES` with every other item, and the floor counts the open ones.
 constant LEARNING_FLOOR: i64
     300
 
@@ -3925,13 +4146,280 @@ constant LEARNING_FLOOR: i64
 constant RECORD_LIST: str
     "docs/work/DONE.md"
 
-# **And the tree the record has been since 2026-09-12**, one file per closed
-# entry, where `RECORD_LIST` became the map. `lists` asks each of its files
-# the map's own question, whether an OPEN item lives in it: nothing asked it
-# until 2026-10-04, when a defect began to close by moving its whole file here
-# (`git mv`), so that a file moved without its tick is now one command away.
-constant RECORD_TREE: str
-    "docs/records/done"
+# THE ISSUES, since 2026-10-04 (`.claude/rules/records.md` § The issues, the
+# author's instruction of that day, meant as: *everything goes into a top-level
+# issues folder, it is more orderly; change the rules, toward a final
+# definition*). Every item this project tracks is one file here, in the folder
+# of the day its name carries, `issues/<year-month>/<day>/`, open and closed side by
+# side, and **nothing moves when one closes**: the box is ticked where it
+# stands, so a link to the file, GitHub's included, stays good for ever.
+#
+# It replaced six homes in one move: the open defects' directory, the decision
+# list, the items of the milestone pages, the learning list, and the record's
+# two trees, `docs/records/done` and `docs/records/log`, whose files kept their
+# names, so a citation of one resolves by the rule (`issue_redirect`).
+constant ISSUES: str
+    "issues"
+
+# Its front page: what an issue file is, how one is filed and how one closes,
+# and no item, no banner and no count, each of which would make the page a
+# second list beside the files.
+constant ISSUES_PAGE: str
+    "issues/README.md"
+
+# The floor under the issue files read, the count measured the day they moved
+# and not a round figure (CL-069): an empty walk passes, and this one reads
+# every item the project has.
+constant CARDS_FLOOR: i64
+    2000
+
+# Every issue file in the walk, the front page aside, in the walk's order,
+# which is the names' and so the order of birth.
+function issue_files(present: [str]) -> [str]
+    out: [str] @ []
+
+    for path in present
+        if strings.starts_with(text: path, prefix: ISSUES + "/") && strings.ends_with(text: path, suffix: ".md") && path != ISSUES_PAGE
+            out @ out.push(path)
+
+    return out
+
+function read_issues(present: [str]) -> [cards.Issue]?
+    out: [cards.Issue] @ []
+
+    for path in issue_files(present)
+        text = read_file(path)?
+        out @ out.push(cards.issue_of(path: path, text: text))
+
+    return ok(out)
+
+# The folder an issue named `name` lives in, or the empty string where the name
+# is not `YYYY-MM-DD-HHMM-<slug>.md` and so carries no day to file it under.
+function issue_home(name: str) -> str
+    if !is_entry_name(name)
+        return ""
+
+    # Sixteen ASCII bytes open an entry's name, so every cut stands between
+    # characters.
+    return ISSUES + "/" + name.slice(from: 0, to: 7) + "/" + name.slice(from: 8, to: 10) + "/" + name
+
+# EVERY ISSUE CARRIES ITS CARD, AND THE CARD SAYS WHAT THE FILE ALREADY SAYS.
+#
+# The card is what makes two thousand files one set GitHub can take (`kind`,
+# `area`, `milestone`, `filed`, `commit`, `github`;
+# `.claude/rules/records.md` § The issues), and three of its values state in a
+# structured line what the item states in prose: `commit` and a body's `Repaired at`, `filed` and the day
+# its `**Origin:**` names, `milestone` and an item's first field. The card is
+# their structured home and the prose their account, and this check holds the
+# two to agree, so that neither can drift from the other in silence.
+#
+# **Every commit a card names is asked for, in one process**: `git cat-file
+# --batch-check` over all of them. A clone with a shortened history cannot
+# answer, and the CI's matrix checks out one commit, so there the question is
+# SKIPPED and says why rather than failing every card or passing them unasked.
+function carded(@r: report.Report, scratch: str, present: [str], issues: [cards.Issue])
+    roadmap = read_file("docs/ROADMAP.md")
+
+    if roadmap.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/cards",
+            detail: "  docs/ROADMAP.md cannot be read, so no card's milestone can be asked for"
+        )
+        return
+    chain = chain_states(roadmap.must())
+
+    if !floors.sound(@r, label: "records/cards", found: issues.len(), floor: CARDS_FLOOR, what: "issue files")
+        return
+    offenders: [str] @ []
+    hashes: [str] @ []
+    owners: [str] @ []
+
+    for issue in issues
+        for complaint in card_offences(issue: issue, chain: chain)
+            offenders @ offenders.push("    " + issue.path + ": " + complaint)
+
+        if cards.is_full_hash(issue.card.commit)
+            hashes @ hashes.push(issue.card.commit)
+            owners @ owners.push(issue.path)
+
+    unnamed: [str] @ []
+
+    for path in present
+        if strings.starts_with(text: path, prefix: ISSUES + "/") && !strings.ends_with(text: path, suffix: ".md")
+            offenders @ offenders.push(
+                "    " + path + ": not an issue file, and " + ISSUES + " holds issue files and its front page"
+            )
+
+        if strings.starts_with(text: path, prefix: "selfhost/") && cards.area_of_path(path) == ""
+            directory = strings.split_on(text: strings.without_prefix(text: path, prefix: "selfhost/"), byte: 47)[0]
+
+            if !is_among(directory, seen: unnamed)
+                unnamed @ unnamed.push(directory)
+                offenders @ offenders.push(
+                    "    selfhost/" + directory + "/ is a directory `cards.AREAS` does not name, so no issue about it can say where it is: add it to the list"
+                )
+
+    if offenders.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/cards",
+            detail: "  an issue's card is missing, malformed, or says something its own file does not:\n" + offenders.join("\n") + "\n  Every file of " + ISSUES + " opens with its card, eight lines and a blank one, its values bare words\n  from the lists `tests/harness/cards.hero` names, and the card agrees with the item under it\n  (.claude/rules/records.md § The issues)."
+        )
+    else
+        report.keep_pass(@r)
+
+    shallow = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--is-shallow-repository"])
+
+    if shallow.is_err() || shallow.must().code != 0
+        report.keep_failure(
+            @r,
+            label: "records/cards",
+            detail: "  cannot ask git whether this clone's history is whole"
+        )
+        return
+
+    if strings.trimmed(shallow.must().out) == "true"
+        report.keep_skip(
+            @r,
+            label: "records/cards",
+            detail: "  this clone's history is shortened, so the " + hashes.len().to_str() + " commits the cards name cannot be asked for here; they are\n  judged where the history is whole, which is every working checkout"
+        )
+        return
+    missing = unresolved(scratch: scratch, hashes: hashes)
+
+    if missing.is_err()
+        report.keep_failure(
+            @r,
+            label: "records/cards",
+            detail: "  cannot ask git for the cards' commits: " + failure_of(missing)
+        )
+        return
+    told: [str] @ []
+
+    for one in missing.must()
+        i: i64 @ 0
+
+        while i < hashes.len()
+            if hashes[i] == one
+                told @ told.push("    " + owners[i] + ": line 6 names " + one + ", which is no commit of this history")
+            i @ i + 1
+
+    if told.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/cards",
+            detail: "  a card names a commit git does not know:\n" + told.join("\n") + "\n  `commit` is the commit that settled the issue, named whole; a history is merged and never\n  rebased (.claude/rules/records.md § Working in lanes), so one that resolved once resolves for ever."
+        )
+    else
+        report.keep_pass(@r)
+
+# Every way one issue's card departs from its file, one complaint each. Pure
+# in its arguments, so a test drives it with an issue written for it.
+function card_offences(issue: cards.Issue, chain: {str: bool}) -> [str]
+    found = issue.card
+
+    if found.complaints.len() > 0
+        return found.complaints
+    out: [str] @ []
+    home = issue_home(issue.name)
+
+    if home == ""
+        out @ out.push(
+            "its name is not `YYYY-MM-DD-HHMM-<slug>.md`, and an issue is named for the day it was filed, so that the names read in order are the issues in the order they were born"
+        )
+        return out
+
+    if issue.path != home
+        out @ out.push(
+            "it stands in another day's folder, and an issue lives in the folder its name's day gives: " + home
+        )
+    named_day = cards.day_of(issue.name)
+
+    if named_day.is_err()
+        out @ out.push("its name opens with no day of the calendar")
+        return out
+    filed_day = cards.day_of(found.filed).must()
+
+    if issue.open && filed_day != named_day.must()
+        out @ out.push(
+            "line 5: `filed` is " + found.filed + ", and an open issue is named for the day it was filed, " + cards.day_text(named_day.must())
+        )
+
+    if !issue.open && filed_day > named_day.must()
+        out @ out.push(
+            "line 5: `filed` is " + found.filed + ", after the day its name carries, and an issue is filed before it closes"
+        )
+    origin = cards.origin_day(issue.body)
+
+    if origin != "" && origin != found.filed
+        out @ out.push("line 5: `filed` is " + found.filed + ", and its `**Origin:**` names " + origin + " first")
+
+    if found.milestone != "none" && chain[found.milestone].is_err()
+        out @ out.push(
+            "line 4: `milestone` is " + found.milestone + ", which has no row in docs/ROADMAP.md § The chain"
+        )
+    first_named = cards.first_field_milestone(first_item_line(issue.body))
+
+    if first_named != "" && !chain[first_named].is_err() && first_named != found.milestone
+        out @ out.push(
+            "line 4: `milestone` is " + found.milestone + ", and the item's first field names " + first_named
+        )
+    repairs = cards.repaired_hashes(issue.body)
+
+    if repairs.len() > 0
+        agrees: bool @ false
+
+        for one in repairs
+            if strings.starts_with(text: found.commit, prefix: one)
+                agrees @ true
+
+        if !agrees
+            out @ out.push(
+                "line 6: `commit` is " + found.commit + ", and its body says it was repaired at " + repairs.join(" and ") + ": the card names that commit whole"
+            )
+
+    return out
+
+# The first item line of a text, `- [ ] ` or `- [x] `, or the empty string.
+function first_item_line(text: str) -> str
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "- [ ] ") || strings.starts_with(text: row, prefix: "- [x] ")
+            return row
+
+    return ""
+
+# The commits of `hashes` git does not know, asked of one `git cat-file
+# --batch-check`, which answers `<name> missing` for a name it cannot find and
+# `<name> <type> <size>` for one it can; a name that is not a commit is as
+# unknown here as a missing one.
+function unresolved(scratch: str, hashes: [str]) -> [str]?
+    none: [str] = []
+
+    if hashes.len() == 0
+        return ok(none)
+    asked = scratch + "/card-commits"
+    shell.mkdir_all(scratch)?
+    write_file(path: asked, text: hashes.join("\n") + "\n")?
+    answered = shell.run_fed(scratch: scratch, program: "git", words: ["git", "cat-file", "--batch-check"], stdin_path: asked)?
+
+    if answered.code != 0
+        return fail(
+            code: "git",
+            msg: "`git cat-file --batch-check` exited " + answered.code.to_str() + ": " + strings.trimmed(answered.err)
+        )
+    out: [str] @ []
+
+    for row in strings.lines(answered.out)
+        fields = strings.words(row)
+
+        if fields.len() == 0
+            continue
+
+        if fields.len() < 2 || fields[1] != "commit"
+            out @ out.push(fields[0])
+
+    return ok(out)
 
 # Does an OPEN item in the queue name this sitting? The number is the key, because
 # a panel file's name changes and its number does not (CLAUDE.md §14: an id is
@@ -3952,23 +4440,33 @@ constant RECORD_TREE: str
 # VALUE IN HAND; how the repository happens to spell a number is a premise about
 # the world, and it expired silently. Both forms are accepted because a human
 # writing the item may reach for either and neither can name a different sitting.
-function queued(path: str) -> bool
+#
+# **Since 2026-10-04 the queue is the open decisions among the issues**, each a
+# file of its own: a sitting's ratification is filed as a `decision` whose
+# item names `panel NNN` on its line, and closes when the author answers.
+function queued(path: str, issues: [cards.Issue]) -> bool
     digits = sitting_digits(path)
 
     if digits.is_err()
         return false
-    text = read_file(DECISIONS)
 
-    if text.is_err()
-        return false
-    padded = "panel " + digits.must()
+    for issue in issues
+        if issue.open && issue.card.kind == "decision" && names_sitting(text: issue.body, digits: digits.must())
+            return true
+
+    return false
+
+# Whether an open item's line of `text` names the sitting whose file's name
+# opens with `digits`, as the record spells it or as the integer it is.
+function names_sitting(text: str, digits: str) -> bool
+    padded = "panel " + digits
     bare: str @ padded
-    number = strings.to_number(text: digits.must())
+    number = strings.to_number(text: digits)
 
     if !number.is_err()
         bare @ "panel " + number.must().to_str()
 
-    for line in strings.lines(text: text.must())
+    for line in strings.lines(text)
         if strings.starts_with(text: line, prefix: "- [ ] ")
             if strings.contains(text: line, needle: padded) || strings.contains(text: line, needle: bare)
                 return true
@@ -4164,25 +4662,7 @@ function roadmap_counts(text: str) -> OpenCounts?
 
     return fail(code: "absent", msg: "no count line")
 
-# The `**OPEN: N**` a live list states under its own opening banner.
-function banner_open(path: str) -> i64?
-    text = read_file(path)
-
-    if text.is_err()
-        return fail(code: "absent", msg: "cannot read " + path)
-    banners: i64 @ 0
-
-    for row in strings.lines(text.must())
-        if row == BANNER
-            banners @ banners + 1
-            continue
-
-        if banners == 1 && strings.starts_with(text: row, prefix: OPEN_PREFIX)
-            return count_stated(row)
-
-    return fail(code: "absent", msg: "no count line in " + path)
-
-function counts(@r: report.Report, present: [str])
+function counts(@r: report.Report, issues: [cards.Issue])
     text = read_file("docs/ROADMAP.md")
 
     if text.is_err()
@@ -4197,20 +4677,17 @@ function counts(@r: report.Report, present: [str])
             detail: "  docs/ROADMAP.md has no `" + OPEN_LINE_PREFIX + "N defects · M decisions.**` line.\n  The author asked for a preamble, the two open counts and the tables, and a\n  check that finds no line at all passes whatever the file holds."
         )
         return
-    held_decisions = banner_open(DECISIONS)
+    defects: i64 @ 0
+    decisions: i64 @ 0
 
-    if held_decisions.is_err()
-        report.keep_failure(
-            @r,
-            label: "records/counts",
-            detail: "  " + DECISIONS + " states no `" + OPEN_PREFIX + "N**` under its banner, so the ROADMAP's\n  count of decisions cannot be compared with anything"
-        )
-        return
-    trouble = count_trouble(
-        stated: stated.must(),
-        defects: defect_files(present).len(),
-        decisions: held_decisions.must()
-    )
+    for issue in issues
+        if issue.open && issue.card.kind == "defect"
+            defects @ defects + 1
+
+        if issue.open && issue.card.kind == "decision"
+            decisions @ decisions + 1
+
+    trouble = count_trouble(stated: stated.must(), defects: defects, decisions: decisions)
 
     if trouble.len() > 0
         report.keep_failure(
@@ -4221,20 +4698,20 @@ function counts(@r: report.Report, present: [str])
     else
         report.keep_pass(@r)
 
-# What the ROADMAP's line says against what the two lists hold, one sentence per
-# number that disagrees: the defect files counted, the decisions' banner read.
-# Pure, so the test below drives it with numbers.
+# What the ROADMAP's line says against what the issues hold, one sentence per
+# number that disagrees: the open defects and the open decisions, counted by
+# their cards' kind. Pure, so the test below drives it with numbers.
 function count_trouble(stated: OpenCounts, defects: i64, decisions: i64) -> [str]
     trouble: [str] @ []
 
     if stated.defects != defects
         trouble @ trouble.push(
-            "    the ROADMAP says " + stated.defects.to_str() + " open defects and " + DEFECT_FILES + " holds " + defects.to_str() + " defect files"
+            "    the ROADMAP says " + stated.defects.to_str() + " open defects and " + ISSUES + " holds " + defects.to_str() + " open defect issues"
         )
 
     if stated.decisions != decisions
         trouble @ trouble.push(
-            "    the ROADMAP says " + stated.decisions.to_str() + " open decisions and " + DECISIONS + " says " + decisions.to_str()
+            "    the ROADMAP says " + stated.decisions.to_str() + " open decisions and " + ISSUES + " holds " + decisions.to_str() + " open decision issues"
         )
 
     return trouble
@@ -4304,27 +4781,29 @@ function where_we_are(@r: report.Report)
 # item's first field must equal the NAME OF THE FILE IT IS IN. In one list an
 # item could sit anywhere; here the file is its home, and a mis-filed item is
 # one a reader opening that milestone would never see.
-function homed(@r: report.Report, present: [str])
+#
+# **AND THE CARD IS NOW THE KEY**, since 2026-10-04: the items left the pages
+# for `ISSUES`, where an open `feature` or `task` says its milestone on its
+# card's fourth line. The page keeps the milestone's reasoning and holds no
+# item (`lists`), and what this check asks moved with the items: an open item
+# of a milestone's work names a milestone, that milestone has a row in § The
+# chain, and the row is not closed. A `learn`, a `defect` or a `decision` may
+# name a closed one, because there the milestone is where the item came from
+# rather than where it is owed.
+function homed(@r: report.Report, present: [str], issues: [cards.Issue])
     chain = read_file("docs/ROADMAP.md")
 
     if chain.is_err()
         report.keep_failure(@r, label: "records/homes", detail: "  docs/ROADMAP.md cannot be read")
         return
-    is_open: {str: bool} @ {}
-
-    for row in strings.lines(chain.must())
-        found = chain_row_name(row)
-
-        if !found.is_err()
-            is_open[found.must()] @ !strings.contains(text: row, needle: "| done ")
-
-    files = milestone_files(present)
+    is_open = chain_states(chain.must())
+    files = milestone_pages(present)
 
     if files.len() == 0
         report.keep_failure(
             @r,
             label: "records/homes",
-            detail: "  `" + MILESTONES + "` holds nothing, so this check read zero items and\n  would pass whatever had been filed. Either the tree moved and this reader\n  did not follow it, or every milestone has been closed."
+            detail: "  `" + MILESTONES + "` holds no page, so this check read zero milestones and\n  would pass whatever had been filed. Either the tree moved and this reader\n  did not follow it, or every milestone has been closed."
         )
         return
 
@@ -4339,55 +4818,71 @@ function homed(@r: report.Report, present: [str])
 
     for path in files
         own = strings.without_suffix(text: strings.base_name(path), suffix: ".md")
-        text = read_file(path)
 
-        if text.is_err()
-            offenders @ offenders.push("    cannot read " + path)
+        if is_open[own].is_err()
+            offenders @ offenders.push("    " + own + ": a page and no row in § The chain")
+
+    for path in present
+        if strings.starts_with(text: path, prefix: MILESTONES + "/") && !is_among(path, seen: files)
+            offenders @ offenders.push(
+                "    " + path + ": below the pages, and a milestone's items are issues in " + ISSUES
+            )
+
+    for issue in issues
+        if !issue.open || issue.card.kind != "feature" && issue.card.kind != "task"
             continue
-        state = is_open[own]
+        home = issue.card.milestone
 
-        if state.is_err()
-            offenders @ offenders.push("    " + own + ": no row in § The chain")
+        if home == "none"
+            offenders @ offenders.push(
+                "    " + issue.path + ": an open " + issue.card.kind + " names no milestone, and a milestone's work is owed to one"
+            )
+            continue
+        open_now = is_open[home]
 
-        for row in strings.lines(text.must())
-            if !strings.starts_with(text: row, prefix: "- [ ] ")
-                continue
-            home = item_milestone(row)
-
-            if home.is_err()
-                offenders @ offenders.push("    " + path + " names no milestone: " + head_of(row))
-                continue
-
-            if home.must() != own
-                offenders @ offenders.push("    " + path + " holds an item filed at " + home.must())
-                continue
-            open_now = is_open[home.must()]
-
-            if open_now.is_err()
-                offenders @ offenders.push("    " + home.must() + ": no row in § The chain")
-            else if !open_now.must()
-                offenders @ offenders.push(
-                    "    " + home.must() + ": that milestone is CLOSED and still holds an open item"
-                )
+        if open_now.is_err()
+            offenders @ offenders.push("    " + issue.path + ": " + home + " has no row in § The chain")
+        else if !open_now.must()
+            offenders @ offenders.push(
+                "    " + issue.path + ": " + home + " is CLOSED and this item of its work is still open"
+            )
 
     if offenders.len() > 0
         report.keep_failure(
             @r,
             label: "records/homes",
-            detail: "  an item is filed where a reader would not find it — the first field is\n  the milestone whose FILE it lives in, and that milestone has an open row\n  in § The chain:\n" + offenders.join("\n")
+            detail: "  an item is filed where a reader would not find it — an open feature or task\n  names on its card the milestone it is owed to, and that milestone has an open\n  row in § The chain:\n" + offenders.join("\n")
         )
     else
         report.keep_pass(@r)
+
+# The milestones of § The chain, each to whether its row is still open: a row
+# with a `done` cell is closed. The summary rows above the chain carry no row
+# number and are not read (`chain_row_name`).
+function chain_states(text: str) -> {str: bool}
+    is_open: {str: bool} @ {}
+
+    for row in strings.lines(text)
+        found = chain_row_name(row)
+
+        if !found.is_err()
+            is_open[found.must()] @ !strings.contains(text: row, needle: "| done ")
+
+    return is_open
 
 # The one milestone list, and the tree that holds it.
 constant MILESTONES: str
     "docs/work/milestones"
 
-function milestone_files(present: [str]) -> [str]
+# A milestone's page, `M-<name>.md` directly in the tree: its reasoning, the
+# description of the milestone it becomes on GitHub, and no item.
+function milestone_pages(present: [str]) -> [str]
     out: [str] @ []
 
     for path in present
-        if strings.starts_with(text: path, prefix: MILESTONES + "/") && strings.ends_with(text: path, suffix: ".md")
+        rest = strings.without_prefix(text: path, prefix: MILESTONES + "/")
+
+        if strings.starts_with(text: path, prefix: MILESTONES + "/") && strings.ends_with(text: path, suffix: ".md") && !strings.contains(text: rest, needle: "/")
             out @ out.push(path)
 
     return out
@@ -4491,75 +4986,61 @@ function head_of(row: str) -> str
 # held to holding none of it (`front_page_offences`). And the record's own
 # tree is asked for an open item, file by file, because a defect now closes
 # by moving its whole file into it.
-function lists(@r: report.Report, present: [str])
+#
+# **Since 2026-10-04 the items are issues**, the author's instruction of that
+# day: one file per item in `ISSUES`, open and closed side by side. What the
+# list's rules held of an item now holds of an OPEN issue's text below its
+# card (`item_offences`): its line first and open, the only item in it, and
+# every other line blank or indented under it, as a body is. A closed issue is
+# a record, and a record keeps the words it closed with. The front pages are
+# held to holding no item, and the milestone pages with them, whose items left
+# for the issues that day.
+function lists(@r: report.Report, present: [str], issues: [cards.Issue])
     offenders: [str] @ []
     unclassed: bool @ false
-
-    for path in shell.both(first: [DECISIONS], second: milestone_files(present))
-        text = read_file(path)
-
-        if text.is_err()
-            offenders @ offenders.push("    " + path + ": cannot be read")
-        else
-            for complaint in list_offences(text.must(), ticked_allowed: false)
-                offenders @ offenders.push("    " + path + ": " + complaint)
-
-    front = read_file(DEFECTS)
+    front = read_file(ISSUES_PAGE)
 
     if front.is_err()
-        offenders @ offenders.push("    " + DEFECTS + ": cannot be read")
+        offenders @ offenders.push("    " + ISSUES_PAGE + ": cannot be read")
     else
-        for complaint in front_page_offences(front.must())
-            offenders @ offenders.push("    " + DEFECTS + ": " + complaint)
+        for complaint in front_page_offences(text: front.must(), files: ISSUES, ceiling: PREAMBLE_CEILING)
+            offenders @ offenders.push("    " + ISSUES_PAGE + ": " + complaint)
 
-    for path in defect_files(present)
-        filed = read_file(path)
+    for path in milestone_pages(present)
+        page = read_file(path)
 
-        if filed.is_err()
+        if page.is_err()
             offenders @ offenders.push("    " + path + ": cannot be read")
-            continue
-
-        for complaint in defect_file_offences(path: path, text: filed.must())
-            offenders @ offenders.push("    " + path + ": " + complaint)
-
-        for complaint in class_offences(filed.must())
-            offenders @ offenders.push("    " + path + ": " + complaint)
-            unclassed @ true
-
-    if unclassed
-        offenders @ offenders.push("    " + CLASS_RULE)
-    decided = read_file(DECISIONS)
-
-    if !decided.is_err()
-        above = preamble_lines(decided.must())
-
-        if above > PREAMBLE_CEILING
-            offenders @ offenders.push(
-                "    " + DECISIONS + ": " + above.to_str() + " lines above the banner, ceiling " + PREAMBLE_CEILING.to_str() + " — the rules stay, a story moves to docs/records/"
-            )
+        else
+            for complaint in front_page_offences(text: page.must(), files: ISSUES, ceiling: 0)
+                offenders @ offenders.push("    " + path + ": " + complaint)
 
     asked: i64 @ 0
 
-    for path in present
-        if !strings.starts_with(text: path, prefix: LEARNING + "/")
+    for issue in issues
+        if !issue.open
             continue
 
-        if strings.ends_with(text: path, suffix: "/README.md")
-            continue
-        one = read_file(path)
+        for complaint in item_offences(text: issue.body, first: issue.first)
+            offenders @ offenders.push("    " + issue.path + ": " + complaint)
 
-        if one.is_err()
-            offenders @ offenders.push("    " + path + ": cannot be read")
-            continue
+        if issue.card.kind == "defect"
+            for complaint in defect_line_offences(issue)
+                offenders @ offenders.push("    " + issue.path + ": " + complaint)
 
-        for complaint in one_question(one.must())
-            offenders @ offenders.push("    " + path + ": " + complaint)
+            for complaint in class_offences_from(text: issue.body, first: issue.first)
+                offenders @ offenders.push("    " + issue.path + ": " + complaint)
+                unclassed @ true
 
-        asked @ asked + 1
+        if issue.card.kind == "learn"
+            asked @ asked + 1
+
+    if unclassed
+        offenders @ offenders.push("    " + CLASS_RULE)
 
     if asked < LEARNING_FLOOR
         offenders @ offenders.push(
-            "    " + LEARNING + ": " + asked.to_str() + " questions and the floor is " + LEARNING_FLOOR.to_str() + " — a walk that reads almost nothing passes for the wrong reason, which is what the count line used to catch"
+            "    " + ISSUES + ": " + asked.to_str() + " open questions and the floor is " + LEARNING_FLOOR.to_str() + " — a walk that reads almost nothing passes for the wrong reason, which is what the count line used to catch"
         )
     kept = read_file(RECORD_LIST)
 
@@ -4569,23 +5050,11 @@ function lists(@r: report.Report, present: [str])
         for complaint in record_offences(kept.must())
             offenders @ offenders.push("    " + RECORD_LIST + ": " + complaint)
 
-    for path in present
-        if !strings.starts_with(text: path, prefix: RECORD_TREE + "/")
-            continue
-        entry = read_file(path)
-
-        if entry.is_err()
-            offenders @ offenders.push("    " + path + ": cannot be read")
-            continue
-
-        for complaint in unticked_in_record(entry.must())
-            offenders @ offenders.push("    " + path + ": " + complaint)
-
     if offenders.len() > 0
         report.keep_failure(
             @r,
             label: "records/lists",
-            detail: "  a work list is not in the shape its own preamble states — a live list holds open items between two banners and nothing else, a defect is one open item in a file of its own, and the record holds no open item at all:\n" + offenders.join("\n")
+            detail: "  an issue or a page is not in the shape its rules state — an open issue holds its one open item, its line first and its body indented, a front page holds its rules and no item, and the map holds no open item at all:\n" + offenders.join("\n")
         )
     else
         report.keep_pass(@r)
@@ -4628,12 +5097,13 @@ function unticked_in_record(text: str) -> [str]
 
     return out
 
-# The defects' front page against its rules: what a defect file is, how one is
-# filed and how one closes, and **no item, no banner and no count**, each of
-# which would make the page a second list beside the files, the count in one
-# drifting from the other. Held whole to `PREAMBLE_CEILING`, having no banner
-# to stand above.
-function front_page_offences(text: str) -> [str]
+# A front page against its rules: what its files are, how one is filed and how
+# one closes, and **no item, no banner and no count**, each of which would make
+# the page a second list beside the files, the count in one drifting from the
+# other. Held whole to `ceiling` where one is given, having no banner to stand
+# above; a milestone's page is given none, its preamble being the milestone's
+# reasoning, which `/step` § 1 calls the thing that must not be lost.
+function front_page_offences(text: str, files: str, ceiling: i64) -> [str]
     out: [str] @ []
     number: i64 @ 0
 
@@ -4642,57 +5112,38 @@ function front_page_offences(text: str) -> [str]
 
         if strings.starts_with(text: row, prefix: "- [")
             out @ out.push(
-                "line " + number.to_str() + ": an item, and an open defect is a file of its own in " + DEFECT_FILES + ": " + head_of(row)
+                "line " + number.to_str() + ": an item, and an item is a file of its own in " + files + ": " + head_of(row)
             )
         else if row == BANNER
-            out @ out.push("line " + number.to_str() + ": a banner, and the front page fences no item region")
+            out @ out.push("line " + number.to_str() + ": a banner, and a front page fences no item region")
         else if strings.starts_with(text: row, prefix: OPEN_PREFIX)
             out @ out.push(
-                "line " + number.to_str() + ": a count line, and the open count is the number of files in " + DEFECT_FILES + ": " + head_of(row)
+                "line " + number.to_str() + ": a count line, and the open count is the number of open files in " + files + ": " + head_of(row)
             )
 
-    if number > PREAMBLE_CEILING
+    if ceiling > 0 && number > ceiling
         out @ out.push(
-            number.to_str() + " lines, ceiling " + PREAMBLE_CEILING.to_str() + " — the rules stay, a story moves to docs/records/"
+            number.to_str() + " lines, ceiling " + ceiling.to_str() + " — the rules stay, a story moves to docs/records/"
         )
     return out
 
-# One defect file against its shape, the item region's rules applied to the one
-# item a file holds: its line first and open, the only item in it, and every
-# other line blank or indented under it, as a body is. And one rule the region
-# never needed: the number on the item's line is the number the file is named
-# for, so a reader who finds the file by its number finds that defect.
-function defect_file_offences(path: str, text: str) -> [str]
+# One open issue's text below its card against the shape an item has had since
+# the lists took one shape (CL-066): its line first and open, the only item in
+# it, and every other line blank or indented under it, as a body is. `first` is
+# the line of the file the text starts on, so a complaint names the line a
+# reader opens the file at.
+function item_offences(text: str, first: i64) -> [str]
     rows = strings.lines(text)
 
     if rows.len() == 0
-        return ["holds no item, and a defect file holds exactly one"]
+        return ["holds no item, and an open issue holds exactly one"]
     out: [str] @ []
-    first = rows[0]
+    opening = rows[0]
 
-    if strings.starts_with(text: first, prefix: "- [x]")
+    if !strings.starts_with(text: opening, prefix: "- [ ] ")
         out @ out.push(
-            "line 1: a ticked item, and a closed defect's file moves to " + RECORD_TREE + ": " + head_of(first)
+            "line " + first.to_str() + " is not the item's line, and an open issue's item stands first under its card: " + head_of(opening)
         )
-    else if !strings.starts_with(text: first, prefix: "- [ ] ")
-        out @ out.push("line 1 is not the item's line, and a defect file opens with it: " + head_of(first))
-    else
-        stated = defect_number(first)
-        filed_as = name_number(path)
-
-        if stated == ""
-            out @ out.push(
-                "line 1 states no number as `**NNN — ` opens one, so no count here can read it: " + head_of(first)
-            )
-        else if filed_as != "" && stated != filed_as
-            out @ out.push(
-                "line 1 is defect " + stated + " and the file is named for defect " + filed_as + ": the name is how a reader finds it"
-            )
-        shape = line_shape(first)
-
-        if shape != ""
-            out @ out.push("line 1: " + shape + ": " + head_of(first))
-
     i: i64 @ 1
 
     while i < rows.len()
@@ -4700,13 +5151,41 @@ function defect_file_offences(path: str, text: str) -> [str]
 
         if strings.starts_with(text: row, prefix: "- [")
             out @ out.push(
-                "line " + (i + 1).to_str() + ": an item line below line 1, and a defect file holds one item, on its first line: " + head_of(row)
+                "line " + (first + i).to_str() + ": an item line below line " + first.to_str() + ", and an issue holds one item, on its first line: " + head_of(row)
             )
         else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
             out @ out.push(
-                "line " + (i + 1).to_str() + ": prose at column zero, and an item's body is indented under its line: " + head_of(row)
+                "line " + (first + i).to_str() + ": prose at column zero, and an item's body is indented under its line: " + head_of(row)
             )
         i @ i + 1
+
+    return out
+
+# What an open defect's line owes beyond an item's shape: its number, the one
+# its file is named for, so a reader who finds the file by its number finds
+# that defect; and the line's own shape between its number and its class
+# (`line_shape`, defect 190).
+function defect_line_offences(issue: cards.Issue) -> [str]
+    out: [str] @ []
+    opening = first_item_line(issue.body)
+
+    if !strings.starts_with(text: opening, prefix: "- [ ] ")
+        return out
+    stated = defect_number(opening)
+    filed_as = defect_in_name(issue.name)
+
+    if stated == ""
+        out @ out.push(
+            "line " + issue.first.to_str() + " states no number as `**NNN — ` opens one, so no count here can read it: " + head_of(opening)
+        )
+    else if stated != filed_as
+        out @ out.push(
+            "line " + issue.first.to_str() + " is defect " + stated + " and the file is named for defect `" + filed_as + "`: the name carries `defect-" + stated + "-`, which is how a reader finds it"
+        )
+    shape = line_shape(opening)
+
+    if shape != ""
+        out @ out.push("line " + issue.first.to_str() + ": " + shape + ": " + head_of(opening))
 
     return out
 
@@ -4758,48 +5237,90 @@ function last_bar_at(fields: str) -> i64
 
     return at
 
-# THE DIRECTORY IS THE REGISTER, AND THIS IS ITS EXECUTOR (2026-10-04).
+# THE NAMES ARE THE REGISTER, AND THIS IS ITS EXECUTOR (2026-10-04).
 #
-# The author asked for the list's IDs to stay in `DEFECTS.md` as a register,
-# meant as: *perhaps keep in DEFECTS.md only the IDs, as a register*. The
-# answer *5a* took the directory's own listing instead: a register every lane
-# edits is the conflict this change removes, made smaller, and
-# `.claude/rules/records.md` § A rotated record refuses a directory index as a
-# second place where truth lives. What a register owes a reader is then owed
-# by the names, and three things are held here:
+# The author asked on 2026-10-03 for the defects' IDs to be kept as a register,
+# meant as: *perhaps keep in DEFECTS.md only the IDs, as a register*; the answer
+# *5a* took the files' own names instead, and since the issues of 2026-10-04
+# the names say it whole: a defect's file is named `<stamp>-defect-NNN-<slug>`,
+# so `ls` and a grep of `defect-NNN-` find it. Three things are held here:
 #
-#   - **the directory is there.** A walk that reads nothing passes for the
-#     wrong reason, which `LEARNING_FLOOR` guards with a floor; here the goal IS
-#     zero defects, and a floor would refuse the goal. `DEFECT_KEEPER` tells the
-#     two apart: present, an empty directory passes; absent, the list moved or
-#     went, and every check that walks it would read zero and pass.
-#   - **each name is `NNN-<slug>.md`, directly in it**, the number in three
-#     digits or more, padded to three and never past (defect 280), because the
-#     number is how a defect is cited, filed and closed.
-#     `records/lists` holds the item's line to the same number.
-#   - **no two files share a number.** Two lanes that each take the next number
-#     write two files with different names, so their merge is CLEAN AND WRONG:
-#     `records/numbering`'s shape one level up, which git cannot see at all.
-#
-# Pure in `present`, so the test below drives it with trees written for it.
-function defect_register(@r: report.Report, present: [str])
-    if !is_among(DEFECT_KEEPER, seen: present)
-        report.keep_failure(
-            @r,
-            label: "records/defects",
-            detail: "  " + DEFECT_KEEPER + " is not in the tree, so the open defects' directory moved\n  or went, and every check that walks it reads zero defects and passes. An\n  empty directory is the goal and passes; a missing one is a list nobody reads\n  (docs/work/DEFECTS.md says where the files live)."
-        )
-        return
-    offences = name_offences(defect_files(present))
+#   - **an open defect's name carries its number**, because the number is how
+#     a defect is cited, filed and closed;
+#   - **a defect's name that carries a number is that defect's**: its item's
+#     line states the same number (`records/lists`). A file of another kind may
+#     carry a number in its slug, as the log's decisions about a defect do, and
+#     is not the register's;
+#   - **no two files are named for one number.** Two lanes that each take the
+#     next number write two files with different names, so their merge is
+#     CLEAN AND WRONG, `records/numbering`'s shape one level up, which git
+#     cannot see at all. The number the record issued twice is its exception
+#     there and here.
+function defect_register(@r: report.Report, issues: [cards.Issue])
+    offences: [str] @ []
+    first: {str: str} @ {}
+
+    for issue in issues
+        number = defect_in_name(issue.name)
+
+        if number == ""
+            if issue.open && issue.card.kind == "defect"
+                offences @ offences.push(
+                    issue.path + " is an open defect whose name does not carry `defect-NNN-`, and the number is how a defect is found"
+                )
+            continue
+
+        # A decision or a task may be ABOUT a defect and say so in its name: the
+        # log wrote `defect-010-repaired-the-day-it-was-found` as the decision it
+        # is. Only a defect's own file is the register's.
+        if issue.card.kind != "defect"
+            continue
+
+        if number == ISSUED_TWICE
+            continue
+        before = first[number]
+
+        if before.is_err()
+            first[number] @ issue.path
+        else
+            offences @ offences.push(
+                number + " is the number of two files, " + before.must() + " and " + issue.path + ": two lanes took one number, and the later filing takes the next"
+            )
 
     if offences.len() > 0
         report.keep_failure(
             @r,
             label: "records/defects",
-            detail: "  the open defects' directory is not a register a reader can trust:\n    " + offences.join("\n    ") + "\n  A defect file is `NNN-<slug>.md` directly in " + DEFECT_FILES + ", its NNN the number\n  on its own item's line and on no other file's name: the next number to issue\n  is one above the highest here and in the record, read and never remembered."
+            detail: "  the defects' names are not a register a reader can trust:\n    " + offences.join("\n    ") + "\n  A defect's file is `<stamp>-defect-NNN-<slug>.md` in " + ISSUES + ", its NNN the number on its own\n  item's line and on no other file's name: the next number to issue is one above the\n  highest any issue states, read and never remembered."
         )
     else
         report.keep_pass(@r)
+
+# The number a file's name says it is the defect of: its slug, after the
+# sixteen bytes of its stamp, OPENS with `defect-NNN-`, NNN read as
+# `issued_digits` reads one; the empty string where it does not. A name that
+# only MENTIONS a defect further on, `decided-...-and-defect-030-s-repair-lands`,
+# is a decision about it and names no defect of its own, and
+# `defect-fixed-2026-...` opens with the word and no number, as records written
+# before the names carried one do.
+function defect_in_name(name: str) -> str
+    if !is_entry_name(name)
+        return ""
+
+    # An entry's name opens with sixteen ASCII bytes, so the cut stands between
+    # characters.
+    slug = name.slice(from: 16, to: name.len())
+
+    if !strings.starts_with(text: slug, prefix: "defect-")
+        return ""
+    rest = strings.without_prefix(text: slug, prefix: "defect-")
+    digits = issued_digits(rest)
+
+    if digits == 0 || digits >= rest.len() || rest[digits] != '-'
+        return ""
+
+    # Digits are ASCII, so the cut stands between characters.
+    return rest.slice(from: 0, to: digits)
 
 # The open defects' files: every path under `DEFECT_FILES` but its keeper, in
 # the walk's order, which is the names' and so the numbers'.
@@ -4811,195 +5332,6 @@ function defect_files(present: [str]) -> [str]
             out @ out.push(path)
 
     return out
-
-# Every way these defect files' names fail the register, one sentence each: a
-# file below the directory rather than in it, a name not `NNN-<slug>.md`, and a
-# number two files share, named with both.
-function name_offences(paths: [str]) -> [str]
-    out: [str] @ []
-    first: {str: str} @ {}
-
-    for path in paths
-        rest = strings.without_prefix(text: path, prefix: DEFECT_FILES + "/")
-
-        if strings.contains(text: rest, needle: "/")
-            out @ out.push(path + " is below " + DEFECT_FILES + " and not directly in it")
-            continue
-
-        if !is_defect_name(rest)
-            out @ out.push(
-                path + " is not named `NNN-<slug>.md`: a number of three digits or more, padded to three and never past, a `-`, then words of lowercase letters and digits joined by one `-`, at most " + SLUG_CEILING.to_str() + " characters"
-            )
-            continue
-        number = name_number(rest)
-        before = first[number]
-
-        if before.is_err()
-            first[number] @ path
-        else
-            out @ out.push(
-                number + " is the number of two files, " + before.must() + " and " + path + ": two lanes took one number, and the later filing takes the next"
-            )
-
-    return out
-
-# `NNN-<slug>.md`: a number as `issued_digits` reads one, a `-`, and a slug
-# of lowercase letters and digits in words joined by one `-`, none at either
-# end, at most `SLUG_CEILING` characters. Asked of the bytes and never of a
-# slice it has not yet proved safe, for `strings.hero`'s reason: a name is
-# whatever somebody typed.
-function is_defect_name(name: str) -> bool
-    if name.len() < 8 || !strings.ends_with(text: name, suffix: ".md")
-        return false
-    digits = issued_digits(name)
-
-    if digits == 0 || digits + 4 >= name.len() || name[digits] != '-'
-        return false
-
-    # ASCII bytes before it and an ASCII `.md` after it, so both cuts stand
-    # between characters.
-    slug = name.slice(from: digits + 1, to: name.len() - 3)
-
-    if slug.len() == 0 || slug.len() > SLUG_CEILING || slug[0] == '-' || slug[slug.len() - 1] == '-'
-        return false
-    j: i64 @ 0
-
-    while j < slug.len()
-        byte = slug[j]
-
-        if byte == '-'
-            if slug[j + 1] == '-'
-                return false
-        else if !is_lower(byte) && !is_digit(byte)
-            return false
-        j @ j + 1
-
-    return true
-
-# The number a defect file is named for, or the empty string where its name is
-# not a defect file's, which `records/defects` says on its own.
-function name_number(path: str) -> str
-    name = strings.base_name(path)
-
-    if !is_defect_name(name)
-        return ""
-
-    return name.slice(from: 0, to: issued_digits(name))
-
-# One list's text against that shape, as a list of complaints. **Pure, so the
-# tests below drive it with the exact lines the defect produced** rather than
-# with a file — which is `homed`/`item_milestone`'s division, for the same
-# reason: a check nobody has watched fail is a check nobody has watched.
-#
-# **`ticked_allowed` is `docs/learn/`, and it is one line rather than a
-# second function.** A ticked question STAYS in that file by `/learn`'s own rule,
-# because the list is also its own record: a question the author has answered is
-# a different object from a decision the compiler acted on. So there the first
-# accusation is switched off and a `- [x]` is skipped rather than counted, which
-# is what keeps the banner's number the OPEN one — what is still unanswered,
-# which is the only number that says anything about that file.
-# One file, one question. The shape is the lists' own — a `- [ ]` or `- [x]`
-# line with an optional indented body — and what this adds over `list_offences`
-# is that a file holding two items, or none, is a file somebody split wrong.
-function one_question(text: str) -> [str]
-    out: [str] @ []
-    heads: i64 @ 0
-
-    for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "- [ ]") || strings.starts_with(text: row, prefix: "- [x]")
-            heads @ heads + 1
-        else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
-            out @ out.push("a line outside the item and its body: " + head_of(row))
-
-    if heads != 1
-        out @ out.push("holds " + heads.to_str() + " items and a file here holds exactly one")
-
-    return out
-
-# Lines above the opening banner. A file with no banner has no item region at
-# all, which `list_offences` already complains about, so this returns the whole
-# length rather than inventing a second accusation about the same shape.
-function preamble_lines(text: str) -> i64
-    n: i64 @ 0
-
-    for row in strings.lines(text)
-        if row == BANNER
-            return n
-        n @ n + 1
-
-    return n
-
-function list_offences(text: str, ticked_allowed: bool) -> [str]
-    out: [str] @ []
-    banners: i64 @ 0
-    items: i64 @ 0
-    stated: i64 @ 0
-    counted: bool @ false
-    number: i64 @ 0
-
-    for row in strings.lines(text)
-        number @ number + 1
-
-        if row == BANNER
-            banners @ banners + 1
-            continue
-
-        if strings.starts_with(text: row, prefix: "- [x]")
-            if !ticked_allowed
-                out @ out.push(
-                    "line " + number.to_str() + ": a ticked item lives here, and a ticked item belongs to docs/work/DONE.md"
-                )
-            continue
-
-        if banners == 1 && strings.starts_with(text: row, prefix: OPEN_PREFIX)
-            found = count_stated(row)
-
-            if found.is_err()
-                out @ out.push("line " + number.to_str() + ": the count line is not a number: " + head_of(row))
-            else
-                stated @ found.must()
-                counted @ true
-            continue
-
-        if strings.starts_with(text: row, prefix: "- [ ] ")
-            items @ items + 1
-
-            if banners != 1
-                out @ out.push("line " + number.to_str() + ": an item outside the banners")
-            continue
-
-        if strings.trimmed(row).len() == 0 || banners == 0
-            continue
-
-        if banners == 1
-            # An item's body is indented under its line; anything at column zero
-            # between the banners is the free prose these files are cleared of.
-            if !strings.starts_with(text: row, prefix: "    ")
-                out @ out.push("line " + number.to_str() + ": prose between the banners: " + head_of(row))
-            continue
-        out @ out.push("line " + number.to_str() + ": prose after the closing banner: " + head_of(row))
-
-    if banners != 2
-        out @ out.push(
-            "the item region is fenced by " + banners.to_str() + " banner lines, not 2"
-        )
-
-    if !counted
-        out @ out.push("no `" + OPEN_PREFIX + "N**` line under the opening banner")
-    else if stated != items
-        out @ out.push(
-            "the banner says " + stated.to_str() + " open items and " + items.to_str() + " are here"
-        )
-    return out
-
-# `**OPEN: 41**` — the number the banner states.
-function count_stated(row: str) -> i64?
-    rest = strings.without_prefix(text: row, prefix: OPEN_PREFIX)
-    end = strings.index_of(text: rest, needle: "**")
-
-    if end.is_err()
-        return fail(code: "shape", msg: "the count is not closed")
-    return strings.to_number(text: rest.slice(from: 0, to: end.must()))
 
 # THE CLASS OF A DEFECT, READ OFF ITS ITEM (the author's *D1a* of 2026-10-02,
 # `.claude/rules/verification.md` § Bounded discovery).
@@ -5193,7 +5525,7 @@ function class_stated(rows: [str], at: i64) -> Classed?
             msg: "its `**Class: " + name + "**` is not followed by `, YYYY-MM-DD`, the day it was classed"
         )
     dated = strings.without_prefix(text: after, prefix: ", ")
-    day = day_of(dated)
+    day = cards.day_of(dated)
 
     if day.is_err()
         return fail(
@@ -5238,107 +5570,51 @@ function has_letter(text: str) -> bool
 
     return false
 
-# A day written YYYY-MM-DD at the start of `text`, as the number YYYYMMDD, so
-# that two days compare as numbers do (spec § 7 Operators: `<` takes a number
-# only). The ten bytes are read by index and never sliced, so a character of
-# several bytes among them is a refusal rather than an abort, and an eleventh
-# digit is refused, or `2026-10-021` would read as the second of October.
-function day_of(text: str) -> i64?
-    wrong = "`" + head_of(text) + "` does not open with a day written YYYY-MM-DD"
-
-    if text.len() < 10
-        return fail(code: "shape", msg: wrong)
-    digits: i64 @ 0
-    i: i64 @ 0
-
-    while i < 10
-        byte = text[i]
-
-        if i == 4 || i == 7
-            if byte != '-'
-                return fail(code: "shape", msg: wrong)
-        else if byte < '0' || byte > '9'
-            return fail(code: "shape", msg: wrong)
-        else
-            digits @ digits * 10 + (byte - '0').to_i64().must()
-        i @ i + 1
-
-    if text.len() > 10 && text[10] >= '0' && text[10] <= '9'
-        return fail(code: "shape", msg: wrong)
-    year = digits / 10000
-    month = digits / 100 % 100
-    day = digits % 100
-
-    if month < 1 || month > 12 || day < 1 || day > days_in(year: year, month: month)
-        return fail(code: "shape", msg: "`" + head_of(text) + "` names no day of the calendar")
-
-    return ok(digits)
-
-function days_in(year: i64, month: i64) -> i64
-    if month == 2
-        if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
-            return 29
-        return 28
-
-    if month == 4 || month == 6 || month == 9 || month == 11
-        return 30
-
-    return 31
-
-# YYYYMMDD written back as YYYY-MM-DD, for a message.
-function day_text(day: i64) -> str
-    return (day / 10000).to_str() + "-" + padded_two(day / 100 % 100) + "-" + padded_two(day % 100)
-
-function padded_two(n: i64) -> str
-    if n < 10
-        return "0" + n.to_str()
-
-    return n.to_str()
-
 # Every way the open items of a defect text depart from the class rule, one
 # complaint per departure, each naming its item by line and head: one defect
 # file since 2026-10-04, `docs/work/DEFECTS.md` whole before it.
 function class_offences(text: str) -> [str]
+    return class_offences_from(text: text, first: 1)
+
+# The same, for a text that starts on line `first` of its file, which is an
+# issue's below its card: the complaint names the line a reader opens.
+function class_offences_from(text: str, first: i64) -> [str]
     out: [str] @ []
 
     for region in open_regions(text)
         for complaint in classed(region.text).complaints
-            out @ out.push("line " + region.line.to_str() + ": " + head_of(region.head) + ": " + complaint)
+            out @ out.push(
+                "line " + (region.line + first - 1).to_str() + ": " + head_of(region.head) + ": " + complaint
+            )
 
     return out
 
-test "a live list in the shape its preamble states has nothing to complain about"
-    good = "# T\n\nprose, above the banner, is the rules\n\n" + BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\n    **Origin:** 2026-09-07.\n\n" + BANNER + "\n"
-    assert list_offences(good, ticked_allowed: false).len() == 0
+test "an open issue holds its one item, its line first under its card, and its body indented"
+    good = "- [ ] **M-ir-lowering** | a thing | somewhere\n\n    **Origin:** 2026-09-07.\n"
+    assert item_offences(text: good, first: 10).len() == 0
 
-    # And an empty list is a legal shape rather than a suspicious one: two
-    # banners, a zero, nothing between them.
-    empty = "# T\n\nthe rules\n\n" + BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n"
-    assert list_offences(empty, ticked_allowed: false).len() == 0
+    # Something above the item's line; a second item; prose at column zero;
+    # nothing at all. Each names the line a reader opens the file at.
+    headed = item_offences(text: "# a title\n" + good, first: 10)
+    assert strings.contains(text: headed[0], needle: "line 10 is not the item's line")
+    second = item_offences(text: good + "\n- [ ] **M-ir-lowering** | another | x\n", first: 10)
+    assert second.len() == 1
+    assert strings.contains(text: second[0], needle: "line 14: an item line below line 10")
+    loose = item_offences(text: good + "\nAnd this paragraph is not indented.\n", first: 10)
+    assert loose.len() == 1
+    assert strings.contains(text: loose[0], needle: "line 14: prose at column zero")
+    assert strings.contains(text: item_offences(text: "", first: 10)[0], needle: "holds no item")
 
-test "the preamble is counted, and the shape that grew is the one it catches"
-    # Four lines of rules above the banner, which is what a live list is for.
-    short = "# T\n\nthe rules\n\n" + BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n"
-    assert preamble_lines(short) == 4
+# An issue for the tests below, as `issues/` holds one since 2026-10-04: its
+# card, then its text, in the folder of the day its name carries.
+function issue_with(name: str, kind: str, text: str) -> cards.Issue
+    day = name.slice(from: 0, to: 10)
+    card = cards.card_text(kind: kind, area: "none", milestone: "none", filed: day, commit: "none", github: "none")
 
-    # The shape `DEFECTS.md` had actually grown into: the rules, and then a
-    # register of everything that ever happened. Thirty-five lines is one past
-    # the ceiling, which is the boundary rather than a comfortable margin.
-    grown: str @ "# T\n"
-    added: i64 @ 1
+    return cards.issue_of(path: issue_home(name), text: card + text)
 
-    while added < 35
-        grown @ grown + "a sentence about a defect repaired last month\n"
-        added @ added + 1
-
-    assert preamble_lines(grown + BANNER + "\n**OPEN: 0**\n") == 35
-    assert preamble_lines(grown + BANNER + "\n") > PREAMBLE_CEILING
-
-    # A file with no banner at all has no item region, which `list_offences`
-    # already accuses; this returns the whole length rather than a second
-    # accusation about the same shape.
-    none = "# T\nno banner here\n"
-    assert preamble_lines(none) == strings.lines(none).len()
+function defect_issue(name: str, text: str) -> cards.Issue
+    return issue_with(name: name, kind: "defect", text: text)
 
 test "the ROADMAP's two counts are read, and a line that is not there is not a pass"
     line = "**Open: 2 defects · 0 decisions.** they live in two files\n"
@@ -5362,54 +5638,6 @@ test "the ROADMAP's two counts are read, and a line that is not there is not a p
     # writes "a few" instead of a figure would leave.
     assert roadmap_counts("**Open: some defects · 0 decisions.**\n").is_err()
     assert roadmap_counts("**Open: 2 defects and no decisions.**\n").is_err()
-
-test "the four shapes these three files have actually been in"
-    # 1. A ticked item in a live list. This is the rule four documents stated and
-    # nothing performed, so it is the one shape with no witness of its own — the
-    # files were cleared by hand every time somebody happened to look.
-    ticked = BANNER + "\n**OPEN: 0**\n\n- [x] **M-x** | done | here\n\n" + BANNER + "\n"
-    assert strings.contains(text: list_offences(ticked, ticked_allowed: false)[0], needle: "a ticked item lives here")
-
-    # 2. Prose after the closing banner: `DEFECTS.md`'s five paragraphs about
-    # defects that had already moved to the record.
-    trailing = BANNER + "\n**OPEN: 0**\n\n" + BANNER + "\n\n**Defect 015 was repaired the same day** and is in the record.\n"
-    assert strings.contains(
-        text: list_offences(trailing, ticked_allowed: false)[0],
-        needle: "prose after the closing banner"
-    )
-
-    # 3. A banner missing, which is how a region stops being a region.
-    unfenced = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n"
-    assert strings.contains(text: list_offences(unfenced, ticked_allowed: false)[0], needle: "fenced by 1 banner lines")
-
-    # 4. The count disagreeing with the items — the direction an ADDITION takes,
-    # which is the one an assert notices least loudly (CLAUDE.md § Commands).
-    miscounted = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-a** | one | here\n\n- [ ] **M-b** | two | there\n\n" + BANNER + "\n"
-    assert strings.contains(
-        text: list_offences(miscounted, ticked_allowed: false)[0],
-        needle: "says 1 open items and 2 are here"
-    )
-
-test "in the comprehension list a ticked question stays, and the count stays the OPEN one"
-    # `/learn`'s rule: that list is also its own record, so a covered question is
-    # ticked in place rather than moved. The same text is an offence in a work
-    # list and none here, and the banner keeps counting what is unanswered — which
-    # is why the flag exists instead of a second copy of this function.
-    answered = BANNER + "\n**OPEN: 1**\n\n- [x] **M-ir-lowering.1** | covered | here\n\n- [ ] **M-ir-lowering.2** | still open | there\n\n" + BANNER + "\n"
-    assert list_offences(answered, ticked_allowed: true).len() == 0
-    assert strings.contains(
-        text: list_offences(answered, ticked_allowed: false)[0],
-        needle: "a ticked item lives here"
-    )
-
-test "prose at column zero between the banners is refused and an indented body is not"
-    # The distinction the shape rests on: a body is indented under its item, so
-    # it is invisible to no count — the count reads the `- [ ] ` line. Free prose
-    # at column zero is what these files were cleared of.
-    bodied = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\n    **Origin:** 2026-09-07, measured.\n\n    A second paragraph of the same body.\n\n" + BANNER + "\n"
-    assert list_offences(bodied, ticked_allowed: false).len() == 0
-    loose = BANNER + "\n**OPEN: 1**\n\n- [ ] **M-x** | a thing | somewhere\n\nAnd this paragraph is not indented.\n\n" + BANNER + "\n"
-    assert strings.contains(text: list_offences(loose, ticked_allowed: false)[0], needle: "prose between the banners")
 
 # One defect file for the tests below, as a file of `DEFECT_FILES` holds it
 # since 2026-10-04: the item's line first, and its body indented under it.
@@ -5450,7 +5678,7 @@ test "an item of the defect list states one class on its line and the same in it
         body: filed
     )
     assert class_offences(good).len() == 0
-    assert defect_file_offences(path: "docs/work/defects/161-a-second-message-for-one-mistake.md", text: good).len() == 0
+    assert item_offences(text: good, first: 1).len() == 0
     item = classed(open_regions(good)[0].text)
     assert item.kind == "adjacent"
     assert item.day == 20261002
@@ -5575,39 +5803,21 @@ test "an open item's body runs to the next item, a banner or a line at column ze
 
 # THE ITEM REGION'S RULES, ONE FILE AT A TIME (2026-10-04). Each shape the
 # region refused is refused in a file, and the file's own rule beside them.
-test "a defect file holds one open item, its line first, its body indented, its number its name's"
-    path = "docs/work/defects/161-a-second-message.md"
+test "an open defect's line states the number its file's name carries"
     head = "- [ ] **161 — a second message** | what | where · **class: adjacent**"
     body = ["", "**Origin:** a lane, 2026-10-02.", "", "**Class: adjacent**, 2026-10-02, a reason."]
     good = one_defect(head: head, body: body)
-    assert defect_file_offences(path: path, text: good).len() == 0
+    assert defect_line_offences(defect_issue(name: "2026-10-02-0000-defect-161-a-second-message.md", text: good)).len() == 0
 
-    # Ticked: a closed defect's file moves to the record with its tick.
-    ticked = one_defect(head: "- [x] **161 — a second message** | what | where · **class: adjacent**", body: body)
-    assert strings.contains(text: defect_file_offences(path: path, text: ticked)[0], needle: "a ticked item")
-
-    # Something above the item's line; a second item; prose at column zero.
-    headed = defect_file_offences(path: path, text: "# 161\n" + good)
-    assert strings.contains(text: headed[0], needle: "line 1 is not the item's line")
-    second = defect_file_offences(path: path, text: good + "\n- [ ] **162 — another** | x | y · **class: adjacent**\n")
-    assert second.len() == 1
-    assert strings.contains(text: second[0], needle: "line 7: an item line below line 1")
-    loose = defect_file_offences(path: path, text: good + "\nAnd this paragraph is not indented.\n")
-    assert loose.len() == 1
-    assert strings.contains(text: loose[0], needle: "line 7: prose at column zero")
-
-    # An empty file holds no item at all.
-    assert strings.contains(text: defect_file_offences(path: path, text: "")[0], needle: "holds no item")
-
-    # The name's number and the line's: another number, and a line that
-    # states none `defect_number` can read, which no count would then see.
-    renamed = defect_file_offences(path: "docs/work/defects/162-a-second-message.md", text: good)
-    assert strings.contains(text: renamed[0], needle: "line 1 is defect 161 and the file is named for defect 162")
+    # The name's number and the line's: another number, and a line that states
+    # none `defect_number` can read, which no count would then see.
+    renamed = defect_line_offences(defect_issue(name: "2026-10-02-0000-defect-162-a-second-message.md", text: good))
+    assert strings.contains(text: renamed[0], needle: "line 10 is defect 161 and the file is named for defect `162`")
     short = one_defect(head: "- [ ] **61 — two digits** | what | where · **class: adjacent**", body: body)
-    assert strings.contains(text: defect_file_offences(path: path, text: short)[0], needle: "states no number")
-
-    # A name that is not a defect file's leaves the number to `records/defects`.
-    assert defect_file_offences(path: "docs/work/defects/notes.md", text: good).len() == 0
+    assert strings.contains(
+        text: defect_line_offences(defect_issue(name: "2026-10-02-0000-defect-161-x.md", text: short))[0],
+        needle: "states no number"
+    )
 
 # DEFECT 190, held as a test (2026-10-04): a defect item's line is read whole
 # between its number and its class token. Item 130's line as `8349d264` left
@@ -5619,10 +5829,10 @@ test "fixedbugs: a defect item's line is read whole, its title closed and its tw
         head: "- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**",
         body: body
     )
-    said = defect_file_offences(path: "docs/work/defects/130-after-a-unction.md", text: damaged)
+    said = defect_line_offences(defect_issue(name: "2026-10-02-0000-defect-130-after-a-unction.md", text: damaged))
     assert said.len() == 1
-    assert strings.starts_with(text: said[0], prefix: "line 1: its title's closing `**` is not followed by ` | `")
-    path = "docs/work/defects/164-x.md"
+    assert strings.starts_with(text: said[0], prefix: "line 10: its title's closing `**` is not followed by ` | `")
+    name = "2026-10-02-0000-defect-164-x.md"
     shapes = [
         "- [ ] **164 — x · **class: blocking**"
         "- [ ] **164 — x** · **class: blocking**"
@@ -5642,29 +5852,36 @@ test "fixedbugs: a defect item's line is read whole, its title closed and its tw
     at: i64 @ 0
 
     while at < shapes.len()
-        got = defect_file_offences(path: path, text: one_defect(head: shapes[at], body: body))
+        got = defect_line_offences(defect_issue(name: name, text: one_defect(head: shapes[at], body: body)))
         assert got.len() == 1
-        assert strings.starts_with(text: got[0], prefix: "line 1: " + told[at])
+        assert strings.starts_with(text: got[0], prefix: "line 10: " + told[at])
         at @ at + 1
 
     bars_inside = one_defect(head: "- [ ] **164 — x** | no ` | ` at all | where · **class: blocking**", body: body)
-    assert defect_file_offences(path: path, text: bars_inside).len() == 0
+    assert defect_line_offences(defect_issue(name: name, text: bars_inside)).len() == 0
 
-test "the front page holds its rules and no item, no banner and no count"
-    page = "# DEFECTS\n\nthe rules, and where the files are\n"
-    assert front_page_offences(page).len() == 0
+test "a front page holds its rules and no item, no banner and no count"
+    page = "# Issues\n\nthe rules, and where the files are\n"
+    assert front_page_offences(text: page, files: ISSUES, ceiling: PREAMBLE_CEILING).len() == 0
     assert strings.contains(
-        text: front_page_offences(page + "- [ ] **177 — x** | a | b\n")[0],
-        needle: "line 4: an item"
+        text: front_page_offences(text: page + "- [ ] **177 — x** | a | b\n", files: ISSUES, ceiling: PREAMBLE_CEILING)[0],
+        needle: "line 4: an item, and an item is a file of its own in issues"
     )
-    assert strings.contains(text: front_page_offences(page + BANNER + "\n")[0], needle: "line 4: a banner")
-    assert strings.contains(text: front_page_offences(page + "**OPEN: 52**\n")[0], needle: "line 4: a count line")
+    assert strings.contains(
+        text: front_page_offences(text: page + BANNER + "\n", files: ISSUES, ceiling: PREAMBLE_CEILING)[0],
+        needle: "line 4: a banner"
+    )
+    assert strings.contains(
+        text: front_page_offences(text: page + "**OPEN: 52**\n", files: ISSUES, ceiling: PREAMBLE_CEILING)[0],
+        needle: "line 4: a count line"
+    )
 
-    # The single list the page used to be is every one of the three at once.
+    # The single list a page used to be is every one of the three at once.
     old = page + BANNER + "\n**OPEN: 1**\n\n- [ ] **177 — x** | a | b\n\n" + BANNER + "\n"
-    assert front_page_offences(old).len() == 4
+    assert front_page_offences(text: old, files: ISSUES, ceiling: PREAMBLE_CEILING).len() == 4
 
-    # Held whole to the lists' ceiling, at the line and one past it.
+    # Held whole to a ceiling where one is given, at the line and one past it;
+    # a milestone's page is given none, its preamble being its reasoning.
     at_ceiling: str @ ""
     written: i64 @ 0
 
@@ -5672,8 +5889,12 @@ test "the front page holds its rules and no item, no banner and no count"
         at_ceiling @ at_ceiling + "a rule\n"
         written @ written + 1
 
-    assert front_page_offences(at_ceiling).len() == 0
-    assert strings.contains(text: front_page_offences(at_ceiling + "a story\n")[0], needle: "lines, ceiling")
+    assert front_page_offences(text: at_ceiling, files: ISSUES, ceiling: PREAMBLE_CEILING).len() == 0
+    assert strings.contains(
+        text: front_page_offences(text: at_ceiling + "a story\n", files: ISSUES, ceiling: PREAMBLE_CEILING)[0],
+        needle: "lines, ceiling"
+    )
+    assert front_page_offences(text: at_ceiling + at_ceiling + at_ceiling, files: ISSUES, ceiling: 0).len() == 0
 
 test "the record holds no open item in any of its files, and a closed defect's file is ticked"
     # A defect file moved whole into the record by `git mv`, ticked as it went.
@@ -5688,118 +5909,92 @@ test "the record holds no open item in any of its files, and a closed defect's f
     headed = "# Defect 161 closed: a second message\n\n" + forgotten
     assert strings.contains(text: unticked_in_record(headed)[0], needle: "line 3:")
 
-test "the register is the directory: there while empty, one name per number, nothing below it"
-    keeper = "docs/work/defects/.gitkeep"
-    empty: report.Report @ report.empty()
-    defect_register(@empty, present: [keeper, "docs/work/DEFECTS.md"])
-    assert empty.passed == 1
-    assert empty.failed == 0
+test "the names are the register: one name per number, carried by every open defect"
     held: report.Report @ report.empty()
-    defect_register(@held, present: [keeper, "docs/work/defects/177-a.md", "docs/work/defects/178-b.md"])
+    defect_register(
+        @held,
+        issues: [defect_issue(name: "2026-10-02-0000-defect-177-a.md", text: "- [ ] **177 — a** | b | c\n"), defect_issue(name: "2026-10-02-0001-defect-178-b.md", text: "- [ ] **178 — b** | b | c\n"), defect_issue(name: "2026-08-13-0003-defect-fixed-2026-08-12-panel-035.md", text: "- [x] closed before names carried numbers\n")]
+    )
+    assert held.passed == 1
     assert held.failed == 0
-
-    # The directory gone, its keeper with it: a walk that would read zero.
-    gone: report.Report @ report.empty()
-    defect_register(@gone, present: ["docs/work/DEFECTS.md", "docs/work/defects/177-a.md"])
-    assert gone.failed == 1
-    assert strings.contains(text: gone.failures[0], needle: "is not in the tree")
 
     # Two lanes that each took 238: two names, one number, no git conflict.
     twice: report.Report @ report.empty()
     defect_register(
         @twice,
-        present: [keeper, "docs/work/defects/238-one-lane.md", "docs/work/defects/238-another-lane.md"]
+        issues: [defect_issue(name: "2026-10-04-0000-defect-238-one-lane.md", text: "- [ ] **238 — one** | b | c\n"), defect_issue(name: "2026-10-04-0001-defect-238-another-lane.md", text: "- [ ] **238 — two** | b | c\n")]
     )
     assert twice.failed == 1
     assert strings.contains(text: twice.failures[0], needle: "238 is the number of two files")
 
-    # One per offence, by name: below the directory, and not named for a number.
-    misfiled = name_offences(
-        ["docs/work/defects/old/177-a.md", "docs/work/defects/notes.md", "docs/work/defects/179-c.md"]
+    # An open defect whose name carries no number, and a name that carries one
+    # on a card that says the file is something else.
+    unnamed: report.Report @ report.empty()
+    defect_register(
+        @unnamed,
+        issues: [defect_issue(name: "2026-10-04-0000-a-thing.md", text: "- [ ] **239 — x** | b | c\n")]
     )
-    assert misfiled.len() == 2
-    assert strings.contains(text: misfiled[0], needle: "is below docs/work/defects")
-    assert strings.contains(text: misfiled[1], needle: "is not named `NNN-<slug>.md`")
+    assert strings.contains(text: unnamed.failures[0], needle: "does not carry `defect-NNN-`")
 
-test "a defect file's name is a number and a slug of at most sixty characters"
-    assert is_defect_name("177-a-match-whose-arms-fall.md")
-    assert is_defect_name("009-x.md")
-    assert is_defect_name("235-a-header-name-no-ntfs-file-can-hold-builds-on-the-mac-and.md")
-    widest = SLUG_CEILING.to_u64().must()
-    assert is_defect_name("237-" + repeat("a", widest) + ".md")
-    assert !is_defect_name("237-" + repeat("a", widest + 1) + ".md")
-    assert !is_defect_name("17-two-digits.md")
-    assert !is_defect_name("177_underscore.md")
-    assert !is_defect_name("177-Upper-Case.md")
-    assert !is_defect_name("177-two--dashes.md")
-    assert !is_defect_name("177-trailing-.md")
-    assert !is_defect_name("177--leading.md")
-    assert !is_defect_name("177-.md")
-    assert !is_defect_name("177-x.txt")
-    assert !is_defect_name(".gitkeep")
-    assert !is_defect_name("README.md")
+    # A decision ABOUT a defect may carry its number in its slug, as the log's
+    # did, and shares it with the defect's own file without being a second one.
+    about: report.Report @ report.empty()
+    defect_register(
+        @about,
+        issues: [defect_issue(name: "2026-09-04-0612-defect-011-two-arguments.md", text: "- [x] **011 — two** | b | c\n"), issue_with(name: "2026-09-05-0001-defect-011-repaired.md", kind: "decision", text: "# Defect 011 repaired\n")]
+    )
+    assert about.failed == 0
 
-    # A character of two bytes is refused by its bytes, never cut.
-    assert !is_defect_name("177-café.md")
-    assert name_number("docs/work/defects/177-a.md") == "177"
-    assert name_number("docs/work/defects/notes.md") == ""
+test "a name says which defect it is, and a slug that opens with the word says none"
+    assert defect_in_name("2026-10-04-0000-defect-177-a-match-whose-arms-fall.md") == "177"
+    assert defect_in_name("2026-10-04-1440-defect-009-x.md") == "009"
+    assert defect_in_name("2026-08-13-0003-defect-fixed-2026-08-12-panel-035-r7.md") == ""
+    assert defect_in_name("2026-10-04-0000-defect-17-two-digits.md") == ""
+    assert defect_in_name("2026-10-04-0000-defect-177.md") == ""
+    assert defect_in_name("2026-10-04-0000-panel-191-ratify.md") == ""
+    assert defect_in_name("2026-09-13-1001-decided-2026-09-13-author-the-refresh-authorised-and-defect-030-s-repair-lands.md") == ""
+    assert defect_in_name("defect-177-no-stamp.md") == ""
 
 # DEFECT 280, held as a test (2026-10-04): a defect number is three digits or
 # more, padded to three and never past, read so in a name, on an item's line
 # and in the register, so the thousandth defect has a name every check takes.
 # A number padded past three is a second spelling and stays refused.
 test "fixedbugs: the thousandth defect has a name and a line every check reads (defect 280)"
-    assert is_defect_name("1000-the-thousandth.md")
-    assert is_defect_name("1777-four-digits.md")
-    assert is_defect_name("10000-five-digits.md")
-    assert !is_defect_name("0999-padded-past-three.md")
-    assert !is_defect_name("0177-padded.md")
-    assert !is_defect_name("1000-.md")
-    assert name_number("docs/work/defects/1000-the-thousandth.md") == "1000"
+    assert defect_in_name("2026-10-04-0000-defect-1000-the-thousandth.md") == "1000"
+    assert defect_in_name("2026-10-04-0000-defect-1777-four-digits.md") == "1777"
+    assert defect_in_name("2026-10-04-0000-defect-10000-five-digits.md") == "10000"
+    assert defect_in_name("2026-10-04-0000-defect-0999-padded-past-three.md") == ""
+    assert defect_in_name("2026-10-04-0000-defect-0177-padded.md") == ""
     assert defect_number("- [ ] **1000 — the thousandth** | a | b · **class: adjacent**") == "1000"
     assert defect_number("- [x] **10000 — far on** | a | b") == "10000"
     assert defect_number("- [ ] **0999 — padded** | a | b") == ""
     assert defect_number("- [ ] **99 — short** | a | b") == ""
     assert defect_number("- [ ] **1000—unspaced** | a | b") == ""
     filed = "- [ ] **1000 — the thousandth** | what | where · **class: adjacent**\n\n    **Class: adjacent**, 2026-10-04, a reason.\n"
-    assert defect_file_offences(path: "docs/work/defects/1000-the-thousandth.md", text: filed).len() == 0
+    assert defect_line_offences(defect_issue(name: "2026-10-04-0000-defect-1000-the-thousandth.md", text: filed)).len() == 0
     assert class_offences(filed).len() == 0
-    twice = name_offences(
-        ["docs/work/defects/1000-one.md", "docs/work/defects/1000-two.md", "docs/work/defects/0999-x.md"]
+    twice: report.Report @ report.empty()
+    defect_register(
+        @twice,
+        issues: [defect_issue(name: "2026-10-04-0000-defect-1000-one.md", text: filed), defect_issue(name: "2026-10-04-0001-defect-1000-two.md", text: filed)]
     )
-    assert twice.len() == 2
-    assert strings.contains(text: twice[0], needle: "1000 is the number of two files")
-    assert strings.contains(text: twice[1], needle: "docs/work/defects/0999-x.md is not named `NNN-<slug>.md`")
+    assert strings.contains(text: twice.failures[0], needle: "1000 is the number of two files")
 
-test "the ROADMAP's defects are the files counted and its decisions the banner read"
+test "the ROADMAP's two counts are the open defects and the open decisions the issues hold"
     stated = OpenCounts(defects: 52, decisions: 0)
     assert count_trouble(stated: stated, defects: 52, decisions: 0).len() == 0
     fewer = count_trouble(stated: stated, defects: 51, decisions: 0)
     assert fewer.len() == 1
     assert strings.contains(
         text: fewer[0],
-        needle: "the ROADMAP says 52 open defects and docs/work/defects holds 51 defect files"
+        needle: "the ROADMAP says 52 open defects and issues holds 51 open defect issues"
     )
     both = count_trouble(stated: stated, defects: 53, decisions: 1)
     assert both.len() == 2
-    assert strings.contains(text: both[1], needle: "the ROADMAP says 0 open decisions and docs/work/DECIDE.md says 1")
-
-test "a day is YYYY-MM-DD of the calendar, read without a slice"
-    assert day_of("2026-10-02").must() == 20261002
-    assert day_of("2026-10-02 (the rule)").must() == 20261002
-    assert day_of("2024-02-29").must() == 20240229
-    assert day_of("2026-02-29").is_err()
-    assert day_of("2026-04-31").is_err()
-    assert day_of("2026-10-00").is_err()
-    assert day_of("2026-00-10").is_err()
-    assert day_of("2026-10-2").is_err()
-    assert day_of("2026-10-021").is_err()
-
-    # A character of two bytes where a dash belongs is a refusal, never the
-    # abort a slice through it would be.
-    assert day_of("2026·10-02").is_err()
-    assert day_text(20261002) == "2026-10-02"
-    assert day_text(20260101) == "2026-01-01"
+    assert strings.contains(
+        text: both[1],
+        needle: "the ROADMAP says 0 open decisions and issues holds 1 open decision issues"
+    )
 
 test "the record holds no open item, and it is fenced at the top only"
     good = "# DONE\n\nthe rules\n\n" + BANNER + "\n**THE RECORD BEGINS HERE**\n\n- [x] a thing | done | here\n"
@@ -5814,12 +6009,6 @@ test "the record holds no open item, and it is fenced at the top only"
     # land under it, and the rule would be broken by the act it exists for.
     fenced_twice = BANNER + "\n\n- [x] a thing | done | here\n\n" + BANNER + "\n"
     assert strings.contains(text: record_offences(fenced_twice)[0], needle: "opens with 2 banner lines")
-
-test "the count line is read rather than trusted"
-    assert count_stated("**OPEN: 41**").must() == 41
-    assert count_stated("**OPEN: 0**").must() == 0
-    assert count_stated("**OPEN: 41").is_err()
-    assert count_stated("**OPEN: many**").is_err()
 
 test "the section ends at a rule and not at anything that merely starts like one"
     # The shape the record was actually in on 2026-09-06: one good block, then a
@@ -6055,7 +6244,8 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
 
     # The check itself, firing: a stand-in document citing something absent.
     fired: report.Report @ report.empty()
-    citations(@fired, scratch: "build/harness-selftest", present: ["design.md"])
+    no_closed: {str: bool} @ {}
+    citations(@fired, scratch: "build/harness-selftest", present: ["design.md"], closed: no_closed)
     assert fired.failed + fired.passed == 1
 
     # **The defect this check shipped with, named after itself** (§9: a fixed
@@ -6330,7 +6520,38 @@ test "the pending rule fires only when nothing is asking"
     # today. The positive direction is exercised on every run by the check
     # itself — it is what refused `docs/panel/091` and `092` until each had an
     # item, which is how the `panel 91` vs `panel 091` defect above was found.
-    assert !queued(path: "docs/panel/999-a-sitting-nobody-held.md")
+    nothing: [cards.Issue] = []
+    assert !queued(path: "docs/panel/999-a-sitting-nobody-held.md", issues: nothing)
+
+    # **And since 2026-10-04 the queue is a value a test can hold**, so the
+    # direction this case had to drop is asserted on issues written for it,
+    # never on what the tree holds today: an open decision naming the sitting
+    # queues it, padded or bare; a task does not, and neither does the same
+    # decision once it is ticked.
+    asking = issue_with(
+        name: "2026-10-04-0000-panel-099-ratify.md",
+        kind: "decision",
+        text: "- [ ] **panel 099** | ratify | x\n"
+    )
+    assert queued(path: "docs/panel/099-a-sitting.md", issues: [asking])
+    bare = issue_with(
+        name: "2026-10-04-0000-panel-99-ratify.md",
+        kind: "decision",
+        text: "- [ ] **panel 99** | ratify | x\n"
+    )
+    assert queued(path: "docs/panel/099-a-sitting.md", issues: [bare])
+    tasked = issue_with(
+        name: "2026-10-04-0000-panel-099-ratify.md",
+        kind: "task",
+        text: "- [ ] **panel 099** | ratify | x\n"
+    )
+    assert !queued(path: "docs/panel/099-a-sitting.md", issues: [tasked])
+    answered = issue_with(
+        name: "2026-10-04-0000-panel-099-ratify.md",
+        kind: "decision",
+        text: "- [x] **panel 099** | ratified | x\n"
+    )
+    assert !queued(path: "docs/panel/099-a-sitting.md", issues: [answered])
 
 test "a citation that names a member is checked at its file, and that is the hole it closes"
     # The token that provoked panel 092: `CLAUDE.md` carried it for months and
@@ -6525,30 +6746,33 @@ test "a quoted glob loses its quotes and an unquoted one is unchanged"
 test "a tag's excuse covers exactly what it stood over, and nothing else"
     two = ["- [ ] **061 — a fixed-array field** | x | y", "- [ ] **062 — a marker** | x | y"]
     records = [
-        "docs/records/done/2026-09-18-1745-defect-061-closes-and-its-own-premise-was-false.md"
-        "docs/records/done/2026-09-18-1310-defect-062-closes-and-the-marker-was-one-word.md"
+        "issues/2026-09/18/2026-09-18-1745-defect-061-closes-and-its-own-premise-was-false.md"
+        "issues/2026-09/18/2026-09-18-1310-defect-062-closes-and-the-marker-was-one-word.md"
     ]
+    nothing: [cards.Issue] = []
 
     # The real row, over the real pair, with both records present and neither
-    # defect open in the tree handed in: no file of `DEFECT_FILES` there at
-    # all, so the answer is this tree's and not whatever the working tree's
-    # list holds on the day it runs (2026-10-04; `DEFECTS.md` was read until).
-    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: records) == ""
+    # defect open among the issues handed in, so the answer is this tree's and
+    # not whatever the working tree holds on the day it runs.
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: records, issues: nothing) == ""
 
     # A tag no row names is excused by nothing.
-    assert tag_is_excused(tag: "m-somewhere-else", open_rows: two, present: records) != ""
+    assert tag_is_excused(tag: "m-somewhere-else", open_rows: two, present: records, issues: nothing) != ""
 
     # A tag standing over a THIRD defect is not excused by a row naming two.
     three = two.push("- [ ] **063 — something later** | x | y")
-    assert tag_is_excused(tag: "m-readable-bytes", open_rows: three, present: records) != ""
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: three, present: records, issues: nothing) != ""
 
     # A row naming a done record that is not in the tree is not excused.
-    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: []) != ""
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: [], issues: nothing) != ""
 
-    # A defect file in the tree that this cannot read is never read as a
-    # defect closed: the row stops working, in the loud direction.
-    reopened = records.push("docs/work/defects/061-a-fixed-array-field.md")
-    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: reopened) != ""
+    # One of the two open again among the issues: the row stops working, since
+    # it excuses a tag only because what it names is CLOSED.
+    reopened = defect_issue(
+        name: "2026-10-04-0000-defect-061-a-fixed-array-field.md",
+        text: "- [ ] **061 — a fixed-array field** | x | y\n"
+    )
+    assert tag_is_excused(tag: "m-readable-bytes", open_rows: two, present: records, issues: [reopened]) != ""
 
 # The carried row is not an amnesty either, and each clause of
 # `tag_is_carried` fires on its own for the same reason.
@@ -6556,7 +6780,7 @@ test "a carried defect is excused at its tag only where its own item says so"
     entry = "2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
     table = ["m-carrying | 2026-09-28 | 129 130 | " + entry]
     both = ["- [ ] **129 — a minus alone** | x | y", "- [ ] **130 — a skipped statement** | x | y"]
-    logs = ["docs/records/log/" + entry]
+    logs = ["issues/2026-09/28/" + entry]
     carrying = [
         "**OPEN: 2**"
         ""
@@ -6705,7 +6929,7 @@ test "an item without a class at a tag counts as blocking, and the excuses read 
     # item a tag may stand over needs no excuse.
     entry = "2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md"
     table = ["m-carrying | 2026-09-28 | 129 130 | " + entry]
-    logs = ["docs/records/log/" + entry]
+    logs = ["issues/2026-09/28/" + entry]
     carried = "\n\n    **Carried to the next milestone**, by the author's instruction of\n    2026-09-28 16:40 (`docs/records/log/" + entry + "`)."
     pair_and_one = [
         "- [ ] **129 — a minus alone** | x | y" + carried
@@ -6815,3 +7039,144 @@ test "a tag's directory is read as its single file was, so a tag counts the same
     # One blank line between two files, whether or not a file ended its line.
     bare = joined_files(["- [ ] **161 — a** | x | y", "- [ ] **162 — b** | x | y\n"])
     assert bare == "- [ ] **161 — a** | x | y\n\n- [ ] **162 — b** | x | y\n"
+
+# THE ISSUES, held as tests (2026-10-04). Each rule `records/cards` states of
+# a card is made to fire on an issue written for it.
+test "an issue's card agrees with its name, its folder, its origin, its repairs and its first field"
+    chain: {str: bool} @ {}
+    chain["M-ir-lowering"] @ false
+    chain["M-issue-files"] @ true
+    body = "- [ ] **231 — a** | b | c · **class: blocking**\n\n    **Origin:** lane x, 2026-10-03.\n"
+    good = defect_issue(name: "2026-10-03-0000-defect-231-a.md", text: body)
+    assert card_offences(issue: good, chain: chain).len() == 0
+
+    # Filed on another day than its name's, while it is open.
+    late = cards.issue_of(
+        path: "issues/2026-10/03/2026-10-03-0000-defect-231-a.md",
+        text: cards.card_text(kind: "defect", area: "ir", milestone: "none", filed: "2026-10-02", commit: "none", github: "none") + body
+    )
+    said = card_offences(issue: late, chain: chain)
+    assert strings.contains(text: said[0], needle: "an open issue is named for the day it was filed")
+    assert strings.contains(text: said[1], needle: "its `**Origin:**` names 2026-10-03")
+
+    # In another day's folder.
+    strayed = cards.issue_of(
+        path: "issues/2026-10/04/2026-10-03-0000-defect-231-a.md",
+        text: cards.card_text(kind: "defect", area: "ir", milestone: "none", filed: "2026-10-03", commit: "none", github: "none") + body
+    )
+    assert strings.contains(
+        text: card_offences(issue: strayed, chain: chain)[0],
+        needle: "issues/2026-10/03/2026-10-03-0000-defect-231-a.md"
+    )
+
+    # A name that carries no day.
+    unnamed = cards.issue_of(
+        path: "issues/x/a-thing.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-10-03", commit: "none", github: "none") + "- [ ] x | y\n"
+    )
+    assert strings.contains(text: card_offences(issue: unnamed, chain: chain)[0], needle: "its name is not")
+
+    # A closed issue may be named for the day it closed, never filed after it.
+    closed_late = cards.issue_of(
+        path: "issues/2026-10/03/2026-10-03-1440-defect-231-a.md",
+        text: cards.card_text(kind: "defect", area: "ir", milestone: "none", filed: "2026-10-04", commit: "none", github: "none") + "- [x] **231 — a** | b | c\n"
+    )
+    assert strings.contains(
+        text: card_offences(issue: closed_late, chain: chain)[0],
+        needle: "after the day its name carries"
+    )
+    closed_in_time = cards.issue_of(
+        path: "issues/2026-10/03/2026-10-03-1440-defect-231-a.md",
+        text: cards.card_text(kind: "defect", area: "ir", milestone: "none", filed: "2026-10-01", commit: "none", github: "none") + "- [x] **231 — a** | b | c\n"
+    )
+    assert card_offences(issue: closed_in_time, chain: chain).len() == 0
+
+    # A milestone with no row, and a first field that names another.
+    unrowed = cards.issue_of(
+        path: "issues/2026-10/03/2026-10-03-0000-x.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "M-nowhere-at-all", filed: "2026-10-03", commit: "none", github: "none") + "- [ ] **M-ir-lowering** | a | b\n"
+    )
+    told = card_offences(issue: unrowed, chain: chain)
+    assert told.len() == 2
+    assert strings.contains(text: told[0], needle: "has no row in docs/ROADMAP.md § The chain")
+    assert strings.contains(text: told[1], needle: "the item's first field names M-ir-lowering")
+
+    # The repair its body states, against the commit its card names.
+    repaired = "- [ ] **231 — a** | b | c\n\n    Repaired at `5ba5296c`, 2026-10-04.\n"
+    named_whole = cards.issue_of(
+        path: "issues/2026-10/03/2026-10-03-0000-defect-231-a.md",
+        text: cards.card_text(kind: "defect", area: "ir", milestone: "none", filed: "2026-10-03", commit: "5ba5296c0123456789abcdef0123456789abcdef", github: "none") + repaired
+    )
+    assert card_offences(issue: named_whole, chain: chain).len() == 0
+    unnamed_repair = defect_issue(name: "2026-10-03-0000-defect-231-a.md", text: repaired)
+    assert strings.contains(
+        text: card_offences(issue: unnamed_repair, chain: chain)[0],
+        needle: "its body says it was repaired at 5ba5296c"
+    )
+
+    # And a card that is not there is the card's own complaint, whole.
+    bare = cards.issue_of(path: "issues/2026-10/03/2026-10-03-0000-x.md", text: "- [ ] x | y\n")
+    assert strings.contains(text: card_offences(issue: bare, chain: chain)[0], needle: "line 1 is")
+
+test "an issue lives in the folder of its name's day, and a name with no day has none"
+    assert issue_home("2026-10-04-1440-defect-239-a.md") == "issues/2026-10/04/2026-10-04-1440-defect-239-a.md"
+    assert issue_home("2026-08-03-0000-x.md") == "issues/2026-08/03/2026-08-03-0000-x.md"
+    assert issue_home("239-a.md") == ""
+    assert issue_home("README.md") == ""
+    assert issue_files(["issues/README.md", "issues/2026-10/04/2026-10-04-0000-x.md", "issues/notes.txt", "docs/x.md"]) == ["issues/2026-10/04/2026-10-04-0000-x.md"]
+
+test "a citation of a file that moved into the issues is followed by the rule, and still dies with its file"
+    known: {str: bool} @ {}
+    known["issues/2026-10/04/2026-10-04-1440-defect-239-a.md"] @ true
+    known["issues/2026-09/23/2026-09-23-1215-a-seats-copy-is-its-own-decided.md"] @ true
+    known["issues/2026-10/02/2026-10-02-0000-defect-187-four.md"] @ true
+    assert issue_redirect(part: "docs/records/done/2026-10-04-1440-defect-239-a.md", known: known) == "issues/2026-10/04/2026-10-04-1440-defect-239-a.md"
+    assert issue_redirect(part: "docs/done/2026-10-04-1440-defect-239-a.md", known: known) == "issues/2026-10/04/2026-10-04-1440-defect-239-a.md"
+    assert issue_redirect(part: SHARED_NAME, known: known) == "issues/2026-09/23/2026-09-23-1215-a-seats-copy-is-its-own-decided.md"
+    assert issue_redirect(part: "docs/work/defects/187-four.md", known: known) == "issues/2026-10/02/2026-10-02-0000-defect-187-four.md"
+
+    # A file the rule would find and that is not there; a path the rule does
+    # not cover; a file below a retired tree's directory.
+    assert issue_redirect(part: "docs/records/done/2026-10-04-1441-gone.md", known: known) == ""
+    assert issue_redirect(part: "docs/panel/190-x.md", known: known) == ""
+    assert issue_redirect(part: "docs/records/done/sub/2026-10-04-1440-defect-239-a.md", known: known) == ""
+
+test "a diff of many files names each removal's own file and its line in the old file"
+    diffed = "diff --git a/issues/a.md b/issues/a.md\nindex 1..2 100644\n--- a/issues/a.md\n+++ b/issues/a.md\n@@ -10,2 +10,1 @@\n-gone from a\n kept\ndiff --git a/issues/b.md b/issues/b.md\n--- a/issues/b.md\n+++ b/issues/b.md\n@@ -3,1 +3,2 @@\n kept\n+added\n@@ -12,1 +13,0 @@\n-gone from b\n"
+    got = removed_by_file(diffed)
+    assert got.len() == 2
+    assert got[0].path == "issues/a.md"
+    assert got[0].line == 10
+    assert got[0].row == "-gone from a"
+    assert got[1].path == "issues/b.md"
+    assert got[1].line == 12
+
+    # The second file's own header is never read as a line it removes, which is
+    # what reading the diff as one file would do.
+    for one in got
+        assert !strings.contains(text: one.row, needle: "--- a/")
+
+test "a list at a tag is its issues where the tag has them, and the older shapes where it has not"
+    issues_shape = shape_listed(
+        ["issues/README.md", "issues/2026-10/04/2026-10-04-0000-defect-1-x.md", "docs/work/DEFECTS.md"]
+    )
+    assert issues_shape.issues
+    assert issues_shape.files == ["issues/2026-10/04/2026-10-04-0000-defect-1-x.md"]
+    directory = shape_listed(["docs/work/defects/.gitkeep", "docs/work/defects/177-a.md"])
+    assert !directory.issues
+    assert directory.files == ["docs/work/defects/177-a.md"]
+    single = shape_listed(["docs/work/DEFECTS.md"])
+    assert !single.directory
+    assert single.files == ["docs/work/DEFECTS.md"]
+
+test "a milestone's page stands directly in its tree, and the chain says which milestones are open"
+    pages = milestone_pages(
+        ["docs/work/milestones/M-x.md", "docs/work/milestones/M-x/2026-10-04-0000-a.md", "docs/work/milestones/README.txt"]
+    )
+    assert pages == ["docs/work/milestones/M-x.md"]
+    states = chain_states(
+        "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 83 | **M-issue-files** | **OPEN** | — |\n| **Current milestone** | **M-other** |\n"
+    )
+    assert !states["M-day-zero"].must()
+    assert states["M-issue-files"].must()
+    assert states["M-other"].is_err()

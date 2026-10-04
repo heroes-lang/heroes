@@ -39,8 +39,3 @@ page, and `records/tagged` reads the directory at a tag that has it and the
 single file at one that has not. Not a rotation: no map stays behind, the
 items being open work and not a record
 (`docs/records/log/2026-10-04-0206-the-defect-list-becomes-one-file-per-defect.md`).
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

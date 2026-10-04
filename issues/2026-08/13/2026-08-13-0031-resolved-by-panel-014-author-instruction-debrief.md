@@ -1,0 +1,10 @@
+---
+kind: decision
+area: records
+milestone: M-syntax-tree
+filed: 2026-08-04
+commit: 730a696c75a50a1fdae7a2456823d14cb2f9f527
+github: none
+---
+
+- [x] The record | panel? M2.2 | RESOLVED by panel 014 (author instruction, debrief 2026-08-04): an arm's body is one statement, inline, or an indented block. Adopted on §1.7 — it deleted the `ArmBody::Expr` bypass and with it a `heroes fmt` that deleted code, a `heroes parse` that hung, and a doubled diagnostic. R vetoed; the appendix's 8 inline `assert` arms are restored | docs/panel/014-match-arm-body.md | the rationale I attached to the proposal was false and the record says so: `?` never needed statement arms
