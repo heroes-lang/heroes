@@ -1,0 +1,19 @@
+# fixedbugs, defect 338, lane b11-misc, 2026-10-05.
+#
+# SYMPTOM: zeros before a base's marker were offered one zero whatever followed
+# the marker, so `00x` and `00xg` were offered `0x` and `0xg`, a literal with no
+# digits and one with a digit no hexadecimal number has, both refused.
+#
+# CAUSE: the advice read the one character after the zeros, the marker, and
+# never what followed it.
+#
+# FIX: one zero is offered only where it writes a literal the scanner accepts
+# (`leading_zeros.based_literal`, held to the scanner by `number.hero`'s
+# test); elsewhere a note says why none is, and how such a literal is written.
+# The form is the full one, since the brief form shows no fix.
+
+function main()
+    a = 00x    #~ leading_zero
+    b = 00xg    #~ leading_zero
+    c = 00x7    #~ leading_zero
+    print(a, b, c)
