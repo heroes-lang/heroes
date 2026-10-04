@@ -34,7 +34,7 @@ function read(@c: cursor.Cursor)
     then = cursor.peek(c, 2)
     worded = first == .ident && token.begins_an_expression(then) && then != .lparen && then != .lbracket && then != .dot && then != .minus
 
-    if continues_a_line(first) || worded
+    if token.continues_a_line(first) || worded
         passed(@c)
 
 # The first token of the block under the cursor's indent passed over as a line
@@ -90,23 +90,6 @@ function named(@c: cursor.Cursor)
             message: "this block is indented deeper than anything that opens one",
             span: cursor.current_span(c)
         )
-
-# Whether a token only ever goes on with a line above it and begins none of
-# its own: an operator but the three that also begin a value, `-`, `!` and
-# `~`; a separator or a closer; `else` and `in`. Enumerated, so a new token
-# kind is answered for, not defaulted.
-function continues_a_line(kind: token.TokenKind) -> bool
-    return match kind
-        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge      => true
-        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .comma       => true
-        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket      => true
-        .rbrace | .kw_else | .kw_in                                                        => true
-        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece   => false
-        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if         => false
-        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function     => false
-        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue          => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator => false
-        .indent | .dedent | .eof | .error                                                  => false
 
 ## Tests
 
