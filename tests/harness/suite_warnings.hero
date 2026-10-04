@@ -3,7 +3,7 @@
 #
 # Ports golden.rs:811 and corpus.rs:382. Two directories of cases and
 # fourteen real programs, each built at -O0 and at -O2, because clang's
-# warnings differ by level and reach stderr even on success — a warning
+# warnings differ by level and reach stderr even on success, and a warning
 # nobody sees cannot falsify anything. It ran `build` and `run` for the two
 # levels until defect 299 (below, `judge`).
 #
@@ -85,7 +85,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         report.keep_failure(
             @r,
             label: "warnings",
-            detail: "  " + skipped.to_str() + " of " + judged.to_str() + " programs were skipped for a missing library — this machine is not testing the warnings"
+            detail: "  " + skipped.to_str() + " of " + judged.to_str() + " programs were skipped for a missing library: this machine is not testing the warnings"
         )
     return ok(r)
 
