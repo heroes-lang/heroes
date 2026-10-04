@@ -12,9 +12,18 @@
 # program its author wrote; and the text after it is read as the file, so
 # nothing else is told of it. Not a thesis rule: the mark is not the
 # language's syntax, as § 1 has it.
+#
+# **UTF-16 with no mark over ASCII** (defect 247), as a tool that writes
+# UTF-16 writes a file it was not told to mark: every other byte NUL, which
+# is well-formed UTF-8 and so not `not_text`, and each NUL was a message of
+# its own, thirty for a program of two lines, its excerpts full of raw NULs.
+# One message now, at the first NUL, its note naming the encoding as
+# `byte_evidence` names it where the bytes prove it, and nothing else of the
+# file is read, as nothing else of a file that is not UTF-8 is.
 
 use token
 use diag
+use byte_evidence
 
 # How many bytes of byte-order marks, U+FEFF as UTF-8 writes it, open the
 # text: 0 for nearly every file, 3 for one mark, more for a file a tool saved
@@ -45,6 +54,27 @@ function marked(length: i64) -> diag.Diagnostic
     )
     return d
 
+# The one message for a text in UTF-16 with no mark, where every other byte
+# is NUL, at the first NUL; none for any other text.
+function utf16_told(text: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    order = byte_evidence.utf16_order(text)
+
+    if order.len() == 0
+        return out
+    first: i64 @ 0
+
+    if text[0] != 0
+        first @ 1
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unexpected_character",
+        message: "the control character U+0000 is not part of the language's syntax",
+        span: token.Span(start: first, end: first + 1)
+    )
+    d.notes @ d.notes.push(byte_evidence.utf16_said(order))
+    d.notes @ d.notes.push("nothing else in this file is read until it is UTF-8")
+    return out.push(d)
+
 ## Tests
 
 # U+FEFF from its UTF-8 bytes, since the language writes no character by its
@@ -66,3 +96,18 @@ test "the marks that open a text are counted, and none elsewhere"
     assert one.fixes[0].certainty == .certain
     assert one.fixes[0].replacement == ""
     assert marked(6).message == "the file opens with 2 UTF-8 byte-order marks, U+FEFF, which is not part of the language's syntax: a `.hero` file is UTF-8 with no mark"
+
+# Defect 247's two orders, committed as UTF-16 with no mark over ASCII, which
+# is UTF-8: one message each, at the first NUL, naming the order; a text with
+# no NUL, or one alone, is no UTF-16.
+test "UTF-16 with no mark over ASCII is told once, at its first NUL, naming its order"
+    fixtures = "tests/golden/surface-fixtures/notext247/"
+    little = utf16_told(read_file(fixtures + "utf16le-ascii.txt").must())
+    assert little.len() == 1
+    assert little[0].span.start == 1
+    assert little[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 little-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
+    big = utf16_told(read_file(fixtures + "utf16be-ascii.txt").must())
+    assert big[0].span.start == 0
+    assert big[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 big-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
+    assert utf16_told("function main()\n").len() == 0
+    assert utf16_told("").len() == 0
