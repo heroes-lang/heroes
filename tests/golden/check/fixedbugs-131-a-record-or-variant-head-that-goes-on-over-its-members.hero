@@ -20,19 +20,25 @@ record Point )  #~ expected_end_of_line
     x: i64
     y i64  #~ expected_field_type
 
-record Lone )  #~ empty_record
+record Lone )  #~ expected_end_of_line empty_record
 
 variant Token )  #~ expected_end_of_line
     word
     number
         n f64  #~ expected_field_type
 
-variant Nothing )  #~ empty_variant
+variant Nothing )  #~ expected_end_of_line empty_variant
 
 extern "m.h" )  #~ expected_end_of_line
     function q() -> i64
 
-extern "n.h" )  #~ expected_extern_block
+extern "n.h" )  #~ expected_end_of_line expected_extern_block
 
 function main()
     print(1)
+
+# Moved 2026-10-04 with defect 198's repair (lane b9-recovery): a head with
+# junk and nothing below is no longer told its emptiness alone, which hid the
+# junk until members were written. `record Lone )`, `variant Nothing )` and
+# `extern "n.h" )` are told their `)` and their missing members both, the
+# group's at its head as a record's and a variant's are.

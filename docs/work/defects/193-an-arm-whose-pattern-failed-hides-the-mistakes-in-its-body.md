@@ -5,3 +5,5 @@
     **Why it is a defect.** A mistake told only once another is fixed: design.md §4.17's measure counts an exchange more.
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only once another is fixed; no false message, no wrong certain fix.
+
+    Repaired at `901acaa4` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

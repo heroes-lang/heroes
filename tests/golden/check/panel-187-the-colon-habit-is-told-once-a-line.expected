@@ -1,4 +1,2 @@
-tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero:9:13: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)
-tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero:9:23: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `:`)
-tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero:12:13: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)
-tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero:12:23: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `:`)
+tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero:14:13: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)
+tests/golden/check/panel-187-the-colon-habit-is-told-once-a-line.hero:17:13: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)

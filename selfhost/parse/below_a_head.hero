@@ -21,6 +21,7 @@ use diag
 use lexer
 use parse/readings
 use parse/joined_lines as seams
+use text_outline
 
 # Which reading a line below a bodiless head is read as: the head's body, one
 # level deeper (`body`); a line beside the head, apart (`beside`); or the
@@ -69,7 +70,7 @@ function agreed(line: seams.Line, d: diag.Diagnostic, r: readings.Readings) -> b
 
     if !seams.opens_a_line_below(line, at: at)
         return false
-    i: i64 @ seams.last_at_most(r.held.starts, at: at) + 1
+    i: i64 @ text_outline.last_at_most(r.held.starts, at: at) + 1
 
     while i < r.held.starts.len() && r.held.starts[i] <= line.after
         if r.held.diagnostics[i].code == d.code
@@ -128,7 +129,7 @@ function read_as_what_it_is(lines: [seams.Line], froms: [i64], b: Bodied, r: rea
 # the head's missing body and the breaks' own reports aside, or `to` where
 # there is none.
 function first_refusal(line: seams.Line, s: readings.Sorted, from: i64, to: i64, r: readings.Readings) -> i64
-    i: i64 @ seams.last_at_most(s.starts, at: from - 1) + 1
+    i: i64 @ text_outline.last_at_most(s.starts, at: from - 1) + 1
 
     while i < s.starts.len() && s.starts[i] < to
         d = s.diagnostics[i]
@@ -141,7 +142,7 @@ function first_refusal(line: seams.Line, s: readings.Sorted, from: i64, to: i64,
 
 # The line below a bodiless head that `at` stands on, or -1.
 function region_at(b: Bodied, at: i64) -> i64
-    i = seams.last_at_most(b.froms, at: at)
+    i = text_outline.last_at_most(b.froms, at: at)
 
     if i >= 0 && at < b.ends[i]
         return i

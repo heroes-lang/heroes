@@ -33,6 +33,8 @@ use grammar_expr
 use parse/opening
 use parse/brace_habit
 use parse/unclosed
+use parse/swap_reading
+use parse/head_kind
 
 ## The habit
 
@@ -51,7 +53,26 @@ function body_or_block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, he
 
     if b.is_err()
         unclosed.past_what_was_swallowed(@c, text, from: head.pos)
+        at_the_margin(@c, @a, text, head: head)
     return b
+
+# A body written at its head's own margin, `function main()` over `print(1)`
+# at column 0, told missing at its first line: that line and those below it,
+# to the next that opens a declaration, read as the body they are, their own
+# mistakes told, where each was told again as no declaration (defect 202).
+function at_the_margin(@c: cursor.Cursor, @a: ast.Ast, text: str, head: opening.Mark)
+    if !opening.refused_here(c, head)
+        return
+
+    while !cursor.at(c, .eof) && !cursor.at(c, .indent) && !cursor.at(c, .dedent) && !opens_a_declaration(c, text)
+        _ = grammar_expr.statement(@c, @a, text)
+        cursor.skip_terminators(@c)
+
+# Whether the line under the cursor opens a top-level declaration or a `use`,
+# as the file's reader takes it (`parse/decl.file`).
+function opens_a_declaration(c: cursor.Cursor, text: str) -> bool
+    k = swap_reading.opens_line_as(c, text)
+    return head_kind.declares(k) || k == .kw_use
 
 # Braces below a head that failed past a line of its own, `extern "m.h" )`
 # over them, which go whole with that head, `{` to `}`, after the caller's

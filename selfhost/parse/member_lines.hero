@@ -148,26 +148,6 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             reading @ false
         else if k == .eof
             reading @ false
-        else if k == .ident
-            name = cursor.current_span(c)
-            doc = doc_comments.take_docs(@c, text, name)
-            _ = cursor.bump(@c)
-            colon_habit.eat(@c)
-            which = "the case `" + cursor.slice_of(text, name) + "`"
-            fields: [ast.Field] @ []
-
-            if braces_close(c, text)
-                told(@c, text: text, member: which, rule: CASE_RULE)
-
-                if !past_laid_braces(@c)
-                    fields @ braced_fields(@c, @a, text)
-            line_ends(@c, text: text, member: which, rule: CASE_RULE, @habit)
-            cursor.skip_terminators(@c)
-
-            if cursor.at(c, .indent)
-                for field in fields_of(@c, @a, text, @habit)
-                    fields @ fields.push(field)
-            cases @ cases.push(ast.Case(name: name, fields: fields, doc: doc))
         else if k == .lbrace && cases.len() > 0 && brace_habit.alone(text, cursor.current_span(c)) && braces_close(c, text)
             # Allman's braces, alone on the line below a case: its fields,
             # told where the next case's name was owed and read as the case's.
@@ -191,20 +171,49 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
                 rule: CASE_RULE,
                 @habit
             )
-        else if k == .indent
-            # The payload of a case whose NAME was refused on the line above.
-            # The ident arm is the only one that consumes a payload block, so
-            # when the name is not an identifier its block is still here — and
-            # `skip_line` deliberately stops BEFORE an indent, which left this
-            # loop spinning on the same token forever (fixedbugs, 2026-08-13).
-            # Dropping it silently is recovery's own rule: one bad declaration
-            # costs one diagnostic, and the case name already spent it.
-            _ = cursor.balanced_block(@c)
         else
-            refused_case(@c, text)
-            cursor.skip_line(@c)
+            one = case_line(@c, @a, text, @habit)
+
+            if !one.is_err()
+                cases @ cases.push(one.must())
 
     return cases
+
+# One line of a variant's cases, read as one: its case, its fields in braces
+# on its line or indented below it; or a failure where it holds none, told
+# where nothing stands on it already and passed. A block under a line whose
+# name was refused is passed whole, the name having spent the one report: the
+# ident arm alone consumes a payload, and `skip_line` stops BEFORE an indent,
+# which spun the loop on it (fixedbugs, 2026-08-13). A variant's block that
+# holds declarations too reads its other lines here (`parse/heads`, defect 200).
+function case_line(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> ast.Case?
+    if cursor.at(c, .indent)
+        _ = cursor.balanced_block(@c)
+        return fail(code: "absent", msg: "a block")
+
+    if !cursor.at(c, .ident)
+        refused_case(@c, text)
+        cursor.skip_line(@c)
+        return fail(code: "absent", msg: "no case")
+    name = cursor.current_span(c)
+    doc = doc_comments.take_docs(@c, text, name)
+    _ = cursor.bump(@c)
+    colon_habit.eat(@c)
+    which = "the case `" + cursor.slice_of(text, name) + "`"
+    fields: [ast.Field] @ []
+
+    if braces_close(c, text)
+        told(@c, text: text, member: which, rule: CASE_RULE)
+
+        if !past_laid_braces(@c)
+            fields @ braced_fields(@c, @a, text)
+    line_ends(@c, text: text, member: which, rule: CASE_RULE, @habit)
+    cursor.skip_terminators(@c)
+
+    if cursor.at(c, .indent)
+        for field in fields_of(@c, @a, text, @habit)
+            fields @ fields.push(field)
+    return ok(ast.Case(name: name, fields: fields, doc: doc))
 
 # What a case's line is told where its name was owed and something else
 # stands, where no report stands on it already.

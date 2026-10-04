@@ -18,42 +18,82 @@
 # same bad pattern told again (`::x`), and it is not said: the line goes. The
 # arm read so is no arm of the tree, its pattern having been refused.
 #
+# **So is an arm whose pattern was refused anywhere, or whose `=>` was owed at
+# junk, where its line holds a `=>`** (defect 193): `x | 2 => f(1 +)` went
+# whole with its line at the `x`, and the `1 +` waited for a pattern to be
+# written. It goes on at that `=>` (`to_the_arrow`), what it passes the
+# refused pattern's, and its value is read for its own mistakes.
+#
 # | entry | called by |
 # |---|---|
-# | `lead` | `grammar_expr.arm` |
+# | `lead`, `to_the_arrow` | `grammar_expr.arm` |
 
 use token
 use ast
 use cursor
 use parse/arm_pattern
+use open_line
 
-# An arm's first pattern, or none where an operator stood alone where it
-# goes; and whether the operator was told (`told`), the arm then read for
-# its own mistakes and kept from the tree.
+# An arm's patterns, none where an operator stood alone where they go; and
+# whether a refusal of them was told (`told`), the arm then read for its own
+# mistakes and kept from the tree.
 record Lead
     patterns: [ast.Pattern]
     told: bool
 
-# The arm's first pattern as `arm_pattern.read` reads it; where that refused
-# an operator no pattern begins with, the pattern after the operator, or
-# none where the `=>` follows it. A failure where no arm can be read here.
+# The arm's patterns: the first as `arm_pattern.read` reads it, or, where
+# that refused an operator no pattern begins with, the one after it or none
+# where the `=>` follows it; then each one a `|` joins. After a refusal the
+# arm goes on at a `=>` its line holds (`to_the_arrow`), and is a failure
+# where none stands there.
 function lead(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Lead?
     first = arm_pattern.read(@c, @a, text)
+    patterns: [ast.Pattern] @ []
+    told: bool @ first.is_err()
+    reading: bool @ !told
 
-    if !first.is_err()
-        return ok(Lead(patterns: [first.must()], told: false))
+    if !told
+        patterns @ [first.must()]
+    else if passed(@c) && !cursor.at(c, .fat_arrow)
+        after = pattern_after(@c, @a, text)
+        reading @ !after.is_err()
 
-    if !passed(@c)
+        if reading
+            patterns @ [after.must()]
+
+    while reading && cursor.eat(@c, .pipe)
+        more = arm_pattern.read(@c, @a, text)
+        reading @ !more.is_err()
+        told @ told || !reading
+
+        if reading
+            patterns @ patterns.push(more.must())
+
+    if told && !cursor.at(c, .fat_arrow) && !to_the_arrow(@c)
         return fail(code: "no_pattern", msg: "the arm has no pattern")
-    none: [ast.Pattern] = []
+    return ok(Lead(patterns: patterns, told: told))
 
-    if cursor.at(c, .fat_arrow)
-        return ok(Lead(patterns: none, told: true))
-    after = pattern_after(@c, @a, text)
+# Where the arm was refused at the cursor, its pattern or its `=>`: moved to
+# a `=>` its line holds outside its brackets, what it passes the refusal's,
+# told already; false, nothing moved, where none stands before the line ends.
+function to_the_arrow(@c: cursor.Cursor) -> bool
+    depth: i64 @ 0
+    i: i64 @ c.pos
 
-    if after.is_err()
-        return fail(code: "no_pattern", msg: "no pattern after the operator")
-    return ok(Lead(patterns: [after.must()], told: true))
+    while !token.ends_a_line(c.tokens[i].kind) && !(depth <= 0 && c.tokens[i].kind == .fat_arrow)
+        if c.tokens[i].kind == .lparen || c.tokens[i].kind == .lbracket || c.tokens[i].kind == .lbrace
+            depth @ depth + 1
+        else if token.is_closer(c.tokens[i].kind)
+            depth @ depth - 1
+        i @ i + 1
+
+    if c.tokens[i].kind != .fat_arrow
+        return false
+
+    while c.pos < i
+        _ = cursor.bump(@c)
+
+    return true
 
 # Where an arm's pattern was refused at the cursor, whether the token there
 # is an operator no pattern begins with, `arm_pattern.read` having told it:
@@ -76,22 +116,12 @@ function pattern_after(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern
 
 # A binary operator (spec § 7), the propagating `?` and the `::` that names a
 # field: the tokens a line that holds an arm's `=>` may begin with and no
-# pattern may. `-` signs a pattern's literal and is the pattern's own
-# (`arm_line.spaced_sign`). ENUMERATED, never a catch-all: a new kind is a
-# compile error here until somebody decides it.
+# pattern may, the lexer's enumerated list of what only goes on with a line
+# (`open_line.can_only_go_on`) but `-`, which signs a pattern's literal and
+# is the pattern's own (`arm_line.spaced_sign`). This module kept its own
+# copy of that list until defect 202 paid for its lines with it.
 function leads_no_pattern(kind: token.TokenKind) -> bool
-    return match kind
-        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge               => true
-        .pipe | .caret | .amp | .shl | .shr | .plus | .star | .slash | .percent     => true
-        .question | .colon_colon                                                    => true
-        .minus | .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit => false
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if => false
-        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue          => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use     => false
-        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot        => false
-        .hole | .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket     => false
-        .lbrace | .rbrace | .bang | .tilde | .comment | .terminator | .indent       => false
-        .dedent | .eof | .error                                                     => false
+    return open_line.can_only_go_on(kind) && kind != .minus
 
 test "an operator no pattern begins with is passed, and a pattern's own sign is not"
     assert leads_no_pattern(.pipe)

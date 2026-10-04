@@ -1,0 +1,42 @@
+# Fixed defect 198, 2026-10-04 (lane b9-recovery; panel 187's cause B1, the
+# audit's rows 131-16a, 16b, 53a and 53b). Symptom: a head whose line went on
+# past it was told by one message and the rest of its line dropped, so a
+# mistake in that rest waited for the first to be repaired: `variant T )` and
+# `record Point )` with nothing below were told empty and the `)` not at all,
+# and `function f(): i64 )` was told its `:` and the `)` only once `->` was
+# written. Cause: `parse/members_below.no_members_below` told the junk only
+# over members below it, and every head's drop of its line, there and in
+# `parse/opening.body_follows`, asked nothing of what it dropped. The junk is
+# told over members and over none, the members' absence beside it, and the
+# drop tells a closer one too many first (`parse/brace_habit.drop_told`), as a
+# statement's does. An `extern` group's absence stands at its head, as a
+# record's and a variant's do. The last two are the shapes left as they were:
+# junk over members, one report, and a head that owes a body, whose missing
+# body names the junk it found.
+
+variant T )  #~ expected_end_of_line empty_variant
+
+variant U ]  #~ expected_end_of_line empty_variant
+
+record Point )  #~ expected_end_of_line empty_record
+
+record Twice ) )  #~ expected_end_of_line expected_end_of_line empty_record
+
+record Named x )  #~ expected_end_of_line expected_end_of_line empty_record
+
+extern "m.h" )  #~ expected_end_of_line expected_extern_block
+
+function f(): i64 )  #~ expected_end_of_line expected_end_of_line
+    return 1
+
+function g(): i64 )  #~ missing_body expected_end_of_line
+
+constant K: i64 = 5 )  #~ missing_body expected_end_of_line
+
+variant Over )  #~ expected_end_of_line
+    red
+
+test "t" )  #~ missing_body
+
+function main()
+    print(f())

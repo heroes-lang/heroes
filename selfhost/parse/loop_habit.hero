@@ -36,6 +36,7 @@
 # |---|---|
 # | `refuse` | `grammar_expr.for_stmt` |
 # | `do_tail` | `grammar_expr.while_stmt` |
+# | `past_a_statement` | `parse/statement_end.close` |
 
 use token
 use diag
@@ -43,6 +44,7 @@ use cursor
 use parse/brace_habit
 use parse/opening
 use parse/line_end
+use parse/pairing
 use text_lines
 use operators
 
@@ -52,15 +54,49 @@ use operators
 function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.Cursor)
     certainty: diag.Certainty @ .guess
 
-    if !cursor.at(c, .ident) && a_loop(c: c, text: text, read: read) && a_condition(c: c, read: read)
+    if !cursor.at(c, .ident) && a_loop(c: c, text: text, read: read) && a_condition(c: c, text: text, read: read)
         certainty @ .certain
+    header = c_header(c, text)
+    rule: str @ "a loop over a condition is `while`"
+
+    if header
+        rule @ "C's three-clause header is no loop here: count with `for i in range(from: a, to: b)`, and loop on a condition with `while`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "for_missing_in",
-        message: "`for` iterates — `for x in xs`; found " + cursor.found(c, text) + " — a loop over a condition is `while`",
+        message: "`for` iterates — `for x in xs`; found " + cursor.found(c, text) + " — " + rule,
         span: cursor.current_span(c)
     )
-    d.fixes @ d.fixes.push(diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty))
+
+    if !header
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty)
+        )
     cursor.push_diagnostic(@c.diagnostics, d)
+
+# Whether the `(` under the cursor holds, in no bracket of its own, a `;` the
+# lexer left to this report: C's three-clause header `(i = 0; i < n; i++)`,
+# its every `;` once a message (`closers.in_a_for_header`, defect 194), which
+# no `while` writes. Inside a `(` the lexer ends no line, so one never closed
+# holds what stands before the first line end past it.
+function c_header(c: cursor.Cursor, text: str) -> bool
+    depth: i64 @ 0
+    i: i64 @ c.pos
+
+    while cursor.at(c, .lparen) && !token.ends_a_line(c.tokens[i].kind)
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if token.is_closer(k)
+            depth @ depth - 1
+
+            if depth == 0
+                return false
+        else if depth == 1 && k == .error && cursor.slice_of(text, c.tokens[i].span) == ";"
+            return true
+        i @ i + 1
+
+    return false
 
 # Whether `read`, the cursor `c` after the condition a `while` would read,
 # read one: it moved, refused nothing, held nothing back, and stands where
@@ -80,14 +116,14 @@ function a_loop(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
 # `for [1, 2, 3]`, `for (xs)` and `for "abc".chars()` took a certain `while`
 # that was refused anew as `not_bool` (the certain-fix audit's P4), and so did
 # `for 3`, `for ("abc")` and `for {"a": 1}` beside them.
-function a_condition(c: cursor.Cursor, read: cursor.Cursor) -> bool
+function a_condition(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
     from: i64 @ c.pos
     to: i64 @ read.pos
 
     while to > from && (c.tokens[to - 1].kind == .comment || c.tokens[to - 1].kind == .terminator)
         to @ to - 1
 
-    while to - from >= 2 && c.tokens[from].kind == .lparen && closer_after(c, open: from) == to - 1
+    while to - from >= 2 && c.tokens[from].kind == .lparen && pairing.paired_closer(c, text, open: from) == to - 1
         from @ from + 1
         to @ to - 1
 
@@ -112,26 +148,22 @@ function a_condition(c: cursor.Cursor, read: cursor.Cursor) -> bool
 function gives_a_bool(kind: token.TokenKind) -> bool
     return kind == .or_or || kind == .and_and || kind == .eq_eq || kind == .bang_eq || kind == .lt || kind == .le || kind == .gt || kind == .ge
 
-# The index of the closer the opener at `open` pairs with, by depth, or -1.
-function closer_after(c: cursor.Cursor, open: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ open
-
-    while c.tokens[i].kind != .eof
-        k = c.tokens[i].kind
-
-        if k == .lparen || k == .lbracket || k == .lbrace
-            depth @ depth + 1
-        else if k == .rparen || k == .rbracket || k == .rbrace
-            depth @ depth - 1
-
-            if depth == 0
-                return i
-        i @ i + 1
-
-    return -1
-
 ## The tail of `do { ... } while (c)`
+
+# How what stands past the statement begun at token `from` is told, its
+# line's rule; but where the statement is `do` and the `{` under the cursor
+# opens braces that close on a line a `while` goes on with, C's do-while,
+# which no word here writes: told at that `{` for what it is, its one report,
+# the tail then read by `do_tail`. It was told as a brace past a name, and
+# its loop only once the braces went, `unexpected_block` and `missing_body`
+# beside it (defect 201).
+function past_a_statement(c: cursor.Cursor, text: str, from: i64) -> str
+    if c.pos == from + 1 && cursor.slice_of(text, c.tokens[from].span) == "do" && brace_habit.opens_here(c, text)
+        close = brace_habit.closer(c, open: c.pos)
+
+        if c.tokens[close].kind == .rbrace && c.tokens[close + 1].kind == .kw_while
+            return "C's `do { … } while (c)`, which runs its body before asking `c`, is no loop here: write the body under `while true`, ending it with `if !(c)` over `break`"
+    return "one statement per line, no semicolons"
 
 # Whether the `while` at token `head`, whose condition the cursor stands
 # after, is the tail of braces whose `}` stands before it on its line and

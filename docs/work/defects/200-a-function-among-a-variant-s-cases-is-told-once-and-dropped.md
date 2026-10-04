@@ -3,3 +3,5 @@
     **Origin:** panel 187's compiler engineer, its § 1's cause B3 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on lane recovery-b8's shape `g2/r12`, one of the six beside item 130; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+    Repaired at `7831aec7` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

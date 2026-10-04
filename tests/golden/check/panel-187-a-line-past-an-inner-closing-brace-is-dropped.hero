@@ -5,6 +5,12 @@
 # (`parse/braced_lines.hero:154`, `brace_habit.pass`), and what follows the
 # inner `}` on its line is not read. Row 131-32: `while (1 == 1)` is told
 # only once the braces are gone. Class (b): `adjacent`.
+#
+# Moved 2026-10-04 with defect 201's repair (lane b9-recovery): the line past
+# the inner `}` is read, the tail's own mistakes told, and what was hidden is
+# the do-while itself, which no word here writes: the `do {`'s `{` is told as
+# that habit, with the loop that replaces it
+# (`parse/loop_habit.past_a_statement`); it pins that now.
 
 function main() {  #~ missing_body
     do {  #~ expected_end_of_line

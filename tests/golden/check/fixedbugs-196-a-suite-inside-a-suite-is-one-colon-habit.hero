@@ -1,0 +1,57 @@
+# Fixed defect 196, 2026-10-04 (lane b9-recovery; panel 187's cause A3, rows
+# 131-56a and 131-56b). Symptom: Python's one-line suites nested on one line,
+# `if n > 0: if n > 1: print(1)`, were told `trailing_colon` at the first `:`
+# and `missing_body` at the second, *found `:`*, two messages for one habit,
+# three heads on a line the same two. Cause: the first suite's `:` and line
+# end are laid out as a block's indent and dedent (`parse/colon_habit`), and
+# the second suite then met that dedent where its line end was asked, and was
+# left to its head. A suite inside the one on its line is now that one's
+# report, one more certain fix of it writing it one level deeper, and is read
+# as its block, the dedent the two share ending both (`suite_ended`). The
+# shapes: two and three heads, under `while`, `for` and `else`, spaced, the
+# last line of a body with a declaration after it, inside a deeper block with
+# a line after it, under an `if` with an `else` after it, a `match` inside.
+
+function two(n: i64)
+    if n > 0: if n > 1: print(1)  #~ trailing_colon
+
+function three(n: i64)
+    if n > 0: if n > 1: if n > 2: print(1)  #~ trailing_colon
+
+function under_while(n: i64)
+    while n > 5: if n > 6: print(1)  #~ trailing_colon
+
+function under_for(xs: [i64])
+    for x in xs: if x > 0: print(x)  #~ trailing_colon
+
+function under_else(n: i64)
+    if n > 5
+        print(5)
+    else: if n > 1: print(1)  #~ trailing_colon
+
+function spaced(n: i64)
+    if n > 0:  if n > 1:  print(1)  #~ trailing_colon
+
+function deeper_with_a_line_after(n: i64)
+    while n > 9
+        if n > 0: if n > 1: print(1)  #~ trailing_colon
+    print(n)
+
+function with_an_else_after(n: i64)
+    if n > 0: if n > 1: print(1)  #~ trailing_colon
+    else
+        print(0)
+
+function a_match_inside(n: i64)
+    if n > 0: match n: _ => print(1)  #~ trailing_colon
+
+function main()
+    two(2)
+    three(3)
+    under_while(7)
+    under_for([1])
+    under_else(2)
+    spaced(2)
+    deeper_with_a_line_after(2)
+    with_an_else_after(2)
+    a_match_inside(1)

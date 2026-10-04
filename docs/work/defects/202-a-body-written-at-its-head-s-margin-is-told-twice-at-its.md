@@ -5,3 +5,5 @@
     **Why it is a defect.** One mistake, the body's indentation, told twice at one place (design.md §4.17).
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, class (a); both messages true.
+
+    Repaired at `07cf779a` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

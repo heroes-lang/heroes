@@ -149,21 +149,26 @@ record Owed
 function next(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Owed
     told: bool @ true
     habit: i64 @ -1
-    return next_member(@c, @a, text, in_record: false, told: @told, @habit)
+    return next_member(@c, @a, text: text, holder: "", told: @told, @habit)
 
-# The same, where the block is a record's, `record Q` over `x: i64` and
-# `function f()` (`parse/records`): every line no declaration's keyword opens
-# is a field's (`member_lines.field_line`, `habit` its `,` report), and the
+# The same, where the block is a `record`'s or a `variant`'s, its `holder`,
+# `record Q` over `x: i64` and `function f()` (`parse/records`): every line
+# no declaration's keyword opens is a field's or a case's
+# (`member_lines.field_line`, `case_line`, `habit` its `,` report), and the
 # first line one opens is told where `told` is false, a record holding only
-# fields, and read as the declaration it is, its body the grammar's (defect
-# 130's class, lane recovery-b8). It was `expected_field` and then
-# `unexpected_block`, two messages, its body unread.
-function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, in_record: bool, @told: bool, @habit: i64) -> Owed
+# fields and a variant only cases, and read as the declaration it is, its
+# body the grammar's (defect 130's class, lane recovery-b8; a variant's since
+# defect 200, where it went whole with its block). It was `expected_field`
+# and then `unexpected_block`, two messages, its body unread.
+function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, holder: str, @told: bool, @habit: i64) -> Owed
     cursor.skip_terminators(@c)
     k: token.TokenKind @ swap_reading.opens_line_as(c, text)
 
-    while member_owner(c, text, kind: k) == "" && (in_record && k != .dedent && k != .eof || !in_record && k == .ident && headless.field_shaped(c.tokens, c.pos))
-        _ = member_lines.field_line(@c, @a, text, @habit).is_err()
+    while member_owner(c, text, kind: k) == "" && (holder != "" && k != .dedent && k != .eof || holder == "" && k == .ident && headless.field_shaped(c.tokens, c.pos))
+        if holder == "variant"
+            _ = member_lines.case_line(@c, @a, text, @habit).is_err()
+        else
+            _ = member_lines.field_line(@c, @a, text, @habit).is_err()
         cursor.skip_terminators(@c)
         k @ swap_reading.opens_line_as(c, text)
 
@@ -180,16 +185,27 @@ function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, in_record: bool,
     if owner == ""
         return Owed(owes: .statement, owner: owner, head: began)
 
+    # A word the lexer refused there, `fn f()`, is told by the lexer, which
+    # says it is declared at the top level: the one report (defect 200).
+    if !told && cursor.at_reported_error(c)
+        told @ true
+
     if !told
         told @ true
+        what: str @ "field"
+        holds: str @ "its fields, one per line, `name: type`"
         taking: str @ ""
 
+        if holder == "variant"
+            what @ "case"
+            holds @ "its cases, one per line, each with its fields below it"
+
         if owner == "a `function`"
-            taking @ ", taking the record as a parameter"
+            taking @ ", taking the " + holder + " as a parameter"
         cursor.error(
             @c,
-            code: "expected_field",
-            message: "expected a field name, found " + swap_reading.found(c, text) + " — a `record` holds only its fields, one per line, `name: type`, and " + owner + " in it is declared at the top level of the file" + taking,
+            code: "expected_" + what,
+            message: "expected a " + what + " name, found " + swap_reading.found(c, text) + " — a `" + holder + "` holds only " + holds + ", and " + owner + " in it is declared at the top level of the file" + taking,
             span: cursor.current_span(c)
         )
 
@@ -201,7 +217,7 @@ function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, in_record: bool,
 
     if k == .kw_record || k == .kw_variant
         members(@c, @a, text, fields: k == .kw_record)
-        return next_member(@c, @a, text, in_record: in_record, told: @told, @habit)
+        return next_member(@c, @a, text: text, holder: holder, told: @told, @habit)
 
     if head_read(@c, @a, text, kind: k)
         return Owed(owes: .body, owner: owner_named(c, text, kind: k, keyword: began.pos), head: began)
