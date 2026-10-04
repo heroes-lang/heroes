@@ -3,3 +3,5 @@
     **Origin:** panel 191's compiler-engineer, 2026-10-04, on the Windows box, set outside the sitting's question; named by the critic's second pass as filed nowhere (`git grep -i doctor` over `docs/work/defects/` finding only 243); filed with the sitting's synthesis.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message, *cc not found* with exit 2 on a machine whose toolchain works, and advice for another platform; the CI's green on it is its image's, not the tool's.
+
+    **2026-10-04:** Repaired at `20b55d02`, gated by its cases and the compiler's own tests on this Mac (1,214, all passed); the net is owed at the batch's close, and the Windows box owes the row red at the base and green with the repair.
