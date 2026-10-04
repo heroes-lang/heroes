@@ -193,6 +193,19 @@ constant RUN_ROOTS: [str]
 constant LEAST: i64
     3581
 
+# **The run roots' own floor** (defect 318, 2026-10-04): what the walk of
+# `RUN_ROOTS` reaches, asked or stepped aside. They hold 133 of the marks
+# `LEAST` counts (measured that day on this tree, 25 groups, none stepped
+# aside), so a walk of them that reached nothing left the total 133 short, and
+# the total floor caught that only while it stood within 133 of the count:
+# at 2779 under batch 9 the sweep read green with the run roots' half gone,
+# and at 3581 it reads so again once the expectation half grows 133 marks
+# past it, which the total's quarter of slack lets it do in silence. A mark
+# stepped aside is reached, as for the total, so the number is the tree's on
+# every platform.
+constant RUN_LEAST: i64
+    133
+
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the
 # floor, which are questions about the whole.
@@ -235,7 +248,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         return ok(r)
     every_thesis_rule_has_a_witness(@r, witnessed: witnessed)
     run = run_roots(@r, scratch: scratch, compiler: compiler, roots: RUN_ROOTS)?
-    floored(@r, expected: annotated, run: run, floor: LEAST)
+    floored(@r, expected: annotated, run: run, floor: LEAST, run_floor: RUN_LEAST)
     return ok(r)
 
 # What the run roots' half counted: the diagnostics its groups pinned, and the
@@ -279,15 +292,26 @@ function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str])
 # the tree, and a mark stepped aside was reached, so it counts as reached and
 # never as passed: the third above is what judges the skips, as the
 # `unsupported` form's floor is the tree's count, the same on every platform.
-function floored(@r: report.Report, expected: i64, run: Asked, floor: i64)
+#
+# **And the run roots answer to a floor of their own, `run_floor`** (defect
+# 318, 2026-10-04): the total cannot see them go, since they are 133 marks of
+# 3581 and the total's slack is a quarter (`RUN_LEAST` says how it read green).
+function floored(@r: report.Report, expected: i64, run: Asked, floor: i64, run_floor: i64)
+    held = run.marks + run.stepped
     floors.check(
         @r,
         label: "annotations",
-        found: expected + run.marks + run.stepped,
+        found: expected + held,
         floor: floor,
-        what: "annotated diagnostics found (" + run.stepped.to_str() + " of them stepped aside for a library this machine lacks, which the third below judges)"
+        what: "annotated diagnostics (" + run.stepped.to_str() + " of them stepped aside for a library this machine lacks, which the third below judges)"
     )
-    held = run.marks + run.stepped
+    floors.check(
+        @r,
+        label: "annotations/run-roots",
+        found: held,
+        floor: run_floor,
+        what: "annotated diagnostics in the run roots, " + RUN_ROOTS.join(" and ") + " (" + run.stepped.to_str() + " of them stepped aside)"
+    )
 
     if run.stepped > 0 && run.stepped * 3 >= held
         report.keep_failure(
@@ -856,17 +880,17 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
 
     # The expectation half alone holds its floor; the third turns it red.
     all_aside: report.Report @ report.empty()
-    floored(@all_aside, expected: 10, run: run, floor: 10)
+    floored(@all_aside, expected: 10, run: run, floor: 10, run_floor: 2)
     assert all_aside.failed == 1
     assert strings.contains(text: all_aside.failures[0], needle: "this machine is not asking them")
 
     # A floor the marks found miss is red; one they reach is green, the mark
     # stepped aside counted as reached (10 expected, 9 asked, 1 stepped aside).
     short: report.Report @ report.empty()
-    floored(@short, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 21)
+    floored(@short, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 21, run_floor: 10)
     assert short.failed == 1
     reached: report.Report @ report.empty()
-    floored(@reached, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20)
+    floored(@reached, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20, run_floor: 10)
     assert reached.failed == 0
 
     # The Windows box's counts at batch 9's leg: 3575 asked and six run-root
@@ -875,10 +899,22 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     # run-root marks less those six. Green, where the asked-only floor read it
     # red.
     box: report.Report @ report.empty()
-    floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581)
+    floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581, run_floor: 133)
     assert box.failed == 0
-    assert box.passed == 1
+    assert box.passed == 2
     assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 318, held as a test (2026-10-04): the run roots' half gone, its walk
+# reaching nothing, while the expectation half has grown 133 marks past the
+# total's floor: the total reads green, as it did under one floor, and the run
+# roots' own floor reads red, naming them.
+test "fixedbugs: the run roots' half going is red by a floor of its own, whatever the total reads (defect 318)"
+    gone: report.Report @ report.empty()
+    floored(@gone, expected: 3714, run: Asked(marks: 0, stepped: 0), floor: 3581, run_floor: 133)
+    assert gone.passed == 1
+    assert gone.failed == 1
+    assert strings.starts_with(text: gone.failures[0], prefix: "FAIL annotations/run-roots\n")
+    assert strings.contains(text: gone.failures[0], needle: "the walk found 0 annotated diagnostics in the run roots")
 
 # DEFECT 319, held as a test (2026-10-04). A module's marks are the programs'
 # that reach it by their `use` lines: stepped aside with them where every one
