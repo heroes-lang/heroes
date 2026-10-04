@@ -792,6 +792,13 @@ gathered two, so an open defect was invisible in the author's own status report.
 That is CL-031's story, *a rule with no executor*, inside the section that tells
 it.
 
+**Reversed in its shape on 2026-10-04 by the author's *5a***, meant as: *one
+defect one file, so that we have no conflicts*. An open defect is a file of
+`docs/work/defects/` again, `docs/work/DEFECTS.md` its front page with no item,
+and a repaired one moves by `git mv` into `docs/records/done/`: batch 8's four
+lanes each edited the one file, and their merge conflicted on it twice
+(`docs/records/log/2026-10-04-0206-the-defect-list-becomes-one-file-per-defect.md`).
+
 ## CL-045 — When the author is following live, the update comes every two minutes and in full
 2026-09-03 · author instruction, given while the seven defects were being attacked · § 3
 

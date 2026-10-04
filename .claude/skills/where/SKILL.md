@@ -33,7 +33,9 @@ sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next,
                                   #  line count that stopped reaching the table it named.
                                   #  A pattern range cannot rot the same way.)
 cat docs/work/DECIDE.md           # open decisions = what the compiler is waiting on
-cat docs/work/DEFECTS.md          # what is BROKEN right now
+cat docs/work/defects/*.md        # what is BROKEN right now, one file per defect
+                                  # (one file, docs/work/DEFECTS.md, until 2026-10-04;
+                                  #  that file is now the list's front page, its rules)
                                   # (missing from this block until 2026-09-07, four days
                                   #  after the author instituted the list: no skill read
                                   #  it, so an open defect was invisible in exactly the
@@ -75,7 +77,7 @@ has never heard the word *compiler*. Rules:
 
 ### 4. Your turn — the author's pending items (never blocking)
 Summarize the **open** items of `docs/work/DECIDE.md` (what the compiler is
-waiting on), `docs/work/DEFECTS.md` (what is broken) and
+waiting on), the files of `docs/work/defects/` (what is broken) and
 `docs/work/SCHEDULED.md (retired 2026-09-12)` (work with a milestone), each with the file path and
 why it is worth their time — the vocabulary file keeps the sentence for the
 commonest reason, that guessing a cause before reading the fix is where the

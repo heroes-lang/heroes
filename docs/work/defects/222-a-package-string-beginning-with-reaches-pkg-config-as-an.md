@@ -1,0 +1,9 @@
+- [ ] **222 — a `package` string beginning with `-` reaches `pkg-config` as an option: one is accepted with no package named, another called a package, a third told falsely as not installed** | `extern "ab.h" package "--atleast-pkgconfig-version=0"` over `function seven() -> i32`, `ab.h` a `static inline`: `check` 0, `build` 0, prints `7`, a package clause naming no package; `package "--version"`: *the package `--version` answered with `3.0.7`*; `package "-x"`: *the package `-x` is not installed on this machine*, where `pkg-config` said *unknown option -- x* (the trunk's compiler at `826ddc2f`, this Mac, 2026-10-03, `<scratchpad>/repro188/pkg-option/`, `pkg-opt--/`, `pkg-opt-x/`; the first also in the Linux arm64 image, the seats) | `selfhost/cli/libraries.hero` (the `pkg-config` argv; its comment at 302 to 304 says no `.hero` file can hand it an argument) · panel 188 R7 (b) · **class: blocking**
+
+    **Origin:** panel 188's ffi-pragmatist and compiler-engineer, 2026-10-03, on Q5; reproduced by the coordinator the same day.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted and a false message; filed apart from 216 (the tool's parse of a whole string, not a string its tool cannot carry), landed in the same lane.
+
+    **Widened to `link` by panel 188's Windows leg**, 2026-10-03 (`docs/panel/188-reports/compiler-engineer.md` § 22.5; the author kept the extension): lld-link reads a `link` beginning with `-` as an option of its own, `link "-out:pwn188"` building at exit 0 and writing a file `pwn188.lib`; refused with the same `option_like_name`.
+
+    **2026-10-03, batch 8's FFI lane**: repaired at `9c1ee8c3`, widened at `d3597207`, gated by its cases and the compiler's own tests; the net and the Windows leg are owed at the batch's close.

@@ -97,8 +97,19 @@ Four work lists and one comprehension list, all in one shape (CL-066):
 `- [ ] **<first field>** | <what, in one line> | <where to look>`, an optional
 body indented four spaces opening with `**Origin:**` and its date, and the item
 region fenced between two lines of asterisks. `docs/work/DECIDE.md` carries the
-rule in full and `records/lists` is its executor. **An item of
-`docs/work/DEFECTS.md` ends its line with ` · **class: <name>**`** (`blocking`,
+rule in full and `records/lists` is its executor.
+
+**The defect list is a directory since 2026-10-04** (the author's *5a*, meant
+as: *one defect one file, so that we have no conflicts*): each open defect is a
+file of `docs/work/defects/`, `NNN-<slug>.md`, holding its one item in the shape
+above with its line first, and no fence and no count, the shape `docs/learn/`
+took on 2026-09-12. `docs/work/DEFECTS.md` stays at its path as the list's front
+page, its rules and no item; the open count is the number of files, derived. A
+defect is filed as a new file and closed by a `git mv` into `docs/records/done/`,
+ticked, so its history follows it. `records/lists` holds each file and the page,
+`records/defects` the names, and `records/tagged` reads either shape at a tag.
+
+**A defect's item ends its line with ` · **class: <name>**`** (`blocking`,
 `adjacent`, `systemic` or `improvement`) and carries a `**Class:**` body line
 with its date and reason, since 2026-10-02 (the author's *D1a*;
 `.claude/rules/verification.md` § Bounded discovery). That body line opens
@@ -110,18 +121,22 @@ judged included.
 
 **The first field is what that file's instrument reads**, so it differs by file:
 the milestone in its own `docs/work/milestones/` file, the padded `panel NNN` in
-`docs/work/DECIDE.md`, the defect number in `docs/work/DEFECTS.md`, the origin in
-`docs/learn/`. Put a sitting's number in a body instead and every pending
-verdict reports as unqueued, silently.
+`docs/work/DECIDE.md`, the defect number in a file of `docs/work/defects/`, the
+same number its name opens with, the origin in `docs/learn/`. Put a sitting's
+number in a body instead and every pending verdict reports as unqueued,
+silently.
 
 **A line that carries an archived or never-written path carries its date on that
 same physical line**, because the citation check reads one line at a time.
 
 ## A live list is a preamble, a count and its items — author instruction 2026-09-16
 
-`docs/work/DECIDE.md`, `docs/work/DEFECTS.md` and the files under
-`docs/work/milestones/` carry **a very short preamble**, then the `**OPEN: N**`
-banner, then the items. `docs/ROADMAP.md` carries a very short preamble, then
+`docs/work/DECIDE.md` and the files under `docs/work/milestones/` carry **a very
+short preamble**, then the `**OPEN: N**` banner, then the items. Since 2026-10-04
+`docs/work/DEFECTS.md` is the defects' front page and carries the very short
+preamble alone, under the same ceiling, its items being the files of
+`docs/work/defects/` and its count their number (§ The lists).
+`docs/ROADMAP.md` carries a very short preamble, then
 the two open counts, then its tables. **No other story goes in any of them**,
 and a story already there is MOVED rather than deleted — to `docs/records/done/`,
 to the milestone's journal, or to a `docs/records/log/` entry, all three
