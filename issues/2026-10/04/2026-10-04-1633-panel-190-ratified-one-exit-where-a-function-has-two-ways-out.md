@@ -1,3 +1,12 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-10-04
+commit: 761525bb3727aa916e492615398358ba7fa4dceb
+github: none
+---
+
 # Panel 190 ratified: one exit where a function has two or more ways out, its return slot borrowing
 
 2026-10-04, on the author's answer to the coordinator's recommendation of that

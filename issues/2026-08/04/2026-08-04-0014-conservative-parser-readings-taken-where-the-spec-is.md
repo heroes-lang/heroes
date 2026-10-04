@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-04
+commit: 39e4ebe6e8da7aa67aa9783da2ac22b2d34dba82
+github: none
+---
+
 2026-08-04 | Conservative parser readings taken where the spec is silent, each queued rather than decided: parameters separated by `,` only (§4.9's newline separation is stated for literals); `T??` rejected (§4.6 refuses the level ambiguity); a `match` arm body must be an expression or a block, so `=> assert false` is an error (the appendix wanted it in 8 places — recommendation on record to unify arm bodies as blocks) | a rejection can be relaxed later, an acceptance cannot be withdrawn | §4.6, §4.7, §4.9 | — |

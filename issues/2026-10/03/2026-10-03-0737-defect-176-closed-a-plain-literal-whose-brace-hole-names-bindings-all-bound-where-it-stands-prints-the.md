@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-10-02
+commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
+github: none
+---
+
 # Defect 176 closed: a plain literal whose brace hole names bindings all bound where it stands prints the braces, where panel 185's R7, decided by the author, refuses it with the `f` as its fix
 
 - [x] **176 — a plain literal whose brace hole names bindings all bound where it stands prints the braces, where panel 185's R7, decided by the author, refuses it with the `f` as its fix** | `x = 1` over `print("{x}")` and `print(x)`: `run` exit 0, prints `{x}` and `1`; under R7 `check` refuses the literal | spec `:52` (*A literal without the `f` is unchanged*), the opposite of the landing · panel 185's R7 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:201-203`; decided 2026-10-02, `:264-268`, *route (5b) lands after panel 184's R1*), so after defect 173 · **class: blocking** · **closed 2026-10-03**

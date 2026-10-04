@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 10480d650aa3a9e33dbc54e9f13ed41fbc319105
+github: none
+---
+
 # A closed rule with no golden is a rule waiting to reopen
 
 2026-09-16. M-check-completeness opens, and the first thing the milestone's own

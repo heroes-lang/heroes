@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-09-21
+commit: d02b8bf4c39c910bbd37669bc59e09ea2751cc7f
+github: none
+---
+
 - [x] **074 — on the Windows CI leg a window opens in which no child process starts, and 106 cases go red** | one holder of one shared redirect handle refused every later spawn; the cases reported a build that failed and annotations that disagreed, and neither happened | **closed 2026-09-22**, GitHub run 35693306661 green on all four legs | `docs/panel/174-the-two-files-the-whole-net-shares.md`
 
     **Origin:** 2026-09-21, the push carrying M-declared-extents step 32. The

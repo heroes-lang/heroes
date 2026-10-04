@@ -1,3 +1,12 @@
+---
+kind: defect
+area: ir
+milestone: none
+filed: 2026-10-03
+commit: 075b425d2a5356eaf1b4269c5731da5d9fee7e2c
+github: none
+---
+
 - [ ] **231 — every return sweeps every owned slot, so a function of many returns and many slots grows its IR and its C as their product** | lane irverify: `slots-returns-400` builds in 64.57 s after defect 218's repair, and at 800 clang does not finish in 300 s (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/` (the sweep at a return) · panel 106's design · **class: blocking**
 
     **Origin:** lane irverify, 2026-10-03, beside defect 218, reported to the coordinator; not yet run by the coordinator.

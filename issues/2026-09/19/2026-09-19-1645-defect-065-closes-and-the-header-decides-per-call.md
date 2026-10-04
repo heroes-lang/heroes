@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-19
+commit: 1d4b31178aa332aabc125d210b559eec1af430c9
+github: none
+---
+
 # Defect 065 closes, and the header decides per call
 
 2026-09-19, M-declared-extents step 5. Found by panel 165's completeness critic;

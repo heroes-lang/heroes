@@ -1,3 +1,12 @@
+---
+kind: decision
+area: golden
+milestone: none
+filed: 2026-10-01
+commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
+github: none
+---
+
 # Panel 183's R3: the opener's message reworded, and a narrower rule prototyped first
 
 2026-10-01, evening, `/decide` on the author's answer. The item below was

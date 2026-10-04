@@ -1,3 +1,12 @@
+---
+kind: defect
+area: resolve
+milestone: none
+filed: 2026-08-04
+commit: bb8728ac9394056246acb01dbf0f224df1b5570e
+github: none
+---
+
 - [x] **Defect 011 — two `@` arguments of one place compiled and ran, and design.md had promised a compile error since 2026-08-04** | found 2026-09-04 while retiring the panel watch list, repaired the same night, landed 2026-09-05 | panel 010 ratified 2026-08-04 (`DESIGN-LOG.md:43`), written into `design.md:1287-1289`; the shape and the tag are panel 110's | selfhost/resolve/writes.hero · selfhost/resolve/walk.hero · tests/golden/check/fixedbugs-two-mutable-arguments-of-one-place.hero · tests/golden/run/mutable-arguments-that-do-not-overlap.hero · docs/panel/110 | **the class this language exists to delete**: exit 0, and the answer depended on which reading of §4.8 the reader assumed
 
   **What it was.** `shift(a: @n, b: @n)` gave `heroes check` **0**, `heroes run` **0**, and printed **10** — the divergence panel 010 sat over, arriving silently. §4.8's copy-in/copy-out gives last-write-wins, so `b`'s `+ 10` overwrites `a`'s `+ 1`, while the reference semantics every mainstream language installs would give **11**. All four shapes the entry listed passed: the cell, the field, the index, and a three-argument `bump` printing 100. So `spec:80`'s *"No aliasing exists anywhere"* was false of a program the compiler accepted, and §12 says the spec beats the compiler.

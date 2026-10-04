@@ -1,3 +1,12 @@
+---
+kind: defect
+area: parse
+milestone: none
+filed: 2026-10-03
+commit: dd1c0dec98d84487f9bc8283e1e82707ad8f0fd6
+github: none
+---
+
 - [x] **216 — a header whose name holds a `>` passes `check` and stops `build` at exit 2 with an internal error and clang's text** | `extern "a>b.h"` over `function seven() -> i32`, the header beside the program: `check` exit 0; `build` exit 2, *internal error: compiling the generated C failed*, clang's `#include <a>b.h>` and *'a' file not found*, then *error: clang refused the generated C*; the same program over `ab.h` builds and prints `7` (the trunk's compiler, `02e507bc`'s seed, 2026-10-03) | `selfhost/parse/group_head.hero` (what a group head refuses of its header's text, `machine_locked_path` its one refusal today) · the `#include` line the emitter writes · **class: blocking**
 
     **Origin:** lane warn's first pass beside defect 207, 2026-10-03, reported to the coordinator with its reproducer; reproduced by the coordinator the same day.

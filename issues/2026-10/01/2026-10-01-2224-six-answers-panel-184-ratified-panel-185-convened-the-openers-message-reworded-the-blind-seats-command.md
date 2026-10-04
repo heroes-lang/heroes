@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-01
+commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
+github: none
+---
+
 # Six answers: panel 184 ratified, panel 185 convened, the opener's message reworded, the blind seat's command
 
 2026-10-01, evening, `/decide` on the author's answer to six recommendations

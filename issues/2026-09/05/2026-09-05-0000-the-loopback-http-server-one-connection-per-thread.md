@@ -1,3 +1,12 @@
+---
+kind: feature
+area: runtime
+milestone: M-core-packages
+filed: 2026-09-05
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | the loopback HTTP server, one connection per thread | `design.md` Part 7 item 13 · `runtime/parts/thread.c` · `docs/panel/111`
 
     **Origin:** carried out of the callback-boundary item that closed at

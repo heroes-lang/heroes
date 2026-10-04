@@ -1,3 +1,12 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-10-01
+commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
+github: none
+---
+
 # Panel 184 ratified: a brace both ways, a statement after a jump refused, and a floor for depth
 
 2026-10-01, evening, `/decide` on the author's answer. The item below was

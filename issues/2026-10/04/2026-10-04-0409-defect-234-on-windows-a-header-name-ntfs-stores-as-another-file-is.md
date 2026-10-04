@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-03
+commit: e839729705724404c8e48e2906690c8afb98b608
+github: none
+---
+
 - [x] **234 — on Windows a header name NTFS stores as another file is accepted, and the include opens that file at exit 0 where the Mac and Linux say it is missing** | under clang 23.1.1 on the Windows box, each tree holding only what the row needs: `#include <ab.h.>`, `<ab.h >`, `<ab.h..>` and `<ab.h::$DATA>` open `ab.h`; `<ab:c.h>` opens the alternate data stream `c.h` of a file `ab`; `<d./ab.h>` opens `d/ab.h`; `<zz/../ab.h>` opens `ab.h` with no `zz`; `<ABCDEF~1.H>` opens `abcdefghij.h` by its 8.3 name; `<NUL>` opens the null device; each *file not found* on this Mac and in the Linux arm64 image (the ffi-pragmatist, `docs/panel/188-reports/ffi-pragmatist.md` § Windows, measured, 2026-10-03); every one passes the ratified rules of panel 188 | the leaf's judgement of a group head's string (`selfhost/head_names.hero` after panel 188's landing) · panel 188 R2 and R6 · panel 055 · **class: blocking**
 
     **Origin:** panel 188's ffi-pragmatist, 2026-10-03, measuring R12's Windows facts after the ratification; read by the coordinator from the seat's tables, not yet run by the coordinator.

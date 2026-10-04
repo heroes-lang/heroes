@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-09-21
+commit: eb53a58f7b627c94c9ad3b5d4be7a7ce8e744da2
+github: none
+---
+
 - [x] **panel 174** | the net gives every spawn its own redirect files, clang stops inheriting the harness's capture, and the process tree is killed rather than the process — with the `FILE_SHARE_WRITE` bit vetoed | **ratified 2026-09-21**, as a reading | `docs/panel/174-the-two-files-the-whole-net-shares.md`
 
     **Origin:** defect 074, 2026-09-21, which reproduced in CI twice in three

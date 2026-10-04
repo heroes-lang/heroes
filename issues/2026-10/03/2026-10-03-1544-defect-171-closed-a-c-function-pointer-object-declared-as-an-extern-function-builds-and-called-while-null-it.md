@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-10-02
+commit: 428fc2a68b58a3b60485eb72f81729d4972059ed
+github: none
+---
+
 # Defect 171 closed: a C function-pointer object declared as an `extern` `function` builds, and called while null it panics naming a callback the program never passed
 
 - [x] **171 — a C function-pointer object declared as an `extern` `function` builds, and called while null it panics naming a callback the program never passed** | `own.h`'s `static int32_t (*hook)(int32_t) = 0;` bound `function hook(x: i32) -> i32`, `print(hook(x: 1))`: `build` exit 0; the run prints *panic: a null function pointer was called — a `ptr` holding `nullptr` reached C where C calls it back*, exit 134 | `runtime/parts/stack.c:515` (and `:738`) · the `extern` member's kind check (defect 152's `2d5240a0`, which lets a function-pointer object through) · **class: blocking** · **closed 2026-10-03**

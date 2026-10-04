@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-09-06
+commit: b0d8d9276c69157dfc6c197fca861f3e68763c10
+github: none
+---
+
 - [x] **014 — a `[T]` or `{K: V}` crosses the FFI boundary inside a callback signature, and nothing says a word** | 2026-09-06, found by panel 113's compiler-engineer seat and reproduced independently by the coordinator the same hour | **OPEN** | the sitting convened on copy-on-write's test-and-mutate; this is what it found instead, and it is the channel the corruption actually came through | **§1.12** — it is the one route by which a refcounted Heroes value reaches a thread the program did not start, so it is the door panel 111's four corruption classes were measured behind
 
     **The reproducer, eleven lines, run today.** A header that names a function

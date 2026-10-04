@@ -1,3 +1,12 @@
+---
+kind: feature
+area: cli
+milestone: M-core-packages
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | `compile "gfx.c"` waits for a witness, not for an argument | `docs/panel/114` § R6, R7 · `selfhost/cli/libraries.hero` · `examples/sdl/main.hero`
 
     **Origin:** settled out of `docs/work/DECIDE.md` on 2026-09-06 by author

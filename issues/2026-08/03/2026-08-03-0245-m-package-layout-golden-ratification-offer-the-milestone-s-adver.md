@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-package-layout
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-package-layout** | golden ratification offer: the milestone's adversarial cases — `use-has-a-path.hero` (four refusals, one of whose comments was measured false), `use-as-renames-it.hero`, and `fixedbugs-use-refusal-eats-the-next-line.hero`
 
     **Where to look:** tests/golden/check/

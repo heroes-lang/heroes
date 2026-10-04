@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: 69853b5863d4fb20b65d093a09d6a990f5e9c077
+github: none
+---
+
 # A record's construction keeps rather than reads
 
 2026-09-20. M-declared-extents step 8, repairing defect 067 — which panel 167

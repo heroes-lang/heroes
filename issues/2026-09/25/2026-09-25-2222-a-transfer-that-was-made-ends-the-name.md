@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-25
+commit: 7dc739251188afc0670eb51771b8350e376b1cfd
+github: none
+---
+
 # A transfer that was made ends the program's own name for the value
 
 2026-09-25 | a value handed over by `transfers` is dead in the program once the

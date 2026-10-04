@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-25
+commit: f1e2132f06d03c40b808bf2fe98cc50799ad1f4f
+github: none
+---
+
 # A signature holding a comment prints one parameter per line
 
 2026-09-25 | the canonical form of a function signature has a second shape:

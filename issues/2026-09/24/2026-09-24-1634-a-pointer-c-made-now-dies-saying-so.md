@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: M-agreed-retention
+filed: 2026-09-21
+commit: 43c225d53f89cc98310d34830187c29c0661deeb
+github: none
+---
+
 # The milestone's first item closed: a pointer C made and gave back twice now dies saying so
 
 2026-09-24, M-agreed-retention step 4, by panel 175's route E (`8a18290a`,

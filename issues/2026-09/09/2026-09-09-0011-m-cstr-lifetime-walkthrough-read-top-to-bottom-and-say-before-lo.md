@@ -1,3 +1,12 @@
+---
+kind: learn
+area: check
+milestone: M-cstr-lifetime
+filed: 2026-09-09
+commit: none
+github: none
+---
+
 - [ ] **M-cstr-lifetime, walkthrough** | Read `selfhost/check/lending.hero` top to bottom and say, before looking at the tests, which of its three clauses would catch each of five programs | `selfhost/check/lending.hero` · `tests/golden/check/fixedbugs-a-lend-*.hero` | three clauses that look like one rule are three different kinds of rule, and telling them apart is the whole lesson
 
     **Origin:** M-cstr-lifetime close, 2026-09-09.

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
+github: none
+---
+
 - [x] **053 — `main` may declare parameters, and the backend breaks in clang's voice** | `function main(n: i64)` passed `check` at exit 0 and `run` exited 2 with *too few arguments to function call* | closed 2026-09-16, M-check-completeness, the same day it was opened
 
     **Origin:** 2026-09-16, **panel 159's completeness critic, and no seat**. It

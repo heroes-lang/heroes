@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-23
+commit: 7dc739251188afc0670eb51771b8350e376b1cfd
+github: none
+---
+
 # Defect 088 closed: a handle handed to a call after the call that ended its life is refused at check through its name, and stopped before C through a copy
 
 2026-09-25, M-agreed-retention step 14, panel 177's items 1 to 3 on their

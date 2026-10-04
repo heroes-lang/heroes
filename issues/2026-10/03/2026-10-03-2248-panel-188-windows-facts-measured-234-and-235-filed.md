@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: 33b72e65a0b5f02858639054a477336792fc3f10
+github: none
+---
+
 # Panel 188's Windows facts measured after its ratification; defects 234 and 235 filed, one decision put to the author
 
 2026-10-03, written at 22:48 by the clock (`date`). The author powered the

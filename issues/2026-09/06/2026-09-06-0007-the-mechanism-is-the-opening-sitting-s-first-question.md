@@ -1,3 +1,12 @@
+---
+kind: task
+area: cli
+milestone: M-typed-inspection
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-typed-inspection** | the mechanism is the opening sitting's first question | `CLAUDE.md` §10 · `selfhost/cli/table.hero` § run_flags · `docs/ROADMAP.md` § M-vscode-extension
 
     **Origin:** measured 2026-09-06, the cheap route RUN rather than argued.

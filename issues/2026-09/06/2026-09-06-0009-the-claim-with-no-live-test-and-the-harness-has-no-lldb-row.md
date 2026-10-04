@@ -1,3 +1,12 @@
+---
+kind: task
+area: ci
+milestone: M-typed-inspection
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-typed-inspection** | the claim with no live test, and the harness has no lldb row | `.github/workflows/ci.yml` · `tests/harness/main.hero` · `docs/panel/085`
 
     **Origin:** measured 2026-09-06.

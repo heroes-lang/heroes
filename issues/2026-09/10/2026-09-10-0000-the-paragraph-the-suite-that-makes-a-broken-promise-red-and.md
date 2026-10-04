@@ -1,3 +1,12 @@
+---
+kind: task
+area: process
+milestone: M-compatibility-promise
+filed: 2026-09-10
+commit: none
+github: none
+---
+
 - [ ] **M-compatibility-promise** | the paragraph, the suite that makes a broken promise red, and the sentence §10 forces | `README.md:117` · `.claude/rules/records.md` § Release tags · `docs/ROADMAP.md` § M-publication-gate
 
     **Origin:** author decision 2026-09-10, § What production-ready means row 1.

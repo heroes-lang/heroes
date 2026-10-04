@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-30
+commit: b9fdb0a3d777829b2e0e62396944bd59283132cf
+github: none
+---
+
 # Defect 146 closed: a file of foreign heads is read once to place its words, and the parser grows its arrays in place
 
 - [x] **146 — the parser is quadratic on declaration heads written with a foreign word** | 1,500 `fn f<i>() {` heads parse in 0.80 s and 3,000 in 3.18 s, where 3,000 clean `function` heads take 0.06 s; lane 136 measured 6,000 at 28.5 s | the recovery after a foreign-word head (`selfhost/scan.hero`'s error token, `cursor.recover_to_next_decl`) · **closed 2026-10-02**

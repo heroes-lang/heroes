@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-28
+commit: aee8b01ed0a4f427fcaf31b0aadf55ba4962fa4d
+github: none
+---
+
 # Defect 119 closed: a suffix never reaches across a block that just closed
 
 2026-09-28, M-agreed-retention step 28, in lane 181 (`5772c830`, the trunk

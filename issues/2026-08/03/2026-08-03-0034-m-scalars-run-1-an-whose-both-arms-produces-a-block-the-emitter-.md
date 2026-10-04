@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-scalars-run
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-scalars-run.1** | An `if` whose both arms `return` produces a block the emitter does not print at all. Say what would happen in C if it printed the label but not the block, and what would happen if it printed neither the label nor the `goto`
 
     **Where to look:** archive/bootstrap-rs/heroes/src/emit/decls.rs (reachable)

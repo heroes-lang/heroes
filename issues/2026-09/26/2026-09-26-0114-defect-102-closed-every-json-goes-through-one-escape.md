@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-26
+commit: bdf430f154abcb177e62939151fec71adfc0ff60
+github: none
+---
+
 # Defect 102 closed: every JSON the compiler writes goes through one escape, and a character the reader cannot see is named by its code
 
 2026-09-26, M-agreed-retention step 18, in lane `b75b908f`, merged `5e691890`.

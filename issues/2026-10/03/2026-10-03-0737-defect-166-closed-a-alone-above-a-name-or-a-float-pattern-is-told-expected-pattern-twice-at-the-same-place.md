@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-10-02
+commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
+github: none
+---
+
 # Defect 166 closed: a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place
 
 - [x] **166 — a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place** | `k = match n` over a line holding only `-` and then `x => "one"` (or `1.5 => "one"`): `continuation_outside_brackets`, then `expected_pattern` twice at the name or the number, the same text at the same column | the pattern's refusal after the join of a `-` line (the same on the compiler before lane h158) · **class: adjacent** · **closed 2026-10-03**

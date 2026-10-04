@@ -1,3 +1,12 @@
+---
+kind: learn
+area: emit
+milestone: M-agreed-retention
+filed: 2026-09-28
+commit: none
+github: none
+---
+
 - [ ] **M-agreed-retention exit quiz** | The seed emitted `= {0}` on 106,734 locals; after panel 182 it emits 21,566. The emitted C has two kinds of local: a VALUE, an IR temporary defined once, and a SLOT, a variable a store writes and rewrites. **Before reading: which of the two can be read before its first write, by what operation, and why is the zero on the other kind not a safety net but a blindfold?** | `selfhost/emit/body.hero` (its header) · `selfhost/ir/values.hero` (`in_order`) · design.md Part 5
 
     **Where to look after answering:** the slot. Every store into a

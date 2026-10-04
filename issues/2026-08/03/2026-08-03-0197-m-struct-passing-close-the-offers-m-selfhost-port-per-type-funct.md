@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, per-type functions complete | **A T?'s retain does NOT go through the descriptor's copy — why?** What two things would going through it cost?
 
     **Where to look:** emit_perfn.hero::one_reference's comment

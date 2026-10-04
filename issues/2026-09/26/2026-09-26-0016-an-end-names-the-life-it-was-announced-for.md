@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-26
+commit: 4f52c3039855f319a85f6746d055e6694a9d9041
+github: none
+---
+
 # An end names the life it was announced for
 
 2026-09-26 | the runtime numbers every handle life and an end hands back the

@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-08
+commit: 23795b48bfe78e459fccfa09f8231324236e668a
+github: none
+---
+
 2026-09-08 | **Panel 120 RATIFIED in full** (author instruction, same words), R5 included, so the mandatory-named-argument bullet stays and the **−35** removal is refused rather than merely unspent: it is not available to the next sitting that goes shopping for a removal, and its falsifier stays live and unmet. The spec stands at 3995 with 40 free | that bullet is the conversion function from a listed signature to a written call, and the rule governs the WRITER, so a reader who never meets it writes a program that compiles, runs correctly and is permanently worse at every call site | §1.6, §4.17 | 120 |

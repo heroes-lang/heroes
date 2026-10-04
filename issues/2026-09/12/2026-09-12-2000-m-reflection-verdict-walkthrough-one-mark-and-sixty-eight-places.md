@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-reflection-verdict
+filed: 2026-09-12
+commit: none
+github: none
+---
+
 - [ ] **M-reflection-verdict walkthrough** | `Point::x` is two characters of surface and sixty-eight places in the compiler. Walk the path one of them takes: from the two bytes the lexer reads to the string literal the C comes out holding.
 
     **Where to look:** `selfhost/scan.hero`'s two-byte rule, `selfhost/token.hero`'s

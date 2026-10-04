@@ -1,1 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-12
+commit: ec5558bef7a0e7934ec69fce6dab1b6d45dcb362
+github: none
+---
+
 - [x] Covered | panel 021 | **CLOSED, panel 035 R4 — stated, +2: `str` is *indexed and measured in bytes*. The only genuinely silent one of the thirteen, and the FFI compiled the alternative storing invalid UTF-8 into a real database at exit 0.** Decide `len`'s unit in the spec, or leave it derivable. The discriminating probe is `print(len("è"))` — 2 under bytes, 1 under characters — and the panel's own test vector was all-ASCII, so it could not have told the difference. +8 measured | spec line 47, 146 · docs/panel/021 R7 | the corpus decides: pre-registered for M5c

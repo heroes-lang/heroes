@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-readable-bytes
+filed: 2026-09-18
+commit: none
+github: none
+---
+
 - [ ] **M-readable-bytes golden ratification** | A program that compiles and lies is what defeated refusing this. **Before reading: `f.name` is an `i8[8]` holding the bytes of "Darwin". Write the loop a reader would write to print it, using only what the language had. Then say what it prints.** | `docs/panel/162-the-conversion-already-existed-and-what-was-missing-was-the-extent.md`
 
     The loop:

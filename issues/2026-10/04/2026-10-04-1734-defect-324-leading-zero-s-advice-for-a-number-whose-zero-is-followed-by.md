@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-04
+commit: f065c0af90dec3652c19b43bf84c92c94dadfd4a
+github: none
+---
+
 - [x] **324 — `leading_zero`'s advice for a number whose zero is followed by `_`, `0_7`, offers `_7` and `0o_7`, and the compiler refuses both** | `x = 0_7`: `leading_zero`'s note says *Write `0o_7` for the octal value, or `_7` for the decimal one*, and its two `guess` fixes write the same; `_7` is a name, `unknown_name`, and `0o_7` is `misplaced_separator` (batch 9's round compiler at `38d6c6b1`, run by the coordinator 2026-10-04, `<scratchpad>/p324/`); the brief golden `check/leading-zero.hero` hides it, `check` without `--brief` shows it | `selfhost/number.hero:120` to `:135` (`stripped`, the number with its zero taken off and its separator left leading) · **class: blocking**
 
     **Origin:** lane b10-harness, 2026-10-04, found beside 289 (the `full` form's first reading); reproduced by the coordinator; filed for lane b10-cli, no lane of batch 10 holding `number.hero`.

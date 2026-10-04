@@ -1,3 +1,12 @@
+---
+kind: task
+area: process
+milestone: M-selfhost-port
+filed: 2026-08-17
+commit: 1945659f34e230570fe3796cf1da08f20917d148
+github: none
+---
+
 - [x] M-selfhost-port, 2026-08-17 | **THE MEASUREMENT THAT ROUTED A MILESTONE, kept whole.** It is CLAUDE.md §13's named case — performance is not a goal *and not a licence* — and the numbers below are what made the fixpoint's cost the author's to route rather than an assistant's optimisation instinct. The measurement verbatim:
 
   The port compiles small programs instantly and its own 34,512 lines not at

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-10-04
+commit: 27998f47b68a3886af1396e743d9e79d5137f00a
+github: none
+---
+
 - [x] **289 — no golden pins `check`'s full diagnostic form, so the notes and excerpts of a check-stage diagnostic are pinned nowhere** | 0 of the 466 `.expected` files of `tests/golden/check/` hold an `at` line or a gutter (counted by the coordinator at `703af779`, 2026-10-04): every one is `check --brief`, which prints neither the excerpt nor the notes, so a note or an excerpt that changes moves no check golden | `tests/harness/suite_golden.hero` (the `check` form's flag) · defect 244 (the excerpt's control characters) and 271 (a fix's place), both in the parts nothing pins · **class: improvement**
 
     **Origin:** lane b9-harness, 2026-10-04 (its reply's *found beside*); counted by the coordinator.

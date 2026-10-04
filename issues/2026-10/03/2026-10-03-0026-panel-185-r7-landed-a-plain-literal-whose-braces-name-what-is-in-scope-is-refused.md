@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: ffaf4cec4ca7f3ff4a182b579e9947010e5aaf4f
+github: none
+---
+
 # Panel 185's R7 landed: a plain literal whose braces would be a hole naming only what is in scope is refused
 
 2026-10-03 at 00:26 by the clock (`date`), lane fbrace records the landing of

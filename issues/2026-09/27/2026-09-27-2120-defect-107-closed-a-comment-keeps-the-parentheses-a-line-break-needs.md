@@ -1,3 +1,12 @@
+---
+kind: defect
+area: print
+milestone: none
+filed: 2026-09-27
+commit: b02855a922d08319f4be4097d49505d24b6c3eb8
+github: none
+---
+
 # Defect 107 closed: a comment the author's parentheses hold is printed inside parentheses, wherever no other bracket holds it
 
 2026-09-27, M-agreed-retention step 23, in lane B (`ec483127`), merged `335b6895`, with

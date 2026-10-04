@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-11
+commit: 205a8024d9c6dfa01b783c21a3eeb2ad76a7c31e
+github: none
+---
+
 2026-08-11 | **Generated C declarations are emitted in one pass in `TyId` order, options and function typedefs interleaved.** Each kind can name the other — `(function(int) -> int)?` and `(function(int) -> int?)` — so neither can be emitted wholesale first. Measured when they were two passes: a function typedef naming an option not yet declared parsed as an implicit-`int` function type, and clang reported *"'const' qualifier on function type … has no effect"* on a line about something else. **`TyId` order IS containment order**, and that is an invariant of the type table rather than luck: the checker interns a composite only after the ids it is built from | one ascending walk emits every declaration after everything it names, with no graph and no sort | §4.20 | — |

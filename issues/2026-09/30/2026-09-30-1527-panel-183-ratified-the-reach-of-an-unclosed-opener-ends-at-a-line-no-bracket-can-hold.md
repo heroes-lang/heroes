@@ -1,3 +1,12 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-09-30
+commit: fd523aad7f4f63cdcb639cc0e93181bed639cb6d
+github: none
+---
+
 # Panel 183 ratified: the reach of an unclosed opener ends at a line no bracket can hold
 
 2026-09-30, afternoon, `/decide`-shaped on the author's answer to five

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-16
+commit: b95874374df1f5c29aae0ab36b7b6ee28b8435de
+github: none
+---
+
 # One half had to be able to refuse, and the other had to never
 
 2026-09-16. Panel 157, soundness lane, at M-check-completeness. Defect 048 was

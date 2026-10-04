@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-11
+commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
+github: none
+---
+
 - [x] **026 — a function type names no parameters, so a call through one takes its arguments positionally** | two same-typed arguments can be swapped in silence through a function value and through a C callback. **NARROWED 2026-09-11 by panel 128**: the invented label is refused now, and the document says the call is positional; what remains open is the inversion itself, which the instrument prices at 50% unchanged | `spec § 9 Functions and calls` · `spec § 13 FFI` · `selfhost/check/walk.hero` · `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
 
     **Origin:** panel 127's ffi seat, 2026-09-11, which named it as two holes;

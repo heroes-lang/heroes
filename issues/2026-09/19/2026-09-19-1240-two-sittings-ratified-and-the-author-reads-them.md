@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-09-19
+commit: 0d197cdd101069b30a645e9cb883db13ebf3b7a9
+github: none
+---
+
 # Two sittings ratified, and the author reads them
 
 2026-09-19, M-declared-extents. The author's instruction, in one line and given

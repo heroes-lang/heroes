@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: 61a43d374c13631a34b163fd80761a31717b0e5f
+github: none
+---
+
 # `lent`, and the pointer C hands back
 
 2026-09-20. M-declared-extents step 22, panel 171, the full panel with the

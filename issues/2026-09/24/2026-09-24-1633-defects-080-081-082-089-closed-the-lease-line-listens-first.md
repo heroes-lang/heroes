@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-23
+commit: 43c225d53f89cc98310d34830187c29c0661deeb
+github: none
+---
+
 # Defects 080, 081, 082 and 089 closed: the lease line listens first, says under, hears every trap, and leaves an ignored signal alone
 
 2026-09-24, M-agreed-retention step 4, landing panel 175's resolution item 3

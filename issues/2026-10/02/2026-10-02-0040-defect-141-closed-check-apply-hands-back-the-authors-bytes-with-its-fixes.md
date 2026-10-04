@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-30
+commit: b9fdb0a3d777829b2e0e62396944bd59283132cf
+github: none
+---
+
 # Defect 141 closed: check --apply hands back the author's bytes with its fixes, a last line left open included
 
 - [x] **141 — `check --apply` writes bytes no fix proposed: the newline the loader adds to a root file's open last line** | `fn main()` over `    print(1)` with no final newline, 22 bytes: `check --apply` prints 29 where its one certain fix makes 28, the last byte a `\n`; `--apply --in-place` writes it into the author's file | `source.from_files` · `source_extent.user_text` · `selfhost/cli/check.hero` (what `--apply` prints) · **closed 2026-10-02**

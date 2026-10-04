@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-18
+commit: 843daff3fa32f707274d867cc4c7552deb2b781c
+github: none
+---
+
 # The number had a platform in it
 
 2026-09-18. M-declared-extents step 1, the milestone `docs/ROADMAP.md` scheduled

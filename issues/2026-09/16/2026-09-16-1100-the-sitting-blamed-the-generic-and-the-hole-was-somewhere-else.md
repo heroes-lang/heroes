@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 50bb2214d31db4291f21884fd07f469749ec73a9
+github: none
+---
+
 # The sitting blamed the generic, and the hole was somewhere else
 
 2026-09-16. Panel 155, at M-check-completeness. Five seats and a completeness

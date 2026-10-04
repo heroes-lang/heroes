@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-10-03
+commit: ed776fb2c5b94574e1277187f34e114bddbcad8f
+github: none
+---
+
 # Defect 207 closed: a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C
 
 - [x] **207 — a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C** | `print("what???)")`: `check` exit 0, `run` exit 0 and prints `what???)`, and clang prints `build/tu-<key>/tri.c:10:42: warning: trigraph ignored [-Wtrigraphs]`; the net's own tests' build prints it twice for the harness's own `print(???)` | the emitter's string literals (a `?` that would begin a trigraph is written `?\?` in C) · **class: blocking** · **closed 2026-10-03**

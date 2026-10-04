@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-name-resolution
+filed: 2026-08-19
+commit: none
+github: none
+---
+
 - [ ] **M-name-resolution** | Three names in one function: `MAX` (a top-level constant), `x` (a local), `print` (a built-in). Each records a different `Ref` variant. Which one is looked up FIRST, and what would break if the order were reversed?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/resolve/exprs.rs (`name`), tests/names.rs (2026-08-19)

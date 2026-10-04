@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-25
+commit: 4f52c3039855f319a85f6746d055e6694a9d9041
+github: none
+---
+
 # Defect 098 closed: an end names the life it was announced for, so two threads over one allocator give back their own handles
 
 2026-09-26, M-agreed-retention step 16, in lane `bcfc342b`, merged `e79fa17f`.

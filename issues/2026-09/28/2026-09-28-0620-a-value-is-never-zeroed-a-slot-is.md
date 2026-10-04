@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-28
+commit: 64003eddbe9d3c25ffc48ccc77993a1b6ae32da2
+github: none
+---
+
 # A value is never zeroed, a slot is, and every definition is written whole
 
 2026-09-28 | the emitted C never zeroes a value or an `@` parameter's slot and

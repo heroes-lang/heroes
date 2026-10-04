@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-20
+commit: b5ee40c4bb52ca99f49f729c75a603a5eeac9433
+github: none
+---
+
 - [x] **070 — a lease handed to a C function that frees it dies with an empty stderr and an unstable exit code** | **closed 2026-09-21**, M-declared-extents step 28 | **The runtime names the live leases from the signal handler it already installs**, so the program that died saying nothing now says what was live and in which function; no word could reach the class, and panels 172 and 173 measured why | `runtime/parts/os.c` · `runtime/parts/panic.c` · `tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero` | 172, 173
 
     **Origin:** panel 168's compiler-engineer, 2026-09-20, reproduced by the

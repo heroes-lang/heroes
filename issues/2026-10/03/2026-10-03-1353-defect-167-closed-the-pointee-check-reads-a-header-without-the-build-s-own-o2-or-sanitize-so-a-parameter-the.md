@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-02
+commit: e28f4fc767589be57988c690bf6c60700c424477
+github: none
+---
+
 # Defect 167 closed: the pointee check reads a header without the build's own `-O2` or `--sanitize`, so a parameter the header types otherwise under them is accepted and the program writes past its `i32`
 
 - [x] **167 — the pointee check reads a header without the build's own `-O2` or `--sanitize`, so a parameter the header types otherwise under them is accepted and the program writes past its `i32`** | `opt.h` declares `fill(int32_t *p)`, and `fill(int64_t *p)` under `#ifdef __OPTIMIZE__`, bound `function fill(@p: i32)`, `a: i32 @ 0`, `fill(@a)`, `print(a)`: `build -O0` prints `7`; `build -O2` exit 0, prints `0`; `build -O2 --sanitize` stops in *AddressSanitizer: stack-buffer-overflow ... WRITE of size 8* on the 4-byte local, exit 134; a header keyed on `__has_feature(address_sanitizer)` does the same under `--sanitize` alone | `selfhost/cli/pointee.hero` (its dump and its check, about `:153-174` and `:197-222` at `6bec7c8c`, `probe_flags()` at `:279-286`), run without the level and the sanitizer `selfhost/cli/units.hero` and `selfhost/cli/flags.hero:201` give the program's own compile · defect 163's class · **class: blocking** · **closed 2026-10-03**

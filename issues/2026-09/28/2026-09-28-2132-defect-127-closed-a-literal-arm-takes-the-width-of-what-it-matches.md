@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-28
+commit: 687c54f34fea0c8393828dd444279ec43b61fc59
+github: none
+---
+
 # Defect 127 closed: a literal arm takes the width of what it matches
 
 2026-09-28, M-agreed-retention step 30, in lane 123 (`d5e088d9`, `492a7ee4`,

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: M-selfhost-port
+filed: 2026-08-17
+commit: 37ceaf9cc548b2bf49cc466c476433455edfe854
+github: none
+---
+
 - [x] Covered | M-selfhost-port / DEFECT | **FIXED 2026-08-17, found by the port's own resolver — the first program to write `xs[i].f @ v`.** Raw symptom, before any reading: two selfhost tests FAIL with `panic: entered unreachable code — this is a compiler bug, please report it`, exit 134; minimised to 10 lines (`locals[0].reads @ locals[0].reads + 1`). Cause: `emit/inst.rs` dispatches every store whose place path holds an index to `write_element`, whose trailing-Field arm answered `return None` under a comment claiming a trailing field store never reaches it — true only of an index-free path, a premise that expired silently when the dispatch was written against `any(Index)` (CLAUDE.md §11's class, in the emitter's own prose). And the first repair leaked: a plain assignment left the OLD field value alive (`1 heap blocks still live at exit` on a heap str), because `hero_array_set`'s descriptor release is bypassed when the store replaces a field rather than the element. Fix: the arm releases the old member when counted (typed decref, satellite `_release` for aggregates), then assigns; the COW spine above was already unshared on the way down. Attacked at the adjacent shapes before commit: two array levels, plain element store, map insert, sharing (`kept` sees the old value), heap-str overwrite, all ASan-clean | crates/heroes/src/emit/container.rs · tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero | the witness was one line of the resolver port, and the class was every record-in-array mutation in the self-hosted compiler
 
 - **waM-selfhost-port closed 2026-08-17 — the fixpoint | - **walkthrough** — the fixpoint recipe run live, four commands, and the hash

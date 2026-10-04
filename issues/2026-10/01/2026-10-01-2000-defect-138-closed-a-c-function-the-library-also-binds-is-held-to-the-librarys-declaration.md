@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-30
+commit: 6708ba0521af542def2be41ff0798db7b2e3d518
+github: none
+---
+
 # Defect 138 closed: a C function the library also binds is held to the library's declaration, and the caret is the author's
 
 - [x] **138 — a program that declares a C function the Heroes library also binds, with other marks, stops `check` with an internal error** | a five-line file whose `extern "hero_os.h"` group declares `function hero_file_read(path: cstr, @status: i64) -> str`, where the library writes `path: cstr lent`: `heroes check` prints `internal error: a diagnostic landed inside the Heroes library, at its line 112: [contract_differs] ...` and exits 2, with or without `--permissive`, where a `contract_differs` at the author's line 2 and exit 1 are owed | `selfhost/check/contracts.hero:256` (`differs`, which puts the message at `at`) and its caller's choice of `at` · `selfhost/cli/check.hero:73-82` and `selfhost/cli/compile.hero:96` (the guard that turns a diagnostic inside the library into the internal error) · **closed 2026-10-01**

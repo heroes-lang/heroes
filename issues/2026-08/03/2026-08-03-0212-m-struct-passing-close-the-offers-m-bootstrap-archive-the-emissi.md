@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-bootstrap-archive (the emission oracle) | Four guards keep this suite from quietly stopping: a floor, a collision check, an orphan sweep, a skip floor. Pick the ORPHAN sweep and say which mistake it catches that the other three cannot
 
     **Where to look:** tests/harness/suite_emission.hero::orphans

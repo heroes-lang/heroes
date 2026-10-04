@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-30
+commit: 04e90077ab8f0ebcc06e7141a1b35f1fa8243b29
+github: none
+---
+
 # Defect 136 closed: a file the author names is replaced whole or not at all, and a write that fails or is killed leaves it as it was
 
 - [x] **136 — `fmt --in-place` and `check --apply --in-place` destroy the author's source when the write fails** | on a disk nearly full, `heroes fmt prog.hero --in-place` answers `error: cannot write`, exit 2, and leaves `prog.hero` at 0 bytes, the 62,706 bytes the author wrote gone; `heroes check --apply --in-place` leaves the file cut mid-token, 57,344 of the 59,312 bytes it meant to write, ending in `retu` | `selfhost/cli/syntax_cmds.hero:66` · `selfhost/cli/check.hero:110` · `runtime/parts/os.c:635` (`hero_file_write`) · `selfhost/cli/publish.hero` (defect 134's publish by rename) · **closed 2026-10-01**

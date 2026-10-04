@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-04
+commit: a8b6c02b08c816becad421c4ba8a6f501c88a27b
+github: none
+---
+
 - [x] **010 — a `void *` C parameter bound as `@value: i32` is refused by clang, and the compiler calls it its own internal error at exit 2** | 2026-09-04, found by panel 108's ffi-pragmatist while compiling in-out shapes (`getsockopt`'s `void *optval`) | **repaired 2026-09-04**, the same day, with its adjacent shape | `selfhost/emit/` pointee-width check (design.md §4.19, CLAUDE.md §7's four exit-1 classes) | a wrong exit code and a message that blames the wrong party — no crash, no wrong answer, but §7 says this is the author's line and exit 1
 
   **Reproducer.** An `extern` group declaring `function getsockopt(fd: i32, level: i32, name: i32, @value: i32, @len: i32) -> i32` against `<sys/socket.h>`, whose C parameter is `void *optval`. `heroes check` accepts the declaration; `heroes build` emits the pointee check as `_Static_assert(sizeof(void) == sizeof(int32_t), …)`, clang refuses `sizeof(void)`, and the compiler answers `internal error … clang refused the generated C`, **exit 2**. Measured on macOS arm64 (Apple clang 21.0.0) in the panel's frozen copy; the FFI seat's files are under the session scratchpad at `p108/ffi2/p108/` (`getsockopt_inout.hero`, first form), and the shape is one line to reconstruct from the sentence above.

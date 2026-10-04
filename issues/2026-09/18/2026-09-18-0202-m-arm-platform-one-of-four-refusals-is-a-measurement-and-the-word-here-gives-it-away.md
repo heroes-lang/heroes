@@ -1,3 +1,12 @@
+---
+kind: learn
+area: golden
+milestone: M-arm-platform
+filed: 2026-09-18
+commit: none
+github: none
+---
+
 - [ ] **M-arm-platform golden ratification** | The case that broke is `tests/golden/run/ffi-a-char-array-member.hero`, written at M-complete-structs in August. Its comment lists four things the repair must not relax. **Before reading: one of the four is not a rule, it is a measurement. Which, and how would you tell from the wording alone?** | `tests/golden/run/ffi-a-char-array-member.hero`, the comment block
 
     The four, verbatim from the case:

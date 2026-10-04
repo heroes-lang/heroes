@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-17
+commit: e98b60de850ef7ad23b9953a8eaf6196283b0084
+github: none
+---
+
 # The pages Google had not indexed were the pages it had not yet visited
 
 2026-09-17. Out of the author's question, who brought four exports of Google

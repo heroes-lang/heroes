@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-23
+commit: 64c9265411b6de2175b6235646f023035da991ae
+github: none
+---
+
 # A seat's copy is its own
 
 2026-09-23 | every seat of a sitting that builds works in its own

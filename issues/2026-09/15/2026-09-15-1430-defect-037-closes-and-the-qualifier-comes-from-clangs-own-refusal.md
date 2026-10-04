@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-15
+commit: cfda0ad29815f28807827718d3230e6f8a4fc381
+github: none
+---
+
 - [x] **037 — a handle over a struct C names with two words cannot be spelled, so the author falls back to `ptr` and leaks at exit 0** | where a group consumes a `ptr`, nothing demands a mark on the call that hands one back, so the program leaks with zero diagnostics on every platform | **repaired 2026-09-15**, both halves, and the route is panel 152 R1 obeyed and panel 150 R3 landed | `selfhost/check/acquiring.hero`'s `consumed_types` · `selfhost/handles.hero`'s `is_handle` · `runtime/parts/alloc.c`
 
     **Origin:** measured by panel 149's **ffi-pragmatist**, which called it *"the

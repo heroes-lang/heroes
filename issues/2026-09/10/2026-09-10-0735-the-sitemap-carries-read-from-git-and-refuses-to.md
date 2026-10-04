@@ -1,3 +1,12 @@
+---
+kind: task
+area: none
+milestone: none
+filed: 2026-09-10
+commit: 44177d3c4394c8f33a5f2ebfc8bae810693e35fa
+github: none
+---
+
 - [x] **The sitemap carries `<lastmod>`, read from git, and refuses to guess.**
     184 addresses dated over 15 distinct dates, `site/src/lib/lastmod.ts`, where
     it was 0 of 184. A page's date is the last commit touching its OWN sources,

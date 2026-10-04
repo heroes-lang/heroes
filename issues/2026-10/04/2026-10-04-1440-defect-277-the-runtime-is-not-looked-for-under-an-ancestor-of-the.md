@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-10-04
+commit: 7f875977bc876ab30fc23f7d2fbd985cc0feb62f
+github: none
+---
+
 - [x] **277 — the runtime is not looked for under an ancestor of the executable, the third place panel 020 ruled, so an installed compiler finds none without `HEROES_RUNTIME`** | a compiler copied to `prefix/bin/heroes` with the runtime at `prefix/runtime/`, run from another folder with `HEROES_RUNTIME` unset: `build p.hero` exit 2, *cannot find the Heroes runtime (heroes_runtime.h and runtime.c). looked in: the given hint and ./runtime* (batch 8's round compiler, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/inst277/`) | `selfhost/cli/toolchain.hero:77` (`locate_toolchain`, two candidates, the hint and `runtime`) · design.md §3.1, line 709: *`$HEROES_RUNTIME`, then `runtime/` under the working directory, then `runtime/` under an ancestor of the executable*, ruled by panel 020 (`docs/panel/020-the-c-emitter.md:85` and `:328`) for *an installed compiler has no repository above it* · **class: adjacent**
 
     **Origin:** the coordinator, 2026-10-04, reading `locate_toolchain` for defect 276 against design.md's search order, and running the installed shape.

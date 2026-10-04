@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-10-01
+commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
+github: none
+---
+
 # Defect 174 closed: a statement after `return`, `break` or `continue` in the same block compiles, where panel 184's R4, ratified, makes it a compile error
 
 - [x] **174 — a statement after `return`, `break` or `continue` in the same block compiles, where panel 184's R4, ratified, makes it a compile error** | `function f() -> i64` over `return 1` and then `print(2)`, `main` printing `f()`: `run` exit 0, prints `1` | the checker's walk of a block · panel 184's R4 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:181-182`; *the spec states the return rule for the first time*, `:186-190`; *R4 lands as it stands*, `:276-277`) · spec § 8 `:229-230`, its only sentence on a jump · **class: blocking** · **closed 2026-10-03**

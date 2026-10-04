@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: f070c4c86556e23b0b0c148341c6fb7c17a57a11
+github: none
+---
+
 # The author answers 1a 2a 3a: panel 188 convened in full, the emulated x86 containers and eighteen merged lane worktrees removed
 
 2026-10-03, written at 16:27 by the clock (`date`). The coordinator put three

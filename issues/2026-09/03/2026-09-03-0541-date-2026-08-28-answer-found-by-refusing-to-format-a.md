@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-08-28
+commit: b660cc224056521d0e2367067858d5e99f73c4b1
+github: none
+---
+
 - [x] **005 — The parser accepted a continuation at bracket depth zero** | Date: 2026-08-28, `/decide` answer `5a`. **Found by `heroes fmt` refusing to format a file, and the refusal was right.** | **Status: fixed 2026-08-28** — `selfhost/grammar_expr.hero`, `ends_the_expression`. | moved here 2026-09-03 from `docs/defects/005-a-continuation-the-language-does-not-have.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★** — a program that two ratified rulings forbid compiled, ran, and produced a meaningful answer. Nothing was silently wrong; a form that should not exist simply existed.
 
 

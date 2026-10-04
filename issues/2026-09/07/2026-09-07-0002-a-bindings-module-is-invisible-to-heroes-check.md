@@ -1,3 +1,12 @@
+---
+kind: feature
+area: cli
+milestone: M-package-manager
+filed: 2026-09-07
+commit: none
+github: none
+---
+
 - [ ] **M-package-manager** | a bindings module is invisible to `heroes check` | `selfhost/cli/check.hero` · `docs/panel/091` · `docs/panel/082` R3
 
     **Origin:** panel 091, found by the ffi-pragmatist unasked. Load-bearing

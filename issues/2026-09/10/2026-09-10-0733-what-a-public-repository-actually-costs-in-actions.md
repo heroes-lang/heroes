@@ -1,3 +1,12 @@
+---
+kind: task
+area: ci
+milestone: M-publication-gate
+filed: 2026-09-08
+commit: f9ea5c5b7c27d40fc6eacb0af30ba6003d1d72f8
+github: none
+---
+
 - [x] **M-publication-gate** | what a public repository actually costs in Actions minutes, measured on the account rather than read in a document | `.github/workflows/ci.yml` header · `.github/workflows/deploy-site.yml` | **DECIDED 2026-09-10, it widens** (author instruction: build the complete version on all three platforms, once, and start no second workflow). Every push to `main` runs the three legs; `m-*` tags start no run, because the commit they tag has already been judged on every platform and four tags pushed with a branch were starting five runs of one commit's work; `v*` release tags keep their trigger, their per-leg asserts and the `release` job. The five steps that were tag-only run on every push now. The mutation score stays gated on a release tag or a request: 20 to 30 minutes a leg for a table that came out identical on all three
 
     **Origin:** M-open-repository, 2026-09-08.

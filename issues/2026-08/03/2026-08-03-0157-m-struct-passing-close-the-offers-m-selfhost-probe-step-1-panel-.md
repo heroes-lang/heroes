@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-probe step 1 (panel 065) | The double-emit determinism test emits the same program twice with one binary and diffs the two files. Which of these regressions does it catch? (a) the emitter starts ordering `_desc` definitions by insertion instead of TyId, deterministically; (b) the emitted C mentions the output path; (c) a map with a random seed enters the emitter. One of the three passes it silently
 
     **Where to look:** archive/bootstrap-rs/heroes-cli/tests/golden.rs (the two tests at :520 and :555) · docs/panel/065

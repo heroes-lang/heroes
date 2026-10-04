@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-ir-lowering
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-ir-lowering.2** | The verifier had 257 lines of checks and no test that any of them fired. Fifteen tests now break one invariant each. Pick two and say what the *wrong* IR would have done at M-scalars-run, in C
 
     **Where to look:** ir/tests/verify.rs · docs/records/journal/005-lowering.md §3

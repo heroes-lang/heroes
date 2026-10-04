@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-10-04
+commit: 5ba5296c7571c0297a6e41ec1db07168e5eb1bda
+github: none
+---
+
 - [x] **239 — the directory walk panics on a file name that is not UTF-8, so `heroes probe` and `heroes mutate` abort over a folder a user can make** | Linux arm64 (Debian clang 22.1.8): `heroes probe only/` over a file `caf<e9>.hero`, `heroes probe onlydir/` over a directory `d<e9>`, and `heroes mutate only/`, exit 134, *panic: hero_str_from_bytes: not well-formed UTF-8*; the Windows box: `probe only/` and `mutate only/` over a folder holding `café.hero`, exit 127, the same panic, `FindFirstFileA` answering in code page 1252 (the trunk's compiler at `7d9f2e8f`, 2026-10-04, `<scratchpad>/189-ffi-pragmatist-cases/linux/inner.sh` and its `out-arm64.txt`, `win/names.sh`) | `runtime/parts/dir.c:127` (`hero_dir_at` hands each name to `hero_str_from_bytes`, which aborts on bytes that are not UTF-8) · `hero_str_try_from_bytes` (`runtime/parts/str.c:355`), the status `validated_bytes` already takes · `selfhost/cli/process.hero:199` (`files_under`, the one caller) · panel 189's Q6 · **class: blocking**
 
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:21 to 00:29 (`docs/panel/189-reports/ffi-pragmatist.md`, *Names that are not UTF-8 on Linux arm64*), one cause on two platforms; not 227's, no file's contents being read; filed apart by the coordinator.

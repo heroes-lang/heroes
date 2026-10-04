@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-02
+commit: 0bcd442cd7ca3251779aa586b283580e41681b97
+github: none
+---
+
 # Clock times written without reading the clock, corrected
 
 2026-10-02 at 16:52, by the clock (`date`), the coordinator found that it

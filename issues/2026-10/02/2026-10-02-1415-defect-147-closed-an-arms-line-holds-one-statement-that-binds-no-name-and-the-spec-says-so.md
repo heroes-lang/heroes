@@ -1,3 +1,12 @@
+---
+kind: defect
+area: spec
+milestone: none
+filed: 2026-10-01
+commit: 435201935c2adf4afdd5610b10335b213e8c1239
+github: none
+---
+
 # Defect 147 closed: an arm's line holds one statement that binds no name, and the spec says so
 
 - [x] **147 — spec § 8's `Inline` production refuses one-statement arms the design allows and the compiler builds** | `Inline = ( Expression | "return" [ Expression ] | "break" | "continue" | "assert" Expression ) NEWLINE` leaves out a mutation (`.blue => n @ 5`) and a `while` (`.red => while n < 3` over its body), and both check, build and run on the trunk, where design.md §4.7 says *an arm's body is one statement, inline, or an indented block* (panel 014) | `spec/heroes-spec.md:241-243` · design.md §4.7 (`:1230-1235`) · `selfhost/parse/arm_line.hero` · **closed 2026-10-02**

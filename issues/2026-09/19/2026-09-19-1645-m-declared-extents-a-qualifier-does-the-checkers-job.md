@@ -1,3 +1,12 @@
+---
+kind: learn
+area: emit
+milestone: M-declared-extents
+filed: 2026-09-19
+commit: none
+github: none
+---
+
 - [ ] **M-declared-extents walkthrough** | Defect 065: a `=` binding's field was written by C, and the repair added **no rule to the checker** about who may write. Before reading: the lend now crosses as `const void *` from a `=` binding and `void *` from a `@` cell, and the compiler ships `-Werror=incompatible-pointer-types-discards-qualifiers`. **Which of the four C crossings is a hard error under that flag — `const void *` into `void *`, `void *` into `const void *`, `void *` into `void *`, `const void *` into `const void *`?** | `selfhost/emit/field_lend.hero` § WHAT THE CAST IS
 
     **Where to look after answering:** exactly one — `const void *` into

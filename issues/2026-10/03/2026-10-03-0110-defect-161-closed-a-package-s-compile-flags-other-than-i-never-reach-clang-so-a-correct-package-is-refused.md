@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-02
+commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
+github: none
+---
+
 # Defect 161 closed: a package's compile flags other than `-I` never reach clang, so a correct package is refused or stops `build` at exit 2
 
 - [x] **161 — a package's compile flags other than `-I` never reach clang, so a correct package is refused or stops `build` at exit 2** | `extern "valued.h" package "dpkg"` over a `.pc` with `Cflags: -I<dir> -DHERO_PKG_VALUE=7` and a header returning `HERO_PKG_VALUE`: `build` exit 2, *internal error: ... use of undeclared identifier 'HERO_PKG_VALUE'*; a package's `-F` likewise never reaches the compile step, so a framework header it names is told missing | `selfhost/cli/units.hero:139` and `selfhost/cli/pointee.hero:243`, which keep only a package's `-I` · **class: blocking** · **closed 2026-10-03**

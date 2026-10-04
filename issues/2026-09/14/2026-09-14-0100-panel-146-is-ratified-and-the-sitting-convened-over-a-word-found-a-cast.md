@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-09-13
+commit: 61ca81fca6db1da78870853d6576d3b5fd2a0714
+github: none
+---
+
 - [x] **panel 146** | `ptr` keeps its name, and the sitting convened over a word found a cast | **Ratified 2026-09-14, in full** | `docs/panel/146-the-name-survives-and-the-sitting-convened-over-it-found-a-cast.md`
 
     **Origin:** panel 146, sat 2026-09-13, M-handle-verdict's last open item. The

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: ir
+milestone: none
+filed: 2026-10-03
+commit: 2357960567ea8709f50796adb429acba1d8d61b4
+github: none
+---
+
 - [x] **230 — the ownership pass asks of every counted load whether a write in its block lets it survive, a walk of the block each time** | lane irverify's profile: `ir/own.run` → `place_store.load_survives_write`, 33 to 35% of `one-return-many-800`, `many-params-800` and `record-literal-2000` (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/ir/own.hero`, `selfhost/ir/place_store.hero` · **class: improvement**
 
     **Origin:** lane irverify, 2026-10-03, the same profiles, reported to the coordinator; not yet run by the coordinator.

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-23
+commit: 01bd4acd1986aafe53a1e1a5556f040aa472bda6
+github: none
+---
+
 # Defect 086 closed: an empty set holds nothing, so a give-back it never saw is a stray there too
 
 2026-09-24, M-agreed-retention step 5, `e2e13f04`. Found by panel 176's

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-19
+commit: 3702e3d2047577d1b3146db72ee8ff07f47db4d7
+github: none
+---
+
 # Defect 064 closes, and the guard was a list all along
 
 2026-09-19, M-declared-extents. Found by panel 165's compiler-engineer while

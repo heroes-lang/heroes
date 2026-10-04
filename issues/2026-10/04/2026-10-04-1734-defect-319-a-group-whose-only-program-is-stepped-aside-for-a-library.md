@@ -1,3 +1,12 @@
+---
+kind: defect
+area: harness
+milestone: none
+filed: 2026-10-04
+commit: a2d362c96725e5d444c49d0af4df4020183df468
+github: none
+---
+
 - [x] **319 — a group whose only program is stepped aside for a library the machine lacks, its mark in a module, is told *no program with a `main` to provoke them* of a program that has one** | planted in a scratch copy of the run roots: a group binding a header this machine lacks, its `#~` mark in a module of the group, reads a named SKIP for the program and a failure, *1 annotations here and no program with a `main` to provoke them*, though the group's program has one; the code before lane b9-annot's repair said the same, and no group in the tree today binds a header a machine lacks | `tests/harness/suite_annotations.hero` (`:480` to `:509`, the run roots' group: the marks a skipped program would have provoked are left to the claim no program answers) · **class: blocking**
 
     **Origin:** lane b9-annot, 2026-10-04, each reproduced on its worktree's harness (its final reply's *Found beside*; scratch `<scratchpad>/batch9/annot/`). The lane read it `adjacent`, *a false red only a new case can reach; by the letter it could be blocking*; the coordinator reads it `blocking` under the author's *5a*, the same class as 317, which is the same kind of message.

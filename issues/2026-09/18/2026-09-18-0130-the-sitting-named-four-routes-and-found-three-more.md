@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-18
+commit: 3379df9dbb67a4ac15f4f51afdc5a9d44098c983
+github: none
+---
+
 # The sitting named four routes, found three more, and the one that won removes the question
 
 2026-09-18. Panel 161, convened during M-arm-platform on defect 058 at the

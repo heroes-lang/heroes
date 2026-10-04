@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-30
+commit: 6708ba0521af542def2be41ff0798db7b2e3d518
+github: none
+---
+
 # Defect 140 closed: no walk over a record type recurses on its depth, and none gives up at one
 
 - [x] **140 — records nested by value a thousand deep abort `build`** | 1,000 flat declarations, `record R<i>` holding `R<i-1>`, reached by `xs: [R999] = []`: `check` exit 0, `build` exit 134, `panic: stack exhausted in emitsynth.collect`; at 10,000 under a larger stack clang itself crashes on the C | `selfhost/emit/` (`emitsynth.collect`) · `selfhost/check/decls.hero` (`.record_decl`, where a bound would stand) · **closed 2026-10-01**

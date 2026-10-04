@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-robustness-guards
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-robustness-guards step 1** | the emitter's comment said an index step *"cannot appear yet … and the walk stops rather than producing something that compiles"*. It compiled. Name the C type the callee actually received for `@bs[0]` and the flag on panel 047's list that would have refused the unit at exit 2
 
     **Where to look:** selfhost/emit/aggregate.hero (`place`) · docs/work/DONE.md (the step-1 item, exit 138)

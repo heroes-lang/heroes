@@ -1,3 +1,12 @@
+---
+kind: learn
+area: examples
+milestone: M-closures-verdict
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-closures-verdict step 1** | `--dump-ir` on a whole program prints `funcref` once for every place a function is used as a value. Run it on `examples/calculator/main.hero` and count them. Then run it on `selfhost/main.hero` and count them, and explain why the second number is not the compiler's total
 
     **Where to look:** selfhost/ir/print.hero § the .func_ref arm · selfhost/ir/emissions.hero

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-27
+commit: dfc1e221bf2103d247dc82278e9e9e14ff852a41
+github: none
+---
+
 # Defect 111 closed: the checker reads each declaration once, and the compiler checks itself six times faster
 
 2026-09-27, M-agreed-retention step 25, in lane C (`ac3dfaf6`), merged

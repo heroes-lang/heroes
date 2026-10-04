@@ -1,3 +1,12 @@
+---
+kind: feature
+area: runtime
+milestone: M-core-packages
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | copy-on-write's `refcount == 1` is a test and then a mutate, and nobody could race it | `runtime/parts/cow.c:44`, `:78`, `:83` · `runtime/parts/map-write.c:127` · `docs/panel/113`
 
     **Origin:** `docs/panel/113`, 2026-09-06; the finding is both compiling

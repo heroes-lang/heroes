@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-isolated-threads
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-isolated-threads step 3** | Going UP the count asks for the weakest order there is and going DOWN asks for a stronger one. Read the two paragraphs in `str.c` and say, in your own words, what the thread that frees the block has to be able to SEE, and why the thread that merely takes a new reference has to see nothing
 
     **Where to look:** runtime/parts/str.c, the comment above `hero_str_incref`

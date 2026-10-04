@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-02
+commit: 4d0f27a1d630ff8b5ea95fb609ef734c6494e9cc
+github: none
+---
+
 # Three answers: panel 186 ratified, R7's home (a), the push of 2bb45a96
 
 2026-10-02 at 15:03, the author's answer to three recommendations, meant as:

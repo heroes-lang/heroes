@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-03
+commit: 19157f4a2745cf7e05afdf4718eed9811d4888fc
+github: none
+---
+
 2026-09-03 scheduling measured *"three mentions and no ruling"* over a wider set;
 the count has since grown to 22 across design.md, `DESIGN-LOG.md` and
 `docs/panel/` while **none of them is in design.md**, because every new mention is

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-02
+commit: 6c95f44a622ff4064ffa0ee02d055349041084d5
+github: none
+---
+
 # Defect 170 closed: a correct program whose types nest deeper than the C compiler survives stops `build` at exit 2 with clang's crash text
 
 - [x] **170 — a correct program whose types nest deeper than the C compiler survives stops `build` at exit 2 with clang's crash text** | 3,000 variants nested by value, `variant R<i>` whose case `a` holds `R<i-1>`, `xs: [R2999] = []`, `print(xs == xs)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed: clang: error: unable to execute command: Illegal instruction: 4* (Apple clang 21.0.0); the CI's Apple clang died at 1,000 (defect 155) | the build's clang call (`selfhost/cli/units.hero:96`, `tu_object`) · defect 140's closed record (*facts about the C compiler, not refusals of this one*) · panel 184's R6 · **class: blocking** · **closed 2026-10-03**

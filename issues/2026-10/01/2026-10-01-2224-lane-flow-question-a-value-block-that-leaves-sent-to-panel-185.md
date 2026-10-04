@@ -1,3 +1,12 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-10-01
+commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
+github: none
+---
+
 # A value block that leaves on every path: the question goes to panel 185
 
 2026-10-01, evening, `/decide` on the author's answer. The item below was

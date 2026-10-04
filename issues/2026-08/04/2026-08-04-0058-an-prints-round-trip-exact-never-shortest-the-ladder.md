@@ -1,1 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-04
+commit: 7a6349595c3a891402fab1f9c5dabf9ca776f030
+github: none
+---
+
 2026-08-04 | An `f64` prints **round-trip-exact, never "shortest"**: the `%.15g`→`%.17g` ladder with gnulib's subnormal branch (precision starts at 1 below `DBL_MIN`), and the word "shortest" struck everywhere because `5e-324` renders `4.94065645841247e-324`, which round-trips and is not shortest — Java shipped `1.9999999999999998E23` for eighteen years to prove the distinction. A value with no fractional part prints `1.0`, not `1`: under `1`, `print(price * to_f64(count))` and `print(5 * 2)` emit identical bytes and an accidental int→f64 drift stays green forever, which is exactly what `1 + 2.0` being an error exists to prevent (Lua's precedent; Rust needed `Debug` to recover the distinction `Display` destroys) | the algorithm lives in design.md §4.9; the spec names the observable form only, at +34 measured | §4.9, §1.4 | 006, 021 |

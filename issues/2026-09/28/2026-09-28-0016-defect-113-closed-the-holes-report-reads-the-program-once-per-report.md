@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-27
+commit: dfc1e221bf2103d247dc82278e9e9e14ff852a41
+github: none
+---
+
 # Defect 113 closed: the holes report reads the program once per report, not once per hole
 
 2026-09-27, M-agreed-retention step 25, in lane C (`ac3dfaf6`), merged

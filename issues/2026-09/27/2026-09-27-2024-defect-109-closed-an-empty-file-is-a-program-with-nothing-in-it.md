@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-27
+commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
+github: none
+---
+
 # Defect 109 closed: an empty file is a program with nothing in it, and a file's end is the end of what the parser reads there
 
 2026-09-27, M-agreed-retention step 22, in lane A (`7bcd7cc2`), merged `f08b192d`.

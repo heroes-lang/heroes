@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-25
+commit: 517b8e25692a4cf0075c04fd306e5017fd428cd4
+github: none
+---
+
 # An end a call announces is pending until the call returns
 
 2026-09-25 | the live set counts, per address, the ends a call has announced

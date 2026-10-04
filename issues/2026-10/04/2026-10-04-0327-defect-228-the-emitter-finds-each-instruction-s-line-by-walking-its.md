@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-10-03
+commit: 17322f0e49adf9d510475f995af6b9ce11d9a697
+github: none
+---
+
 - [x] **228 — the emitter finds each instruction's line by walking its source line by character, so a long line costs its length squared** | lane irverify's profile: `writer.at_span` → `source.locate`/`line_col`, 65% of `concat-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/writer.hero`, `selfhost/source.hero` · **class: improvement**
 
     **Origin:** lane irverify, 2026-10-03, profiling the shapes of panel 184's R6 after defect 218's repair, reported to the coordinator; not yet run by the coordinator.

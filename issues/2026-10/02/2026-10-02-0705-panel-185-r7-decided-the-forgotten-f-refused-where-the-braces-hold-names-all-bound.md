@@ -1,3 +1,12 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-10-02
+commit: 2b7afefdf3be7b518196071180036026ae1faa6f
+github: none
+---
+
 # Panel 185's R7 decided: the forgotten `f` is refused where the braces hold names all bound
 
 2026-10-02, morning, `/decide`-shaped on the author's answer to the

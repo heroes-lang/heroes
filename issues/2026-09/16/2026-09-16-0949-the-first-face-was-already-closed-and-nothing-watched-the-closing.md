@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: M-check-completeness
+filed: 2026-09-16
+commit: 10480d650aa3a9e33dbc54e9f13ed41fbc319105
+github: none
+---
+
 - [x] **M-check-completeness** | the sortable obligation: `heroes check` accepts `first([P(x: 1)])` at exit 0 and `heroes build` refuses it | **CLOSED 2026-09-16**, found closed at the milestone's opening and pinned the same day | `tests/golden/check/sort-through-a-type-parameter.hero` · `docs/panel/084` R1 · `selfhost/check/ordering.hero:45`
 
     **The measurement, run before the sentence was written.** On a compiler built

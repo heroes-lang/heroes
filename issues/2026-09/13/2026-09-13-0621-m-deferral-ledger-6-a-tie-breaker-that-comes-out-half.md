@@ -1,3 +1,12 @@
+---
+kind: learn
+area: design
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 6** | design.md left a design decision *"to a count"*: how many of the compiler's declarations could be private. Run that count yourself, any way you like. Then read the three numbers three seats got the same day and the one a sitting got a month earlier, and say what it would have taken for the count to decide anything — or say why nothing would have.
 
     **Where to look:** the three methods and their numbers in

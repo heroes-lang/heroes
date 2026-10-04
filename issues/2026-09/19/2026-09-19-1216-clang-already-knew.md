@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-19
+commit: 61fa67e4e3419fbe71e9b76f9cc636cc1223b8ad
+github: none
+---
+
 # Clang already knew
 
 2026-09-19. Panel 166, at M-declared-extents, on the two defects panel 165 found

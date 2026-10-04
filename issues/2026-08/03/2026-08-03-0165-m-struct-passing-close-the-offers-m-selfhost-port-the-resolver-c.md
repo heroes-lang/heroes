@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, the resolver complete | **The driver's order is the design.** resolve() runs: hole scan, collect, per-declaration walk, unused_uses, report_unused, cycles, sort. Two questions with one answer each: why must cycles run LAST (what is incomplete before every body is walked), and why does the hole scan run FIRST as a flat pass over the arena instead of inside the walk?
 
     **Where to look:** selfhost/resolve.hero, the driver's comments · resolve/mod.rs

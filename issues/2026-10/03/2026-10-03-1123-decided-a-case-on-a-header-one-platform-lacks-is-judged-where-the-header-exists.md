@@ -1,3 +1,12 @@
+---
+kind: decision
+area: process
+milestone: none
+filed: 2026-10-03
+commit: d9f5ddb8be6a819680f28490d2aa7ef6237a9772
+github: none
+---
+
 # Decided: a case on a header one platform lacks is judged where the header exists, with a twin on the program's own header running everywhere
 
 2026-10-03, on the author's answer, meant as: *ok, A*. **Recorded as a reading**, CLAUDE.md § 4's default; not `by delegation`.

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: M-declared-extents
+filed: 2026-09-19
+commit: 61fa67e4e3419fbe71e9b76f9cc636cc1223b8ad
+github: none
+---
+
 # The queue panel 164 left is empty
 
 2026-09-19, M-declared-extents. The milestone's first open item, closed by the

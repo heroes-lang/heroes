@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-03
+commit: 9b31cd6444a1d2519de537d59913a0d1d3cf930c
+github: none
+---
+
 # Defect 206 closed: on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`
 
 - [x] **206 — on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`** | `docs/panel/186-briefs/probes/coordinator/fw/` built with `PKG_CONFIG_PATH` at its `pc/` in the Linux arm64 container (Debian clang 22.1.8): `clang: warning: argument unused during compilation: '-F.../fw/pc/../frameworks' [-Wunused-command-line-argument]`, then the program prints `7` at exit 0; this Mac prints no such line; on this Mac `clang --target=aarch64-linux-gnu -F/tmp/fwdir x.o -o x.bin` prints the same warning and the same flag with `-c` prints nothing | `selfhost/cli/libraries.hero` (the words a package gives the compile and the link) · `selfhost/cli/units.hero` (the link line) · defect 160's closed record · **class: blocking** · **closed 2026-10-03**

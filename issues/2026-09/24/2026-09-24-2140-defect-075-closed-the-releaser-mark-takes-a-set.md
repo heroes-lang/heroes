@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-23
+commit: fb0b7cb6ee473f6a9e69d8c7363e179dc63f83bd
+github: none
+---
+
 
 # Defect 075 closed: the releaser mark takes a set, and a release it did not name is stopped before C runs
 

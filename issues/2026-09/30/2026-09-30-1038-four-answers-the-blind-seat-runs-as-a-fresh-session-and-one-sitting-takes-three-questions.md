@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-30
+commit: ec1fd0a9a294978037339b10116720a255856d5e
+github: none
+---
+
 # Four answers: the blind seat runs as a fresh session, and one sitting takes three questions
 
 2026-09-30, morning, on the author's answer to four recommendations the

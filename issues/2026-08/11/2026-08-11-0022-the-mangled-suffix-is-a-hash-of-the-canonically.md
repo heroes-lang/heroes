@@ -1,1 +1,10 @@
+---
+kind: decision
+area: process
+milestone: none
+filed: 2026-08-11
+commit: 4b21fa75e7f2b70b08c5d4c5b3a1a4977084b6bf
+github: none
+---
+
 2026-08-11 | **The mangled suffix is a hash of the CANONICALLY RENDERED type, never of the `TyId` sequence** (panel 029 R5), with each instance emitted under a comment naming its types. Two judges constrained it from opposite ends. The historian: RFC 2603's complaint about Rust's legacy hash was information loss and *"results cannot be replicated by another compiler implementation"* — hashing the public rendering answers the second, and the comment answers the first for free. The engineer: a readable suffix is not spellable, because `render_ty`'s output carries `[ ] { } ( ) ? ,` and spaces. The ffi-pragmatist closed it by compiling both: a readable suffix is **not injective** — `pair<int, str_x>` and `pair<int_str, x>` both spell `h_m_pair_int_str_x`, so clang answers `error: conflicting types` **on a legal Heroes program** — and it buys nothing, because clang prints the `aka` expansion either way | `TyId` is an interning-order artifact, and a `TyId`-derived hash would require the Rust bootstrap and the Heroes port to intern in identical order for the M8c fixpoint to close. `mangle.rs:29-33` already applies that reasoning to `module_of` | §4.12, CLAUDE.md §7 | 029, 028 |

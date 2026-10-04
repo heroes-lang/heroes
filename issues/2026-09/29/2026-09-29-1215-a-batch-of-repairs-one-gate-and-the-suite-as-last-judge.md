@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-29
+commit: eb3fb613ef27526d73317409ddb1de9e7279c383
+github: none
+---
+
 # A batch of repairs, one gate, and the suite as the last judge
 
 2026-09-29, 11:00 to 12:15, the author's instruction over a morning's conversation, with no milestone open and lanes x1, x3, x4 and y live in other sessions.

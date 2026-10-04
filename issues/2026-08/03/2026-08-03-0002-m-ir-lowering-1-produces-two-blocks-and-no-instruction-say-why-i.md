@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-ir-lowering
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-ir-lowering.1** | `a && b` produces two blocks and no `and` instruction. Say why in one sentence — and then say which spec line forces it
 
     **Where to look:** spec/heroes-spec.md § Operators · ir/control.rs (short_circuit)

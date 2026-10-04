@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-04
+commit: fa7ec490856271473fe60e90ccf1f95af29b1d35
+github: none
+---
+
 # Panel 189 sat: a source byte that is not UTF-8 is told `not_text`, on each line it stands on, and nothing writes the file back
 
 2026-10-04, written at 04:11 by the clock (`date`). The synthesis is

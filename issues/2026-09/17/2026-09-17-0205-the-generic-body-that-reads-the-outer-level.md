@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-09-17
+commit: 6f534a1e6daa9eed3d909cfd410e227a2e3e3b26
+github: none
+---
+
 - [x] **056 — a generic body reads the outer level of whatever it is instantiated with** | `is_bad<A>(x: A?) -> bool` returning `x.is_err()`, called with `A := i64?`, passes under every option panel 160 weighed | costed 2026-09-17, M-check-completeness step 15; filed rather than repaired
 
     **Origin:** 2026-09-17, panel 160's compiler-engineer, confirmed by its

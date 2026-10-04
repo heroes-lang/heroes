@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 9** | Read spec § 10's sentence *"`xs @ xs.push(4)` grows in place while nothing else holds `xs`"*, then write a program that satisfies that condition exactly and is still quadratic. Say what the reader who checked the condition, passed it and shipped the program is supposed to do next.
 
     **Where to look:** `spec/heroes-spec.md` § 10; the llm-ergonomist's hesitation

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: spec
+milestone: M-interpolation-verdict
+filed: 2026-09-08
+commit: ba68ee81468d5aef4209d5bf668d5d389f56104c
+github: none
+---
+
 - [x] **M-interpolation-verdict** | a hole rule below `any expression` makes the spec's *"valid anywhere"* false for `???`, and the sitting either excepts it or pays for it | `spec/heroes-spec.md` § Tests and holes · `examples/gallery/09-holes.hero:28` · `docs/measurements/021-what-would-stand-inside-a-hole.md`
 
     **Origin:** step 1's own count, 2026-09-08, the one hole of 2536 that no

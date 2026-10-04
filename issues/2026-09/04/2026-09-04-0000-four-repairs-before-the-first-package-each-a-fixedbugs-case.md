@@ -1,3 +1,12 @@
+---
+kind: feature
+area: ir
+milestone: M-core-packages
+filed: 2026-09-04
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** step 0 | four repairs before the first package, each a `fixedbugs` case, the macro-only probe among them | `selfhost/ir/place_store.hero:100` · `selfhost/cli/pointee.hero` · `selfhost/emit/extern_probe.hero:164-165` · `docs/panel/092`, `103`
 
     **Merged 2026-09-10** from two items, by author instruction, and the second

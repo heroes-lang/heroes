@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: 2dc2b2f878e84d3268c217f136762ff87922d28f
+github: none
+---
+
 # Not one word for two opposite admissions
 
 2026-09-20. M-declared-extents step 17, panel 170, the full panel: five seats and

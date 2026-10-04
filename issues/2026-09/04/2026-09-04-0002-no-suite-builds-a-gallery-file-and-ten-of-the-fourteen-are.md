@@ -1,3 +1,12 @@
+---
+kind: task
+area: examples
+milestone: M-publication-gate
+filed: 2026-09-04
+commit: none
+github: none
+---
+
 - [ ] **M-publication-gate** | no suite builds a gallery file, and ten of the fourteen are named by no test | `examples/gallery/` · `tests/harness/suite_corpus.hero:44` · `examples/README.md`
 
     **Origin:** measured 2026-09-04 at the close of M-corpus-depth, which is

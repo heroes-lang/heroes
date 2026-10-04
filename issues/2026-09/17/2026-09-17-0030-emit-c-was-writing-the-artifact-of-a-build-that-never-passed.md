@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 4d4eec4386dcffed8b699d5bd2d6b09159b3e73f
+github: none
+---
+
 - [x] **049 — `--emit-c` writes the pre-probe tag spelling, and the obvious repair makes the artifact platform-dependent** | a program binding `record <Name> tag <name>` got C that clang refuses, and the probe that fixed it made the SAME program emit two different files on two machines | closed 2026-09-17, M-check-completeness, inside panel 157 R1 and without a new sitting
 
     **Origin:** the tag half of defect 048, withdrawn 2026-09-16 within the hour

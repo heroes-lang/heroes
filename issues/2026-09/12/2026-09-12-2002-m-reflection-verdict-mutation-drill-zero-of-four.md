@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-reflection-verdict
+filed: 2026-09-12
+commit: none
+github: none
+---
+
 - [ ] **M-reflection-verdict mutation drill** | One program, two spellings, the same four keys: bare strings score 0 of 4 killed and `Room::width` scores 5 of 5. Predict the two numbers for a THIRD spelling before running it — the keys declared as `constant K_WIDTH: str`.
 
     **Where to look:** `heroes mutate <dir> --operator typo-key --survivors` and

@@ -1,1 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-03
+commit: 113b1019366da3fcde875f24931e819a9ba9c6a0
+github: none
+---
+
 2026-08-03 | Errata applied to design.md: Part 2 heading restored; `&`→`&&` in §4.3/§4.8 examples | document already legislates && at §4.14; these were internal inconsistencies | Part 2, §4.3, §4.8 | 000

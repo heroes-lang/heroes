@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-08-26
+commit: b660cc224056521d0e2367067858d5e99f73c4b1
+github: none
+---
+
 - [x] **003 — `heroes fmt` deletes a control form used inside an expression** | Date: 2026-08-26, during the first repo-wide `heroes fmt` sweep (the sweep was reverted; nothing shipped). **Found by the sweep itself**, because formatting file 50 of 165 broke every one of the 107 files after it: `fmt` refused them with a diagnostic pointing into the file it had just written. | **Status: fixed 2026-08-26**, two repairs in one commit — see § The repair. | moved here 2026-09-03 from `docs/defects/003-fmt-deletes-a-control-form-inside-an-expression.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — `fmt` rewrote a compiler source file into a **different program that does not parse**, at **exit 0**, with the author's file replaced. This is the worst shape a formatter's bug can take, and it is the third instance of the same class (panel 014, panel 060/061, this).
 
 

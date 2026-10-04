@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: 76bcd43ae585462d9aef5b13919e2d197d92a0c3
+github: none
+---
+
 # The option set was short by one, and the question was never A or B
 
 2026-09-15. Panel 153, convened without asking on `docs/work/DEFECTS.md` 042 and

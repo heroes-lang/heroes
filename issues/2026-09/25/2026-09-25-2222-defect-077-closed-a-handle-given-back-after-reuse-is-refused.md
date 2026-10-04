@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-23
+commit: 7dc739251188afc0670eb51771b8350e376b1cfd
+github: none
+---
+
 # Defect 077 closed: a handle given back after C handed its address out again is refused at check through its name, and stopped before C through a copy that was not reused
 
 2026-09-25, M-agreed-retention step 14, panel 177's items 1 to 3 on their

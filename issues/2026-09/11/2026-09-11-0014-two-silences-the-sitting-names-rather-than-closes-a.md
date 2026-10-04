@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: 28915417c2d73197253dfeb3a51fb4a71ae5f54f
+github: none
+---
+
 2026-09-11 · **Two silences the sitting names rather than closes.** A callback
 whose own two parameters are DIFFERENT types puts no names in its type, so the
 mandate does not bind it: `tally(item: str, acc: i64)` has its names fully

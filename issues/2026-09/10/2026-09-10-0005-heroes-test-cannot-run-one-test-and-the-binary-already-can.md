@@ -1,3 +1,12 @@
+---
+kind: feature
+area: cli
+milestone: M-core-packages
+filed: 2026-09-10
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | `heroes test` cannot run one test, and the binary already can | `selfhost/cli/verbs.hero:104-163` · `selfhost/cli/table.hero` · `CLAUDE.md` §10
 
     **Origin:** author decision 2026-09-10, § What production-ready means. Homed

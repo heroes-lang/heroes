@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-arm-platform
+filed: 2026-09-18
+commit: none
+github: none
+---
+
 - [ ] **M-arm-platform walkthrough** | A prediction was registered so it could be scored: *plain `char` is unsigned on the ARM ABI and signed on x86-64*. The new leg found the divergence. **Before reading: this Mac is an arm64 machine. What does it read, and what does your answer do to the word "ARM" in that sentence?** | `docs/work/milestones/M-arm-platform.md` § What warrants it, and the SCORED paragraph under it
 
     The three machines, measured with a three-line C program:

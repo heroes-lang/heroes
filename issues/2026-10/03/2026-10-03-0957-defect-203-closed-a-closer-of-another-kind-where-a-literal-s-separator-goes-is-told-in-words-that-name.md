@@ -1,3 +1,12 @@
+---
+kind: defect
+area: parse
+milestone: none
+filed: 2026-09-30
+commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
+github: none
+---
+
 # Defect 203 closed: a closer of another kind where a literal's separator goes is told in words that name neither the opener nor its closer
 
 - [x] **203 — a closer of another kind where a literal's separator goes is told in words that name neither the opener nor its closer** | `x = [1, 2` over `print(x) )` in a function: `expected_separator` at the `)`, *expected `,` or a new line between one element and the next, found `)`*, no `[` and no `]` in it; the `)` deleted, a second run tells `unclosed_bracket` at the `[`; the same on one line, `[1, 2)` and `{1: 2]`, and for a `}` in a list | `selfhost/parse/list_line.hero:223-228` (`separator`'s message) · panel 187's Q2 and R6 · **class: adjacent** · **closed 2026-10-03**

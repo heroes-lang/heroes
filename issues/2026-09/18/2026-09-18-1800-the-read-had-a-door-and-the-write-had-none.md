@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-18
+commit: ef7b013bcd42debc4924ef787b2e5dd44138b6c0
+github: none
+---
+
 # The read had a door, and the write had none
 
 2026-09-18. Panel 164, convened between milestones on defect 061, which panel 162

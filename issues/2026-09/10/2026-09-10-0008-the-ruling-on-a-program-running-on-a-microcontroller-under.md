@@ -1,3 +1,12 @@
+---
+kind: task
+area: runtime
+milestone: M-microcontroller-verdict
+filed: 2026-09-10
+commit: none
+github: none
+---
+
 - [ ] **M-microcontroller-verdict** | the ruling on a program running on a microcontroller under an RTOS, RISC-V first, and the two runtime facts a 32-bit build refuses today | `runtime/heroes_runtime.h:122` · `runtime/parts/stack.c` · `runtime/parts/spawn.c:128` · `DESIGN-LOG.md:539` · `docs/measurements/026-the-two-facts-a-32-bit-target-refuses.md` · `docs/measurements/027-behind-the-first-refusal-two-files-and-one-symbol.md` · `.claude/rules/platforms.md`
 
     **Origin:** author question 2026-09-10, whether supporting a microcontroller

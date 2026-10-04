@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-11
+commit: 205a8024d9c6dfa01b783c21a3eeb2ad76a7c31e
+github: none
+---
+
 2026-08-11 | **The function typedefs are derived from the program, never walked off the interned arena** — the rule `descriptors.rs` already had, applied to a second table. The checker interns a `Ty::Func` for *every* top-level declaration, so an arena walk emitted one typedef per function in the file, almost all named by nothing; three golden `.expected` files changed for programs that use no function value at all. An unused typedef is not a warning the way an unused `static const` is, which is precisely why it had to be deliberate: nothing would ever make it fall out | the derived set restored all three goldens to byte-identical, which is the check that the noise was noise | §4.20, panel 022 | — |

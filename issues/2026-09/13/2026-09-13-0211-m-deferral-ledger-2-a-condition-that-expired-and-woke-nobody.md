@@ -1,3 +1,12 @@
+---
+kind: learn
+area: design
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 2** | design.md deferred doctests *"until the first mechanism is proven"*. That condition has been met for months — 641 `test` blocks in the compiler, 545 in the examples, one of the three suites made of them — and nothing happened. Say what a condition needs in order to be able to wake somebody, and name the one thing every return condition panel 135 and 136 wrote has that this one did not.
 
     **Where to look:** design.md §4.18's doctest paragraph and its correction

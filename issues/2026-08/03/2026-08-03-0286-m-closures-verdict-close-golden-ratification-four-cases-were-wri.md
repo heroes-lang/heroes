@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-closures-verdict
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-closures-verdict close — golden ratification** | Four cases were written this milestone and none is marked UNVERIFIED, because all four are repairs of measured defects rather than adversarial cases. Read them and rule on whether each one's `#~` annotations cover every diagnostic the program provokes — that is the half a regenerator cannot fake, and the last case needed two codes on one line before it did
 
     **Where to look:** tests/golden/check/fixedbugs-a-comparison-names-every-numeric-width.hero and the other three

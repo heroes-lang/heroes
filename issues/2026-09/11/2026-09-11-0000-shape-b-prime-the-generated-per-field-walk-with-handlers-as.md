@@ -1,3 +1,12 @@
+---
+kind: feature
+area: emit
+milestone: M-core-packages
+filed: 2026-09-11
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | shape B-prime, the generated per-field walk with handlers as parameters, which is the only route to the ROT — scheduled with what it owes, and NOT adopted | `docs/panel/132-two-seats-invented-the-same-thing-and-two-others-invented-the-other.md` · `selfhost/emit/structural.hero` · `selfhost/ir/mono.hero`
 
     **Origin:** panel 132, 2026-09-11, where it was reached twice independently.

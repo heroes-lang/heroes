@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: 21716c167fd6ae0bbf45e4193058efe3f2c84d37
+github: none
+---
+
 # Two sittings refused two routes, and the answer had been spoken all along
 
 2026-09-15. Panels 151 and 152, both on `docs/work/DEFECTS.md` 037, and the

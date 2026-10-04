@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-10-02
+commit: ffaf9f4dc40f97c82379b5e16a0f84506c5e359c
+github: none
+---
+
 # Defect 169 closed: `check` aborts on a correct program of 300 additions
 
 - [x] **169 — `check` aborts on a correct program of 300 additions** | `total = 1 + 2 + ... + 300` over `print(total)`: `check` exit 134, *panic: stack exhausted in checkwalk.synth* | `selfhost/check/walk.hero:101` (`synth`) · panel 184's R5 (*the compiler runs its passes on a thread whose stack it chooses*) and R6 (*a floor, not a ceiling*), ratified 2026-10-01, not landed (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:197`, `:204-206`) · **class: blocking** · **closed 2026-10-03**

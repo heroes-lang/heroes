@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: b6e26fcc3240ebe1c92625392a93063b301849c9
+github: none
+---
+
 # Heroes must be robust, and the default flips
 
 2026-09-20. M-declared-extents step 21, on the author's decision, after the

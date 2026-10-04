@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-04
+commit: 9224fae338f301d50c02e0bcdf26d3e398bdc3e3
+github: none
+---
+
 - [x] **295 — a root file that does not exist is told *cannot read*, where no file of that name is what is true** | `check nosuch.hero`: exit 2, *error: cannot read `nosuch.hero`*, `cli/input`'s one message for every failure to read the root, where the file is absent (lane b9-notext's compiler, 2026-10-04) | `selfhost/cli/input.hero` · defect 274, which made `read_file` tell absence from a failure · **class: adjacent**
 
     **Origin:** lane b9-notext, 2026-10-04, reproduced on its compiler (`<scratchpad>/batch9/notext/report.md`, *Found beside* 7).

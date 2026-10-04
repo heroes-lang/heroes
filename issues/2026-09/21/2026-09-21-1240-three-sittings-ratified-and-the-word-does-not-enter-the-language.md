@@ -1,3 +1,12 @@
+---
+kind: decision
+area: process
+milestone: none
+filed: 2026-09-21
+commit: 32da07c91460aaf254aa7859af581abfa0b4adaf
+github: none
+---
+
 - [x] **panel 171** | the word is `lent`, in its own slot beside `counted_by`; a lend reaches only a `lent` parameter of an `extern` function; the spec sentence is the warden's merged draft and promises nothing about a pointer C hands back; the landing is two commits with 27 marks on 19 functions across three trees | **RATIFIED 2026-09-21**, and the whole of it had already landed: commit A `83a8c92c`, commit B `abf9a17e`. The word, the rule, the sentence and the two-commit landing are confirmed rather than authorised, under CLAUDE.md § 3's rule that a milestone asked for in one `/step` decides its delegated questions with the recommended resolution as the default and says once which way it went. **The direction was never in the item**: the author ruled the default flipped on 2026-09-20 | `docs/panel/171-lent-and-the-pointer-c-hands-back.md` | 171
 
 - [x] **panel 172** | the repair of defect 070 is a run-time report and not a word: `consumes` stays refused on a `cstr` or `ptr`, § 13 writes the limit with its falsifier, and the mechanism goes to a soundness-lane sitting before it lands | **RATIFIED 2026-09-21.** The word does not enter the language, design.md Part 6's row stands, and the conservative option the sitting recorded — route C alone, the limit written and no runtime change — was **not** taken | `docs/panel/172-the-report-comes-from-the-crash-and-not-from-the-declaration.md` | 172

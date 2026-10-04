@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-17
+commit: 4d4eec4386dcffed8b699d5bd2d6b09159b3e73f
+github: none
+---
+
 # The reader that forgets the level
 
 2026-09-17. Panel 160, on defect 050: `.is_err()` applied to a value that is

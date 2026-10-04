@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-03
+commit: 599bfb5da3d568e58a139922b14c51cc37221c7a
+github: none
+---
+
 2026-08-03 | Maps iterate in insertion order, overwrite keeps position, seed fixed (unobservable); print is a compiler form over str/int/f64/bool — canonical rendering, no separator, one trailing newline, deterministic locale-independent f64; Rust bootstrap marks ordering-sensitive BTreeMap walks (// ORDER:) for explicit sorts in the port | author decision; 4 approve, warden's narrow objection on (b) resolved by completing the contract; Python 3.7/ES2015 precedent, Go condemns only unspecified order | §4.9, §4.20, §1.0 | 006

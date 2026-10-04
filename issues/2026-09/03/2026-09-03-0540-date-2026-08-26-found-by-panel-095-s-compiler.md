@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-08-26
+commit: b660cc224056521d0e2367067858d5e99f73c4b1
+github: none
+---
+
 - [x] **004 — `heroes fmt` was not a fixpoint on 31 of its own 165 modules** | Date: 2026-08-26, found by panel 095's compiler-engineer seat and independently re-measured by the coordinator at the same number in the same session. | **Status: fixed 2026-08-26** — two repairs, both in `selfhost/print_fmt.hero`. See § The repair. | moved here 2026-09-03 from `docs/defects/004-fmt-was-not-a-fixpoint-on-its-own-compiler.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — it made the repo-wide sweep the sitting was convened for **impossible**, and before the guard existed it silently wrote source that changes again on the next format. The morning's reverted sweep did exactly that to 118 files.
 
 

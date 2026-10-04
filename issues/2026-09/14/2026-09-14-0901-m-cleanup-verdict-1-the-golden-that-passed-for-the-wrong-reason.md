@@ -1,3 +1,12 @@
+---
+kind: learn
+area: golden
+milestone: M-cleanup-verdict
+filed: 2026-09-14
+commit: none
+github: none
+---
+
 - [ ] **M-cleanup-verdict 1** | Open `tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero`, landed 2026-09-13, and find the line `print(s.handle == nullptr)` with its expected `true`. That case ran green for a whole day while `==` on a handle was a constant `true`. **Before reading any further: say why a green run of that case told nobody anything, and write down the smallest change to it that would have gone red.**
 
     **Where to look:**

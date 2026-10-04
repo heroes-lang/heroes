@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-12
+commit: c93a3ff2a402fd2fc4936221ca31c4ffec268f4d
+github: none
+---
+
 2026-08-12 | **`ok`'s arity is derived from its payload, so `ok()` is how a `()?` succeeds.** Before this there was **no way to construct one**: `ok(())` is `expected_expression` (`()` is a type, not a value), `ok()` was `wrong_arity`, a bare `return` is `missing_value` — three spellings, three refusals, and `write_file(path, text) -> ()?` is the first signature in the language that needs one. Panel 036's spec-warden predicted the failure before the signature existed | a type the language can write but no expression can produce is a hole that only appears when something needs it, which is why it survived six milestones | §4.6, §4.3 | 036 |

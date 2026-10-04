@@ -1,3 +1,12 @@
+---
+kind: decision
+area: harness
+milestone: none
+filed: 2026-09-10
+commit: 09b6b01fe71f3b59f63fd6cb6c83a9c92813efc5
+github: none
+---
+
 - [x] **reasoning — the chain judged against a production-readiness criterion nobody had written** | 2026-09-10, the session that asked whether the chain was missing steps for the language to be usable for **production code that is not mission critical** at 1.0 | **Settled**: the criterion exists now and lives in `docs/ROADMAP.md` § What production-ready means, by author decision, because the criterion is not the language; **four rows entered** and all four were put with a recommendation and accepted — `M-cleanup-verdict`, `M-arm-platform`, `M-deployable-binary`, `M-compatibility-promise`, 63 rows to 67; **M-core-packages was not a new row and its step order was**, the web stack moving from steps 10-12 to 2-6 at no dependency cost; **CL-036's walk gained the two things that colour a program**; and **all 42 items of `docs/work/SCHEDULED.md` were verified, three pairs merged, twelve added and the file ordered by the chain for the first time**. **The finding that framed all of it**: design.md defines v1 as *compiles itself* and production readiness **nowhere** — no section on distribution, versioning, stability or a 1.0 promise over 3,612 lines, and the only `1.0` in the file is Go's. **Six of the criterion's ten rows were owned already**, which is the answer to the question as asked | `docs/ROADMAP.md` § What production-ready means, § The chain rows 47, 49, 63, 66 · `DESIGN-LOG.md`, the 2026-09-10 row · `docs/work/SCHEDULED.md` § the header's two new paragraphs · `.claude/rules/diagnostics-and-goldens.md` § A new surface form · `tests/harness/suite_records.hero` `ROWS` 67 -> 71 | the session that found the chain in better shape than the question assumed, and the four things nothing owned
 
     **THIRTEEN CANDIDATES WERE MET WITH THE RULE THAT ALREADY RULED ON EACH, and

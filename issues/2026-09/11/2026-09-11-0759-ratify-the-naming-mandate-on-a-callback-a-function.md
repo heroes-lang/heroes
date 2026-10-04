@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-09-11
+commit: 9ab292e19073616e4ad2bcdcbdc4f7a393eefe2b
+github: none
+---
+
 - [x] **panel 130** | ratify the naming mandate on a callback: a function handed to a callback type that names its parameters names them the same way, at 7 of 7 against 2 of 7 | `docs/panel/130-the-name-a-generic-callback-could-not-say.md` · `docs/measurements/010-spec-budget-ledger.md` row 67
 
     **Origin:** panel 130, 2026-09-11, on the route you asked for at panel 129's

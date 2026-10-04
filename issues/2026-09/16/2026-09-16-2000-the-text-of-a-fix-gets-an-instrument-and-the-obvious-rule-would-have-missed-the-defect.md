@@ -1,3 +1,12 @@
+---
+kind: task
+area: harness
+milestone: M-check-completeness
+filed: 2026-09-08
+commit: ec44b6421e09e03ae917f9f0d4020a532860497d
+github: none
+---
+
 - [x] **M-check-completeness** | nothing watches the TEXT of a `guess` fix, and one shipped a name the language had withdrawn | **CLOSED 2026-09-16** | `tests/harness/fix_names.hero` · `tests/harness/suite_fixes.hero`
 
     **Origin:** found 2026-09-08 at M-closures-verdict step 3, while writing

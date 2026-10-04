@@ -1,3 +1,12 @@
+---
+kind: defect
+area: harness
+milestone: none
+filed: 2026-10-03
+commit: 80cb060ca850d08f4eecfb0d001c48ea4e8aff1a
+github: none
+---
+
 - [x] **209 — a `layout` run filtered to a name that matches no module reads 1 passed** | `./heroes run tests/harness/main.hero -- ./heroes layout <a name no module has>`: `1 passed, 0 failed`, because the harness's guard against an empty selection counts cases and the suite's file-wide checks are always one case | `tests/harness/suite_layout.hero` · the harness's selection guard · **class: improvement**
 
     **Origin:** the coordinator's agent finishing defect 167 in lane cb4, 2026-10-03, which then checked by hand that each of its six filters matched one module (`scratchpad/lane-cb4/progress.md`, 2026-10-03).

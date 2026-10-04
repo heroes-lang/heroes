@@ -1,3 +1,12 @@
+---
+kind: learn
+area: golden
+milestone: M-struct-passing
+filed: 2026-08-26
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-harness-port | `tests/golden/check/x.hero` carries `#~ <code>` comments AND `x.expected` records the same diagnostics. Why is that redundancy the one check a regenerator cannot fake? (2026-08-26)
 
     **Where to look:** tests/harness/suite_annotations.hero · CLAUDE.md §9

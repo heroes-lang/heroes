@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-21
+commit: 497a048f638887d6bf0f64542afce49eed136659
+github: none
+---
+
 # A process that never started stops being a record with an exit code
 
 2026-09-21 | the harness refuses a non-start instead of reporting one, and the

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-04
+commit: 761525bb3727aa916e492615398358ba7fa4dceb
+github: none
+---
+
 # The author ratifies panel 190, funds sitting 192, and asks for the push
 
 2026-10-04, written at 16:33 by the clock (`date`). The coordinator had put

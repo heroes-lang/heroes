@@ -1,3 +1,12 @@
+---
+kind: task
+area: emit
+milestone: M-typed-inspection
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-typed-inspection** | what a stopped program shows today, so the "before" is on the record | `selfhost/emit/mangle.hero` · `selfhost/emit/body.hero` § prologue · `runtime/heroes_runtime.h`
 
     **Origin:** measured 2026-09-06 on this Mac, with lldb in batch mode over a

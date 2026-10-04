@@ -1,3 +1,12 @@
+---
+kind: learn
+area: golden
+milestone: M-handle-verdict
+filed: 2026-09-14
+commit: none
+github: none
+---
+
 - [ ] **M-handle-verdict 8** | Read `tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero` and its `.h` beside it, then build it with a compiler from before the fix: `git show HEAD~1:seed/heroes.c > /tmp/old.c && clang -I runtime /tmp/old.c runtime/runtime.c -o /tmp/old && /tmp/old build tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero -o /tmp/x`. Read the warning it prints. Then build it with `./heroes` and read the silence. Before looking at the fix, say **which of the record's three fields the compiler was getting wrong and why the other two were right.**
 
     **Where to look:** the comment block above the change in

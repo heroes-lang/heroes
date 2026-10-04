@@ -1,3 +1,12 @@
+---
+kind: defect
+area: spec
+milestone: none
+filed: 2026-09-26
+commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
+github: none
+---
+
 # Defect 104 closed: a line inside brackets breaks by how it ends, the compiler breaks it one way everywhere, and the spec says so
 
 2026-09-27, M-agreed-retention step 21, in lane `74203a64` (a detached worktree

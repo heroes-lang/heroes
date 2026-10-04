@@ -1,3 +1,12 @@
+---
+kind: defect
+area: ir
+milestone: none
+filed: 2026-10-03
+commit: 9bd02fcaeb9d66049caeda38afccc609bace4fce
+github: none
+---
+
 # Defect 218 closed: the IR verifier's cost grows about as the cube of a function's size, so 7 of 25 nesting shapes at 2,000 deep do not build in 150 s on this Mac, 8 in the Linux container
 
 - [x] **218 — the IR verifier's cost grows about as the cube of a function's size, so 7 of 25 nesting shapes at 2,000 deep do not build in 150 s on this Mac, 8 in the Linux container** | lane depth's 25 shapes (panel 184's thirteen and twelve beside them) at N = 2,000: `check` and `fmt` hold every one, `build` of seven does not finish in 150 s; the cost the lane traced to `released_on_return` in `selfhost/ir/phases.hero` and `dominators` in `selfhost/ir/values.hero` (`<scratchpad>/lane-depth/pass1-findings.md`) | those two functions · panel 184's R6 · **class: blocking** · **closed 2026-10-03**

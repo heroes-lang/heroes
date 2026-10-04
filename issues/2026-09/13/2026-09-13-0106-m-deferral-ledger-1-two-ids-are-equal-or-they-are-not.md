@@ -1,3 +1,12 @@
+---
+kind: learn
+area: check
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 1** | The checker never compares two types recursively. `selfhost/check/table.hero:5-9` says every distinct type gets exactly one id, so `a == b` on two ids IS type equality. Say at which single function a written type becomes an id, and why that one place is what would make `alias Env = {str: i64}` cost one match arm rather than a change at every place the compiler asks *is this the same type*. Then name one thing it does NOT make cheap.
 
     **Where to look:** `selfhost/check/table.hero` (`ty_key` at :128, `intern` at

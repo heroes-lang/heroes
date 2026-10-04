@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-09-05
+commit: 7d1d2ebd153f451ce21f3f65f1af2f5ce78ce027
+github: none
+---
+
 - [x] **014 — every FFI diagnostic was blind on Windows whenever the path was absolute** | 2026-09-05, found by the three-platform rule at M-c-callbacks step 4, on the real box the author had just started | **repaired the same hour** | it was never anyone's change: it has been there since `location()` was written, and only a drive letter exposes it | **§4.19's own named failure** — the compiler blaming itself for a mistake in a `.hero` file
 
     **THE SYMPTOM.** The same program is exit 1 on macOS and **exit 2 on

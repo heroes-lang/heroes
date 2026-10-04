@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: 879139cd5f3479d45594505928fa0ef1295cd8a7
+github: none
+---
+
 2026-09-11 · **Panel 131 ratified as adopted, and a ratification of four days
 earlier is reversed on the measurements it had itself demanded** (**author
 instruction**, the same evening the sitting closed: *yes to the two refusals, yes

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-10-02
+commit: 2caca5620fae121ba23fd6eefe9ef04cf4c305ce
+github: none
+---
+
 # Defect 165 closed: an operator alone above an arm's pattern is offered the deletion of its line, and the arm is read without it
 
 - [x] **165 — a `+` or `*` alone on the line above an arm's pattern gets a join that no pattern takes, and a second message** | `k = match n` over a line holding only `+` (or `*`) and then `1 => "one"`: `continuation_outside_brackets` with the guess *write the statement on one line*, which writes `+1 => "one"`, then `expected_pattern` at the `+`; no deletion of the line is offered | the join of a line ending in an operator (lane h158's `sign_above.hero`, beside defect 159) · **class: adjacent** · **closed 2026-10-02**

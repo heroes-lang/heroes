@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-04
+commit: f34d8eba10c556b6b0982ce5938dc0aea1236646
+github: none
+---
+
 - [x] **282 — the `unexpected_character` flood is told once a byte with no bound, and each telling rebuilds a table, so 32 KB of control bytes cost 31,600 messages** | a file of 32 KB of control bytes: `check` exit 1 with 31,600 diagnostics and 8.7 billion instructions retired, `shown_char.named` rebuilding its `UNSEEN` table at every call (panel 189's compiler-engineer, `<scratchpad>/189-compiler-engineer/q6/unseen/`, 2026-10-04, counted on the trunk's compiler) | the lexer's `unexpected_character` (`selfhost/lexer.hero`) and `selfhost/shown_char.hero` (`named`, and the `UNSEEN` table it rebuilds) · defect 247, a two-line file's thirty, the same telling small · **class: adjacent**
 
     **Origin:** panel 189's compiler-engineer, its Q6 (`docs/panel/189-reports/compiler-engineer.md`), which called it *filed apart*; found unfiled by the critic's second pass (`git grep` of `UNSEEN`, `shown_char`, `31,600` over `docs/work/defects/`) and filed by the sitting's R12.

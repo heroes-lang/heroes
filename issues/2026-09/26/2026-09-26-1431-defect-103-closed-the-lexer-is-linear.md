@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-26
+commit: fa813325a4ba437fd93a50107ce8299568ddb92b
+github: none
+---
+
 # Defect 103 closed: the lexer is linear in the size of a file, and the compiler checks itself a quarter faster
 
 2026-09-26, M-agreed-retention step 19, in lane `e64b93ca`, merged `eaf7e88f`.

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: spec
+milestone: none
+filed: 2026-09-10
+commit: cb1d8dd67c4dd48982d6cc9baebc8f7dae4ef5df
+github: none
+---
+
 - [x] **panel 125** | the lease clause says a forgotten lease is *counted* where every other runtime stop in the document *aborts*, and the word never says the program dies: does §4.19's fourth case take the document's own verb, at +0 or +4 vendored tokens? | `spec/heroes-spec.md:246`, the verb at `spec:71` and its five other uses | **ANSWERED 2026-09-10, the +4 wording** (`/decide`, `a`): the clause reads *a lease nobody ends aborts when `main` returns, saying how many*. SPEC_TOKENS 4206 to 4210, REAL_TOKENS 5373 to 5378 on `claude-opus-5`, digest `527e1b762302f9ca`, ledger row 62, the seed regenerated at the fixpoint. The +0 variant was priced and refused for dropping the count the message prints. The prediction is now an instrument: `tests/golden/run/lease-open-through-exit.hero` pins the `exit(code:)` path where the gate never runs, which no golden covered — **corrected 2026-09-10: that golden could not exist**, because a `run/` case is also run under `--sanitize` and this program leaks by construction, so LeakSanitizer reports it and the case is red; what pays in its place is that report itself, the Linux leg naming the allocation site while the runtime's count stays silent (`docs/measurements/025`)
 
     **Origin:** the site panel's languages seat, 2026-09-10, on the sentence the

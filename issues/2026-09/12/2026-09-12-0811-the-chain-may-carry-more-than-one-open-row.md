@@ -1,1 +1,10 @@
+---
+kind: decision
+area: site
+milestone: M-rotated-records
+filed: 2026-09-12
+commit: 8e424e948dae3d465c412f10953b5fd6dae886ae
+github: none
+---
+
 - [x] **M-rotated-records step 7** | **ANSWERED 2026-09-12 — yes, § The chain may carry more than one `**OPEN**` row, and the recommendation was taken** (author, put with both routes and their prices). `site/src/lib/chain.ts` threw on the second one, which made the lane protocol one lane short of working: two sessions could hold two milestones and only one could say so in the table. The guard was not wrong, it was written before work happened in lanes. **What changed**: the `length > 1` throw is gone and the two floors beside it stay, because `FLOOR_ROWS` and `FLOOR_DONE` guard a parse that fell apart, which is a different failure and still a real one. **And the page itself had the same assumption one level up**, which the decision found: `chainSection` took `rows.find(open)` and wrote *"quello aperto è X"* / *"the open one is X"*, so with two lanes the page would have named the first and been silently wrong about the second. It now lists them all, in both editions, with the singular and the plural written out. Verified: `astro build`, **186 pages**, and `records` 20 of 20. Was | the question this milestone filed rather than settled, because `site/` is outward-facing and the call is the author's | `site/src/lib/chain.ts` · `.claude/rules/records.md` § Working in lanes | a protocol that reads as though it worked, and does not, is worse than one that names what blocks it

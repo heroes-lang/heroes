@@ -1,3 +1,12 @@
+---
+kind: defect
+area: examples
+milestone: none
+filed: 2026-09-27
+commit: dfc1e221bf2103d247dc82278e9e9e14ff852a41
+github: none
+---
+
 # Defect 117 closed: `heroes mutate` says what a path it cannot walk is
 
 2026-09-27, M-agreed-retention step 24, in lane 117 (`97b4bb24`), merged

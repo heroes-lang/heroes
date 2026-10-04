@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-30
+commit: b39ae3d5b8c2b45de877661f7040be8d918a93fa
+github: none
+---
+
 # Defect 139 closed: a match statement leaves its block only when every arm does, and a branch that ended on a statement is told from one that jumped
 
 - [x] **139 — a block holding a `match` statement counts as leaving whatever its arms do, so `check` passes a function with no `return` and `build` fails** | `function f(c: Color) -> i64` whose body is a `match` with printing arms, then `print(3)`: `check` exit 0, `build` exit 2, *internal error: compiling the generated C failed ... non-void function should return a value*; the same with the `match` inside one branch of an `if` | `selfhost/check/walk.hero:898-904` (no arm with a value read as every arm jumping) · `arms` at `:1041-1050` · `check/join.hero`'s `Branch` · **closed 2026-10-01**

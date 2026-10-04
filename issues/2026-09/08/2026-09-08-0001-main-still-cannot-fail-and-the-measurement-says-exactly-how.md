@@ -1,3 +1,12 @@
+---
+kind: feature
+area: spec
+milestone: M-publication-gate
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-publication-gate** | `main` still cannot fail, and the measurement says exactly how far `exit(code)` got | `docs/panel/030-the-build-order-revised.md:225` · `spec/heroes-spec.md:190-194` · `examples/`
 
     **Origin:** M-open-repository, 2026-09-08. The gate's own checklist names

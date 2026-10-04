@@ -1,3 +1,12 @@
+---
+kind: decision
+area: parse
+milestone: none
+filed: 2026-10-03
+commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
+github: none
+---
+
 # Panel 187 ratified: a recovery is done when every row is repaired, filed or pinned, and the instrument compares two compilers
 
 2026-10-03, on the author's answer to the seven recommendations the coordinator put to them that morning, meant as: *I accept all your

@@ -1,3 +1,12 @@
+---
+kind: task
+area: mutate
+milestone: M-thesis-harness
+filed: 2026-08-04
+commit: none
+github: none
+---
+
 - [ ] **M-thesis-harness** | the compiles-but-wrong-output bucket the harness never named | `docs/panel/009-spec-budget-2000.md:100-103` · `design.md:2851-2853` · `selfhost/mutate/score.hero`
 
     **Origin:** panel 009's llm-ergonomist, as a condition on its own vote

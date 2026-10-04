@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-20
+commit: fde3dd3b4298e81fe43955c4cdeec0d09ce9f6ae
+github: none
+---
+
 - [x] **071 — the `consumes` guard is emitted AFTER the call, so it can never prevent** | **closed 2026-09-20**, M-declared-extents step 13 | **The repair is an ORDER, in two halves, and neither alone is enough.** `consumes` is now emitted BEFORE the call and `acquires` still after, which is a fact rather than a preference: a consumed handle's value exists before the call, while an acquired result does not exist until the call returns and an acquiring `@` out-parameter's cell is not written until then. And `hero_handle_consumed` now ABORTS at the stray instead of counting it for exit, because a program that double-frees never reaches exit | `selfhost/emit/handle_traffic.hero` · `selfhost/emit/ops.hero` · `runtime/parts/alloc.c` · `tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero` | 169
 
     **Origin:** panel 169's ffi-pragmatist, 2026-09-20, as the one further rule

@@ -1,3 +1,12 @@
+---
+kind: learn
+area: emit
+milestone: M-declared-extents
+filed: 2026-09-19
+commit: none
+github: none
+---
+
 - [ ] **M-declared-extents walkthrough** | Defect 063: `sl_fill(p: s.name.ptr(), n: 64)` on an 8-byte field wrote past it at exit 0, and the repair does **not** compare 64 to 8 in Heroes. Before reading: the emitter writes `_Static_assert((int64_t)(64) <= (int64_t)sizeof(h0_s.name), …)` into the generated C. **Two shapes make a Heroes-side comparison wrong where this one is right — a record the group declared `partial`, and an extent written as a header `constant`. Which way does each fail?** | `selfhost/emit/lend_extent.hero` § THE CHECK IS C'S
 
     **Where to look after answering:** a `partial` record's size is **C's**, not

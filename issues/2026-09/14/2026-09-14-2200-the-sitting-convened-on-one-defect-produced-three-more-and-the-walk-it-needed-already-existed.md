@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-14
+commit: 547383aa6f375754063cd1da0fece97e24686ece
+github: none
+---
+
 # The sitting convened on one defect produced three more, and the walk it needed already existed
 
 2026-09-14, 22:00. Panel 149, convened by author instruction on

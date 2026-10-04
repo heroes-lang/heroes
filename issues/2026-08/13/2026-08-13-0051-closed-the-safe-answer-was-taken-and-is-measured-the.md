@@ -1,1 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-12
+commit: 92839225795319e99ead11abddd8f0cfac38f012
+github: none
+---
+
 - [x] Covered | panel 022 | **CLOSED — the safe answer was taken and is measured.** The lowering increfs each element (`incref` inside the loop body, `--dump-ir`), so the loop sees a snapshot: iterating while pushing to the same array prints the original length and is clean under `--sanitize` (verified 2026-08-12). Was: `for x in xs` over a counted element type is undecided: borrowing is a use-after-free if the body mutates `xs`, and +1 per element is the safe answer at the cost of a descriptor copy per iteration. `own.rs` currently declares `Op::Index` non-allocating, "listed rather than defaulted so that switching one on is a decision here" — this is that decision | crates/heroes/src/own.rs (allocates) · docs/panel/022 § Watch list | the comment invited the decision and the panel did not make it

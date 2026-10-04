@@ -846,8 +846,8 @@ function run_all(scratch: str) -> report.Report?
     named(@r, living: living)
     sections(@r, living: living)
     c_files(@r, living: living)
-    citations(@r, scratch: scratch, present: walked)
-    english(@r, present: walked)
+    citations(@r, scratch: scratch, present: walked, closed: closed)
+    english(@r, present: walked, closed: closed)
     exemptions(@r, present: walked)
     redirects(@r, present: walked)
     rules(@r, present: walked)
@@ -3042,7 +3042,7 @@ constant MOVED: [str]
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    10
+    17
 
 constant RETIRED_ROOTS: [str]
     [
@@ -3517,7 +3517,7 @@ function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
 
     return out
 
-function citations(@r: report.Report, scratch: str, present: [str])
+function citations(@r: report.Report, scratch: str, present: [str], closed: {str: bool})
     known: {str: bool} @ {}
     roots: {str: bool} @ {}
 
@@ -3550,7 +3550,7 @@ function citations(@r: report.Report, scratch: str, present: [str])
     tokens: [str] @ []
 
     for document in present
-        if is_record(document) || is_generated(document)
+        if is_record(document) || is_generated(document) || !closed[document].is_err()
             continue
         text = read_file(document)
 
@@ -3640,11 +3640,11 @@ function read_the_line(@dead: [str], @tokens: [str], row: str, found: [str], doc
 # citing one, a gloss nobody translated. A file-wide ratio drowns one sentence in
 # four hundred English ones, which is exactly the case that got past every reader
 # for a month.
-function english(@r: report.Report, present: [str])
+function english(@r: report.Report, present: [str], closed: {str: bool})
     found: [str] @ []
 
     for path in present
-        if is_record(path) || is_generated(path) || is_appended(path)
+        if is_record(path) || is_generated(path) || is_appended(path) || !closed[path].is_err()
             continue
 
         if quotes_the_italian(path)
@@ -5239,8 +5239,10 @@ function last_bar_at(fields: str) -> i64
 #
 #   - **an open defect's name carries its number**, because the number is how
 #     a defect is cited, filed and closed;
-#   - **a name that carries a number belongs to that defect**: its item's line
-#     states the same number, and its card says `kind: defect`;
+#   - **a defect's name that carries a number is that defect's**: its item's
+#     line states the same number (`records/lists`). A file of another kind may
+#     carry a number in its slug, as the log's decisions about a defect do, and
+#     is not the register's;
 #   - **no two files are named for one number.** Two lanes that each take the
 #     next number write two files with different names, so their merge is
 #     CLEAN AND WRONG, `records/numbering`'s shape one level up, which git
@@ -5260,10 +5262,11 @@ function defect_register(@r: report.Report, issues: [cards.Issue])
                 )
             continue
 
-        if issue.card.kind != "defect" && issue.card.complaints.len() == 0
-            offences @ offences.push(
-                issue.path + " is named for defect " + number + " and its card says `kind: " + issue.card.kind + "`"
-            )
+        # A decision or a task may be ABOUT a defect and say so in its name: the
+        # log wrote `defect-010-repaired-the-day-it-was-found` as the decision it
+        # is. Only a defect's own file is the register's.
+        if issue.card.kind != "defect"
+            continue
 
         if number == ISSUED_TWICE
             continue
@@ -5285,16 +5288,24 @@ function defect_register(@r: report.Report, issues: [cards.Issue])
     else
         report.keep_pass(@r)
 
-# The number a file's name says it is the defect of, `-defect-NNN-` with NNN
-# read as `issued_digits` reads one, or the empty string where the name says
-# none. `defect-fixed-2026-...` is a slug that opens with the word and no
-# number, which records written before the names carried one hold.
+# The number a file's name says it is the defect of: its slug, after the
+# sixteen bytes of its stamp, OPENS with `defect-NNN-`, NNN read as
+# `issued_digits` reads one; the empty string where it does not. A name that
+# only MENTIONS a defect further on, `decided-...-and-defect-030-s-repair-lands`,
+# is a decision about it and names no defect of its own, and
+# `defect-fixed-2026-...` opens with the word and no number, as records written
+# before the names carried one do.
 function defect_in_name(name: str) -> str
-    pieces = strings.split_text(text: name, separator: "-defect-")
-
-    if pieces.len() < 2
+    if !is_entry_name(name)
         return ""
-    rest = pieces[1]
+
+    # An entry's name opens with sixteen ASCII bytes, so the cut stands between
+    # characters.
+    slug = name.slice(from: 16, to: name.len())
+
+    if !strings.starts_with(text: slug, prefix: "defect-")
+        return ""
+    rest = strings.without_prefix(text: slug, prefix: "defect-")
     digits = issued_digits(rest)
 
     if digits == 0 || digits >= rest.len() || rest[digits] != '-'
@@ -5916,12 +5927,15 @@ test "the names are the register: one name per number, carried by every open def
         issues: [defect_issue(name: "2026-10-04-0000-a-thing.md", text: "- [ ] **239 — x** | b | c\n")]
     )
     assert strings.contains(text: unnamed.failures[0], needle: "does not carry `defect-NNN-`")
-    elsewhere: report.Report @ report.empty()
+
+    # A decision ABOUT a defect may carry its number in its slug, as the log's
+    # did, and shares it with the defect's own file without being a second one.
+    about: report.Report @ report.empty()
     defect_register(
-        @elsewhere,
-        issues: [issue_with(name: "2026-10-04-0000-defect-240-x.md", kind: "task", text: "- [ ] **240 — x** | b | c\n")]
+        @about,
+        issues: [defect_issue(name: "2026-09-04-0612-defect-011-two-arguments.md", text: "- [x] **011 — two** | b | c\n"), issue_with(name: "2026-09-05-0001-defect-011-repaired.md", kind: "decision", text: "# Defect 011 repaired\n")]
     )
-    assert strings.contains(text: elsewhere.failures[0], needle: "its card says `kind: task`")
+    assert about.failed == 0
 
 test "a name says which defect it is, and a slug that opens with the word says none"
     assert defect_in_name("2026-10-04-0000-defect-177-a-match-whose-arms-fall.md") == "177"
@@ -5930,6 +5944,8 @@ test "a name says which defect it is, and a slug that opens with the word says n
     assert defect_in_name("2026-10-04-0000-defect-17-two-digits.md") == ""
     assert defect_in_name("2026-10-04-0000-defect-177.md") == ""
     assert defect_in_name("2026-10-04-0000-panel-191-ratify.md") == ""
+    assert defect_in_name("2026-09-13-1001-decided-2026-09-13-author-the-refresh-authorised-and-defect-030-s-repair-lands.md") == ""
+    assert defect_in_name("defect-177-no-stamp.md") == ""
 
 # DEFECT 280, held as a test (2026-10-04): a defect number is three digits or
 # more, padded to three and never past, read so in a name, on an item's line
@@ -6220,7 +6236,8 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
 
     # The check itself, firing: a stand-in document citing something absent.
     fired: report.Report @ report.empty()
-    citations(@fired, scratch: "build/harness-selftest", present: ["design.md"])
+    no_closed: {str: bool} @ {}
+    citations(@fired, scratch: "build/harness-selftest", present: ["design.md"], closed: no_closed)
     assert fired.failed + fired.passed == 1
 
     # **The defect this check shipped with, named after itself** (§9: a fixed

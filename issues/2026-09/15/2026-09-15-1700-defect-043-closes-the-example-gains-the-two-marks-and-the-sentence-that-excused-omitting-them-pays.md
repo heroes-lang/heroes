@@ -1,3 +1,12 @@
+---
+kind: defect
+area: spec
+milestone: none
+filed: 2026-09-15
+commit: 559af72530561b60f7e1d8e521de885269073951
+github: none
+---
+
 - [x] **043 — the specification's only FFI example teaches the omission it exists to prevent** | `sqlite3_open` and `sqlite3_close` are an acquire-and-release pair and the example carried neither `acquires` nor `consumes`, so a reader copied a binding that leaks in silence | **repaired 2026-09-15**, panel 153 R1, ratification pending | `spec/heroes-spec.md` § 13's fenced example · `docs/design/design.md` §4.19's own copy of it · `docs/measurements/010-spec-budget-ledger.md` row 5989
 
     **Origin:** found 2026-09-15 by **panel 152's llm-ergonomist**, which named

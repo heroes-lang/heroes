@@ -1,1 +1,10 @@
+---
+kind: decision
+area: process
+milestone: none
+filed: 2026-08-12
+commit: 7090ca4fe78725df7a0c8cdbf7594f5122a075a3
+github: none
+---
+
 2026-08-12 | **A `/learn` question arrives with the code on screen and a preamble long enough to make it answerable.** Author instruction, and it overrides the terser habit that came before: a queue entry is a note written by somebody who had the file open, and read out loud it is a riddle — *"which field decides it, and where is it computed?"* is a memory test on something never learnt. The setup is now: where we are, why the piece exists at all, the code pasted rather than cited, what the alternatives were, then one question with lettered options. The preamble may run twenty lines; the one thing it may never contain is the answer | retrieval is preserved by withholding the answer, not by withholding the question's subject — those had been confused | CLAUDE.md §3 | — |

@@ -1,3 +1,12 @@
+---
+kind: task
+area: emit
+milestone: M-qbe-backend
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-qbe-backend** | the QBE the sitting will meet is not the one panel 001 rejected | `design.md` §3.2 · `DESIGN-LOG.md:6`, `:8` · `selfhost/emit/extern_probe.hero`
 
     **Origin:** measured 2026-09-06 from this Mac, after the author asked

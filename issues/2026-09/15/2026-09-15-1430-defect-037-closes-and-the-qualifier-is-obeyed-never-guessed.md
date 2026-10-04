@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: cfda0ad29815f28807827718d3230e6f8a4fc381
+github: none
+---
+
 # Defect 037 closes, and the qualifier is obeyed, never guessed
 
 2026-09-15. No sitting: panels 150, 151 and 152 had ruled and the author had

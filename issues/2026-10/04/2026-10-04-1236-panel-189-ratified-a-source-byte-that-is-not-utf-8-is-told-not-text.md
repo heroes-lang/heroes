@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-10-04
+commit: f6a3122e818f9f622f7f264bdff5a47a8472a746
+github: none
+---
+
 # Panel 189 ratified: a source byte that is not UTF-8 is told `not_text`, on each line it stands on, and nothing writes the file back
 
 2026-10-04, on the author's answer to the coordinator's recommendation of that

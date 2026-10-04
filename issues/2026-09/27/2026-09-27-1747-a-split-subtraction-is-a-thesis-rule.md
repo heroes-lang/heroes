@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-27
+commit: 70db9f6c1da6de73a0c5f4de045b64e5884d7800
+github: none
+---
+
 # A split subtraction is a thesis rule, so the control arm reads it as a language without the rule
 
 2026-09-27 | `spaced_minus_element` joins `diag.is_thesis_rule`, so `check

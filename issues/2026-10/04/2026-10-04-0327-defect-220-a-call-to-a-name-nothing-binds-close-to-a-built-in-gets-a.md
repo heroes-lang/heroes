@@ -1,3 +1,12 @@
+---
+kind: defect
+area: resolve
+milestone: none
+filed: 2026-10-03
+commit: d0cd827896f1f5dd4d2e8385ed90baf9fb20c32c
+github: none
+---
+
 - [x] **220 — a call to a name nothing binds, close to a built-in, gets a `certain` rename to the built-in, and the program `--apply` writes is refused anew** | `function main()` over `print(sqrt(2.0))`: `check` exit 1, `unknown_name`, *nothing named `sqrt` is in scope, did you mean `sort`?*, `fix (certain): rename to sort`; `check --apply` writes `print(sort(2.0))`, which `check` refuses, `bad_operand`, *`sort` takes `[T]`, found `f64`* (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro220/`) | the `unknown_name` rename's certainty (`selfhost/resolve/`) · `.claude/rules/diagnostics-and-goldens.md` (*a `certain` fix repairs the defect the diagnostic names*) · **class: blocking**
 
     **Origin:** panel 188's completeness critic, 2026-10-03, in its first pass, beside the blind seat's own program with its `extern` line dropped; reproduced by the coordinator the same day.

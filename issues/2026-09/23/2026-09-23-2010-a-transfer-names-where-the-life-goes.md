@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-23
+commit: 85a1d91c43c285a60ee2132c70b2707165c00c17
+github: none
+---
+
 # A transfer names where the life goes, and a reference joins the life it finds
 
 2026-09-23 | the releaser mark takes a set; a transfer is a consuming word of its

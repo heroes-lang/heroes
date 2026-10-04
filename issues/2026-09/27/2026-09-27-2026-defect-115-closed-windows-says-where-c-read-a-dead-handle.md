@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-09-27
+commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
+github: none
+---
+
 # Defect 115 closed: on Windows the runtime says where in the dead region C read, as it does on Linux and the Mac
 
 2026-09-27, M-agreed-retention step 22, in lane A (`7bcd7cc2`), merged `f08b192d`.

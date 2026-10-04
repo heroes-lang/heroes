@@ -1,3 +1,12 @@
+---
+kind: task
+area: records
+milestone: M-thesis-harness
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-thesis-harness** | panel 007's two predictions contradict each other and nothing has scored them | `docs/panel/007-terminator-enders.md:72-85` · `design.md:1800-1809` · `docs/panel/046` R1
 
     **Origin:** panel 007's two registered predictions, deferred as *"007-bis"*

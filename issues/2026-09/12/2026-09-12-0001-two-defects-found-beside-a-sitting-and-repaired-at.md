@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-12
+commit: eb7c93def36517a6c2b1dd1e4403b5ddbf9dd74a
+github: none
+---
+
 2026-09-12 · **Two defects found beside a sitting and repaired at their classes,
 and one of them is a rule that had already been decided and not followed**
 (defects 027 and 028, both from the ffi-pragmatist's boundary experiments at

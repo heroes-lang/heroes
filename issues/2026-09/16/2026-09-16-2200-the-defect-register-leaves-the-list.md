@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
+github: none
+---
+
 # The defect register leaves the list
 
 2026-09-16, author instruction: the live lists and the ROADMAP carry a very

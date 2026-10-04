@@ -1,1 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-12
+commit: 3111799d8fe746b4adfd260b54eb8d0dbb341bba
+github: none
+---
+
 - [x] Covered | panel 025 | **RATIFIED 2026-08-12** (blanket author instruction — see the panel file's Ratification section for what that does and does not settle). Ratify: the recursion rule promoted (**−6 removal, +47**, the first measured removal in eight amendments) · `/` and `%` stated (**+26**) · the slice sentence **held** on three teeth · **nothing** on map order · and the correction that panel 024 R4 was factually false | docs/panel/025-the-four-costed-gaps.md § Resolution | the spec is the deliverable, and this is the first time a panel repaired one of its own

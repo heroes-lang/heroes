@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-01
+commit: 9d1c209d1cef5a7f643d8913117b73aecbe3594a
+github: none
+---
+
 # Seven rulings the recovery batches applied, written where they can be read
 
 Written 2026-10-01 at 00:26, late, on the audit of defects 130 to 133 run on

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-21
+commit: 65c91594501cb84ca2d202f42bad3b957a421461
+github: none
+---
+
 # The report comes from the crash, and not from the declaration
 
 2026-09-21. M-declared-extents step 25, panel 172, the full panel with the

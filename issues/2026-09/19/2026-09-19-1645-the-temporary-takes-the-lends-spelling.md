@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-19
+commit: 1d4b31178aa332aabc125d210b559eec1af430c9
+github: none
+---
+
 # The temporary takes the lend's spelling
 
 2026-09-19. M-declared-extents step 5, landing panel 166's route H for defect

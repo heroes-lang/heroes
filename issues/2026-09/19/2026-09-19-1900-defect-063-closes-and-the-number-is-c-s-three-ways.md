@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-19
+commit: 28df0084bab41fc12ef0eed89a604873dacc6d64
+github: none
+---
+
 # Defect 063 closes, and the number is C's three ways
 
 2026-09-19, M-declared-extents step 6. Found by panel 165's spec-warden and

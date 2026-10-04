@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-28
+commit: 405caf90891a1daad7ddba2a132b45319fb76e5a
+github: none
+---
+
 # Outside brackets a line ends its statement, in both directions
 
 2026-09-28 | at bracket depth zero a line ends its statement: a line whose last

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-04
+commit: ea5c22ca7f6989ab3585972bfcdcd8fc171f0820
+github: none
+---
+
 - [x] **243 — an environment variable whose value is not UTF-8 is read as unset, so a `HEROES_RUNTIME` naming a real runtime is answered *looked in: the given hint* and told to set it** | Linux arm64, `HEROES_RUNTIME=/root/rt<e9>` naming a real runtime: `build` exit 2, *cannot find the Heroes runtime (heroes_runtime.h and runtime.c). looked in: the given hint and ./runtime. set HEROES_RUNTIME=<dir> to say where it is*, and `doctor` *not found* (the trunk's compiler at `7d9f2e8f`, panel 189's ffi-pragmatist, 2026-10-04); `env` answers `""` for a value that is not UTF-8, `validated(c: getenv(...)).default("")` (read by the coordinator, 2026-10-04), so the hint is never looked in; on Windows every accented value is one, through the narrow `getenv` (defect 238) | `selfhost/cli/process.hero:214` (`env`) · `selfhost/cli/toolchain.hero:95` (the message) · panel 189's Q6 · **class: blocking**
 
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:29 (`docs/panel/189-reports/ffi-pragmatist.md`, the Linux arm64 table); the message read against `env` by the coordinator; filed apart.

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: 115c4dd177727f02a6c0e13b2e73172c3bac4a96
+github: none
+---
+
 # Five seats legislated the argument, and the class was a dereference
 
 2026-09-15. Panel 154, convened without asking on `docs/work/DEFECTS.md` 045,

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
+github: none
+---
+
 2026-09-11 · **M-labelled-types, panel 129, ratified as adopted the same day.** A
 function type carries the parameter names of the positions that share a type with
 another, and no others; the names are part of the type's identity; a declared

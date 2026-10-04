@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-24
+commit: dc67e3995a333e645a6b2db7cfbe5e32599e984f
+github: none
+---
+
 # A seat can afford to rebuild the compiler
 
 2026-09-24 | `/panel`'s step 2 stops telling a brief that rebuilding from

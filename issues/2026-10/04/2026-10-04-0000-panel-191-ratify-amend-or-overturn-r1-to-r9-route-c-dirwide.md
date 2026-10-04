@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-10-04
+commit: none
+github: none
+---
+
 - [ ] **panel 191** | ratify, amend or overturn R1 to R9 (route `c-dirwide` for defect 238: the UTF-8 code-page manifest compiled into the runtime's own object, a refusal to start where `GetACP()` is not 65001, the directory door made wide; the lone-surrogate directory repaired at the landing; the cases red on `7f4c0cc5` first; (a) alone, (a′), (e), (f) and (g) refused; Q-c and Q-i handed to panel 192), and set the floor: the oldest Windows a Heroes program starts on | `docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md` § The resolution
 
     **Origin:** panel 191's synthesis, 2026-10-04 from 16:47, on the seats' archive of `7f4c0cc5`, convened by the author's *6b*. Until it is answered defect 238 stays open, and, `blocking`, it lands in the next batch on the provisional resolution (CLAUDE.md § 4, *the panel never blocks*).

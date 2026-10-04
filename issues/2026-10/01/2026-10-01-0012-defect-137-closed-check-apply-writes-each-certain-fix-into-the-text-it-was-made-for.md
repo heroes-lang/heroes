@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-30
+commit: 04e90077ab8f0ebcc06e7141a1b35f1fa8243b29
+github: none
+---
+
 # Defect 137 closed: check --apply writes each certain fix into the text it was made for, and asks the stage again until it has none left
 
 - [x] **137 — `check --apply` applies overlapping certain fixes against the original text, so an enclosing fix overwrites, misaligns or overruns an inner one** | `print(total(xs.must()).must())` as a file's last line: `heroes check --apply` aborts, `panic: string slice out of range`, exit 134; with a line below it, exit 0 and the written text is `print(total(xs.must())rint(0)`, the line break, the margin and the next line's `p` eaten, which `--in-place` writes into the author's file | `selfhost/cli/check.hero:242-280` (`apply`) · the two sites whose span can enclose another fix, `check/builtins.hero:413` and `parse/type.hero:255` · **closed 2026-10-01**

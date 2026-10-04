@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-20
+commit: be30fde25c9b5d9fff7369ac725160eb7add2d54
+github: none
+---
+
 - [x] **073 — `owned <fn>` on an INPUT parameter is admitted by the grammar and crashes the backend** | **closed 2026-09-20**, M-declared-extents step 19 | **The guard asked the TYPE and had never asked the POSITION**, and the note beside it had named the position rule since the mark shipped. One condition, one function, the same diagnostic code | `selfhost/check/freer.hero` · `tests/golden/check/fixedbugs-owned-on-a-by-value-parameter.hero` | 170
 
     **Origin:** panel 170's spec-warden, 2026-09-20, reproduced by that sitting's

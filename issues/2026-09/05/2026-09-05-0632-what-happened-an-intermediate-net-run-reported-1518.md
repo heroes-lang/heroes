@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-09-05
+commit: 16b541d5ed4e94750479b73acac8dc2f9735541b
+github: none
+---
+
 - [x] **A false RED in the net, chased to its cause, and the frightening half does NOT reproduce** | found 2026-09-05 at M-c-callbacks' close, by killing two net runs mid-flight | **What happened.** An intermediate net run reported **1518 passed, 3 failed**: `cache/an untouched build still hits` (`build/4c3a3f7a1f9799bc/main.c.o` rebuilt), `cache/only the module that read it is rebuilt` (`main.c.o` moved with `bind.o`), and `annotations/tests/golden/fixedbugs` **missing `ffi-not-constant.hero:34:ffi_not_constant`** — a diagnostic that simply did not fire. **The cause was the session's own**: two earlier runs of the net had been killed with `pkill` so that the tree could be re-verified after later edits, and the run that followed inherited their half-written per-module cache. Measured, not inferred: the same tree, the same compiler and one **uninterrupted** run is **1521 passed, 0 failed**, with `annotations` 120/0, `cache` 5/0, `records` 11/0 and `determinism` 127/0. The first run of the day, also uninterrupted, was 1521/0 as well.
 
     **The half worth fearing was then attacked directly, and it does not reproduce.** *Can an interrupted build suppress an FFI diagnostic in ordinary use?* — a §1.12 question, and a **question rather than a premise** (CLAUDE.md §1), so it was run rather than asserted. `tests/golden/fixedbugs/ffi-not-constant.hero` was copied to a scratch directory with its own cache, built cold once as a baseline (`error[ffi_not_constant]` at `nc.hero:34`, build time **0.31 s**), and then built **eight** times with the build killed at 0.02, 0.05, 0.08, 0.12, 0.18, 0.25, 0.35 and 0.5 seconds — the whole window and past its end — with the cache left exactly as the kill left it and the program rebuilt immediately after. **The diagnostic fired on all eight.** So the annotations failure is a consequence of the interrupted harness state and its mechanism is **not established**; the obvious probe is negative, and that is written here rather than filed as a defect, because a defect with no reproducer is a rumour with a number on it.

@@ -1,3 +1,12 @@
+---
+kind: task
+area: design
+milestone: M-core-packages
+filed: 2026-09-03
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | the opening sitting, full five seats, and no step lands before it | `design.md` §1.11, §4.15, §4.19, Part 6 · `docs/panel/028`, `032`, `036`, `039`, `049`, `097`, `099`
 
     **Origin:** author instruction 2026-09-03, out of the reasoning session

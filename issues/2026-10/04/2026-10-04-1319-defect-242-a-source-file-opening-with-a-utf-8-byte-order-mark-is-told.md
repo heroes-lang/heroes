@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-04
+commit: 701c042358d79aedd9f0d551dcbf249f1a5debc7
+github: none
+---
+
 - [x] **242 — a source file opening with a UTF-8 byte order mark is told twice, the second message saying its first block is indented deeper than anything that opens one** | `EF BB BF`, then `function main()` over `    print(1)`, as PowerShell's `Out-File -Encoding utf8` and `Set-Content -Encoding utf8` write it: `check` exit 1, `error[unexpected_character]: the invisible character U+FEFF is not part of the language's syntax` at 1:1, then `error[unexpected_block]: this block is indented deeper than anything that opens one` at 2:1 (batch 8's round compiler at `1eb854c3`, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/bom.hero`; the trunk's on the Windows box, panel 189's ffi-pragmatist); clang skips a BOM at a header's start | the lexer's reading of U+FEFF at a file's first byte and the margin it leaves for the line below (`selfhost/lexer.hero`) · **class: blocking**
 
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:17 to 00:21 (`docs/panel/189-reports/ffi-pragmatist.md`, *What each writer puts on disk*), not 227's cause, the file being UTF-8; filed apart by the coordinator.

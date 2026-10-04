@@ -1,3 +1,12 @@
+---
+kind: defect
+area: examples
+milestone: none
+filed: 2026-09-04
+commit: 0b7627c5c655058dac2e62d399b59f0bc555338f
+github: none
+---
+
 - [x] **009 — A record whose every field is unhashable emits C that clang warns about** | Date: 2026-09-04, found by `examples/ledger/` on its first run, while binding SQLite at program scale | REPAIRED the same hour, at the cause | `selfhost/emit/structural.hero::hash_body` · `tests/harness/suite_warnings.hero` (the rule it broke) | **Severity: the emitted C failed the corpus's own zero-warning rule, and six lines were enough to make it.**
 
   **The reproducer, whole:**

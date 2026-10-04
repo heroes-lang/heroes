@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: 8637cccd3ebdb880abb5d68e8834b103611ea0b0
+github: none
+---
+
 # Panel 184's R5 landed: every command runs on a thread whose stack the compiler chooses
 
 2026-10-03 at 11:30 by the clock, lane depth, defect 169, at `ffaf9f4d`.

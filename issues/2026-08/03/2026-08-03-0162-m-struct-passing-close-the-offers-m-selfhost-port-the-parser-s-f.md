@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, the parser's front door (parse.hero) | `parse` concatenates diagnostics lexer-first, then parser — never sorted across stages. The test feeds a tab on line 2 and `junk` on line 3: which diagnostic comes out FIRST, and what would interleaving by position have put first instead?
 
     **Where to look:** selfhost/parse.hero, the second test

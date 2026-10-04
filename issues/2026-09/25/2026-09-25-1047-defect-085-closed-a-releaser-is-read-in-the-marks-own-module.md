@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-23
+commit: 517b8e25692a4cf0075c04fd306e5017fd428cd4
+github: none
+---
+
 # Defect 085 closed: a mark's releaser is read in the mark's own module, from whichever file is checked
 
 2026-09-25, M-agreed-retention step 11, in lane `9f813de2`, merged `62324531`:

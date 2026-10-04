@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-19
+commit: 28df0084bab41fc12ef0eed89a604873dacc6d64
+github: none
+---
+
 # The number C keeps, and the one it throws away
 
 2026-09-19. M-declared-extents step 6, landing panel 166's route C for defect

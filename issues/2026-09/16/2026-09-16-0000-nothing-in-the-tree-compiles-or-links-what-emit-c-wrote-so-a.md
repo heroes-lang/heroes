@@ -1,3 +1,12 @@
+---
+kind: task
+area: harness
+milestone: M-package-manager
+filed: 2026-09-16
+commit: none
+github: none
+---
+
 - [ ] **M-package-manager** | nothing in the tree compiles or links what `--emit-c` wrote, so a defect in the artifact is invisible to every suite | `tests/harness/suite_emission.hero` · `docs/panel/157-the-artifact-of-a-build-that-never-happened.md` R4
 
     **Origin:** panel 157 R4, adopted 2026-09-16 and deliberately not built —

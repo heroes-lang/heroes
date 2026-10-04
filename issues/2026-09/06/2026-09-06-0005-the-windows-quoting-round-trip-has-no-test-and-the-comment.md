@@ -1,3 +1,12 @@
+---
+kind: task
+area: runtime
+milestone: M-panic-location
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-panic-location** | the Windows quoting round trip has no test, and the comment claimed one | `runtime/parts/run.c` § quoted · `tests/harness/suite_records.hero` § citations
 
     **Origin:** measured 2026-09-06, found by the citation check the same day it
