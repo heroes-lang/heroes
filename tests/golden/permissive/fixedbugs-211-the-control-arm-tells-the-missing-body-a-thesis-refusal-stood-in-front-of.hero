@@ -1,0 +1,13 @@
+# Defect 211, 2026-10-04: no golden form ran the control arm, `check
+# --permissive`, Part 11's measurement with the thesis rules dropped, so what
+# it says could change with every golden green (panel 187's R3). Here, at the
+# parse stage: `if n >` over a deeper line is joined by the lexer, and the
+# normal arm refuses the join (`continuation_outside_brackets`, a thesis rule);
+# the control arm reads the parse as a language without that rule does
+# (`selfhost/parse.hero`'s `control`), so it tells the joined head's missing
+# body, where until defects 130 and 131 it told nothing at all.
+
+function main()
+    n = 1
+    if n >
+        print(1)  #~v missing_body

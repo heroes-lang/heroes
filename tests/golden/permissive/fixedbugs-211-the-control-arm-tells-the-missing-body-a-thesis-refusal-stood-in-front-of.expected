@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-211-the-control-arm-tells-the-missing-body-a-thesis-refusal-stood-in-front-of.hero:14:1: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found the end of the block)

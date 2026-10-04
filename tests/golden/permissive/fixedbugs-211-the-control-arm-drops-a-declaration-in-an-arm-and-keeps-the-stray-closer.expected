@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-211-the-control-arm-drops-a-declaration-in-an-arm-and-keeps-the-stray-closer.hero:13:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

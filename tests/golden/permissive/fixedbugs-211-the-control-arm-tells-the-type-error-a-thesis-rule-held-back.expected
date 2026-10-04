@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-211-the-control-arm-tells-the-type-error-a-thesis-rule-held-back.hero:11:14: error[type_mismatch]: expected `i64`, found `str`

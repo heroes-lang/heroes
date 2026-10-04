@@ -1,0 +1,13 @@
+# Defect 211, 2026-10-04: no golden form ran the control arm, `check
+# --permissive`, Part 11's measurement with the thesis rules dropped, so what
+# it says could change with every golden green (panel 187's R3). Here, at the
+# parse stage: an arm that declares `x` is refused for the thesis
+# (`declaration_in_arm`), and the control arm drops that refusal and keeps the
+# stray `)` the normal arm tells beside it; the two arms differ by the thesis
+# rule alone.
+
+function main()
+    match 1
+        0 => x = 5
+        _ => print(2)
+    z = 4 )  #~ expected_end_of_line

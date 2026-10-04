@@ -37,6 +37,7 @@
 # `examples/sqlite` the same afternoon, exactly as the sentence above it
 # promised, and the exemption was deleted by the step that made it obsolete.
 
+use absence
 use cases
 use report
 use shell
@@ -79,8 +80,27 @@ function judge(@r: report.Report, scratch: str, compiler: str, label: str, main:
             report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + main)
             return
 
-        if shell.machine_lacks_the_library(said.must().err)
-            return
+        # A program this machine cannot build for a library it lacks says
+        # nothing about warnings: skipped, by name. It is the machine's only
+        # where the program binds what the compiler says is missing and the
+        # machine, asked, lacks it (`absence`); until defect 246 the compiler's
+        # words alone dropped the program, with no pass, no failure and no
+        # line. A word the machine refutes is a program that did not build.
+        if said.must().code != 0
+            lacks = absence.machine_lacks(scratch: scratch, path: main, expected: "", said: said.must().err)
+
+            if !lacks.is_err()
+                report.keep_skip(@r, label: label, detail: "  " + lacks.must())
+                return
+            why = absence.refused(lacks)
+
+            if why.len() > 0
+                report.keep_failure(
+                    @r,
+                    label: label + " under `" + verb + "`",
+                    detail: "  " + main + " did not build, and not for a library this machine lacks: " + why + "\n    " + said.must().err
+                )
+                return
         noise = warnings_in(said.must().err)
 
         if noise.len() > 0
@@ -175,3 +195,33 @@ test "a warning naming another program is told apart from one naming this progra
     # A `note:` mentioning the word is not a warning line; a real warning
     # line always carries `warning:` itself.
     assert warnings_in("  note: this warning: is quoted\n").len() == 1
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the compiler's
+# words alone dropped a program with no line at all. A header the machine has,
+# said to be missing, is a program that did not build; a header no machine has,
+# which the program binds, is skipped by name.
+test "fixedbugs: a program that cannot build is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/warnings-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    refuted: report.Report @ report.empty()
+    judge(@refuted, scratch: scratch, compiler: compiler.must(), label: "warnings/has", main: has.must())
+    assert refuted.failed == 1
+    assert refuted.passed == 0
+    assert refuted.skips.len() == 0
+    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused: report.Report @ report.empty()
+    judge(@excused, scratch: scratch, compiler: compiler.must(), label: "warnings/lacks", main: lacks.must())
+    assert excused.failed == 0
+    assert excused.passed == 0
+    assert excused.skips.len() == 1
+    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP warnings/lacks\n")

@@ -1,0 +1,13 @@
+# Pinned 2026-10-04 for defect 211 (panel 187's R3, which found no golden form
+# running `check --permissive`): a known cost, not an intent; a change in
+# either direction turns this case red. Row 131-22's open half: `record` alone
+# over a deeper field is joined by the lexer. The normal arm refuses the join
+# (`continuation_outside_brackets`, a thesis rule) and tells the field missing
+# its `:`, two mistakes and two messages, (f) by ruling 1. The control arm
+# drops the refusal and reads the joined head, so its first message quotes
+# `record x`, a line the author never wrote as one, at the field's `:`: true of
+# the joined line, not of the text.
+
+record
+    x: i64  #~ expected_end_of_line
+    y i64  #~ expected_field_type
