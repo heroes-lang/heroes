@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, both true, no fix certain; the trunk's one message named the empty block and not the member on the head's line, so it cost a second exchange, which the round's two messages do not.
 
     Repaired at `2ee246ca`, 2026-10-05 (lane b11-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-05, the shapes with this cause the repair leaves at two messages** (lane b11-parse's report): a generic head with a field after its type parameters, `record Pair<T>: x: T`, and `record R = x: i64` are still told the member on the head's line and the empty record both. They are this item's cause, so they stay its rows and are owed before it closes. `variant T a` keeps two on purpose: `record R extends Base` reads the same, and there the record is empty.
