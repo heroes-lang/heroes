@@ -26,6 +26,7 @@ use token
 use ast
 use cursor
 use parse/arm_pattern
+use open_line
 
 # An arm's first pattern, or none where an operator stood alone where it
 # goes; and whether the operator was told (`told`), the arm then read for
@@ -76,22 +77,12 @@ function pattern_after(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern
 
 # A binary operator (spec § 7), the propagating `?` and the `::` that names a
 # field: the tokens a line that holds an arm's `=>` may begin with and no
-# pattern may. `-` signs a pattern's literal and is the pattern's own
-# (`arm_line.spaced_sign`). ENUMERATED, never a catch-all: a new kind is a
-# compile error here until somebody decides it.
+# pattern may, the lexer's enumerated list of what only goes on with a line
+# (`open_line.can_only_go_on`) but `-`, which signs a pattern's literal and
+# is the pattern's own (`arm_line.spaced_sign`). This module kept its own
+# copy of that list until defect 202 paid for its lines with it.
 function leads_no_pattern(kind: token.TokenKind) -> bool
-    return match kind
-        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge               => true
-        .pipe | .caret | .amp | .shl | .shr | .plus | .star | .slash | .percent     => true
-        .question | .colon_colon                                                    => true
-        .minus | .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit => false
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if => false
-        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue          => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use     => false
-        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot        => false
-        .hole | .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket     => false
-        .lbrace | .rbrace | .bang | .tilde | .comment | .terminator | .indent       => false
-        .dedent | .eof | .error                                                     => false
+    return open_line.can_only_go_on(kind) && kind != .minus
 
 test "an operator no pattern begins with is passed, and a pattern's own sign is not"
     assert leads_no_pattern(.pipe)

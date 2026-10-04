@@ -358,7 +358,7 @@ function past_a_range(@c: cursor.Cursor, @a: ast.Ast, text: str, dot: token.Span
     while ends >= 0 && cursor.current_span(c).start < ends && !cursor.at(c, .eof)
         _ = cursor.bump(@c)
 
-    if ends >= 0 && opening.begins_an_expression(cursor.current_kind(c))
+    if ends >= 0 && token.begins_an_expression(cursor.current_kind(c))
         _ = unary(@c, @a, text)
 
 # `Point::x` — a record's own name on the left, a field's name on the right,
@@ -1666,7 +1666,7 @@ test "only a place can be passed as @"
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "not_a_place"
 
-# `opening.begins_an_expression` was what a `certain` *use `while`* rested on
+# `token.begins_an_expression` was what a `certain` *use `while`* rested on
 # (defect 131's third round) until lane X3, 2026-09-29, when the rest of the
 # line came to be read as the `while`'s condition (`parse/loop_habit`). It is
 # still a second copy of what `unary` and `primary` accept, and this is where
@@ -1749,4 +1749,4 @@ test "an expression begins exactly where begins_an_expression says it can"
         a: ast.Ast @ ast.new_ast()
         _ = parse_expr(@c, @a, "x ")
         refused_first = c.diagnostics.len() > 0 && c.diagnostics[0].code == "expected_expression" && c.diagnostics[0].span.start == 0
-        assert refused_first == !opening.begins_an_expression(k)
+        assert refused_first == !token.begins_an_expression(k)

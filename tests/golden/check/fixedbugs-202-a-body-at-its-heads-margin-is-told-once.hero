@@ -1,0 +1,48 @@
+# Fixed defect 202, 2026-10-04 (lane b9-recovery; found by lane rec187
+# beside panel 187's R5). Symptom: a body written at its head's own margin,
+# `function main()` over `print(1)` at column 0, was told `missing_body` and
+# `expected_declaration` at one place for its one missing indentation, and
+# `expected_declaration` once more for each line after; a mistake on such a
+# line went untold. Cause: the missing body was told, and then the top level
+# read each of its lines as a declaration it is not. Its lines, to the next
+# that opens a declaration, are read now as the body they are, their own
+# mistakes told (`parse/braces.at_the_margin`); and a comment line between the
+# head and them is no line the lexer joined (`parse/head_lines.joined_at`),
+# which held the missing body back and kept them unread. The shapes: a
+# function's, a test's and a constant's, two lines, a block below one, a
+# mistake on the first line and on a later one, a comment line above them, a
+# word the lexer refused, and a declaration right after.
+
+function f(x: i64) -> i64
+y = x + 1  #~ missing_body
+return y
+
+test "t"
+assert true  #~ missing_body
+
+constant K: i64
+5  #~ missing_body
+
+function on_its_first_line()
+print(1 +)  #~ missing_body expected_expression
+
+function on_a_later_line()
+print(1)  #~ missing_body
+print(2) )  #~ expected_end_of_line
+
+function over_a_block()
+if true  #~ missing_body
+    print(1)
+
+function under_a_comment()
+# a note above the body
+print(1)  #~ missing_body
+
+function a_refused_word()
+#~v reserved_word missing_body
+let x = 5
+
+function before_the_next()
+print(1)  #~ missing_body
+function main()
+    print(f(1))

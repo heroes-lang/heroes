@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:43:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:17:1: error[missing_body]: the `function` `f` needs an indented body — one level deeper, exactly 4 spaces (found a name (`y`))
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:21:1: error[missing_body]: the `test` `"t"` needs an indented body — one level deeper, exactly 4 spaces (found `assert`)
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:24:1: error[missing_body]: the `constant` `K` needs an indented body — one level deeper, exactly 4 spaces (found a number (`5`))
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:27:1: error[missing_body]: the `function` `on_its_first_line` needs an indented body — one level deeper, exactly 4 spaces (found a name (`print`))
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:27:10: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:30:1: error[missing_body]: the `function` `on_a_later_line` needs an indented body — one level deeper, exactly 4 spaces (found a name (`print`))
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:31:10: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:34:1: error[missing_body]: the `function` `over_a_block` needs an indented body — one level deeper, exactly 4 spaces (found `if`)
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:39:1: error[missing_body]: the `function` `under_a_comment` needs an indented body — one level deeper, exactly 4 spaces (found a name (`print`))
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:43:1: error[missing_body]: the `function` `a_refused_word` needs an indented body — one level deeper, exactly 4 spaces (found `let`)
+tests/golden/check/fixedbugs-202-a-body-at-its-heads-margin-is-told-once.hero:46:1: error[missing_body]: the `function` `before_the_next` needs an indented body — one level deeper, exactly 4 spaces (found a name (`print`))
