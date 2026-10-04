@@ -71,8 +71,8 @@ true, and the cheap half, because the check each word carries in the checker is
 the expensive half and a general syntax does not pay it. A decorator in Python's
 sense, a function that takes a function and gives back another, needs a closure
 to build and is M-closures-verdict's, named here and not judged.
-Measured 2026-09-07: `decorator` appears three times across design.md, `spec/`,
-`docs/panel/`, `DESIGN-LOG.md`, `docs/work/`, this file and CLAUDE.md — the prior's
+`decorator` appears three times across design.md, `spec/`, `docs/panel/`,
+`DESIGN-LOG.md`, `docs/work/` (measured 2026-09-07), this file and CLAUDE.md — the prior's
 refusal in `spec/reserved-words.md:30` and FastAPI twice — and zero times in any
 sitting; spec headroom **225**.
 

@@ -13,7 +13,7 @@ This repository is one person learning compilers, and the way it is built is the
 point of it rather than a detail of it. Every line goes through a written
 contract, `CLAUDE.md`; every design change goes through a panel of five judges
 with differentiated inputs, recorded in `docs/panel/`; every decision is one
-dated line in `DESIGN-LOG.md`; every claim is measured in the session that writes
+dated file in `issues/`; every claim is measured in the session that writes
 it, or it says out loud that it is unmeasured. A patch arriving from outside that
 process cannot carry its own panel session, its own measurement or its own case
 law, and the honest options today would be to merge it without them, which breaks

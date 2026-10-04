@@ -190,7 +190,7 @@ ratification recorded as *not a reading*: take the reading for granted. **Ask
 once
 per milestone, then convene without asking again**, choosing only the seats whose
 input differs (CL-023). Briefs keep every command short and grep design.md,
-`docs/panel/` and `DESIGN-LOG.md` first (CL-027). No design change lands without
+`docs/panel/` and `issues/` first (CL-027). No design change lands without
 its `docs/panel/` file, a decision issue and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
@@ -368,6 +368,6 @@ these rules reach the sessions that need them and cost nothing in the others.
 | the site's copy and every outward-facing text | `site/CLAUDE.md` |
 
 The skills are the process: `/step` (its protocol and the milestone-close
-checklist), `/decide`, `/learn`, `/panel`, `/where`, and `/p` (how far this
-chat's own work is). The seats are `.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
+checklist), `/decide`, `/learn`, `/panel`, `/where`, `/stats` (the issues
+counted), and `/p` (how far this chat's own work is). The seats are `.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
 carries the count of citations that would break in silence).

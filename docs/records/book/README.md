@@ -2,7 +2,7 @@
 
 **There are two of them** (author instruction 2026-08-11, ROADMAP M16 and M17),
 and this directory feeds both. **M16 — the journey**: how the language came to
-be, which is what the rest of this file describes and what `beats.md` exists for.
+be, which is what the rest of this file describes and what `beats/` exists for.
 **M17 — the guide**: the classic language book, organised by subject, the kind
 you would find in a shop — not the spec, which is a control instrument budgeted
 so that it can never become a teaching text.
@@ -31,7 +31,7 @@ for that book a first-class output of the process, not an afterthought.
 | Source | What it gives the book |
 |---|---|
 | `docs/records/journal/` | the narrative spine: one lesson per step, predictions vs reality, what broke and why |
-| `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
+| `issues/` | every decision, one file each, dated by its name, with its reason |
 | `docs/panel/` | the arguments — objections, verdicts, and the author's answers |
 | `git log` + tags | the true chronology; `git checkout m2` re-opens any chapter's code |
 | measurement records (born with the first harness run) | the numbers that make the thesis a claim, not an opinion |
@@ -43,9 +43,9 @@ Technical records forget how things *felt*, and the book needs exactly that.
 So every **milestone close** and every panel decision writes one line as a new
 file in `docs/records/book/beats/`, named `YYYY-MM-DD-HHMM-<slug>.md` (cadence per
 CLAUDE.md rule 14 — and any day something genuinely diverged deserves one too).
-`docs/records/book/beats.md` is the MAP since 2026-09-12 and is never appended to: it
-keeps the line count the record had, so a `beats.md:NNN` citation still lands on
-its own beat. The line itself is unchanged:
+There is no index of the beats: the directory, read in name order, is the book's
+chronology (the map `beats.md` was deleted on 2026-10-05). The line itself is
+unchanged:
 
 ```
 date | milestone | the beat (1–2 sentences, plain language)
@@ -61,8 +61,8 @@ inside beats: they are quoted speech, not artifacts"*), and it was the root
 precedent the rest of the repository cited: the reasoning notes' README took its
 own carve-out from it by name, and 241 Italian quotations came in behind them
 both. CLAUDE.md §11 retired the doctrine — quoted speech is an artifact like
-any other, and an instruction is quoted for what it **meant**. `beats.md` is a
-dated record and keeps the Italian it already holds (§14); what is written from
+any other, and an instruction is quoted for what it **meant**. The beats are
+dated records and keep the Italian they already hold (§14); what is written from
 here on is English.
 
 ## Tentative shape (revisit at M5, don't design it now)

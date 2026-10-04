@@ -113,7 +113,7 @@ void hero_run_arg(HeroStr word) {
  * Windows leg.
  *
  * The driver asks this and names its output accordingly, which is
- * DESIGN-LOG:282's rule — a fact about the machine, measured on the machine,
+ * issues/2026-08/14/2026-08-14-0005-is-not-a-fact-about-the-program-so-the-driver.md's rule — a fact about the machine, measured on the machine,
  * rather than a word the compiler has to know. */
 HeroStr hero_run_exe_suffix(void) {
 #if defined(_WIN32)

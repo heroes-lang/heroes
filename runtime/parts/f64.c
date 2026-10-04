@@ -32,7 +32,7 @@
  *
  * This comment said for a month that 5e-324 renders 4.94065645841247e-324.
  * It has rendered 5e-324 since the subnormal branch below landed
- * (DESIGN-LOG:100, 2026-08-05), and 1e-323 renders 1e-323 — both measured
+ * (issues/2026-08/05/2026-08-05-0003-the-ladder-starts-at-precision-1-below-gnulib-s.md, 2026-08-05), and 1e-323 renders 1e-323 — both measured
  * 2026-09-03. A dead example in a comment reads as a live one (CLAUDE.md §11).
  *
  * The subnormal branch is gnulib's, whose ftoastr is the widely-shipped

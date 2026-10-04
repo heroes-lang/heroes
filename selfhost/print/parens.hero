@@ -6,7 +6,7 @@
 #
 # Parentheses are MINIMAL: 2 + (3 * 4) loses them, (2 + 3) * 4 keeps them.
 # `render` returns a control form's HEADER alone, and `fmt`'s `valued` owes
-# the blocks under it (defect 003, `docs/work/DONE.md`).
+# the blocks under it (defect 003).
 
 use ast
 use source

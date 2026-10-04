@@ -3,8 +3,8 @@
 Milestones were numbered until 2026-08-12 and are named now. The algorithm that
 assigns the next one is **CLAUDE.md §14** — its only home; this section is only
 the map, and it exists because **the record was not rewritten**. `docs/panel/`,
-`DESIGN-LOG.md`, `docs/records/journal/`, `docs/measurements/`, `docs/work/DONE.md`,
-`docs/records/book/beats.md`, `tests/golden/`, every commit subject and all twelve legacy
+a closed issue in `issues/`, `docs/records/journal/`, `docs/measurements/`,
+`docs/records/book/beats/`, `tests/golden/`, every commit subject and all twelve legacy
 tags keep the identifiers they were written with. Panel 030 R7, as amended, is
 the argument.
 

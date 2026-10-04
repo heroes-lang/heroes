@@ -202,7 +202,7 @@ included.
 | `design.md` | the source of truth for the language, and the reasoning behind it |
 | `spec/heroes-spec.md` | the contract, budgeted at 10240 tokens measured by the tokeniser that reads it, a control instrument and never a tutorial |
 | `docs/ROADMAP.md` | the milestone chain, in execution order |
-| `DESIGN-LOG.md` | every decision, dated, one line, with its reason |
+| `issues/` | every defect, decision and milestone task, one file each, ready to be one GitHub issue |
 | `docs/panel/` | the design reviews: five judges with differentiated inputs, their vetoes, and what lifted them |
 | `docs/records/journal/` | one entry per milestone: what was built, what broke, and why |
 

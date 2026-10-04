@@ -106,7 +106,7 @@ grammar file. On 2026-09-03 it moved to row 36, before M-core-packages, because 
 packages and the framework are a larger consumer still — 51,788 lines of Heroes
 in 178 modules is the size of the one body of that kind today, measured
 2026-09-03, and a form that lands after them is a form they
-were written without (§ Who scheduled what; `DESIGN-LOG.md:539`). The book's
+were written without (§ Who scheduled what; `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md`). The book's
 argument holds and is now the second reason. CLAUDE.md §9
 is the bill a new form arrives with — the formatter, every `--dump-<stage>` printer,
 `heroes mutate`, the diagnostics that quote a program back, and `heroes measure`

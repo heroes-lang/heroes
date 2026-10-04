@@ -21,7 +21,7 @@
 # robustness rule forbids. NUL is the one byte a filename cannot hold, a Heroes
 # `str` carries it through `read_file` and byte indexing without trouble, and
 # `tests/harness/shell.hero` measured the same route on both compilers
-# (DESIGN-LOG:389).
+# (issues/2026-08/18/2026-08-18-0002-a-directory-walk-that-needs-no-extern-panel-085-r4-s.md).
 
 use bytes
 use diag

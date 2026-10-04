@@ -13,7 +13,7 @@
 # letter** when somebody finally looked, and nobody had noticed for two
 # days: design.md said one `malloc` and one `free` inside the `str`
 # primitives, and the sweep found **eleven calls across five files**
-# (`DESIGN-LOG.md:235`). That is what created `alloc.c`. Its own header
+# (`issues/2026-08/12/2026-08-12-0043-the-runtime-has-a-single-allocation-point-and-4-20-s.md`). That is what created `alloc.c`. Its own header
 # then promised *"the invariant is checkable with one grep"* — and the
 # grep was never written, so on 2026-09-05 `runtime/parts/array.c` was
 # growing a static buffer with `realloc`, which is a second allocation

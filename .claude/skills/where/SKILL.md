@@ -40,7 +40,7 @@ grep -rl "^kind: defect" issues/ | xargs grep -l "^- \[ \] "     # what is BROKE
                                   #  after the author instituted the list: no skill read
                                   #  it, so an open defect was invisible in exactly the
                                   #  report the author asks for. CL-044.)
-cat docs/work/milestones/*.md          # open work, each item inside its own milestone's file
+cat docs/roadmap/milestones/*.md          # open work, each item inside its own milestone's file
                                   # (this said `QUEUE.md` until 2026-08-26 — the RECORD,
                                   #  which holds only closed items and had held zero open
                                   #  ones since the 2026-08-12 split. The skill reported a

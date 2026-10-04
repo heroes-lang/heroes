@@ -4,7 +4,7 @@
 now trees of one file per entry, and the files they were stay at their paths as
 maps of the same height. `DESIGN-LOG.md` → `docs/records/log/` (620), `docs/work/DONE.md`
 → `docs/records/done/` (491), `docs/records/book/beats.md` → `docs/records/book/beats/` (114), and
-§ The milestones, one by one → `docs/work/milestones/` (43), which absorbed
+§ The milestones, one by one → `docs/roadmap/milestones/` (43), which absorbed
 the 53 items `docs/work/SCHEDULED.md` held until 2026-09-12, so that one milestone is one file is one
 lane.
 
@@ -20,7 +20,7 @@ entry moves and its line does not**. 161 citations by line number point into the
 two large records, 124 of them from inside records §14 forbids anybody to
 repoint, and CL-037 says no instrument can see one. A map of the same height
 keeps them all true and makes them checkable — `records/positions`. Any future
-rotation takes the same shape, and `.claude/rules/records.md` § A rotated record
+rotation takes the same shape, and `.claude/rules/records.md` § A tree of entries (§ A rotated record until 2026-10-05)
 is its home.
 
 **What it did not deliver**: `docs/work/DECIDE.md` and `docs/work/DEFECTS.md`

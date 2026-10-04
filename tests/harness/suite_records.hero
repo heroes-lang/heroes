@@ -73,8 +73,6 @@ constant RECORD: [str]
         "docs/records/book"
         "tests/golden"
         "tests/emission"
-        "docs/design/DESIGN-LOG.md"
-        "docs/work/DONE.md"
         "docs/records/contract"
         "vendor"
         "editors/vscode/icons"
@@ -183,7 +181,6 @@ constant GENERATED: [str]
 # is: this module quotes `M0` and `M5b` in its own assertions.
 constant QUOTES_THE_OLD_SPELLING: [str]
     [
-        "docs/work/DONE.md"
         "docs/roadmap/names.md"
         "CLAUDE.md"
         "tests/harness/suite_records.hero"
@@ -308,7 +305,7 @@ constant REFUSED: [str]
 # framework that composes them.
 #
 # **48 → 55 on 2026-09-03**, later the same evening, out of a reasoning session
-# that re-read the whole chain for what it lacked (`DESIGN-LOG.md:539`): four
+# that re-read the whole chain for what it lacked (`issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md`): four
 # rulings on the language (`M-closures-verdict`, `M-reflection-verdict`,
 # `M-deferral-ledger`, with `M-interpolation-verdict` moved up beside them), one
 # runtime guard (`M-panic-location`), one instrument (`M-thesis-harness`), one
@@ -352,7 +349,7 @@ constant REFUSED: [str]
 # instruction: the compiler reached without installing anything, for the visitor
 # who will not run even the one clang line M-install-channels builds every
 # channel from. **It half-reverses a recorded refusal, and the row says which
-# half** — `DESIGN-LOG.md:539` refused *a web playground* on 2026-09-03 because
+# half** — `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md` refused *a web playground* on 2026-09-03 because
 # wasm cannot call native C libraries, which is an argument about a Heroes
 # program compiled to wasm and not about the compiler running in a browser. The
 # id enters with its chain row in the same commit, so this number is moved by
@@ -691,23 +688,6 @@ constant ITALIAN_BY_DESIGN: [str]
         ".claude/skills/where/italian-vocabulary.md"
     ]
 
-# The record that lives under no record DIRECTORY. `docs/work/DONE.md` is
-# append-only and never rewritten (CLAUDE.md §3 and §14), so it keeps the words
-# it was written with exactly as `docs/panel/` does — about 38 Italian quotations
-# among them, left there on purpose. It is missing from `RECORD` only because
-# `quoting` already takes it out of the milestone walk for an unrelated reason.
-#
-# **This is why `english` does not walk `living`.** `living` also drops
-# `CLAUDE.md` and `docs/ROADMAP.md` — they quote the retired milestone spelling,
-# so `quoting` removes them — and those two held **35 of the 55 Italian spans**
-# repaired on 2026-09-04. A check reading `living` would have run green over the
-# exact two files it exists for. It was written that way first, and caught
-# before the commit by asking which files the walk actually hands it.
-constant APPENDED: [str]
-    [
-        "docs/work/DONE.md"
-    ]
-
 # **The same words again, and many more of them, for use INSIDE A QUOTATION
 # ONLY.** The list above is what a line of mixed English prose can be scanned
 # with; this is what a span already known to be a quotation can be scanned with,
@@ -867,8 +847,7 @@ function run_all(scratch: str) -> report.Report?
     appended(@r, scratch: scratch)
     numbering(@r, present: walked)
     unmerged(@r, scratch: scratch)
-    rotated(@r, present: walked)
-    positions(@r, scratch: scratch, present: walked)
+    entries(@r, present: walked)
     return ok(r)
 
 # A MILESTONE IS TAGGED ONLY OVER A CLEAN LIST (author instruction
@@ -1866,11 +1845,7 @@ function exemptions(@r: report.Report, present: [str])
         if entry != "" && !selects_tree(entry: strings.without_suffix(text: entry, suffix: "/"), present: present)
             dead @ dead.push("    HOMES: " + entry)
 
-    for entry in APPENDED
-        if !selects_exactly(entry: entry, present: present)
-            dead @ dead.push("    APPENDED: " + entry)
-
-    for entry in [ISSUES, ISSUES_PAGE, RECORD_LIST, MILESTONES]
+    for entry in [ISSUES, ISSUES_PAGE, MILESTONES]
         if !selects_tree(entry: entry, present: present)
             dead @ dead.push("    a named list: " + entry)
 
@@ -1882,15 +1857,9 @@ function exemptions(@r: report.Report, present: [str])
         if !selects_exactly(entry: strings.words(entry)[0], present: present)
             dead @ dead.push("    APPEND_ONLY: " + entry)
 
-    for entry in ROTATED
-        fields = strings.words(entry)
-
-        if fields.len() == 3
-            if !selects_exactly(entry: fields[0], present: present)
-                dead @ dead.push("    ROTATED, the map: " + fields[0])
-
-            if !selects_tree(entry: fields[2], present: present)
-                dead @ dead.push("    ROTATED, the tree: " + fields[2])
+    for entry in ENTRY_TREES
+        if !selects_tree(entry: entry, present: present)
+            dead @ dead.push("    ENTRY_TREES: " + entry)
 
     # AND THE INVERSE RULE, which is the only one of its kind here: a retired
     # root must select NOTHING. A root that comes back is not retired, and the
@@ -2448,73 +2417,32 @@ function unmerged(@r: report.Report, scratch: str)
         detail: "  a tracked file carries an unresolved merge conflict:\n" + files.join("\n") + "\n  Every other check here reads the marker as prose and passes. Resolve the\n  conflict in the file, then run this suite again."
     )
 
-# A ROTATED RECORD: the entries live one per file in a tree, and the file that
-# held them stays behind as a MAP with the line count it had.
+# A TREE OF ENTRIES, READ IN NAME ORDER (`.claude/rules/records.md` § A tree of
+# entries). The story beats are one file each, `YYYY-MM-DD-HHMM-<slug>.md`, and
+# the directory read in name order is the book's chronology, so the name is the
+# one thing this asks of each, and that the tree holds anything at all.
 #
-# The map is what makes the rotation free of damage, and the damage it avoids is
-# the invisible kind. Measured 2026-09-12: this repository cites
-# `DESIGN-LOG.md:NNN` and `DESIGN-LOG:NNN` **133** times, `DONE.md:NNN` 28 times
-# and `ROADMAP.md:NNN` 19, and `.claude/rules/spec-shape.md` states the rule that
-# makes those dangerous — CL-037, *a line number is the one citation shape no
-# instrument can see*. Moving an entry out of a record would leave every one of
-# them pointing at whatever slid into its place, with the whole net green.
-#
-# So the entry moves and its LINE does not. A citation resolves to the line it
-# always named, and that line now says which file holds what it named. Better
-# than before, and this is the half worth having: the map can be CHECKED, which
-# is `positions` below, so 161 blind citations become 161 verified ones.
-#
-# Each row is `<map> <lines> <tree>`, the shape `DECIDED` uses in
-# `tests/harness/suite_layout.hero`. The line count is pinned rather than
-# derived: a map that grows is a map somebody appended to, and the entry they
-# appended is the one no citation can reach.
-constant ROTATED: [str]
+# **There were maps until 2026-10-05**: `docs/records/book/beats.md`,
+# `docs/design/DESIGN-LOG.md` and `docs/work/DONE.md` stayed behind at the
+# heights of the records they were rotated from, so that a `<map>:NNN` citation
+# landed where it always had, and `rotated` and `positions` held them to it. The
+# author deleted all three that day, meant as: *I prefer cleanliness for the
+# future to keeping the historical legacy*. Every living citation by line was
+# resolved to the file it named first; the ones inside dated records read
+# against the maps as they stand at `d8a9913e`, the last commit that held them.
+constant ENTRY_TREES: [str]
     [
-        "docs/records/book/beats.md 140 docs/records/book/beats"
-        "docs/design/DESIGN-LOG.md 1119 issues"
-        "docs/work/DONE.md 4071 issues"
+        "docs/records/book/beats"
     ]
 
-# **Both maps name `ISSUES` since 2026-10-04**, the day the entries of the log
-# and of the record moved there, each keeping its name: every row was repointed
-# to the file's new folder and no row was added or removed, so the maps keep
-# the heights they were rotated at and every `<map>:NNN` citation lands where
-# it did.
-
-function rotated(@r: report.Report, present: [str])
+function entries(@r: report.Report, present: [str])
     offences: [str] @ []
 
-    for entry in ROTATED
-        fields = strings.words(entry)
-
-        if fields.len() != 3
-            offences @ offences.push("    " + entry + " is not `<map> <lines> <tree>`")
-            continue
-        map_path = fields[0]
-        pinned = strings.to_number(fields[1]).default(0)
-        tree = fields[2]
-        text = read_file(map_path)
-
-        if text.is_err()
-            offences @ offences.push("    cannot read the map " + map_path)
-            continue
-        rows = strings.lines(text.must())
-
-        if rows.len() != pinned
-            offences @ offences.push(
-                "    " + map_path + " is " + rows.len().to_str() + " lines and was rotated at " + pinned.to_str() + ": a citation by line no longer lands where it did"
-            )
-
-        for row in rows
-            points_at = tree_path_in(row: row, tree: tree)
-
-            if points_at != "" && !is_among(points_at, seen: present)
-                offences @ offences.push("    " + map_path + " names " + points_at + ", which git does not track")
-
+    for tree in ENTRY_TREES
         held: i64 @ 0
 
         for path in present
-            if strings.starts_with(text: path, prefix: tree + "/") && path != ISSUES_PAGE
+            if strings.starts_with(text: path, prefix: tree + "/")
                 held @ held + 1
 
                 if !is_entry_name(strings.base_name(path))
@@ -2530,43 +2458,11 @@ function rotated(@r: report.Report, present: [str])
     if offences.len() > 0
         report.keep_failure(
             @r,
-            label: "records/rotated",
-            detail: "  a rotated record and its tree disagree:\n" + offences.join("\n") + "\n  The map keeps the line count the record had, so that every `<file>:NNN`\n  citation resolves to the entry it named (CL-037: a line number is the one\n  citation shape no instrument can see). A new entry is a NEW FILE in the\n  tree, never a line appended here."
+            label: "records/entries",
+            detail: "  a tree of dated entries is not in the shape its order rests on:\n" + offences.join("\n") + "\n  An entry is a NEW FILE named for its day and its place in that day; the directory\n  read in name order is the chronology, and no index of it is kept."
         )
     else
         report.keep_pass(@r)
-
-# The path a map row hands on, or the empty string.
-#
-# A PATH HAS NO SPACE IN IT, and that sentence is the whole function. The first
-# draft took everything from the tree's name to the first `.md`, and the map's
-# own preamble then read as a path: it names the tree, said `docs/records/log/` on 2026-09-12, and
-# mentions `design.md` nine words later, so the two were sewn into one name that
-# git does not track and the check reported the preamble as a missing entry. It
-# was right to fire and wrong about what it had found. So the name ends where a
-# name ends — at a space, a backtick or the end of the line — and only then is
-# it asked whether it is markdown.
-function tree_path_in(row: str, tree: str) -> str
-    at = strings.index_of(text: row, needle: tree + "/")
-
-    if at.is_err()
-        return ""
-    tail = row.slice(from: at.must(), to: row.len())
-    end: i64 @ 0
-
-    while end < tail.len()
-        byte = tail[end]
-
-        if byte == ' ' || byte == '`' || byte == '\t'
-            break
-        end @ end + 1
-
-    name = tail.slice(from: 0, to: end)
-
-    if !strings.ends_with(text: name, suffix: ".md")
-        return ""
-
-    return name
 
 # `YYYY-MM-DD-HHMM-<slug>.md`, and nothing else, because the directory is read
 # in NAME order and that order is what CLAUDE.md § RUN IT's *read forward* rests
@@ -2609,84 +2505,6 @@ function is_entry_name(name: str) -> bool
         j @ j + 1
 
     return true
-
-# EVERY `<map>:NNN` CITATION IN THE TREE RESOLVES, AND WHAT IT RESOLVES TO
-# EXISTS.
-#
-# This is the check CL-037 says cannot exist, and it exists for one reason: the
-# map. A line number is unreadable while the thing it points into is prose, and
-# readable the moment that line is a path. So the 161 citations that no
-# instrument has ever looked at become the 161 this one does.
-#
-# It asks git for the citations rather than reading every file again:
-# `git grep -h -o` over the tracked paths is the same oracle `project_files`
-# uses, in one process.
-# One citation is written in many places — `beats.md:53` is cited from the
-# record and from the map's own neighbourhood — and the same broken line
-# reported four times reads as four defects. The offence is the LINE, not the
-# mention of it.
-function note_once(@offences: [str], text: str)
-    if !is_among(text, seen: offences)
-        offences @ offences.push(text)
-
-function positions(@r: report.Report, scratch: str, present: [str])
-    offences: [str] @ []
-
-    for entry in ROTATED
-        fields = strings.words(entry)
-
-        if fields.len() != 3
-            continue
-        map_path = fields[0]
-        stem = strings.without_suffix(text: strings.base_name(map_path), suffix: ".md")
-        text = read_file(map_path)
-
-        if text.is_err()
-            offences @ offences.push("    cannot read the map " + map_path)
-            continue
-        rows = strings.lines(text.must())
-        cited = shell.run(
-            scratch: scratch,
-            program: "git",
-            words: ["git", "grep", "-h", "-o", "-E", stem + "(\\.md)?:[0-9]+"]
-        )
-
-        if cited.is_err()
-            offences @ offences.push("    cannot ask git which lines of " + map_path + " are cited")
-            continue
-
-        for row in strings.lines(cited.must().out)
-            at = strings.index_of(text: row, needle: ":")
-
-            if at.is_err()
-                continue
-            number = strings.to_number(row.slice(from: at.must() + 1, to: row.len())).default(0)
-
-            if number == 0
-                continue
-
-            if number > rows.len()
-                note_once(
-                    @offences,
-                    text: "    " + strings.trimmed(row) + " is past the end of a " + rows.len().to_str() + "-line map"
-                )
-                continue
-            points_at = tree_path_in(row: rows[number - 1], tree: fields[2])
-
-            if points_at != "" && !is_among(points_at, seen: present)
-                note_once(
-                    @offences,
-                    text: "    " + strings.trimmed(row) + " lands on a line naming " + points_at + ", which git does not track"
-                )
-
-    if offences.len() > 0
-        report.keep_failure(
-            @r,
-            label: "records/positions",
-            detail: "  a citation by line number does not land where it claims:\n" + offences.join("\n") + "\n  A rotation keeps the map's line count so that these stay true. If one is\n  past the end, the map was appended to; if it lands on a missing file, an\n  entry was moved or deleted after the rotation."
-        )
-    else
-        report.keep_pass(@r)
 
 # No living file names a numbered milestone.
 #
@@ -3028,11 +2846,11 @@ constant MOVED: [str]
         "docs/work/learn -> issues"
         "docs/learn/LEARN.md -> issues"
         "design.md -> docs/design/design.md"
-        "DESIGN-LOG.md -> docs/design/DESIGN-LOG.md"
+        "DESIGN-LOG.md -> issues"
         "docs/ROADMAP.md § The names -> docs/roadmap/names.md"
         "docs/ROADMAP.md § Verify it yourself -> docs/roadmap/verify.md"
         "docs/ROADMAP.md § What production-ready means -> docs/roadmap/production-ready.md"
-        "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones.md"
+        "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones"
         "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/decisions.md"
         "docs/ROADMAP.md § Who scheduled what -> docs/roadmap/scheduling.md"
         "docs/ref/environment/linux/Dockerfile -> docs/ref/environment/linux/Dockerfile.amd64"
@@ -3041,6 +2859,11 @@ constant MOVED: [str]
         "docs/learn/README.md -> issues/README.md"
         "docs/work/defects -> issues"
         "docs/learn -> issues"
+        "docs/design/DESIGN-LOG.md -> issues"
+        "docs/work/DONE.md -> issues"
+        "docs/records/book/beats.md -> docs/records/book/beats"
+        "docs/work/milestones -> docs/roadmap/milestones"
+        "docs/roadmap/milestones.md -> docs/roadmap/milestones"
         "docs/records/done -> issues"
         "docs/records/log -> issues"
     ]
@@ -3048,7 +2871,7 @@ constant MOVED: [str]
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    17
+    23
 
 constant RETIRED_ROOTS: [str]
     [
@@ -3060,6 +2883,7 @@ constant RETIRED_ROOTS: [str]
         "docs/records/done"
         "docs/records/log"
         "docs/work/defects"
+        "docs/work"
     ]
 
 # Where this repository's prose puts a module when it writes the SHORT name.
@@ -3242,6 +3066,27 @@ function moved_to(part: str) -> str
 
     return ""
 
+# A file of a directory that MOVED names something where the same file stands
+# under the directory it moved to: `docs/work/milestones/M-issue-files.md` is
+# `docs/roadmap/milestones/M-issue-files.md` since 2026-10-05. Asked of the file, never of
+# the directory alone, so a citation of a file that is gone stays dead.
+function moved_under(part: str, known: {str: bool}) -> bool
+    for row in MOVED
+        at = strings.index_of(text: row, needle: " -> ")
+
+        if at.is_err()
+            continue
+        written = strings.trimmed(row.slice(from: 0, to: at.must()))
+
+        if !strings.index_of(text: written, needle: " §").is_err() || !strings.starts_with(text: part, prefix: written + "/")
+            continue
+        landed = strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
+
+        if !known[landed + "/" + strings.without_prefix(text: part, prefix: written + "/")].is_err()
+            return true
+
+    return false
+
 function one_names(part: str, document: str, known: {str: bool}) -> bool
     if !known[part].is_err()
         return true
@@ -3255,6 +3100,9 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
     # for nothing a reader gains, so the table answers instead and the citation
     # stays as it was written.
     if moved_to(part).len() > 0
+        return true
+
+    if moved_under(part: part, known: known)
         return true
 
     # **A file of a tree that moved into `ISSUES` resolves by the rule**,
@@ -3640,8 +3488,11 @@ function read_the_line(@dead: [str], @tokens: [str], row: str, found: [str], doc
 # It reads every file that is not a record — the records keep the words they were
 # written with (§14) — so a red line here is never history: it is a rule, a
 # comment or a page that somebody wrote in Italian today. It takes the whole
-# walk and does its own pruning rather than the `living` list, and `APPENDED`
-# above says why in full: `living` drops the two files this rule exists for.
+# walk and does its own pruning rather than the `living` list, because `living`
+# drops `CLAUDE.md` and `docs/ROADMAP.md`, which quote the retired milestone
+# spelling, and those two held 35 of the 55 Italian spans repaired on
+# 2026-09-04: a check reading `living` would run green over the two files it
+# exists for.
 #
 # **Why per line and not per file.** The shape this catches is one Italian
 # sentence inside an English document: a quoted author instruction, a module doc
@@ -3652,7 +3503,7 @@ function english(@r: report.Report, present: [str], closed: {str: bool})
     found: [str] @ []
 
     for path in present
-        if is_record(path) || is_generated(path) || is_appended(path) || !closed[path].is_err()
+        if is_record(path) || is_generated(path) || !closed[path].is_err()
             continue
 
         if quotes_the_italian(path)
@@ -3706,13 +3557,6 @@ function quotes_the_italian(path: str) -> bool
     return false
 
 # The record with no directory of its own, kept out by exact name.
-function is_appended(path: str) -> bool
-    for entry in APPENDED
-        if path == entry
-            return true
-
-    return false
-
 function italian_by_design(path: str) -> bool
     for entry in ITALIAN_BY_DESIGN
         if path == entry || strings.starts_with(text: path, prefix: entry + "/")
@@ -4137,14 +3981,6 @@ constant OPEN_LINE_PREFIX: str
 # `ISSUES` with every other item, and the floor counts the open ones.
 constant LEARNING_FLOOR: i64
     300
-
-# The record the three lists empty into. **The same string appears in `RECORD`,
-# `QUOTES_THE_OLD_SPELLING` and `APPENDED` above, and it is not the same fact**:
-# those three answer *which walks skip this file*, and this one answers *which
-# file is the record* — the question `lists` asks it. A record carries one banner
-# and no closing fence, because it is appended to forever.
-constant RECORD_LIST: str
-    "docs/work/DONE.md"
 
 # THE ISSUES, since 2026-10-04 (`.claude/rules/records.md` § The issues, the
 # author's instruction of that day, meant as: *everything goes into a top-level
@@ -4872,7 +4708,7 @@ function chain_states(text: str) -> {str: bool}
 
 # The one milestone list, and the tree that holds it.
 constant MILESTONES: str
-    "docs/work/milestones"
+    "docs/roadmap/milestones"
 
 # A milestone's page, `M-<name>.md` directly in the tree: its reasoning, the
 # description of the milestone it becomes on GitHub, and no item.
@@ -5042,60 +4878,15 @@ function lists(@r: report.Report, present: [str], issues: [cards.Issue])
         offenders @ offenders.push(
             "    " + ISSUES + ": " + asked.to_str() + " open questions and the floor is " + LEARNING_FLOOR.to_str() + " — a walk that reads almost nothing passes for the wrong reason, which is what the count line used to catch"
         )
-    kept = read_file(RECORD_LIST)
-
-    if kept.is_err()
-        offenders @ offenders.push("    " + RECORD_LIST + ": cannot be read")
-    else
-        for complaint in record_offences(kept.must())
-            offenders @ offenders.push("    " + RECORD_LIST + ": " + complaint)
 
     if offenders.len() > 0
         report.keep_failure(
             @r,
             label: "records/lists",
-            detail: "  an issue or a page is not in the shape its rules state — an open issue holds its one open item, its line first and its body indented, a front page holds its rules and no item, and the map holds no open item at all:\n" + offenders.join("\n")
+            detail: "  an issue or a page is not in the shape its rules state — an open issue holds its one open item, its line first and its body indented, a front page holds its rules and no item:\n" + offenders.join("\n")
         )
     else
         report.keep_pass(@r)
-
-# The record's half, and it is one rule rather than four. `docs/work/DONE.md` is
-# appended to forever, so it carries the opening banner alone: a closing fence
-# would be a rule the next append breaks, which is the shape this whole check
-# exists to stop being written. What it must never hold is an OPEN item — work
-# filed among the finished reads as done and is not, and it is invisible to every
-# count that asks what is owed, because those count the live lists.
-function record_offences(text: str) -> [str]
-    out: [str] @ unticked_in_record(text)
-    banners: i64 @ 0
-
-    for row in strings.lines(text)
-        if row == BANNER
-            banners @ banners + 1
-
-    if banners != 1
-        out @ out.push(
-            "the record opens with " + banners.to_str() + " banner lines, not 1"
-        )
-    return out
-
-# Every OPEN item in a text of the record, by line: the map's rule above, and
-# the one rule each file of `RECORD_TREE` is held to. Measured 2026-10-04, not
-# one of that tree's files held one; a defect file moved there whole and left
-# unticked is the shape a `git mv` makes one command away.
-function unticked_in_record(text: str) -> [str]
-    out: [str] @ []
-    number: i64 @ 0
-
-    for row in strings.lines(text)
-        number @ number + 1
-
-        if strings.starts_with(text: row, prefix: "- [ ]")
-            out @ out.push(
-                "line " + number.to_str() + ": an OPEN item lives in the record, and a closed one is ticked: " + head_of(row)
-            )
-
-    return out
 
 # A front page against its rules: what its files are, how one is filed and how
 # one closes, and **no item, no banner and no count**, each of which would make
@@ -5896,19 +5687,6 @@ test "a front page holds its rules and no item, no banner and no count"
     )
     assert front_page_offences(text: at_ceiling + at_ceiling + at_ceiling, files: ISSUES, ceiling: 0).len() == 0
 
-test "the record holds no open item in any of its files, and a closed defect's file is ticked"
-    # A defect file moved whole into the record by `git mv`, ticked as it went.
-    moved = "- [x] **161 — a second message** | what | where · **class: adjacent** · **closed 2026-10-04**\n\n    **Class: adjacent**, 2026-10-02, a reason.\n"
-    assert unticked_in_record(moved).len() == 0
-
-    # The same file moved without its tick, which is one command away.
-    forgotten = "- [ ] **161 — a second message** | what | where · **class: adjacent**\n\n    **Class: adjacent**, 2026-10-02, a reason.\n"
-    assert strings.contains(text: unticked_in_record(forgotten)[0], needle: "line 1: an OPEN item lives in the record")
-
-    # A heading above the moved item, as a closing record may give it.
-    headed = "# Defect 161 closed: a second message\n\n" + forgotten
-    assert strings.contains(text: unticked_in_record(headed)[0], needle: "line 3:")
-
 test "the names are the register: one name per number, carried by every open defect"
     held: report.Report @ report.empty()
     defect_register(
@@ -5995,20 +5773,6 @@ test "the ROADMAP's two counts are the open defects and the open decisions the i
         text: both[1],
         needle: "the ROADMAP says 0 open decisions and issues holds 1 open decision issues"
     )
-
-test "the record holds no open item, and it is fenced at the top only"
-    good = "# DONE\n\nthe rules\n\n" + BANNER + "\n**THE RECORD BEGINS HERE**\n\n- [x] a thing | done | here\n"
-    assert record_offences(good).len() == 0
-
-    # The mirror failure of a ticked item in a live list: work filed among the
-    # finished, which every count of what is owed walks straight past.
-    open_in_record = BANNER + "\n\n- [x] a thing | done | here\n\n- [ ] another | not done | there\n"
-    assert strings.contains(text: record_offences(open_in_record)[0], needle: "an OPEN item lives in the record")
-
-    # A closing fence is refused rather than tolerated: the next append would
-    # land under it, and the rule would be broken by the act it exists for.
-    fenced_twice = BANNER + "\n\n- [x] a thing | done | here\n\n" + BANNER + "\n"
-    assert strings.contains(text: record_offences(fenced_twice)[0], needle: "opens with 2 banner lines")
 
 test "the section ends at a rule and not at anything that merely starts like one"
     # The shape the record was actually in on 2026-09-06: one good block, then a
@@ -6697,32 +6461,13 @@ test "an entry file carries its day and its place in that day, and six names tha
     # Not markdown at all.
     assert !is_entry_name("2026-08-03-0000-the-author-arrived.txt")
 
-test "a map row hands on the path it names, and a row that names none says so"
-    row = "2026-08-03 | pre-M0 | docs/records/book/beats/2026-08-03-0000-the-author-arrived.md"
-    assert tree_path_in(row: row, tree: "docs/records/book/beats") == "docs/records/book/beats/2026-08-03-0000-the-author-arrived.md"
-
-    # The preamble names the tree with a trailing slash and no file, which is
-    # why the `.md` is required and the prefix alone is not enough.
-    preamble = "Every beat is one file in `docs/records/book/beats/`, and a new beat is a new file."
-    assert tree_path_in(row: preamble, tree: "docs/records/book/beats") == ""
-    assert tree_path_in(row: "", tree: "docs/records/book/beats") == ""
-
-    # THE SHAPE THAT COST THIS FUNCTION ITS FIRST DRAFT. DESIGN-LOG.md's own
-    # preamble names its tree and then says `design.md` nine words later, and a
-    # reader that ran from the tree's name to the first `.md` sewed the two into
-    # one name git does not track — reporting the preamble as a missing entry.
-    # It fired correctly and described the wrong thing, which is the worst way
-    # for a check to be right.
-    sewn = "Every decision is one file in `docs/records/log/`, still `date | decision | reason | design.md § | panel`."
-    assert tree_path_in(row: sewn, tree: "docs/records/log") == ""
-
-# `rotated` and `positions` are not driven from a `test` block, and the reason
-# is worth writing down rather than leaving as an omission: both need the walk,
+# `entries` is not driven from a `test` block, and the reason
+# is worth writing down rather than leaving as an omission: it needs the walk,
 # the walk needs a scratch directory, and a test that passes `"."` for one makes
 # the shell write `stdout`, `stderr` and `listing-project` into the repository
 # root. That is what happened here first. They are exercised where they belong,
-# by `run_all` over the real tree, and what a literal CAN drive — the name shape
-# and the row reader — is driven above.
+# by `run_all` over the real tree, and what a literal CAN drive, the name shape,
+# is driven above.
 
 test "a paths glob is asked for the part before its star"
     assert prefix_of("docs/**") == "docs"
@@ -7171,12 +6916,20 @@ test "a list at a tag is its issues where the tag has them, and the older shapes
 
 test "a milestone's page stands directly in its tree, and the chain says which milestones are open"
     pages = milestone_pages(
-        ["docs/work/milestones/M-x.md", "docs/work/milestones/M-x/2026-10-04-0000-a.md", "docs/work/milestones/README.txt"]
+        ["docs/roadmap/milestones/M-x.md", "docs/roadmap/milestones/M-x/2026-10-04-0000-a.md", "docs/roadmap/milestones/README.txt"]
     )
-    assert pages == ["docs/work/milestones/M-x.md"]
+    assert pages == ["docs/roadmap/milestones/M-x.md"]
     states = chain_states(
         "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 83 | **M-issue-files** | **OPEN** | — |\n| **Current milestone** | **M-other** |\n"
     )
     assert !states["M-day-zero"].must()
     assert states["M-issue-files"].must()
     assert states["M-other"].is_err()
+
+test "a file under a directory that moved is found under the directory it moved to, and a gone file is not"
+    known: {str: bool} @ {}
+    known["docs/roadmap/milestones/M-issue-files.md"] @ true
+    assert moved_under(part: "docs/work/milestones/M-issue-files.md", known: known)
+    assert !moved_under(part: "docs/work/milestones/M-never-written.md", known: known)
+    assert !moved_under(part: "docs/work/milestones", known: known)
+    assert !moved_under(part: "elsewhere/M-issue-files.md", known: known)

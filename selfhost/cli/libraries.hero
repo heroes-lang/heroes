@@ -54,7 +54,7 @@ use cli/package_answer
 # name added here is a name silently DROPPED from a link line — the
 # loudest possible failure mode if it is wrong. So this grows one
 # measurement at a time, and the platform is read off `exe_suffix()`,
-# the runtime answering about the machine it is on (DESIGN-LOG:282's
+# the runtime answering about the machine it is on (issues/2026-08/14/2026-08-14-0005-is-not-a-fact-about-the-program-so-the-driver.md's
 # rule) rather than a `#if` this language does not have.
 function in_the_c_runtime(library: str) -> bool
     if process.exe_suffix() != ".exe"

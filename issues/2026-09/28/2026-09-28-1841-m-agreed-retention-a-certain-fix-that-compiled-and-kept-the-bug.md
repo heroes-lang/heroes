@@ -21,7 +21,7 @@ github: none
     run, and the note under it says so.
 
     **To ratify:** read the three files and say whether the join is certain
-    on this shape. Then look at defect 129 in `docs/work/DEFECTS.md`, the same
+    on this shape. Then look at defect 129, the same
     join on a line holding `-` alone, where two certain fixes applied together
     write a program `check` refuses, and say what a `certain` fix owes when a
     second fix touches the same lines.

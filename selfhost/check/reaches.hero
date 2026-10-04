@@ -1,5 +1,5 @@
-# What a type REACHES, asked once (panel 149, 2026-09-14; `docs/work/DEFECTS.md`
-# 033 and 035).
+# What a type REACHES, asked once (panel 149, 2026-09-14; defects 033
+# and 035).
 #
 # A handle is C's pointer to something opaque, and a type reaches one when the
 # handle is the type itself, or sits in a field, or in a field of a field, or as

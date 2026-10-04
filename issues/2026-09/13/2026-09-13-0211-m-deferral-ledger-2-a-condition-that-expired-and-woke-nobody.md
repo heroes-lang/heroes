@@ -12,7 +12,7 @@ github: none
     **Where to look:** design.md §4.18's doctest paragraph and its correction
     beneath; Part 7 item 6; the four return conditions in
     `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md`
-    § The resolution adopted; and `docs/work/milestones/M-deferral-ledger.md`'s
+    § The resolution adopted; and `docs/roadmap/milestones/M-deferral-ledger.md`'s
     own opening sentence about what a promise with no date is.
 
     **Why it matters:** this is the milestone's whole thesis arriving as a
