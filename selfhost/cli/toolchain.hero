@@ -21,8 +21,9 @@
 #   `cli_deps`, `cli_deps` needs to hash a file, and Heroes refuses
 #   module cycles.
 # - the compiler fingerprint and the runtime hint arrive as PARAMETERS
-#   from the driver: the language has no current_exe and no getenv
-#   (yet — the DECIDE entry owns the question).
+#   from the driver; where the compiler itself stands is the runtime's
+#   answer (`hero_exe_path_shown`, defect 277), the one file that knows
+#   what machine it is on.
 # - the runtime's contents are gathered by one shell glob (`cat` in
 #   the shell's sorted order) because the language has no readdir;
 #   same fact, same key, different plumbing.
@@ -37,6 +38,8 @@ use cli/publish
 use cli/runtime_key
 use cli/strings
 use cli/clang_died
+use module/reading
+use cli/runtime_places
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
 # `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
@@ -74,26 +77,35 @@ record Toolchain
 # the ABI stamp exists: a decoy runtime/ compiled with zero warnings
 # under -Weverything and printed 0x1e where 30 was expected; the stamp
 # turns that silence into `use of undeclared identifier`.
+#
+# Three places, in the order design.md §3.1 and panel 020 rule them:
+# `$HEROES_RUNTIME`, `runtime/` under the working directory, and `runtime/`
+# under an ancestor of the executable, nearest first, which until defect 277
+# was never looked in, so an installed compiler found none without the
+# variable while its help said *beside the compiler*.
 function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
     candidates: [str] @ []
 
     if hint.len() > 0
         candidates @ candidates.push(hint)
     candidates @ candidates.push("runtime")
+    beside = runtime_places.beside_the_compiler()
+
+    for above in beside.above
+        candidates @ candidates.push(above + "/runtime")
 
     for candidate in candidates
-        if !read_file(candidate + "/heroes_runtime.h").is_err() && !read_file(candidate + "/runtime.c").is_err()
-            gathered = runtime_key.runtime_text(candidate)?
+        # Present is what is asked, and a C source that is not UTF-8 is present:
+        # it was *cannot find the Heroes runtime* (panel 189).
+        if !reading.source_text(candidate + "/heroes_runtime.h").is_err() && !reading.source_text(candidate + "/runtime.c").is_err()
+            gathered = runtime_key.each_file(candidate)?
             said = clang_floor.identity(build_dir: "build", runtime: candidate, words: flags.flags())
 
             return ok(
                 Toolchain(runtime: candidate, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
             )
 
-    return fail(
-        code: "failed",
-        msg: "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: the given hint and ./runtime\n  set HEROES_RUNTIME=<dir> to say where it is"
-    )
+    return fail(code: "failed", msg: runtime_places.not_found(hint: hint, beside: beside))
 
 # What the key is given for clang's answer: the answer, or what was said
 # instead. A clang that did not answer keys apart from one that did, and the

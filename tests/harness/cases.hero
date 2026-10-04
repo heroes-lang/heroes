@@ -15,6 +15,29 @@
 use shell
 use strings
 
+# A case's source as the compiler holds it (panel 189, defect 227): its text,
+# or for a case that is not UTF-8 on purpose, the text with each byte that is
+# not text shown as one U+FFFD, which keeps every line and every `#~` mark
+# where it is. `read_file` failed such a case as *cannot read*, the defect's own
+# shape inside the net. `runtime/parts/os.c` is the C.
+extern "hero_os.h"
+    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_TEXT: i64
+
+record Shown
+    text: str
+    is_text: bool
+
+function shown(path: str) -> Shown?
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
+        return fail(code: "unreadable", msg: "cannot read " + path)
+    return ok(Shown(text: got.slice(from: marks, to: got.len()), is_text: status == HERO_OS_OK))
+
 # One golden case: its source, its expectation, and the name a failure
 # message says.
 record Case

@@ -231,7 +231,14 @@ function command(_: i64) -> i64
 # located: a missing runtime is the tool being unable to run, which is
 # exit 2 whatever the verb.
 function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
-    found = toolchain.locate_toolchain(hint: runtime_hint(), fingerprint: VERSION)
+    hint = runtime_hint()
+
+    if hint.is_err()
+        io.eprint(
+            text: "error: " + message_of_hint(hint) + "\n  set HEROES_RUNTIME to the directory holding heroes_runtime.h and runtime.c, spelt in UTF-8, or unset it"
+        )
+        return .failed_exit
+    found = toolchain.locate_toolchain(hint: hint.must(), fingerprint: VERSION)
 
     if found.is_err()
         io.eprint(text: "error: " + message_of_toolchain(found))
@@ -260,10 +267,26 @@ function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_tab
 # says "set HEROES_RUNTIME=<dir>", which every reader takes for an
 # environment variable, and under the port that route did nothing
 # (panel 085 R8, measured both ways).
-function runtime_hint() -> str
-    return process.env(name: "HEROES_RUNTIME")
+#
+# A value that is not UTF-8 is a failure that names it (defect 243), never
+# the unset hint it was read as: the search then went on to `./runtime`
+# without a word, or told the author to set what was set.
+function runtime_hint() -> str?
+    hint = process.env(name: "HEROES_RUNTIME")
+
+    if hint.is_err()
+        return fail(
+            code: "not_text",
+            msg: "`HEROES_RUNTIME` is set, and its value, `" + process.env_written(name: "HEROES_RUNTIME") + "`, is not UTF-8, so this compiler cannot look in the directory it names"
+        )
+    return hint
 
 function message_of(failed: argv.Invocation?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
+function message_of_hint(failed: str?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg

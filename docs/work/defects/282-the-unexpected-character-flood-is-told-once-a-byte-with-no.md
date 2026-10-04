@@ -3,3 +3,5 @@
     **Origin:** panel 189's compiler-engineer, its Q6 (`docs/panel/189-reports/compiler-engineer.md`), which called it *filed apart*; found unfiled by the critic's second pass (`git grep` of `UNSEEN`, `shown_char`, `31,600` over `docs/work/defects/`) and filed by the sitting's R12.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): one mistake told thirty thousand times, at a cost growing with the table at each telling; not 227's cause, the file being UTF-8.
+
+    Repaired at `f34d8eba`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

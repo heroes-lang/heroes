@@ -1,0 +1,6 @@
+# Defect 227, panel 189: a UTF-8 character cut short, its first two bytes
+# of three and then text. The reading names the cut rather than an encoding.
+# Not UTF-8 on purpose.
+
+function main()
+    print("aâ‚b")  #~ not_text

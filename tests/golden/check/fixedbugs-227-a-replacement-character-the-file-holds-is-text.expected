@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-227-a-replacement-character-the-file-holds-is-text.hero:8:14: error[type_mismatch]: expected `i64`, found `str`

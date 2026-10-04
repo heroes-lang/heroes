@@ -9,6 +9,7 @@
 
 use token
 use source
+use shown_char
 
 ## The kind
 
@@ -159,10 +160,14 @@ function is_thesis_rule(d: Diagnostic) -> bool
 
 # `file:line:col: <kind>[code]: message` — the one-line form the
 # golden tests pin and a terminal scans; the file and line are the
-# ones the reader can open, which is locate's whole job.
+# ones the reader can open, which is locate's whole job. A control
+# character a message quotes is written by its code, as the rich form
+# writes it (`diag_render.render`, defect 244).
 function render_line(d: Diagnostic, s: source.Source) -> str
     found = source.locate(s, d.span.start)
-    return found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ": " + word(d.kind) + "[" + d.code + "]: " + d.message
+    return shown_char.visible(
+        found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ": " + word(d.kind) + "[" + d.code + "]: " + d.message
+    )
 
 test "a diagnostic starts empty and grows by mutation"
     d: Diagnostic @ new_diagnostic(

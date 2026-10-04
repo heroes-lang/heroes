@@ -1,0 +1,91 @@
+# Where the runtime is looked for beside the running compiler (design.md
+# §3.1; panel 020; defect 277): every directory above the executable, nearest
+# first, the third place after `$HEROES_RUNTIME` and `runtime/` under the
+# working directory, which until 2026-10-04 was never looked in, so an
+# installed compiler found no runtime without the variable while its own
+# help said *beside the compiler*; and the message naming the places looked
+# in. Its own module, out of `toolchain.hero`, for the ceiling and along a
+# seam: where things are, against what is built from them.
+
+use cli/process
+
+# `runtime/parts/fs.c` is the C, and names each platform's call.
+extern "hero_os.h"
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_TEXT: i64
+
+# Every directory above the running compiler, nearest first, each a place
+# for `runtime/`; or, where there are none, why: this machine gave no path,
+# or one that is not UTF-8, which no `str` can open.
+record Beside
+    above: [str]
+    why: str
+
+function beside_the_compiler() -> Beside
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_exe_path_shown(status: @status, marks: @marks)
+    none: [str] = []
+
+    if status == HERO_OS_OK
+        return Beside(above: ancestors(got, either: process.exe_suffix() == ".exe"), why: "")
+
+    if status == HERO_OS_NOT_TEXT
+        return Beside(
+            above: none,
+            why: "the compiler's own path, `" + process.written_value(answer: got, marks: marks) + "`, is not UTF-8"
+        )
+    return Beside(above: none, why: "this machine did not say where the compiler is")
+
+# The directories holding `path`, nearest first, to the root: `/a/b/heroes`
+# gives `/a/b`, `/a` and "", whose `runtime/` is `/runtime`. `either` reads a
+# `\` as a separator too, as Windows writes its paths and only there, `\`
+# being a byte of a name elsewhere (`deps.under`'s rule). Cut at a separator,
+# a byte of ASCII, so never inside a character.
+function ancestors(path: str, either: bool) -> [str]
+    out: [str] @ []
+    at: i64 @ path.len() - 1
+
+    while at >= 0
+        if path[at] == '/' || either && path[at] == '\\'
+            out @ out.push(path.slice(from: 0, to: at))
+        at @ at - 1
+
+    return out
+
+# The places named, as they were looked in, and the way to name another.
+function not_found(hint: str, beside: Beside) -> str
+    places: [str] @ []
+
+    if hint.len() > 0
+        places @ places.push("`" + hint + "` (HEROES_RUNTIME)")
+    places @ places.push("./runtime")
+
+    if beside.above.len() > 0
+        places @ places.push("runtime/ in `" + beside.above[0] + "` and every directory above it")
+    else
+        places @ places.push("nothing beside the compiler, since " + beside.why)
+    return "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: " + places.join(", ") + "\n  set HEROES_RUNTIME=<dir> to say where it is"
+
+## Tests
+
+# Defect 277: the third place, under an ancestor of the executable, each
+# platform's path cut where it separates, and a message naming the places.
+test "the runtime is looked for under every directory above the compiler, nearest first"
+    assert ancestors("/a/b/heroes", either: false) == ["/a/b", "/a", ""]
+    assert ancestors("C:\\x\\bin\\heroes.exe", either: true) == ["C:\\x\\bin", "C:\\x", "C:"]
+    assert ancestors("C:\\x\\heroes.exe", either: false).len() == 0
+    assert ancestors("heroes", either: false).len() == 0
+    here = beside_the_compiler()
+    assert here.why == ""
+    assert here.above.len() > 0
+    assert process.is_directory(path: here.above[0])
+    told = not_found(hint: "", beside: Beside(above: ["/opt/heroes/bin", "/opt/heroes"], why: ""))
+    assert told == "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: ./runtime, runtime/ in `/opt/heroes/bin` and every directory above it\n  set HEROES_RUNTIME=<dir> to say where it is"
+    none: [str] = []
+    hinted = not_found(
+        hint: "/nowhere",
+        beside: Beside(above: none, why: "this machine did not say where the compiler is")
+    )
+    assert hinted == "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: `/nowhere` (HEROES_RUNTIME), ./runtime, nothing beside the compiler, since this machine did not say where the compiler is\n  set HEROES_RUNTIME=<dir> to say where it is"

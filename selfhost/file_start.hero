@@ -1,0 +1,130 @@
+# What a file's first bytes say before its words are read, told once, at its
+# place (design.md §4.17), by `lexer.lexed`, which every reading of a text
+# goes through: the compilation's, a `use` line's discovery, the parser's
+# re-readings.
+#
+# **A UTF-8 byte-order mark at the start** (defect 242), which PowerShell's
+# `-Encoding utf8` and `Set-Content -Encoding utf8` write before the first
+# line. Read as a character, it was `unexpected_character`, and then
+# `unexpected_block` at the first indented line, false about the program:
+# the mark had set the first line one column deep. One message now, at the
+# mark, with the certain fix that deletes it, the file without it being the
+# program its author wrote; and the text after it is read as the file, so
+# nothing else is told of it. Not a thesis rule: the mark is not the
+# language's syntax, as § 1 has it.
+#
+# **UTF-16 with no mark over ASCII** (defect 247), as a tool that writes
+# UTF-16 writes a file it was not told to mark: every other byte NUL, which
+# is well-formed UTF-8 and so not `not_text`, and each NUL was a message of
+# its own, thirty for a program of two lines, its excerpts full of raw NULs.
+# One message now, at the first NUL, its note naming the encoding as
+# `byte_evidence` names it where the bytes prove it, and nothing else of the
+# file is read, as nothing else of a file that is not UTF-8 is.
+
+use token
+use diag
+use state
+use byte_evidence
+
+# How many bytes of byte-order marks, U+FEFF as UTF-8 writes it, open the
+# text: 0 for nearly every file, 3 for one mark, more for a file a tool saved
+# twice, adding one each time.
+function mark_length(text: str) -> i64
+    at: i64 @ 0
+
+    while at + 2 < text.len() && text[at] == 239 && text[at + 1] == 187 && text[at + 2] == 191
+        at @ at + 3
+
+    return at
+
+# The one message for the marks that open the text, at them, with the fix
+# that deletes them.
+function marked(length: i64) -> diag.Diagnostic
+    what: str @ "a UTF-8 byte-order mark, U+FEFF,"
+
+    if length > 3
+        what @ (length / 3).to_str() + " UTF-8 byte-order marks, U+FEFF,"
+    at = token.Span(start: 0, end: length)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unexpected_character",
+        message: "the file opens with " + what + " which is not part of the language's syntax: a `.hero` file is UTF-8 with no mark",
+        span: at
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "delete the byte-order mark", replacement: "", span: at, certainty: .certain)
+    )
+    return d
+
+# The one message for a text in UTF-16 with no mark, where every other byte
+# is NUL, at the first NUL; none for any other text.
+function utf16_told(text: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    order = byte_evidence.utf16_order(text)
+
+    if order.len() == 0
+        return out
+    first: i64 @ 0
+
+    if text[0] != 0
+        first @ 1
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unexpected_character",
+        message: "the control character U+0000 is not part of the language's syntax",
+        span: token.Span(start: first, end: first + 1)
+    )
+    d.notes @ d.notes.push(byte_evidence.utf16_said(order))
+    d.notes @ d.notes.push("nothing else in this file is read until it is UTF-8")
+    return out.push(d)
+
+# The breaks a text's lexing refused, each naming its diagnostic by its
+# place among the text's (`state.Break`), moved `by` places: the marks'
+# message stands before the rest, and `parse/apart` reads a break's
+# diagnostic at that place.
+function behind(breaks: [state.Break], by: i64) -> [state.Break]
+    out: [state.Break] @ []
+
+    for b in breaks
+        moved: state.Break @ b
+
+        if b.diagnostic >= 0
+            moved.diagnostic @ b.diagnostic + by
+        out @ out.push(moved)
+
+    return out
+
+## Tests
+
+# U+FEFF from its UTF-8 bytes, since the language writes no character by its
+# code (spec § 2 Literals) and an invisible one in a literal would be read by
+# nobody.
+function mark() -> str
+    bytes: [u8] = [239, 187, 191]
+    return bytes.validated_bytes().must()
+
+test "the marks that open a text are counted, and none elsewhere"
+    assert mark_length(mark() + "function main()\n") == 3
+    assert mark_length(mark() + mark() + "x") == 6
+    assert mark_length("x" + mark()) == 0
+    assert mark_length("") == 0
+    assert mark_length(mark()) == 3
+    one = marked(3)
+    assert one.code == "unexpected_character"
+    assert one.message == "the file opens with a UTF-8 byte-order mark, U+FEFF, which is not part of the language's syntax: a `.hero` file is UTF-8 with no mark"
+    assert one.fixes[0].certainty == .certain
+    assert one.fixes[0].replacement == ""
+    assert marked(6).message == "the file opens with 2 UTF-8 byte-order marks, U+FEFF, which is not part of the language's syntax: a `.hero` file is UTF-8 with no mark"
+
+# Defect 247's two orders, committed as UTF-16 with no mark over ASCII, which
+# is UTF-8: one message each, at the first NUL, naming the order; a text with
+# no NUL, or one alone, is no UTF-16.
+test "UTF-16 with no mark over ASCII is told once, at its first NUL, naming its order"
+    fixtures = "tests/golden/surface-fixtures/notext247/"
+    little = utf16_told(read_file(fixtures + "utf16le-ascii.txt").must())
+    assert little.len() == 1
+    assert little[0].span.start == 1
+    assert little[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 little-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
+    big = utf16_told(read_file(fixtures + "utf16be-ascii.txt").must())
+    assert big[0].span.start == 0
+    assert big[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 big-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
+    assert utf16_told("function main()\n").len() == 0
+    assert utf16_told("").len() == 0

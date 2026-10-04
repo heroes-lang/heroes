@@ -59,6 +59,27 @@
  * absent. */
 HeroStr hero_file_read(const char *path, int64_t *status);
 
+/* The compiler's read of a source file it will tell about, never a program's
+ * (panel 189, defect 227): bound in `selfhost/module/reading.hero`'s own group,
+ * so no emitted program names it and the ABI stamp does not move (panel 089's
+ * reading: adding a function is self-guarding, an old runtime is an undefined
+ * symbol at link). `*status` is `hero_file_read`'s, and so is the result for
+ * every status but one. For HERO_OS_NOT_TEXT the result is the file as a `str`
+ * can hold it, preceded by its MARKS: each byte that is not part of a
+ * well-formed UTF-8 sequence is one U+FFFD in the text, and the marks give two
+ * characters for every U+FFFD of the text in order, that byte in upper-case
+ * hexadecimal or `--` for a U+FFFD the file itself held. `*marks` is how many
+ * bytes of the result are marks; the text is the rest. Zero for every other
+ * status. `parts/os.c` says why each choice was made. */
+HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks);
+
+/* One environment variable read as the shown read reads a file (defect 243):
+ * HERO_OS_NOT_FOUND and "" where it is unset, HERO_OS_OK and its value where
+ * that is UTF-8, HERO_OS_NOT_TEXT with marks and the shown value where it is
+ * not, the marks counted in `*marks` as `hero_file_read_shown` counts them.
+ * Bound in `selfhost/cli/process.hero`'s own group, like the read above. */
+HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks);
+
 /* The text, written whole, replacing whatever was there. Returns a status. */
 int64_t hero_file_write(const char *path, HeroStr text);
 
@@ -152,6 +173,12 @@ int64_t hero_word_bits(void);
 
 int64_t hero_fs_exists(const char *path);
 int64_t hero_fs_is_directory(const char *path);
+
+/* The running executable's own path, read as the shown read reads a file:
+ * HERO_OS_OK and the path, HERO_OS_NOT_TEXT with marks, or HERO_OS_NOT_FOUND
+ * where this machine gives none (defect 277). `parts/fs.c` names each
+ * platform's call. Bound in `selfhost/cli/toolchain.hero`'s own group. */
+HeroStr hero_exe_path_shown(int64_t *status, int64_t *marks);
 int64_t hero_fs_mkdir_all(const char *path);
 int64_t hero_fs_remove(const char *path);
 
@@ -283,6 +310,11 @@ int64_t hero_os_pid(void);
 
 int64_t hero_dir_scan(const char *root, int64_t want, int64_t recursive);
 HeroStr hero_dir_at(int64_t index);
+
+/* The name at that index read as `hero_file_read_shown` reads a file: a name
+ * that is not UTF-8 is HERO_OS_NOT_TEXT with marks, never a panic (defect
+ * 239). Bound in `selfhost/cli/process.hero`'s own group. */
+HeroStr hero_dir_at_shown(int64_t index, int64_t *status, int64_t *marks);
 
 /* Release the listing once its names have been read. A listing nobody releases
  * is a leak the gate reports at exit. */

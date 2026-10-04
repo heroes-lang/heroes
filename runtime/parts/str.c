@@ -244,38 +244,56 @@ void hero_print_str(HeroStr s) {
  *
  * It is a loop over the length rather than a promise in a comment, because the
  * cost is paid once at the boundary and the alternative is a corrupt `str` that
- * every later abort blames on the author. */
+ * every later abort blames on the author.
+ *
+ * **The judge of one sequence is `hero_utf8_sequence`, and it is the only one**
+ * (panel 189, defect 227). The compiler's shown read (`hero_file_read_shown`,
+ * parts/os.c) has to say WHICH bytes are not text where this says only whether
+ * any is, and two validators can silently disagree (panel 035's item 4 named
+ * that hazard when this function was exported), so both ask the same function
+ * of each byte that is not ASCII. The ASCII byte stays inline here: it is every
+ * byte of every file the compiler reads of its own, and the loop for it is the
+ * one it always was. */
+static int64_t hero_utf8_sequence(const char *p, int64_t i, int64_t len) {
+    unsigned char c = (unsigned char)p[i];
+    int64_t extra;
+    unsigned long lowest;
+    unsigned long value;
+    if (c < 0x80) {
+        return 1;
+    } else if ((c & 0xE0) == 0xC0) {
+        extra = 1; lowest = 0x80; value = c & 0x1FUL;
+    } else if ((c & 0xF0) == 0xE0) {
+        extra = 2; lowest = 0x800; value = c & 0x0FUL;
+    } else if ((c & 0xF8) == 0xF0) {
+        extra = 3; lowest = 0x10000; value = c & 0x07UL;
+    } else {
+        return 0; /* a continuation byte or 0xF8..0xFF as a leader */
+    }
+    if (i + extra >= len) return 0; /* truncated at the end of the buffer */
+    for (int64_t k = 1; k <= extra; k++) {
+        unsigned char n = (unsigned char)p[i + k];
+        if ((n & 0xC0) != 0x80) return 0;
+        value = (value << 6) | (unsigned long)(n & 0x3F);
+    }
+    /* Overlong encodings, surrogates and past U+10FFFF are all ill-formed. */
+    if (value < lowest) return 0;
+    if (value >= 0xD800 && value <= 0xDFFF) return 0;
+    if (value > 0x10FFFF) return 0;
+    return extra + 1;
+}
+
 bool hero_utf8_valid(const char *p, int64_t len) {
     if (p == NULL) return len == 0;
     int64_t i = 0;
     while (i < len) {
-        unsigned char c = (unsigned char)p[i];
-        int64_t extra;
-        unsigned long lowest;
-        unsigned long value;
-        if (c < 0x80) {
+        if ((unsigned char)p[i] < 0x80) {
             i += 1;
             continue;
-        } else if ((c & 0xE0) == 0xC0) {
-            extra = 1; lowest = 0x80; value = c & 0x1FUL;
-        } else if ((c & 0xF0) == 0xE0) {
-            extra = 2; lowest = 0x800; value = c & 0x0FUL;
-        } else if ((c & 0xF8) == 0xF0) {
-            extra = 3; lowest = 0x10000; value = c & 0x07UL;
-        } else {
-            return false; /* a continuation byte or 0xF8..0xFF as a leader */
         }
-        if (i + extra >= len) return false; /* truncated at the end of the buffer */
-        for (int64_t k = 1; k <= extra; k++) {
-            unsigned char n = (unsigned char)p[i + k];
-            if ((n & 0xC0) != 0x80) return false;
-            value = (value << 6) | (unsigned long)(n & 0x3F);
-        }
-        /* Overlong encodings, surrogates and past U+10FFFF are all ill-formed. */
-        if (value < lowest) return false;
-        if (value >= 0xD800 && value <= 0xDFFF) return false;
-        if (value > 0x10FFFF) return false;
-        i += extra + 1;
+        int64_t n = hero_utf8_sequence(p, i, len);
+        if (n == 0) return false;
+        i += n;
     }
     return true;
 }

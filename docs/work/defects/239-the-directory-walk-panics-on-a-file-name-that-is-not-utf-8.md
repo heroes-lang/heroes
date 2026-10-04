@@ -3,3 +3,5 @@
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:21 to 00:29 (`docs/panel/189-reports/ffi-pragmatist.md`, *Names that are not UTF-8 on Linux arm64*), one cause on two platforms; not 227's, no file's contents being read; filed apart by the coordinator.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a panic in the compiler, exit 134 and 127, over a directory a user can make.
+
+    Repaired at `5ba5296c`, 2026-10-04, gated by the compiler's own tests, its case the platform legs' (this Mac's filesystem refuses the name); the net is owed at the batch's close.

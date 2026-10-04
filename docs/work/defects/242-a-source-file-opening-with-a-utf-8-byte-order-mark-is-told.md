@@ -3,3 +3,5 @@
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:17 to 00:21 (`docs/panel/189-reports/ffi-pragmatist.md`, *What each writer puts on disk*), not 227's cause, the file being UTF-8; filed apart by the coordinator.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): the second message is false about the program (design.md §4.17). The seat read the row `adjacent`, a second message for one mistake; the coordinator classes it by the list's *a false message*.
+
+    Repaired at `701c0423` and `30d1a664`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

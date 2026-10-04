@@ -3,3 +3,5 @@
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:17 (`docs/panel/189-reports/ffi-pragmatist.md`, *One shape beside*), not 227's cause, the file being UTF-8; filed apart by the coordinator.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): one mistake, the file's encoding, told thirty times.
+
+    Repaired at `cdc79563`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

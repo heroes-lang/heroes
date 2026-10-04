@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-242-a-byte-order-mark-is-told-once-at-it.hero:1:1: error[unexpected_character]: the file opens with a UTF-8 byte-order mark, U+FEFF, which is not part of the language's syntax: a `.hero` file is UTF-8 with no mark

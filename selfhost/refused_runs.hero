@@ -1,0 +1,228 @@
+# A character the language refuses, told once a cause and with a bound
+# (defect 282, design.md §4.17). The scanner tells each such character
+# (`scan.hero`), and a text full of them was a flood: 32 KB of control bytes
+# drew 31,600 messages, each carrying its line, 8.8 billion instructions
+# retired to render them, and 4,000 on one line wrote that line 4,000 times,
+# 16 MB. Here, after a text is scanned (`lexer.lexed`):
+#
+# - a run of one refused character that cannot be seen, a control character
+#   or an invisible one (`shown_char` names each by its code), is told once,
+#   at its first, a note counting the run, where each character of it was a
+#   message; one that can be seen keeps a message each, as panel 187 pinned
+#   `;;` in a C-style `for` header;
+# - past `TOLD` such messages in one text the rest are counted in a note on
+#   the last one told, as `not_text` counts the lines it does not tell.
+#
+# Only the scanner's plain refusal is gathered, `unexpected_character` with
+# no fix and no note, its message ending as `scan.hero` writes it: a refusal
+# a fix repairs (`separator_runs`, the comment habits) keeps every message,
+# since a message dropped is a repair `--apply` would no longer make.
+#
+# **A refused break names its diagnostic by its place** among its text's
+# (`state.Break`), which `parse/apart` reads; a message counted rather than
+# told moves the places after it, so `told_once` says where each one went and
+# `renumbered` moves the breaks with them.
+
+use token
+use diag
+use state
+use shown_char
+
+# How many refused characters are told one by one in a text.
+constant TOLD: i64
+    8
+
+# How the scanner's refusal of one character ends (`scan.hero`, its
+# `unexpected_character` for a character the syntax does not have).
+constant SAID: str
+    " is not part of the language's syntax"
+
+# A text's diagnostics as told, and where each one given stands among them:
+# its place, or -1 for one counted rather than told.
+record Told
+    diagnostics: [diag.Diagnostic]
+    at: [i64]
+
+# The diagnostics of one text, its refused characters told once a run and at
+# most `TOLD` times, everything else as it was, in the order it was.
+function told_once(diagnostics: [diag.Diagnostic], text: str) -> Told
+    out: [diag.Diagnostic] @ []
+    at: [i64] @ []
+    first: i64 @ -1
+    last_kept: i64 @ -1
+    run: i64 @ 0
+    run_end: i64 @ -1
+    run_said: str @ ""
+    run_unseen: bool @ false
+    kept: i64 @ 0
+    unsaid: i64 @ 0
+
+    for d in diagnostics
+        if !gathered(d)
+            out @ out.push(d)
+            at @ at.push(out.len() - 1)
+            continue
+
+        # One more of the run: the same character, unseen, right after the last.
+        # The same message is the same character, so whether it is unseen is
+        # asked once a run, at its first.
+        if run > 0 && run_unseen && d.span.start == run_end && d.message == run_said
+            run @ run + 1
+            run_end @ d.span.end
+            at @ at.push(-1)
+
+            if first < 0
+                unsaid @ unsaid + 1
+            continue
+        out @ noted(out, at: first, run: run)
+        run @ 1
+        run_end @ d.span.end
+        run_said @ d.message
+        run_unseen @ unseen(d, text: text)
+
+        if kept == TOLD
+            first @ -1
+            unsaid @ unsaid + 1
+            at @ at.push(-1)
+            continue
+        out @ out.push(d)
+        first @ out.len() - 1
+        at @ at.push(first)
+        last_kept @ first
+        kept @ kept + 1
+
+    out @ noted(out, at: first, run: run)
+
+    if unsaid > 0
+        out[last_kept].notes @ out[last_kept].notes.push(
+            unsaid.to_str() + " more characters of this file are not part of the language's syntax either, not told one by one"
+        )
+    return Told(diagnostics: out, at: at)
+
+# The diagnostics of one text but those `dropped` marks, a message another
+# reader tells instead (`head_names.told_by_heads`, defect 250), with where
+# each one given went, as `told_once` says it.
+function without(diagnostics: [diag.Diagnostic], dropped: [bool]) -> Told
+    out: [diag.Diagnostic] @ []
+    at: [i64] @ []
+    k: i64 @ 0
+
+    for d in diagnostics
+        if dropped[k]
+            at @ at.push(-1)
+        else
+            out @ out.push(d)
+            at @ at.push(out.len() - 1)
+        k @ k + 1
+
+    return Told(diagnostics: out, at: at)
+
+# Where each diagnostic went through two of the steps above, the first's
+# places read through the second's.
+function through(first: [i64], then: [i64]) -> [i64]
+    out: [i64] @ []
+
+    for one in first
+        if one < 0
+            out @ out.push(-1)
+        else
+            out @ out.push(then[one])
+
+    return out
+
+# The breaks a text's lexing refused, each naming its diagnostic by the place
+# `told_once` gave it; a break whose diagnostic was counted names none, which
+# cannot happen, a break's being a join's, with its fix.
+function renumbered(breaks: [state.Break], at: [i64]) -> [state.Break]
+    out: [state.Break] @ []
+
+    for b in breaks
+        moved: state.Break @ b
+
+        if b.diagnostic >= 0
+            moved.diagnostic @ at[b.diagnostic]
+        out @ out.push(moved)
+
+    return out
+
+# Whether `d` is the scanner's plain refusal of one character.
+function gathered(d: diag.Diagnostic) -> bool
+    if d.code != "unexpected_character" || d.fixes.len() > 0 || d.notes.len() > 0
+        return false
+    return d.message.len() >= SAID.len() && d.message.slice(from: d.message.len() - SAID.len(), to: d.message.len()) == SAID
+
+# Whether the character `d` refuses is one `shown_char` writes by its code,
+# a control character or an invisible one, which a reader cannot count by
+# looking; asked of the character itself.
+function unseen(d: diag.Diagnostic, text: str) -> bool
+    if d.span.end > text.len()
+        return false
+    ch = text.slice(from: d.span.start, to: d.span.end)
+    return shown_char.is_control(ch) || shown_char.unseen(shown_char.code_point(ch))
+
+# The run a message is told by, counted on it where it is more than one.
+function noted(out: [diag.Diagnostic], at: i64, run: i64) -> [diag.Diagnostic]
+    if at < 0 || run < 2
+        return out
+    done: [diag.Diagnostic] @ out
+    done[at].notes @ done[at].notes.push("the first of " + run.to_str() + " in a row")
+    return done
+
+## Tests
+
+function refused(start: i64, said: str) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "unexpected_character", message: said + SAID, span: token_at(start))
+
+function token_at(start: i64) -> token.Span
+    return token.Span(start: start, end: start + 1)
+
+test "a run of one refused character that cannot be seen is told once, at its first, the run counted"
+    one = "the control character U+0001"
+    two = "the control character U+0002"
+    controls: [u8] = [1, 1, 1, 2, 32, 1]
+    told = told_once(
+        [refused(start: 0, said: one), refused(start: 1, said: one), refused(start: 2, said: one), refused(start: 3, said: two), refused(start: 5, said: one)],
+        text: controls.validated_bytes().must()
+    )
+    got = told.diagnostics
+    assert told.at == [0, -1, -1, 1, 2]
+    assert got.len() == 3
+    assert got[0].span.start == 0
+    assert got[0].notes == ["the first of 3 in a row"]
+    assert got[1].notes.len() == 0
+    assert got[2].span.start == 5
+
+test "past eight refused characters the rest are counted on the last told, and a refusal with a fix is never gathered"
+    said: [diag.Diagnostic] @ []
+
+    for k in range(from: 0, to: 12)
+        said @ said.push(refused(start: k * 2, said: "`$`"))
+
+    fixed: diag.Diagnostic @ refused(start: 40, said: "`;`")
+    fixed.fixes @ fixed.fixes.push(
+        diag.Fix(title: "delete the `;`", replacement: "", span: token_at(40), certainty: .certain)
+    )
+    said @ said.push(fixed)
+    told = told_once(said, text: "$ ".repeat(21))
+    got = told.diagnostics
+    assert told.at[12] == 8
+    assert told.at[9] == -1
+    assert got.len() == 9
+    assert got[7].notes == ["4 more characters of this file are not part of the language's syntax either, not told one by one"]
+    assert got[8].fixes.len() == 1
+    habit = diag.new_diagnostic(
+        code: "unexpected_character",
+        message: "`/*` is not part of the language's syntax — a comment begins with `#`",
+        span: token_at(0)
+    )
+    assert told_once([habit], text: "/* x").diagnostics.len() == 1
+    assert !gathered(habit)
+
+    # A message another reader tells is left out, and the places compose.
+    left = without([refused(start: 0, said: "`$`"), refused(start: 2, said: "`$`")], dropped: [true, false])
+    assert left.at == [-1, 0]
+    assert through(first: [-1, 0, 1], then: [5, 6]) == [-1, 5, 6]
+
+    # Two `;` side by side are seen, and each keeps its message (panel 187).
+    semis = told_once([refused(start: 0, said: "`;`"), refused(start: 1, said: "`;`")], text: ";;")
+    assert semis.diagnostics.len() == 2
