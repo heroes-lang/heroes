@@ -622,6 +622,91 @@ static int hero_file_kind(FILE *file, size_t *first_room) {
         *first_room = (size_t)info.st_size + 1;
     return 0;
 }
+/* BYTES THAT MAY NOT BE UTF-8, AS A `str` CAN HOLD THEM: the one converter
+ * every shown read goes through, a file's (`hero_file_read_shown`), an
+ * environment variable's (`hero_env_shown`) and a directory's name
+ * (`hero_dir_at_shown`, parts/dir.c), so all three say a byte one way.
+ * HERO_OS_OK, no marks and the bytes themselves where they are UTF-8; where
+ * they are not, HERO_OS_NOT_TEXT and the marks before the shown text, as
+ * `hero_os.h` states for the file.
+ *
+ * ONE U+FFFD PER BYTE, never per run and never per maximal subpart. Each byte
+ * that begins no well-formed sequence (`hero_utf8_sequence`, parts/str.c, the
+ * one judge) is replaced alone and the scan resumes at the next byte, so the
+ * shown text has exactly as many lines as the bytes and a byte's line is
+ * exact; a caret on the first such byte of a line has only text before it.
+ *
+ * THE MARKS ARE THE BYTES. Two characters for each U+FFFD of the shown text,
+ * in order: the replaced byte in upper-case hexadecimal, or `--` for a U+FFFD
+ * the bytes themselves held, so a real U+FFFD in a string stays legal and no
+ * byte is lost. Marks and text travel in ONE string made from ONE read, so
+ * they cannot describe two different versions of a file another process is
+ * writing. The bytes are only read; the caller keeps them. */
+static HeroStr hero_bytes_shown(const char *buffer, int64_t got, int64_t *status, int64_t *marks) {
+    *marks = 0;
+    if (hero_utf8_valid(buffer, got)) {
+        *status = HERO_OS_OK;
+        return hero_str_from_bytes(buffer, got);
+    }
+    /* Each replaced byte grows by two (one byte to U+FFFD's three) and marks
+     * two; checked rather than assumed (design.md §1.12), though bytes that
+     * many were never going to be read whole. */
+    if (got > INT64_MAX / 5) {
+        *status = HERO_OS_FAILED;
+        return hero_str_from_bytes("", 0);
+    }
+    int64_t replaced = 0;
+    int64_t held = 0;
+    int64_t i = 0;
+    while (i < got) {
+        int64_t n = hero_utf8_sequence(buffer, i, got);
+        if (n == 0) {
+            replaced += 1;
+            i += 1;
+            continue;
+        }
+        if (n == 3 && (unsigned char)buffer[i] == 0xEF && (unsigned char)buffer[i + 1] == 0xBF &&
+            (unsigned char)buffer[i + 2] == 0xBD)
+            held += 1;
+        i += n;
+    }
+    int64_t mark_bytes = 2 * (replaced + held);
+    int64_t size = mark_bytes + got + 2 * replaced;
+    char *out = hero_alloc((size_t)size + 1);
+    char *mark = out;
+    char *text = out + mark_bytes;
+    static const char hex[] = "0123456789ABCDEF";
+    i = 0;
+    while (i < got) {
+        int64_t n = hero_utf8_sequence(buffer, i, got);
+        if (n == 0) {
+            unsigned char b = (unsigned char)buffer[i];
+            *mark++ = hex[b >> 4];
+            *mark++ = hex[b & 0x0F];
+            *text++ = (char)0xEF;
+            *text++ = (char)0xBF;
+            *text++ = (char)0xBD;
+            i += 1;
+            continue;
+        }
+        if (n == 3 && (unsigned char)buffer[i] == 0xEF && (unsigned char)buffer[i + 1] == 0xBF &&
+            (unsigned char)buffer[i + 2] == 0xBD) {
+            *mark++ = '-';
+            *mark++ = '-';
+        }
+        memcpy(text, buffer + i, (size_t)n);
+        text += n;
+        i += n;
+    }
+    /* `hero_str_from_bytes` validates again, and a defect above aborts there
+     * by name rather than handing on a `str` that is not UTF-8. */
+    HeroStr shown = hero_str_from_bytes(out, size);
+    hero_release(out);
+    *marks = mark_bytes;
+    *status = HERO_OS_NOT_TEXT;
+    return shown;
+}
+
 /* **The runtime does nothing to a path, and that is the portability** (recorded
  * 2026-08-14, after a day in which four separate things broke on Windows over path
  * separators and none of them was here).
@@ -735,19 +820,7 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
 /* The compiler's read of a file it will SHOW (panel 189, defect 227): what
  * `hero_file_read` answers, and for a file that read whole and is not UTF-8,
  * what a `str` can hold of it instead of nothing. `hero_os.h` states the shape
- * of the result; here is why each choice was made.
- *
- * ONE U+FFFD PER BYTE, never per run and never per maximal subpart. Each byte
- * that begins no well-formed sequence (`hero_utf8_sequence`, parts/str.c, the
- * one judge) is replaced alone and the scan resumes at the next byte, so the
- * shown text has exactly as many lines as the file and a byte's line is
- * exact; a caret on the first such byte of a line has only text before it.
- *
- * THE MARKS ARE THE BYTES. Two characters for each U+FFFD of the shown text,
- * in order: the replaced byte in upper-case hexadecimal, or `--` for a U+FFFD
- * the file itself held, so a real U+FFFD in a string stays legal and no byte is
- * lost. Marks and text travel in ONE string from ONE read, so they cannot
- * describe two different versions of a file another process is writing.
+ * of the result; `hero_bytes_shown` below says why each choice was made.
  *
  * Never handed to a writer: what the compiler builds of it is a diagnostic
  * (selfhost/not_text.hero), and the text is never lexed. */
@@ -756,71 +829,27 @@ HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks) 
     int64_t got = 0;
     char *buffer = hero_file_bytes(path, &got, status);
     if (buffer == NULL) return hero_str_from_bytes("", 0);
-    if (hero_utf8_valid(buffer, got)) {
-        HeroStr text = hero_str_from_bytes(buffer, got);
-        hero_release(buffer);
-        *status = HERO_OS_OK;
-        return text;
-    }
-    /* Each replaced byte grows by two (one byte to U+FFFD's three) and marks
-     * two; checked rather than assumed (design.md §1.12), though a file that
-     * large was never going to be read whole. */
-    if (got > INT64_MAX / 5) {
-        hero_release(buffer);
-        *status = HERO_OS_FAILED;
+    HeroStr shown = hero_bytes_shown(buffer, got, status, marks);
+    hero_release(buffer);
+    return shown;
+}
+
+/* One environment variable as the compiler can hold it (defect 243): the
+ * shown read's answer for the bytes `getenv` gives. HERO_OS_NOT_FOUND and ""
+ * where the variable is unset; HERO_OS_OK and the value where it is UTF-8;
+ * HERO_OS_NOT_TEXT, the marks and the shown value where it is not. The
+ * compiler read such a value as unset, so a `HEROES_RUNTIME` naming a real
+ * runtime was told to be set, and a `./runtime` beside the program was used
+ * instead without a word. `getenv`'s answer is the environment's own and is
+ * only read, never kept: the result is a copy. */
+HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks) {
+    *marks = 0;
+    const char *value = getenv(name);
+    if (value == NULL) {
+        *status = HERO_OS_NOT_FOUND;
         return hero_str_from_bytes("", 0);
     }
-    int64_t replaced = 0;
-    int64_t held = 0;
-    int64_t i = 0;
-    while (i < got) {
-        int64_t n = hero_utf8_sequence(buffer, i, got);
-        if (n == 0) {
-            replaced += 1;
-            i += 1;
-            continue;
-        }
-        if (n == 3 && (unsigned char)buffer[i] == 0xEF && (unsigned char)buffer[i + 1] == 0xBF &&
-            (unsigned char)buffer[i + 2] == 0xBD)
-            held += 1;
-        i += n;
-    }
-    int64_t mark_bytes = 2 * (replaced + held);
-    int64_t size = mark_bytes + got + 2 * replaced;
-    char *out = hero_alloc((size_t)size + 1);
-    char *mark = out;
-    char *text = out + mark_bytes;
-    static const char hex[] = "0123456789ABCDEF";
-    i = 0;
-    while (i < got) {
-        int64_t n = hero_utf8_sequence(buffer, i, got);
-        if (n == 0) {
-            unsigned char b = (unsigned char)buffer[i];
-            *mark++ = hex[b >> 4];
-            *mark++ = hex[b & 0x0F];
-            *text++ = (char)0xEF;
-            *text++ = (char)0xBF;
-            *text++ = (char)0xBD;
-            i += 1;
-            continue;
-        }
-        if (n == 3 && (unsigned char)buffer[i] == 0xEF && (unsigned char)buffer[i + 1] == 0xBF &&
-            (unsigned char)buffer[i + 2] == 0xBD) {
-            *mark++ = '-';
-            *mark++ = '-';
-        }
-        memcpy(text, buffer + i, (size_t)n);
-        text += n;
-        i += n;
-    }
-    hero_release(buffer);
-    /* `hero_str_from_bytes` validates again, and a defect above aborts there
-     * by name rather than handing on a `str` that is not UTF-8. */
-    HeroStr shown = hero_str_from_bytes(out, size);
-    hero_release(out);
-    *marks = mark_bytes;
-    *status = HERO_OS_NOT_TEXT;
-    return shown;
+    return hero_bytes_shown(value, (int64_t)strlen(value), status, marks);
 }
 
 int64_t hero_file_write(const char *path, HeroStr text) {

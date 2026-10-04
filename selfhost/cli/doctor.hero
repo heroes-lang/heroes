@@ -87,7 +87,7 @@ function trim_ends(text: str) -> str
 # first ran on two platforms, which is the whole reason that CI exists.
 # The port asks `uname -s` rather than carrying a cfg: a fact about
 # the machine in hand, not a premise about which platforms exist.
-function checks(build_dir: str, runtime_hint: str) -> [Check]
+function checks(build_dir: str, runtime_hint: str?) -> [Check]
     out: [Check] @ []
     clang = capture(program: "clang", words: ["clang", "--version"], build_dir: build_dir)
     out @ out.push(
@@ -121,13 +121,17 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
     out @ out.push(Check(name: "arch", ok: true, detail: arch))
 
     # The runtime — found by searching, so doctor is the place that
-    # says which candidate won.
-    found = toolchain.locate_toolchain(hint: runtime_hint, fingerprint: "doctor")
+    # says which candidate won. A hint that cannot be read is named, never
+    # passed over for the next place (defect 243).
+    match runtime_hint
+        .err e => out @ out.push(Check(name: "runtime", ok: false, detail: e.msg))
+        .ok hint =>
+            found = toolchain.locate_toolchain(hint: hint, fingerprint: "doctor")
 
-    if found.is_err()
-        out @ out.push(Check(name: "runtime", ok: false, detail: "not found — set HEROES_RUNTIME=<dir>"))
-    else
-        out @ out.push(Check(name: "runtime", ok: true, detail: found.must().runtime))
+            if found.is_err()
+                out @ out.push(Check(name: "runtime", ok: false, detail: "not found — set HEROES_RUNTIME=<dir>"))
+            else
+                out @ out.push(Check(name: "runtime", ok: true, detail: found.must().runtime))
 
     # build/ must be creatable and writable, probed by writing.
     made = process.mkdir_all(build_dir)
@@ -146,7 +150,7 @@ function checks(build_dir: str, runtime_hint: str) -> [Check]
     out @ out.push(Check(name: "build cache", ok: cache_ok, detail: detail))
     return out
 
-function run_doctor(build_dir: str, runtime_hint: str) -> cli_table.Exit
+function run_doctor(build_dir: str, runtime_hint: str?) -> cli_table.Exit
     all_ok: bool @ true
 
     for c in checks(build_dir: build_dir, runtime_hint: runtime_hint)
@@ -192,7 +196,7 @@ function run_this() -> cli_table.Exit
 ## Tests
 
 test "doctor finds this machine's toolchain, and the Zen is byte-exact"
-    got = checks(build_dir: "build", runtime_hint: "")
+    got = checks(build_dir: "build", runtime_hint: ok(""))
 
     # Six since panel 103: the clang floor row follows the clang row.
     assert got.len() == 6
