@@ -41,8 +41,3 @@ and Haskell's `void` returns a still-wrapped value.
 introduced `_ = os::remove(path)` as *the* explicit way to ignore an error. Zig
 ships the rule this milestone adopted and has not retreated from it. Across
 seventeen languages searched, none banned the silent drop with no valve at all.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

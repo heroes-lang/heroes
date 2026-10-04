@@ -41,8 +41,3 @@ and it falsified two thirds of the premise above: `owned` puts no obligation on
 any path and a missed `lease` is loud, so the C handle is the only silent one.
 The ruling is `docs/panel/147-the-obligation-is-created-by-a-call-and-not-by-a-type.md`,
 and the form it admitted is `docs/work/milestones/M-marked-acquisition.md`.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

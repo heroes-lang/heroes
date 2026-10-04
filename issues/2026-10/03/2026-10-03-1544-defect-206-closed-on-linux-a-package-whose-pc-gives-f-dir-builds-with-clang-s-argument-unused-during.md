@@ -1,0 +1,29 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-03
+commit: 9b31cd6444a1d2519de537d59913a0d1d3cf930c
+github: none
+---
+
+# Defect 206 closed: on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`
+
+- [x] **206 — on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`** | `docs/panel/186-briefs/probes/coordinator/fw/` built with `PKG_CONFIG_PATH` at its `pc/` in the Linux arm64 container (Debian clang 22.1.8): `clang: warning: argument unused during compilation: '-F.../fw/pc/../frameworks' [-Wunused-command-line-argument]`, then the program prints `7` at exit 0; this Mac prints no such line; on this Mac `clang --target=aarch64-linux-gnu -F/tmp/fwdir x.o -o x.bin` prints the same warning and the same flag with `-c` prints nothing | `selfhost/cli/libraries.hero` (the words a package gives the compile and the link) · `selfhost/cli/units.hero` (the link line) · defect 160's closed record · **class: blocking** · **closed 2026-10-03**
+
+    **Origin:** the coordinator's closings agent, 2026-10-03, reading defect 160's cases one by one on Linux arm64 between 00:36 and 00:54 by `date` (`scratchpad/closings/table.txt`, 2026-10-03), and its target probe on this Mac after 01:03 (`scratchpad/closings/fwprobe/`, 2026-10-03). The queue's question *a link step handed compile words, unmeasured on Linux* (lane h158, 2026-10-02) is this, measured. Which of the build's clang calls prints it on Linux is not read: that the link carries `-F` is an inference from the target probe.
+
+    **2026-10-03, lane warn, a link is handed only the words a link reads
+    (`libraries.link_words`, `link.link_line`): a package's `-L`, `-l`,
+    `-Wl,-rpath` and `-framework` pair, its `-F` only where the answer links a
+    framework, and no include directory. Which call printed it, read first
+    under a wrapper logging every clang call (Debian clang 22.1.8): the
+    program's final link and no other; of every compile word at a Linux link,
+    22.1.8 and 18.1.8 warn about `-F` alone**: repaired at `9b31cd64`, gated
+    by its own cases on this Mac and on Linux arm64, where the fixture prints
+    `7` with an empty stderr and its link carries no `-F`; the rest is owed
+    at the round's gate.
+
+    **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+    **Closed 2026-10-03** after the push of `e339ece9`. Repaired at `9b31cd64` in lane warn, it entered the trunk at the round of 2026-10-03's sixth gate, `da3e29af` (lanes warn, ffimsg, depth, twin156 and win214): the seed regenerated once, 39,690,755 bytes, SHA-256 beginning `2c809845ed0f7ba8`, its fixpoint by `cmp`; the compiler's own tests 1,099 and the net's own 200, all passed; the full net, 26 suites, 5,033 passed and 0 failed; the censuses of `check --brief` over 1,905 files and of `--emit-c` over 595, every move attributed to its lane. Its cases read one by one at `da3e29af`, whose compiler `e339ece9` carries unchanged (no file under `selfhost/`, `seed/`, `runtime/` or `tests/` moved between them): on this Mac (Apple clang 21), in the Linux arm64 container under Debian clang 22.1.8 and again under 18.1.8, and on the Windows box (clang 23.1.1): its two compiler tests `ok` on each; and the fixture `docs/panel/186-briefs/probes/coordinator/fw/prog/main.hero`, over the `.pc` that gives `-F`, run by `heroes run` on `e339ece9` in the Linux arm64 container under clang 22.1.8 and again under 18.1.8: exit 0, `7` printed and 0 bytes on stderr, where clang's *argument unused during compilation* had been. The push's legs: Linux arm64, its suites four at a time, the compiler's own tests 1,099 all passed and 20 suites at 0 failed under each clang; the Windows box, the compiler's own tests 1,099 all passed and nine of its 20 suites at 0 failed before it went offline at about 14:47 (Tailscale, read at 15:41: last seen 54 minutes before), every case above already read there; and the CI's run 37124159403 on `e339ece9`: Linux x86-64 (Ubuntu clang 18.1.3), the compiler's own tests 1,099 all passed and 26 suites, 4,993 passed and 0 failed; Windows x86-64 (clang 20.1.8), 1,099 and 26 suites, 4,932 passed and 0 failed, the box's eleven unrun suites among them; Linux arm64 and Darwin arm64 green. Which golden cases those jobs ran their logs do not say, so the readings above are the measurement of them, and x86-64's an inference from Linux arm64 under the same clang major. It closes after the push's platform legs ran its cases (`.claude/rules/verification.md` § The batch).

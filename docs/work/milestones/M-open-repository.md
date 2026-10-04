@@ -43,8 +43,3 @@ shape.
 the 1.0.0 compatibility paragraph (only 0.x's one sentence is published here),
 the trademark question, the install channels, and any new release — the compiler
 does not move in this milestone, so `VERSION` does not either.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

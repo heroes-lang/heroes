@@ -1,0 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-interpolation-verdict
+filed: 2026-09-09
+commit: none
+github: none
+---
+
+- [ ] **M-interpolation-verdict, exit quiz** | Three questions with one right answer each: why is the brace active only behind an `f`; why is the form one AST node rather than a payload on the existing string literal; and why is every ceiling number panel 121 computed void while its ranking of the two spellings survives | `docs/panel/121-the-brace-was-already-taken.md` § Resolution · `docs/measurements/023-the-instrument-was-not-the-readers.md` | a level measured on the wrong instrument is void and a delta measured on it is not, which is panel 123 R8's rule and the reason the ledger reads as deltas
+
+    **Origin:** M-interpolation-verdict close, 2026-09-09.

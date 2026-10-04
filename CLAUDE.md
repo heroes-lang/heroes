@@ -68,7 +68,7 @@ question until somebody runs it (CL-061). Four shapes:
   *so*, *therefore*, *which means*. A negative claim rests on the searcher's
   vocabulary rather than the world, so *"X cannot be done"* goes out as a
   question naming what was searched for. A silence in the spec is often a
-  ruling: grep `docs/records/log/` and `docs/panel/` for what is not there.
+  ruling: grep `issues/` and `docs/panel/` for what is not there.
 - **The list is a measurement too** (CL-057). Enumerate from the world, and say
   where the enumeration came from wherever it is handed on. A recommendation is
   a claim about the option **set**: ask what would have to be true for a route
@@ -114,7 +114,7 @@ at their cost too.
 ## 1. Re-read protocol: what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session; its budget
   is design.md §1.6's and `heroes measure` settles it. Then
-  `git log --oneline -10`, the newest entries of `docs/records/log/`, `docs/ROADMAP.md` status.
+  `git log --oneline -10`, the newest decisions in `issues/`, `docs/ROADMAP.md` status.
 - Re-read a shared record immediately before writing a scheduling fact into it,
   never from the session-start copy (CL-047).
 - Any asserted design rule cites its design.md section; an uncitable rule is a
@@ -130,18 +130,18 @@ Neither, and it waits, regardless of elegance.
 ## 3. Process: implement first, understand on the author's clock
 The assistant implements autonomously and **never stops mid-step to ask**, with
 three exceptions and no others: a **push or any outward-facing act**, a **panel
-gate** once per milestone, and the **open items of `docs/work/DECIDE.md` while a
-long build runs**, each with a recommendation (CL-046). A whole milestone may be
+gate** once per milestone, and the **open decisions in `issues/` while a long
+build runs**, each with a recommendation (CL-046). A whole milestone may be
 asked for in one `/step`: chain the steps, decide the delegated questions with
 the recommended resolution as the default, say which way it went once (CL-002).
 
-**Five lists.** `docs/work/DECIDE.md` holds what should be true,
-`docs/work/milestones/` work inside the file of the milestone that will do it,
-`docs/work/defects/` what is broken, `docs/learn/` what is true, and
-`docs/records/done/` is the record. A list holds only OPEN items and a ticked one
-moves to the record at once. Notation is `- [ ]` and `- [x]` only, because a
-bare bullet is invisible to every count here (CL-032); the item shape and its
-executor are `.claude/rules/records.md` (CL-066).
+**Five lists, one folder** (author instruction 2026-10-04). Every item is one
+file of `issues/` and one GitHub issue: a `decision` says what should be true, a
+`feature` or `task` is a milestone's work, a `defect` what is broken, a `learn`
+what is true, and a closed issue is the record; closing ticks it where it
+stands. Notation is `- [ ]` and `- [x]` only, because a bare bullet is invisible
+to every count here (CL-032); the card, the shape and their executors are
+`.claude/rules/records.md` § The issues (CL-066, CL-080).
 
 **Telling the author where you are.** Never let three minutes pass, in any
 session and not only a loop: what is running, what is being waited on, what was
@@ -161,7 +161,7 @@ background monitor is never asked about: the answer is always yes (CL-056).
 session and every item verified against the repository first. `/learn` takes the
 comprehension **only when the author asks**, never convened by the assistant and
 never at a milestone close, which **writes** its offers into
-`docs/learn/` instead of proposing them. Learn-first only when asked
+`learn` issues instead of proposing them. Learn-first only when asked
 before a step. Comprehension questions never go through the question widget,
 which hides the code they are about: fenced snippet, lettered options, one
 message (CL-060). Lessons stay impersonal: shapes and rules, never scores. The
@@ -191,7 +191,7 @@ once
 per milestone, then convene without asking again**, choosing only the seats whose
 input differs (CL-023). Briefs keep every command short and grep design.md,
 `docs/panel/` and `DESIGN-LOG.md` first (CL-027). No design change lands without
-its `docs/panel/` file, a `docs/records/log/` entry and its own commit.
+its `docs/panel/` file, a decision issue and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
 Spent at the fixpoint, and what it bought is CL-021. The Rust it governed is
@@ -274,7 +274,7 @@ closure list compiles itself.
 ## 14. Documentation duty + git
 A step is not done without a commit, `M-<name> step <k>: <what>`, staging only
 this conversation's files by name (§ Hard stops). Per decision, a
-`docs/records/log/` entry. Per milestone: a journal in `docs/records/journal/`, one story
+`decision` issue. Per milestone: a journal in `docs/records/journal/`, one story
 beat as a file in `docs/records/book/beats/`, the ROADMAP status, and a local tag; **the push
 that would carry that tag is asked for** (CL-042). The close checklist lives in
 `/step`, its only copy.
@@ -320,10 +320,9 @@ CL-060.
   **A lane lives under `.claude/worktrees/`, never beside the project**
   (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes).
 - **A milestone is tagged only over a clean list** (author instruction
-  2026-09-08, amended 2026-10-02): zero `blocking` or `systemic` items in
-  `docs/work/defects/` (`.claude/rules/verification.md` § Bounded
-  discovery), and nothing open in
-  `docs/work/DECIDE.md` that is not a `panel NNN` ratification. The author asked
+  2026-09-08, amended 2026-10-02): zero open `blocking` or `systemic` defects
+  in `issues/` (`.claude/rules/verification.md` § Bounded discovery), and no
+  open decision that is not a `panel NNN` ratification. The author asked
   for zero of both; a pending sitting is **waiting on the author rather than
   broken**, and § 4's queue catches an unratified one only while that item
   exists, so the exception is named rather than the rule weakened. The executor

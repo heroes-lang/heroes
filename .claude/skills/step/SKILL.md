@@ -12,12 +12,13 @@ closed questions before implementing — only when the author explicitly asks
 for it before a step; no other ceremony attaches to it.)
 
 ## 1. Orient
-`git log --oneline -10` · the newest files in `docs/records/log/` · `docs/ROADMAP.md` status · read
+`git log --oneline -10` · the newest decisions in `issues/` · `docs/ROADMAP.md` status · read
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
-**Opening a milestone means opening its own file, `docs/work/milestones/<its name>.md`,
-which carries its reasoning and the open items that name it.** That list is work with a home — a measurement to run, a
+**Opening a milestone means opening its own page, `docs/work/milestones/<its name>.md`,
+which carries its reasoning, and the open `feature` and `task` issues whose card
+names it** (`grep -rl "milestone: <its name>" issues/`). That list is work with a home — a measurement to run, a
 paragraph owed, a row to price — put aside precisely because doing it earlier
 would do it against a smaller corpus or a compiler that had not grown into the
 question yet. There is no `/scheduled` skill and there should not be one: a third
@@ -27,44 +28,37 @@ the list needs is not a caller of its own, it is *this line* — without it the
 file is write-only, which is the failure mode of every list nobody is obliged to
 open.
 
-**Every item that gets done in the step is ticked with what closed it and MOVED
-to a NEW FILE in `docs/records/done/` before the commit** (never a line appended to
-`docs/work/DONE.md`, which has been the map since 2026-09-12); a defect's own
-file is that file, moved by `git mv` and ticked, so its history follows it
-(since 2026-10-04). A live list holds open items only;
-the record holds everything else. That rule existed in three documents and in no
-skill until 2026-08-26, and by then `docs/work/DECIDE.md` held 138 ticked items
-and zero open ones while the record had not been written to in eight days. The
-same applies to an item this step *finds* rather than finishes: it is filed as
-`- [ ]` in the list that matches what it asks — `SCHEDULED.md` if it names a
-milestone, `DECIDE.md` if it names a default the compiler is running on,
-**a new file in `docs/work/defects/` if it is BROKEN** (a crash, a wrong answer
-at exit 0, a silence where a message is owed; one file per defect since
-2026-10-04, its shape on the list's front page `docs/work/DEFECTS.md`),
-`docs/learn/` if it only asks what is true —
-and **never as a bare bullet or a `## ` section**, which is a notation no count
-in this project can see. **`DEFECTS.md` was missing from this list until
-2026-09-07**, four days after the author instituted it, so no skill read or
-wrote the fourth list and an open defect was invisible in `/where`'s own status
-report: CLAUDE.md § 3's story about a rule with no executor, told about § 3's
-own list (`docs/records/contract/case-law.md` CL-044).
+**Every item is an issue file, since 2026-10-04** (`.claude/rules/records.md`
+§ The issues, the author's instruction of that day). **An item the step finishes
+is ticked where it stands**, with what closed it written under it and the card's
+`commit` filled: the commit that repaired a defect, or `self` where the closing
+commit is the one writing the file. Nothing moves, so the link a GitHub issue
+holds to the file never breaks. **An item the step finds** is filed as a new
+file in today's folder, `issues/<year-month>/<day>/<stamp>-<slug>.md`, its card
+first and its kind the one that matches what it asks: a `feature` or `task`
+naming the milestone that owes it, a `decision` if it names a default the
+compiler is running on, **a `defect` if it is BROKEN** (a crash, a wrong answer
+at exit 0, a silence where a message is owed; its slug opens `defect-NNN-`, the
+number one above the highest any issue states), a `learn` question if it only
+asks what is true — and **never as a bare bullet or a `## ` section**, which is
+a notation no count in this project can see. The ROADMAP's count line moves with
+a defect or a decision filed or closed (`records/counts`). Before the lists
+became files a ticked item had to be moved by hand, and by 2026-08-26
+`DECIDE.md` held 138 ticked items and zero open ones: a rule nobody performs
+(CL-044, CL-080).
 
-**The shape of a filed item, since 2026-09-07:** one line of three fields,
-`- [ ] **<first field>** | <what, in one line> | <where to look>`, then an
-optional body indented four spaces opening with `**Origin:**` and its date, and
-the whole region fenced by two lines of asterisks (`docs/work/DECIDE.md` carries
-the rule and `/decide` § 6 the reasoning). The first field is what the
-instrument reads: a milestone in `SCHEDULED.md`, `panel NNN` in `DECIDE.md`, the
-number in a defect's file, which its name opens with, the origin in
-`docs/learn/`. **When an item is added, the `**OPEN: N**` line under the banner
-moves with it** — `records/lists` compares that number to the items it counts,
-so the count cannot drift the way one in a second document does; the defects
-carry no banner, their count is their files, and the ROADMAP's line moves with
-a defect filed or closed (`records/counts`). **A line that will carry a path into a body needs its
-date on that same physical line** — `records/citations` reads one line at a
-time, and re-wrapping a paragraph moved five dates off their paths the day this
-shape landed, which the check caught before the commit. `records/lists` is what
-fails when any of it is not done.
+**The shape of a filed item:** its card (`kind`, `area`, `milestone`, `filed`,
+`commit`, `github`, eight lines and a blank one), then one line of three
+fields, `- [ ] **<first field>** | <what, in one line> | <where to look>`, then
+an optional body indented four spaces opening with `**Origin:**` and its date,
+the same day as the card's `filed` and the name's. The first field is what the
+instrument reads: `**M-<name>**` for a milestone's work, `**panel NNN**` for a
+sitting's ratification, `**NNN — <title>**` for a defect, the origin for a
+question. **A line that will carry a path into a body needs its date on that
+same physical line** — `records/citations` reads one line at a time, and
+re-wrapping a paragraph moved five dates off their paths the day this shape
+landed. `records/cards` and `records/lists` are what fail when any of it is not
+done.
 
 ## 2. Implement
 - If the step touches a panel path (CLAUDE.md § 4), run `/panel` first, and
@@ -130,11 +124,11 @@ before reading the fix.
 
 ## 4. Queue comprehension — per new concept, not per step
 When a step introduces a new concept (first tokens, first tree, first types,
-first blocks, first C…), append 2–4 closed-form items (a count, a choice
-among structures, an output value) to the END of `docs/learn/`, which
-appends at the bottom since 2026-09-12 (it appended at line 31 before, so every
-filing touched one line):
-`- [ ] <origin> | <question / task> | <where to look> | <why it matters>`
+first blocks, first C…), file 2–4 closed-form questions (a count, a choice
+among structures, an output value) as `learn` issues, one file each in today's
+folder of `issues/`, under the shape § 1 gives:
+`- [ ] **<origin>** | <question / task> | <where to look>`, its card saying
+`kind: learn` and the milestone it came from.
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 
 ## 5. Close
@@ -158,10 +152,10 @@ Milestone close — the checklist (this is its only copy):
   which has been the MAP since 2026-09-12: it keeps the line count the record
   had so that a `beats.md:NNN` citation still resolves, and `records/rotated`
   goes red on a line added to it;
-- one `docs/records/log/` entry per decision made, a new file named
-  `YYYY-MM-DD-HHMM-<slug>.md` and holding the line
-  `date | decision | reason | design.md § | panel`. `DESIGN-LOG.md` has been the
-  MAP since 2026-09-12 and is never appended to;
+- one `decision` issue per decision made, a new file of today's folder of
+  `issues/`, closed the day it is filed (no box), its card's `commit` `self`,
+  saying the decision, its reason, its design.md § and its panel.
+  `DESIGN-LOG.md` has been the MAP since 2026-09-12 and is never appended to;
 - **score every prediction whose milestone this is**, and lapse the ones you
   cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/work/milestones/
   docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named
@@ -170,11 +164,11 @@ Milestone close — the checklist (this is its only copy):
   the record above, where `tests/harness/suite_spec.hero` locks them to
   `SPEC_TOKENS`.) A prediction is scored, or
   it is marked `lapsed` in the ledger row that spent it and the clause it bought
-  goes back to `docs/work/DECIDE.md` to be re-argued under the removal branch — **never
+  goes back to an open `decision` issue to be re-argued under the removal branch — **never
   renewed with a new milestone name** (panel 046 R2). This bullet exists because
   the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
   survived that milestone's close untouched;
-- **WRITE** the milestone's `/learn` offers into `docs/learn/` as items
+- **WRITE** the milestone's `/learn` offers as `learn` issues
   (walkthrough, golden ratification, mutation drill, exit-quiz), and **do not
   put them to the author**. `/learn` is never convened by the assistant, not at
   a milestone close and not as a suggestion at the end of a step; this bullet

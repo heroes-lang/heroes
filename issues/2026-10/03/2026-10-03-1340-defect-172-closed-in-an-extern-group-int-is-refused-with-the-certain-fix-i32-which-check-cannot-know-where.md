@@ -1,0 +1,22 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-10-02
+commit: da3e29af815645a3bcb98fd9e16681b6b5ed7b8d
+github: none
+---
+
+# Defect 172 closed: in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`
+
+- [x] **172 — in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`** | `docs/panel/176-briefs/xfer_cj.hero`'s `-> i64`, over `cj.h`'s `int64_t cJSON_AddItemToObject(...)`, written `-> int`: `check` exit 1, `reserved_word`, *in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`*, fix (certain) *replace `int` with `i32`*; `check --apply` writes `-> i32`, `check` exit 0, `build` exit 1, `ffi_return_type` | the `reserved_word` fix for `int` in an `extern` group (defect 135's L6, `c61a1d04`) · `.claude/rules/diagnostics-and-goldens.md` § Errors are a deliverable (*a fix that leaves the defect standing is a `guess`*) · **class: blocking** · **closed 2026-10-03**
+
+    **Origin:** panel 187's completeness critic, 2026-10-02, on the recovery instrument's APPLY-OTHER 20 and APPLY-NEW 19 on lane recovery-b8's runs, 0 and 0 on lane recovery-b6's gate, every one operator `int`, and the same 20 and 19 on the trunk's compiler at `6bec7c8c`, the instrument's run of 2026-10-02 from 21:55 to 22:08 by `date` (`scratchpad/inst-187/round3/`, 2026-10-02); built by the coordinator on `62d65e48` (2026-10-02, `scratchpad/apply-int/case/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). In each of the instrument's cases the original said `i64`, so the header's type is 64 bits there. `check` does not read the header, so it cannot tell C's `int` copied from it (`i32` right) from `int` meaning an integer (`i64` right); `build` reads it, and the binding never runs with the wrong width.
+
+    **Why it is a defect.** `check --apply` applies a `certain` fix without asking, and this one writes a binding that says something else than the header in every case the instrument planted.
+
+    **2026-10-03, lane ffimsg**: repaired at `c53ce231`, gated by its own cases; the rest is owed at the round's gate, and so is the recovery instrument's `int` row re-read there (`scratchpad/inst-187/run.sh` over lane recovery-b6's `rGate` plan, APPLY-OTHER 20 and APPLY-NEW 19 before). In a group `int` is a guess now, `i64` where a result or a constant may be wider and `i32` elsewhere; outside one it keeps its certain `i64`.
+
+    **Class: blocking**, 2026-10-02 (`.claude/rules/verification.md` § Bounded discovery): a `certain` fix that writes a program meaning something else; `build` refuses that program, so no wrong value runs.
+
+    **Closed 2026-10-03** at the round of 2026-10-03's sixth gate, on this Mac, over the round's tree at `7e026ccf` (lanes warn, ffimsg, depth, twin156 and win214 merged onto the trunk's `64befd50`): the seed regenerated through two stages, 39,690,755 bytes, SHA-256 beginning `2c809845ed0f7ba8`, its fixpoint by `cmp`; the compiler's own tests 1,099 and the net's own 200, all passed; the full net, 26 suites, 5,033 passed and 0 failed, `emission`, `wholes` and `descriptors` run again alone after one trace of defect 171's was blessed whose `#line` numbers alone had moved. The census of `check --brief` over the 1,905 tracked files read this item's four `check/fixedbugs-172-*` cases and `check/fixedbugs-135-l6-int-in-an-extern-group` move, the same errors with the `int` message's new words, and nothing else of this lane's; the census of `--emit-c` over the 595 files with an `extern` moved no byte of C. The recovery instrument over lane recovery-b6's plan, the round's compiler against the trunk's (panel 187's R2): the `int` row's APPLY-NEW 19 and APPLY-OTHER 20 both to 0, no class moved in either arm and no second newly hidden. Its repair lives in the parser's foreign-word readings and its cases are `check` goldens, alike on every platform, so it closes at the round's gate (`.claude/rules/verification.md` § The batch).

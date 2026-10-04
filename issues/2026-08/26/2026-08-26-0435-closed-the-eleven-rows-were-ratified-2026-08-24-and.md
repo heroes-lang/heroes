@@ -1,0 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-24
+commit: 1945659f34e230570fe3796cf1da08f20917d148
+github: none
+---
+
+- [x] panel 089 | **CLOSED — the eleven rows were ratified 2026-08-24 and the split was never needed.** The brief proposed cutting the sitting in two if eleven rows was too many for one: **089A**, the four that kill a correct program (rows 1, 2, 3 and 9 — each ending at exit 134 or exit 2 on a program whose author did nothing wrong), and **089B**, what the document promises (rows 4, 5, 6, 7, 8, 10 and 11 — spec truth and verification rather than crashes). The author took all eleven in one sitting | docs/panel/089 | a contingency written into a brief, recorded so the next brief can reuse the shape
