@@ -25,6 +25,7 @@ use cursor
 use text_lines
 use parse/line_end
 use parse/unclosed
+use parse/pairing
 
 # Whether the line end the parser just crossed may separate a literal's element
 # from what follows (§4.9). Asked only where a line end separates with no `,`,
@@ -229,6 +230,32 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
             span: cursor.current_span(c)
         )
     return false
+
+# Whether the list whose `[` at `open` the lexer closed with a closer of
+# another kind further down ends above a binding or a mutation on a line below
+# it, `x = [1, 2` over `y = 3 )` (defect 204): no element, told where its
+# `=`, `:` or `@` stands (`binding`, the element begun at token `first`), or
+# at its first token where a list inside ended above it, naming the `[` and
+# where its `]` goes; the cursor at that line's first token, which the
+# statement reader reads with its own mistakes, its stray closer among them.
+function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64, binding: bool) -> bool
+    next = cursor.peek(c, 1)
+    inner = !binding && cursor.at_fresh_line(c) && cursor.at(c, .ident) && (next == .eq || next == .colon || next == .at)
+    pair = pairing.paired_closer(c, text, open: open)
+
+    if !(binding || inner) || pair < 0 || c.tokens[pair].kind == .rbracket
+        return false
+    opener = c.tokens[open].span
+    cursor.error(
+        @c,
+        code: "expected_separator",
+        message: "expected `,` or a new line between one element and the next, found " + cursor.found(c, text) + " — a binding is no element: the `[` still open " + text_lines.place_above(text, at: opener.start, from: cursor.current_span(c).start) + ", closes on a line above, so write its `]` there",
+        span: cursor.current_span(c)
+    )
+
+    if binding
+        c.pos @ first
+    return true
 
 # The `:` owed after a map entry's key at the cursor, `line_end.expect_after`'s;
 # where a closer of another kind stands there for the map's `}`, `{1: 2` over

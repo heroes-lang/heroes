@@ -19,6 +19,7 @@
 use token
 use diag
 use ast
+use text_lines
 
 constant CODE: str
     "continuation_outside_brackets"
@@ -66,7 +67,7 @@ function spanning(tokens: [token.Token], a: ast.Ast, text: str, at: token.Span) 
     while j < tokens.len() && tokens[j].kind == .comment
         j @ j + 1
 
-    if j >= tokens.len() || !breaks_between(text, from: at.end, to: tokens[j].span.start)
+    if j >= tokens.len() || text_lines.newlines_between(text, from: at.end, to: tokens[j].span.start) == 0
         return fail(code: "no_break", msg: "the line does not end after this token")
     after = tokens[j].span
 
@@ -132,13 +133,3 @@ function first_at(tokens: [token.Token], start: i64) -> i64
         low @ low + 1
 
     return -1
-
-function breaks_between(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from
-
-    while i < to && i < text.len()
-        if text[i] == '\n'
-            return true
-        i @ i + 1
-
-    return false

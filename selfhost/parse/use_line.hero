@@ -26,7 +26,7 @@
 
 use token
 use diag
-use parse/module_text
+use module_text
 use cursor
 use ast
 use keywords

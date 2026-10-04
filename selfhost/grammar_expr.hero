@@ -524,6 +524,7 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     open = cursor.bump(@c).span
     items: [i64] @ []
     reading: bool @ true
+    ended: bool @ false
 
     while reading
         cursor.skip_terminators(@c)
@@ -533,17 +534,25 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else
             first = c.pos
             items @ items.push(parse_expr(@c, @a, text))
+            binding = (cursor.at(c, .colon) || cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
 
             # A binding or a mutation on a line below a `[` the lexer named
-            # never closed is a statement its reach took in (`unclosed`).
-            if open_ended && (cursor.at(c, .colon) || cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
+            # never closed is a statement its reach took in (`unclosed`); below
+            # one it closed with another kind's closer, the list ends above it
+            # and its line is read as the statement it is (defect 204).
+            if open_ended && binding
                 unclosed.past_the_reach(@c, open: at)
                 reading @ false
+            else if list_line.ended_at_a_binding(@c, text, open: at, first: first, binding: binding)
+                reading @ false
+                ended @ true
             else if !list_line.separator(@c, text: text, closer: .rbracket, what: "element", open_ended: open_ended, open: at)
                 reading @ false
 
     close = cursor.current_span(c)
-    unclosed.end_literal(@c, text: text, open: at)
+
+    if !ended
+        unclosed.end_literal(@c, text: text, open: at)
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end))
