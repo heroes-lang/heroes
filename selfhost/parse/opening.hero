@@ -18,6 +18,7 @@
 # | refused nothing, and its line ends | none | parsed | named missing at the next line |
 # | refused nothing, and its line goes on | named as junk, then dropped | parsed | the body named missing, found the junk |
 # | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line inside brackets or refused that very token |
+# | refused something, a closer one too many past where it stopped | told, `if f(1 +) )` (defect 199) | as above | as above |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
 # | any, its line ending with `{` or over a `{` alone | as above, up to the `{` | the `{` named missing, the braces parsed | — |
 #
@@ -145,7 +146,7 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
         return braced(@c, text, head: head, failed: failed, brace: brace, missing: missing)
 
     if failed
-        cursor.drop_rest_of_line(@c, from: head.pos)
+        brace_habit.drop_told(@c, text, from: head.pos)
     cursor.skip_terminators(@c)
 
     # Lines a bracket the head left open swallowed are its body (`parse/swallowed`).
@@ -202,6 +203,7 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
 function braced(@c: cursor.Cursor, text: str, head: Mark, failed: bool, brace: i64, missing: Missing) -> Body
     if !failed && !token.is_line_end(cursor.current_kind(c)) && c.pos < brace
         junk(@c, text, missing: missing)
+    brace_habit.a_closer_too_many(@c, text, from: head.pos)
 
     while c.pos < brace
         _ = cursor.bump(@c)

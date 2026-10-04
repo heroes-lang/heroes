@@ -1,1 +1,2 @@
-tests/golden/check/panel-187-a-failed-heads-rest-is-dropped-as-debris.hero:12:13: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/panel-187-a-failed-heads-rest-is-dropped-as-debris.hero:16:13: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/panel-187-a-failed-heads-rest-is-dropped-as-debris.hero:16:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
