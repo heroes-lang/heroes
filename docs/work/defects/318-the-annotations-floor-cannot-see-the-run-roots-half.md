@@ -3,3 +3,5 @@
     **Origin:** lane b9-annot, 2026-10-04, each reproduced on its worktree's harness (its final reply's *Found beside*; scratch `<scratchpad>/batch9/annot/`); the remedy the lane names is a floor of the run roots' own.
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): an instrument that can read green over a half it no longer walks; hardening of the net.
+
+    Repaired at `9acc7fe8`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.
