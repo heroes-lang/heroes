@@ -1,0 +1,22 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-02
+commit: 23fdfed38560a0f987c94242666047d2ddc4bac0
+github: none
+---
+
+- [x] **195 — a line a recovery hands on to the statement reader is told a second time, by the expression's `primary`** | an arm's `0` over a `=> 5` two dedents out: `expected_arm_arrow` at the `0` and `expected_expression` at the `=>`; `use geom` over an indented `function g()`: `expected_declaration` at the block and `expected_expression` at the `function` | `selfhost/grammar_expr.hero:429` (`primary`'s message), after `selfhost/parse/broken_arm.hero:55` or `selfhost/parse/top_level.hero:82` · pinned by `tests/golden/check/panel-187-a-line-a-recovery-hands-on-is-told-again-by-the-expression.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause A2 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's rows 131-55a and 131-55b and lane recovery-b8's shape `g1/a11`; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a second message for one mistake, class (a).
+
+    Repaired at `23fdfed3` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+## The repair
+
+Repaired at `23fdfed3`. A line a recovery hands on is not told again by the expression: a top-level block's own indent or `{` heads nothing, so its lines are read by their shape, and a `=>` that begins the line below an arm told its missing `=>` is that arm's, its value read for its own mistakes. Its cases are `fixedbugs-195-a-line-a-recovery-hands-on-is-told-once`, eight shapes, both arms alike. Its pin, `panel-187-a-line-a-recovery-hands-on-is-told-again-by-the-expression`, moved from 8 messages to 5, the expression's second tellings gone, read at the gate.
+
+**Closed 2026-10-04** with batch 9 (lanes b9-notext, b9-emit, b9-harness, b9-recovery and b9-annot, merged into one round tree with the trunk at `f6a3122e`), its closing gate run on the round's head from `2c58b28e` to `662870e6`, no line of `selfhost/`, `runtime/` or the seed moving between, with the seed regenerated: 41,364,146 bytes, SHA-256 beginning `26ccaa9d96478a20`, its fixpoint by `cmp`; the compiler's own tests 1,190, all passed; the net's own tests 246, all passed; the full net, 27 suites, 5,268 passed and 0 failed, `fixes` read alone after `662870e6`, which stopped that suite copying the byte fixtures of defects 227 and 241 as text. The census, the trunk's compiler at `703af779` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 1,993, 34 moved, and `build --emit-c` over the 621 holding an `extern`, 3 files of C and 22 of messages moved, every one the batch's own. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 68 fewer messages in the normal arm and 71 in the control arm and none more; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked.

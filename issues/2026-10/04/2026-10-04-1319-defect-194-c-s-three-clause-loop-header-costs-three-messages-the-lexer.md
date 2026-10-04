@@ -1,0 +1,22 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-02
+commit: fc36a4bcd637ddebedcd2481e9fa0b411beb5241
+github: none
+---
+
+- [x] **194 — C's three-clause loop header costs three messages: the lexer tells each `;` and the loop habit the `for (`** | `for (i = 0; i < 3; i++)` over its body: `unexpected_character` at each `;` and `for_missing_in` at the `(`, three messages for one habit; `for (;;)` the same; a `{` after the header adds `missing_body`, ruling 4's | `selfhost/scan.hero:299` (the lexer's `;`) · `selfhost/parse/loop_habit.hero:58` (`for_missing_in`) · pinned by `tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause A1 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's rows 131-33a, 131-54a and 131-54b and the recovery instrument's `c-for`, 52 of its 439 EXTRA; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a second message for one mistake, class (a).
+
+    Repaired at `fc36a4bc` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Its pin moved from 11 messages to 5, the six `;` gone.
+
+## The repair
+
+Repaired at `fc36a4bc`. C's three-clause loop header is told once, at its `(`: the lexer leaves a `;` inside the `(` after a `for` to the parser, and the loop habit tells the header once, naming `for i in range(...)` and `while`, with no fix; a `;` in a bracket of its own, `f(1; 2)`, is told as before. Its cases are `fixedbugs-194-a-c-for-header-is-told-once`, fourteen shapes, both arms alike. Its pin, `panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop`, moved from 11 messages to 5, the six `;` gone, read at the gate.
+
+**Closed 2026-10-04** with batch 9 (lanes b9-notext, b9-emit, b9-harness, b9-recovery and b9-annot, merged into one round tree with the trunk at `f6a3122e`), its closing gate run on the round's head from `2c58b28e` to `662870e6`, no line of `selfhost/`, `runtime/` or the seed moving between, with the seed regenerated: 41,364,146 bytes, SHA-256 beginning `26ccaa9d96478a20`, its fixpoint by `cmp`; the compiler's own tests 1,190, all passed; the net's own tests 246, all passed; the full net, 27 suites, 5,268 passed and 0 failed, `fixes` read alone after `662870e6`, which stopped that suite copying the byte fixtures of defects 227 and 241 as text. The census, the trunk's compiler at `703af779` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 1,993, 34 moved, and `build --emit-c` over the 621 holding an `extern`, 3 files of C and 22 of messages moved, every one the batch's own. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 68 fewer messages in the normal arm and 71 in the control arm and none more; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked.

@@ -1,0 +1,10 @@
+---
+kind: decision
+area: site
+milestone: none
+filed: 2026-09-10
+commit: 281489cb250c3b146b001d857c64fa5054c2fe5c
+github: none
+---
+
+- [x] Author instruction 2026-09-10 | **The site's specification page copies the whole text in one click, and the site's JavaScript rule changes**: *no JavaScript of its own* becomes **JavaScript is never the only way**. One page asks for one script, about thirty lines, inline, that copy the specification to the clipboard and, where the clipboard is refused, select the block and say which key to press; without scripts one click on the block selects it whole, and the file is still a link and a `curl` line away. No cookie, no storage, nothing external, nothing sent, so the sharper rule of the same day stays true word for word, and `site/src/lib/scripts.ts` reads every page the build writes to enforce it | `site/README.md` · `site/src/lib/spec-page.ts` · `site/src/lib/scripts.ts` · `site/public/style.css` | the block a reader is told to paste into a prompt sat in a scrolling frame thirty lines tall, where selecting 265 lines meant dragging while it scrolled

@@ -25,17 +25,17 @@ appears — no exceptions, take nothing for granted.**
 ```
 git log --oneline -15
 git tag --list --sort=creatordate
-tail -8 DESIGN-LOG.md
+find issues -name '20*.md' | sort | tail -8      # the newest issues, decisions among them
 sed -n '/^## Where we are/,/^## Verify/p' docs/ROADMAP.md        # where we are
 sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next, in order
                                   # (this said `head -40 … § Status + § The order` until
                                   #  2026-08-26: two headings renamed on 2026-08-25 and a
                                   #  line count that stopped reaching the table it named.
                                   #  A pattern range cannot rot the same way.)
-cat docs/work/DECIDE.md           # open decisions = what the compiler is waiting on
-cat docs/work/defects/*.md        # what is BROKEN right now, one file per defect
-                                  # (one file, docs/work/DEFECTS.md, until 2026-10-04;
-                                  #  that file is now the list's front page, its rules)
+grep -rl "^kind: decision" issues/ | xargs grep -l "^- \[ \] "   # open decisions = what the compiler is waiting on
+grep -rl "^kind: defect" issues/ | xargs grep -l "^- \[ \] "     # what is BROKEN right now, one file per defect
+                                  # (docs/work/DEFECTS.md until 2026-10-04 and the
+                                  #  files of docs/work/defects/ that day; issues since)
                                   # (missing from this block until 2026-09-07, four days
                                   #  after the author instituted the list: no skill read
                                   #  it, so an open defect was invisible in exactly the
@@ -76,9 +76,9 @@ has never heard the word *compiler*. Rules:
   author's mental model accumulates instead of resetting.
 
 ### 4. Your turn — the author's pending items (never blocking)
-Summarize the **open** items of `docs/work/DECIDE.md` (what the compiler is
-waiting on), the files of `docs/work/defects/` (what is broken) and
-`docs/work/SCHEDULED.md (retired 2026-09-12)` (work with a milestone), each with the file path and
+Summarize the **open** issues: the `decision`s (what the compiler is waiting
+on), the `defect`s (what is broken) and the `feature`s and `task`s of the open
+milestone (work with a milestone), each with the file path and
 why it is worth their time — the vocabulary file keeps the sentence for the
 commonest reason, that guessing a cause before reading the fix is where the
 value is. Make clear nothing is waiting on them to proceed.
@@ -88,8 +88,8 @@ wrong today, on the author's own line, not the module it lives in. It goes first
 when there is one, because a broken compiler outranks a pending decision, and
 saying so with force is CLAUDE.md § 11's *alive rather than flat*.
 
-**Two records this step must not read.** `docs/records/done/` is the record: it is
-all closed, so summarising it reports finished work as owed. `docs/learn/`
+**Two kinds of issue this step must not read.** A closed issue is the record: it
+is all done, so summarising it reports finished work as owed. A `learn` issue
 is comprehension and is **never** offered here — it exists when the author asks
 for it (`/learn`'s own rule), and listing it turns an offer into a debt.
 

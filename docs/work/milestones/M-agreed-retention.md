@@ -23,8 +23,3 @@ may claim opposite things; one declaration cannot carry a contract chosen per
 call; and a pointer C made has no rule at all about who frees it once. The
 fourth is a process rule that the closed file could not keep, parked here with
 its reason rather than lost.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

@@ -1,0 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-04
+commit: 7a6349595c3a891402fab1f9c5dabf9ca776f030
+github: none
+---
+
+2026-08-04 | `slice(from:, to:)`'s `to` is **excluded**, stated in the spec at +5 measured — the best value on the table. "Inclusive", "exclusive" and "half-open" appeared nowhere in the spec or design.md; the ergonomist called it a coin flip and named the consequence: `slice` is how a self-hosted lexer extracts every token, `"el"` and `"ell"` both compile, and the golden that would catch the error is written by the same guess that made it. `len`'s unit **waits** — derivable in one step from "indexed in bytes", +8 measured, pre-registered for M5c | a rejection can be relaxed later; a call site whose meaning is not recoverable from the line plus the signature is the locality rule failing | §4.9, §1.0 | 021 |

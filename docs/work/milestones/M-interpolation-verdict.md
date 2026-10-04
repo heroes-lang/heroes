@@ -112,8 +112,3 @@ is the bill a new form arrives with — the formatter, every `--dump-<stage>` pr
 `heroes mutate`, the diagnostics that quote a program back, and `heroes measure`
 where the form has spec text — and it was written the day `as` reached six consumers
 one at a time, with the formatter silently deleting it from a working program.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

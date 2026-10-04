@@ -1,0 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-04
+commit: ac8c34cc7d48cd0faf5eacd59c10fc67ce327606
+github: none
+---
+
+2026-08-04 | The gate refuses `extern` until **M7** — the ffi-pragmatist's veto, lifted by one table row. `extern function labs(x: int) -> int` lowers today, no header attachment exists, and an emitter-invented prototype is unverifiable by *any* clang flag: measured, `abs(-2147483649)` returned 2147483647 at exit 0 and `sqlite3_open` was accepted in total silence under `-Weverything -pedantic`, while with the real header both are `error: conflicting types` | §4.19's mechanism is the `#include`, not the declaration; shipping an unverified FFI from M5a to M7 aims the silent-wrong-answer class at the founding constraint | §1.11, §4.19 | 020 |
