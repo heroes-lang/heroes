@@ -56,12 +56,16 @@ extern "hero_os.h"
     function hero_fs_remove(path: cstr lent) -> i64
     function hero_fs_newer_than(path: cstr lent, reference: cstr lent) -> i64
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
-    function hero_dir_at(index: i64) -> str
     function hero_dir_release()
     function hero_dir_remove_tree(path: cstr lent) -> i64
-
-extern "stdlib.h"
-    function getenv(name: cstr lent) -> cstr
+    # The shown reads (defects 239 and 243): a name, or a value, that is not
+    # UTF-8 comes back as a status and marks, never as a panic and never as
+    # nothing. `hero_dir_at` aborts on such a name and `getenv` hands back
+    # bytes `validated` can only refuse, so neither is bound here any more.
+    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
 
 # What `hero_dir_scan` is looking for.
 constant DIR_FILES: i64
@@ -297,22 +301,76 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     _ = hero_fs_remove(path: err_path.cstr())
     return ok(Run(code: code, out: out.must(), err: err.must(), started: true, why: 0))
 
-# The names `hero_dir_scan` just found, as a list — and the listing is
-# let go on the way out. The runtime holds those names in memory it
-# allocated, so a caller that reads them and walks away leaks; the leak
-# gate turns that into a panic at exit rather than a silence, which is
-# how this line came to be written at all.
-function scanned(count: i64) -> [str]
+# What a scan found: each name that is UTF-8, which a path can be made of, and
+# each name that is not, written by its bytes (`written`), which no `str` can
+# open and a message can name.
+record Scanned
+    names: [str]
+    unnamed: [str]
+
+# The names `hero_dir_scan` just found — and the listing is let go on the
+# way out. The runtime holds those names in memory it allocated, so a
+# caller that reads them and walks away leaks; the leak gate turns that
+# into a panic at exit rather than a silence, which is how this line came
+# to be written at all.
+#
+# **A name that is not UTF-8 is a value here, never a death** (defect 239,
+# 2026-10-04). This read `hero_dir_at`, which panics on such a name: Linux
+# keeps the bytes a program wrote, `caf<0xE9>.hero`, and Windows'
+# `FindFirstFileA` answers `café.hero` in its ANSI code page, so one such file
+# under a walked tree stopped the whole harness at exit 134, every suite after
+# it unrun. The compiler's own walk asks `hero_dir_at_shown` since the same
+# day (`selfhost/cli/process.hero`'s `walk`), and so does this one; each caller
+# says what such a name means to it.
+function scanned(count: i64) -> Scanned
     found: [str] @ []
+    unnamed: [str] @ []
     at: i64 @ 0
 
     while at < count
-        found @ found.push(hero_dir_at(index: at))
+        status: i64 @ 0
+        marks: i64 @ 0
+        name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
+
+        if status == HERO_OS_OK
+            found @ found.push(name)
+        else
+            unnamed @ unnamed.push(written(answer: name, marks: marks))
         at @ at + 1
 
     hero_dir_release()
+    return Scanned(names: found, unnamed: unnamed)
 
-    return found
+# A name or a value as the runtime's shown read hands it back, `marks` bytes
+# of marks before the shown text (`runtime/hero_os.h`): each byte that is not
+# UTF-8, shown as one U+FFFD, written by its value, `<0xE9>`, as the compiler
+# writes it (`selfhost/cli/process.hero`'s `written_value`); a U+FFFD the
+# bytes themselves held, marked `--`, stays as it is.
+function written(answer: str, marks: i64) -> str
+    shown = answer.slice(from: marks, to: answer.len())
+    pieces: [str] @ []
+    from: i64 @ 0
+    at: i64 @ 0
+    mark: i64 @ 0
+
+    while at + 2 < shown.len()
+        if shown[at] == 239 && shown[at + 1] == 191 && shown[at + 2] == 189
+            if mark + 1 < marks && answer[mark] != 45
+                pieces @ pieces.push(shown.slice(from: from, to: at))
+                pieces @ pieces.push("<0x" + answer.slice(from: mark, to: mark + 2) + ">")
+                from @ at + 3
+            mark @ mark + 2
+            at @ at + 3
+        else
+            at @ at + 1
+
+    pieces @ pieces.push(shown.slice(from: from, to: shown.len()))
+    return pieces.join("")
+
+# Why a walk stopped at a name it cannot hold, in the compiler's words for the
+# same refusal (`selfhost/cli/process.hero`'s `unnamed_said`).
+function unnamed_said(path: str) -> str
+    return "the name of `" + path + "` is not UTF-8, and this harness opens a file by a name it can hold: rename it"
 
 # Every file directly inside `dir`, sorted, whatever its name holds.
 #
@@ -328,9 +386,15 @@ function list_entries(scratch: str, dir: str) -> [str]?
 
     if found < 0
         return fail(code: "cannot_walk", msg: "cannot list " + dir)
+    scan = scanned(count: found)
+
+    # Every caller reads each entry it is handed, a golden case or a blessed
+    # file, so a name it cannot open stops the listing, named.
+    if scan.unnamed.len() > 0
+        return fail(code: "not_text", msg: unnamed_said(dir + "/" + scan.unnamed[0]))
     entries: [str] @ []
 
-    for name in scanned(count: found)
+    for name in scan.names
         entries @ entries.push(dir + "/" + name)
 
     return ok(entries.sort())
@@ -342,9 +406,13 @@ function list_directories(scratch: str, dir: str) -> [str]?
 
     if found < 0
         return fail(code: "cannot_walk", msg: "cannot list the directories in " + dir)
+    scan = scanned(count: found)
+
+    if scan.unnamed.len() > 0
+        return fail(code: "not_text", msg: unnamed_said(dir + "/" + scan.unnamed[0]))
     entries: [str] @ []
 
-    for name in scanned(count: found)
+    for name in scan.names
         entries @ entries.push(dir + "/" + name)
 
     return ok(entries.sort())
@@ -421,17 +489,28 @@ function walk_into(dir: str, skip: [str]) -> [str]?
 
     if files < 0
         return fail(code: "cannot_walk", msg: "cannot list " + dir)
+    scan = scanned(count: files)
+
+    # The trees walked here are the project's own, every file of them read
+    # or counted, and a directory whose name is not UTF-8 cannot be entered:
+    # either stops the walk, named.
+    if scan.unnamed.len() > 0
+        return fail(code: "not_text", msg: unnamed_said(dir + "/" + scan.unnamed[0]))
     found: [str] @ []
 
-    for name in scanned(count: files)
+    for name in scan.names
         found @ found.push(dir + "/" + name)
 
     dirs = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
 
     if dirs < 0
         return fail(code: "cannot_walk", msg: "cannot list the directories in " + dir)
+    below = scanned(count: dirs)
 
-    for name in scanned(count: dirs)
+    if below.unnamed.len() > 0
+        return fail(code: "not_text", msg: unnamed_said(dir + "/" + below.unnamed[0]))
+
+    for name in below.names
         if !skipped(name: name, skip: skip)
             for deeper in walk_into(dir: dir + "/" + name, skip: skip)?
                 found @ found.push(deeper)
@@ -528,9 +607,21 @@ function found_under(dir: str, suffix: str, reference: str) -> [str]?
 
     if count < 0
         return fail(code: "cannot_walk", msg: "cannot walk " + dir)
+    scan = scanned(count: count)
+
+    # **Only a name the caller asked for stops this walk.** Its callers walk
+    # `build/`, where any test may leave a file of any name, for one suffix
+    # each: the compiler's own test of defect 239 leaves
+    # `build/selftest-walk-names/only/caf<0xE9>.hero` on Linux, and `cache`
+    # asks this walk for `.o`. A name that is not UTF-8 ends in the suffix
+    # exactly when its written form does, every suffix asked being ASCII.
+    for name in scan.unnamed
+        if suffix.len() == 0 || ends_with(text: name, tail: suffix)
+            return fail(code: "not_text", msg: unnamed_said(dir + "/" + name))
+
     out: [str] @ []
 
-    for name in scanned(count: count)
+    for name in scan.names
         full = dir + "/" + name
 
         if suffix.len() > 0 && !ends_with(text: name, tail: suffix)
@@ -560,14 +651,40 @@ function both(first: [str], second: [str]) -> [str]
 
     return out
 
-# One environment variable, or "" where it is unset. The null test is the
-# contract, not caution: converting a null `cstr` aborts (spec § 13 FFI).
-function env(name: str) -> str
-    got = getenv(name: name.cstr())
+# One environment variable: "" where it is unset, its value where that is
+# UTF-8, and a failure naming the variable where it is set and not, which the
+# caller tells at its place. The failure does not quote the value; a caller
+# whose variable names a place quotes it with `env_written`.
+#
+# **It answered "" for a value that is not UTF-8 until 2026-10-04** (defect
+# 243): `getenv` and `validated`, defaulted, so a `HEROES_COMPILER` naming a
+# compiler in bytes that are not UTF-8 was read as unset and the harness
+# judged `./heroes` instead, no word said. The compiler's own `env` (in
+# `selfhost/cli/process.hero`) answers this way since the same day, through
+# the same runtime call.
+function env(name: str) -> str?
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
 
-    if got == nullptr
-        return ""
-    return got.validated().default("")
+    if status == HERO_OS_NOT_FOUND
+        return ok("")
+
+    if status == HERO_OS_OK
+        return ok(got)
+    return fail(
+        code: "not_text",
+        msg: "`" + name + "` is set, and its value is not UTF-8, which a value this harness reads must be"
+    )
+
+# A variable's value as a message may quote it, each byte that is not UTF-8
+# written by its value, `<0xE9>`; "" where it is unset. For a variable that
+# names a place, never for one that may hold a secret.
+function env_written(name: str) -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+    return written(answer: got, marks: marks)
 
 # The compilers this harness's own test blocks may use, in the order they are
 # tried. Read as: whatever the caller named, then the binary in the repository
@@ -609,18 +726,28 @@ constant CANDIDATES: [str]
 # adding the seed leg to CI). It stayed in the list above for six more days,
 # which is the whole argument for the CI leg that now runs this file.
 #
-# An empty answer is a loud failure rather than a skip: the harness is being run
-# BY a compiler, so one exists, and if none of these paths holds it the test
-# says which four it looked at.
-function some_compiler() -> str
+# No answer is a loud failure rather than a skip: the harness is being run
+# BY a compiler, so one exists, and if none of these paths holds it the
+# failure says which places it looked at.
+#
+# **A `HEROES_COMPILER` that is not UTF-8 is a refusal, never a fallback**
+# (defect 243): until 2026-10-04 it read as unset, and the net judged
+# whichever compiler came first in the list below without a word.
+function some_compiler() -> str?
     named = env(name: "HEROES_COMPILER")
 
-    if named.len() > 0 && exists(named)
-        return named
+    if named.is_err()
+        return fail(
+            code: "not_text",
+            msg: "HEROES_COMPILER is set to `" + env_written(name: "HEROES_COMPILER") + "`, which is not UTF-8, and this harness runs a compiler by a path it can hold: set it in UTF-8, or name the compiler, -- <compiler>"
+        )
+
+    if named.must().len() > 0 && exists(named.must())
+        return ok(named.must())
 
     for path in CANDIDATES
         if exists(path)
-            return path
+            return ok(path)
 
         # The same name as the machine spells it: `./heroes` here is
         # `./heroes.exe` on Windows, and a list that forgets the suffix
@@ -628,9 +755,9 @@ function some_compiler() -> str
         # root — measured 2026-08-31, four self-tests red on the VPS while
         # CI passed them only because its leg names HEROES_COMPILER.
         if exists(path + exe_suffix())
-            return path + exe_suffix()
+            return ok(path + exe_suffix())
 
-    return ""
+    return fail(code: "none", msg: no_compiler_anywhere())
 
 # What to print when there is none — the four places, named.
 function no_compiler_anywhere() -> str
@@ -839,3 +966,145 @@ test "fixedbugs: the watchdog is a runtime limit, because no probe could name th
     assert !quick.is_err()
     assert quick.must().started
     assert quick.must().code == 1
+
+# The runtime's shown answer (`runtime/hero_os.h`): two marks for each U+FFFD
+# of the text, the byte it replaced in hexadecimal, or `--` for one the bytes
+# themselves held, and the text after them.
+test "a name that is not UTF-8 is written by its bytes, and a U+FFFD it holds stays"
+    assert written(answer: "E9caf�.hero", marks: 2) == "caf<0xE9>.hero"
+    assert written(answer: "C3FFa��b", marks: 4) == "a<0xC3><0xFF>b"
+    assert written(answer: "--E9a�b�c", marks: 4) == "a�b<0xE9>c"
+    assert written(answer: "plain", marks: 0) == "plain"
+    assert written(answer: "a�", marks: 0) == "a�"
+
+# Defect 239 in the harness's own walk (2026-10-04): a name that is not UTF-8
+# is named by its bytes and never panics, and a walk for one suffix passes
+# over a name that does not end in it. Only C can make such a name, so a
+# program of a few lines does: Linux keeps `caf<0xE9>.hero` as written, and
+# Windows' narrow `fopen` makes `café.hero`, which `FindFirstFileA` answers
+# as 0xE9 in its ANSI code page, so both run the real path. This Mac's APFS
+# refuses the name (errno 92), and there the test asserts the walks whole.
+test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (defect 239)"
+    scratch = "build/harness-selftest"
+    dir = scratch + "/walk-names"
+    only = dir + "/only"
+    nothing: [str] = []
+    assert !remove_tree(dir).is_err()
+    assert !mkdir_all(only).is_err()
+    assert !write_file(path: only + "/plain.hero", text: "").is_err()
+    maker = dir + "/maker" + exe_suffix()
+    assert !write_file(path: dir + "/maker.c", text: maker_source(only)).is_err()
+    built = run(scratch: scratch, program: "clang", words: ["clang", dir + "/maker.c", "-o", maker])
+    assert !built.is_err()
+    assert built.must().code == 0
+    made = run(scratch: scratch, program: maker, words: [maker])
+    assert !made.is_err()
+    assert made.must().code == 0 || made.must().code == 3
+
+    if made.must().code == 0
+        file = "the name of `" + only + "/caf<0xE9>.hero` is not UTF-8"
+        assert strings.contains(text: refused_walk(list_entries(scratch: scratch, dir: only)), needle: file)
+        assert strings.contains(
+            text: refused_walk(list_tree(scratch: scratch, dir: only, skip: nothing)),
+            needle: "is not UTF-8"
+        )
+        assert strings.contains(
+            text: refused_walk(list_directories(scratch: scratch, dir: only)),
+            needle: "the name of `" + only + "/d<0xE9>` is not UTF-8"
+        )
+        assert strings.contains(
+            text: refused_walk(found_under(dir: only, suffix: ".hero", reference: "")),
+            needle: "<0xE9>"
+        )
+
+        # A walk for another suffix passes over both, as `cache` walks
+        # `build/` for `.o` beside what the compiler's own tests leave there.
+        assert found_under(dir: only, suffix: ".o", reference: "").must().len() == 0
+    else
+        assert list_entries(scratch: scratch, dir: only).must() == [only + "/plain.hero"]
+        assert list_directories(scratch: scratch, dir: only).must().len() == 0
+        assert list_tree(scratch: scratch, dir: only, skip: nothing).must() == [only + "/plain.hero"]
+        assert found_under(dir: only, suffix: ".hero", reference: "").must() == [only + "/plain.hero"]
+
+    # The runtime removes a tree by its names' bytes, so none is left behind.
+    assert !remove_tree(dir).is_err()
+    assert !exists(dir)
+
+# A program that makes, under `only`, a file and a directory whose names hold
+# the byte 0xE9, and a file inside that directory: exit 3 where the file
+# cannot be made, 4 the directory, 5 the file inside it.
+function maker_source(only: str) -> str
+    return "#include <stdio.h>\n#if defined(_WIN32)\n#include <direct.h>\n#define MAKE_DIR(p) _mkdir(p)\n#else\n#include <sys/stat.h>\n#define MAKE_DIR(p) mkdir(p, 0755)\n#endif\nstatic int touch(const char *path) {\n    FILE *f = fopen(path, \"wb\");\n    if (f == NULL) return 0;\n    return fclose(f) == 0;\n}\nint main(void) {\n    if (!touch(\"" + only + "/caf\\xe9.hero\")) return 3;\n    if (MAKE_DIR(\"" + only + "/d\\xe9\") != 0) return 4;\n    if (!touch(\"" + only + "/d\\xe9/x.hero\")) return 5;\n    return 0;\n}\n"
+
+# Why a walk refused, "" where it answered.
+function refused_walk(got: [str]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# Defect 243 in the harness (2026-10-04): a variable set to bytes that are not
+# UTF-8 is named, never read as unset. Only a child's environment can hold such
+# bytes, and only a shell puts them there, so the harness's own modules, byte
+# for byte, are built under a program printing what each reader answers, and
+# run three ways. Until that day the first run printed `compiler ok ./heroes`,
+# the list's first candidate, judged in silence.
+test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named, never read as unset (defect 243)"
+    if !can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    dir = scratch + "/env-values"
+    assert !remove_tree(dir).is_err()
+    assert !mkdir_all(dir).is_err()
+
+    for name in ["absence", "mark_readers", "shell", "strings"]
+        text = read_file("tests/harness/" + name + ".hero")
+        assert !text.is_err()
+        assert !write_file(path: dir + "/" + name + ".hero", text: text.must()).is_err()
+
+    assert !write_file(path: dir + "/main.hero", text: ENV_PROBE).is_err()
+    compiler = some_compiler().must()
+    probe = dir + "/probe" + exe_suffix()
+    built = run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/main.hero", "-o", probe])
+    assert !built.is_err()
+    assert built.must().code == 0
+    bad = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$(printf 'nowhere/heroes\\351')\" HEROES_RUNTIME=\"$(printf 'nowhere/rt\\351')\" exec \"$0\"", probe]
+    )
+    assert !bad.is_err()
+    assert strings.contains(
+        text: bad.must().out,
+        needle: "compiler not_text: HEROES_COMPILER is set to `nowhere/heroes<0xE9>`, which is not UTF-8"
+    )
+    assert strings.contains(
+        text: bad.must().out,
+        needle: "runtime unasked: HEROES_RUNTIME is set to `nowhere/rt<0xE9>`, which is not UTF-8"
+    )
+    assert strings.contains(
+        text: bad.must().out,
+        needle: "env not_text: `HEROES_RUNTIME` is set, and its value is not UTF-8"
+    )
+
+    # The same readers over values that are text, and over none.
+    good = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$1\" HEROES_RUNTIME=rt exec \"$0\"", probe, compiler]
+    )
+    assert !good.is_err()
+    assert strings.contains(text: good.must().out, needle: "compiler ok " + compiler + "\n")
+    assert strings.contains(text: good.must().out, needle: "runtime ok rt\n")
+    unset = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "unset HEROES_COMPILER HEROES_RUNTIME; exec \"$0\"", probe]
+    )
+    assert !unset.is_err()
+    assert strings.contains(text: unset.must().out, needle: "compiler ok ")
+    assert strings.contains(text: unset.must().out, needle: "runtime ok \n")
+    assert !remove_tree(dir).is_err()
+
+# The program the test above builds over the harness's own modules.
+constant ENV_PROBE: str
+    "use absence\nuse shell\n\nfunction main()\n    match shell.some_compiler()\n        .ok path => print(\"compiler ok \" + path)\n        .err e   => print(\"compiler \" + e.code + \": \" + e.msg)\n\n    match absence.runtime_hint()\n        .ok value => print(\"runtime ok \" + value)\n        .err e    => print(\"runtime \" + e.code + \": \" + e.msg)\n\n    match shell.env(name: \"HEROES_RUNTIME\")\n        .ok value => print(\"env ok \" + value)\n        .err e    => print(\"env \" + e.code + \": \" + e.msg)\n"
