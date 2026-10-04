@@ -23,7 +23,7 @@
 # two images are therefore siblings and not cousins.
 #
 # What this machine answers that the x86-64 one cannot, and it is why the
-# milestone exists (`docs/work/milestones/M-arm-platform.md`):
+# milestone exists (`docs/roadmap/milestones/M-arm-platform.md`):
 #
 #   - plain `char` is **unsigned** on the ARM ABI and **signed** on x86-64,
 #     while `spec § 13` declares a parameter and a field at *the header's own

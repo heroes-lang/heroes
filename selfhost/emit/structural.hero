@@ -250,7 +250,7 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
     #
     # **The first repair asked a predicate instead and was wrong** — a fixed
     # array answers no there while the loop below still writes `&v->…` for
-    # it. Defect 009 in `docs/work/DONE.md` has the reproducer, the golden
+    # it. Defect 009 has the reproducer, the golden
     # that caught it and why the predicate could not have been right.
     lines: [str] @ []
 

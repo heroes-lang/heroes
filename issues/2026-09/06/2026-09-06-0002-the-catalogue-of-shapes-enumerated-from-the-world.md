@@ -45,7 +45,7 @@ github: none
     **Re-verified 2026-09-10: STILL OPEN, and every count it states is now
     LOW.** `docs/work/DONE.md` carries **19** numbered defect entries, not fourteen —
     18 distinct ids, since 014 was issued twice and the next is 025
-    (`docs/work/DEFECTS.md:20-26`). Regression cases are **58** `fixedbugs-*.hero`
+    (the defect list's preamble on 2026-09-10). Regression cases are **58** `fixedbugs-*.hero`
     under `tests/golden/` (17 check, 35 run, 6 unsupported) against the item's 49, and
     **28** in `tests/golden/fixedbugs/` against 27: **86** in total, not 76. **And the
     63 is UNSETTLED**: no command reproduces it. Over `selfhost/**/*.hero`,

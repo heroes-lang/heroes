@@ -11,8 +11,8 @@ a `git clone` and one clang line (M-install-channels); this row is for the
 visitor who will not run even that.
 
 **The refusal this row half-reverses, and the half of it that still stands.**
-`DESIGN-LOG.md:539` refused *a web playground* on 2026-09-03, and
-`docs/work/DONE.md:2415` records it among five candidates given a recorded
+`issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md` refused *a web playground* on 2026-09-03, and
+`issues/2026-09/04/2026-09-04-0611-settled-the-order-of-rows-33-to-51-with-a-reason-for.md` records it among five candidates given a recorded
 refusal *so the candidate is not proposed again as new*. The reason given was
 *Part 2 and Part 9: wasm breaks the FFI premise*, and both cited passages —
 `design.md:590` and `design.md:2869` — are about **a Heroes program targeting the

@@ -41,7 +41,7 @@ suites:
 M-complete-structs whose own comment carries the premise *"`char` is signed
 here"* — measured on one machine, true on three legs, false on the fourth.
 
-**It is not the cross-compilation `DESIGN-LOG.md:539` refused.** That refusal's
+**It is not the cross-compilation `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md` refused.** That refusal's
 own ground — *"the three platforms are measured on real machines by rule"* —
 argues for a fourth real machine and against a `--target` flag. And it is cheap:
 the existing image runs x86-64 **under Rosetta** on an arm64 Mac, so the new one

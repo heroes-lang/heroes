@@ -754,7 +754,7 @@ jobs:
   # message (the one paragraph a human writes), the milestone tags between the
   # previous release and this one (the chain), and the diff of
   # `spec/heroes-spec.md` between the two (the language's changelog, because
-  # the spec is the whole language). NO BINARY IS UPLOADED: `DESIGN-LOG.md:539`
+  # the spec is the whole language). NO BINARY IS UPLOADED: `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md`
   # refused prebuilt binaries as a decoy without clang, and a release is not
   # where that refusal expires.
   #

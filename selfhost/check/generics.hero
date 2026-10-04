@@ -134,7 +134,7 @@ function mismatch_shape(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
     state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: span))
 
 # THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
-# 2026-09-03; the defect is 006, in docs/work/DONE.md). `wanted<A>(what: str) ->
+# 2026-09-03; the defect is 006). `wanted<A>(what: str) ->
 # A?` has no argument that mentions `A`; what does is the type the call's
 # position asks for — the annotation of the binding, the declared result a
 # `return` or an arm answers to, a non-generic callee's parameter — which

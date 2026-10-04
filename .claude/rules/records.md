@@ -17,8 +17,8 @@ What each rule cost to learn is in `docs/records/contract/case-law.md`, cited as
 
 `docs/panel/`, `docs/records/journal/`, `docs/measurements/`, a closed issue in
 `issues/` below its card (§ The issues), `docs/records/book/beats/`,
-`docs/records/contract/`, `tests/golden/`, `docs/design/DESIGN-LOG.md`, every
-commit subject and the twelve legacy tags are append-only. Where a sentence in
+`docs/records/contract/`, `tests/golden/`, every commit subject and the twelve
+legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
 date: a measurement that was right when it was taken is history, and a record
 that quietly loses its inconvenient half is worth less than none.
@@ -30,30 +30,32 @@ makes this section a rule rather than a sentence: it went unperformed until
 2026-09-12, and `76799a18` had already removed a line from the record with every
 suite green.
 
-## A rotated record: the entries are files, the old file is a map
+## A tree of entries: one file each, and no map
 
-**A new entry in a rotated record is a NEW FILE**, `YYYY-MM-DD-HHMM-<slug>.md`
-in the tree, never a line appended to the map. Two sessions then write two files
-and never one line, which is the whole reason the shape exists.
+**A new entry is a NEW FILE**, `YYYY-MM-DD-HHMM-<slug>.md`, in `issues/` or in
+`docs/records/book/beats/`. Two sessions then write two files and never one
+line, which is the whole reason the shape exists. The minute in the name is a
+POSITION for an entry written before its record became a tree: a historical
+entry has no clock reading, and two entries of one day still have an order.
+**No directory index**, because an index is a second place where truth lives
+and the only tabulated one here drifted for nine closes in silence.
+`records/entries` holds the beats' names and `records/cards` the issues'.
 
-The file that used to hold the entries stays at its path **with the line count
-it had**, one row per entry naming the file that now holds it. That is what
-keeps a `<file>:NNN` citation resolving: CL-037 says a line number is the one
-citation shape no instrument can see, and this repository writes 161 of them
-into its two largest records. A map makes them checkable instead —
-`records/positions` reads every one and follows it.
-
-The minute in the name is a POSITION for an entry written before its rotation: a
-historical entry has no clock reading, and two entries of one day still have an
-order. **No directory index**, because an index is a second place where truth
-lives and the only tabulated one here drifted for nine closes in silence.
-
-Rotated so far: `docs/records/book/beats.md` → `docs/records/book/beats/` (2026-09-12, 114
-entries), `DESIGN-LOG.md` → `docs/records/log/` (620) and `docs/work/DONE.md` →
-`docs/records/done/` (491), all three on 2026-09-12. The last two trees moved
-into `issues/` on 2026-10-04 (§ The issues), each file keeping its name, and the
-two maps' rows were repointed there with their heights unchanged.
-`ROTATED` in `tests/harness/suite_records.hero` is the live list.
+**No map either, since 2026-10-05** — author instruction, meant as: *I prefer
+cleanliness for the future to keeping the historical legacy*. From 2026-09-12
+the three files whose entries became trees, `docs/records/book/beats.md`,
+`DESIGN-LOG.md` (later `docs/design/DESIGN-LOG.md`) and `docs/work/DONE.md`,
+stayed behind at the heights they had, one row per entry, so that a `<file>:NNN`
+citation still landed where it always had (CL-037: a line number is the one
+citation shape no instrument can see). That day all three were deleted. Every
+living citation by line was resolved first to the file it named; a living file
+names an entry by its path from then on, which `records/citations` checks. The
+citations inside dated records read against the maps at `d8a9913e`, the last
+commit that held them, as the specification's line citations read against
+`834d804f` (`.claude/rules/spec-shape.md`). **The rule this leaves**: when a
+record's shape changes, the citations into it that a living file holds are
+rewritten to the new shape in the same change, and no file is kept only so an
+old citation still resolves.
 
 ## And the record says whose idea it was
 
@@ -92,7 +94,7 @@ release is a commit, never a milestone**, and it is the author's act on a clean
 moves only in the commit that carries the tag. While `X` is 0, `Y` moves when
 `git diff vA vB -- spec/heroes-spec.md` is not empty and `Z` when it is. The CI
 is the instrument, and no binary is uploaded. The reasoning and the six choices
-are CL-067 and the `DESIGN-LOG.md` row of 2026-09-07.
+are CL-067 and the decision issue of 2026-09-07.
 
 ## The issues — author instruction 2026-10-04
 
@@ -113,7 +115,7 @@ milestone's item that changes what a Heroes program or the `heroes` command does
 for somebody writing programs; a `task`, a milestone's item that serves the
 project, its instruments, records, platforms and site; and a `learn` question,
 `/learn`'s. **Not an issue**: a milestone, which is its page in
-`docs/work/milestones/` and its row in the ROADMAP's chain and becomes a GitHub
+`docs/roadmap/milestones/` and its row in the ROADMAP's chain and becomes a GitHub
 milestone named `M-<name>`; a sitting, a journal, a beat, the case law, a
 measurement. Those are the account an issue links to.
 
@@ -241,7 +243,7 @@ same physical line**, because the citation check reads one line at a time.
 section binds is their front pages. `issues/README.md` carries **a very short
 preamble** alone, under `PREAMBLE_CEILING`, and no item, no banner and no count:
 the open counts are derived from the issues' cards. A milestone's page under
-`docs/work/milestones/` carries its reasoning alone, which `/step` § 1 calls the
+`docs/roadmap/milestones/` carries its reasoning alone, which `/step` § 1 calls the
 thing that must not be lost, under no ceiling and with no item. `docs/ROADMAP.md`
 carries a very short preamble, then the two open counts, then its tables. **No
 other story goes in any of them**, and a story already there is MOVED rather
@@ -282,7 +284,7 @@ numbers to the banners the two lists state.
 **And the ROADMAP's counts had already drifted when the rule was given**, which
 is why they get an instrument and not a convention: § Where we are read *open
 defects 0, open decisions 0* while `DEFECTS.md`'s own banner read `**OPEN: 3**`.
-That is § A rotated record's lesson — an index is a second place where truth
+That is § A tree of entries' lesson — an index is a second place where truth
 lives — arriving in the one document the author opens to see where the project
 is.
 

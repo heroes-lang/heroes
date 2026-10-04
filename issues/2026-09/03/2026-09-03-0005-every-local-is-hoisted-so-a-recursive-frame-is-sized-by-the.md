@@ -10,7 +10,7 @@ github: none
 - [ ] **M-qbe-backend** | every local is hoisted, so a recursive frame is sized by the whole body | `CLAUDE.md` §7 · `examples/interpreter/syn/expr.hero` · `selfhost/emit/`
 
     **Origin:** measured 2026-09-03 at M-corpus-depth step 5, while measuring
-    defect 007 in `docs/work/DONE.md`. Its home since 2026-09-04: it had named
+    defect 007. Its home since 2026-09-04: it had named
     no milestone, only *the next panel that touches the emitter or the IR*. That
     milestone's own warrant is the one this question needs — a second backend is
     what turns *the IR is target-agnostic* from an assertion into a measurement,
@@ -49,7 +49,7 @@ github: none
     wrote — so the sitting reads that census before pricing per-block scoping
     rather than counting again.
 
-    **Where to look also:** defect 007 in `docs/work/DONE.md` ·
+    **Where to look also:** defect 007 ·
     `docs/ROADMAP.md` § M-typed-inspection.
     **Why it matters:** a recursion ceiling nobody chose is a limit set by an
     implementation detail.

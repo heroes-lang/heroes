@@ -53,5 +53,5 @@ whether its own warrant has grown.
 record is
 `docs/records/done/2026-09-14-1900-the-form-is-closed-at-three-words-and-two-of-the-three-items-were-decisions.md`.
 The highlighter class was not closed but MOVED, to
-`docs/work/milestones/M-vscode-extension.md`, which is the milestone whose
+`docs/roadmap/milestones/M-vscode-extension.md`, which is the milestone whose
 subject it is; closing it here would have been ticking somebody else's work.

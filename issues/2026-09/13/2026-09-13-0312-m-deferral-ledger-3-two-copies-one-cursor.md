@@ -9,7 +9,7 @@ github: none
 
 - [ ] **M-deferral-ledger 3** | The specification says *"Every value behaves as an independent copy: after `b = a`, mutating `b` never changes `a`. No aliasing exists anywhere."* Write the shortest program you can that makes that sentence false, and say which single field type is what makes it possible. Then say why the repair is a sentence in the specification rather than a change to the compiler, and which rule of the operating contract decides that.
 
-    **Where to look:** `spec/heroes-spec.md` § 3; `docs/work/DEFECTS.md` item 030
+    **Where to look:** `spec/heroes-spec.md` § 3; defect 030
     and its reproducer; `examples/ledger/db/sqlite.hero:287`, which ships the
     shape; CLAUDE.md § 12's first sentence about the spec and the compiler.
 

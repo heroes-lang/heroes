@@ -72,7 +72,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
-| `docs/**`, `issues/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
+| `docs/**`, `issues/**`, `CLAUDE.md`, `.claude/**` | `records` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
 

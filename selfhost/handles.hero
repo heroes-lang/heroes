@@ -1,4 +1,4 @@
-# What a C handle is, asked once (panel 145, 2026-09-13; `docs/work/DEFECTS.md` 029).
+# What a C handle is, asked once (panel 145, 2026-09-13; defect 029).
 #
 # A **handle** is a `record` declared inside an `extern` group with a `tag` and
 # no fields: a pointer to a type the header names. `record Db tag sqlite3` is

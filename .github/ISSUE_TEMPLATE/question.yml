@@ -16,7 +16,7 @@ body:
           wrong;
         - `docs/panel/` holds the design sessions, with the vetoes and what
           lifted them;
-        - `DESIGN-LOG.md` is every decision, dated, one line.
+        - `issues/` holds every decision, one file each, named for its day.
   - type: textarea
     id: question
     attributes:

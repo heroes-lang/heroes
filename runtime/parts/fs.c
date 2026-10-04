@@ -10,7 +10,7 @@
  * `direct.h` is `ffi_missing_header` off Windows, this language has no `#if` by
  * design, and `struct stat`'s `st_mode` is two bytes on Darwin against four on
  * glibc, so no `record` spelling passes both (measured, cross-compiled). The
- * platform arm belongs to the runtime — DESIGN-LOG:282's rule, and the same one
+ * platform arm belongs to the runtime — issues/2026-08/14/2026-08-14-0005-is-not-a-fact-about-the-program-so-the-driver.md's rule, and the same one
  * `parts/os.c:21` already follows for `_setmode`.
  *
  * WHAT EACH ONE OWES THAT THE SHELL WAS PROVIDING SILENTLY, measured by panel

@@ -40,7 +40,7 @@ that prevents the next one is `.claude/rules/diagnostics-and-goldens.md`'s walk,
 widened the same day.
 
 **The thirteen candidates this reading refused, each with the rule that refused
-it, are in `docs/work/DONE.md`** with the five `DESIGN-LOG.md:539` had already
+it, are in `issues/2026-09/10/2026-09-10-0734-settled-the-criterion-exists-now-and-lives-in-what.md`** with the five `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md` had already
 refused on 2026-09-03 — because that entry's own stated reason is *so the
 candidate is not proposed again as new*.
 

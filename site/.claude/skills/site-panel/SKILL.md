@@ -7,7 +7,7 @@ description: Convene the site's five-expert review panel on heroes-lang.org — 
 
 This is **not** the language panel (CLAUDE.md §4): the site is not spec,
 surface, diagnostics or architecture, so no `docs/panel/<NNN>` record and no
-DESIGN-LOG line. The deliverable is the site getting better, and the record is
+decision issue. The deliverable is the site getting better, and the record is
 the commit that does it.
 
 ## The seats

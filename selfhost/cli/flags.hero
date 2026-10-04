@@ -163,7 +163,7 @@ function flags() -> [str]
 # `-Wl,` to a compile step is an unused argument, and passing `/STACK:` to `ld`
 # is an error — so it goes into the two link lines only, and the platform is read
 # off `exe_suffix()`, which is the runtime answering about the machine it is on
-# (DESIGN-LOG:282's rule, `in_the_c_runtime`'s shape). `selfhost/` gains no
+# (issues/2026-08/14/2026-08-14-0005-is-not-a-fact-about-the-program-so-the-driver.md's rule, `in_the_c_runtime`'s shape). `selfhost/` gains no
 # platform axis: it asks a question and gets a fact.
 function link_flags() -> [str]
     # **`-rdynamic` on every POSIX link line** (panel 104, 2026-09-03). The stack

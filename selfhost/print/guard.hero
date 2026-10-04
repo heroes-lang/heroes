@@ -6,7 +6,7 @@
 #
 # `fmt` checked that its INPUT parsed and never looked at what it wrote,
 # so it deleted seven arms out of a compiler source file at exit 0 (defect
-# 003 (docs/work/DONE.md), the third instance of this class after panels
+# 003, the third instance of this class after panels
 # 014 and 060/061, every one found by a person).
 #
 # FOUR CHECKS OF THE OUTPUT, and they are four different properties,

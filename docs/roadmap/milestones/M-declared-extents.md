@@ -98,7 +98,7 @@ parameter's extent is erased by C, so route 6 would compare the author's
 declaration to the author's argument. What the milestone delivered instead is
 the relation declared where C can check it.
 
-**Its four open items moved to `docs/work/milestones/M-agreed-retention.md`** at
+**Its four open items moved to `docs/roadmap/milestones/M-agreed-retention.md`** at
 this milestone's close, 2026-09-21. A closed milestone's file is a place nobody
 looks, which `records/homes` refuses in as many words, and no scheduled row was
 their subject: what they ask is who frees what a C function is handed, which is

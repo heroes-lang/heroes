@@ -11,7 +11,7 @@ github: none
 
     **Where to look:** `docs/records/journal/051-reflection-verdict.md`
     § What landed, and what carried forward, and the rehomed item in
-    `docs/work/milestones/M-core-packages.md`.
+    `docs/roadmap/milestones/M-core-packages.md`.
 
     **Why it matters:** the pair is the clearest example in the project of a
     repair that is honest about its own reach. One failure is a name written

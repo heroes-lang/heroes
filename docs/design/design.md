@@ -58,11 +58,11 @@ shape how you work:
    are queued so the author can hypothesise before reading the fix — diagnosis is still where the
    density of learning is highest; it just no longer blocks the pipeline.
 
-Also maintain a `DESIGN-LOG.md`: one line per decision plus the reason. In three months this is the
-only thing that distinguishes reasoning from improvisation.
+Also record every decision as a `decision` file of `issues/`, with its reason. In three months
+this is the only thing that distinguishes reasoning from improvisation.
 
 A declared end-goal of the journey itself: a **mini-book about how this language came to be** — the
-adventure, the decisions, the prompts, the wrong turns. The journal, the DESIGN-LOG, the panel
+adventure, the decisions, the prompts, the wrong turns. The journal, the decision issues, the panel
 records and the story beats in `docs/records/book/` are its raw material, collected as we go; see
 `docs/records/book/README.md`.
 

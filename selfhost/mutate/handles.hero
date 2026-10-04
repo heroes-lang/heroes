@@ -1,5 +1,5 @@
 # One C handle handed where another belongs — the sixteenth mutation operator
-# (design.md Part 11; panel 145, 2026-09-13; `docs/work/DEFECTS.md` 029).
+# (design.md Part 11; panel 145, 2026-09-13; defect 029).
 #
 # `sqlite3_step(db)` for `sqlite3_step(statement)` builds at zero diagnostics
 # and exits 139 on Darwin, `rows: -1` at exit 0 on Linux, because every C

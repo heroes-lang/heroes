@@ -142,7 +142,7 @@ function text_of(v: Value) -> str?
 # check` accepted it at exit 0 and `heroes build` died at exit 134 with a bare
 # `assert failed: false`, because inference read the arguments only and left
 # `A` as a silent error type all the way to the emitter. It was rewritten as two
-# concrete functions for a few hours (defect 006 in `docs/work/DONE.md`), and it is one generic
+# concrete functions for a few hours (defect 006), and it is one generic
 # again because panel 105 ruled, the same evening, that a type parameter the
 # arguments leave unbound takes the type the context asks for — the rule `fail`,
 # `[]` and `nullptr` already followed. A call with no context, `x = wanted(...)`,

@@ -46,6 +46,6 @@ you hold.
 ## No prebuilt binaries exist
 
 Nothing here ships a compiled artifact — no release attaches one, by a decision
-on the record (`DESIGN-LOG.md`, 2026-09-03). If you are holding a binary that
+on the record (`issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md`). If you are holding a binary that
 claims to be Heroes and did not come out of your own clang, it did not come from
 this project.

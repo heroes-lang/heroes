@@ -805,7 +805,7 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
      * neither arm. The Rust bootstrap's own record walk survived the same input
      * because `read_to_string` returns `Err`, and the Heroes port transcribed
      * that guard faithfully to `suite_records.hero:148` — where it could never
-     * fire. defect 002 in `docs/work/DONE.md` is the record. */
+     * fire. defect 002 is the record. */
     if (!hero_utf8_valid(buffer, got)) {
         hero_release(buffer);
         *status = HERO_OS_NOT_TEXT;

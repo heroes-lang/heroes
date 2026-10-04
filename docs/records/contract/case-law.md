@@ -2024,3 +2024,21 @@ three facts the item states in prose given a structured home the instrument
 holds to agree with the prose, so neither drifts. The folder is the day, not the
 kind and not a numbered bucket, because a kind is corrected and a counter is the
 one number two lanes take at once (`records/numbering`).
+
+## CL-081 — No file is kept only so an old citation still resolves
+2026-10-05 · author instruction · `.claude/rules/records.md` § A tree of entries
+
+Meant as: *I prefer cleanliness for the future to keeping the historical
+legacy; delete it and simplify.* Three maps had stood since 2026-09-12 at the
+heights of the records they were rotated from, 4,071, 1,119 and 140 lines of
+paths, so that a citation by line number still landed (CL-037). They cost a
+check apiece, a constant pinning each height, a paragraph in every rule that
+named the records, and a reader's confusion at a file named DONE that held
+nothing done. Measured when they went: 23 such citations in living files and
+117 inside dated records. **What it cost to learn**: one of the 23,
+`docs/work/DONE.md:2415`, had pointed two lines past the entry it meant since
+before the rotation, and the map faithfully carried the drift for three weeks:
+a line citation is wrong in the same silent way whether a map keeps it or not.
+The rule since: a change of shape rewrites the living citations into it in the
+same change, and the dated ones read against the commit that last held the old
+shape.

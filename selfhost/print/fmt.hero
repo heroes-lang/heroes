@@ -82,12 +82,12 @@ use stable
 # literals (§4.9 leaves the choice to the formatter on purpose).
 #
 # 88 until 2026-08-28, then 120 by author instruction. The 88 was never
-# adjudicated either — `DESIGN-LOG:46` fixed it with `—` in the panel
+# adjudicated either — `issues/2026-08/04/2026-08-04-0012-policies-fixed-4-15-s-mandatory-canonical-formatter.md` fixed it with `—` in the panel
 # column, and panel 007 ruled on WHERE a line may break (inside brackets
 # only), never on how wide. What the number buys is measured in the
 # commit that moved it: at 88 the canonical form of `selfhost/` was
 # +19.7% longer than the source, and the breaking is what made a run of
-# match arms stop being a run — every non-fixpoint in defect 004 (docs/work/DONE.md)
+# match arms stop being a run — every non-fixpoint in defect 004
 # began with a line this constant decided to break.
 constant WIDTH: i64
     120
@@ -536,7 +536,7 @@ function field_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [to
     #
     # Deleting that blank PROMOTED a remark to documentation: a different
     # program that parses and is a fixpoint, which is why only the tree
-    # guard saw it (defect 004 (docs/work/DONE.md) § What is still owed, found by panel
+    # guard saw it (defect 004 § What is still owed, found by panel
     # 095's compiler-engineer). The same test as `fmt_block` uses between
     # two statements, for the same reason — the layout the author chose is
     # content — and here it is content the CHECKER reads.
@@ -558,7 +558,7 @@ function case_line(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
     # The same §4.1 discriminator `field_line` carries, and here because a
     # variant case takes a doc comment too (`dump.hero`'s
     # `case_lines` prints one). This is the ADJACENT SHAPE of
-    # defect 004 (docs/work/DONE.md)'s repair, fixed with it rather than after it —
+    # defect 004's repair, fixed with it rather than after it —
     # CLAUDE.md §1's fourth rule: the provoking case is a witness and a
     # `record` field and a `variant` case are the same witness twice.
     if f.last_line > 0 && page.blank_between(s, above: f.last_line, below: line)
@@ -595,7 +595,7 @@ constant IF_BLOCK: i64
 
 # THIS MUST AGREE WITH `statement()` AND `valued()` ARM FOR ARM, and that
 # obligation is the whole risk of this function. It is a SECOND dispatch
-# over the same two kinds, and defect 003 (docs/work/DONE.md) is what a second dispatch
+# over the same two kinds, and defect 003 is what a second dispatch
 # that disagrees costs: `valued` knew a control form can sit at a
 # binary's right edge, `render` did not, and seven arms were deleted at
 # exit 0. `a_block_opener_is_what_valued_prints_a_block_for` is the test
@@ -671,7 +671,7 @@ function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
         # `record`, `variant` or `extern` body is reached by other
         # callers of comments_before, and design.md §4.1 makes the blank
         # BELOW a comment there the difference between a remark and that
-        # field's documentation (defect 004 (docs/work/DONE.md) § What is still owed).
+        # field's documentation (defect 004 § What is still owed).
         if !first && page.comment_waits_before(f, s, comments, line: line)
             page.blank_line(@f)
         page.comments_before(@f, s, comments, line: line, indent: indent)
@@ -904,7 +904,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                         # `line` alone either — a value THIS FORMATTER
                         # broke across lines occupies them, and stopping
                         # short grew a blank line on every re-format
-                        # (defect 004, `docs/work/DONE.md`). The value's own extent is
+                        # (defect 004). The value's own extent is
                         # the question, and fmt_block already asks it. And
                         # never back: an inline `if` moved it past its blocks.
                         stop: i64 @ line
@@ -1017,7 +1017,7 @@ function block_head(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [to
 # THE INVARIANT: render() returns a control form's HEADER ONLY, and owes
 # the blocks to valued(). That obligation held for a value that IS a
 # control form and not for one that CONTAINS it — which deleted seven
-# arms out of digits.hero at exit 0 (defect 003, `docs/work/DONE.md`). A control form
+# arms out of digits.hero at exit 0 (defect 003). A control form
 # runs to the end of its line and carries its block indented below, so
 # it can only ever be the RIGHTMOST operand: that is what makes the rest
 # of the expression printable as a head.
@@ -1181,7 +1181,7 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, 
     # string `statement()` puts there, and its width comes from the
     # literal rather than typed, so the two cannot drift in characters.
     # `return ` was missing here: the arm measured short, joined the run,
-    # was padded past the margin and then broken (defect 004, `docs/work/DONE.md`).
+    # was padded past the margin and then broken (defect 004).
     head: i64 @ 0
 
     match tree.stmts[stmt_at].kind
@@ -1197,7 +1197,7 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, 
         # Any other statement shape prints on its own line by
         # construction, so it is in the run and its length is its
         # head's. NO `indent`: `close_run` adds it, and this path added
-        # it twice (defect 004, `docs/work/DONE.md`).
+        # it twice (defect 004).
         return ok(left + 4)
 
     if spans_lines(tree, s, lines: lines, value: value)
@@ -1300,7 +1300,7 @@ test "fmt is idempotent on a program with groups, comments and a match"
     # The group survives as one head line, the arms line up.
     assert once == "# A file header remark.\n\nuse geom\n\nextern \"m.h\" link \"m\"\n    function sqrtish(x: f64) -> f64\n    constant K: i64\n\n# Documentation for pick.\nfunction pick(n: i64) -> i64\n    match n\n        0 => return 10\n        1 => return 20\n        _ =>\n            v = n * 2\n            return v\n\nfunction main()\n    print(pick(n: 1))\n"
 
-# defect 004 (docs/work/DONE.md) § What is still owed, closed 2026-08-28 (`/decide` answer
+# defect 004 § What is still owed, closed 2026-08-28 (`/decide` answer
 # `4a`). §4.1 makes the blank line below a comment the difference between
 # an ordinary remark and the next member's DOCUMENTATION, and deleting it
 # promoted one — a different program that parses, is a fixpoint, and was
@@ -1328,7 +1328,7 @@ test "the blank line that decides remark from documentation survives"
     sc = source.new_source(name: "t.hero", text: cases)
     assert format_file(pc.tree, sc, pc.comments, pc.uses, pc.decls) == cases
 
-# defect 003 (docs/work/DONE.md): fmt deleted seven arms out of digits.hero at exit 0.
+# defect 003: fmt deleted seven arms out of digits.hero at exit 0.
 # Four shapes, because the provoking case is a witness and not the class
 # (CLAUDE.md §1): the plain binary tail, a chain of two operators, a
 # match nested inside an arm of the outer one, and an `if` rather than a

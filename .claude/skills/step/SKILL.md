@@ -16,7 +16,7 @@ for it before a step; no other ceremony attaches to it.)
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
-**Opening a milestone means opening its own page, `docs/work/milestones/<its name>.md`,
+**Opening a milestone means opening its own page, `docs/roadmap/milestones/<its name>.md`,
 which carries its reasoning, and the open `feature` and `task` issues whose card
 names it** (`grep -rl "milestone: <its name>" issues/`). That list is work with a home — a measurement to run, a
 paragraph owed, a row to price — put aside precisely because doing it earlier
@@ -148,16 +148,13 @@ Milestone close — the checklist (this is its only copy):
   and why**;
 - one story beat, **a new file in `docs/records/book/beats/`** named
   `YYYY-MM-DD-HHMM-<slug>.md` and holding the one line
-  `date | milestone | the beat`. Never a line appended to `docs/records/book/beats.md`,
-  which has been the MAP since 2026-09-12: it keeps the line count the record
-  had so that a `beats.md:NNN` citation still resolves, and `records/rotated`
-  goes red on a line added to it;
+  `date | milestone | the beat`; the directory, read in name order, is the
+  book's chronology, and no index of it is kept;
 - one `decision` issue per decision made, a new file of today's folder of
   `issues/`, closed the day it is filed (no box), its card's `commit` `self`,
-  saying the decision, its reason, its design.md § and its panel.
-  `DESIGN-LOG.md` has been the MAP since 2026-09-12 and is never appended to;
+  saying the decision, its reason, its design.md § and its panel;
 - **score every prediction whose milestone this is**, and lapse the ones you
-  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/work/milestones/
+  cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/roadmap/milestones/
   docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named
   `crates/heroes/src/measure/gate.rs` until 2026-08-23 — doubly dead: the tree is
   archived, and panel 086 moved the ledger's 38 rows out of that doc comment into
@@ -188,7 +185,7 @@ Milestone close — the checklist (this is its only copy):
   its date, tag and journal link, and the counts in the summary table are
   **re-measured, never carried** (CLAUDE.md §1). **The reasoning a future
   milestone has to honour stays in that milestone's own file under
-  `docs/work/milestones/`**, and the rest goes to the journal.
+  `docs/roadmap/milestones/`**, and the rest goes to the journal.
 
   **This bullet pointed at a § The milestones that does not exist, from
   2026-09-12 until 2026-09-14.** `abc3d503`, *"The ROADMAP becomes the chain and

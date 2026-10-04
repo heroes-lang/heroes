@@ -297,7 +297,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
 
     # **A `use` binds its name for the whole file, so a local may not take it
     # either** — the mirror of `use_shadows_a_declaration` and the same rule,
-    # because `use` BINDS (panel 031 R3, ratified at `DESIGN-LOG:185`, which
+    # because `use` BINDS (panel 031 R3, ratified at `issues/2026-08/11/2026-08-11-0041-modules-the-namespace-at-71-measured-spec-tokens.md`, which
     # chose that verb for exactly this coverage). FIRST of the four, because a
     # `use` line is always in this file. **It reports and then BINDS**, unlike
     # the three below: returning here leaves the name meaning the MODULE,

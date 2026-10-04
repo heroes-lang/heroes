@@ -1674,7 +1674,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 index @ index + 1
 
             # THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
-            # 2026-09-03; defect 006, docs/work/DONE.md). `wanted<A>(what: str) -> A?`
+            # 2026-09-03; defect 006). `wanted<A>(what: str) -> A?`
             # has no argument that mentions `A`; the type this call's
             # position asks for does — the same expectation a literal, an
             # empty `[]` and `fail(…)` take theirs from. Fill-only: a

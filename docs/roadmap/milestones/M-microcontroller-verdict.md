@@ -17,7 +17,7 @@ is the full lane, because a new class of machine touches the runtime's layout
 (§1.12), the tool surface (§10) and a refusal in the log. It is handed seven
 questions, each with its measurement beside it:
 
-1. **Whether `DESIGN-LOG.md:539`'s refusal reaches a machine the compiler cannot
+1. **Whether `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md`'s refusal reaches a machine the compiler cannot
    run on.** Cross-compilation was *considered and not entered* on 2026-09-03
    because *the three platforms are measured on real machines by rule*. A board
    on the author's desk is a real machine and the program is measured there; but

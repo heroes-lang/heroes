@@ -185,7 +185,7 @@ function no_generic_survives(blk: containers.Block, known: Facts, label: str, @p
     if known.generic_result
         problems @ problems.push(label + "the result still has a type parameter in it")
 
-# NO POISON SURVIVES EITHER (defect 006, docs/work/DONE.md, 2026-09-03). The checker
+# NO POISON SURVIVES EITHER (defect 006, 2026-09-03). The checker
 # answers the error id for an expression it has ALREADY REPORTED, so that
 # one mistake is one diagnostic (§4.5's poison class) — and a program that
 # reached this phase has no diagnostics, or the compile would have stopped

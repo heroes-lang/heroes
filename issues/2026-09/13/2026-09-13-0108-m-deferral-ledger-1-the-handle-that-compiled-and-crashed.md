@@ -12,7 +12,7 @@ github: none
     **Where to look:** `spec/heroes-spec.md` § 3 (the `ptr` `cstr` row) and § 9 (the
     same-typed-argument rule); `examples/sqlite/main.hero:46-48,74`;
     `selfhost/emit/callback_guard.hero` and the probe line in the emitted C
-    (`heroes build --emit-c`); `docs/work/DEFECTS.md` item 029 and
+    (`heroes build --emit-c`); defect 029 and
     `docs/panel/135-the-form-was-cheap-and-the-reasons-under-it-were-borrowed.md`
     § Found beside the sitting.
 

@@ -420,7 +420,7 @@ test "a type parameter that appears nowhere in the signature is refused at its l
 # `type_mismatch`. So the pair this rule was written to catch is still caught,
 # and the pair it was catching by accident is not a hole.
 #
-# **What it buys is the shape C uses most** (`docs/work/DEFECTS.md` 042).
+# **What it buys is the shape C uses most** (defect 042).
 # `getaddrinfo` hands back `struct addrinfo **`, which is a handle, and takes
 # `const struct addrinfo *hints`, which is a record with fields; `netdb.h`
 # declares 19 struct-pointer-returning entry points and no typedef for any of
