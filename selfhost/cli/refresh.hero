@@ -183,7 +183,13 @@ function probed() -> i64?
 # the contract records it in place of a digest, and why is on
 # `selfhost/measure/pinned.hero`'s `CONTRACT_TOKENS`.
 function refreshed(text: str, spec: bool, vendored: i64) -> [str]?
-    if process.env(name: KEY_NAME).len() == 0
+    # A key that is not UTF-8 is named as one, never said unset (defect 243).
+    key = process.env(name: KEY_NAME)
+
+    if key.is_err()
+        return fail(code: "no_key", msg: why_text(key))
+
+    if key.must().len() == 0
         return fail(
             code: "no_key",
             msg: "`" + KEY_NAME + "` is unset. `.env.example` § Anthropic carries the shape; the real `.env` is ignored by git and stays that way — the repository is public"

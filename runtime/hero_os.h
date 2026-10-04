@@ -73,6 +73,13 @@ HeroStr hero_file_read(const char *path, int64_t *status);
  * status. `parts/os.c` says why each choice was made. */
 HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks);
 
+/* One environment variable read as the shown read reads a file (defect 243):
+ * HERO_OS_NOT_FOUND and "" where it is unset, HERO_OS_OK and its value where
+ * that is UTF-8, HERO_OS_NOT_TEXT with marks and the shown value where it is
+ * not, the marks counted in `*marks` as `hero_file_read_shown` counts them.
+ * Bound in `selfhost/cli/process.hero`'s own group, like the read above. */
+HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks);
+
 /* The text, written whole, replacing whatever was there. Returns a status. */
 int64_t hero_file_write(const char *path, HeroStr text);
 

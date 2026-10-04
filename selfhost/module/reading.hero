@@ -19,6 +19,7 @@
 use source
 use diag
 use not_text
+use byte_evidence
 use cli/digest
 use cli/files
 use cli/process
@@ -58,48 +59,7 @@ function source_text(path: str) -> Text?
         none: [source.Fault] = []
         return ok(Text(text: got, faults: none))
     shown = got.slice(from: marks, to: got.len())
-    return ok(Text(text: shown, faults: faults_of(marks: got.slice(from: 0, to: marks), text: shown)))
-
-# The marks read against the text they describe: two for each U+FFFD of the
-# text in order, the byte it stands for in hexadecimal, or `--` where the file
-# itself held a U+FFFD, which is text and no fault. A U+FFFD is the three bytes
-# EF BF BD, and a byte search finds only whole ones: EF leads and never
-# continues a character.
-#
-# **Bounded, and exact where it is told** (panel 189): every fault of the
-# first `not_text.TOLD` + 1 lines holding one, then the first of each further
-# line, which is what `not_text` names (eight lines told, a ninth to know there
-# are more) and counts (how many more). The compiler's own 8 MB binary named
-# as a source holds 3.8 million such bytes, and recording each cost 356 MB.
-function faults_of(marks: str, text: str) -> [source.Fault]
-    out: [source.Fault] @ []
-    at: i64 @ 0
-    mark: i64 @ 0
-    line: i64 @ 0
-    last: i64 @ -1
-    lines: i64 @ 0
-
-    while at + 2 < text.len() && mark + 1 < marks.len()
-        if text[at] == 239 && text[at + 1] == 191 && text[at + 2] == 189
-            if marks[mark] != '-' && (line != last || lines <= not_text.TOLD + 1)
-                if line != last
-                    lines @ lines + 1
-                out @ out.push(source.Fault(at: at, byte: hex(marks[mark]) * 16 + hex(marks[mark + 1])))
-                last @ line
-            mark @ mark + 2
-            at @ at + 3
-        else
-            if text[at] == '\n'
-                line @ line + 1
-            at @ at + 1
-
-    return out
-
-# One upper-case hexadecimal digit's value, as the runtime writes them.
-function hex(b: u8) -> i64
-    if b >= 'A'
-        return (b - 'A').to_i64().must() + 10
-    return (b - '0').to_i64().must()
+    return ok(Text(text: shown, faults: not_text.faults_of(marks: got.slice(from: 0, to: marks), text: shown)))
 
 # A file read for a cache's key: the text a reader of it scans, which is its
 # own where it is UTF-8 and the shown text where it is not, and its key.
@@ -255,21 +215,6 @@ test "the directory that would hold a path is the path without its last part"
     assert holder("/c.hero") == ""
     assert holder("a/") == "a"
 
-# Panel 189: the marks read against the shown text, a U+FFFD the file held told
-# apart from one that stands for a byte.
-test "the marks name each byte that is not text, and a U+FFFD the file held is text"
-    one = faults_of(marks: "E9", text: "caf�")
-    assert one.len() == 1
-    assert one[0].at == 3
-    assert one[0].byte == 233
-    held = faults_of(marks: "--80", text: "�a�")
-    assert held.len() == 1
-    assert held[0].at == 4
-    assert held[0].byte == 128
-    assert faults_of(marks: "", text: "plain").len() == 0
-    assert hex('0') == 0
-    assert hex('F') == 15
-
 test "a compilation's faults stand in its text, the root's first"
     inputs: [source.InputFile] = [
         source.user_file(name: "main.hero", text: "# �\n")
@@ -313,20 +258,6 @@ test "a file that is not UTF-8 has a key no file of text can have"
         assert !write_file(path: "build/selftest-reading-spelled.h", text: spelled).is_err()
         assert key_of("build/selftest-reading-spelled.h").must() != held.key
 
-test "every fault of the first nine lines is kept, then the first of each line"
-    lines: [str] @ []
-    marks: [str] @ []
-
-    for _ in range(from: 0, to: 12)
-        lines @ lines.push("�x�")
-        marks @ marks.push("E9E8")
-
-    kept = faults_of(marks: marks.join(""), text: lines.join("\n") + "\n")
-    assert kept.len() == 21
-    assert kept[17].byte == 232
-    assert kept[18].byte == 233
-    assert kept[20].at == 11 * 8
-
 test "a file of text reads with no faults, and a missing one fails as read_file does"
     assert !write_file(path: "build/selftest-reading-text.hero", text: "# café\n").is_err()
     t = source_text("build/selftest-reading-text.hero").must()
@@ -355,4 +286,4 @@ test "NUL at every other byte is told as UTF-16 with no mark, in either order, a
     assert big[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 big-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
     elsewhere = told_of(fixtures + "nul-and-latin1.txt")
     assert elsewhere[0].notes[0] == "the file also holds NUL bytes, which no source text holds: it is likely not a text file at all"
-    assert not_text.utf16_order(source_text(fixtures + "nul-and-latin1.txt").must().text) == ""
+    assert byte_evidence.utf16_order(source_text(fixtures + "nul-and-latin1.txt").must().text) == ""

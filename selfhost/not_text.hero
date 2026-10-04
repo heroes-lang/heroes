@@ -21,19 +21,14 @@
 # the compiler can only guess, and a fix applied would write the shown text
 # back, U+FFFD where every other such byte was.
 #
-# **The note names what the bytes prove and nothing they do not** (panel
-# 189's R4): a UTF-16 byte-order mark, NUL at every other byte, a UTF-8
-# character cut short or one UTF-8 forbids. A byte that begins no UTF-8
-# character names no encoding, since one byte is a different letter in each:
-# `82` is `é` in the OEM code page 437 `cmd` writes and `‚` in Windows-1252
-# (the ffi-pragmatist's measurement), and a note naming either was false for
-# the other.
+# **The note under the first names what the bytes prove and nothing they do
+# not** (panel 189's R4): `byte_evidence.hero` reads it.
 
 use token
 use diag
 use source
 use source_extent
-use shown_char
+use byte_evidence
 
 # How many lines holding such a byte are told one by one.
 constant TOLD: i64
@@ -59,7 +54,7 @@ function told(s: source.Source, index: i64) -> [diag.Diagnostic]
     lines = by_line(s, faults: mine)
     limit: i64 @ TOLD
 
-    if holds_nul(text)
+    if byte_evidence.holds_nul(text)
         limit @ 1
 
     for line in lines
@@ -72,7 +67,7 @@ function told(s: source.Source, index: i64) -> [diag.Diagnostic]
         )
 
         if out.len() == 0
-            d.notes @ d.notes.push(reading(text: text, mine: mine, start: start))
+            d.notes @ d.notes.push(byte_evidence.reading(text: text, mine: mine, start: start))
             d.notes @ d.notes.push("nothing else in this file is read until it is UTF-8")
         out @ out.push(d)
 
@@ -89,17 +84,59 @@ function told(s: source.Source, index: i64) -> [diag.Diagnostic]
 # The first byte of a file that is not text, said for a tool that cannot go
 # on with such a file and has no diagnostic to give (`measure`): where it is,
 # by line and column as a diagnostic counts them, its value, and how many
-# lines hold one, which the faults keep exactly (`module/reading.faults_of`
-# keeps every line's first, where it does not keep every byte).
+# lines hold one, which the faults keep exactly (`faults_of` keeps every
+# line's first, where it does not keep every byte).
 function first_said(name: str, text: str, faults: [source.Fault]) -> str
     s = source.new_source(name: name, text: text)
     at = source.locate(s, faults[0].at)
     lines = by_line(s, faults: faults).len()
-    head = "`" + name + "` is not UTF-8: the byte " + shown(faults[0].byte) + " at line " + at.line.to_str() + ", column " + at.col.to_str() + " is the first that is not, "
+    head = "`" + name + "` is not UTF-8: the byte " + byte_evidence.shown(faults[0].byte) + " at line " + at.line.to_str() + ", column " + at.col.to_str() + " is the first that is not, "
 
     if lines == 1
         return head + "and no other line holds one"
     return head + "and " + lines.to_str() + " lines hold one"
+
+# The marks read against the text they describe, a file's
+# (`module/reading.source_text`) or a variable's value (`cli/process.env`):
+# two for each U+FFFD of the text in order, the byte it stands for in
+# hexadecimal, or `--` where the bytes themselves held a U+FFFD, which is
+# text and no fault. A U+FFFD is the three bytes EF BF BD, and a byte search
+# finds only whole ones: EF leads and never continues a character.
+#
+# **Bounded, and exact where it is told** (panel 189): every fault of the
+# first `TOLD` + 1 lines holding one, then the first of each further
+# line, which is what `not_text` names (eight lines told, a ninth to know there
+# are more) and counts (how many more). The compiler's own 8 MB binary named
+# as a source holds 3.8 million such bytes, and recording each cost 356 MB.
+function faults_of(marks: str, text: str) -> [source.Fault]
+    out: [source.Fault] @ []
+    at: i64 @ 0
+    mark: i64 @ 0
+    line: i64 @ 0
+    last: i64 @ -1
+    lines: i64 @ 0
+
+    while at + 2 < text.len() && mark + 1 < marks.len()
+        if text[at] == 239 && text[at + 1] == 191 && text[at + 2] == 189
+            if marks[mark] != '-' && (line != last || lines <= TOLD + 1)
+                if line != last
+                    lines @ lines + 1
+                out @ out.push(source.Fault(at: at, byte: hex(marks[mark]) * 16 + hex(marks[mark + 1])))
+                last @ line
+            mark @ mark + 2
+            at @ at + 3
+        else
+            if text[at] == '\n'
+                line @ line + 1
+            at @ at + 1
+
+    return out
+
+# One upper-case hexadecimal digit's value, as the runtime writes them.
+function hex(b: u8) -> i64
+    if b >= 'A'
+        return (b - 'A').to_i64().must() + 10
+    return (b - '0').to_i64().must()
 
 # A text a tool answered, its bytes that are not UTF-8 written by their
 # value, `<0xE9>`, as clang writes one it will not show (defect 241): what
@@ -113,7 +150,7 @@ function bytes_written(text: str, faults: [source.Fault]) -> str
 
     for one in faults
         pieces @ pieces.push(text.slice(from: from, to: one.at))
-        pieces @ pieces.push("<" + shown(one.byte) + ">")
+        pieces @ pieces.push("<" + byte_evidence.shown(one.byte) + ">")
         from @ one.at + 3
 
     pieces @ pieces.push(text.slice(from: from, to: text.len()))
@@ -169,175 +206,7 @@ function named(s: source.Source, line: [source.Fault]) -> str
 # One byte by its value and its place in its own file: `0xE9 at 2:15`.
 function placed(s: source.Source, one: source.Fault) -> str
     at = source.locate(s, one.at)
-    return shown(one.byte) + " at " + at.line.to_str() + ":" + at.col.to_str()
-
-# A byte as the reader searches for it: `0xE9`.
-function shown(byte: i64) -> str
-    digits = "0123456789ABCDEF"
-    return "0x" + digits.slice(from: byte / 16, to: byte / 16 + 1) + digits.slice(from: byte % 16, to: byte % 16 + 1)
-
-# What the bytes prove, and what to do: a byte-order mark of UTF-16 first,
-# then NUL at every other byte, UTF-16 with no mark, then NUL elsewhere, then
-# a UTF-8 character written wrong; and where none of those, a byte of another
-# encoding, the encoding unnamed, in a file with no character of UTF-8 above
-# ASCII, saved whole in it, or in one that has some, where such bytes came in.
-function reading(text: str, mine: [source.Fault], start: i64) -> str
-    first = mine[0]
-
-    if mine.len() >= 2 && first.at == start && mine[1].at == start + 3 && first.byte + mine[1].byte == 509 && first.byte >= 254
-        return "the file opens with " + shown(first.byte) + " " + shown(mine[1].byte) + ", the byte-order mark of UTF-16, so it was saved as UTF-16: save it as UTF-8"
-    order = utf16_order(text)
-
-    if order.len() > 0
-        return utf16_said(order)
-
-    if holds_nul(text)
-        return "the file also holds NUL bytes, which no source text holds: it is likely not a text file at all"
-    shaped = sequence(text: text, mine: mine, start: start)
-
-    if shaped.len() > 0
-        return shaped
-    other = shown(first.byte) + " here belongs to an encoding other than UTF-8, which one the bytes do not say"
-
-    if only_replacements(text)
-        return other + ", and no character of this file is UTF-8 above ASCII: save the file as UTF-8"
-    return other + ", and the rest of this file is UTF-8: write in UTF-8 the character each such byte stands for, or delete it"
-
-# What NUL at every other byte proves, said the same for a file that is not
-# UTF-8 (`reading`) and for one that is, ASCII in UTF-16 with no mark
-# (defect 247).
-function utf16_said(order: str) -> str
-    return "every other byte of the file is NUL, which is how UTF-16 " + order + " writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
-
-# The order of UTF-16 a text's bytes show where every other one is NUL: a
-# character then NUL is little-endian, NUL then a character big-endian, as
-# UTF-16 writes every character below U+0100; "" where they do not alternate
-# so through the whole text, or there are fewer than two pairs to say it.
-# Asked of characters, so a U+FFFD the shown text holds for one byte of the
-# file counts as that byte.
-function utf16_order(text: str) -> str
-    nul_first: i64 @ 0
-    nul_second: i64 @ 0
-    at: i64 @ 0
-
-    while at < text.len()
-        then = at + character_length(text[at])
-
-        if then >= text.len() || text[at] == 0 == (text[then] == 0)
-            return ""
-
-        if text[at] == 0
-            nul_first @ nul_first + 1
-        else
-            nul_second @ nul_second + 1
-        at @ then + character_length(text[then])
-
-    if nul_first >= 2 && nul_second == 0
-        return "big-endian"
-
-    if nul_second >= 2 && nul_first == 0
-        return "little-endian"
-    return ""
-
-# The bytes of the UTF-8 character `lead` begins: a `str` is well-formed, so a
-# lead byte's shape says it (spec § 3).
-function character_length(lead: u8) -> i64
-    if lead < 192
-        return 1
-
-    if lead < 224
-        return 2
-
-    if lead < 240
-        return 3
-    return 4
-
-# What the first such byte reads as where it leads a sequence of UTF-8's
-# shape: whole and forbidden, or cut short by a byte that does not continue it
-# or by the file's end; "" where no byte continues it and the file goes on,
-# which a one-byte encoding writing one letter alone does far more often.
-function sequence(text: str, mine: [source.Fault], start: i64) -> str
-    lead = mine[0].byte
-    need: i64 @ 4
-
-    if lead < 192 || lead > 247
-        return ""
-
-    if lead < 224
-        need @ 2
-    else if lead < 240
-        need @ 3
-    given: i64 @ 1
-
-    while given < need && given < mine.len() && mine[given].at == mine[0].at + 3 * given && mine[given].byte < 192
-        given @ given + 1
-
-    words: [str] @ []
-
-    for k in range(from: 0, to: given)
-        words @ words.push(shown(mine[k].byte))
-
-    run = words.join(" ")
-
-    if given == need
-        return run + " have the shape of a UTF-8 character and encode " + forbidden(mine, need: need) + ", which UTF-8 forbids: write in UTF-8 the character meant"
-
-    if given > 1
-        return run + " begin a UTF-8 character of " + need.to_str() + " bytes and stop after " + given.to_str() + ", so the text was cut short: write the character whole"
-
-    if mine[0].at + 3 == start + text.len()
-        return run + " begins a UTF-8 character of " + need.to_str() + " bytes and the file ends after it, so it was cut short: write the character whole"
-    return ""
-
-# What a whole sequence of UTF-8's shape encodes that UTF-8 forbids, read
-# from its bytes as UTF-8 reads them: a UTF-16 surrogate, a value past
-# U+10FFFF, or an overlong form of a smaller one, the three ways the
-# runtime's judge refuses a whole sequence (`hero_utf8_sequence`).
-function forbidden(mine: [source.Fault], need: i64) -> str
-    value: i64 @ mine[0].byte - 192
-
-    if need == 3
-        value @ mine[0].byte - 224
-    else if need == 4
-        value @ mine[0].byte - 240
-
-    for k in range(from: 1, to: need)
-        value @ value * 64 + mine[k].byte - 128
-
-    if value >= 55296 && value <= 57343
-        return "the UTF-16 surrogate " + shown_char.u_plus(value)
-
-    if value > 1114111
-        return shown_char.u_plus(value) + ", past U+10FFFF"
-    return "an overlong form of " + shown_char.u_plus(value)
-
-# Whether every character of the text above ASCII is a U+FFFD, as every byte
-# that is not text is here: then no character of the file is UTF-8 above ASCII
-# (a U+FFFD the file held is counted with them, so the rare file holding both
-# is read as a one-byte encoding's). Asked of the text, which is whole, and not
-# of the faults, which are bounded (`module/reading.faults_of`).
-function only_replacements(text: str) -> bool
-    at: i64 @ 0
-
-    while at < text.len()
-        if text[at] < 128
-            at @ at + 1
-        else if at + 2 < text.len() && text[at] == 239 && text[at + 1] == 191 && text[at + 2] == 189
-            at @ at + 3
-        else
-            return false
-
-    return true
-
-function holds_nul(text: str) -> bool
-    at: i64 @ 0
-
-    while at < text.len()
-        if text[at] == 0
-            return true
-        at @ at + 1
-
-    return false
+    return byte_evidence.shown(one.byte) + " at " + at.line.to_str() + ":" + at.col.to_str()
 
 ## Tests
 
@@ -428,3 +297,32 @@ test "a root holding such a byte is what --apply refuses, and a tool is told whe
     assert first_said(name: "p.hero", text: s.text, faults: s.faults) == "`p.hero` is not UTF-8: the byte 0xE9 at line 1, column 6 is the first that is not, and no other line holds one"
     two = shown_source(text: "# caf�\n# ��\n", bytes: [233, 232, 224])
     assert first_said(name: "p.hero", text: two.text, faults: two.faults) == "`p.hero` is not UTF-8: the byte 0xE9 at line 1, column 6 is the first that is not, and 2 lines hold one"
+
+# Panel 189: the marks read against the shown text, a U+FFFD the file held told
+# apart from one that stands for a byte.
+test "the marks name each byte that is not text, and a U+FFFD the file held is text"
+    one = faults_of(marks: "E9", text: "caf�")
+    assert one.len() == 1
+    assert one[0].at == 3
+    assert one[0].byte == 233
+    held = faults_of(marks: "--80", text: "�a�")
+    assert held.len() == 1
+    assert held[0].at == 4
+    assert held[0].byte == 128
+    assert faults_of(marks: "", text: "plain").len() == 0
+    assert hex('0') == 0
+    assert hex('F') == 15
+
+test "every fault of the first nine lines is kept, then the first of each line"
+    lines: [str] @ []
+    marks: [str] @ []
+
+    for _ in range(from: 0, to: 12)
+        lines @ lines.push("�x�")
+        marks @ marks.push("E9E8")
+
+    kept = faults_of(marks: marks.join(""), text: lines.join("\n") + "\n")
+    assert kept.len() == 21
+    assert kept[17].byte == 232
+    assert kept[18].byte == 233
+    assert kept[20].at == 11 * 8
