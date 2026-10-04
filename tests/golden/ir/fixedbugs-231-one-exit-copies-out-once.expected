@@ -1,0 +1,260 @@
+strings
+    0  "x"
+    1  "unknown"
+    2  "!"
+    3  "end"
+    4  "no more words"
+    5  "a"
+    6  "-"
+
+function known(word: str) -> str?
+    slots  $ret0: str? · $own2: str · $own3: str? · $own4: str?
+    bb0  entry
+        $t1: str = load word
+        $t2: str = const str 0
+        $t3: bool = eq $t1, $t2
+        branch $t3 -> bb2 else bb3
+    bb1  if: join    preds bb3
+        $t7: str = load word
+        $t8: str = const str 2
+        $t9: str = add $t7, $t8
+        $t12: str = load $own2
+        store $own2 <- $t9
+        decref $t12
+        incref $t9
+        $t10: str? = construct ok($t9)
+        $t13: str? = load $own3
+        store $own3 <- $t10
+        decref $t13
+        store $ret0 <- $t10
+        jump bb4
+    bb2  if: then    preds bb0
+        $t4: str = const str 1
+        $t5: str = load word
+        incref $t4
+        incref $t5
+        $t6: str? = construct fail($t4, $t5)
+        $t14: str? = load $own4
+        store $own4 <- $t6
+        decref $t14
+        store $ret0 <- $t6
+        jump bb4
+    bb3  if: else    preds bb0
+        jump bb1
+    bb4  exit    preds bb1, bb2
+        $t11: str? = load $ret0
+        incref $t11
+        decref_slot $own2
+        decref_slot $own3
+        decref_slot $own4
+        return $t11
+
+function next(@r: Reader) -> str?
+    slots  word: str · $f0: str? · $ret0: str? · $own4: str? · $own5: str? · $own6: str? · $own7: str?
+    bb0  entry
+        $t1: Reader = load r
+        $t2: i64 = field $t1.pos
+        $t3: Reader = load r
+        $t4: [str] = field $t3.words
+        $t5: i64 = call builtin len($t4)
+        $t6: bool = ge $t2, $t5
+        branch $t6 -> bb2 else bb3
+    bb1  if: join    preds bb3
+        $t10: Reader = load r
+        $t11: [str] = field $t10.words
+        $t12: Reader = load r
+        $t13: i64 = field $t12.pos
+        $t14: str = index! $t11, $t13
+        $t32: str = load word
+        incref $t14
+        store word <- $t14
+        decref $t32
+        $t15: Reader = load r
+        $t16: i64 = field $t15.pos
+        $t17: i64 = const 1
+        $t18: i64 = add! $t16, $t17
+        store r.pos <- $t18
+        $t19: str = load word
+        $t20: str? = call heroes known($t19)
+        $t33: str? = load $own4
+        store $own4 <- $t20
+        decref $t33
+        $t34: str? = load $f0
+        incref $t20
+        store $f0 <- $t20
+        decref $t34
+        $t21: str? = load $f0
+        $t22: i64 = tag $t21
+        $t23: i64 = const 0
+        $t24: bool = eq $t22, $t23
+        branch $t24 -> bb4 else bb5
+    bb2  if: then    preds bb0
+        $t7: str = const str 3
+        $t8: str = const str 4
+        incref $t7
+        incref $t8
+        $t9: str? = construct fail($t7, $t8)
+        $t35: str? = load $own5
+        store $own5 <- $t9
+        decref $t35
+        store $ret0 <- $t9
+        jump bb6
+    bb3  if: else    preds bb0
+        jump bb1
+    bb4  ?: ok    preds bb1
+        $t28: str? = load $f0
+        $t29: str = payload $t28 .ok
+        incref $t29
+        $t30: str? = construct ok($t29)
+        $t36: str? = load $own6
+        store $own6 <- $t30
+        decref $t36
+        store $ret0 <- $t30
+        jump bb6
+    bb5  ?: propagate    preds bb1
+        $t25: str? = load $f0
+        $t26: the error (`code`, `msg`) = payload $t25 .err
+        incref $t26
+        $t27: str? = construct err($t26)
+        $t37: str? = load $own7
+        store $own7 <- $t27
+        decref $t37
+        store $ret0 <- $t27
+        jump bb6
+    bb6  exit    preds bb2, bb4, bb5
+        copyout r
+        $t31: str? = load $ret0
+        incref $t31
+        decref_slot word
+        decref_slot $f0
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        decref_slot $own7
+        return $t31
+
+function main()
+    slots  r: Reader · $f0: str? · $r0: str · $f1: str? · $r1: str · $f2: str? · $r2: str · $own7: [str] · $own8: Reader · $own9: str? · $own10: str? · $own11: str?
+    bb0  entry
+        $t1: str = const str 5
+        $t2: str = const str 0
+        $t3: [str] = construct array($t1, $t2)
+        $t35: [str] = load $own7
+        store $own7 <- $t3
+        decref $t35
+        $t4: i64 = const 0
+        incref $t3
+        $t5: Reader = construct Reader($t3, $t4)
+        $t36: Reader = load $own8
+        store $own8 <- $t5
+        decref $t36
+        $t37: Reader = load r
+        incref $t5
+        store r <- $t5
+        decref $t37
+        $t6: str? = call heroes next(@r)
+        $t38: str? = load $own9
+        store $own9 <- $t6
+        decref $t38
+        $t39: str? = load $f0
+        incref $t6
+        store $f0 <- $t6
+        decref $t39
+        $t7: str? = load $f0
+        $t8: i64 = tag $t7
+        $t9: i64 = const 0
+        $t10: bool = eq $t8, $t9
+        branch $t10 -> bb1 else bb2
+    bb1  default: ok    preds bb0
+        $t11: str? = load $f0
+        $t12: str = payload $t11 .ok
+        $t40: str = load $r0
+        incref $t12
+        store $r0 <- $t12
+        decref $t40
+        jump bb3
+    bb2  default: else    preds bb0
+        $t13: str = const str 6
+        $t41: str = load $r0
+        incref $t13
+        store $r0 <- $t13
+        decref $t41
+        jump bb3
+    bb3  default: join    preds bb1, bb2
+        $t14: str = load $r0
+        $t15: str? = call heroes next(@r)
+        $t42: str? = load $own10
+        store $own10 <- $t15
+        decref $t42
+        $t43: str? = load $f1
+        incref $t15
+        store $f1 <- $t15
+        decref $t43
+        $t16: str? = load $f1
+        $t17: i64 = tag $t16
+        $t18: i64 = const 0
+        $t19: bool = eq $t17, $t18
+        branch $t19 -> bb4 else bb5
+    bb4  default: ok    preds bb3
+        $t20: str? = load $f1
+        $t21: str = payload $t20 .ok
+        $t44: str = load $r1
+        incref $t21
+        store $r1 <- $t21
+        decref $t44
+        jump bb6
+    bb5  default: else    preds bb3
+        $t22: str = const str 6
+        $t45: str = load $r1
+        incref $t22
+        store $r1 <- $t22
+        decref $t45
+        jump bb6
+    bb6  default: join    preds bb4, bb5
+        $t23: str = load $r1
+        $t24: str? = call heroes next(@r)
+        $t46: str? = load $own11
+        store $own11 <- $t24
+        decref $t46
+        $t47: str? = load $f2
+        incref $t24
+        store $f2 <- $t24
+        decref $t47
+        $t25: str? = load $f2
+        $t26: i64 = tag $t25
+        $t27: i64 = const 0
+        $t28: bool = eq $t26, $t27
+        branch $t28 -> bb7 else bb8
+    bb7  default: ok    preds bb6
+        $t29: str? = load $f2
+        $t30: str = payload $t29 .ok
+        $t48: str = load $r2
+        incref $t30
+        store $r2 <- $t30
+        decref $t48
+        jump bb9
+    bb8  default: else    preds bb6
+        $t31: str = const str 6
+        $t49: str = load $r2
+        incref $t31
+        store $r2 <- $t31
+        decref $t49
+        jump bb9
+    bb9  default: join    preds bb7, bb8
+        $t32: str = load $r2
+        $t33: Reader = load r
+        $t34: i64 = field $t33.pos
+        call builtin print($t14, $t23, $t32, $t34) variadic
+        decref_slot r
+        decref_slot $f0
+        decref_slot $r0
+        decref_slot $f1
+        decref_slot $r1
+        decref_slot $f2
+        decref_slot $r2
+        decref_slot $own7
+        decref_slot $own8
+        decref_slot $own9
+        decref_slot $own10
+        decref_slot $own11
+        return
