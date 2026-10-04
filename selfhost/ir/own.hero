@@ -140,7 +140,12 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                 .store st =>
                     ty = containers.value_type(worked, st.value)
 
-                    if layout.is_refcounted(c, ty)
+                    # The return slot borrows (panel 190): a store into it is
+                    # a plain copy, and rule 4 retains its value at the exit.
+                    if containers.is_return_slot(slots[st.place.root])
+                        out @ out.push(inst)
+                        handled @ true
+                    else if layout.is_refcounted(c, ty)
                         indexed: bool @ false
 
                         for step in containers.steps_of(worked, st.place.path)
@@ -233,7 +238,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
         match slot.kind
             .local_slot | .synthetic_slot => owed @ true
-            .param_slot                   => owed @ owed
+            .param_slot | .return_slot    => owed @ owed
 
         if owed && layout.is_refcounted(c, slot.ty) && !is_param[slot_at]
             sweep @ sweep.push(slot_at)
@@ -532,3 +537,78 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
     # its copy-out, and `shout`'s `s` read after `echo(@s)` survive: the
     # oracle saw each kind answer true, and `g`'s twelve answer false.
     assert survived >= 3
+
+test "the return slot borrows: a store into it is a plain copy, rule 4 retains at the exit, and no sweep names it"
+    # The shape `ir/exits.hero` makes (panel 190), built by hand from one
+    # return: bb0 stores what it returns into the return slot and jumps to bb1,
+    # which loads it and returns it.
+    text = "function f(s: str) -> str\n    t = s + \"!\"\n    return t\n"
+    parsed = parse.parse(text)
+    src = source.new_source(name: "t.hero", text: text)
+    resolved_out = resolve.resolve(parsed.tree, src, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, resolved_out, src, parsed.decls)
+    p: containers.Program @ lower.lower(parsed.tree, resolved_out, c, src, parsed.decls).program
+    assert mono.run(@p, @c, src, parsed.decls).len() == 0
+    f: containers.Function @ p.functions[0]
+    ret = f.slots.len()
+    f.slots @ f.slots.push(containers.Slot(name: "$ret0", ty: f.result, kind: .return_slot))
+    whole = ir.Place(root: ret, path: ir.Run(start: 0, length: 0))
+    returned: i64 @ 0 - 1
+
+    match f.blocks[0].term
+        .return_term r                                        => returned @ r.value.must()
+        .jump | .branch | .switch_term | .unreachable | .open => assert false
+
+    f.blocks[0].insts @ f.blocks[0].insts.push(
+        ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: whole, value: returned), ty: f.result, span: f.span)
+    )
+    f.blocks[0].term @ .jump(to: 1)
+    loaded = f.values.len()
+    f.values @ f.values.push(f.result)
+    load = ir.Inst(dest: ok(loaded), op: .load(place: whole), ty: f.result, span: f.span)
+    f.blocks @ f.blocks.push(
+        containers.Block(preds: [0], insts: [load], term: .return_term(value: ok(loaded)), note: "exit")
+    )
+    p.functions[0] @ f
+    run(@p, c)
+    assert verify.verify(p, c, parsed.decls).len() == 0
+    got = p.functions[0]
+
+    # Rule 3 loads a slot's old value before it stores; nothing reads the
+    # return slot before the exit's own load.
+    for inst in got.blocks[0].insts
+        match inst.op
+            .load ld                                                                                => assert ld.place.root != ret
+            .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct             => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    # Rule 4 retains the loaded value before the first release, and the
+    # sweep names every owned slot but the return slot.
+    retained: i64 @ 0 - 1
+    first_release: i64 @ 0 - 1
+    swept: i64 @ 0
+    at: i64 @ 0
+
+    for inst in got.blocks[1].insts
+        match inst.op
+            .incref rc =>
+                if rc.value == loaded
+                    retained @ at
+            .decref_slot ds =>
+                assert ds.slot != ret
+                swept @ swept + 1
+
+                if first_release < 0
+                    first_release @ at
+            # Not `continue`: the position is counted at the bottom.
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => at @ at
+            .field | .index | .map_get | .len_of | .tag_of | .payload                           => at @ at
+            .func_ref | .copy_out | .abort_op | .decref | .hole | .missing                      => at @ at
+
+        at @ at + 1
+
+    assert retained >= 0
+    assert first_release > retained
+    assert swept == released.owed_slots(got, c).len()
+    assert swept >= 2

@@ -228,7 +228,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
             .param_slot ps =>
                 if ps.mutable
                     owed @ owed.push(slot_id)
-            .local_slot | .synthetic_slot => continue
+            .local_slot | .synthetic_slot | .return_slot => continue
 
     if owed.len() == 0
         return

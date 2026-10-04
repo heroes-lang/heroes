@@ -210,7 +210,7 @@ function zero_call(f: containers.Function, names: ctype.Names, c: state.Checked,
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
-            .local_slot | .synthetic_slot => mutable @ mutable
+            .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
         zeros @ zeros.push(assert_spelling.zero_of(names, c, ty: declared.ty, mutable: mutable))
 

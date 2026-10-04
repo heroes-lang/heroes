@@ -165,7 +165,7 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
-            .local_slot | .synthetic_slot => mutable @ mutable
+            .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
         if is_param && !mutable
             index @ index + 1
@@ -279,7 +279,7 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
-            .local_slot | .synthetic_slot => mutable @ mutable
+            .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
         if mutable
             writer.line(

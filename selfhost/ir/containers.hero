@@ -47,11 +47,24 @@ variant SlotKind
     # starts with `$`, a character no Heroes program contains, so it can
     # collide with nothing the author wrote.
     synthetic_slot
+    # `$ret0`, what a function with two or more ways out returns through
+    # (panel 190, `ir/exits.hero`): each way out stores its value here and
+    # jumps to the one exit, which loads it. It BORROWS: a store into it is a
+    # plain copy and no sweep releases it, because what it holds is owned by
+    # a slot the exit sweeps, by a parameter, or by nobody (a literal), and
+    # the exit's rule 4 retain runs before that sweep (`ir/own.hero`).
+    return_slot
 
 record Slot
     name: str
     ty: i64
     kind: SlotKind
+
+# Whether this is the return slot, the one slot that only borrows.
+function is_return_slot(slot: Slot) -> bool
+    return match slot.kind
+        .return_slot                                => true
+        .param_slot | .local_slot | .synthetic_slot => false
 
 # One basic block: where control can arrive from, what happens, and the
 # single edge out. preds and note are both there for the READER: their
