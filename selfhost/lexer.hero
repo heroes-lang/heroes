@@ -203,8 +203,15 @@ function lex_bodies(text: str) -> LexOutput
 # byte-order mark is told once, at it, and the text after it read as the
 # file (defect 242), where the mark read as a character set the first line
 # one column deep and its first indented line was told a false
-# `unexpected_block`.
+# `unexpected_block`; and a text in UTF-16 with no mark is told once and not
+# read (defect 247), where each of its NULs was a message.
 function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
+    utf16 = file_start.utf16_told(text)
+
+    if utf16.len() > 0
+        unread: LexOutput @ lexed("", apart: apart, bodies: bodies)
+        unread.diagnostics @ utf16
+        return unread
     mark = file_start.mark_length(text)
 
     if mark > 0
@@ -347,6 +354,16 @@ test "a byte-order mark is told once, at it, and the file is read from after it"
     assert twice.diagnostics[0].span.end == 6
     crlf = lex_one(bom + "function main()\r\n    print(1)\r\n")
     assert crlf.diagnostics.len() == 1
+
+# Defect 247: UTF-16 with no mark over ASCII, which is UTF-8, every other
+# byte NUL: one message, the file not read, where each NUL was one.
+test "a text in UTF-16 with no mark is told once and not read"
+    text = read_file("tests/golden/surface-fixtures/notext247/utf16le-ascii.txt").must()
+    out = lex_one(text)
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unexpected_character"
+    assert out.diagnostics[0].notes.len() == 2
+    assert kind_line(out.tokens) == "eof"
 
 test "a whole program lexes to the stream the parser expects"
     out = lex_one("function main()\n    x = 5\n")
