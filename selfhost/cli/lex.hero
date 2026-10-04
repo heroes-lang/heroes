@@ -12,6 +12,7 @@ use token
 use source
 use lexer
 use diag
+use shown_char
 use cli/table as cli_table
 use cli/argv
 use cli/io
@@ -59,6 +60,12 @@ function json(tokens: [token.Token], s: source.Source) -> str
     rows @ rows.push("]\n")
     return rows.join("")
 
+# **The text dump is read on a terminal, so a token's control characters are
+# written by their code** (defect 290), each but a line end and a tab as a
+# diagnostic writes them, `<U+001B>` (`shown_char.visible`, defect 244): a
+# string literal may hold an ESC raw, and the dump handed it to the terminal
+# that shows the dump, where `[2J` cleared the screen. The JSON form is the
+# exact one, its escapes `json_text`'s.
 function text_dump(tokens: [token.Token], s: source.Source) -> str
     rows: [str] @ []
 
@@ -74,7 +81,7 @@ function text_dump(tokens: [token.Token], s: source.Source) -> str
             row @ at + " " + word + "\n"
         rows @ rows.push(row)
 
-    return rows.join("")
+    return shown_char.visible(rows.join(""))
 
 # Layout tokens carry no text, so printing their (empty) slice would
 # be noise.
@@ -102,6 +109,30 @@ test "the dump is root-only, layout tokens stay wordless, json escapes"
     j = json(out.tokens, s)
     assert has_text(text: j, needle: "{\"kind\": \"kw_constant\", \"text\": \"constant\", \"line\": 1, \"col\": 1},")
     assert json_text.json_string("a\"b\\c\nd\te") == "a\\\"b\\\\c\\nd\\te"
+
+# Defect 290's string, an ESC and a clear-screen, and the two kinds beside it
+# a terminal also acts on, DEL and C1's CSI: none reaches the text dump raw,
+# and the JSON dump escapes each, so neither hands a terminal a sequence.
+test "a token's control characters are written by their code in the text dump, and escaped in the JSON one (defect 290)"
+    esc = bytes_of([27])
+    del = bytes_of([127])
+    csi = bytes_of([194, 155])
+    text = "function main()\n    x = \"" + esc + "[2Jboom\"\n    print(x + \"" + del + csi + "31m\")\n"
+    s = source.new_source(name: "t.hero", text: text)
+    out = lexer.lex(s)
+    dumped = text_dump(out.tokens, s)
+    assert has_text(text: dumped, needle: "2:9 str \"<U+001B>[2Jboom\"\n")
+    assert has_text(text: dumped, needle: "\"<U+007F><U+009B>31m\"")
+    assert !shown_char.holds_control(dumped)
+    j = json(out.tokens, s)
+    assert has_text(text: j, needle: "\\u001b[2Jboom")
+    assert has_text(text: j, needle: "\\u007f\\u009b31m")
+    assert !shown_char.holds_control(j)
+
+# A text from its UTF-8 bytes, since a string literal names no control
+# character by its code (spec § 2 Literals).
+function bytes_of(bytes: [u8]) -> str
+    return bytes.validated_bytes().must()
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()
