@@ -1,0 +1,106 @@
+# Defect 289, 2026-10-04: two messages in one file, the second past line 99,
+# each excerpt under a gutter as wide as its own line number, one digit and
+# three, and a blank line between the two messages. The lines between are
+# filler, there to carry the second binding past line 99.
+
+function main()
+    a = 1  #~ unused_binding
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    # filler, so that the second binding stands past line 99
+    b = 2  #~ unused_binding
+    print(0)
