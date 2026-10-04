@@ -173,6 +173,12 @@ int64_t hero_word_bits(void);
 
 int64_t hero_fs_exists(const char *path);
 int64_t hero_fs_is_directory(const char *path);
+
+/* The running executable's own path, read as the shown read reads a file:
+ * HERO_OS_OK and the path, HERO_OS_NOT_TEXT with marks, or HERO_OS_NOT_FOUND
+ * where this machine gives none (defect 277). `parts/fs.c` names each
+ * platform's call. Bound in `selfhost/cli/toolchain.hero`'s own group. */
+HeroStr hero_exe_path_shown(int64_t *status, int64_t *marks);
 int64_t hero_fs_mkdir_all(const char *path);
 int64_t hero_fs_remove(const char *path);
 

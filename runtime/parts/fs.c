@@ -31,6 +31,11 @@
 #include <direct.h>
 #else
 #include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+#endif
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
 #endif
 
 /* Each call below that can fail clears `hero_fs_why_code` on the way in and
@@ -224,4 +229,48 @@ int64_t hero_fs_rename(const char *from, const char *to) {
     hero_fs_why_code = (int64_t)errno;
     return HERO_OS_FAILED;
 #endif
+}
+
+/* WHERE THE RUNNING EXECUTABLE IS (defect 277), so the compiler can look for
+ * `runtime/` under an ancestor of it, the third place design.md §3.1 and
+ * panel 020 rule, for an installed compiler that has no repository above it.
+ * The answer is the shown read's (`hero_bytes_shown`, parts/os.c): HERO_OS_OK
+ * and the path where it is UTF-8, HERO_OS_NOT_TEXT with marks where it is
+ * not, HERO_OS_NOT_FOUND where this machine gives no answer. Each platform's
+ * own call, the one place that knows which machine it is on:
+ *
+ *   - Windows: `GetModuleFileNameA(NULL, ...)`, the path the module was
+ *     loaded by, in the ANSI code page as every narrow call here answers
+ *     (defect 238's question, which this does not settle); a path at the
+ *     buffer's bound is cut, and is no answer.
+ *   - macOS: `_NSGetExecutablePath`, then `realpath`, so a compiler reached
+ *     through a link answers where it lives, as Linux's answer does.
+ *   - Linux and every other POSIX: `/proc/self/exe`, the resolved path; where
+ *     `/proc` is not mounted there is no answer, never a guess from `argv[0]`,
+ *     which a shell sets to whatever was typed.
+ *
+ * Fixed buffers of HERO_FS_PATH_MAX, so nothing here allocates outside
+ * `parts/alloc.c` (the `runtime` suite's rule 1); `realpath` is given its
+ * buffer, which POSIX asks be PATH_MAX, never fewer than these 4096 bytes on
+ * the two platforms that run it. */
+HeroStr hero_exe_path_shown(int64_t *status, int64_t *marks) {
+    *marks = 0;
+    char found[HERO_FS_PATH_MAX];
+    int64_t length = -1;
+#if defined(_WIN32)
+    DWORD got = GetModuleFileNameA(NULL, found, (DWORD)sizeof found);
+    if (got > 0 && got < (DWORD)sizeof found) length = (int64_t)got;
+#elif defined(__APPLE__)
+    char raw[HERO_FS_PATH_MAX];
+    uint32_t size = (uint32_t)sizeof raw;
+    if (_NSGetExecutablePath(raw, &size) == 0 && realpath(raw, found) != NULL) length = (int64_t)strlen(found);
+#else
+    ssize_t got = readlink("/proc/self/exe", found, sizeof found - 1);
+    if (got > 0 && (size_t)got < sizeof found - 1) length = (int64_t)got;
+#endif
+    if (length < 0) {
+        *status = HERO_OS_NOT_FOUND;
+        return hero_str_from_bytes("", 0);
+    }
+    return hero_bytes_shown(found, length, status, marks);
 }
