@@ -35,15 +35,18 @@ function crossed_a_line(c: cursor.Cursor, text: str, from: i64) -> bool
 # Where the lexer joined two lines inside the head begun at token `from`: two
 # adjacent tokens on two lines with no line end between them. The span runs
 # from the last token before the break that is not a comment to the first one
-# after it, which is where the lexer's refusal of the join stands.
+# after it, which is where the lexer's refusal of the join stands. A comment
+# alone on its line joins nothing: past the head's line end, it stood over
+# the body as a join and held its absence back (defect 202's shape).
 function joined_at(c: cursor.Cursor, text: str, from: i64) -> token.Span?
     i: i64 @ from
 
     while i < c.pos
         here = c.tokens[i]
         next = c.tokens[i + 1]
+        alone = here.kind == .comment && text_lines.margin_width(text, at: here.span.start) >= 0
 
-        if !token.is_line_end(here.kind) && !token.is_line_end(next.kind) && next.kind != .eof
+        if !token.is_line_end(here.kind) && !token.is_line_end(next.kind) && next.kind != .eof && !alone
             if text_lines.newlines_between(text, from: here.span.end, to: next.span.start) > 0
                 return ok(token.Span(start: before_the_break(c, from: from, at: i), end: next.span.end))
         i @ i + 1

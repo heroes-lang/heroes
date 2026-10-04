@@ -15,7 +15,6 @@
 use token
 use cursor
 use lexer
-use parse/opening
 
 # A block where a statement should start, which no head opens: named, once,
 # and read by the caller, its own mistakes told, where until 2026-09-29 it
@@ -33,7 +32,7 @@ function read(@c: cursor.Cursor)
     named(@c)
     first = cursor.peek(c, 1)
     then = cursor.peek(c, 2)
-    worded = first == .ident && opening.begins_an_expression(then) && then != .lparen && then != .lbracket && then != .dot && then != .minus
+    worded = first == .ident && token.begins_an_expression(then) && then != .lparen && then != .lbracket && then != .dot && then != .minus
 
     if continues_a_line(first) || worded
         passed(@c)
