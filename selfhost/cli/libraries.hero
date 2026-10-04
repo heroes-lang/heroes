@@ -310,7 +310,7 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
         # option: until panel 188 `package "--atleast-pkgconfig-version=0"`
         # was answered with nothing at exit 0 and the group accepted.
         if !ran.started
-            return fail(code: "no_pkg_config", msg: package_answer.unasked(package))
+            return fail(code: "no_pkg_config", msg: package_answer.unasked(package: package, why: ran.why))
 
         # Installed or not is asked of `pkg-config`, never assumed (defect 292).
         if ran.code != 0
@@ -529,13 +529,14 @@ test "a package pkg-config reads and refuses is told installed, and one it canno
         err: process.discard()
     )
 
-    # Where none starts, as on the Windows box, the package is defect 249's.
+    # Where none starts, as on the Windows box, the package is defect 249's,
+    # told by the reason the machine gave (defect 323).
     if !tool.started
         match resolve_packages(packages: [pc], build_dir: dir)
             .ok => assert false
             .err e =>
                 assert e.code == "no_pkg_config"
-                assert e.msg == package_answer.unasked(pc)
+                assert e.msg == package_answer.unasked(package: pc, why: tool.why)
 
     if tool.started
         each = package_answer.known(package: "pkg-config")
