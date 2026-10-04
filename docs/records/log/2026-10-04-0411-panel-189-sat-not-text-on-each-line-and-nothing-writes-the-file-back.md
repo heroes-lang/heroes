@@ -31,3 +31,5 @@ the author's to fund. **Filed**: 281 (the compiler's own argv not UTF-8),
 **Process**: two stray files the compiler-engineer wrote into the trunk's
 root, `err.txt` and `out.txt`, moved to the scratchpad with this commit's
 landing, their content kept there.
+
+*Corrected 2026-10-04 at 04:19 by `date`: R2 is not *`mutate` and `measure` at exit 1*. `surface`'s row runs `mutate` over a corpus that does not compile at exit 2, and `measure` is a tool over a document; R2 now reads exit 1 for every verb that compiles or prints a program, `mutate` meeting such a file as any refused program (exit 2, its corpus message, the file and its `not_text` named), `measure` refusing it with no count at exit 2. The synthesis carries the same correction under R2.*

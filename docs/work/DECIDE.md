@@ -23,7 +23,7 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
 *******************************************************************************
 **OPEN: 1**
 
-- [ ] **panel 189** | ratify, amend or overturn R1 to R13 (`not_text` at exit 1 through every verb, `mutate` and `measure` included; one diagnostic per line that holds a byte not UTF-8, eight lines and a count; the message naming only what the bytes prove, no single-byte encoding guessed; no fix; no writer and no digest of a replaced text; one runtime function, the ABI unmoved, 273 and 274 inside its read; 241, 243 and 244 landing with 227; no spec sentence) | `docs/panel/189-a-source-byte-that-is-not-utf-8-is-told-not-text-on-each-line-it-stands-on-and-nothing-writes-the-file-back.md` § The resolution
+- [ ] **panel 189** | ratify, amend or overturn R1 to R13 (`not_text` at exit 1 through every verb that compiles or prints a program, `mutate` and `measure` keeping exit 2 by their contracts, R2 as corrected at 04:19; one diagnostic per line that holds a byte not UTF-8, eight lines and a count; the message naming only what the bytes prove, no single-byte encoding guessed; no fix; no writer and no digest of a replaced text; one runtime function, the ABI unmoved, 273 and 274 inside its read; 241, 243 and 244 landing with 227; no spec sentence) | `docs/panel/189-a-source-byte-that-is-not-utf-8-is-told-not-text-on-each-line-it-stands-on-and-nothing-writes-the-file-back.md` § The resolution
 
     **Origin:** panel 189's synthesis, 2026-10-04 from 04:06, on the trunk
     frozen at `7d9f2e8f`. Until it is answered defect 227 stays open (*cannot

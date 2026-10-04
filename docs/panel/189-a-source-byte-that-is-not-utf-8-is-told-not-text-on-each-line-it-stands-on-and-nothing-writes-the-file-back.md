@@ -154,6 +154,21 @@ program, so `surface`'s row holds; `measure` refuses it with no count (the
 spec-warden's condition, held on the route). The route's exit 2 for these two
 is not adopted.
 
+*Corrected 2026-10-04 at 04:19 by `date`, before any landing, on reading the
+row R2 names: `tests/harness/suite_surface.hero`'s row *mutate refuses a
+corpus that does not compile* runs `mutate tests/golden/check` at **exit 2**
+and asks its stderr for *this corpus does not compile* and *already refused
+by*: `mutate`'s contract for a corpus holding a program the compiler refuses
+is exit 2, the tool unable to run on it. So R2 reads: **every verb that
+compiles or prints a program** (`check`, `build`, `run`, `test`, `fmt`,
+`lex`, `parse`, `probe`) tells a file that is not UTF-8 at exit 1; `mutate`
+meets it as it meets every program the compiler refuses, exit 2 and its
+corpus message, the file named with its `not_text`, which is the half the
+route got wrong and `surface` caught (its message named the byte alone);
+`measure`, a tool over a document, refuses it with no count at exit 2, as the
+route has it. The sentence above was written without the row read, and is
+wrong on both counts.*
+
 **R3. One diagnostic per line that holds such a byte**, its caret on the
 line's first one, at most eight lines and the rest counted in a note (the
 compiler-engineer's); **the file is never lexed past**, the other files of
