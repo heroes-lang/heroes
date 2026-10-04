@@ -35,6 +35,7 @@ use keywords
 use operators
 use open_line
 use parse/line_end_readings
+use text_lines
 
 ## What the parser is reading
 
@@ -287,13 +288,13 @@ function moved_up(text: str, ender: token.Span, found: token.Span, tight: bool, 
 
     if tight
         lead @ ""
-    end: i64 @ past_spaces(text, at: found.end)
+    end: i64 @ text_lines.past_spaces(text, at: found.end)
 
     if end + 1 < text.len() && text[end] == '\r' && text[end + 1] == '\n'
-        end @ past_spaces(text, at: end + 2)
+        end @ text_lines.past_spaces(text, at: end + 2)
     else if end < text.len() && text[end] == '\n'
-        end @ past_spaces(text, at: end + 1)
-    kept: i64 @ past_spaces(text, at: ender.end)
+        end @ text_lines.past_spaces(text, at: end + 1)
+    kept: i64 @ text_lines.past_spaces(text, at: ender.end)
 
     if kept >= text.len() || text[kept] != '\n' && text[kept] != '\r'
         kept @ ender.end
@@ -304,14 +305,6 @@ function moved_up(text: str, ender: token.Span, found: token.Span, tight: bool, 
         span: token.Span(start: ender.end, end: end),
         certainty: certainty
     )
-
-function past_spaces(text: str, at: i64) -> i64
-    i: i64 @ at
-
-    while i < text.len() && text[i] == ' '
-        i @ i + 1
-
-    return i
 
 function has_a_line_end(text: str) -> bool
     for i in range(from: 0, to: text.len())
