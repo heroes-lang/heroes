@@ -3,3 +3,5 @@
     **Origin:** lane b10-cli, 2026-10-04, found beside 249 and reproduced on its compiler; filed by the coordinator for the same lane, being blocking and in its files.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message about the machine (`.claude/rules/verification.md` § Bounded discovery's *a false message*); a cause apart from 249's, which was the bare line's missing code, place and route.
+
+    Repaired at `4370bd60`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
