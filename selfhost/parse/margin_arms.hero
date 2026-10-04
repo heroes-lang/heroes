@@ -139,17 +139,8 @@ function read_line(c: cursor.Cursor, from: i64) -> ArmRead
     next: i64 @ -1
 
     if c.tokens[i].kind == .terminator
-        next @ past_line_ends(c, from: i)
+        next @ unclosed.past_line_ends(on(c, at: i))
     return ArmRead(holds: false, patterns: patterns && i > from, next: next)
-
-# The index of the first token past the line ends and comment lines at `from`.
-function past_line_ends(c: cursor.Cursor, from: i64) -> i64
-    i: i64 @ from
-
-    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
-        i @ i + 1
-
-    return i
 
 # Whether the `match` at token `head` is an arm's value: a `=>` stands before
 # it on its line.

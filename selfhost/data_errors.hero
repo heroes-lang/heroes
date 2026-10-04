@@ -99,6 +99,15 @@ function parameter_name_not_a_name(span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# `(function(i64 -> i64))`: the `->` inside the parameters' parentheses, their
+# `)` written past the result (`parse/type.function_params`, defect 197).
+function arrow_inside_parameters(span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "expected_function_type_params_close",
+        message: "expected `)`, or `,` and another parameter type, found `->` — a function type closes its parameters before its `->`, `function(i64) -> i64`: the `)` written past the result goes there",
+        span: span
+    )
+
 # The mandatory half. The message shows the repair in full rather than
 # describing it, because the reader has to invent two names and the shape is
 # what tells them where they go.

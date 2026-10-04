@@ -5,8 +5,15 @@
 # (`closers.hero:151`), and the type reader then asks for the `)` and the
 # `->` it was owed (`parse/type.hero`, through `cursor.expect`). Row
 # 131-41a. Class (a): `adjacent`.
+#
+# Moved 2026-10-04 with defect 197's repair (lane b9-recovery): the type
+# reader reads the `->` and the result where they stand, up to the `)` the
+# lexer pairs with the parameters' `(`, and asks for no `->` at the line's
+# end; its message at the `->` says that `)` goes before it, after which each
+# opener the lexer names is owed a `)` of its own. Three messages, one a
+# mistake, where the `)` moves and two are written.
 
-function f(g: (function(i64 -> i64)  #~ unclosed_bracket unclosed_bracket expected_function_type_params_close expected_function_type_arrow
+function f(g: (function(i64 -> i64)  #~ unclosed_bracket unclosed_bracket expected_function_type_params_close
     print(1)
 
 function main()
