@@ -1,0 +1,13 @@
+- [x] **247 — a file in UTF-16 without a byte order mark, holding ASCII only, is well-formed UTF-8 and is told in thirty messages, one for each NUL** | `function main()` over `    print(1)` in UTF-16 LE with no BOM: `check` exit 1 with 30 diagnostics, 29 `unexpected_character` *the control character U+0000* and one `expected_declaration` (batch 8's round compiler at `1eb854c3`, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/u16.hero`; the trunk's, panel 189's ffi-pragmatist and compiler-engineer); the raw NULs in its excerpts are defect 244 | the lexer's `unexpected_character`, told once for each control character of one cause (`selfhost/lexer.hero`) · **class: adjacent**
+
+    **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:17 (`docs/panel/189-reports/ffi-pragmatist.md`, *One shape beside*), not 227's cause, the file being UTF-8; filed apart by the coordinator.
+
+    **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): one mistake, the file's encoding, told thirty times.
+
+    Repaired at `cdc79563`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+## The repair
+
+Repaired at `cdc79563`. A file in UTF-16 with no byte-order mark over ASCII is told once, at its first NUL, its note naming the encoding, and nothing else of it is read: one message where there were 30 to 36.
+
+**Closed 2026-10-04** with batch 9 (lanes b9-notext, b9-emit, b9-harness, b9-recovery and b9-annot, merged into one round tree with the trunk at `f6a3122e`), its closing gate run on the round's head from `2c58b28e` to `662870e6`, no line of `selfhost/`, `runtime/` or the seed moving between, with the seed regenerated: 41,364,146 bytes, SHA-256 beginning `26ccaa9d96478a20`, its fixpoint by `cmp`; the compiler's own tests 1,190, all passed; the net's own tests 246, all passed; the full net, 27 suites, 5,268 passed and 0 failed, `fixes` read alone after `662870e6`, which stopped that suite copying the byte fixtures of defects 227 and 241 as text. The census, the trunk's compiler at `703af779` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 1,993, 34 moved, and `build --emit-c` over the 621 holding an `extern`, 3 files of C and 22 of messages moved, every one the batch's own. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 68 fewer messages in the normal arm and 71 in the control arm and none more; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked.
