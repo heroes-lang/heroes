@@ -181,9 +181,13 @@ verb renders it (a sitting's question, CLAUDE.md § 4):
 - the labels are `kind:<kind>`, `class:<class>` for a defect and
   `area:<area>`, and the milestone is `M-<name>`;
 - the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD`, because a transcription
-  cannot back-date GitHub's own dates; then the item and its body under the
-  section headings of `.github/ISSUE_TEMPLATE/`'s form for its kind; then
-  `Record:` and the file's permalink;
+  cannot back-date GitHub's own dates; then the item under the headings of its
+  kind's form in `.github/ISSUE_TEMPLATE/`: a defect's second field under *What
+  happens* and its third under *Where to look*, then its `**Origin:**`, its
+  `**Class:**` and *The repair* under headings of those names; a decision's
+  question, default, recommendation and verdict; a feature's or a task's *What
+  it delivers*; a question's *The question*; any other paragraph under *Notes*;
+  then `Record:` and the file's permalink;
 - a closed issue takes one comment, `Fixed by <commit>` for a defect and
   `Settled by <commit>` for the rest: GitHub links a bare hash to its commit, so
   no pull request is needed;
