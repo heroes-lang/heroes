@@ -1,0 +1,65 @@
+# Fixed defect 199, 2026-10-04 (lane b9-recovery; panel 187's cause B2,
+# shape `g4/ti`). Symptom: a head that refused something dropped the rest of
+# its line as debris, a stray closer in it with it: `if f(1 +) )` over its
+# body was told the call's `)` alone, and the stray `)` only once the operand
+# was written. Cause: `parse/opening.body_follows` dropped the failed head's
+# line unread, where a failed statement's drop tells a closer one too many
+# first (the audit's row 130-28). Both drops are that one now
+# (`parse/brace_habit.drop_told`). The functions are the shapes beside it:
+# every head that opens a block, a group, a closer of another kind, a stray
+# right after the refusal, no body, a body in braces, and two strays, of
+# which the first is told, as on a statement's line.
+
+function f(a: i64) -> i64
+    return a
+
+function under_if()
+    if f(1 +) )  #~ expected_expression expected_end_of_line
+        print(1)
+
+function under_while()
+    while f(1 +) )  #~ expected_expression expected_end_of_line
+        print(1)
+
+function under_for()
+    for x in [f(1 +)] )  #~ expected_expression expected_end_of_line
+        print(x)
+
+function under_match()
+    k = match f(1 +) )  #~ expected_expression expected_end_of_line
+        _ => 0
+    print(k)
+
+function under_else_if()
+    if true
+        print(0)
+    else if f(1 +) )  #~ expected_expression expected_end_of_line
+        print(1)
+
+function after_a_group()
+    if (1 +) )  #~ expected_expression expected_end_of_line
+        print(1)
+
+function a_closer_of_another_kind()
+    if f(1 +) ]  #~ expected_expression expected_end_of_line
+        print(1)
+
+function right_after_the_refusal(n: i64)
+    if n > ) )  #~ expected_expression expected_end_of_line
+        print(1)
+
+function with_no_body()
+    if f(1 +) )  #~ expected_expression expected_end_of_line
+    print(1)  #~ missing_body
+
+function over_braces()
+    if f(1 +) ) {  #~ expected_expression expected_end_of_line missing_body
+        print(1)
+    }
+
+function two_strays()
+    if f(1 +) ) )  #~ expected_expression expected_end_of_line
+        print(1)
+
+function main()
+    print(1)

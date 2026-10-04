@@ -1,0 +1,28 @@
+# Fixed defect 196, 2026-10-04 (lane b9-recovery), beside
+# `fixedbugs-196-a-suite-inside-a-suite-is-one-colon-habit`: what a suite
+# nested in another on its line holds, and what follows it, says its own
+# mistakes in the same run. `print(1 +)` inside two suites was untold behind
+# the second `:`'s `missing_body`; a mistake on the line after the suites,
+# and in the declaration after them, is told where the blocks the suites
+# made end. Each fix of the habit is certain and `check --apply` writes them
+# all, the operands left out staying for their author (`.applied`).
+
+function inside(n: i64)
+    if n > 0: if n > 1: print(1 +)  #~ trailing_colon expected_expression
+
+function on_the_line_after(n: i64)
+    if n > 0: if n > 1: print(1)  #~ trailing_colon
+    print(n +)  #~ expected_expression
+
+function deeper_and_last(n: i64)
+    while n > 9
+        if n > 0: if n > 1: print(1)  #~ trailing_colon
+
+function after_them()
+    print(1 +)  #~ expected_expression
+
+function main()
+    inside(2)
+    on_the_line_after(2)
+    deeper_and_last(2)
+    after_them()

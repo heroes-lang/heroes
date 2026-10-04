@@ -341,7 +341,7 @@ test "a block in braces is read as the fields or cases its lines are, as without
     # braces around it, once, the broken field too, and the cursor is past the
     # braces (ruling 1, 2026-10-01: the habit's debris until then).
     fields = "class P {\n    x: i64,\n    y i64,\n}\n"
-    c: cursor.Cursor @ at_brace(fields)
+    c: cursor.Cursor @ braced_lines.at_brace(fields)
     a: ast.Ast @ ast.new_ast()
     assert read_below(@c, @a, fields, word: 0) == .nothing
     assert c.diagnostics.len() == 2
@@ -353,14 +353,14 @@ test "a block in braces is read as the fields or cases its lines are, as without
     # class C {  /  red  /  green  /  blue  /  }: three cases, and nothing to
     # tell.
     cases = "class C {\n    red\n    green\n    blue\n}\n"
-    d: cursor.Cursor @ at_brace(cases)
+    d: cursor.Cursor @ braced_lines.at_brace(cases)
     assert read_below(@d, @a, cases, word: 0) == .nothing
     assert d.diagnostics.len() == 0
     assert cursor.at(d, .eof)
 
     # class B {  /  x = 1  /  }: a body, left to the caller on its `{`.
     body = "class B {\n    x = 1\n}\n"
-    e: cursor.Cursor @ at_brace(body)
+    e: cursor.Cursor @ braced_lines.at_brace(body)
     assert read_below(@e, @a, body, word: 0) == .statements
     assert cursor.at(e, .lbrace)
 
@@ -376,15 +376,6 @@ test "a block under a head that opens none is named and read"
     assert read_below(@c, @a, text, word: 0) == .statements
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "unexpected_block"
-
-# The cursor on the `{` of a line headed by a word the lexer refused.
-function at_brace(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ lexed(text)
-
-    while !cursor.at(c, .lbrace)
-        _ = cursor.bump(@c)
-
-    return c
 
 test "a line's head the lexer refused is told from one it read"
     text = "elif x\nx = 1\n"

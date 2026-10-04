@@ -19,3 +19,7 @@ function main()
         x @ x + 1
     } while (x < )  #~ expected_expression
     print(x)
+
+# Moved 2026-10-04 with defect 201's repair (lane b9-recovery): each `do {`'s
+# `{` is told as C's do-while, the habit its tail completes, with the loop
+# that replaces it, where it was told as a brace past a name.

@@ -1,1 +1,2 @@
-tests/golden/check/panel-187-a-function-among-a-variants-cases-is-dropped.hero:10:5: error[expected_case]: expected a case name, found `function` — a variant case is a name on its own line, with its fields indented below it
+tests/golden/check/panel-187-a-function-among-a-variants-cases-is-dropped.hero:14:5: error[expected_case]: expected a case name, found `function` — a `variant` holds only its cases, one per line, each with its fields below it, and a `function` in it is declared at the top level of the file, taking the variant as a parameter
+tests/golden/check/panel-187-a-function-among-a-variants-cases-is-dropped.hero:15:18: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

@@ -1,4 +1,8 @@
-tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:11:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
-tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:13:1: error[empty_record]: a `record` needs at least one field, indented one level below it
-tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:15:13: error[expected_end_of_line]: expected the end of the line, found `:` — the `function` `f`'s body goes on the lines below its head, one level deeper
-tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:18:13: error[missing_body]: the `function` `g` needs an indented body — one level deeper, exactly 4 spaces (found `:`)
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:16:11: error[expected_end_of_line]: expected the end of the line after `variant T`, found `)` — its cases go on the lines below it, one level deeper
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:16:1: error[empty_variant]: a `variant` needs at least one case, indented one level below it
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:18:14: error[expected_end_of_line]: expected the end of the line after `record Point`, found `)` — its fields go on the lines below it, one level deeper
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:18:1: error[empty_record]: a `record` needs at least one field, indented one level below it
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:20:13: error[expected_end_of_line]: expected the end of the line, found `:` — the `function` `f`'s body goes on the lines below its head, one level deeper
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:20:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:23:13: error[missing_body]: the `function` `g` needs an indented body — one level deeper, exactly 4 spaces (found `:`)
+tests/golden/check/panel-187-a-heads-line-that-goes-on-is-told-once.hero:23:19: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

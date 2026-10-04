@@ -7,15 +7,20 @@
 # junk not at all. Rows 131-16a, 131-16b, 131-53b (the `)` untold) and
 # 131-53a (the `)` told only once `->` replaces the `:`). Class (b), a
 # mistake told only once another is fixed: `adjacent`.
+#
+# Moved 2026-10-04 with defect 198's repair (lane b9-recovery): a record's or
+# a variant's junk is told over nothing below too, its empty block beside it,
+# and a closer one too many past a function's junk is told
+# (`parse/brace_habit.drop_told`); it pins that now, one message a mistake.
 
-variant T )  #~ empty_variant
+variant T )  #~ expected_end_of_line empty_variant
 
-record Point )  #~ empty_record
+record Point )  #~ expected_end_of_line empty_record
 
-function f(): i64 )  #~ expected_end_of_line
+function f(): i64 )  #~ expected_end_of_line expected_end_of_line
     return 1
 
-function g(): i64 )  #~ missing_body
+function g(): i64 )  #~ missing_body expected_end_of_line
 
 function main()
     print(1)

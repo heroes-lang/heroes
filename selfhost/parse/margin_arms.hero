@@ -124,7 +124,7 @@ function read_line(c: cursor.Cursor, from: i64) -> ArmRead
 
     while c.tokens[i].kind != .eof && !(depth == 0 && token.is_line_end(c.tokens[i].kind))
         k = c.tokens[i].kind
-        patterns @ patterns && of_a_pattern(k)
+        patterns @ patterns && token.of_a_pattern(k)
 
         if k == .lparen || k == .lbracket || k == .lbrace
             depth @ depth + 1
@@ -139,31 +139,8 @@ function read_line(c: cursor.Cursor, from: i64) -> ArmRead
     next: i64 @ -1
 
     if c.tokens[i].kind == .terminator
-        next @ past_line_ends(c, from: i)
+        next @ unclosed.past_line_ends(on(c, at: i))
     return ArmRead(holds: false, patterns: patterns && i > from, next: next)
-
-# A token spec § 8's `Pattern` is written with, or the `|` that joins two.
-# ENUMERATED, so that a new kind is answered for here.
-function of_a_pattern(k: token.TokenKind) -> bool
-    return match k
-        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment             => true
-        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant        => false
-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true      => false
-        .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow  => false
-        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus      => false
-        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and        => false
-        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent   => false
-        .dedent | .eof | .error                                                                 => false
-
-# The index of the first token past the line ends and comment lines at `from`.
-function past_line_ends(c: cursor.Cursor, from: i64) -> i64
-    i: i64 @ from
-
-    while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
-        i @ i + 1
-
-    return i
 
 # Whether the `match` at token `head` is an arm's value: a `=>` stands before
 # it on its line.

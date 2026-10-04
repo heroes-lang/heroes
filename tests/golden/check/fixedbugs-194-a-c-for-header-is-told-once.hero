@@ -1,0 +1,76 @@
+# Fixed defect 194, 2026-10-04 (lane b9-recovery; panel 187's A1, rows
+# 131-33a, 131-54a and 131-54b; the recovery instrument's `c-for`). Symptom:
+# C's three-clause loop header, `for (i = 0; i < 3; i++)`, cost three
+# messages for one habit: the lexer told each `;` as a character the
+# language has not, and the parser's loop habit the `for (`, with *use
+# `while`*, a guess whose `while (i = 0; ...` is refused anew. Cause: the
+# lexer read the header's `;` as strays of the program, one message each,
+# where they are the header's. A `;` whose innermost bracket is the `(` right
+# after a `for` is left by the lexer to the parser now
+# (`closers.in_a_for_header`), and the loop habit, finding one in that `(` in
+# no bracket of its own, tells the header once, naming the loops that replace
+# it, with no fix (`parse/loop_habit.c_header`); a `(` never closed holds what
+# stands before its line's end. A `;` in a bracket of its own is another
+# mistake, told as before (`call_inside`, `semicolon_in_a_call`), and a
+# `for (` that holds no `;` is told as before (`in_parentheses`, `empty`).
+
+function three_clauses()
+    for (i = 0; i < 3; i++)  #~ for_missing_in
+        print(i)
+
+function forever()
+    for (;;)  #~ for_missing_in
+        print(1)
+
+function padded()
+    for ( i = 0 ; i < 3 ; i++ )  #~ for_missing_in
+        print(i)
+
+function tight()
+    for(i=0;i<3;i++)  #~ for_missing_in
+        print(i)
+
+function two_clauses()
+    for (i = 0; i < 3)  #~ for_missing_in
+        print(i)
+
+function nested()
+    if true
+        for (i = 0; i < 3; i++)  #~ for_missing_in
+            print(i)
+
+function split_over_two_lines()
+    for (i = 0;  #~ for_missing_in
+         i < 3; i++)
+        print(i)
+
+function with_a_c_type()
+    for (int i = 0; i < 3; i++) {  #~ reserved_word for_missing_in missing_body
+        print(i)
+    }
+
+function the_bodys_own_mistake()
+    for (i = 0; i < 3; i++)  #~ for_missing_in
+        print(i +)  #~ expected_expression
+
+function call_inside()
+    for (i = f(1; 2); i < 3; i++)  #~ unexpected_character for_missing_in
+        print(i)
+
+function semicolon_in_a_call(xs: [i64])
+    for (x in f(1; 2))  #~ unexpected_character for_missing_in
+        print(x)
+
+function in_parentheses(xs: [i64])
+    for (x in xs)  #~ for_missing_in
+        print(x)
+
+function empty()
+    for ()  #~ for_missing_in
+        print(1)
+
+function f(a: i64) -> i64
+    return a
+
+function main()
+    print(1)

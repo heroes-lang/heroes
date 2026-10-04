@@ -1,0 +1,96 @@
+# Fixed defect 193, 2026-10-04 (lane b9-recovery; panel 187's R4, the
+# compiler engineer's probes `h01` to `h17`). Symptom: an arm whose pattern
+# failed hid the mistakes in its body: `k = match n` over `x | 2 => f(1 +)`
+# was told the `x`, and the `1 +` only once a pattern was written; `x |` over
+# `2 => f(1 +)`, joined by the lexer, told it in the normal arm, from the
+# lines apart, and not in `check --permissive`. Cause: `arms_of` dropped a
+# failed arm's line, its `=>` and its value with it. An arm whose pattern was
+# refused anywhere, or whose `=>` was owed at junk, goes on at a `=>` its line
+# holds, its value read for its own mistakes, as one opened by an operator
+# was (`parse/operator_arm.to_the_arrow`); the arm stays out of the tree. The
+# shapes: a name, a name joined, a refused second pattern, an operator joined,
+# a comparison, an arrow of another language, a payload's second name, a
+# sign before a name, a stray closer after the value, an arm one level
+# deeper, and the line broken after the `|`.
+
+function f(a: i64) -> i64
+    return a
+
+function a_name_joined(n: i64)
+    k = match n
+        x | 2 => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_name(n: i64)
+    k = match n
+        x => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_second_pattern(n: i64)
+    k = match n
+        0 | x => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function an_operator_joined(n: i64)
+    k = match n
+        1 | + => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_comparison(n: i64)
+    k = match n
+        x == 2 => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function another_arrow(n: i64)
+    k = match n
+        1 -> 2 => f(1 +)  #~ expected_arm_arrow expected_expression
+        _ => 0
+    print(k)
+
+variant Color
+    red
+        v: i64
+    blue
+
+function a_second_name(c: Color)
+    k = match c
+        .red x y => f(1 +)  #~ expected_arm_arrow expected_expression
+        .blue => 0
+    print(k)
+
+function a_signed_name(n: i64)
+    k = match n
+        -m => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_closer_after(n: i64)
+    k = match n
+        x | 2 => f(1 +) )  #~ expected_pattern expected_expression expected_end_of_line
+        _ => 0
+    print(k)
+
+function one_level_deeper(n: i64)
+    k = match n
+        0 =>
+            match n
+                x => f(1 +)  #~ expected_pattern expected_expression
+                _ => 0
+        _ => 0
+    print(k)
+
+function broken_after_the_pipe(n: i64)
+    k = match n
+        #~v continuation_outside_brackets expected_pattern
+        x |
+            2 => f(1 +)  #~ expected_expression
+        _ => 0
+    print(k)
+
+function main()
+    print(1)

@@ -20,8 +20,8 @@
 # `match_expr` reaches `arm`, which reaches both `statement` and `block`;
 # `annotated` reaches `parse_type` in another module, which reaches nothing here
 # — the one edge that leaves the knot and the reason `parse_type` stays its own
-# file. `arm` reads its patterns with `parse/arm_pattern`, which since defect
-# 124 reaches nothing here either, and refuses a declaration as its body with
+# file. `arm` reads its patterns with `parse/operator_arm`, through
+# `parse/arm_pattern`, neither of which reaches anything here, and refuses a declaration as its body with
 # `parse/arm_body`, which reaches nothing here; nor do `parse/annotation`,
 # `parse/margin_arms` and `parse/broken_arm`, which `annotated`, `match_expr`
 # and `arm` ask what a failed type, a misplaced arm or a broken one owes, nor
@@ -358,7 +358,7 @@ function past_a_range(@c: cursor.Cursor, @a: ast.Ast, text: str, dot: token.Span
     while ends >= 0 && cursor.current_span(c).start < ends && !cursor.at(c, .eof)
         _ = cursor.bump(@c)
 
-    if ends >= 0 && opening.begins_an_expression(cursor.current_kind(c))
+    if ends >= 0 && token.begins_an_expression(cursor.current_kind(c))
         _ = unary(@c, @a, text)
 
 # `Point::x` — a record's own name on the left, a field's name on the right,
@@ -524,6 +524,7 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     open = cursor.bump(@c).span
     items: [i64] @ []
     reading: bool @ true
+    ended: bool @ false
 
     while reading
         cursor.skip_terminators(@c)
@@ -533,17 +534,25 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else
             first = c.pos
             items @ items.push(parse_expr(@c, @a, text))
+            binding = (cursor.at(c, .colon) || cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
 
             # A binding or a mutation on a line below a `[` the lexer named
-            # never closed is a statement its reach took in (`unclosed`).
-            if open_ended && (cursor.at(c, .colon) || cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
+            # never closed is a statement its reach took in (`unclosed`); below
+            # one it closed with another kind's closer, the list ends above it
+            # and its line is read as the statement it is (defect 204).
+            if open_ended && binding
                 unclosed.past_the_reach(@c, open: at)
                 reading @ false
+            else if list_line.ended_at_a_binding(@c, text, open: at, first: first, binding: binding)
+                reading @ false
+                ended @ true
             else if !list_line.separator(@c, text: text, closer: .rbracket, what: "element", open_ended: open_ended, open: at)
                 reading @ false
 
     close = cursor.current_span(c)
-    unclosed.end_literal(@c, text: text, open: at)
+
+    if !ended
+        unclosed.end_literal(@c, text: text, open: at)
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end))
@@ -564,13 +573,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             reading @ false
         else
             key = parse_expr(@c, @a, text)
-            _ = line_end.expect_after(
-                @c,
-                text: text,
-                kind: .colon,
-                code: "expected_map_entry_colon",
-                what: "`:` between a map's key and its value"
-            )
+            list_line.entry_colon(@c, text: text, open: at)
             value = parse_expr(@c, @a, text)
             entries @ entries.push(ast.MapEntry(key: key, value: value))
 
@@ -712,6 +715,7 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
 # The statements of the block whose indent is under the cursor; a block one
 # deeper, which no head opens, named and read (`parse/orphans`).
 function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
+    at = c.pos
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -720,10 +724,10 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
 
-        if k == .dedent
-            _ = cursor.bump(@c)
+        if k == .eof || colon_habit.suite_ended(c, text, open: at)
             reading @ false
-        else if k == .eof
+        else if k == .dedent
+            _ = cursor.bump(@c)
             reading @ false
         else if k == .indent
             orphans.read(@c)
@@ -854,6 +858,10 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
 
     if k == .ident && cursor.peek(c, 1) == .colon
         return annotated(@c, @a, text)
+
+    # An arm's `=>` broken out past its block, told at the arm (defect 195).
+    if broken_arm.told_above(c)
+        _ = cursor.bump(@c)
     return expression_or_mutation(@c, @a, text)
 
 # Every statement ends at its line end, consumed here; what that owes is
@@ -1164,18 +1172,12 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
 
     if lead.is_err()
         return fail(code: "no_pattern", msg: "the arm has no pattern")
-    patterns: [ast.Pattern] @ lead.must().patterns
-    joining: bool @ true
 
-    while joining && cursor.eat(@c, .pipe)
-        more = arm_pattern.read(@c, @a, text)
+    # An arm broken before its `=>` goes on at it (`parse/broken_arm`), and
+    # one whose `=>` was owed at junk at a `=>` past it (defect 193).
+    missed = !broken_arm.arrow(@c, text, own_block: own_block)
 
-        if more.is_err()
-            return fail(code: "no_pattern", msg: "a joined pattern is missing")
-        patterns @ patterns.push(more.must())
-
-    # An arm broken before its `=>` goes on at it (`parse/broken_arm`).
-    if !broken_arm.arrow(@c, text, own_block: own_block)
+    if missed && !(operator_arm.to_the_arrow(@c) && cursor.eat(@c, .fat_arrow))
         return fail(code: "no_arrow", msg: "the arm has no `=>`")
 
     # One statement, or a block — the same two shapes every other body has
@@ -1197,12 +1199,12 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
         body @ .one_stmt(at: at)
     broken_arm.close_its_block(@c, from: head.pos)
 
-    # A pattern begun with an operator was told, and the arm read past it for
-    # its own mistakes (`parse/operator_arm`).
-    if lead.must().told
-        return fail(code: "no_pattern", msg: "the arm's pattern began with an operator")
+    # A pattern or a `=>` refused was told, and the arm read past it for its
+    # own mistakes (`parse/operator_arm`).
+    if lead.must().told || missed
+        return fail(code: "no_pattern", msg: "the arm's pattern or its `=>` was refused")
     return ok(
-        ast.Arm(patterns: patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+        ast.Arm(patterns: lead.must().patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
     )
 
 ## Tests — the precedence table, read back off real token streams
@@ -1666,7 +1668,7 @@ test "only a place can be passed as @"
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "not_a_place"
 
-# `opening.begins_an_expression` was what a `certain` *use `while`* rested on
+# `token.begins_an_expression` was what a `certain` *use `while`* rested on
 # (defect 131's third round) until lane X3, 2026-09-29, when the rest of the
 # line came to be read as the `while`'s condition (`parse/loop_habit`). It is
 # still a second copy of what `unary` and `primary` accept, and this is where
@@ -1749,4 +1751,4 @@ test "an expression begins exactly where begins_an_expression says it can"
         a: ast.Ast @ ast.new_ast()
         _ = parse_expr(@c, @a, "x ")
         refused_first = c.diagnostics.len() > 0 && c.diagnostics[0].code == "expected_expression" && c.diagnostics[0].span.start == 0
-        assert refused_first == !opening.begins_an_expression(k)
+        assert refused_first == !token.begins_an_expression(k)

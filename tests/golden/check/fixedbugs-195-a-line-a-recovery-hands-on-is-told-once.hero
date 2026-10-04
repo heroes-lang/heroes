@@ -1,0 +1,62 @@
+# Fixed defect 195, 2026-10-04 (lane b9-recovery; panel 187's cause A2, rows
+# 131-55a and 131-55b, shape `g1/a11`). Symptom: a line a recovery handed on
+# to the statement reader was told a second time by the expression's
+# `primary`: `use geom` over an indented `function g()` was told the block
+# and then `expected_expression` at the `function`, and an arm's `0` over a
+# `=> 5` two dedents out `expected_arm_arrow` and then `expected_expression`
+# at the `=>`. Cause: the top level's block was read by the shape its first
+# line's keyword named, as a head's would be, so `function g()` made it that
+# function's statements and `record P` its fields (`head_kind.named_by`); and
+# the `=>` the arm could not reach was read as a statement. A block's own
+# indent heads nothing, and a `=>` that begins the line below an arm told its
+# missing `=>` is that arm's, passed, its value read for its own mistakes. The
+# shapes: a function, a record and a bodiless function in the block, its
+# statements and fields as before, the `=>` two and three dedents out, with
+# a closer after it; a stray `=>` below no arm, and one below a whole arm,
+# are each one message as before.
+
+use geom
+    function g()  #~ expected_declaration
+        y = 4 )  #~ expected_end_of_line
+
+use lines
+    record P  #~ expected_declaration
+        x: i64 )  #~ expected_end_of_line
+
+use more
+    #~v expected_declaration
+    function h()
+
+#~v missing_body
+function two_dedents()
+    n = 1
+    if n > 0
+        k = match n
+            0  #~ expected_arm_arrow
+    => 5
+    print(n)
+
+function three_dedents()
+    n = 1
+    if n > 0
+        if n > 1
+            k = match n
+                0  #~ expected_arm_arrow
+    => 5 )  #~ expected_end_of_line
+    print(n)
+
+function no_arm_above()
+    x = 1
+    => 5  #~ expected_expression
+    print(x)
+
+function a_whole_arm_above()
+    n = 1
+    if n > 0
+        k = match n
+            0 => 1
+    => 5  #~ expected_expression
+    print(n)
+
+function main()
+    print(1)

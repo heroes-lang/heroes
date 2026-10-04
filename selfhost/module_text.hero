@@ -7,7 +7,10 @@
 # a `use` line's recovery came to drop only its own line and that module
 # stood at the 310 `tests/harness/suite_layout.hero` measured it at. These
 # never read the cursor: each asks the text, which is the seam. A leaf, used
-# by `parse/use_line` and `parse/group_head`.
+# by `parse/use_line` (and by no other module, by grep on 2026-10-04). Out
+# of `parse/` since that day (defect 204), along that seam: it reads no
+# parse, and the parser's line budget (`tests/harness/suite_layout.hero`)
+# holds what does.
 
 use text_lines
 

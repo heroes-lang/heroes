@@ -116,11 +116,90 @@ function is_line_end(kind: TokenKind) -> bool
 function ends_a_line(kind: TokenKind) -> bool
     return is_line_end(kind) || kind == .eof
 
+## Brackets
+
+# Whether a token of `kind` closes a bracket.
+function is_closer(kind: TokenKind) -> bool
+    return kind == .rparen || kind == .rbracket || kind == .rbrace
+
+# The opener a closer closes, a `(` for any other kind; and the closer an
+# opener owes, a `)` for any other. Here since defect 196, from
+# `parse/pairing` and `parse/unclosed`, which kept one each.
+function opener_of(closer: TokenKind) -> TokenKind
+    if closer == .rbracket
+        return .lbracket
+
+    if closer == .rbrace
+        return .lbrace
+    return .lparen
+
+function closer_of(opener: TokenKind) -> TokenKind
+    if opener == .lbracket
+        return .rbracket
+
+    if opener == .lbrace
+        return .rbrace
+    return .rparen
+
+# Whether a token of `kind` can begin an expression, spec § 7's `Unary` and
+# `Primary`: what `while` needs after it to be a loop, so what a `certain`
+# *use `while`* for a `for` over a condition needs (defect 131's third
+# round). Enumerated, so a new token kind is answered for, not defaulted.
+# Moved here from `parse/opening.hero` with defect 202, a table of kinds that
+# reads no parse, as the two above came here.
+function begins_an_expression(kind: TokenKind) -> bool
+    return match kind
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece => true
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if       => true
+        .kw_match | .lparen | .lbracket | .lbrace | .dot                                 => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for      => false
+        .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return | .kw_test            => false
+        .kw_assert | .kw_extern | .kw_use | .eq | .at | .colon | .colon_colon | .comma   => false
+        .question | .arrow | .fat_arrow | .pipe | .rparen | .rbracket | .rbrace | .plus  => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge            => false
+        .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator         => false
+        .indent | .dedent | .eof | .error                                                => false
+
 # A token of `kind` over `start` to `end`: a stream written by hand, as the
 # parser's tests write theirs, eight modules of which held a copy as `tok`
 # until 2026-10-03 (lane b8-recovery).
 function made(kind: TokenKind, start: i64, end: i64) -> Token
     return Token(kind: kind, span: Span(start: start, end: end))
+
+## What a line may begin or hold
+
+# Whether a token only ever goes on with a line above it and begins none of
+# its own: an operator but the three that also begin a value, `-`, `!` and
+# `~`; a separator or a closer; `else` and `in`. Enumerated, so a new token
+# kind is answered for, not defaulted. Moved here from `parse/orphans` with
+# defect 193, a table of kinds that reads no parse.
+function continues_a_line(kind: TokenKind) -> bool
+    return match kind
+        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge      => true
+        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .comma       => true
+        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket      => true
+        .rbrace | .kw_else | .kw_in                                                        => true
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece   => false
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if         => false
+        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function     => false
+        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue          => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator => false
+        .indent | .dedent | .eof | .error                                                  => false
+
+# A token spec § 8's `Pattern` is written with, or the `|` that joins two.
+# ENUMERATED, so that a new kind is answered for here. Moved here from
+# `parse/margin_arms` with defect 193, a table of kinds that reads no parse.
+function of_a_pattern(k: TokenKind) -> bool
+    return match k
+        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment             => true
+        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant        => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true      => false
+        .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow  => false
+        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus      => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and        => false
+        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent   => false
+        .dedent | .eof | .error                                                                 => false
 
 ## The stable names
 

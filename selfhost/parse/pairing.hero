@@ -51,13 +51,13 @@ function paired_closer(c: cursor.Cursor, text: str, open: i64) -> i64
             # A closer of another kind the lexer paired below the innermost
             # takes the walk that knows the kinds; anything else there is
             # where the lexer named every opener open.
-            if at == closed && is_closer(k)
+            if at == closed && token.is_closer(k)
                 return paired_by_kinds(c, text, open: open)
             return -1
 
         if k == .lparen || k == .lbracket || k == .lbrace
             depth @ depth + 1
-        else if is_closer(k)
+        else if token.is_closer(k)
             depth @ depth - 1
 
             if depth == 0
@@ -88,9 +88,9 @@ function paired_by_kinds(c: cursor.Cursor, text: str, open: i64) -> i64
         at = c.tokens[i].span.start
 
         if closed >= 0 && at >= closed
-            if at > closed || !is_closer(k)
+            if at > closed || !token.is_closer(k)
                 return -1
-            own = innermost(kinds, opener: opener_of(k))
+            own = innermost(kinds, opener: token.opener_of(k))
 
             if own < 0
                 return -1
@@ -101,7 +101,7 @@ function paired_by_kinds(c: cursor.Cursor, text: str, open: i64) -> i64
             closed @ close_after(c, at: at)
         else if k == .lparen || k == .lbracket || k == .lbrace
             kinds @ kinds.push(k)
-        else if is_closer(k)
+        else if token.is_closer(k)
             kinds @ kinds.slice(from: 0, to: kinds.len() - 1)
 
             if kinds.len() == 0
@@ -125,18 +125,6 @@ function innermost(kinds: [token.TokenKind], opener: token.TokenKind) -> i64
         at @ at - 1
 
     return at
-
-function is_closer(k: token.TokenKind) -> bool
-    return k == .rparen || k == .rbracket || k == .rbrace
-
-# The opener a closer closes.
-function opener_of(closer: token.TokenKind) -> token.TokenKind
-    if closer == .rbracket
-        return .lbracket
-
-    if closer == .rbrace
-        return .lbrace
-    return .lparen
 
 # The first offset past `at` where the lexer named the brackets still open,
 # or -1 where it named none there.
