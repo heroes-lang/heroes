@@ -577,11 +577,51 @@ int64_t hero_fs_why(void) {
     return hero_fs_why_code;
 }
 
-/* The whole file, read with `fseek`/`ftell`/`fread`.
+/* The whole file, read to its end.
  *
  * A binary read (`"rb"`), because a `str` is bytes: §4.3 measures and indexes a
  * string in bytes, so translating CRLF here would make `len` disagree with the
- * file on one platform and not the other. */
+ * file on one platform and not the other.
+ *
+ * **Read to the end, never to a size asked first** (defect 273, 2026-10-04,
+ * found by batch 8's Linux arm64 leg on defect 236's test). The size came from
+ * `fseek(SEEK_END)` and `ftell`, which answer for a regular file and for
+ * nothing else: a directory opens with `fopen` on Linux and on this Mac, and on
+ * Linux its end is an offset near 2^63, so the buffer asked for that and
+ * `read_file` died *out of memory* where it owes `.err`; a file under `/proc`
+ * says 0 and read as empty. So the open file is asked what it is: a directory
+ * is FAILED before a byte is read, a regular file's size is only the first
+ * capacity, and the read goes on until `fread` meets the end, the buffer
+ * doubling with its product guarded, as §4.20 asks of every length. */
+#if defined(_WIN32)
+#include <sys/types.h>
+#include <sys/stat.h>
+#else
+#include <sys/stat.h>
+#endif
+
+/* 1 for a directory, -1 where the descriptor cannot be described, 0 otherwise,
+ * with `*first_room` the capacity to start from: one byte past a regular file's
+ * stated size, so a file read whole meets its end in the same call, and 4096
+ * where nothing states a size. Asked of the descriptor rather than the path, so
+ * the answer is about the file that was opened. */
+static int hero_file_kind(FILE *file, size_t *first_room) {
+    *first_room = 4096;
+#if defined(_WIN32)
+    struct _stat64 info;
+    if (_fstat64(_fileno(file), &info) != 0) return -1;
+    if ((info.st_mode & _S_IFMT) == _S_IFDIR) return 1;
+    int regular = (info.st_mode & _S_IFMT) == _S_IFREG;
+#else
+    struct stat info;
+    if (fstat(fileno(file), &info) != 0) return -1;
+    if (S_ISDIR(info.st_mode)) return 1;
+    int regular = S_ISREG(info.st_mode);
+#endif
+    if (regular && info.st_size > 0 && (uint64_t)info.st_size < (uint64_t)(SIZE_MAX / 2))
+        *first_room = (size_t)info.st_size + 1;
+    return 0;
+}
 /* **The runtime does nothing to a path, and that is the portability** (recorded
  * 2026-08-14, after a day in which four separate things broke on Windows over path
  * separators and none of them was here).
@@ -607,21 +647,36 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
         *status = HERO_OS_NOT_FOUND;
         return hero_str_from_bytes("", 0);
     }
-    if (fseek(file, 0, SEEK_END) != 0) {
+    size_t room = 0;
+    if (hero_file_kind(file, &room) != 0) {
         fclose(file);
         *status = HERO_OS_FAILED;
         return hero_str_from_bytes("", 0);
     }
-    long size = ftell(file);
-    if (size < 0 || fseek(file, 0, SEEK_SET) != 0) {
-        fclose(file);
-        *status = HERO_OS_FAILED;
-        return hero_str_from_bytes("", 0);
+    char *buffer = hero_alloc(room);
+    size_t got = 0;
+    for (;;) {
+        if (got == room) {
+            if (room > SIZE_MAX / 2) {
+                hero_release(buffer);
+                fclose(file);
+                *status = HERO_OS_FAILED;
+                return hero_str_from_bytes("", 0);
+            }
+            char *grown = hero_alloc(room * 2);
+            memcpy(grown, buffer, got);
+            hero_release(buffer);
+            buffer = grown;
+            room = room * 2;
+        }
+        size_t want = room - got;
+        size_t n = fread(buffer + got, 1, want, file);
+        got += n;
+        if (n < want) break;
     }
-    char *buffer = hero_alloc((size_t)size + 1);
-    size_t got = fread(buffer, 1, (size_t)size, file);
+    int failed = ferror(file);
     fclose(file);
-    if (got != (size_t)size) {
+    if (failed || got > (size_t)INT64_MAX) {
         hero_release(buffer);
         *status = HERO_OS_FAILED;
         return hero_str_from_bytes("", 0);
