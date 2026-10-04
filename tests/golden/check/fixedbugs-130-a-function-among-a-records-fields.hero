@@ -42,7 +42,7 @@ record T
 
 record V
     x: i64
-    fn f()  #~ reserved_word expected_field
+    fn f()  #~ reserved_word
         print(1 +)  #~ expected_expression
 
 class W  #~ reserved_word
@@ -65,3 +65,8 @@ function a_class_in_a_body()
 
 function main()
     print(1)
+
+# Moved 2026-10-04 with defect 200's repair (lane b9-recovery): `fn f()` among
+# a record's fields is told once, by the lexer, whose `reserved_word` says a
+# `function` is declared at the top level; the parser's `expected_field` at
+# the same token said it a second time (`parse/heads.next_member`).

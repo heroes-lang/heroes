@@ -53,6 +53,7 @@ use parse/braces
 use grammar_expr
 use parse/opening
 use parse/top_level
+use parse/headless
 
 ## The dispatcher
 
@@ -234,7 +235,14 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
         if below == .none
             return
     start = cursor.current_span(c)
-    cases = members_below.cases_below(@c, @a, text, below: below)
+    cases: [ast.Case] @ []
+
+    # A declaration among the cases is read as one, as among a record's
+    # fields (`records.among_members`, defect 200).
+    if below == .indented && cursor.at(c, .indent) && headless.declares_inside(c, text)
+        records.among_members(@c, @a, text: text, holder: "variant")
+    else
+        cases @ members_below.cases_below(@c, @a, text, below: below)
     finish: token.Span @ start
 
     if cases.len() > 0

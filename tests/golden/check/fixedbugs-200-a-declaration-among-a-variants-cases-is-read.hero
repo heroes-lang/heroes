@@ -1,0 +1,64 @@
+# Fixed defect 200, 2026-10-04 (lane b9-recovery; panel 187's cause B3, shape
+# `g2/r12`). Symptom: a `function` among a variant's cases was told
+# `expected_case` once and dropped with its block, so a mistake inside it,
+# `print(1 +)`, waited until it moved out; among a record's fields the same
+# function was read as the function it is. Cause: a variant's block was read
+# by the case reader alone, which can read no body: the line went with
+# `skip_line` and its block with `balanced_block`. A variant's block that
+# holds a declaration is read now as a record's is (`records.among_members`,
+# `heads.next_member`): a case's line as a case (`member_lines.case_line`), a
+# declaration's as the declaration it is, the first told once in the
+# variant's words; a word the lexer refused there, `fn`, is the lexer's one
+# report. The shapes: a function after a case and before one, a constant, a
+# test, a record, a variant, a function with no body, `fn`, and a case's own
+# mistake after the function.
+
+variant A
+    red
+    function f()  #~ expected_case
+        print(1 +)  #~ expected_expression
+
+variant B
+    function g()  #~ expected_case
+        print(1 +)  #~ expected_expression
+    red
+
+variant C
+    red
+    constant K: i64  #~ expected_case
+        1 +  #~ expected_expression
+
+variant D
+    red
+    test "t"  #~ expected_case
+        assert 1 +  #~ expected_expression
+
+variant E
+    red
+    record R  #~ expected_case
+        x i64  #~ expected_field_type
+
+variant F
+    red
+    variant W  #~ expected_case
+        a b  #~ expected_end_of_line
+
+variant G
+    red
+    function h()  #~ expected_case
+    #~v missing_body
+    blue
+
+variant H
+    red
+    fn k()  #~ reserved_word
+        print(1 +)  #~ expected_expression
+
+variant I
+    red
+    function m()  #~ expected_case
+        print(1 +)  #~ expected_expression
+    blue x  #~ expected_end_of_line
+
+function main()
+    print(1)

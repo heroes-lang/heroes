@@ -136,7 +136,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     fields: [ast.Field] @ []
 
     if members_below.close_of(below) < 0 && cursor.at(c, .indent) && headless.declares_inside(c, text)
-        among_fields(@c, @a, text)
+        among_members(@c, @a, text: text, holder: "record")
     else
         fields @ members_below.fields_below(@c, @a, text, below: below)
 
@@ -146,16 +146,17 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
         ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
     )
 
-# A record's block that holds a declaration, `function f()` among its
-# fields: each line read by `parse/heads.next_member`, a field's as a field,
-# and the first declaration's told once and read as the declaration it is,
-# its body by the grammar (defect 130's class, lane recovery-b8). It was
+# A record's or a variant's block that holds a declaration, `function f()`
+# among its fields or its cases: each line read by `parse/heads.next_member`,
+# a field's or a case's as one, and the first declaration's told once and
+# read as the declaration it is, its body by the grammar (defect 130's
+# class, lane recovery-b8; a variant's since defect 200). It was
 # `expected_field` and `unexpected_block`, two messages, its body unread.
-function among_fields(@c: cursor.Cursor, @a: ast.Ast, text: str)
+function among_members(@c: cursor.Cursor, @a: ast.Ast, text: str, holder: str)
     _ = cursor.bump(@c)
     told: bool @ false
     habit: i64 @ -1
-    owed: heads.Owed @ heads.next_member(@c, @a, text, in_record: true, told: @told, @habit)
+    owed: heads.Owed @ heads.next_member(@c, @a, text: text, holder: holder, told: @told, @habit)
 
     while owed.owes != .done
         if owed.owes == .body
@@ -164,7 +165,7 @@ function among_fields(@c: cursor.Cursor, @a: ast.Ast, text: str)
             grammar_expr.abandon(@c, @a, text, from: owed.head.pos)
         else
             _ = grammar_expr.statement(@c, @a, text)
-        owed @ heads.next_member(@c, @a, text, in_record: true, told: @told, @habit)
+        owed @ heads.next_member(@c, @a, text: text, holder: holder, told: @told, @habit)
 
 ## Tests
 
