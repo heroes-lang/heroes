@@ -24,6 +24,7 @@ use module/reading
 use not_text
 use cli/process
 use cli/files
+use cli/publish
 use cli/shell_split
 use cli/strings
 use emit/ffi_build
@@ -71,10 +72,10 @@ function complaint(path: str) -> str
 # marker (`emit/ffi_build.package_problem` reads it into `ffi_package`), and
 # the not-installed sentence is word for word the one the net reads as a
 # machine lacking the library (`tests/harness/absence.hero`).
-function refused(package: str, complained: str) -> str
+function refused(package: str, complained: str, build_dir: str) -> str
     said = "\n  pkg-config said: " + shell_split.shown(strings.trimmed(complained), keep_lines: true)
 
-    if known(package)
+    if installed(package: package, build_dir: build_dir)
         return "heroes-ffi-package `" + package + "` is installed, and pkg-config cannot give its flags" + said + "\n  install what pkg-config says it lacks, or name the library directly with `link`"
     return "heroes-ffi-package `" + package + "` is not installed on this machine" + said + "\n  install its development files, or name the library directly with `link`"
 
@@ -97,22 +98,107 @@ function unasked(package: str, why: i64) -> str
         return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
     return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `package \"" + package + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
 
-# Whether `pkg-config` reads `package`'s own `.pc`, asked with no requirement
-# followed: `--maximum-traverse-depth=1 --modversion` is answered at exit 0
-# for a package whose `Requires:` names one the machine lacks, and at exit 1
-# for one not found, by pkgconf 3.0.7 (this Mac) and 1.8.1 (Debian, the Linux
-# arm64 image), measured 2026-10-04. Without the depth, 1.8.1 follows the
-# requirements for `--modversion`, `--path` and `--variable`, and both follow
-# them for `--exists`. A `pkg-config` that refuses the option answers no, so
-# its refusal reads as every refusal did before. Its words are not read.
-function known(package: str) -> bool
+# **Whether `package` is installed, asked three ways, any one enough, so *not
+# installed* is said only where all three say no** (defect 292): `pkg-config`
+# reading the package's own `.pc` without following what it requires, in
+# either of two spellings, and a `.pc` of that name on the search path it
+# reads (`on_search_path`). Measured 2026-10-04 on pkgconf 3.0.7 (this Mac),
+# pkgconf 1.8.1 (Debian, the Linux arm64 image) and pkg-config 0.29.2 (Ubuntu
+# 22.04's, under Docker), over `.pc` files whose requirement is missing, two
+# deep, private or too old: pkgconf reads each with
+# `--maximum-traverse-depth=1 --modversion`, which 0.29.2 refuses as an
+# unknown option; 0.29.2 reads each with a plain `--modversion`, which 1.8.1
+# answers only by following the requirements. Each reads one of the two, none
+# reads a package that is not there, and their words are not read. The search
+# path is the question every `pkg-config` answers, and it sees what neither
+# spelling does: a `.pc` that pkg-config will not read, which pkgconf calls
+# not found where it has no `Version:`, and which is installed all the same.
+function installed(package: str, build_dir: str) -> bool
+    if read_alone(words: ["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", package])
+        return true
+
+    if read_alone(words: ["pkg-config", "--modversion", "--", package])
+        return true
+    return on_search_path(package: package, build_dir: build_dir)
+
+function read_alone(words: [str]) -> bool
+    ran = process.run(program: "pkg-config", words: words, out: process.discard(), err: process.discard())
+    return ran.started && ran.code == 0
+
+# Whether a `.pc` named for `package` stands in a directory `pkg-config`
+# searches: `PKG_CONFIG_PATH`'s, then `PKG_CONFIG_LIBDIR`'s where it is set,
+# or else the default `pkg-config --variable=pc_path pkg-config` reports.
+# Measured on the same three, 2026-10-04: the reported default holds neither
+# variable; `PKG_CONFIG_LIBDIR` set replaces it, and set empty leaves no
+# directory of it; an entry left empty names none; an `-uninstalled.pc`
+# answers to the plain name unless `PKG_CONFIG_DISABLE_UNINSTALLED` is set.
+# A value this compiler cannot read adds no directory, so the search can miss
+# a `.pc` and never invents one.
+function on_search_path(package: str, build_dir: str) -> bool
+    rest: str @ ""
+
+    if process.is_set(name: "PKG_CONFIG_LIBDIR")
+        rest @ process.env(name: "PKG_CONFIG_LIBDIR").default("")
+    else
+        rest @ default_path(build_dir)
+    windows = process.exe_suffix() == ".exe"
+    dirs = strings.with_all(
+        list: entries(process.env(name: "PKG_CONFIG_PATH").default(""), windows: windows),
+        more: entries(rest, windows: windows)
+    )
+    return pc_found(dirs: dirs, package: package, uninstalled: !process.is_set(name: "PKG_CONFIG_DISABLE_UNINSTALLED"))
+
+# The default search path `pkg-config` reports of itself, "" where it reports
+# none or the answer cannot be read.
+function default_path(build_dir: str) -> str
+    out = publish.private_name(build_dir + "/pkg-config-pc-path.txt")
     ran = process.run(
         program: "pkg-config",
-        words: ["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", package],
-        out: process.discard(),
+        words: ["pkg-config", "--variable=pc_path", "pkg-config"],
+        out: out,
         err: process.discard()
     )
-    return ran.started && ran.code == 0
+    said = reading.source_text(out)
+    publish.discard(out)
+
+    if !ran.started || ran.code != 0 || said.is_err() || said.must().faults.len() > 0
+        return ""
+    return strings.trimmed(strings.without_returns(said.must().text))
+
+# The directories a search path's value names, parted at `:`, or at `;` on
+# Windows, where a path holds a `:` of its own (pkgconf's rule there, and
+# unmeasured: the Windows box has no `pkg-config`); an empty entry names none.
+# Each cut falls before or after an ASCII byte, so never inside a character.
+function entries(value: str, windows: bool) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= value.len()
+        if at == value.len() || windows && value[at] == ';' || !windows && value[at] == ':'
+            if at > start
+                out @ out.push(value.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# Whether `<package>.pc`, or `<package>-uninstalled.pc` where `uninstalled`,
+# is a file in one of `dirs`, a link to one counting (Homebrew's are links).
+function pc_found(dirs: [str], package: str, uninstalled: bool) -> bool
+    names: [str] @ [package + ".pc"]
+
+    if uninstalled
+        names @ names.push(package + "-uninstalled.pc")
+
+    for dir in dirs
+        for name in names
+            path = dir + "/" + name
+
+            if process.path_exists(path: path) && !process.is_directory(path: path)
+                return true
+
+    return false
 
 # The answer on one line, its line ends dropped: pkg-config ends its answer
 # with one, and the message quotes the words.
@@ -158,13 +244,42 @@ test "pkg-config's lines ended by a return and a line end are read as lines (def
     assert !write_file(path: answer_path, text: "-DSEVEN=7 -lz\r\n").is_err()
     said = complaint(complaint_path)
     assert said == "Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n"
-    told = refused(package: "heroes-package-no-machine-has-285", complained: said)
+    told = refused(package: "heroes-package-no-machine-has-285", complained: said, build_dir: "build")
     assert told == "heroes-ffi-package `heroes-package-no-machine-has-285` is not installed on this machine\n  pkg-config said: Package zz9 was not found in the pkg-config search path.\nPackage 'zz9' not found\n  install its development files, or name the library directly with `link`"
     answered = answer(path: answer_path, package: "z").must()
     assert answered == "-DSEVEN=7 -lz\n"
     assert shell_split.words(package: "z", said: answered).must() == ["-DSEVEN=7", "-lz"]
     assert !write_file(path: complaint_path, text: "one\rtwo\r").is_err()
     assert complaint(complaint_path) == "one\rtwo\r"
+
+# Defect 292's search path, as the three measured `pkg-config`s read it: an
+# entry left empty names no directory, and Windows parts at `;`; a `.pc` or
+# its `-uninstalled.pc` counts and a directory of that name does not; and a
+# `.pc` with no `Version:`, which pkgconf calls not found, stands on it.
+test "the search path's directories are read as pkg-config reads them (defect 292)"
+    assert entries("/a:/b::/c:", windows: false) == ["/a", "/b", "/c"]
+    assert entries("C:\\pc\\a;C:\\pc\\b", windows: true) == ["C:\\pc\\a", "C:\\pc\\b"]
+    assert entries("", windows: false).len() == 0
+    dir = "build/selftest-package-292-path"
+    assert !process.mkdir_all(dir + "/one/dirnamed292.pc").is_err()
+    assert !process.mkdir_all(dir + "/two").is_err()
+    assert !write_file(path: dir + "/two/nover292.pc", text: "Name: nover292\nDescription: no Version\nCflags: -I/nowhere\nLibs:\n").is_err()
+    assert !write_file(path: dir + "/one/un292-uninstalled.pc", text: "Name: un292\nDescription: u\nVersion: 1\nLibs:\n").is_err()
+    both = [dir + "/one", dir + "/two"]
+    assert pc_found(dirs: both, package: "nover292", uninstalled: true)
+    assert pc_found(dirs: both, package: "un292", uninstalled: true)
+    assert !pc_found(dirs: both, package: "un292", uninstalled: false)
+    assert !pc_found(dirs: both, package: "dirnamed292", uninstalled: true)
+    assert !pc_found(dirs: both, package: "absent292", uninstalled: true)
+    tool = process.run(
+        program: "pkg-config",
+        words: ["pkg-config", "--version"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if tool.started
+        assert default_path("build").len() > 0
 
 # Defect 249: where `pkg-config` does not start, the refusal opens with the
 # package marker, so `emit/ffi_build.package_problem` reads it into the
