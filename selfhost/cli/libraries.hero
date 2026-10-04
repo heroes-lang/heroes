@@ -314,7 +314,10 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
 
         # Installed or not is asked of `pkg-config`, never assumed (defect 292).
         if ran.code != 0
-            return fail(code: "failed", msg: package_answer.refused(package: package, complained: complained))
+            return fail(
+                code: "failed",
+                msg: package_answer.refused(package: package, complained: complained, build_dir: build_dir)
+            )
         filtered = filter_words(package: package, said: answered?)
 
         if filtered.is_err()
@@ -515,8 +518,9 @@ test "the C runtime's own libraries are folded in where the machine folds them"
 # Defect 292, asked of this machine's own `pkg-config`: a `.pc` written here,
 # named by its path, which `pkg-config` reads as that file, its `Requires:`
 # naming a package no machine has, is installed and refused; a path holding no
-# `.pc` is not installed. A `pkg-config` that does not answer the per-package
-# question even of its own virtual package is told as every refusal was before.
+# `.pc` is not installed. Every `pkg-config` measured reads such a file by one
+# of `package_answer.installed`'s two spellings (pkgconf 3.0.7 and 1.8.1 and
+# pkg-config 0.29.2, 2026-10-04), so this fires where one no longer does.
 test "a package pkg-config reads and refuses is told installed, and one it cannot find not installed (defect 292)"
     dir = "build/selftest-package-292"
     assert !process.mkdir_all(dir).is_err()
@@ -539,26 +543,18 @@ test "a package pkg-config reads and refuses is told installed, and one it canno
                 assert e.msg == package_answer.unasked(package: pc, why: tool.why)
 
     if tool.started
-        each = package_answer.known(package: "pkg-config")
-
         match resolve_packages(packages: [pc], build_dir: dir)
             .ok => assert false
             .err e =>
-                if each
-                    assert strings.starts_with(
-                        text: e.msg,
-                        prefix: "heroes-ffi-package `" + pc + "` is installed, and pkg-config cannot give its flags\n  pkg-config said: "
-                    )
-                    assert has_text(text: e.msg, needle: "heroes-package-no-machine-has-292")
-                    assert strings.ends_with(
-                        text: e.msg,
-                        suffix: "\n  install what pkg-config says it lacks, or name the library directly with `link`"
-                    )
-                else
-                    assert strings.starts_with(
-                        text: e.msg,
-                        prefix: "heroes-ffi-package `" + pc + "` is not installed on this machine\n"
-                    )
+                assert strings.starts_with(
+                    text: e.msg,
+                    prefix: "heroes-ffi-package `" + pc + "` is installed, and pkg-config cannot give its flags\n  pkg-config said: "
+                )
+                assert has_text(text: e.msg, needle: "heroes-package-no-machine-has-292")
+                assert strings.ends_with(
+                    text: e.msg,
+                    suffix: "\n  install what pkg-config says it lacks, or name the library directly with `link`"
+                )
 
         match resolve_packages(packages: [dir + "/absent292.pc"], build_dir: dir)
             .ok => assert false
