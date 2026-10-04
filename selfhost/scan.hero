@@ -34,6 +34,7 @@ use lost_quote
 use comment_habit
 use word_place
 use separator_runs
+use text_lines
 
 ## One line of words
 
@@ -247,22 +248,13 @@ function ident(@l: state.LexState, text: str)
             )
             .hint fix => d.fixes.push(diag.Fix(title: fix.title, replacement: fix.word, span: span, certainty: .guess))
             .drop => d.fixes.push(
-                diag.Fix(title: "drop `" + word + "`", replacement: "", span: token.Span(start: start, end: past_spaces(text, from: l.pos)), certainty: .guess)
+                diag.Fix(title: "drop `" + word + "`", replacement: "", span: token.Span(start: start, end: text_lines.past_spaces(text, at: l.pos)), certainty: .guess)
             )
             .guidance => d.fixes
 
         state.error_token(@l, d)
         return
     state.emit(@l, .ident, start)
-
-# The offset past the spaces that follow `from` on its line.
-function past_spaces(text: str, from: i64) -> i64
-    i: i64 @ from
-
-    while i < text.len() && text[i] == ' '
-        i @ i + 1
-
-    return i
 
 ## The punctuation
 
@@ -293,6 +285,12 @@ function punct(@l: state.LexState, text: str)
     # its deletion certain (`separator_runs`, defect 178).
     if ch == ";" && l.open_brackets.len() == 0 && separator_runs.ends_its_line(text, at: l.pos)
         separator_runs.semicolon(@l.diagnostics, text, at: span)
+        state.error_token_at(@l, start)
+        return
+
+    # One inside C's `for (i = 0; i < n; i++)` is that header's, which the
+    # parser tells once at its `(` (`closers.in_a_for_header`, defect 194).
+    if ch == ";" && closers.in_a_for_header(l)
         state.error_token_at(@l, start)
         return
 

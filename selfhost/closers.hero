@@ -24,6 +24,7 @@
 # |---|---|
 # | `opener_of`, `close_to_its_kind` | `scan.finish` |
 # | `never_closed` | `close_to_its_kind`, `layout.close_brackets` |
+# | `in_a_for_header` | `scan.punct`, a `;` in C's `for (...)` |
 
 use token
 use diag
@@ -132,6 +133,23 @@ function past_literal(text: str, from: i64) -> i64
             i @ i + 1
 
     return i
+
+# Whether the innermost bracket open is the `(` right after a `for`, C's
+# three-clause header `for (i = 0; i < n; i++)`, whose `;` are its own and
+# no strays of the program's: the parser tells the header once, at that `(`
+# (`parse/loop_habit.refuse`, defect 194), where each `;` cost a message.
+function in_a_for_header(l: state.LexState) -> bool
+    n = l.open_brackets.len()
+
+    if n == 0
+        return false
+    open = l.open_brackets[n - 1].start
+    i: i64 @ l.tokens.len() - 1
+
+    while i > 0 && l.tokens[i].span.start > open
+        i @ i - 1
+
+    return i > 0 && l.tokens[i].kind == .lparen && l.tokens[i].span.start == open && l.tokens[i - 1].kind == .kw_for
 
 # The byte of the opener the closer `kind` closes.
 function opener_of(kind: token.TokenKind) -> u8
