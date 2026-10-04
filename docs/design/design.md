@@ -2749,13 +2749,16 @@ Two passes sit between type checking and emission, and they are **core obligatio
   the path that stored it ran or not. An `@` parameter's slot is not zeroed, because its copy-in
   writes it before the first block, and a temporary is never initialised: its one definition
   precedes every read of it on every path, which the verifier proves between blocks and within
-  one, and the C writes it whole, so `-Werror=uninitialized` goes on checking it. **Every block
-  that returns**, a `return` and the early return a `?` lowers to, performs the `@` copy-out,
-  retains what it returns, and releases every local and synthetic slot (§4.8: "copy-out happens
-  always"); `break`, `continue` and a `match`'s arms are jumps inside the function and release
-  nothing, and a panic (`hero_panic` and its kin, `_Noreturn`) aborts the process where it
-  stands, releasing nothing and copying nothing out. The runtime cannot know where a scope ends;
-  only lowering can.
+  one, and the C writes it whole, so `-Werror=uninitialized` goes on checking it. **Every way out
+  of a function that has two or more**, a `return`, the early return a `?` lowers to and the edge
+  that falls off the end, stores what it returns into the function's return slot and jumps to the
+  function's one exit block, which performs the `@` copy-out, retains what it returns and releases
+  every local and synthetic slot (§4.8: "copy-out happens always"). The return slot only borrows,
+  so a store into it retains nothing and the exit does not release it. A function with one way out
+  does all of this in the block that returns. `break`, `continue` and a `match`'s arms are jumps
+  inside the function and release nothing, and a panic (`hero_panic` and its kin, `_Noreturn`)
+  aborts the process where it stands, releasing nothing and copying nothing out. The runtime
+  cannot know where a scope ends; only lowering can.
 
   **AMENDED 2026-09-28 by panel 182**
   (`docs/panel/182-a-value-is-never-zeroed-a-slot-is-and-a-definition-is-whole.md`), and what
@@ -2777,6 +2780,19 @@ Two passes sit between type checking and emission, and they are **core obligatio
   second, with a `match` inside a `while` and a `continue`, each arm and the `continue` are a
   `goto` with no release, and the one returning block sweeps all eight. It said *five rules*, and
   `own.hero` states six.
+
+  **AMENDED 2026-10-04 by panel 190**
+  (`docs/panel/190-a-function-with-two-or-more-ways-out-leaves-by-one-exit-that-sweeps-once-its-return-slot-borrowing.md`,
+  provisional, the author's ratification pending; its R6, the compiler-engineer's wording), landed
+  at `6e616898` for defect 231. It read *"**Every block that returns**, a `return` and the early
+  return a `?` lowers to, performs the `@` copy-out, retains what it returns, and releases every
+  local and synthetic slot"*, and a function of many returns over many slots grew as their
+  product: the sitting measured 481,201 releases for 402 returns over 1,200 slots, and the
+  800-return shape not built at `-O2` on the Windows box, clang dead of memory. The merge is a pass
+  of its own after lowering, `selfhost/ir/exits.hero`, and `selfhost/ir/one_exit.hero` holds the
+  borrow, the one exit and the return type to it. One shape stays unmerged: a function with a
+  result that falls off its end, which only a hole lets past the checker, and of which no binary
+  is made.
 
 ### The sugar: erased on the way into the IR
 
