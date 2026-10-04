@@ -1,10 +1,11 @@
-# The five golden suites that ask one question with five sets of
+# The six golden suites that ask one question with six sets of
 # parameters: run one command per case, diff ONE stream against the
 # `.expected` file, and check how the compiler ended.
 #
 # Ports golden.rs:124 (`check/`), :220 (`ir/`), :459 (`unsupported/`) and
 # :520 (`emit/`), and since defect 211 (2026-10-04) asks `check/`'s question
-# of the control arm (`permissive/`). One runner rather than five, because
+# of the control arm (`permissive/`), and since defect 289 the same day of the
+# whole form a message is written in (`full/`). One runner rather than six, because
 # they differ only in the verb, the flags, which stream carries the artifact
 # and the exit code the case must produce, and a second copy is a second place
 # for the exit-code rule to drift. What is deliberately NOT folded in is
@@ -180,6 +181,28 @@ function shape_unsupported() -> Shape
 
 constant NO_FLAGS: [str]
     []
+
+# `full/` is `check/`'s question asked of the whole form (defect 289,
+# 2026-10-04): `check` with no `--brief`, so what is compared is every part
+# design.md §4.17 asks a message to carry, its place, the line quoted under its
+# gutter and caret, its notes and its fixes. Every `check/` case asks
+# `--brief`, which prints a message's first line alone, so a note, an excerpt
+# or a fix that changed moved no golden: 0 of 466 `check/` expectations held an
+# `at` line, counted at `703af779`, and defect 244's excerpt was pinned in its
+# message alone. **5 cases on 2026-10-04**, the count, and so the floor.
+function shape_full() -> Shape
+    return Shape(
+        name: "full",
+        dir: "tests/golden/full",
+        verb: "check",
+        flags: NO_FLAGS,
+        on_stderr: true,
+        want_code: 1,
+        least: 5,
+        watched: true,
+        silent_stdout: false,
+        library_skip: false
+    )
 
 # `permissive/` is `check/` asked of Part 11's control arm: the same verb and
 # the same brief form, with `--permissive`, which drops the diagnostics that
@@ -480,6 +503,38 @@ test "fixedbugs: the control arm's form runs check with --brief and --permissive
     plain.least @ 1
     plain.watched @ false
     other = run_all(scratch: scratch, compiler: path, shape: plain, only: "")
+    assert !other.is_err()
+    assert other.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
+
+# Defect 289: the whole form is `check` and the case, with no other word, so
+# no `--brief` cuts what is compared. The stub answers with its own arguments,
+# one per line, so the form's real shape, pointed at a one-case tree, passes
+# only while it asks for the whole form, and `check`'s own form does not.
+test "fixedbugs: the whole form runs check with no other word (defect 289)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = one_case_tree(scratch: scratch, name: "full", expectation: "")
+    assert !tree.is_err()
+    assert !write_file(path: tree.must() + "/x.expected", text: "check\n" + tree.must() + "/x.hero\n").is_err()
+    path = scratch + "/stub-argv.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s\\n' \"$@\" 1>&2\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
+    assert !made.is_err()
+    form: Shape @ shape_full()
+    form.dir @ tree.must()
+    form.least @ 1
+    form.watched @ false
+    got = run_all(scratch: scratch, compiler: path, shape: form, only: "")
+    assert !got.is_err()
+    assert got.must().passed == 1
+    assert got.must().failed == 0
+    brief: Shape @ shape_check()
+    brief.dir @ tree.must()
+    brief.least @ 1
+    brief.watched @ false
+    other = run_all(scratch: scratch, compiler: path, shape: brief, only: "")
     assert !other.is_err()
     assert other.must().failed == 1
     assert !shell.remove_tree(scratch).is_err()

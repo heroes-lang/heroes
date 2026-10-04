@@ -1,0 +1,8 @@
+# Defect 289, 2026-10-04: the whole form of a message whose two fixes are
+# both a `guess`, each named and quoted, under its note. (`0_7`, the third
+# shape `check/leading-zero.hero` holds, is not pinned here: its note and its
+# second fix offer `_7`, which is no number, a finding of the same day.)
+
+function main()
+    mode = 0700  #~ leading_zero
+    print(mode)

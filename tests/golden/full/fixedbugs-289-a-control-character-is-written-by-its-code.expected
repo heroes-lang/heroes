@@ -1,0 +1,6 @@
+error[unknown_escape]: `\<U+001B>` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+  at tests/golden/full/fixedbugs-289-a-control-character-is-written-by-its-code.hero:8:13
+    |
+  8 |     print("a\<U+001B>b")  #~ unknown_escape
+    |             ^^^^^^^^^
+  fix (certain): escape the backslash: `\\<U+001B>`

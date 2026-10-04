@@ -49,11 +49,15 @@ use strings
 # `check --permissive` says. Until then its cases were pinned by their
 # `.expected` alone, the one golden directory with an expectation this sweep
 # did not hold to its source.
+#
+# `full/` since defect 289 (2026-10-04): `check`'s whole form, whose marks are
+# the normal arm's, so they witness its rules as `check/`'s do.
 constant DIRECTORIES: [str]
     [
         "tests/golden/check"
         "tests/golden/unsupported"
         "tests/golden/permissive"
+        "tests/golden/full"
     ]
 
 # The directories whose marks witness a thesis rule firing: the normal arm's.
@@ -64,6 +68,7 @@ constant NORMAL_ARM: [str]
     [
         "tests/golden/check"
         "tests/golden/unsupported"
+        "tests/golden/full"
     ]
 
 # **The second sweep, and why there had to be one** (author decision
