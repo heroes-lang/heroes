@@ -98,7 +98,28 @@ function not_octal(value: str) -> str
 function joins(follows: str) -> bool
     if follows.len() == 0
         return false
-    return bytes.is_alnum(follows[0]) || follows[0] == '_' || follows[0] >= 128
+    return joining(follows[0])
+
+# The same of one byte, every byte of a character beyond ASCII among them.
+function joining(b: u8) -> bool
+    return bytes.is_alnum(b) || b == '_' || b >= 128
+
+# Where what joins a refused literal's digits ends, from `at` (defect 329):
+# what `joining` takes, and a `.` before a digit once something has joined, as
+# a based literal's fraction runs (`number.fraction`), so `00x7.5` is one
+# literal. The run stops only between two characters.
+function joined_end(text: str, at: i64) -> i64
+    end: i64 @ at
+
+    while end < text.len()
+        if joining(text[end])
+            end @ end + 1
+        else if end > at && text[end] == '.' && end + 1 < text.len() && bytes.is_digit(text[end + 1])
+            end @ end + 1
+        else
+            return end
+
+    return end
 
 ## Tests
 
@@ -132,3 +153,14 @@ test "the advice is the digits without their zeros and the separators among them
     suffixed = told(written: "0644", span: token.Span(start: 0, end: 4), follows: "u")
     assert suffixed.fixes.len() == 0
     assert suffixed.notes.len() == 2
+
+# Defect 329: what joins the digits is the refused literal's, letters and a
+# character beyond ASCII whole, and a fraction once something has joined, up to
+# the first character that cannot go on a number; a method's `.` stays a call.
+test "what joins a refused literal's digits is the literal's, to the end of what a number could be (defect 329)"
+    assert joined_end("0644u)", at: 4) == 5
+    assert joined_end("00x7.5\n", at: 2) == 6
+    assert joined_end("0644é x", at: 4) == 6
+    assert joined_end("0644u.to_str()", at: 4) == 5
+    assert joined_end("07.5", at: 2) == 2
+    assert joined_end("0644", at: 4) == 4
