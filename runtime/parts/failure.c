@@ -60,29 +60,23 @@ const HeroDesc hero_desc_failure = {sizeof(HeroFailure), hero_copy_failure,
  * conversion that does not fit allocates nothing, so the check is free to sit in
  * a loop (M-sized-integers, panel 042). */
 HeroFailure hero_failure_does_not_fit(void) {
-    static const struct { HeroStrHeader h; char b[13]; } code = {
-        {-1, HERO_STR_MAGIC}, "does_not_fit"};
-    static const struct { HeroStrHeader h; char b[40]; } msg = {
-        {-1, HERO_STR_MAGIC}, "the value is outside the target's range"};
+    HERO_STR_STATIC(code, "does_not_fit");
+    HERO_STR_STATIC(msg, "the value is outside the target's range");
     /* `sizeof(b) - 1`, never a typed number — the rule the sibling below earned
      * the hard way, and the reason its comment is worth reading before touching
      * either message. */
-    return (HeroFailure){{code.b, (int64_t)sizeof(code.b) - 1},
-                         {msg.b, (int64_t)sizeof(msg.b) - 1}};
+    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
 }
 
 HeroFailure hero_failure_missing_key(void) {
-    static const struct { HeroStrHeader h; char b[12]; } code = {
-        {-1, HERO_STR_MAGIC}, "missing_key"};
-    static const struct { HeroStrHeader h; char b[12]; } msg = {
-        {-1, HERO_STR_MAGIC}, "no such key"};
+    HERO_STR_STATIC(code, "missing_key");
+    HERO_STR_STATIC(msg, "no such key");
     /* `sizeof(b) - 1`, never a typed number. The lengths were `11` and `11`,
      * correct and unchecked: shortening either message would have shipped a
      * `str` claiming bytes past its own text, silently, while lengthening it is
      * a clang error — so the two directions failed differently and only one of
      * them loudly (2026-08-12, sweep 001 S12). */
-    return (HeroFailure){{code.b, (int64_t)sizeof(code.b) - 1},
-                         {msg.b, (int64_t)sizeof(msg.b) - 1}};
+    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
 }
 
 /* **The same failure `read_file` and `validated` already give**, built here so
@@ -97,14 +91,20 @@ HeroFailure hero_failure_missing_key(void) {
    `sizeof(b) - 1`, never a typed number, for the reason the sibling above
    earned the hard way: shortening a message with a typed length ships a `str`
    claiming bytes past its own text, silently, while lengthening it is a clang
-   error, so the two directions fail differently and only one of them loudly. */
+   error, so the two directions fail differently and only one of them loudly.
+
+   **And the array's size was typed too, which is the third direction** (defect
+   275, 2026-10-04, found by panel 189's compiler-engineer): C lets a literal
+   exactly as long as its array drop the NUL, with no diagnostic, so `char
+   b[31]` held these 31 letters and no terminator. The `str` said 30 bytes,
+   *these bytes are not valid UTF-*, and its `.cstr()` and the panic's `%s`
+   read on past the array. Every static text of the runtime is now
+   `HERO_STR_STATIC`, sized by `sizeof` of its own literal, and `HERO_STR_LIT`,
+   so no number about a text is typed anywhere. */
 HeroFailure hero_failure_not_text(void) {
-    static const struct { HeroStrHeader h; char b[9]; } code = {
-        {-1, HERO_STR_MAGIC}, "not_text"};
-    static const struct { HeroStrHeader h; char b[31]; } msg = {
-        {-1, HERO_STR_MAGIC}, "these bytes are not valid UTF-8"};
-    return (HeroFailure){{code.b, (int64_t)sizeof(code.b) - 1},
-                         {msg.b, (int64_t)sizeof(msg.b) - 1}};
+    HERO_STR_STATIC(code, "not_text");
+    HERO_STR_STATIC(msg, "these bytes are not valid UTF-8");
+    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
 }
 
 _Noreturn void hero_panic_must(HeroFailure f) {

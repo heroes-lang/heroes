@@ -1,0 +1,31 @@
+# Defect 275, 2026-10-04. `validated_bytes` over bytes that are not UTF-8
+# answered `.err` with the message *these bytes are not valid UTF-*, 30 bytes,
+# where the runtime meant 31: the static text sat in `char b[31]`, which C
+# fills with the 31 letters and no terminator, so the `str` was cut by one and
+# what C read through its `.cstr()` ran past the array. Every static text of
+# the runtime is now sized by its own literal. The case prints each static
+# text a program reaches this way, with its length: the three failures the
+# runtime builds and a `bool`'s two words.
+
+function main()
+    b: [u8] = [99, 97, 102, 233]
+
+    match b.validated_bytes()
+        .ok s  => print("read: ", s)
+        .err e => print(e.code, ": ", e.msg, " (", len(e.msg), ")")
+
+    big: i64 = 300
+
+    match big.to_i8()
+        .ok n  => print("fits: ", n)
+        .err e => print(e.code, ": ", e.msg, " (", len(e.msg), ")")
+
+    m: {str: i64} @ {}
+    m["a"] @ 1
+
+    match m["b"]
+        .ok n  => print("found: ", n)
+        .err e => print(e.code, ": ", e.msg, " (", len(e.msg), ")")
+
+    print(true.to_str(), " (", len(true.to_str()), ")")
+    print(false.to_str(), " (", len(false.to_str()), ")")
