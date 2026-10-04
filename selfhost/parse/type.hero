@@ -288,7 +288,7 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
 
     if cursor.eat(@c, .rparen)
         return params
-    reading: bool @ true
+    reading: bool @ !cursor.at(c, .arrow)
 
     while reading
         ty = parse_type(@c, @a, text)
@@ -311,13 +311,19 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
     if unclosed.never_closed(c, text, open: at)
         return params
 
-    # `function(i64 -> i64)`: `function_parts` reads up to its `)` (defect 197).
-    if cursor.at(c, .arrow)
+    # `function(i64 -> i64)`: `function_parts` reads up to its `)` (defect 197);
+    # `function( -> i64)` too, told with no parameter before its `->` (309).
+    if cursor.at(c, .arrow) && params.len() == 0
+        cursor.error(@c, code: "expected_function_type_params_close", message: BARE_ARROW, span: cursor.current_span(c))
+    else if cursor.at(c, .arrow)
         if !line_end.said_here(c)
             cursor.push_diagnostic(@c.diagnostics, data_errors.arrow_inside_parameters(cursor.current_span(c)))
     else if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
         unclosed.recover_past_pair(@c, text, open: at)
     return params
+
+constant BARE_ARROW: str
+    "expected a parameter type or `)`, found `->` — a function type closes its parameters before its `->`, `function() -> i64`: the `)` written past the result goes there"
 
 # The name in `(function(x: i64) -> i64)`, which the loop above read as a type
 # because a bare name is one. Anything else there is not a name at all, and the

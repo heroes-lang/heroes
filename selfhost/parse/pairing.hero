@@ -128,9 +128,8 @@ function innermost(kinds: [token.TokenKind], opener: token.TokenKind) -> i64
     return at
 
 # The first offset past `at` where the lexer named the brackets still open,
-# or -1 where it named none there. The offsets ascend, each named where the
-# lexer stood as it read on (the test below), so a search finds it: a walk
-# from the first cost a file of unclosed heads their square (defect 266).
+# or -1 where it named none there, found by a search: the offsets ascend, each
+# named where the lexer stood as it read on (the test below; defect 266).
 function close_after(c: cursor.Cursor, at: i64) -> i64
     next = text_outline.last_at_most(c.closes, at: at) + 1
 
