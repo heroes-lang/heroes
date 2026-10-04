@@ -29,15 +29,19 @@ open.
 
 **Every item that gets done in the step is ticked with what closed it and MOVED
 to a NEW FILE in `docs/records/done/` before the commit** (never a line appended to
-`docs/work/DONE.md`, which has been the map since 2026-09-12). A live list holds open items only;
+`docs/work/DONE.md`, which has been the map since 2026-09-12); a defect's own
+file is that file, moved by `git mv` and ticked, so its history follows it
+(since 2026-10-04). A live list holds open items only;
 the record holds everything else. That rule existed in three documents and in no
 skill until 2026-08-26, and by then `docs/work/DECIDE.md` held 138 ticked items
 and zero open ones while the record had not been written to in eight days. The
 same applies to an item this step *finds* rather than finishes: it is filed as
 `- [ ]` in the list that matches what it asks — `SCHEDULED.md` if it names a
 milestone, `DECIDE.md` if it names a default the compiler is running on,
-**`DEFECTS.md` if it is BROKEN** (a crash, a wrong answer at exit 0, a silence
-where a message is owed), `docs/learn/` if it only asks what is true —
+**a new file in `docs/work/defects/` if it is BROKEN** (a crash, a wrong answer
+at exit 0, a silence where a message is owed; one file per defect since
+2026-10-04, its shape on the list's front page `docs/work/DEFECTS.md`),
+`docs/learn/` if it only asks what is true —
 and **never as a bare bullet or a `## ` section**, which is a notation no count
 in this project can see. **`DEFECTS.md` was missing from this list until
 2026-09-07**, four days after the author instituted it, so no skill read or
@@ -51,10 +55,12 @@ optional body indented four spaces opening with `**Origin:**` and its date, and
 the whole region fenced by two lines of asterisks (`docs/work/DECIDE.md` carries
 the rule and `/decide` § 6 the reasoning). The first field is what the
 instrument reads: a milestone in `SCHEDULED.md`, `panel NNN` in `DECIDE.md`, the
-number in `DEFECTS.md`, the origin in `docs/learn/`. **When an item is
-added, the `**OPEN: N**` line under the banner moves with it** — `records/lists`
-compares that number to the items it counts, so the count cannot drift the way
-one in a second document does. **A line that will carry a path into a body needs its
+number in a defect's file, which its name opens with, the origin in
+`docs/learn/`. **When an item is added, the `**OPEN: N**` line under the banner
+moves with it** — `records/lists` compares that number to the items it counts,
+so the count cannot drift the way one in a second document does; the defects
+carry no banner, their count is their files, and the ROADMAP's line moves with
+a defect filed or closed (`records/counts`). **A line that will carry a path into a body needs its
 date on that same physical line** — `records/citations` reads one line at a
 time, and re-wrapping a paragraph moved five dates off their paths the day this
 shape landed, which the check caught before the commit. `records/lists` is what
