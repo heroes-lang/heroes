@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 89d31024bf82f2cedcdb57a8a10fb87033d87df5
 github: none
 ---
 
