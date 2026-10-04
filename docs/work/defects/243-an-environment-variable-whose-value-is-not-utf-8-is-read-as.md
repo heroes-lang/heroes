@@ -7,3 +7,5 @@
     **2026-10-04, panel 189's compiler-engineer and the coordinator**: the hint read as unset falls through to a `./runtime` beside the program when one is there, so the build succeeds against a runtime the author did not name, no word said (its Q6; run by the coordinator with a hint that is not UTF-8 and a copy of the runtime beside `p.hero`, exit 0, `<scratchpad>/filings-b8/probe/rt243/`). The fall-through itself, for any hint that names nothing, is defect 276.
 
     Repaired at `ea5c22ca`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    **2026-10-04, batch 9's annot lane**: the harness's own `env` (`tests/harness/shell.hero`) repaired at `c539f58d`: a value that is not UTF-8 is named, so a `HEROES_COMPILER` in such bytes ends the run at exit 2 saying so where the net judged `./heroes`, and such a `HEROES_RUNTIME` refuses every skip where clang searched `runtime`. Gated by its cases (one runs the harness's own modules under a child given the bytes), the net's own tests and 13 suites whole (no `selfhost/` line moved); the net is owed at the batch's close.
