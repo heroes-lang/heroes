@@ -4,11 +4,15 @@
 # block (`parse/member_lines.hero:205` and `:202`), so a mistake inside it
 # waits until it moves out; a record's is read since lane recovery-b8.
 # Shape `g2/r12`. Class (b): `adjacent`.
+#
+# Moved 2026-10-04 with defect 200's repair (lane b9-recovery): the function
+# is told once, in the variant's words, and read as the declaration it is,
+# its body's `1 +` told (`parse/records.among_members`); it pins that now.
 
 variant V
     red
     function f()  #~ expected_case
-        print(1 +)
+        print(1 +)  #~ expected_expression
 
 function main()
     print(1)
