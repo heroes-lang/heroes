@@ -33,6 +33,7 @@
 
 use cli/io
 use cli/argv
+use cli/input
 use not_text
 use module/reading
 use cli/digest
@@ -46,7 +47,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
     read = reading.source_text(path)
 
     if read.is_err()
-        io.eprint(text: "error: cannot read `" + path + "`")
+        io.eprint(text: "error: " + input.unread(path))
         return .failed_exit
 
     # A document that is not UTF-8 has no token count to give, and is told

@@ -36,7 +36,7 @@ function read_compilation(path: str, library: str) -> source.Source?
     root = reading.source_text(path)
 
     if root.is_err()
-        return fail(code: "unreadable", msg: "cannot read `" + path + "`")
+        return fail(code: "unreadable", msg: unread(path))
 
     # Never lexed, not even for its `use` lines: a binary named on the command
     # line took ten minutes of discovery's lexing to be told (panel 189).
@@ -64,8 +64,19 @@ function read_root_only(path: str) -> source.Source?
     root = reading.source_text(path)
 
     if root.is_err()
-        return fail(code: "unreadable", msg: "cannot read `" + path + "`")
+        return fail(code: "unreadable", msg: unread(path))
     return ok(reading.rooted(source.new_source(name: path, text: root.must().text), root: root.must().faults))
+
+# **What a file named on the command line that did not read is told**
+# (defect 295): *no file is named* where nothing is at its path, nor can be,
+# and *cannot read* where something is, a directory, a file it may not read or
+# a link to nothing, the line a module's path draws (`reading.absent`, defect
+# 236). Every failure was *cannot read*, which sent the reader looking for a
+# permission where a name was misspelled. `heroes measure` names its file too.
+function unread(path: str) -> str
+    if reading.absent(path)
+        return "no file is named `" + path + "`"
+    return "cannot read `" + path + "`"
 
 ## Tests
 
@@ -76,7 +87,7 @@ test "the root read fails loud, a missing module stays the graph's"
         .ok => assert false
         .err e =>
             assert e.code == "unreadable"
-            assert e.msg == "cannot read `build/selftest_no_such_file.hero`"
+            assert e.msg == "no file is named `build/selftest_no_such_file.hero`"
 
     text = "use selftest_absent_module\n\nfunction main()\n    print(1)\n"
     assert !write_file(path: "build/selftest_input_root.hero", text: text).is_err()
@@ -109,6 +120,29 @@ test "a module that is there and cannot be read fails loud, as the root does"
 
     if !files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero").is_err()
         assert read_compilation(path: dir + "/linked.hero", library: "").is_err()
+
+# Defect 295: a root that is not there, nor can be, is named as absent, by
+# both reads; one that is there and does not read, a directory or a link to
+# nothing where this platform makes links, is *cannot read*.
+test "a root that is not there is told so, and one that is there and does not read cannot be read (defect 295)"
+    dir = "build/selftest-input-root-295"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/adir.hero").is_err()
+    assert !write_file(path: dir + "/plain", text: "a file, not a directory\n").is_err()
+
+    for missing in [dir + "/nosuch.hero", dir + "/nodir/x.hero", dir + "/plain/x.hero"]
+        assert message_of(read_compilation(path: missing, library: "")) == "no file is named `" + missing + "`"
+        assert message_of(read_root_only(path: missing)) == "no file is named `" + missing + "`"
+
+    assert message_of(read_compilation(path: dir + "/adir.hero", library: "")) == "cannot read `" + dir + "/adir.hero`"
+
+    if !files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero").is_err()
+        assert message_of(read_root_only(path: dir + "/dangling.hero")) == "cannot read `" + dir + "/dangling.hero`"
+
+function message_of(read: source.Source?) -> str
+    match read
+        .ok    => return ""
+        .err e => return e.msg
 
 # DEFECT 274: a file that is there is never `file_not_found`. A mode of 000
 # makes one an ordinary user may not read, on this Mac and on Linux; as root,
