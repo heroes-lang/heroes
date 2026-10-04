@@ -56,8 +56,3 @@ measured, and the day it returns one this is §1.0 compiler-need at any price.
 **What the milestone does not lift** is the llm-ergonomist's veto: the generic
 body's line stays undecidable from the line plus its signature, and lifting that
 needs constraints on generics, which is the author's trade.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

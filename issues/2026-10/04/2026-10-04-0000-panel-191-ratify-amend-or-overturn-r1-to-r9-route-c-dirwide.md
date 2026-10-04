@@ -1,28 +1,3 @@
-# DECIDE — the decisions the compiler is waiting on
-
-Read by **`/decide`**. Every item asks **what should be true**, and until it is
-answered the compiler goes on behaving some way by default — so the item names
-that default, because it is the cost of leaving the item open.
-
-**Only open items live here.** The moment one is answered it is ticked with the
-verdict written into it and moved to `docs/records/done/`, the record. Rank by
-what an item blocks, never by age, and verify it against the repository before
-putting it to the author: asking a settled question is the one cost this list
-cannot pay.
-
-**The shape.** One line per item, and an optional body indented four spaces
-under it. The first field is the item's **origin**, and where that origin is a
-sitting it is spelled `panel NNN`, padded — because
-`tests/harness/suite_records.hero`'s `queued` check reads the `- [ ] ` lines
-alone and scans them for exactly that, so a citation that slides into the body
-makes every pending sitting report as unqueued, and it fails silently. Nothing
-lives outside the two banners: `records/lists` is the executor of that.
-
-Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
-
-*******************************************************************************
-**OPEN: 1**
-
 - [ ] **panel 191** | ratify, amend or overturn R1 to R9 (route `c-dirwide` for defect 238: the UTF-8 code-page manifest compiled into the runtime's own object, a refusal to start where `GetACP()` is not 65001, the directory door made wide; the lone-surrogate directory repaired at the landing; the cases red on `7f4c0cc5` first; (a) alone, (a′), (e), (f) and (g) refused; Q-c and Q-i handed to panel 192), and set the floor: the oldest Windows a Heroes program starts on | `docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md` § The resolution
 
     **Origin:** panel 191's synthesis, 2026-10-04 from 16:47, on the seats' archive of `7f4c0cc5`, convened by the author's *6b*. Until it is answered defect 238 stays open, and, `blocking`, it lands in the next batch on the provisional resolution (CLAUDE.md § 4, *the panel never blocks*).
@@ -36,5 +11,3 @@ Format: `- [ ] **<origin>** | <the question, in one line> | <where to look>`
     **What the floor costs**: below it every Heroes program, the compiler included, refuses to start with one sentence and exit 2. Unrun below it: nothing here is older than build 26100, the box and the CI alike, so the documentation's *run on earlier builds* is read, not measured.
 
     **The conservative alternative, yours to choose instead**: route (b) whole, every door wide and no manifest, about 250 lines, unbuilt by either seat. It sets no floor, and leaves every bound library reading the program's UTF-8 as 1252 (W21: -1), so §1.11's boundary stays broken for every binding that takes a path.
-
-*******************************************************************************

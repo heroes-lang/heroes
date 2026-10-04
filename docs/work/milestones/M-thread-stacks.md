@@ -33,8 +33,3 @@ narrowing `selfhost/emit/callback_guard.hero`'s set reopens a silent exit 132.
 
 **Still open and re-homed to M-core-packages**: `cow.c`'s `if (refcount == 1)` is
 a test and then a mutate, and two sittings have now failed to race it.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

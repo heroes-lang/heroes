@@ -55,8 +55,3 @@ re-measurement; the author took the robust one (CL-040).
 **What it does not deliver**: a target flag, a prebuilt binary, or a fourth
 platform in M-online-compiler's sense. § The names carries why the id is neither
 `M-fourth-platform` nor `M-arm-linux`.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

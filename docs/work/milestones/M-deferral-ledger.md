@@ -57,8 +57,3 @@ drafted specification corrections at once, because the spec's digest withholds
 it. And **two doors in the panel protocol stand open, each now named twice**: the
 historian seat has no file write, so the completeness critic cannot audit it, and
 the llm-ergonomist's isolation is not enforced by the machinery that convenes it.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

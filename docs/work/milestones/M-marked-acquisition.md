@@ -55,8 +55,3 @@ record is
 The highlighter class was not closed but MOVED, to
 `docs/work/milestones/M-vscode-extension.md`, which is the milestone whose
 subject it is; closing it here would have been ticking somebody else's work.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

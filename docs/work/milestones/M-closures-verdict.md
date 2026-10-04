@@ -35,8 +35,3 @@ row so that whoever takes it re-derives nothing: a generated name must come from
 `selfhost/emit/synth.hero`'s `content_key` renders the type and two unnamed
 functions of one type would collide; and `ziglang/zig#1717` accepted that exact
 proposal in 2020 and rejected it in 2023.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

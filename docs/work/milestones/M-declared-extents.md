@@ -103,8 +103,3 @@ this milestone's close, 2026-09-21. A closed milestone's file is a place nobody
 looks, which `records/homes` refuses in as many words, and no scheduled row was
 their subject: what they ask is who frees what a C function is handed, which is
 the milestone that now carries them.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************
