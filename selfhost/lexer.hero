@@ -32,6 +32,7 @@ use escape
 use swap_words
 use indent_runs
 use not_text
+use file_start
 
 ## The output
 
@@ -198,7 +199,26 @@ function lex_apart(text: str) -> LexOutput
 function lex_bodies(text: str) -> LexOutput
     return lexed(text, apart: true, bodies: true)
 
+# What a file's first bytes say comes first (`file_start.hero`): a UTF-8
+# byte-order mark is told once, at it, and the text after it read as the
+# file (defect 242), where the mark read as a character set the first line
+# one column deep and its first indented line was told a false
+# `unexpected_block`.
 function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
+    mark = file_start.mark_length(text)
+
+    if mark > 0
+        after: LexOutput @ moved(
+            lexed(text.slice(from: mark, to: text.len()), apart: apart, bodies: bodies),
+            offset: mark
+        )
+        told: [diag.Diagnostic] @ [file_start.marked(mark)]
+
+        for d in after.diagnostics
+            told @ told.push(d)
+
+        after.diagnostics @ told
+        return after
     l: state.LexState @ state.new_state()
     l.apart @ apart
     l.bodies @ bodies
@@ -306,6 +326,27 @@ test "a file that is not text is told and not lexed; the files beside it are"
     assert files[1].diagnostics.len() == 1
     assert files[1].diagnostics[0].code == "not_text"
     assert files[1].tokens.len() == 1
+
+# Defect 242: a byte-order mark opening a file, as PowerShell writes it,
+# told once at it, its fix certain, and the file read from after it: the
+# stream is the stream of the file without it, moved by the mark's width.
+test "a byte-order mark is told once, at it, and the file is read from after it"
+    bytes: [u8] = [239, 187, 191]
+    bom = bytes.validated_bytes().must()
+    plain = "function main()\n    print(1)\n"
+    marked = lex_one(bom + plain)
+    assert marked.diagnostics.len() == 1
+    assert marked.diagnostics[0].code == "unexpected_character"
+    assert marked.diagnostics[0].span.start == 0
+    assert marked.diagnostics[0].span.end == 3
+    assert marked.diagnostics[0].fixes[0].certainty == .certain
+    assert kind_line(marked.tokens) == kind_line(lex_one(plain).tokens)
+    assert marked.tokens[0].span.start == 3
+    twice = lex_one(bom + bom + plain)
+    assert twice.diagnostics.len() == 1
+    assert twice.diagnostics[0].span.end == 6
+    crlf = lex_one(bom + "function main()\r\n    print(1)\r\n")
+    assert crlf.diagnostics.len() == 1
 
 test "a whole program lexes to the stream the parser expects"
     out = lex_one("function main()\n    x = 5\n")

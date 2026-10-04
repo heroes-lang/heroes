@@ -1,0 +1,10 @@
+function main()  #~ unexpected_character
+    # Defect 242, 2026-10-04. Symptom: a file opening with a UTF-8 byte-order
+    # mark, as PowerShell's `-Encoding utf8` writes one, was told twice: the
+    # mark as `unexpected_character` at 1:1, then `unexpected_block` at this
+    # first indented line, false, the mark having set the line above one
+    # column deep. Cause: the lexer read the mark as a character of the first
+    # line. It is told once now, at the mark, with the certain fix deleting
+    # it, and the file is read from after it. This file opens with the mark
+    # on purpose.
+    print(1)
