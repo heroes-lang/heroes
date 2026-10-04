@@ -99,6 +99,37 @@ function told_once(diagnostics: [diag.Diagnostic], text: str) -> Told
         )
     return Told(diagnostics: out, at: at)
 
+# The diagnostics of one text but those `dropped` marks, a message another
+# reader tells instead (`head_names.told_by_heads`, defect 250), with where
+# each one given went, as `told_once` says it.
+function without(diagnostics: [diag.Diagnostic], dropped: [bool]) -> Told
+    out: [diag.Diagnostic] @ []
+    at: [i64] @ []
+    k: i64 @ 0
+
+    for d in diagnostics
+        if dropped[k]
+            at @ at.push(-1)
+        else
+            out @ out.push(d)
+            at @ at.push(out.len() - 1)
+        k @ k + 1
+
+    return Told(diagnostics: out, at: at)
+
+# Where each diagnostic went through two of the steps above, the first's
+# places read through the second's.
+function through(first: [i64], then: [i64]) -> [i64]
+    out: [i64] @ []
+
+    for one in first
+        if one < 0
+            out @ out.push(-1)
+        else
+            out @ out.push(then[one])
+
+    return out
+
 # The breaks a text's lexing refused, each naming its diagnostic by the place
 # `told_once` gave it; a break whose diagnostic was counted names none, which
 # cannot happen, a break's being a join's, with its fix.
@@ -186,6 +217,11 @@ test "past eight refused characters the rest are counted on the last told, and a
     )
     assert told_once([habit], text: "/* x").diagnostics.len() == 1
     assert !gathered(habit)
+
+    # A message another reader tells is left out, and the places compose.
+    left = without([refused(start: 0, said: "`$`"), refused(start: 2, said: "`$`")], dropped: [true, false])
+    assert left.at == [-1, 0]
+    assert through(first: [-1, 0, 1], then: [5, 6]) == [-1, 5, 6]
 
     # Two `;` side by side are seen, and each keeps its message (panel 187).
     semis = told_once([refused(start: 0, said: "`;`"), refused(start: 1, said: "`;`")], text: ";;")

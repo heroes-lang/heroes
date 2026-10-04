@@ -34,6 +34,7 @@ use indent_runs
 use not_text
 use file_start
 use refused_runs
+use head_names
 
 ## The output
 
@@ -265,13 +266,18 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     # joined lines exists (defect 129).
     line_joins.weigh(@l, text)
 
-    # A refused character told once a run, at most eight times a text
-    # (defect 282, `refused_runs.hero`), where each was a message; a refused
-    # break moves with the diagnostic it names.
-    said = refused_runs.told_once(l.diagnostics, text: text)
+    # An escape inside a header's name left to the head that judges the
+    # name (defect 250, `head_names.told_by_heads`); a refused character told
+    # once a run, at most eight times a text (defect 282, `refused_runs`); a
+    # refused break moves with the diagnostic it names.
+    left = refused_runs.without(
+        l.diagnostics,
+        dropped: head_names.told_by_heads(l.diagnostics, tokens: l.tokens, text: text)
+    )
+    said = refused_runs.told_once(left.diagnostics, text: text)
     refused: [state.Break] @ []
 
-    for b in refused_runs.renumbered(l.breaks, at: said.at)
+    for b in refused_runs.renumbered(l.breaks, at: refused_runs.through(first: left.at, then: said.at))
         if b.diagnostic >= 0
             refused @ refused.push(b)
 
@@ -392,6 +398,18 @@ test "refused characters are told once a run and eight times a text, and a break
     the_join = out.diagnostics[out.breaks[0].diagnostic]
     assert the_join.code != "unexpected_character"
     assert the_join.span.start == lex_one("y = a +\n1\n").diagnostics[0].span.start + 24
+
+# Defect 250: an escape the language does not have inside a header's name
+# is the head's to tell (`escape_in_header_name`, at the parser), so the
+# lexer says nothing of it there; elsewhere it says what it always said.
+test "an escape inside a header's name is left to the head, and told everywhere else"
+    for text in ["extern \"a\\db.h\"\n    function seven() -> i32\n", "extern \"\\db.h\"\n    function seven() -> i32\n", "extern \"a\\u{41}.h\"\n    function seven() -> i32\n"]
+        assert lex_one(text).diagnostics.len() == 0
+
+    for text in ["extern \"ab.h\" link \"a\\db\"\n    function seven() -> i32\n", "function main()\n    print(\"a\\db\")\n"]
+        said = lex_one(text).diagnostics
+        assert said.len() == 1
+        assert said[0].code == "unknown_escape"
 
 # Defect 247: UTF-16 with no mark over ASCII, which is UTF-8, every other
 # byte NUL: one message, the file not read, where each NUL was one.
