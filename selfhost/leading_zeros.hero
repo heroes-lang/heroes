@@ -14,7 +14,8 @@
 #   none, C itself refusing it as an octal constant, so its one reading is
 #   decimal;
 # - zeros before a base's marker, `00x7`, are the prefix's one zero written
-#   more than once, and one zero is the advice;
+#   more than once, and one zero is the advice where it writes a literal
+#   (defect 338: `00x` and `00xg` get none, `0x` and `0xg` being refused);
 # - any other letter after the digits would run into a fix's replacement,
 #   `0644u` becoming `0o644u`, so no fix is offered there and a note says why.
 #
@@ -26,20 +27,33 @@ use diag
 use digits
 use bytes
 
-# `written` is the digits a zero opens, `span` where they stand, and
-# `follows` the character after them, "" at the end of the text.
-function told(written: str, span: token.Span, follows: str) -> diag.Diagnostic
+# `written` is the digits a zero opens, `span` where they stand, and `rest`
+# what joins them after (`joined_end`), "" where nothing does.
+function told(written: str, span: token.Span, rest: str) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "leading_zero",
         message: "`" + written + "` starts with a zero, and this language reads no meaning into that",
         span: span
     )
+    follows: str @ ""
+
+    if rest.len() > 0
+        follows @ bytes.char_at(rest, 0)
     value = significant(written)
 
     if value == "0" && follows.len() > 0 && !digits.from_marker(follows[0]).is_err()
+        base = digits.from_marker(follows[0]).must()
         d.notes @ d.notes.push(
             "`" + written + "` stands before `" + follows + "`, the marker of a base, whose literal opens with one zero: `0" + follows + "` and its digits"
         )
+
+        # **One zero is offered only where it writes a literal** (defect 338):
+        # `00x` and `00xg` were offered `0x` and `0xg`, both refused.
+        if !based_literal("0" + rest)
+            d.notes @ d.notes.push(
+                "`0" + rest + "` is no literal either, so no fix is offered: " + digits.a_name(base) + " literal is written `" + digits.prefix(base) + "` followed by " + digits.base_digits(base) + ", a `_` only between two of them"
+            )
+            return d
         d.fixes @ d.fixes.push(
             diag.Fix(title: "one zero before `" + follows + "`: `0`", replacement: "0", span: span, certainty: .guess)
         )
@@ -100,6 +114,28 @@ function joins(follows: str) -> bool
         return false
     return joining(follows[0])
 
+# Whether `written` is a based literal the scanner takes whole with no
+# mistake: `0`, a base's marker, a digit of the base, and a `_` only between
+# two digits (`number.digit_run`'s rule, where a fraction is a mistake too).
+# Two readers of one rule can drift apart, so `number.hero`'s test holds this
+# one to the scanner's answer, shape by shape.
+function based_literal(written: str) -> bool
+    if written.len() < 3 || written[0] != '0'
+        return false
+    base = digits.from_marker(written[1])
+
+    if base.is_err()
+        return false
+    at: i64 @ 2
+
+    while at < written.len()
+        if !digits.admits(base.must(), written[at])
+            if written[at] != '_' || at == 2 || at + 1 >= written.len() || !digits.admits(base.must(), written[at + 1])
+                return false
+        at @ at + 1
+
+    return true
+
 # The same of one byte, every byte of a character beyond ASCII among them.
 function joining(b: u8) -> bool
     return bytes.is_alnum(b) || b == '_' || b >= 128
@@ -138,21 +174,39 @@ test "the advice is the digits without their zeros and the separators among them
     assert not_octal("7_7") == ""
     assert not_octal("8_1") == "8"
     assert not_octal("19") == "9"
-    told_77 = told(written: "0_7_7", span: token.Span(start: 0, end: 5), follows: "")
+    told_77 = told(written: "0_7_7", span: token.Span(start: 0, end: 5), rest: "")
     assert told_77.fixes.len() == 2
     assert told_77.fixes[0].replacement == "0o7_7"
     assert digits.decode_u64(told_77.fixes[0].replacement).must() == 63
     assert told_77.fixes[1].replacement == "7_7"
     assert digits.decode_u64(told_77.fixes[1].replacement).must() == 77
-    nine = told(written: "0_9", span: token.Span(start: 0, end: 3), follows: ")")
+    nine = told(written: "0_9", span: token.Span(start: 0, end: 3), rest: "")
     assert nine.fixes.len() == 1
     assert nine.fixes[0].replacement == "9"
-    prefixed = told(written: "00", span: token.Span(start: 0, end: 2), follows: "x")
+    prefixed = told(written: "00", span: token.Span(start: 0, end: 2), rest: "x7")
     assert prefixed.fixes.len() == 1
     assert prefixed.fixes[0].replacement == "0"
-    suffixed = told(written: "0644", span: token.Span(start: 0, end: 4), follows: "u")
+    suffixed = told(written: "0644", span: token.Span(start: 0, end: 4), rest: "u")
     assert suffixed.fixes.len() == 0
     assert suffixed.notes.len() == 2
+
+# Defect 338: one zero before a base's marker is offered only where `0`, the
+# marker and what follows are a literal the compiler accepts, and where they are
+# not, a note says why no fix is offered and how that base's literal is written.
+test "one zero before a marker is offered only where it writes a literal (defect 338)"
+    for rest in ["x", "xg", "x7.5", "x_7", "x7_", "b2", "o9"]
+        refused = told(written: "00", span: token.Span(start: 0, end: 2), rest: rest)
+        assert refused.fixes.len() == 0
+        assert refused.notes.len() == 2
+
+    bare = told(written: "00", span: token.Span(start: 0, end: 2), rest: "x")
+    assert bare.notes[1] == "`0x` is no literal either, so no fix is offered: a hexadecimal literal is written `0x` followed by 0 through 9 and a through f, a `_` only between two of them"
+
+    for rest in ["x7", "xFF_FF", "b1_0", "o17"]
+        taken = told(written: "00", span: token.Span(start: 0, end: 2), rest: rest)
+        assert taken.fixes.len() == 1
+        assert taken.fixes[0].replacement == "0"
+        assert !digits.decode_u64("0" + rest).is_err()
 
 # Defect 329: what joins the digits is the refused literal's, letters and a
 # character beyond ASCII whole, and a fraction once something has joined, up to
