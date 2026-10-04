@@ -5,3 +5,5 @@
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a panic in the compiler, exit 134 and 127, over a directory a user can make.
 
     Repaired at `5ba5296c`, 2026-10-04, gated by the compiler's own tests, its case the platform legs' (this Mac's filesystem refuses the name); the net is owed at the batch's close.
+
+    **2026-10-04, batch 9's annot lane**: the harness's own walk (`tests/harness/shell.hero`, which still read `hero_dir_at`) repaired at `c539f58d`: each name read through `hero_dir_at_shown`, one that is not UTF-8 named by its bytes where it stops a walk, and passed over by a walk for a suffix it does not end in (`cache` and `units` walk `build/`, where the compiler's own test of this defect leaves `caf<0xE9>.hero` on Linux). Gated by its cases, the net's own tests and 13 suites whole (no `selfhost/` line moved); its real path is the platform legs' (APFS refuses the name); the net is owed at the batch's close.

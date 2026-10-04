@@ -163,8 +163,17 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # would call every test's stub tree outgrown. This is where the REAL floor
     # meets the REAL count.
     floors.check(@r, label: "emission", found: programs.len(), floor: LEAST, what: "programs reaching the emitter")
-    swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: shell.env("UPDATE_EMISSION") == "1", least: LEAST)?
+    swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: blessing(), least: LEAST)?
     return ok(report.tally(one: r, two: swept))
+
+# Whether this run blesses: `UPDATE_EMISSION=1` and nothing else. A value that
+# is not UTF-8 is not `1`, so it blesses nothing and the run compares, which
+# writes nothing; that is the value's own answer, not a default taken for an
+# unread one (defect 243, `shell.env`).
+function blessing() -> bool
+    return match shell.env(name: "UPDATE_EMISSION")
+        .ok value => value == "1"
+        .err _    => false
 
 # Every program in the repository that reaches the emitter, with the path
 # its blessed emission lives at.

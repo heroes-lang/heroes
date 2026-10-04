@@ -51,9 +51,9 @@
 # there, since the message lands where its own is pinned; ruling *A* writes
 # such a case on headers of the program's own.
 
+use mark_readers
 use shell
 use strings
-use suite_annotations
 
 # One thing a refusal says this machine lacks. `kind` is `header`, `package` or
 # `pkg-config`; `name` is the header or the package, for `pkg-config` the
@@ -131,7 +131,7 @@ function machine_lacks_among(scratch: str, path: str, modules: [str], expected: 
         return fail(code: "unread", msg: message_of_sources(sources))
     seen = Witnesses(
         named: absences(expected),
-        reported: suite_annotations.reported_by(expected),
+        reported: mark_readers.reported_by(expected),
         marked: marks_of(sources.must()),
         path: path
     )
@@ -144,7 +144,10 @@ function machine_lacks_among(scratch: str, path: str, modules: [str], expected: 
             )
 
     bound = binds_of(sources.must())
-    search = searched(scratch: scratch, dir: directory_of(path), bound: bound)
+    search = searched(scratch: scratch, dir: directory_of(path), bound: bound, hint: runtime_hint())
+
+    if search.is_err()
+        return fail(code: "unasked", msg: message_of_words(search))
     lacking: [str] @ []
 
     for one in named
@@ -153,7 +156,7 @@ function machine_lacks_among(scratch: str, path: str, modules: [str], expected: 
                 code: "unbound",
                 msg: "the compiler says " + shown(one) + " is missing, and " + bound_by(path: path, count: sources.must().len()) + " no such " + one.kind
             )
-        answer = asked(scratch: scratch, search: search, one: one)
+        answer = asked(scratch: scratch, search: search.must(), one: one)
 
         if answer.is_err()
             return fail(
@@ -278,8 +281,8 @@ function last_index_of(text: str, needle: str) -> i64?
 # What the expectation and the case's sources say the case tests: the
 # libraries the expectation names, its diagnostics as `<line>:<code>` (the
 # lines of `path`), the sources' marks as `<file>:<line>:<code>`
-# (`suite_annotations` reads both for the `annotations` suite, so there is one
-# reader of a mark), and the path the compiler was given.
+# (`mark_readers` reads both, for this module and for the `annotations` suite,
+# so there is one reader of a mark), and the path the compiler was given.
 record Witnesses
     named: [Absence]
     reported: [str]
@@ -362,7 +365,7 @@ function marks_of(sources: [Source]) -> [str]
     out: [str] @ []
 
     for one in sources
-        for mark in suite_annotations.claimed_by(one.text)
+        for mark in mark_readers.claimed_by(one.text)
             out @ out.push(one.path + ":" + mark)
 
     return out
@@ -480,7 +483,9 @@ function listed(names: [str], name: str) -> bool
 # none; a narrower search could only fail to refute an absence the compiler
 # named, never name one. None of the compiler's own flags moves the search
 # (`selfhost/cli/flags.hero`, read 2026-10-04: no `-isystem`, no `--target`).
-function searched(scratch: str, dir: str, bound: Binds) -> [str]
+# `hint` is `HEROES_RUNTIME` as `runtime_hint` reads it.
+function searched(scratch: str, dir: str, bound: Binds, hint: str?) -> [str]?
+    runtime: str @ hint?
     out: [str] @ []
 
     for package in bound.packages
@@ -490,15 +495,33 @@ function searched(scratch: str, dir: str, bound: Binds) -> [str]
             for word in strings.words(ran.must().out)
                 out @ out.push(word)
 
-    runtime: str @ shell.env(name: "HEROES_RUNTIME")
-
     if runtime.len() == 0
         runtime @ "runtime"
     out @ out.push("-I")
     out @ out.push(runtime)
     out @ out.push("-I")
     out @ out.push(dir)
-    return out
+    return ok(out)
+
+# The runtime's directory as `HEROES_RUNTIME` names it, "" where it is unset,
+# and a refusal where it is set and not UTF-8 (defect 243). Such a value names
+# a directory no `str` can hold, so clang cannot be asked about it, and the
+# compiler refuses to build under it; until 2026-10-04 it read as unset and
+# clang searched `runtime` in its place, a witness about another directory.
+function runtime_hint() -> str?
+    hint = shell.env(name: "HEROES_RUNTIME")
+
+    if hint.is_err()
+        return fail(
+            code: "unasked",
+            msg: "HEROES_RUNTIME is set to `" + shell.env_written(name: "HEROES_RUNTIME") + "`, which is not UTF-8, so clang cannot be asked about the directory the compiler searches"
+        )
+    return hint
+
+function message_of_words(got: [str]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # What this machine says to one absence: ok with its own words where it lacks
 # the thing, an error naming what refutes the compiler where it does not.
@@ -1043,6 +1066,23 @@ test "a program's witness reads the file it was given, its modules, and what the
     assert !inside(dir: ".", file: "a/x.hero")
     assert inside(dir: "a", file: "a/b/x.hero")
     assert !inside(dir: "a", file: "ab/x.hero")
+
+# Defect 243 at the harness's second reader (2026-10-04): a `HEROES_RUNTIME`
+# that is not UTF-8 refuses the search, so no absence is believed, where it
+# read as unset and clang searched `runtime` in its place. The value itself is
+# read through a child's environment in `shell.hero`'s test of the same day.
+test "fixedbugs: a runtime hint that cannot be read refuses the search, and an unset one searches runtime"
+    scratch = "build/harness-selftest"
+    nothing: [str] = []
+    none = Binds(headers: nothing, packages: nothing)
+    unread: str? = fail(code: "unasked", msg: "HEROES_RUNTIME is set to `rt<0xE9>`, which is not UTF-8")
+    unasked = searched(scratch: scratch, dir: ".", bound: none, hint: unread)
+    assert unasked.is_err()
+    assert message_of_words(unasked) == "HEROES_RUNTIME is set to `rt<0xE9>`, which is not UTF-8"
+    unset: str? = ok("")
+    assert searched(scratch: scratch, dir: "cases", bound: none, hint: unset).must() == ["-I", "runtime", "-I", "cases"]
+    named: str? = ok("elsewhere/rt")
+    assert searched(scratch: scratch, dir: "cases", bound: none, hint: named).must() == ["-I", "elsewhere/rt", "-I", "cases"]
 
 test "a refused skip says why only where the compiler named a library"
     nothing: str? = fail(code: "none", msg: "the compiler names nothing this machine lacks")
