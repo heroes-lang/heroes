@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: e703a84308526fadf15b7ef92b1a5c866705a549
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-misc, 2026-10-05, beside defect 329's repair (its final report, *Found beside*); 324's cause, the advice writing a program the compiler refuses, at a shape 324's cases do not hold.
 
     **Class: blocking**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a `guess` fix that writes a program the compiler refuses, defect 324's own class reading (`.claude/rules/verification.md` § Bounded discovery), so never deferred: repaired in this batch.
+
+    Repaired at `e703a843`, 2026-10-05 (lane b11-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The shapes beside with this cause were repaired with it: a digit no number of the marker's base has (`00b2`, `00o9`), a fraction, and a separator that leads or trails after the marker.
