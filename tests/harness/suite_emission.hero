@@ -237,11 +237,13 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
             words: [compiler, "build", one.source, "--emit-c"]
         )
 
+        # The refusal's own words (defect 317): a compiler that wrote bytes
+        # that are not UTF-8 ran, and its emission is refused as such.
         if said.is_err()
             report.keep_failure(
                 @r,
                 label: "emission/" + one.label,
-                detail: "  cannot run the compiler on " + one.source
+                detail: "  " + one.source + ": " + shell.refusal(said)
             )
             continue
 

@@ -126,8 +126,15 @@ function run_cases(scratch: str, compiler: str, dir: str, least: i64, only: str)
             words: [compiler, "check", item.source, "--apply"]
         )
 
+        # The refusal's own words, here and at every run below (defect 317):
+        # *cannot run the compiler on* was written of a compiler that ran and
+        # wrote bytes that are not UTF-8.
         if applied.is_err()
-            report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + item.source)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  `check " + item.source + " --apply`: " + shell.refusal(applied)
+            )
             continue
 
         if !present[repaired].is_err()
@@ -185,7 +192,7 @@ function judge_fixed(@r: report.Report, scratch: str, compiler: str, label: str,
     )
 
     if rechecked.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + repaired)
+        report.keep_failure(@r, label: label, detail: "  `check " + repaired + " --brief`: " + shell.refusal(rechecked))
         return
 
     if rechecked.must().code != 0
@@ -230,8 +237,12 @@ function judge_pinned(@r: report.Report, scratch: str, compiler: str, label: str
         words: [compiler, "check", pinned, "--apply"]
     )
 
-    if rechecked.is_err() || again.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + pinned)
+    if rechecked.is_err()
+        report.keep_failure(@r, label: label, detail: "  `check " + pinned + " --brief`: " + shell.refusal(rechecked))
+        return
+
+    if again.is_err()
+        report.keep_failure(@r, label: label, detail: "  `check " + pinned + " --apply`: " + shell.refusal(again))
         return
     report_pinned(
         @r,
@@ -438,8 +449,16 @@ function judge_in_place(@r: report.Report, scratch: str, compiler: str, label: s
     ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--apply", "--in-place"])
     after = read_file(placed)
 
-    if ran.is_err() || after.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot apply the fixes of the copy of " + source)
+    if ran.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `check " + placed + " --apply --in-place`, the copy of " + source + ": " + shell.refusal(ran)
+        )
+        return
+
+    if after.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + placed + ", the copy of " + source)
         return
 
     if !has_pinned
@@ -475,10 +494,32 @@ function judge_in_place(@r: report.Report, scratch: str, compiler: str, label: s
     again = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--apply", "--in-place"])
     twice = read_file(placed)
 
-    if clean.is_err() || again.is_err() || twice.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on the copy of " + source)
+    if clean.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `check --brief` over the copy of " + source + ": " + unclean(clean)
+        )
+        return
+
+    if again.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `check " + placed + " --apply --in-place` again, the copy of " + source + ": " + shell.refusal(again)
+        )
+        return
+
+    if twice.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + placed + ", the copy of " + source)
         return
     report_pinned(@r, label: label, pinned: pinned, want: want.must(), clean: clean.must(), again: twice.must())
+
+# Why `clean_roots` has no answer: the refusal of the run it stopped at.
+function unclean(got: bool?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # Does every `.hero` directly inside the copy check clean, as it stands?
 function clean_roots(scratch: str, compiler: str, copy: str, entries: [str]) -> bool?
@@ -505,7 +546,7 @@ function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, lab
     applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", source, "--apply"])
 
     if applied.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + source)
+        report.keep_failure(@r, label: label, detail: "  `check " + source + " --apply`: " + shell.refusal(applied))
         return
 
     if applied.must().out != want.must()
@@ -528,7 +569,7 @@ function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, lab
         rechecked = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--brief"])
 
         if rechecked.is_err()
-            broken @ "cannot run the compiler on " + placed
+            broken @ "`check " + placed + " --brief`: " + shell.refusal(rechecked)
         else if rechecked.must().code != 0
             broken @ placed + " does not check clean after the fix in " + strings.base_name(path: source) + " — a `certain` fix that leaves the program broken is a `guess` that lied:\n" + rechecked.must().err
 

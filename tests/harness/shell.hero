@@ -64,8 +64,13 @@ extern "hero_os.h"
     # bytes `validated` can only refuse, so neither is bound here any more.
     function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
     function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    # A captured stream is read the same way (defect 317): what a child wrote
+    # that is not UTF-8 comes back as marks and shown text, never as a read
+    # that failed.
+    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_FOUND: i64
+    constant HERO_OS_NOT_TEXT: i64
 
 # What `hero_dir_scan` is looking for.
 constant DIR_FILES: i64
@@ -183,20 +188,29 @@ function refusal(got: Run?) -> str
         .ok _  => ""
         .err e => e.msg
 
-# What the program complained, or why there was no program to complain.
+# How a run ended, for a message about one that had to end well and did not:
+# the refusal's own words where it came back with no program verdict, and its
+# exit code with what it wrote on stderr where it did.
 #
-# **The sibling of `refusal`, and it exists because a THIRD way of lying was
-# found the same day.** Seven call sites built their failure message out of
-# `said.default(Run(err: "cannot run", …)).err`, which substitutes a fixed
-# string for whatever actually went wrong — so a compiler that could not be
-# started and a compiler that wrote three pages of diagnostics both printed
-# `cannot run`. Measured 2026-09-21 by pointing the net at a file that exists
-# and is not executable: `suite_units` said `cannot runcannot run` where the
-# repaired `suite_run` said the path, the sentence and the number 13.
-function complaint(got: Run?) -> str
+# **A run is told by its ending and never by a sentence of the caller's.** It
+# was `complaint` until 2026-10-04, written because seven call sites built
+# their failure out of `said.default(Run(err: "cannot run", …)).err`, so a
+# compiler that could not be started and one that wrote three pages of
+# diagnostics both printed `cannot run` (measured 2026-09-21: `suite_units`
+# said `cannot runcannot run`). Its callers then prefixed it with *the build
+# did not run*, of a build that ran and exited 1 and of one whose capture was
+# not UTF-8 alike (defect 317), so it names the exit code too.
+function ending(got: Run?) -> str
     return match got
-        .ok r  => r.err
+        .ok r  => "it exited " + r.code.to_str() + said_on_stderr(r.err)
         .err e => e.msg
+
+function said_on_stderr(err: str) -> str
+    told = strings.trimmed(err)
+
+    if told.len() == 0
+        return ", with nothing on stderr"
+    return ", and on stderr:\n    " + told
 
 # A `Run` that started, or the reason there is none.
 #
@@ -283,23 +297,140 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
         # for later, because `hero_run_why` answers about the LAST call and a
         # caller that holds a `Run` may have made others since.
         return ok(Run(code: -1, out: "", err: "", started: false, why: hero_run_why()))
-    out = read_file(out_path)
+    out = captured(path: out_path, stream: "stdout")
+    err = captured(path: err_path, stream: "stderr")
 
-    if out.is_err()
-        return fail(code: "cannot_run", msg: "cannot read the captured stdout at " + out_path)
-    err = read_file(err_path)
-
-    if err.is_err()
-        return fail(code: "cannot_run", msg: "cannot read the captured stderr at " + err_path)
-
-    # Read, so the names are free. **The answer is deliberately not checked**:
-    # on Windows a file a descendant still holds cannot be deleted, and that is
-    # precisely the case this scheme exists to survive — the next spawn asks
-    # for a name nobody is holding. Refusing here would turn the thing that
-    # was repaired back into a failure.
+    # Read, so the names are free, and on EVERY path. **The answer is
+    # deliberately not checked**: on Windows a file a descendant still holds
+    # cannot be deleted, and that is precisely the case this scheme exists to
+    # survive — the next spawn asks for a name nobody is holding. Refusing here
+    # would turn the thing that was repaired back into a failure. Until defect
+    # 317 a capture that did not read as text returned before this line, and
+    # both of its files stayed on disk (measured 2026-10-04: two per such run).
     _ = hero_fs_remove(path: out_path.cstr())
     _ = hero_fs_remove(path: err_path.cstr())
-    return ok(Run(code: code, out: out.must(), err: err.must(), started: true, why: 0))
+    read_out = out?
+    read_err = err?
+
+    # **A child that wrote bytes that are not UTF-8 RAN, and it is told so**
+    # (defect 317, 2026-10-04). Until then such a capture failed its read as
+    # *cannot read the captured stdout*, and four suites wrote *cannot run the
+    # compiler on* a case whose compiler had run and answered. It is still a
+    # refusal rather than a `Run`: every expectation and every needle this
+    # harness compares a stream against is text, so no such stream can match
+    # one, and holding its bytes written as `<0xE9>` would let a stream that
+    # wrote 0xE9 match an expectation that spells those six characters. So the
+    # refusal names the program, how it ended and the bytes, and the case
+    # fails with that sentence.
+    unshown: [str] @ []
+
+    for one in [read_out, read_err]
+        if one.said.len() > 0
+            unshown @ unshown.push(one.said)
+
+    if unshown.len() > 0
+        return fail(
+            code: "not_text",
+            msg: program + " ran and exited " + code.to_str() + ", and what it wrote is not UTF-8, which every stream this harness reads must be: " + unshown.join("; ")
+        )
+    return ok(Run(code: code, out: read_out.text, err: read_err.text, started: true, why: 0))
+
+# One captured stream, read back: its text where it is UTF-8, and where it read
+# whole and is not, no text and what a refusal says of it (`said`).
+record Captured
+    text: str
+    said: str
+
+# The capture at `path` of the stream named `stream`, read as the shown read
+# reads it (`runtime/hero_os.h`), or why it could not be read at all.
+function captured(path: str, stream: str) -> Captured?
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_OK
+        return ok(Captured(text: got, said: ""))
+
+    if status == HERO_OS_NOT_TEXT
+        return ok(Captured(text: "", said: "on " + stream + " " + unshown_said(answer: got, marks: marks)))
+    return fail(code: "cannot_run", msg: "cannot read the captured " + stream + " at " + path)
+
+# How far either side of the first byte that is not UTF-8 a refusal quotes, in
+# bytes, before it cuts at a character's edge: a binary written to a stream is
+# one line of megabytes, and a message is read by a person.
+constant AROUND: i64
+    60
+
+# What a refusal says of a shown read's answer (`written` reads the same
+# shape): how many of its bytes are not UTF-8, and the text around the first
+# of them, from the line end or NUL before it to the one after it, `AROUND`
+# bytes at most either way, each such byte written by its value.
+function unshown_said(answer: str, marks: i64) -> str
+    shown = answer.slice(from: marks, to: answer.len())
+    bad: i64 @ 0
+    first_pair: i64 @ -1
+    pair: i64 @ 0
+
+    while 2 * pair + 1 < marks
+        if answer[2 * pair] != 45
+            bad @ bad + 1
+
+            if first_pair < 0
+                first_pair @ pair
+        pair @ pair + 1
+
+    first = replacement_at(shown: shown, index: first_pair)
+
+    if bad == 0 || first < 0
+        return "its bytes are not UTF-8"
+    start: i64 @ first
+
+    while start > 0 && !ends_a_piece(shown[start - 1]) && first - start < AROUND
+        start @ start - 1
+
+    start @ strings.boundary_at_or_below(text: shown, at: start)
+    end: i64 @ first + 3
+
+    while end < shown.len() && !ends_a_piece(shown[end]) && end - first - 3 < AROUND
+        end @ end + 1
+
+    end @ strings.boundary_at_or_below(text: shown, at: end)
+    quoted: str @ written_part(answer: answer, marks: marks, from: start, to: end)
+
+    if start > 0 && !ends_a_piece(shown[start - 1])
+        quoted @ "…" + quoted
+
+    if end < shown.len() && !ends_a_piece(shown[end])
+        quoted @ quoted + "…"
+
+    if bad == 1
+        return "1 byte is not, in `" + quoted + "`"
+    return bad.to_str() + " bytes are not, the first in `" + quoted + "`"
+
+# A line end or a NUL: where the text a refusal quotes stops, so that a
+# listing of names separated by NULs (`git ls-files -z`) is quoted one name.
+function ends_a_piece(byte: u8) -> bool
+    return byte == 10 || byte == 0
+
+# The offset in `shown` of its U+FFFD number `index`, counted from zero, or -1.
+# The three bytes of U+FFFD stand for nothing else in UTF-8, so the count is
+# exact.
+function replacement_at(shown: str, index: i64) -> i64
+    if index < 0
+        return -1
+    seen: i64 @ 0
+    at: i64 @ 0
+
+    while at + 2 < shown.len()
+        if shown[at] == 239 && shown[at + 1] == 191 && shown[at + 2] == 189
+            if seen == index
+                return at
+            seen @ seen + 1
+            at @ at + 3
+        else
+            at @ at + 1
+
+    return -1
 
 # What a scan found: each name that is UTF-8, which a path can be made of, and
 # each name that is not, written by its bytes (`written`), which no `str` can
@@ -347,25 +478,46 @@ function scanned(count: i64) -> Scanned
 # writes it (`selfhost/cli/process.hero`'s `written_value`); a U+FFFD the
 # bytes themselves held, marked `--`, stays as it is.
 function written(answer: str, marks: i64) -> str
+    return written_part(answer: answer, marks: marks, from: 0, to: answer.len() - marks)
+
+# The shown text between `from` and `to`, two offsets that stand between its
+# characters, written as `written` writes the whole: what a refusal quotes of a
+# capture (`unshown_said`) is a part, and its marks start at the U+FFFD the
+# part's first one is.
+function written_part(answer: str, marks: i64, from: i64, to: i64) -> str
     shown = answer.slice(from: marks, to: answer.len())
     pieces: [str] @ []
-    from: i64 @ 0
-    at: i64 @ 0
-    mark: i64 @ 0
+    kept: i64 @ from
+    at: i64 @ from
+    mark: i64 @ 2 * replacements_before(shown: shown, at: from)
 
-    while at + 2 < shown.len()
+    while at + 2 < to
         if shown[at] == 239 && shown[at + 1] == 191 && shown[at + 2] == 189
             if mark + 1 < marks && answer[mark] != 45
-                pieces @ pieces.push(shown.slice(from: from, to: at))
+                pieces @ pieces.push(shown.slice(from: kept, to: at))
                 pieces @ pieces.push("<0x" + answer.slice(from: mark, to: mark + 2) + ">")
-                from @ at + 3
+                kept @ at + 3
             mark @ mark + 2
             at @ at + 3
         else
             at @ at + 1
 
-    pieces @ pieces.push(shown.slice(from: from, to: shown.len()))
+    pieces @ pieces.push(shown.slice(from: kept, to: to))
     return pieces.join("")
+
+# How many U+FFFD of `shown` stand before `at`, an offset between characters.
+function replacements_before(shown: str, at: i64) -> i64
+    seen: i64 @ 0
+    i: i64 @ 0
+
+    while i + 2 < at
+        if shown[i] == 239 && shown[i + 1] == 191 && shown[i + 2] == 189
+            seen @ seen + 1
+            i @ i + 3
+        else
+            i @ i + 1
+
+    return seen
 
 # Why a walk stopped at a name it cannot hold, in the compiler's words for the
 # same refusal (`selfhost/cli/process.hero`'s `unnamed_said`).
@@ -1108,3 +1260,72 @@ test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named,
 # The program the test above builds over the harness's own modules.
 constant ENV_PROBE: str
     "use absence\nuse shell\n\nfunction main()\n    match shell.some_compiler()\n        .ok path => print(\"compiler ok \" + path)\n        .err e   => print(\"compiler \" + e.code + \": \" + e.msg)\n\n    match absence.runtime_hint()\n        .ok value => print(\"runtime ok \" + value)\n        .err e    => print(\"runtime \" + e.code + \": \" + e.msg)\n\n    match shell.env(name: \"HEROES_RUNTIME\")\n        .ok value => print(\"env ok \" + value)\n        .err e    => print(\"env \" + e.code + \": \" + e.msg)\n"
+
+# DEFECT 317, held as a test (2026-10-04). A child that writes bytes that are
+# not UTF-8 RAN: the refusal says so, names how it ended, and quotes the text
+# around the first such byte, each written by its value, on stdout and on
+# stderr, one byte and several, a line among others and a name among NULs, a
+# long line cut at its edges and between characters. A U+FFFD the bytes hold is
+# text. And the captures go as any other's do, where until that day both stayed
+# on disk. Only a program can write such bytes, and `printf` in `/bin/sh` is
+# the one at hand (POSIX, as the script cases here).
+test "fixedbugs: a child that writes bytes that are not UTF-8 ran, and its refusal says so (defect 317)"
+    if !can_run_scripts()
+        return
+    scratch = "build/harness-selftest/not-text-317"
+    assert !remove_tree(scratch).is_err()
+    assert !mkdir_all(scratch).is_err()
+    told = "/bin/sh ran and exited "
+    because = ", and what it wrote is not UTF-8, which every stream this harness reads must be: "
+    assert said_by(scratch: scratch, script: "printf 'caf\\351'") == told + "0" + because + "on stdout 1 byte is not, in `caf<0xE9>`"
+    assert said_by(scratch: scratch, script: "printf 'x.hero:1:1: error[boom]: caf\\351\\n' 1>&2; exit 1") == told + "1" + because + "on stderr 1 byte is not, in `x.hero:1:1: error[boom]: caf<0xE9>`"
+    assert said_by(scratch: scratch, script: "printf 'a\\351'; printf 'b\\377' 1>&2; exit 3") == told + "3" + because + "on stdout 1 byte is not, in `a<0xE9>`; on stderr 1 byte is not, in `b<0xFF>`"
+
+    # A character cut short is two bytes, quoted on the line that holds them.
+    assert said_by(scratch: scratch, script: "printf 'ok\\nbad \\342\\202 end\\nmore'") == told + "0" + because + "on stdout 2 bytes are not, the first in `bad <0xE2><0x82> end`"
+
+    # A name among NULs, as `git ls-files -z` lists them, is quoted alone.
+    assert said_by(scratch: scratch, script: "printf 'a.hero\\000caf\\351.hero\\000b.hero'") == told + "0" + because + "on stdout 1 byte is not, in `caf<0xE9>.hero`"
+
+    # A long line is cut `AROUND` bytes either side of the byte, and a cut
+    # that would land inside a character moves to its first byte.
+    sixty = zeros(60)
+    assert said_by(scratch: scratch, script: "printf '%0100d\\351%0100d' 0 0") == told + "0" + because + "on stdout 1 byte is not, in `…" + sixty + "<0xE9>" + sixty + "…`"
+    assert said_by(scratch: scratch, script: "printf 'xé%059d\\351' 0") == told + "0" + because + "on stdout 1 byte is not, in `…é" + zeros(59) + "<0xE9>`"
+
+    # A U+FFFD the bytes hold is text, and comes back as it is.
+    held = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "printf 'a\\357\\277\\275b'"])
+    assert !held.is_err()
+    assert held.must().out == "a�b"
+
+    # The machine-asking run says the same, since a stream is read one way.
+    asked = attempted(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "printf 'caf\\351'"])
+    assert refusal(asked) == told + "0" + because + "on stdout 1 byte is not, in `caf<0xE9>`"
+
+    # Every capture of the eleven runs above is gone, the refused ones included.
+    assert captures_left(scratch) == 0
+    assert !remove_tree(scratch).is_err()
+
+# What `/bin/sh -c <script>` is refused with, "" where it is not.
+function said_by(scratch: str, script: str) -> str
+    return refusal(run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", script]))
+
+function zeros(count: i64) -> str
+    pieces: [str] @ []
+
+    for _ in range(from: 0, to: count)
+        pieces @ pieces.push("0")
+
+    return pieces.join("")
+
+# How many capture files stand directly in `dir`, by their names' own start.
+function captures_left(dir: str) -> i64
+    left: i64 @ 0
+
+    for path in list_entries(scratch: dir, dir: dir).must()
+        name = strings.base_name(path: path)
+
+        if strings.starts_with(text: name, prefix: "stdout-") || strings.starts_with(text: name, prefix: "stderr-")
+            left @ left + 1
+
+    return left

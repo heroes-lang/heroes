@@ -113,8 +113,9 @@ function outcome(scratch: str, compiler: str, p: Probe) -> Outcome
     # this file can see, rather than a premise about arguments in general.
     said = shell.run_guarded(scratch: scratch, words: shell.both(first: [compiler], second: words_of(p.argv)))
 
+    # The refusal's own words (defect 317).
     if said.is_err()
-        return Outcome(kind: "failed", text: "  cannot run: " + p.argv)
+        return Outcome(kind: "failed", text: "  `" + p.argv + "`: " + shell.refusal(said))
     why = skip_of(scratch: scratch, p: p, said: said.must())
 
     if why.kind == "skipped"
