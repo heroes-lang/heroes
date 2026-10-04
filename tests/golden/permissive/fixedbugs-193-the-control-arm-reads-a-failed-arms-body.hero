@@ -1,0 +1,93 @@
+# Fixed defect 193, 2026-10-04, its control-arm half (batch 9's gate; the
+# normal arm's case is `check/fixedbugs-193-a-failed-arms-body-is-read`).
+# Symptom: `x |` over `2 => f(1 +)`, joined by the lexer, was told the `1 +`
+# in the normal arm and not in `check --permissive`, which no golden form ran
+# when the defect was filed (panel 187's R3; the `permissive` form since
+# defect 211). The same eleven shapes as the normal arm's case: the control
+# arm reads each failed arm's value for its own mistakes, as the normal arm
+# does, and tells every message the normal arm tells but one, at the line
+# broken after the `|`, which the control arm reads as the statement going
+# on and the normal arm refuses (`continuation_outside_brackets`, a thesis
+# rule).
+
+function f(a: i64) -> i64
+    return a
+
+function a_name_joined(n: i64)
+    k = match n
+        x | 2 => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_name(n: i64)
+    k = match n
+        x => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_second_pattern(n: i64)
+    k = match n
+        0 | x => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function an_operator_joined(n: i64)
+    k = match n
+        1 | + => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_comparison(n: i64)
+    k = match n
+        x == 2 => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function another_arrow(n: i64)
+    k = match n
+        1 -> 2 => f(1 +)  #~ expected_arm_arrow expected_expression
+        _ => 0
+    print(k)
+
+variant Color
+    red
+        v: i64
+    blue
+
+function a_second_name(c: Color)
+    k = match c
+        .red x y => f(1 +)  #~ expected_arm_arrow expected_expression
+        .blue => 0
+    print(k)
+
+function a_signed_name(n: i64)
+    k = match n
+        -m => f(1 +)  #~ expected_pattern expected_expression
+        _ => 0
+    print(k)
+
+function a_closer_after(n: i64)
+    k = match n
+        x | 2 => f(1 +) )  #~ expected_pattern expected_expression expected_end_of_line
+        _ => 0
+    print(k)
+
+function one_level_deeper(n: i64)
+    k = match n
+        0 =>
+            match n
+                x => f(1 +)  #~ expected_pattern expected_expression
+                _ => 0
+        _ => 0
+    print(k)
+
+function broken_after_the_pipe(n: i64)
+    k = match n
+        #~v expected_pattern
+        x |
+            2 => f(1 +)  #~ expected_expression
+        _ => 0
+    print(k)
+
+function main()
+    print(1)
