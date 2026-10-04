@@ -285,7 +285,7 @@ function run_table(scratch: str, compiler: str, probes: [Probe], @r: report.Repo
 test "fixedbugs: a row that may skip is skipped only where the machine lacks what its case binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/probe-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -317,3 +317,4 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     assert r.skips.len() == 1
     assert strings.starts_with(text: r.skips[0], prefix: "SKIP surface/lacks\n")
     assert r.failed == 1
+    assert !shell.remove_tree(scratch).is_err()

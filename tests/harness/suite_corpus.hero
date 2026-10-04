@@ -440,7 +440,7 @@ test "the leak-gate check reads `exit(` off the program"
     assert !holds(modules: ["function main()\n    print(1)\n"], needle: "exit(")
 
 test "arguments come from main.args, one per line, quoted"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/corpus-args"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -452,6 +452,7 @@ test "arguments come from main.args, one per line, quoted"
     # The words arrive whole: the middle one holds a space and the last
     # an apostrophe, and neither needs a quote to survive the trip.
     assert passed_after_dashes(tree) == ["--", "one", "two words", "it's"]
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
 # the compiler's words for the machine's. A header the machine has, said to be
@@ -460,7 +461,7 @@ test "arguments come from main.args, one per line, quoted"
 test "fixedbugs: a program whose tests cannot build is skipped only where the machine lacks what it binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/corpus-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/has").is_err()
@@ -502,3 +503,4 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert excused.failed == 0
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP corpus/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()

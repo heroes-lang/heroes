@@ -730,7 +730,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
     # Every case so named is judged, counted from the directories themselves
     # rather than from a number written here: four on the day this was
     # written, all of them the control arm's.
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     arm = cases.collect(scratch: scratch, dir: "tests/golden/permissive").must()
     in_arm = cases.matching(found: arm, only: "the-control-arm").len()
     assert in_arm >= 4
@@ -764,6 +764,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
             seen @ seen + 1
 
     assert seen >= 5
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246 at its last reader, held as a test (2026-10-04). The run roots'
 # step-aside asked the compiler's words alone and named nothing, and the guard
@@ -780,7 +781,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
 test "fixedbugs: a run-root program steps aside only where its case and the machine say so, by name"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     root = scratch + "/annotations-246"
     assert !shell.remove_tree(root).is_err()
     nowhere = absence.NOWHERE
@@ -820,6 +821,7 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
         needle: "not skipped for a missing library: " + has + ": clang finds `stdio.h`"
     )
     assert strings.contains(text: got.failures[1], needle: "binds no such header")
+    assert !shell.remove_tree(scratch).is_err()
 
 # The ruling on defect 246's floor (the coordinator, 2026-10-04): a mark
 # stepped aside is not a pass. Measured on this Mac the same day, the
@@ -830,7 +832,7 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
 test "fixedbugs: a machine stepping every run-root program aside reads red, and a skip counts toward the floor as reached"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     root = scratch + "/annotations-246-all"
     assert !shell.remove_tree(root).is_err()
 
@@ -876,6 +878,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581)
     assert box.failed == 0
     assert box.passed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 319, held as a test (2026-10-04). A module's marks are the programs'
 # that reach it by their `use` lines: stepped aside with them where every one
@@ -887,7 +890,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
 test "fixedbugs: a module's marks step aside with the programs that reach it, and only with them (defect 319)"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     root = scratch + "/annotations-319"
     assert !shell.remove_tree(root).is_err()
     compiler = absence.said_stub(scratch).must()
@@ -898,7 +901,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     a = root + "/a/g"
     assert !plant(path: a + "/main.hero", source: using, said: lacking(a + "/bind.hero")).is_err()
     assert !plant(path: a + "/bind.hero", source: marked_nowhere(), said: "").is_err()
-    alone = grouped(root: root + "/a", compiler: compiler)
+    alone = grouped(scratch: scratch, root: root + "/a", compiler: compiler)
     assert alone.asked.marks == 0
     assert alone.asked.stepped == 1
     assert alone.got.failed == 0
@@ -909,7 +912,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     assert !plant(path: b + "/wrong.hero", source: using, said: lacking(b + "/bind.hero")).is_err()
     assert !plant(path: b + "/bind.hero", source: marked_nowhere(), said: "").is_err()
     assert !plant(path: b + "/right.hero", source: judged, said: wrong_type(b + "/right.hero")).is_err()
-    beside = grouped(root: root + "/b", compiler: compiler)
+    beside = grouped(scratch: scratch, root: root + "/b", compiler: compiler)
     assert beside.asked.marks == 1
     assert beside.asked.stepped == 1
     assert beside.got.passed == 1
@@ -920,7 +923,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     assert !plant(path: c + "/main.hero", source: "use mid\n\nfunction main()\n    print(mid.eight())\n", said: lacking(c + "/bind.hero")).is_err()
     assert !plant(path: c + "/mid.hero", source: "use bind\n\nfunction eight() -> i32\n    return bind.seven() + 1\n", said: "").is_err()
     assert !plant(path: c + "/bind.hero", source: marked_nowhere(), said: "").is_err()
-    deep = grouped(root: root + "/c", compiler: compiler)
+    deep = grouped(scratch: scratch, root: root + "/c", compiler: compiler)
     assert deep.asked.stepped == 1
     assert deep.got.failed == 0
 
@@ -930,7 +933,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     assert !plant(path: e + "/aside.hero", source: aside, said: lacking(e + "/aside.hero")).is_err()
     assert !plant(path: e + "/shared.hero", source: MARKED_STDIO, said: "").is_err()
     assert !plant(path: e + "/judged.hero", source: "use shared\n\nfunction main()\n    print(shared.seven())\n", said: wrong_type(e + "/shared.hero")).is_err()
-    shared = grouped(root: root + "/e", compiler: compiler)
+    shared = grouped(scratch: scratch, root: root + "/e", compiler: compiler)
     assert shared.asked.marks == 1
     assert shared.asked.stepped == 0
     assert shared.got.passed == 1
@@ -942,7 +945,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     d = root + "/d/g"
     assert !plant(path: d + "/main.hero", source: judged, said: wrong_type(d + "/main.hero")).is_err()
     assert !plant(path: d + "/orphan.hero", source: MARKED_STDIO, said: "").is_err()
-    orphan = grouped(root: root + "/d", compiler: compiler)
+    orphan = grouped(scratch: scratch, root: root + "/d", compiler: compiler)
     assert orphan.got.failed == 1
     assert strings.contains(
         text: orphan.got.failures[0],
@@ -951,7 +954,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     f = root + "/f/g"
     assert !plant(path: f + "/main.hero", source: program(header: absence.NOWHERE, on_head: "", on_function: ""), said: lacking(f + "/main.hero")).is_err()
     assert !plant(path: f + "/orphan.hero", source: MARKED_STDIO, said: "").is_err()
-    nobody = grouped(root: root + "/f", compiler: compiler)
+    nobody = grouped(scratch: scratch, root: root + "/f", compiler: compiler)
     assert nobody.got.failed == 1
     assert strings.contains(
         text: nobody.got.failures[0],
@@ -959,12 +962,13 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     )
     g = root + "/g/g"
     assert !plant(path: g + "/lone.hero", source: MARKED_STDIO, said: "").is_err()
-    lone = grouped(root: root + "/g", compiler: compiler)
+    lone = grouped(scratch: scratch, root: root + "/g", compiler: compiler)
     assert lone.got.failed == 1
     assert strings.contains(
         text: lone.got.failures[0],
         needle: "1 annotations here and no program with a `main` to provoke them"
     )
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a `use` line names its path, and a program reaches the modules its uses name, from its own directory"
     text = "use a\nuse syntax/decl as sd\n# use not\n    use indented\nuse b  #~ unused_binding\nuse c#x\nuser\n"
@@ -979,9 +983,9 @@ record Grouped
     asked: Asked
     got: report.Report
 
-function grouped(root: str, compiler: str) -> Grouped
+function grouped(scratch: str, root: str, compiler: str) -> Grouped
     got: report.Report @ report.empty()
-    asked = run_roots(@got, scratch: "build/harness-selftest", compiler: compiler, roots: [root]).must()
+    asked = run_roots(@got, scratch: scratch, compiler: compiler, roots: [root]).must()
     return Grouped(asked: asked, got: got)
 
 # What the stand-in compiler says of a program whose group binds a header no

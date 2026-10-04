@@ -605,7 +605,7 @@ function parent_of(path: str) -> str
     return path.slice(from: 0, to: at)
 
 test "the fixes suite catches a wrong application and a repair that does not check clean"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/fixes"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -646,9 +646,10 @@ test "the fixes suite catches a wrong application and a repair that does not che
     assert !red.is_err()
     assert red.must().passed == 0
     assert strings.contains(text: red.must().failures[0], needle: "--apply")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the fixtures half applies across two files, re-checks the whole program, and catches a lie"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/fixtures"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/typo").is_err()
@@ -728,6 +729,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     assert strings.contains(text: caught.must().failures[0], needle: "typo/main.hero")
     assert strings.contains(text: caught.must().failures[0], needle: "--apply")
     assert !strings.contains(text: caught.must().failures[0], needle: "does not check clean")
+    assert !shell.remove_tree(scratch).is_err()
 
 # Defect 129, 2026-09-28: a case with no answer file was skipped, so a join
 # that turned `certain` in a case whose every fix is a `guess` passed green.
@@ -735,7 +737,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
 # a diagnostic no `certain` fix repairs pins what `--apply` writes in an
 # `.applied`, which must not check clean and must not change a second time.
 test "a case with no answer is left as it is by --apply, and an applied answer is pinned"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/untouched"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -796,9 +798,10 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     assert !moved.is_err()
     assert moved.must().failed == 1
     assert strings.contains(text: moved.must().failures[0], needle: "--apply")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a fixture root with no answer is applied in a copy of its whole case and must be left as it is"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/untouched-fixtures"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/typo/lib").is_err()
@@ -845,6 +848,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     assert !promoted.is_err()
     assert promoted.must().failed == 1
     assert strings.contains(text: promoted.must().failures[0], needle: "is a `.fixed`")
+    assert !shell.remove_tree(scratch).is_err()
 
 # Batch 9's gate, 2026-10-04: a directory under the fixtures that holds no
 # `.hero` is no case of this suite, so nothing of it is copied, and bytes in
@@ -855,7 +859,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
 test "a fixture directory with no root is not copied, so its bytes that are not UTF-8 fail nothing"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/fixtures-bytes"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/bytes").is_err()
@@ -871,3 +875,4 @@ test "a fixture directory with no root is not copied, so its bytes that are not 
     assert !passed_over.is_err()
     assert passed_over.must().failed == 0
     assert passed_over.must().passed == 0
+    assert !shell.remove_tree(scratch).is_err()

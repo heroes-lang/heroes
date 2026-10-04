@@ -167,7 +167,7 @@ function starved(skipped: i64, found: i64) -> bool
 test "fixedbugs: a case that cannot emit is skipped only where the machine lacks what it binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -203,6 +203,7 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP lines/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a few skips for a missing library pass, a third of the tree does not"
     assert !starved(skipped: 0, found: 235)
@@ -324,7 +325,7 @@ function unquoted(text: str) -> str
     return parts.join("")
 
 test "a claim that lands on a real line is no offence, and the two bad shapes are"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -342,9 +343,10 @@ test "a claim that lands on a real line is no offence, and the two bad shapes ar
     past = "#line 9 " + quoted(tree + "/s.hero") + "\nint x;\n"
     assert offences(c: past, source: "t").len() == 1
     assert strings.contains(text: offences(c: past, source: "t")[0], needle: "past the end")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the count advances after the anchor, which is the defect this exists for"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines"
     assert !shell.mkdir_all(tree).is_err()
     assert !write_file(path: tree + "/s.hero", text: "function main()\n\n    print(1)\n").is_err()
@@ -355,6 +357,7 @@ test "the count advances after the anchor, which is the defect this exists for"
     drifting = "#line 1 " + quoted(tree + "/s.hero") + "\nint a;\nint b;\n"
     assert offences(c: drifting, source: "t").len() == 1
     assert strings.contains(text: offences(c: drifting, source: "t")[0], needle: ":2 is a blank line")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the library is nobody's line"
     assert offences(c: "#line 400 \"<heroes library>\"\nint x;\n", source: "t").len() == 0

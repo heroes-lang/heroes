@@ -534,7 +534,7 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
 test "fixedbugs: the spec's example is never a pass for a missing library"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest/special-absence"
+    scratch = shell.own_scratch()
     assert !shell.remove_tree(scratch).is_err()
     assert !shell.mkdir_all(scratch).is_err()
     compiler = absence.said_stub(scratch)
@@ -558,6 +558,7 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
     the_specs_own_example_opens_a_database(@claimed, scratch: scratch, compiler: compiler.must())
     assert claimed.passed == 0
     assert claimed.failed + claimed.skips.len() == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the failing-test probe is itself falsifiable"
     # The one shape that would make the check above vacuous: a compiler

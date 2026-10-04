@@ -178,7 +178,7 @@ test "the determinism suite passes identical emissions and catches a wobbling on
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/determinism-case"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -213,9 +213,10 @@ test "the determinism suite passes identical emissions and catches a wobbling on
     assert !a.is_err()
     assert !b.is_err()
     assert a.must() != b.must()
+    assert !shell.remove_tree(scratch).is_err()
 
 test "an emission that fails is an error carrying the compiler's words"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/determinism-broken"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -224,6 +225,7 @@ test "an emission that fails is an error carrying the compiler's words"
     item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
     got = dumped(scratch: scratch, compiler: shell.some_compiler().must(), item: item, flag: "--emit-c", into: "")
     assert got.is_err()
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
 # the compiler's words for the machine's. A header the machine has, said to be
@@ -232,7 +234,7 @@ test "an emission that fails is an error carrying the compiler's words"
 test "fixedbugs: a case that cannot emit is skipped only where the machine lacks what it binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/determinism-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/written").is_err()
@@ -270,3 +272,4 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP determinism/c/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()

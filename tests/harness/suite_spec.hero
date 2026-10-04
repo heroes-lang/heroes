@@ -1663,7 +1663,7 @@ test "the ledger's rows are read, and only the rows"
     assert rows[rows.len() - 1] == SPEC_TOKENS
 
 test "the lock fires when the record and the pin disagree"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     assert !shell.mkdir_all(scratch).is_err()
 
     # A corrupted newest row — the shape panel 086's warden predicts: 7 passed,
@@ -1673,6 +1673,7 @@ test "the lock fires when the record and the pin disagree"
 
     # A dropped row: the count guard, which comparing the newest alone misses.
     assert ledger_figures("| 2231 | panel 023 | only |\n").len() != LEDGER_ROWS
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the compiler's two lists are read out of its own source"
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
@@ -1741,7 +1742,7 @@ test "the drift check fires when the two instruments disagree on the sum"
     # comparison, not the real spec, whose size this suite reads on every run.
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     assert !shell.mkdir_all(scratch).is_err()
     line = "pre-registered falsifiable prediction (panel 012). Headroom: 131 against the 4096 ceiling"
 
@@ -1774,11 +1775,12 @@ test "the drift check fires when the two instruments disagree on the sum"
     agreed: report.Report @ report.empty()
     spendable(@agreed, scratch: scratch, compiler: good)
     assert agreed.failed == 0
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the record has to be printed by the tool, and still be called the binding number"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     assert !shell.mkdir_all(scratch).is_err()
     row = "  real                 " + REAL_TOKENS.to_str() + "   " + REAL_MODEL + ", " + REAL_TAKEN
 
@@ -1816,6 +1818,7 @@ test "the record has to be printed by the tool, and still be called the binding 
     recorded(@trusted, scratch: scratch, compiler: mislabelled)
     assert trusted.failed == 1
     assert strings.contains(text: trusted.failures[0], needle: "cost 998 tokens")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the contract's ceiling fires, and a ceiling above it does not"
     # A stub compiler, for the reason the next test gives: what is under test is
@@ -1823,7 +1826,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     # itself checks on every run.
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     assert !shell.mkdir_all(scratch).is_err()
     fat = scratch + "/stub-fat.sh"
     assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            7000   a lower bound, not the reader s tokeniser'\necho '  real               9999   claude-opus-5, 2026-09-12 — the binding number'\n").is_err()
@@ -1874,13 +1877,14 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     blind: report.Report @ report.empty()
     contract(@blind, scratch: scratch, compiler: mute, ceiling: 10000)
     assert blind.failed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the vendored maximum is read off `measure`, whatever the compiler is"
     # POSIX is this case's subject, and this machine answers for itself
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     assert !shell.mkdir_all(scratch).is_err()
     path = scratch + "/stub-measure.sh"
     assert !write_file(path: path, text: "#!/bin/sh\necho 'spec/heroes-spec.md'\necho '  maximum            9999   any prose at all, because the parser reads the row NAME'\n").is_err()
@@ -1897,6 +1901,7 @@ test "the vendored maximum is read off `measure`, whatever the compiler is"
     assert !write_file(path: broken, text: "#!/bin/sh\necho 'error: no tables' 1>&2\nexit 2\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", broken]).is_err()
     assert maximum_of(scratch: scratch, compiler: broken, path: SPEC).is_err()
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a quoted word is read, and an unquoted line is refused"
     assert first_quoted(text: "a \"word\" here", from: 0).default("") == "word"
