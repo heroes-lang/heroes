@@ -4688,6 +4688,10 @@ function defect_file_offences(path: str, text: str) -> [str]
             out @ out.push(
                 "line 1 is defect " + stated + " and the file is named for defect " + filed_as + ": the name is how a reader finds it"
             )
+        shape = line_shape(first)
+
+        if shape != ""
+            out @ out.push("line 1: " + shape + ": " + head_of(first))
 
     i: i64 @ 1
 
@@ -4705,6 +4709,54 @@ function defect_file_offences(path: str, text: str) -> [str]
         i @ i + 1
 
     return out
+
+# What a defect item's line departs from between its number and its class
+# token, "" where nothing: `- [ ] **NNN — <title>** | <what> | <where>`, the
+# title closed by `**` and the bar after it, then what it does and where to
+# look, set apart by ` | `, a field free to quote ` | ` itself. **The class
+# rule read the line's end and its number its start, and nothing read between**
+# (defect 190): item 130's line as `8349d264` left it, its title never closed
+# and not one bar in it, read whole after that commit and every one until it
+# was restored. The class token is the class rule's to read (`line_class`).
+function line_shape(first: str) -> str
+    rest = strings.without_prefix(text: first, prefix: "- [ ] **")
+    close = strings.index_of(text: rest, needle: "**")
+
+    if close.is_err()
+        return "its title is never closed by `**`"
+
+    # `**` is ASCII, so each cut stands between characters.
+    after = rest.slice(from: close.must() + 2, to: rest.len())
+
+    if !strings.starts_with(text: after, prefix: " | ")
+        return "its title's closing `**` is not followed by ` | `, which sets it apart from what the defect does"
+    fields: str @ strings.without_prefix(text: after, prefix: " | ")
+    token = strings.index_of(text: fields, needle: CLASS_TOKEN)
+
+    if !token.is_err()
+        fields @ fields.slice(from: 0, to: token.must())
+    first_bar = strings.index_of(text: fields, needle: " | ")
+
+    if first_bar.is_err()
+        return "its line holds one field after its title, and an item holds two, what it does and where to look, set apart by ` | `"
+    last_bar = last_bar_at(fields)
+
+    if strings.trimmed(fields.slice(from: 0, to: first_bar.must())).len() == 0
+        return "its field of what the defect does is empty"
+
+    if strings.trimmed(fields.slice(from: last_bar + 3, to: fields.len())).len() == 0
+        return "its field of where to look is empty"
+
+    return ""
+
+# Where the last ` | ` of `fields` stands; the caller has found one.
+function last_bar_at(fields: str) -> i64
+    at: i64 @ fields.len() - 3
+
+    while at > 0 && !(fields[at] == 32 && fields[at + 1] == 124 && fields[at + 2] == 32)
+        at @ at - 1
+
+    return at
 
 # THE DIRECTORY IS THE REGISTER, AND THIS IS ITS EXECUTOR (2026-10-04).
 #
@@ -5556,6 +5608,47 @@ test "a defect file holds one open item, its line first, its body indented, its 
 
     # A name that is not a defect file's leaves the number to `records/defects`.
     assert defect_file_offences(path: "docs/work/defects/notes.md", text: good).len() == 0
+
+# DEFECT 190, held as a test (2026-10-04): a defect item's line is read whole
+# between its number and its class token. Item 130's line as `8349d264` left
+# it read whole; so does each shape beside it here, refused by name, and a
+# field quoting ` | `, as 190's own does, is no offence.
+test "fixedbugs: a defect item's line is read whole, its title closed and its two fields there (defect 190)"
+    body = ["", "**Class: systemic**, 2026-10-02, a reason."]
+    damaged = one_defect(
+        head: "- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**",
+        body: body
+    )
+    said = defect_file_offences(path: "docs/work/defects/130-after-a-unction.md", text: damaged)
+    assert said.len() == 1
+    assert strings.starts_with(text: said[0], prefix: "line 1: its title's closing `**` is not followed by ` | `")
+    path = "docs/work/defects/164-x.md"
+    shapes = [
+        "- [ ] **164 — x · **class: blocking**"
+        "- [ ] **164 — x** · **class: blocking**"
+        "- [ ] **164 — x** | only what it does · **class: blocking**"
+        "- [ ] **164 — x** |  | where · **class: blocking**"
+        "- [ ] **164 — x** | what |  · **class: blocking**"
+        "- [ ] **164 — x"
+    ]
+    told = [
+        "its title's closing `**` is not followed by ` | `"
+        "its title's closing `**` is not followed by ` | `"
+        "its line holds one field after its title"
+        "its field of what the defect does is empty"
+        "its field of where to look is empty"
+        "its title is never closed by `**`"
+    ]
+    at: i64 @ 0
+
+    while at < shapes.len()
+        got = defect_file_offences(path: path, text: one_defect(head: shapes[at], body: body))
+        assert got.len() == 1
+        assert strings.starts_with(text: got[0], prefix: "line 1: " + told[at])
+        at @ at + 1
+
+    bars_inside = one_defect(head: "- [ ] **164 — x** | no ` | ` at all | where · **class: blocking**", body: body)
+    assert defect_file_offences(path: path, text: bars_inside).len() == 0
 
 test "the front page holds its rules and no item, no banner and no count"
     page = "# DEFECTS\n\nthe rules, and where the files are\n"
