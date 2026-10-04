@@ -2174,7 +2174,8 @@ function issued_twice(numbers: [str]) -> [str]
 
 # The `NNN` of `- [ ] **NNN — title**`, or the empty string where the line is
 # not a defect item. It asks the value in hand — this row's own bytes — and
-# never how many defects the project is supposed to have.
+# never how many defects the project is supposed to have. The number is read
+# as `issued_digits` reads one, so the thousandth defect's line has one.
 function defect_number(row: str) -> str
     marker: str @ ""
 
@@ -2187,24 +2188,35 @@ function defect_number(row: str) -> str
     if marker == ""
         return ""
     rest = strings.without_prefix(text: row, prefix: marker)
+    digits = issued_digits(rest)
 
-    if rest.len() < 4
+    if digits == 0
         return ""
-    i: i64 @ 0
 
-    while i < 3
-        byte = rest[i]
-
-        if byte < '0' || byte > '9'
-            return ""
-        i @ i + 1
-
-    number = rest.slice(from: 0, to: 3)
+    # Digits are ASCII, so the cut stands between characters.
+    number = rest.slice(from: 0, to: digits)
 
     if !strings.starts_with(text: strings.without_prefix(text: rest, prefix: number), prefix: " — ")
         return ""
 
     return number
+
+# How many bytes of a defect number open `text`, or 0 where none does: three
+# digits or more, padded with zeros to three and never past three, so `009`,
+# `277` and `1000` are numbers and `99` and `0999` are not (a second spelling
+# of 999 would let two files name one defect). **It read exactly three until
+# defect 280 (2026-10-04)**, so the thousandth defect would have had no name
+# `records/defects` accepted and no line any count could read.
+function issued_digits(text: str) -> i64
+    count: i64 @ 0
+
+    while count < text.len() && text[count] >= '0' && text[count] <= '9'
+        count @ count + 1
+
+    if count < 3 || count > 3 && text[0] == '0'
+        return 0
+
+    return count
 
 function is_among(needle: str, seen: [str]) -> bool
     for one in seen
@@ -4710,7 +4722,8 @@ function defect_file_offences(path: str, text: str) -> [str]
 #     two apart: present, an empty directory passes; absent, the list moved or
 #     went, and every check that walks it would read zero and pass.
 #   - **each name is `NNN-<slug>.md`, directly in it**, the number in three
-#     digits, because the number is how a defect is cited, filed and closed.
+#     digits or more, padded to three and never past (defect 280), because the
+#     number is how a defect is cited, filed and closed.
 #     `records/lists` holds the item's line to the same number.
 #   - **no two files share a number.** Two lanes that each take the next number
 #     write two files with different names, so their merge is CLEAN AND WRONG:
@@ -4763,10 +4776,10 @@ function name_offences(paths: [str]) -> [str]
 
         if !is_defect_name(rest)
             out @ out.push(
-                path + " is not named `NNN-<slug>.md`: three digits, a `-`, then words of lowercase letters and digits joined by one `-`, at most " + SLUG_CEILING.to_str() + " characters"
+                path + " is not named `NNN-<slug>.md`: a number of three digits or more, padded to three and never past, a `-`, then words of lowercase letters and digits joined by one `-`, at most " + SLUG_CEILING.to_str() + " characters"
             )
             continue
-        number = rest.slice(from: 0, to: 3)
+        number = name_number(rest)
         before = first[number]
 
         if before.is_err()
@@ -4778,26 +4791,22 @@ function name_offences(paths: [str]) -> [str]
 
     return out
 
-# `NNN-<slug>.md`: three digits, a `-`, and a slug of lowercase letters and
-# digits in words joined by one `-`, none at either end, at most `SLUG_CEILING`
-# characters. Asked of the bytes and never of a slice it has not yet proved
-# safe, for `strings.hero`'s reason: a name is whatever somebody typed.
+# `NNN-<slug>.md`: a number as `issued_digits` reads one, a `-`, and a slug
+# of lowercase letters and digits in words joined by one `-`, none at either
+# end, at most `SLUG_CEILING` characters. Asked of the bytes and never of a
+# slice it has not yet proved safe, for `strings.hero`'s reason: a name is
+# whatever somebody typed.
 function is_defect_name(name: str) -> bool
     if name.len() < 8 || !strings.ends_with(text: name, suffix: ".md")
         return false
-    i: i64 @ 0
+    digits = issued_digits(name)
 
-    while i < 3
-        if !is_digit(name[i])
-            return false
-        i @ i + 1
-
-    if name[3] != '-'
+    if digits == 0 || digits + 4 >= name.len() || name[digits] != '-'
         return false
 
-    # Four ASCII bytes before it and an ASCII `.md` after it, so both cuts
-    # stand between characters.
-    slug = name.slice(from: 4, to: name.len() - 3)
+    # ASCII bytes before it and an ASCII `.md` after it, so both cuts stand
+    # between characters.
+    slug = name.slice(from: digits + 1, to: name.len() - 3)
 
     if slug.len() == 0 || slug.len() > SLUG_CEILING || slug[0] == '-' || slug[slug.len() - 1] == '-'
         return false
@@ -4823,7 +4832,7 @@ function name_number(path: str) -> str
     if !is_defect_name(name)
         return ""
 
-    return name.slice(from: 0, to: 3)
+    return name.slice(from: 0, to: issued_digits(name))
 
 # One list's text against that shape, as a list of complaints. **Pure, so the
 # tests below drive it with the exact lines the defect produced** rather than
@@ -5619,7 +5628,7 @@ test "the register is the directory: there while empty, one name per number, not
     assert strings.contains(text: misfiled[0], needle: "is below docs/work/defects")
     assert strings.contains(text: misfiled[1], needle: "is not named `NNN-<slug>.md`")
 
-test "a defect file's name is three digits and a slug of at most sixty characters"
+test "a defect file's name is a number and a slug of at most sixty characters"
     assert is_defect_name("177-a-match-whose-arms-fall.md")
     assert is_defect_name("009-x.md")
     assert is_defect_name("235-a-header-name-no-ntfs-file-can-hold-builds-on-the-mac-and.md")
@@ -5627,7 +5636,6 @@ test "a defect file's name is three digits and a slug of at most sixty character
     assert is_defect_name("237-" + repeat("a", widest) + ".md")
     assert !is_defect_name("237-" + repeat("a", widest + 1) + ".md")
     assert !is_defect_name("17-two-digits.md")
-    assert !is_defect_name("1777-four-digits.md")
     assert !is_defect_name("177_underscore.md")
     assert !is_defect_name("177-Upper-Case.md")
     assert !is_defect_name("177-two--dashes.md")
@@ -5642,6 +5650,33 @@ test "a defect file's name is three digits and a slug of at most sixty character
     assert !is_defect_name("177-café.md")
     assert name_number("docs/work/defects/177-a.md") == "177"
     assert name_number("docs/work/defects/notes.md") == ""
+
+# DEFECT 280, held as a test (2026-10-04): a defect number is three digits or
+# more, padded to three and never past, read so in a name, on an item's line
+# and in the register, so the thousandth defect has a name every check takes.
+# A number padded past three is a second spelling and stays refused.
+test "fixedbugs: the thousandth defect has a name and a line every check reads (defect 280)"
+    assert is_defect_name("1000-the-thousandth.md")
+    assert is_defect_name("1777-four-digits.md")
+    assert is_defect_name("10000-five-digits.md")
+    assert !is_defect_name("0999-padded-past-three.md")
+    assert !is_defect_name("0177-padded.md")
+    assert !is_defect_name("1000-.md")
+    assert name_number("docs/work/defects/1000-the-thousandth.md") == "1000"
+    assert defect_number("- [ ] **1000 — the thousandth** | a | b · **class: adjacent**") == "1000"
+    assert defect_number("- [x] **10000 — far on** | a | b") == "10000"
+    assert defect_number("- [ ] **0999 — padded** | a | b") == ""
+    assert defect_number("- [ ] **99 — short** | a | b") == ""
+    assert defect_number("- [ ] **1000—unspaced** | a | b") == ""
+    filed = "- [ ] **1000 — the thousandth** | what | where · **class: adjacent**\n\n    **Class: adjacent**, 2026-10-04, a reason.\n"
+    assert defect_file_offences(path: "docs/work/defects/1000-the-thousandth.md", text: filed).len() == 0
+    assert class_offences(filed).len() == 0
+    twice = name_offences(
+        ["docs/work/defects/1000-one.md", "docs/work/defects/1000-two.md", "docs/work/defects/0999-x.md"]
+    )
+    assert twice.len() == 2
+    assert strings.contains(text: twice[0], needle: "1000 is the number of two files")
+    assert strings.contains(text: twice[1], needle: "docs/work/defects/0999-x.md is not named `NNN-<slug>.md`")
 
 test "the ROADMAP's defects are the files counted and its decisions the banner read"
     stated = OpenCounts(defects: 52, decisions: 0)
