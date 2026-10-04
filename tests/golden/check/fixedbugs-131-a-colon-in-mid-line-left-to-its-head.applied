@@ -14,7 +14,7 @@
 record P: i64  #~ expected_end_of_line
     x: i64
 
-variant T: a  #~ expected_end_of_line empty_variant
+variant T: a  #~ expected_end_of_line
 
 function result_after_a_colon() -> i64  #~ expected_end_of_line
     return 1
@@ -39,3 +39,8 @@ function main()
 # Moved 2026-10-04 with defect 198's repair (lane b9-recovery): `variant T: a`
 # over nothing is told its `:` as the head's junk, beside its missing cases,
 # where the junk waited for a case to be written below.
+
+# Moved 2026-10-04 with defect 315's repair (lane b11-parse): the `a` past
+# the `:` is the variant's case, written on its head's line, which the junk's
+# report sends below; `empty_variant` beside it was that report's debris, and
+# is not said (`parse/members_below.no_members_below`).
