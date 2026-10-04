@@ -97,6 +97,10 @@ record Shape
 # **393 in lane recovery-b7, 2026-10-02**: the batches after it took the
 # directory past 314 by more than a quarter at that lane's eighth case, its
 # CRLF `f` literal, and the suite asked for 393.
+#
+# **498 at batch 10's merge, 2026-10-04**: batches 8, 9 and 10 took the
+# directory past 393 by more than a quarter at lane b10-cli's cases for
+# defects 324 and 325, and the merged tree's suite asked for 498.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -105,7 +109,7 @@ function shape_check() -> Shape
         flags: ["--brief"],
         on_stderr: true,
         want_code: 1,
-        least: 393,
+        least: 498,
         watched: true,
         silent_stdout: false,
         library_skip: false
