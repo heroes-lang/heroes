@@ -14,6 +14,13 @@
 # annotation line between each `match` and its first arm leaves these joins
 # a `guess`, as on the trunk, so `--apply` writes nothing here; without it
 # the first join is `certain` and writes the arm the author broke.
+#
+# Corrected 2026-10-04 by lane b9-recovery: since defect 202 a comment alone
+# on its line joins nothing (`parse/head_lines.joined_at`), so the annotation
+# line no longer holds a `match`'s missing arms back as a join's refusal, and
+# the joins read as they do without it: the first two are `certain`, and
+# `--apply` writes those two arms, pinned in the `.applied`; the third keeps
+# its `guess`.
 
 function a_pipe_below_a_pattern(n: i64) -> i64
     return match n
