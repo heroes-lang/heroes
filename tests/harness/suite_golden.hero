@@ -291,18 +291,7 @@ function judged_or_skipped(@r: report.Report, @skipped: i64, scratch: str, shape
         skipped @ skipped + 1
         report.keep_skip(@r, label: shape.name + "/" + item.name, detail: "  " + lacks.must())
         return
-    verdict(@r, shape: shape, item: item, expected: here, said: said, refused: refusal_of(lacks))
-
-# Why a skip was refused, or "" where the compiler named nothing missing at
-# all, which is an ordinary mismatch and says nothing more.
-function refusal_of(lacks: str?) -> str
-    code = match lacks
-        .ok _  => "none"
-        .err e => e.code
-
-    if code == "none"
-        return ""
-    return absence.message_of(lacks)
+    verdict(@r, shape: shape, item: item, expected: here, said: said, refused: absence.refused(lacks))
 
 # One case's questions, in the order a reader wants them: what it
 # printed, whether it wrote an artifact it should not have, then how it
@@ -553,9 +542,13 @@ test "a machine missing the library skips, but a machine missing every library f
     # know raylib`, a sentence no compiler writes, for a case that binds
     # nothing, and the words alone made it a skip. A skip now needs a library
     # the case binds and the machine lacks: a header no machine has.
-    missing = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
-    assert !planted(tree: tree.must(), name: "x", source: binding(NOWHERE), expected: SAID, said: missing).is_err()
-    compiler = said_stub(scratch)
+    missing = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: "x.hero:1:1"
+    )
+    assert !planted(tree: tree.must(), name: "x", source: binding(absence.NOWHERE), expected: SAID, said: missing).is_err()
+    compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
     got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(tree.must()), only: "")
     assert !got.is_err()
@@ -584,12 +577,24 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
     tree = fresh_tree(scratch: scratch, name: "changed")
     assert !tree.is_err()
     dir = tree.must()
-    direct = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
-    reworded = header_missing(header: NOWHERE, tail: " — clang looked and found nothing", at: "x.hero:1:1")
-    assert !planted(tree: dir, name: "a-words", source: binding(NOWHERE), expected: direct, said: reworded).is_err()
+    direct = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: "x.hero:1:1"
+    )
+    reworded = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and found nothing",
+        at: "x.hero:1:1"
+    )
+    assert !planted(tree: dir, name: "a-words", source: binding(absence.NOWHERE), expected: direct, said: reworded).is_err()
     outer = ", and `heroes-golden-outer.h`, the header this group names, includes it"
-    through = header_missing(header: NOWHERE, tail: outer + " at line 1", at: "x.hero:1:1")
-    moved = header_missing(header: NOWHERE, tail: outer + " through `heroes-golden-mid.h`", at: "x.hero:1:1")
+    through = absence.missing_header_said(header: absence.NOWHERE, tail: outer + " at line 1", at: "x.hero:1:1")
+    moved = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: outer + " through `heroes-golden-mid.h`",
+        at: "x.hero:1:1"
+    )
     assert !planted(tree: dir, name: "b-through", source: binding("heroes-golden-outer.h"), expected: through, said: moved).is_err()
     package = "error[ffi_package]: the package `heroes-golden-gone` is not installed on this machine\n  at x.hero:1:26\n"
     told = package + "  note: install its development files, or name the library directly with `link`\n"
@@ -597,13 +602,13 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
     asking = "extern \"stdio.h\" package \"heroes-golden-gone\"\n    function seven() -> i32\n"
     assert !planted(tree: dir, name: "c-package", source: asking, expected: told, said: retold).is_err()
     second = direct + "error[unused_binding]: a second message nobody expected\n  at x.hero:5:5\n"
-    assert !planted(tree: dir, name: "d-padded", source: binding(NOWHERE), expected: direct, said: second).is_err()
+    assert !planted(tree: dir, name: "d-padded", source: binding(absence.NOWHERE), expected: direct, said: second).is_err()
 
     # The case's group reaches the header named, and no machine has the cut
     # name either, so only the place keeps this from reading as the machine's.
     spot = dir + "/e-misnamed.hero:1:1"
-    pinned_here = header_missing(header: NOWHERE, tail: outer + " at line 1", at: spot)
-    cut = header_missing(header: "heroes-golden-a-header", tail: outer + " at line 1", at: spot)
+    pinned_here = absence.missing_header_said(header: absence.NOWHERE, tail: outer + " at line 1", at: spot)
+    cut = absence.missing_header_said(header: "heroes-golden-a-header", tail: outer + " at line 1", at: spot)
     assert !planted(tree: dir, name: "e-misnamed", source: binding("heroes-golden-outer.h"), expected: pinned_here, said: cut).is_err()
     told_at = "error[ffi_package]: the package `heroes-golden-gone` is not installed on this machine\n  at " + dir + "/f-unread.hero:1:26\n"
     unread = "error[ffi_package]: the package `heroes-golden-gone` is not on this machine at all\n  at " + dir + "/f-unread.hero:1:26\n"
@@ -612,7 +617,7 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
     lost = "error[ffi_pakage]: the package `heroes-golden-gone` is not installed on this machine\n  at " + dir + "/g-marked.hero:1:26\n"
     told_marked = "error[ffi_package]: the package `heroes-golden-gone` is not installed on this machine\n  at " + dir + "/g-marked.hero:1:26\n"
     assert !planted(tree: dir, name: "g-marked", source: marked, expected: lost, said: told_marked).is_err()
-    compiler = said_stub(scratch)
+    compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
     got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
     assert !got.is_err()
@@ -638,9 +643,13 @@ test "a library the case binds and this machine lacks is skipped by name, among 
     for name in ["a", "b", "c"]
         assert !planted(tree: dir, name: name, source: binding("stdio.h"), expected: REFUSED, said: REFUSED).is_err()
 
-    missing = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
-    assert !planted(tree: dir, name: "d", source: binding(NOWHERE), expected: REFUSED, said: missing).is_err()
-    compiler = said_stub(scratch)
+    missing = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: "x.hero:1:1"
+    )
+    assert !planted(tree: dir, name: "d", source: binding(absence.NOWHERE), expected: REFUSED, said: missing).is_err()
+    compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
     got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
     assert !got.is_err()
@@ -663,13 +672,17 @@ test "a library said to be missing is judged where the machine has it, or the ca
 
     # `stdio.h` is on every machine this compiler builds on, so clang finds it
     # and the compiler's word is refuted.
-    has = header_missing(header: "stdio.h", tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    has = absence.missing_header_said(header: "stdio.h", tail: " — clang looked and did not find it", at: "x.hero:1:1")
     assert !planted(tree: dir, name: "a-has", source: binding("stdio.h"), expected: REFUSED, said: has).is_err()
 
     # A header missing everywhere, but one no group of this case names.
-    elsewhere = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    elsewhere = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: "x.hero:1:1"
+    )
     assert !planted(tree: dir, name: "b-unbound", source: binding("stdio.h"), expected: REFUSED, said: elsewhere).is_err()
-    compiler = said_stub(scratch)
+    compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
     got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
     assert !got.is_err()
@@ -688,7 +701,7 @@ test "a pkg-config said to be missing is believed only where it does not start"
     asking = "extern \"stdio.h\" package \"heroes-golden-gone\"\n    function seven() -> i32\n"
     absent = "pkg-config is not on this machine, and `package \"heroes-golden-gone\"` asks it where the library is\n"
     assert !planted(tree: tree.must(), name: "x", source: asking, expected: REFUSED, said: absent).is_err()
-    compiler = said_stub(scratch)
+    compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
     got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(tree.must()), only: "")
     assert !got.is_err()
@@ -729,7 +742,7 @@ test "an expectation quoting pkg-config is judged on this machine's answer, and 
 
     # The quotation is this machine's; the place the compiler names is its own.
     assert !planted(tree: dir, name: "b-moved", source: asking, expected: foreign, said: head + "  at x.hero:1:27\n" + quoted).is_err()
-    compiler = said_stub(scratch)
+    compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
     got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
     assert !got.is_err()
@@ -737,18 +750,6 @@ test "an expectation quoting pkg-config is judged on this machine's answer, and 
     assert got.must().failed == 1
     assert got.must().skips.len() == 0
     assert strings.contains(text: got.must().failures[0], needle: "unsupported/b-moved")
-
-# A stand-in compiler that answers each case with that case's own `.said` file,
-# on stderr, at exit 1, so one tree can hold cases the compiler answers
-# differently: a skip among judged cases needs it.
-function said_stub(scratch: str) -> str?
-    path = scratch + "/stub-said.sh"
-    write_file(path: path, text: "#!/bin/sh\ncat \"${2%.hero}.said\" 1>&2\nexit 1\n")?
-    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
-
-    if made.code != 0
-        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
-    return ok(path)
 
 # An empty golden tree under `scratch`.
 function fresh_tree(scratch: str, name: str) -> str?
@@ -758,7 +759,7 @@ function fresh_tree(scratch: str, name: str) -> str?
     return ok(tree)
 
 # One case planted in `tree`: its source, its expectation, and what
-# `said_stub` answers for it. `.said` is no extension `cases.collect` reads.
+# `absence.said_stub` answers for it. `.said` is no extension `cases.collect` reads.
 function planted(tree: str, name: str, source: str, expected: str, said: str) -> ()?
     write_file(path: tree + "/" + name + ".hero", text: source)?
     write_file(path: tree + "/" + name + ".expected", text: expected)?
@@ -784,21 +785,10 @@ function refusing(dir: str) -> Shape
 function binding(header: str) -> str
     return "extern \"" + header + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
 
-# The compiler's words for a header clang did not find, as
-# `selfhost/emit/ffi_build.hero` writes them, `tail` after the header's close
-# and `at` the place it is told at.
-function header_missing(header: str, tail: str, at: str) -> str
-    return "error[ffi_missing_header]: `" + header + "` is not on this machine's include path" + tail + "\n  at " + at + "\n"
-
 # A refusal that names no missing library: what a case expects where the
 # machine has everything it binds.
 constant REFUSED: str
     "error[ffi_return_type]: the header says `seven` returns `long`, and this group says `i32`\n  at x.hero:2:5\n"
-
-# A header no machine has, which is what makes clang's answer the same on every
-# machine these tests run on.
-constant NOWHERE: str
-    "heroes-golden-a-header-no-machine-has.h"
 
 # Quoting for the CONTENT of a shell script this test writes, which is
 # not the same job `shell.sq` had. That one wrapped a filename on its way

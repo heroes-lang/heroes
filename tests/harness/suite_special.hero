@@ -11,6 +11,7 @@
 # is that a test with no successor is a promise that stops being checked
 # on the day the bootstrap is archived.
 
+use absence
 use expectation
 use report
 use shell
@@ -338,11 +339,26 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot run the compiler")
         return
 
-    if shell.machine_lacks_the_library(said.must().err)
-        report.keep_pass(@r)
+    # A machine with no sqlite cannot open the spec's database, and that says
+    # nothing of the example: skipped, by name, never a pass. It is the
+    # machine's only where the example binds what the compiler says is missing
+    # and the machine, asked, lacks it (`absence`); until defect 246 the
+    # compiler's words alone made it a PASS.
+    if said.must().code != 0
+        lacks = absence.machine_lacks(scratch: scratch, path: path, expected: "", said: said.must().err)
+
+        if !lacks.is_err()
+            report.keep_skip(@r, label: "special/the spec's example", detail: "  " + lacks.must())
+            return
+        detail: str @ "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "special/the spec's example", detail: detail)
         return
 
-    if said.must().code != 0 || said.must().out != "0\n"
+    if said.must().out != "0\n"
         report.keep_failure(
             @r,
             label: "special/the spec's example",
@@ -450,6 +466,40 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
         )
         return
     report.keep_pass(@r)
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): a missing
+# library was counted as a PASS on the compiler's words alone, so the spec's own
+# example read green on any machine, or under any compiler, that said so. The
+# example binds `sqlite3.h` and nothing else, so a header it does not bind is a
+# failure everywhere, and `sqlite3.h` itself is a failure where this machine has
+# it and a skip by name where it does not: never a pass.
+test "fixedbugs: the spec's example is never a pass for a missing library"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest/special-absence"
+    assert !shell.remove_tree(scratch).is_err()
+    assert !shell.mkdir_all(scratch).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    at = scratch + "/spec-ffi.hero:1:1"
+    elsewhere = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: at
+    )
+    assert !write_file(path: scratch + "/spec-ffi.said", text: elsewhere).is_err()
+    unbound: report.Report @ report.empty()
+    the_specs_own_example_opens_a_database(@unbound, scratch: scratch, compiler: compiler.must())
+    assert unbound.passed == 0
+    assert unbound.failed == 1
+    assert unbound.skips.len() == 0
+    assert strings.contains(text: unbound.failures[0], needle: "binds no such header")
+    its_own = absence.missing_header_said(header: "sqlite3.h", tail: " — clang looked and did not find it", at: at)
+    assert !write_file(path: scratch + "/spec-ffi.said", text: its_own).is_err()
+    claimed: report.Report @ report.empty()
+    the_specs_own_example_opens_a_database(@claimed, scratch: scratch, compiler: compiler.must())
+    assert claimed.passed == 0
+    assert claimed.failed + claimed.skips.len() == 1
 
 test "the failing-test probe is itself falsifiable"
     # The one shape that would make the check above vacuous: a compiler

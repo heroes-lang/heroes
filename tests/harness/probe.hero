@@ -24,6 +24,7 @@
 # `f` unqualified. So `probe.Probe` travels between modules and the sugar
 # that builds one does not.
 
+use absence
 use report
 use shell
 use strings
@@ -90,8 +91,21 @@ function words_of(line: str) -> [str]
     return out
 
 # Run one probe. Answers "" where it held, the failure text where it did
-# not, and "SKIP" where the machine lacks the library.
+# not, and "SKIP" where the machine lacks the library (`outcome` says which).
 function unmet(scratch: str, compiler: str, p: Probe) -> str
+    got = outcome(scratch: scratch, compiler: compiler, p: p)
+
+    if got.kind == "skipped"
+        return "SKIP"
+    return got.text
+
+# What one probe came to: `held`, `failed` with the text saying how, or
+# `skipped` with the text saying which library this machine lacks.
+record Outcome
+    kind: str
+    text: str
+
+function outcome(scratch: str, compiler: str, p: Probe) -> Outcome
     # **`argv` is a sentence and the runtime wants words**, so it is split
     # here, on spaces, once. The table's 91 rows were checked: not one of
     # them carries an argument with a space inside it, so the split is
@@ -100,16 +114,73 @@ function unmet(scratch: str, compiler: str, p: Probe) -> str
     said = shell.run_guarded(scratch: scratch, words: shell.both(first: [compiler], second: words_of(p.argv)))
 
     if said.is_err()
-        return "  cannot run: " + p.argv
+        return Outcome(kind: "failed", text: "  cannot run: " + p.argv)
+    why = skip_of(scratch: scratch, p: p, said: said.must())
 
-    if p.library_skip && shell.machine_lacks_the_library(said.must().err)
-        return "SKIP"
-    out = said.must().out
-    err = said.must().err
+    if why.kind == "skipped"
+        return why
+    wrong = judged(p: p, said: said.must())
+
+    if wrong.len() == 0
+        return Outcome(kind: "held", text: "")
+
+    if why.text.len() > 0
+        return Outcome(kind: "failed", text: wrong + "\n  not skipped for a missing library: " + why.text)
+    return Outcome(kind: "failed", text: wrong)
+
+# Whether a row that may skip is skipped: the machine's answer only where the
+# case its argv names binds what the compiler says is missing and the machine,
+# asked, lacks it (`absence`). Until defect 246 the compiler's words alone made
+# the skip. A row whose own needles ask about a missing-library message is
+# that message's test, so it is never skipped, and neither is a row whose
+# argv names no case to ask. `kind` is `skipped` with the reason, or `held`
+# with why a skip the compiler's words asked for was refused ("" when none was).
+function skip_of(scratch: str, p: Probe, said: shell.Run) -> Outcome
+    if !p.library_skip || said.code == 0 || asks_about_absence(p)
+        return Outcome(kind: "held", text: "")
+    path = case_of(p.argv)
+
+    if path.len() == 0
+        return Outcome(kind: "held", text: "")
+    lacks = absence.machine_lacks(scratch: scratch, path: path, expected: "", said: said.err)
+
+    if !lacks.is_err()
+        return Outcome(kind: "skipped", text: lacks.must())
+    return Outcome(kind: "held", text: absence.refused(lacks))
+
+# The case a row's argv hands the compiler: its first word ending in `.hero`,
+# "" where there is none.
+function case_of(argv: str) -> str
+    for word in words_of(argv)
+        if strings.ends_with(text: word, suffix: ".hero")
+            return word
+
+    return ""
+
+# Whether a row's needles ask about a missing-library message itself.
+function asks_about_absence(p: Probe) -> bool
+    asked: [str] @ [p.out_starts, p.err_starts, p.out_is, p.err_is]
+
+    for needle in p.out_has
+        asked @ asked.push(needle)
+
+    for needle in p.err_has
+        asked @ asked.push(needle)
+
+    for one in asked
+        if strings.contains(text: one, needle: "ffi_missing_header") || strings.contains(text: one, needle: "ffi_package") || strings.contains(text: one, needle: "pkg-config is not on this machine")
+            return true
+
+    return false
+
+# Every way one invocation disappointed a probe, "" where none did.
+function judged(p: Probe, said: shell.Run) -> str
+    out = said.out
+    err = said.err
     wrong: [str] @ []
 
-    if p.code >= 0 && said.must().code != p.code
-        wrong @ wrong.push("    exited " + said.must().code.to_str() + ", not " + p.code.to_str())
+    if p.code >= 0 && said.code != p.code
+        wrong @ wrong.push("    exited " + said.code.to_str() + ", not " + p.code.to_str())
 
     if p.out_state == "empty" && out.len() > 0
         wrong @ wrong.push("    stdout should be empty and holds " + out.len().to_str() + " bytes")
@@ -182,14 +253,15 @@ function run_table(scratch: str, compiler: str, probes: [Probe], @r: report.Repo
     skipped: i64 @ 0
 
     for p in probes
-        wrong = unmet(scratch: scratch, compiler: compiler, p: p)
+        got = outcome(scratch: scratch, compiler: compiler, p: p)
 
-        if wrong == "SKIP"
+        if got.kind == "skipped"
             skipped @ skipped + 1
-        else if wrong.len() == 0
+            report.keep_skip(@r, label: "surface/" + p.name, detail: "  " + got.text)
+        else if got.kind == "held"
             report.keep_pass(@r)
         else
-            report.keep_failure(@r, label: "surface/" + p.name, detail: wrong)
+            report.keep_failure(@r, label: "surface/" + p.name, detail: got.text)
 
     # A MAJORITY of skips is a machine testing nothing, and that stays red.
     # The line moved from one-third to one-half on 2026-08-31, measured on the
@@ -203,3 +275,44 @@ function run_table(scratch: str, compiler: str, probes: [Probe], @r: report.Repo
             label: "surface",
             detail: "  " + skipped.to_str() + " of " + probes.len().to_str() + " probes were skipped for a missing library — this machine is not testing the surface"
         )
+
+# DEFECT 246's cause here, held as a test (2026-10-04): a row that may skip was
+# skipped on the compiler's words alone. A header the machine has, said to be
+# missing, fails with the reason; a header no machine has, which the row's case
+# binds, is skipped and named; and a row that asks about the missing-library
+# message itself is that message's test, judged when the message changes.
+test "fixedbugs: a row that may skip is skipped only where the machine lacks what its case binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/probe-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    refuted: Probe @ probe(name: "has", argv: "build " + has.must(), code: 1)
+    refuted.library_skip @ true
+    refuted.err_has @ ["error[ffi_return_type]"]
+    got = outcome(scratch: scratch, compiler: compiler.must(), p: refuted)
+    assert got.kind == "failed"
+    assert strings.contains(text: got.text, needle: "not skipped for a missing library: clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused: Probe @ probe(name: "lacks", argv: "build " + lacks.must(), code: 1)
+    excused.library_skip @ true
+    excused.err_has @ ["error[ffi_return_type]"]
+    assert outcome(scratch: scratch, compiler: compiler.must(), p: excused).kind == "skipped"
+    assert unmet(scratch: scratch, compiler: compiler.must(), p: excused) == "SKIP"
+    asking: Probe @ probe(name: "asking", argv: "build " + lacks.must(), code: 1)
+    asking.library_skip @ true
+    asking.err_has @ ["error[ffi_missing_header]", "clang looked and found nothing"]
+    assert outcome(scratch: scratch, compiler: compiler.must(), p: asking).kind == "failed"
+
+    # And a table names the skip, beside the failure.
+    r: report.Report @ report.empty()
+    run_table(scratch: scratch, compiler: compiler.must(), probes: [excused, refuted], r: @r)
+    assert r.skips.len() == 1
+    assert strings.starts_with(text: r.skips[0], prefix: "SKIP surface/lacks\n")
+    assert r.failed == 1
