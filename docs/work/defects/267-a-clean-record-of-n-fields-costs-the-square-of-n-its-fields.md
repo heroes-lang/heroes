@@ -3,3 +3,5 @@
     **Origin:** batch 8's recovery lane, instructions retired, 2026-10-03, its report's *Found beside*.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): the lane's reading: a correct program's cost, the pattern a closed defect already named.
+
+    Repaired at `7b63179e` (the parser's half: `member_lines`' pushes, a `.must()` inside the push and two places no push grows in place) and `7419b76f` (the resolver's half: `resolve/state.keyed_add`, a map of maps whose read shared each module's set), 2026-10-04 (lane b11-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
