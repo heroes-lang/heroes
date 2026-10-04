@@ -1,0 +1,1091 @@
+# Whether a refusal is the MACHINE's answer, asked of the expectation, the
+# case and the machine itself rather than of the compiler's words alone.
+#
+# `unsupported/` builds programs that bind C, so a machine that lacks what a
+# case binds refuses the build in words of its own: `error[ffi_missing_header]`,
+# `error[ffi_package]`, or `pkg-config is not on this machine`. Such a case
+# cannot be judged there; the author's answer *A* of 2026-10-03 skips it "there
+# by name" and judges it where the library is (`.claude/rules/platforms.md`).
+#
+# **Until defect 246 the skip asked the compiler's words alone**
+# (`shell.machine_lacks_the_library`): a refusal holding one of the three
+# spellings and differing from its expectation was taken for the machine's.
+# The compiler under test was the only witness to its own excuse, and measured
+# on 2026-10-04 at `703af779` the form read green over each of these:
+#
+# - a changed message in any of the 21 cases whose expectation IS such a
+#   message: `136 passed, 0 failed`, the case skipped in silence;
+# - a compiler saying `stdio.h` is missing on a Mac that has it, a second
+#   message beside the expected one, and `pkg-config` said to be missing where
+#   it runs (a stub compiler over ten matching cases: `10 passed, 0 failed`);
+# - Debian's pkgconf words in the three expectations that quote `pkg-config`
+#   (`quoted_here`, below).
+#
+# So three witnesses, and the compiler's words only name the candidate:
+#
+# 1. **the expectation, and the case's own `#~` marks** (`pinned`): a missing
+#    library the expectation names, or a message of its class the expectation
+#    or a mark places on the line it is told at, is what the case tests, so a
+#    difference is the compiler's and is judged, never skipped. The marks are
+#    the witness a hand that rewrites an `.expected` cannot reach (CLAUDE.md
+#    § 9), and the place catches a compiler that misnames the header it did
+#    not find (defect 232's class) or blames another line (226's);
+# 2. **the case** (`binds`, `needs`): what is missing must be the header one of
+#    its groups names, a header that header includes, or a `package` it asks
+#    for;
+# 3. **the machine**, asked directly (`asked`): `pkg-config` does not start,
+#    or does not know the package, or clang does not find the header on the
+#    include path the compiler searches.
+#
+# Every suite of the net that skips for a missing library asks it, and names
+# each skip on its report; the words-only predicate they shared,
+# `shell.machine_lacks_the_library`, is gone, so a new suite cannot take the
+# compiler's word by reaching for it. Measured before, on 2026-10-04: `lines`
+# read 268 passed, 0 failed over one case a stand-in compiler said lacked
+# `stdio.h`, and 269 and 0 without it.
+#
+# A question asked here can refuse a skip and never invent one, since the
+# compiler named the absence before anything here asks: a wrong answer here is
+# a red, never a green. The price is named rather than hidden: a case whose
+# group reaches a header one platform lacks BEFORE the header it tests is red
+# there, since the message lands where its own is pinned; ruling *A* writes
+# such a case on headers of the program's own.
+
+use shell
+use strings
+use suite_annotations
+
+# One thing a refusal says this machine lacks. `kind` is `header`, `package` or
+# `pkg-config`; `name` is the header or the package, for `pkg-config` the
+# package that asked it; `owner` is, for a header another header includes, the
+# header the group names, and "" otherwise. `code` is the diagnostic's, "" for
+# the driver's sentence about `pkg-config`, which has none; `file` and `line`
+# are where it is told, "" and 0 where the output does not say.
+record Absence
+    kind: str
+    name: str
+    owner: str
+    code: str
+    file: str
+    line: i64
+
+# The three spellings, cut where the compiler writes them
+# (`selfhost/emit/ffi_build.hero`'s `missing_header` and `package_problem`,
+# `selfhost/emit/header_reach.hero`, `selfhost/cli/libraries.hero`'s
+# `resolve_packages`). A spelling these no longer read names no absence, so its
+# case is judged: the drift is a red, never a skip. The third, a `pkg-config`
+# not installed at all, joined the first two on 2026-08-31, when the Windows box
+# answered it for four `run/` cases naming raylib and they failed as *did not
+# build* on a machine that simply has no `pkg-config`.
+constant HEADER_OPEN: str
+    "error[ffi_missing_header]: `"
+
+constant HEADER_CLOSE: str
+    "` is not on this machine's include path"
+
+constant OWNER_OPEN: str
+    ", and `"
+
+constant OWNER_CLOSE: str
+    "`, the header this group names"
+
+constant PACKAGE_OPEN: str
+    "error[ffi_package]: the package `"
+
+constant PACKAGE_CLOSE: str
+    "` is not installed on this machine"
+
+constant TOOL_OPEN: str
+    "pkg-config is not on this machine, and `package \""
+
+constant TOOL_CLOSE: str
+    "\"` asks it where the library is"
+
+# Whether a case's output, which differs from its expectation, is this
+# MACHINE's answer, `path` being the source the compiler was given. Ok with the
+# reason, naming each library, where no library the compiler says is missing
+# is the case's subject (`pinned`), and each is one the case binds and the
+# machine, asked, lacks. An error saying which witness refused otherwise, its
+# code `none` where the compiler named nothing missing. `expected` is what the
+# case expects the compiler to say, "" for a suite that expects nothing of it.
+function machine_lacks(scratch: str, path: str, expected: str, said: str) -> str?
+    return machine_lacks_among(scratch: scratch, path: path, modules: [path], expected: expected, said: said)
+
+# The same, for a program of several modules: `modules` are the sources the
+# caller knows the program reads, `path` first among them. Every file the
+# compiler's own `at` lines blame inside `path`'s directory is read as well,
+# since a group the compiler blames is where the program binds what is
+# missing (`examples/ledger` binds sqlite in `db/sqlite.hero`); the driver's
+# sentence about `pkg-config` names no file, so a `package` group is found only
+# in what the caller passes (the corpus passes a program's whole tree; every
+# other caller its one file, which holds every `package` group the tree has,
+# the test below).
+function machine_lacks_among(scratch: str, path: str, modules: [str], expected: str, said: str) -> str?
+    named = absences(said)
+
+    if named.len() == 0
+        return fail(code: "none", msg: "the compiler names nothing this machine lacks")
+    sources = read_sources(path: path, modules: modules, named: named)
+
+    if sources.is_err()
+        return fail(code: "unread", msg: message_of_sources(sources))
+    seen = Witnesses(
+        named: absences(expected),
+        reported: suite_annotations.reported_by(expected),
+        marked: marks_of(sources.must()),
+        path: path
+    )
+
+    for one in named
+        if pinned(one: one, seen: seen)
+            return fail(
+                code: "pinned",
+                msg: "the expectation names the same missing library, or it or the case's own `#~` mark places a `" + one.code + "` where this one is told, so the case tests that message and a difference in it is the compiler's"
+            )
+
+    bound = binds_of(sources.must())
+    search = searched(scratch: scratch, dir: directory_of(path), bound: bound)
+    lacking: [str] @ []
+
+    for one in named
+        if !needs(bound: bound, one: one)
+            return fail(
+                code: "unbound",
+                msg: "the compiler says " + shown(one) + " is missing, and " + bound_by(path: path, count: sources.must().len()) + " no such " + one.kind
+            )
+        answer = asked(scratch: scratch, search: search, one: one)
+
+        if answer.is_err()
+            return fail(
+                code: "refuted",
+                msg: message_of(answer) + ", so the compiler's word that " + shown(one) + " is missing is not this machine's answer"
+            )
+        lacking @ lacking.push(answer.must())
+
+    return ok("this machine lacks what the case binds, so it is judged where that is: " + lacking.join("; "))
+
+# Every absence a compiler's output names, in its order, each with the place
+# it is told: the head of the brief form's line, or the `at` line under §4.17's
+# headline.
+function absences(text: str) -> [Absence]
+    found: [Absence] @ []
+    rows = strings.lines(text)
+    at: i64 @ 0
+
+    while at < rows.len()
+        one = absence_in(rows[at])
+
+        if !one.is_err()
+            placed: Absence @ one.must()
+            here: Place @ place_of(head_of(rows[at]))
+
+            if here.line == 0 && at + 1 < rows.len() && strings.starts_with(text: rows[at + 1], prefix: "  at ")
+                here @ place_of(strings.without_prefix(text: rows[at + 1], prefix: "  at "))
+            placed.file @ here.file
+            placed.line @ here.line
+            found @ found.push(placed)
+        at @ at + 1
+
+    return found
+
+# The absence one line names. A header's name runs to the first close after
+# it, a package's to the last, since a package's name may hold a backtick
+# (defect 237's case) and its line ends with the close.
+function absence_in(row: str) -> Absence?
+    header = between(text: row, open: HEADER_OPEN, close: HEADER_CLOSE)
+
+    if !header.is_err()
+        owner = between(text: row, open: HEADER_CLOSE + OWNER_OPEN, close: OWNER_CLOSE)
+        return ok(
+            Absence(kind: "header", name: header.must(), owner: owner.default(""), code: "ffi_missing_header", file: "", line: 0)
+        )
+    package = between_last(text: row, open: PACKAGE_OPEN, close: PACKAGE_CLOSE)
+
+    if !package.is_err()
+        return ok(Absence(kind: "package", name: package.must(), owner: "", code: "ffi_package", file: "", line: 0))
+    asking = between_last(text: row, open: TOOL_OPEN, close: TOOL_CLOSE)
+
+    if !asking.is_err()
+        return ok(Absence(kind: "pkg-config", name: asking.must(), owner: "", code: "", file: "", line: 0))
+    return fail(code: "none", msg: "this line names nothing the machine lacks")
+
+# Where a diagnostic is told, read from `<file>:<line>:<column>`, the line 0
+# where the text does not open so.
+record Place
+    file: str
+    line: i64
+
+function place_of(text: str) -> Place
+    parts = strings.split_on(text: text, byte: 58)
+
+    if parts.len() < 3
+        return Place(file: "", line: 0)
+    line = strings.to_number(parts[1])
+
+    if line.is_err()
+        return Place(file: "", line: 0)
+    return Place(file: parts[0], line: line.must())
+
+# What stands before the diagnostic's kind on a line: the brief form's
+# `<file>:<line>:<column>: `, or nothing on §4.17's headline.
+function head_of(row: str) -> str
+    at = strings.index_of(text: row, needle: "error[")
+
+    if at.is_err()
+        return ""
+    return row.slice(from: 0, to: at.must())
+
+# What stands between the first `open` and the first `close` after it. Every
+# `open` here ends, and every `close` begins, with an ASCII byte, so both cuts
+# fall between characters.
+function between(text: str, open: str, close: str) -> str?
+    at = strings.index_of(text: text, needle: open)?
+    rest = text.slice(from: at + open.len(), to: text.len())
+    end = strings.index_of(text: rest, needle: close)?
+    return ok(rest.slice(from: 0, to: end))
+
+# What stands between the first `open` and the LAST `close` after it.
+function between_last(text: str, open: str, close: str) -> str?
+    at = strings.index_of(text: text, needle: open)?
+    rest = text.slice(from: at + open.len(), to: text.len())
+    end = last_index_of(text: rest, needle: close)?
+    return ok(rest.slice(from: 0, to: end))
+
+# Where `needle` last occurs in `text`, asked of the bytes as
+# `strings.index_of` asks them, or an error if it does not occur.
+function last_index_of(text: str, needle: str) -> i64?
+    if needle.len() == 0 || needle.len() > text.len()
+        return fail(code: "absent", msg: "`" + needle + "` is not in the text")
+    start: i64 @ text.len() - needle.len()
+
+    while start >= 0
+        i: i64 @ 0
+        hit: bool @ true
+
+        while i < needle.len()
+            if text[start + i] != needle[i]
+                hit @ false
+                i @ needle.len()
+            else
+                i @ i + 1
+
+        if hit
+            return ok(start)
+        start @ start - 1
+
+    return fail(code: "absent", msg: "`" + needle + "` is not in the text")
+
+# What the expectation and the case's sources say the case tests: the
+# libraries the expectation names, its diagnostics as `<line>:<code>` (the
+# lines of `path`), the sources' marks as `<file>:<line>:<code>`
+# (`suite_annotations` reads both for the `annotations` suite, so there is one
+# reader of a mark), and the path the compiler was given.
+record Witnesses
+    named: [Absence]
+    reported: [str]
+    marked: [str]
+    path: str
+
+# Whether an absence the compiler names is the case's own subject rather than
+# a candidate for the machine's answer: the expectation names the same library
+# (the owner not asked, since the same header blamed on another group is the
+# compiler's words changing), or the expectation or a mark of the case's own
+# places a diagnostic of its code on the line it is told at, which holds when
+# the expectation's words are past reading and when the compiler misnames the
+# library at the place the case pins.
+function pinned(one: Absence, seen: Witnesses) -> bool
+    for other in seen.named
+        if one.kind == other.kind && one.name == other.name
+            return true
+
+    if one.code == "" || one.line == 0
+        return false
+    spot = one.line.to_str() + ":" + one.code
+
+    if one.file == seen.path && listed(names: seen.reported, name: spot)
+        return true
+    return listed(names: seen.marked, name: one.file + ":" + spot)
+
+# One source the witness reads: its path as the compiler spells it, its text.
+record Source
+    path: str
+    text: str
+
+# The sources a case's witness reads: `path`, then `modules`, then each file
+# the compiler blames inside `path`'s directory, each once. One it cannot read
+# fails the whole question, so the case is judged rather than excused.
+function read_sources(path: str, modules: [str], named: [Absence]) -> [Source]?
+    wanted: [str] @ [path]
+
+    for one in modules
+        if !listed(names: wanted, name: one)
+            wanted @ wanted.push(one)
+
+    for one in named
+        if one.file != "" && inside(dir: directory_of(path), file: one.file) && !listed(names: wanted, name: one.file)
+            wanted @ wanted.push(one.file)
+
+    out: [Source] @ []
+
+    for one in wanted
+        text = read_file(one)
+
+        if text.is_err()
+            return fail(code: "unread", msg: "cannot read " + one + " to ask what it binds")
+        out @ out.push(Source(path: one, text: text.must()))
+
+    return ok(out)
+
+# Who was read for what a case binds, as a refusal says it: the path the
+# compiler was given, and how many more of the program's files beside it.
+function bound_by(path: str, count: i64) -> str
+    if count <= 1
+        return path + " binds"
+
+    if count == 2
+        return path + " and the one other module read with it bind"
+    return path + " and the " + (count - 1).to_str() + " other modules read with it bind"
+
+# Whether `file` sits in `dir` or below it, `.` holding the bare names.
+function inside(dir: str, file: str) -> bool
+    if dir == "."
+        return strings.index_of(text: file, needle: "/").is_err()
+    return strings.starts_with(text: file, prefix: dir + "/")
+
+function message_of_sources(got: [Source]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# Every source's marks, as `<file>:<line>:<code>`.
+function marks_of(sources: [Source]) -> [str]
+    out: [str] @ []
+
+    for one in sources
+        for mark in suite_annotations.claimed_by(one.text)
+            out @ out.push(one.path + ":" + mark)
+
+    return out
+
+# What the sources bind together.
+function binds_of(sources: [Source]) -> Binds
+    headers: [str] @ []
+    packages: [str] @ []
+
+    for one in sources
+        bound = binds(one.text)
+
+        for header in bound.headers
+            headers @ headers.push(header)
+
+        for package in bound.packages
+            packages @ packages.push(package)
+
+    return Binds(headers: headers, packages: packages)
+
+# Why a skip was refused, for the failure its caller reports: "" where the
+# compiler named nothing missing at all, which is an ordinary failure and needs
+# no word more.
+function refused(lacks: str?) -> str
+    code = match lacks
+        .ok _  => "none"
+        .err e => e.code
+
+    if code == "none"
+        return ""
+    return message_of(lacks)
+
+# What a case binds: the header of each `extern` group, and each group's
+# `package`, read from its source.
+record Binds
+    headers: [str]
+    packages: [str]
+
+constant PACKAGE_WORD: str
+    " package "
+
+function binds(source: str) -> Binds
+    headers: [str] @ []
+    packages: [str] @ []
+
+    for row in strings.lines(source)
+        if !strings.starts_with(text: row, prefix: "extern ")
+            continue
+        rest = strings.without_prefix(text: row, prefix: "extern ")
+        header = quoted(rest)
+
+        if header.is_err()
+            continue
+        headers @ headers.push(header.must().value)
+        tail = rest.slice(from: header.must().after, to: rest.len())
+        at = strings.index_of(text: tail, needle: PACKAGE_WORD)
+
+        if !at.is_err()
+            package = quoted(tail.slice(from: at.must() + PACKAGE_WORD.len(), to: tail.len()))
+
+            if !package.is_err()
+                packages @ packages.push(package.must().value)
+
+    return Binds(headers: headers, packages: packages)
+
+# A string literal opening `text`: its value, `\"` and `\\` read as the byte
+# each stands for, and the offset just past its closing quote. Any other escape
+# stays as written, so a header named with one matches no message and its case
+# is judged.
+record Quoted
+    value: str
+    after: i64
+
+function quoted(text: str) -> Quoted?
+    if text.len() == 0 || text[0] != 34
+        return fail(code: "none", msg: "no string here")
+    parts: [str] @ []
+    start: i64 @ 1
+    at: i64 @ 1
+
+    while at < text.len()
+        if text[at] == 92 && at + 1 < text.len() && (text[at + 1] == 34 || text[at + 1] == 92)
+            parts @ parts.push(text.slice(from: start, to: at))
+            start @ at + 1
+            at @ at + 2
+        else if text[at] == 34
+            parts @ parts.push(text.slice(from: start, to: at))
+            return ok(Quoted(value: parts.join(""), after: at + 1))
+        else
+            at @ at + 1
+
+    return fail(code: "none", msg: "a string nothing closes")
+
+# Whether the case binds what an absence names: the header its group names, a
+# header that header includes, or the package that asked.
+function needs(bound: Binds, one: Absence) -> bool
+    if one.kind == "header" && one.owner != ""
+        return listed(names: bound.headers, name: one.owner)
+
+    if one.kind == "header"
+        return listed(names: bound.headers, name: one.name)
+    return listed(names: bound.packages, name: one.name)
+
+function listed(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+# The words clang searches with to answer for a header, as the compiler's own
+# search reaches them (`selfhost/cli/compiling.hero`'s `search_words`): each
+# package's compile words, the runtime's directory and the case's own. The
+# `--include` directories are the one part left out, since the harness passes
+# none; a narrower search could only fail to refute an absence the compiler
+# named, never name one. None of the compiler's own flags moves the search
+# (`selfhost/cli/flags.hero`, read 2026-10-04: no `-isystem`, no `--target`).
+function searched(scratch: str, dir: str, bound: Binds) -> [str]
+    out: [str] @ []
+
+    for package in bound.packages
+        ran = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--", package])
+
+        if !ran.is_err() && ran.must().started && ran.must().code == 0
+            for word in strings.words(ran.must().out)
+                out @ out.push(word)
+
+    runtime: str @ shell.env(name: "HEROES_RUNTIME")
+
+    if runtime.len() == 0
+        runtime @ "runtime"
+    out @ out.push("-I")
+    out @ out.push(runtime)
+    out @ out.push("-I")
+    out @ out.push(dir)
+    return out
+
+# What this machine says to one absence: ok with its own words where it lacks
+# the thing, an error naming what refutes the compiler where it does not.
+function asked(scratch: str, search: [str], one: Absence) -> str?
+    shell.mkdir_all(scratch)?
+
+    if one.kind == "pkg-config"
+        tool = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--version"])?
+
+        if tool.started
+            return fail(code: "present", msg: "`pkg-config` runs on this machine")
+        return ok("`pkg-config`, which `package \"" + one.name + "\"` asks, does not start here")
+
+    if one.kind == "package"
+        answer = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--libs", "--", one.name])?
+
+        if !answer.started
+            return fail(
+                code: "present",
+                msg: "this machine has no `pkg-config` whose answer could say the package `" + one.name + "` is not installed"
+            )
+
+        if answer.code == 0
+            return fail(code: "present", msg: "`pkg-config` knows the package `" + one.name + "` on this machine")
+        return ok("the package `" + one.name + "`, which `pkg-config` does not know here")
+    probe = scratch + "/absence-probe.c"
+    write_file(path: probe, text: "#include <" + one.name + ">\n")?
+    words: [str] @ ["clang", "-E", "-x", "c"]
+
+    for word in search
+        words @ words.push(word)
+
+    words @ words.push(probe)
+    words @ words.push("-o")
+    words @ words.push(scratch + "/absence-probe.i")
+    clang = shell.attempted(scratch: scratch, program: "clang", words: words)?
+
+    if !clang.started
+        return fail(
+            code: "unasked",
+            msg: "clang could not be started to ask whether `" + one.name + "` is on this machine"
+        )
+
+    if clang.code == 0
+        return fail(code: "present", msg: "clang finds `" + one.name + "` on the include path the compiler searches")
+
+    if !strings.contains(text: clang.err, needle: "'" + one.name + "' file not found")
+        return fail(
+            code: "unasked",
+            msg: "clang refused `#include <" + one.name + ">` for another reason: " + first_line(clang.err)
+        )
+    return ok("`" + one.name + "`, which clang does not find on the include path the compiler searches")
+
+# How a message names an absence.
+function shown(one: Absence) -> str
+    if one.kind == "pkg-config"
+        return "`pkg-config`"
+    return "the " + one.kind + " `" + one.name + "`"
+
+function message_of(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# The directory a case sits in, which clang searches as the compiler does: an
+# `extern "mylib.h"` finds a header beside its `.hero` file.
+function directory_of(path: str) -> str
+    cut: i64 @ -1
+    i: i64 @ 0
+
+    while i < path.len()
+        if path[i] == 47
+            cut @ i
+        i @ i + 1
+
+    if cut < 0
+        return "."
+    return path.slice(from: 0, to: cut)
+
+function first_line(text: str) -> str
+    return strings.split_on(text: text, byte: 10)[0]
+
+# The two lines that frame `pkg-config`'s answer inside an `ffi_package`
+# message (`selfhost/cli/libraries.hero`'s `resolve_packages`, carried as notes
+# by `selfhost/emit/ffi_build.hero`'s `package_problem`).
+constant SAID_NOTE: str
+    "  note: pkg-config said:"
+
+constant LAST_NOTE: str
+    "  note: install its development files, or name the library directly with `link`"
+
+# The expectation as the compiler would write it on THIS machine: each
+# `pkg-config` answer an `ffi_package` message quotes is replaced by what this
+# machine's `pkg-config` answers for that package, and every line of the
+# compiler's own around it is left as written.
+#
+# **The answer is the machine's, and so is its wording**, measured on panel
+# 188's recorded runs (`scratchpad/188-ffi-pragmatist/q5/`, 2026-10-03):
+# Debian's pkgconf 1.8.1 ends with `Package 'zz9', required by
+# 'virtual:world', not found` where this Mac's 3.0.7 says `Package 'zz9' not
+# found`, and nothing else differs. Three expectations quote it (defects 226 and
+# 237, and `ffi-records-only-group-cannot-claim-its-package`), all written on
+# this Mac, so the Linux legs skipped all three in silence until defect 246, and
+# a judgement on the file's own words would turn them red there for a fact
+# about pkgconf. What is judged instead is what the compiler promises: it quotes
+# the answer of the machine it runs on, and every word of its own around the
+# quotation. The quoted lines in the file are one machine's, kept for the
+# reader.
+#
+# An expectation the frame does not fit, a machine with no `pkg-config` or one
+# that knows the package, or an answer `notes_of` does not rebuild leaves the
+# expectation as written: the case is then judged on the file's own bytes.
+function quoted_here(scratch: str, expected: str) -> str
+    rows = strings.split_on(text: expected, byte: 10)
+    out: [str] @ []
+    package: str @ ""
+    changed: bool @ false
+    at: i64 @ 0
+
+    while at < rows.len()
+        row = rows[at]
+        named = absence_in(row)
+
+        if !named.is_err()
+            package @ ""
+
+            if named.must().kind == "package"
+                package @ named.must().name
+
+        if package != "" && strings.starts_with(text: row, prefix: SAID_NOTE)
+            end = closing(rows: rows, from: at)
+
+            if !end.is_err()
+                notes = quotation(scratch: scratch, package: package)
+
+                if !notes.is_err()
+                    for note in notes.must()
+                        out @ out.push(note)
+
+                    changed @ true
+                    package @ ""
+                    at @ end.must()
+                    continue
+        out @ out.push(row)
+        at @ at + 1
+
+    if !changed
+        return expected
+    return out.join("\n")
+
+# The index of the line that closes the quotation opening at `from`.
+function closing(rows: [str], from: i64) -> i64?
+    at: i64 @ from + 1
+
+    while at < rows.len()
+        if rows[at] == LAST_NOTE
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "none", msg: "no closing note")
+
+# This machine's answer for `package`, as the compiler's notes carry it, asked
+# with the compiler's own words (`resolve_packages`).
+function quotation(scratch: str, package: str) -> [str]?
+    ran = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--libs", "--", package])?
+
+    if !ran.started || ran.code == 0
+        return fail(code: "none", msg: "no refusal of this machine's to quote")
+    return notes_of(ran.err)
+
+# `pkg-config`'s complaint as the compiler's notes carry it: its ends trimmed of
+# spaces, tabs and line ends (`selfhost/cli/strings.hero`'s `trimmed`, which
+# keeps a return), `\r\n` read as one line end (its `without_returns`), then
+# each line after `pkg-config said: ` trimmed of spaces and tabs and kept where
+# it holds anything (`selfhost/emit/ffi_lookup.hero`'s `lines` and `trimmed`).
+# A control character the compiler writes by its code
+# (`selfhost/cli/shell_split.hero`'s `shown`) is not rebuilt here: an answer
+# holding one is refused, and its case is judged on the file's own bytes.
+function notes_of(answer: str) -> [str]?
+    said = pairs_joined(driver_trimmed(answer))
+
+    if !printable(said)
+        return fail(code: "unprintable", msg: "an answer holding a control character")
+    notes: [str] @ []
+
+    for line in strings.split_on(text: "pkg-config said: " + said, byte: 10)
+        note = blanks_trimmed(line)
+
+        if note.len() > 0
+            notes @ notes.push("  note: " + note)
+
+    return ok(notes)
+
+# Spaces, tabs and line ends off both ends, and a return kept.
+function driver_trimmed(text: str) -> str
+    head: i64 @ 0
+
+    while head < text.len() && (text[head] == 32 || text[head] == 9 || text[head] == 10)
+        head @ head + 1
+
+    tail: i64 @ text.len()
+
+    while tail > head && (text[tail - 1] == 32 || text[tail - 1] == 9 || text[tail - 1] == 10)
+        tail @ tail - 1
+
+    return text.slice(from: head, to: tail)
+
+# Spaces and tabs off both ends.
+function blanks_trimmed(text: str) -> str
+    head: i64 @ 0
+
+    while head < text.len() && (text[head] == 32 || text[head] == 9)
+        head @ head + 1
+
+    tail: i64 @ text.len()
+
+    while tail > head && (text[tail - 1] == 32 || text[tail - 1] == 9)
+        tail @ tail - 1
+
+    return text.slice(from: head, to: tail)
+
+# `\r\n` as `\n`; a lone return is left where it is.
+function pairs_joined(text: str) -> str
+    parts: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at + 1 < text.len()
+        if text[at] == 13 && text[at + 1] == 10
+            parts @ parts.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    parts @ parts.push(text.slice(from: start, to: text.len()))
+    return parts.join("")
+
+# Whether every character is one the compiler writes as itself: a line end,
+# or anything but a C0 control, DEL or a C1 control (U+0080 to U+009F, whose
+# UTF-8 is 0xC2 and 0x80 to 0x9F).
+function printable(text: str) -> bool
+    at: i64 @ 0
+
+    while at < text.len()
+        byte = text[at]
+
+        if byte < 32 && byte != 10
+            return false
+
+        if byte == 127
+            return false
+
+        if byte == 194 && at + 1 < text.len() && text[at + 1] >= 128 && text[at + 1] <= 159
+            return false
+        at @ at + 1
+
+    return true
+
+# **What the suites' own tests plant**, here rather than in each suite so that
+# the eight that skip for a missing library ask one stand-in the same thing.
+
+# A header no machine has, so clang's answer about it is the same everywhere.
+constant NOWHERE: str
+    "heroes-a-header-no-machine-has.h"
+
+# The compiler's words for a header clang did not find, as
+# `selfhost/emit/ffi_build.hero` writes them, `tail` after the header's close
+# and `at` the place it is told at.
+function missing_header_said(header: str, tail: str, at: str) -> str
+    return "error[ffi_missing_header]: `" + header + "` is not on this machine's include path" + tail + "\n  at " + at + "\n"
+
+# A stand-in compiler: whatever its verb, it answers the first `.hero` it is
+# handed with that case's `.said` file on stderr, at exit 1, so a test plants
+# what the compiler says beside the case. POSIX, as every script case here.
+function said_stub(scratch: str) -> str?
+    shell.mkdir_all(scratch)?
+    path = scratch + "/stub-said.sh"
+    write_file(path: path, text: "#!/bin/sh\nfor word in \"$@\"; do\n    case \"$word\" in\n        *.hero) cat \"${word%.hero}.said\" 1>&2; exit 1 ;;\n    esac\ndone\nexit 2\n")?
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
+    return ok(path)
+
+# A case planted for those tests: `<dir>/<name>.hero`, one group binding
+# `bound`, and beside it what `said_stub` answers for it, that `missing` is not
+# on the include path, told at the group. Answers the case's path.
+function planted_case(dir: str, name: str, bound: str, missing: str) -> str?
+    source = dir + "/" + name + ".hero"
+    write_file(path: source, text: "extern \"" + bound + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n")?
+    write_file(path: dir + "/" + name + ".said", text: missing_header_said(header: missing, tail: " — clang looked and did not find it", at: source + ":1:1"))?
+    return ok(source)
+
+## Tests
+
+test "the three spellings name what is missing, where, and a header reached through another names its owner"
+    direct = absences(
+        "error[ffi_missing_header]: `gone.h` is not on this machine's include path — clang looked and did not find it\n  at x.hero:2:5\n"
+    )
+    assert direct.len() == 1
+    assert direct[0].kind == "header"
+    assert direct[0].name == "gone.h"
+    assert direct[0].owner == ""
+    assert direct[0].code == "ffi_missing_header"
+    assert direct[0].file == "x.hero"
+    assert direct[0].line == 2
+    deep = absences(
+        "error[ffi_missing_header]: `sys/wait.h` is not on this machine's include path, and `outer.h`, the header this group names, includes it at line 7\n"
+    )
+    assert deep.len() == 1
+    assert deep[0].name == "sys/wait.h"
+    assert deep[0].owner == "outer.h"
+    assert deep[0].line == 0
+
+    # A package's name may hold a backtick, so it runs to the line's last
+    # close; the brief form carries its place at the head of its line.
+    ticked = absences("p.hero:9:26: error[ffi_package]: the package `a`b` is not installed on this machine\n")
+    assert ticked.len() == 1
+    assert ticked[0].kind == "package"
+    assert ticked[0].name == "a`b"
+    assert ticked[0].code == "ffi_package"
+    assert ticked[0].file == "p.hero"
+    assert ticked[0].line == 9
+
+    # The driver's sentence about `pkg-config` has no code and no place.
+    tool = absences("pkg-config is not on this machine, and `package \"raylib\"` asks it where the library is\n")
+    assert tool.len() == 1
+    assert tool[0].kind == "pkg-config"
+    assert tool[0].name == "raylib"
+    assert tool[0].code == ""
+    assert tool[0].line == 0
+
+    # A line in no spelling of the compiler's names nothing: the old stub's
+    # text, and a refusal clang gave on a header the machine has.
+    assert absences("x.hero:1:1: error[ffi_package]: pkg-config does not know raylib\n").len() == 0
+    assert absences("error[ffi_return_type]: the header says `seven` returns `long`\n").len() == 0
+
+test "an absence the expectation or a mark makes the case's subject is judged, however its words change"
+    told = "error[ffi_missing_header]: `gone.h` is not on this machine's include path — clang looked and did not find it\n  at c.hero:4:5\n"
+    expected = Witnesses(
+        named: absences(told),
+        reported: ["4:ffi_missing_header"],
+        marked: ["c.hero:4:ffi_missing_header"],
+        path: "c.hero"
+    )
+    reworded = absences(
+        "error[ffi_missing_header]: `gone.h` is not on this machine's include path — clang looked and found nothing\n  at c.hero:4:5\n"
+    )
+    assert pinned(one: reworded[0], seen: expected)
+
+    # The same header blamed on another group, at another line, is still the
+    # same library: the compiler's words changing about it.
+    blamed = absences(
+        "error[ffi_missing_header]: `gone.h` is not on this machine's include path, and `b.h`, the header this group names, includes it at line 1\n  at c.hero:9:5\n"
+    )
+    assert pinned(one: blamed[0], seen: expected)
+
+    # Another name at the place the case pins: a compiler that misnames the
+    # header it did not find (defect 232's class) is judged.
+    misnamed = absences(
+        "error[ffi_missing_header]: `gone` is not on this machine's include path — clang looked and did not find it\n  at c.hero:4:5\n"
+    )
+    assert pinned(one: misnamed[0], seen: expected)
+
+    # An expectation whose words are past reading still pins its place, and
+    # so does a mark where the expectation lost the code.
+    unread = Witnesses(named: [], reported: ["4:ffi_missing_header"], marked: [], path: "c.hero")
+    assert pinned(one: reworded[0], seen: unread)
+    marked = Witnesses(
+        named: [],
+        reported: ["4:ffi_missing_heder"],
+        marked: ["c.hero:4:ffi_missing_header"],
+        path: "c.hero"
+    )
+    assert pinned(one: reworded[0], seen: marked)
+
+    # Another library at another place is a candidate for the machine's answer,
+    # and so is one told in another file, whose lines are not the case's.
+    other = absences(
+        "error[ffi_missing_header]: `sys/wait.h` is not on this machine's include path — clang looked and did not find it\n  at c.hero:12:5\n"
+    )
+    assert !pinned(one: other[0], seen: expected)
+    elsewhere = absences(
+        "error[ffi_missing_header]: `sys/wait.h` is not on this machine's include path — clang looked and did not find it\n  at m.hero:4:5\n"
+    )
+    assert !pinned(one: elsewhere[0], seen: expected)
+
+    # Unless that file's own mark places it: a module's mark is its own.
+    in_module = Witnesses(named: [], reported: [], marked: ["m.hero:4:ffi_missing_header"], path: "c.hero")
+    assert pinned(one: elsewhere[0], seen: in_module)
+
+    # And a `pkg-config` that does not start is not the package the
+    # expectation says is not installed: the Windows box's answer.
+    package = "error[ffi_package]: the package `p` is not installed on this machine\n  at c.hero:1:26\n"
+    asking = Witnesses(
+        named: absences(package),
+        reported: ["1:ffi_package"],
+        marked: ["c.hero:1:ffi_package"],
+        path: "c.hero"
+    )
+    tool = absences("pkg-config is not on this machine, and `package \"p\"` asks it where the library is\n")
+    assert !pinned(one: tool[0], seen: asking)
+
+test "a case binds its groups' headers and packages, read as the language writes a string"
+    bound = binds(
+        "extern \"stdio.h\" package \"zz\"  #~ ffi_package\n    function f()\n\nextern \"a\\\"b.h\" link \"m\"\n    function g()\n# extern \"prose.h\" in a comment binds nothing\n"
+    )
+    assert bound.headers == ["stdio.h", "a\"b.h"]
+    assert bound.packages == ["zz"]
+    assert needs(bound: bound, one: an(kind: "header", name: "stdio.h", owner: ""))
+    assert needs(bound: bound, one: an(kind: "header", name: "deep.h", owner: "stdio.h"))
+    assert !needs(bound: bound, one: an(kind: "header", name: "deep.h", owner: ""))
+    assert !needs(bound: bound, one: an(kind: "header", name: "prose.h", owner: ""))
+    assert needs(bound: bound, one: an(kind: "package", name: "zz", owner: ""))
+    assert needs(bound: bound, one: an(kind: "pkg-config", name: "zz", owner: ""))
+    assert !needs(bound: bound, one: an(kind: "package", name: "other", owner: ""))
+
+test "clang is asked, and a header the machine has refutes the compiler"
+    scratch = "build/harness-selftest"
+    search = ["-I", "."]
+    has = asked(scratch: scratch, search: search, one: an(kind: "header", name: "stdio.h", owner: ""))
+    assert has.is_err()
+    assert strings.contains(text: message_of(has), needle: "clang finds `stdio.h`")
+    lacks = asked(
+        scratch: scratch,
+        search: search,
+        one: an(kind: "header", name: "heroes-absence-a-header-no-machine-has.h", owner: "")
+    )
+    assert !lacks.is_err()
+
+test "pkg-config is asked as the compiler asks it, and a pkg-config that runs refutes its absence"
+    scratch = "build/harness-selftest"
+    search: [str] = []
+    nobody = an(kind: "package", name: "heroes-absence-a-package-no-machine-has", owner: "")
+    tool = an(kind: "pkg-config", name: "heroes-absence-a-package-no-machine-has", owner: "")
+    here = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--version"])
+    assert !here.is_err()
+
+    # Each branch asserts the machine's own fact: where `pkg-config` runs, it
+    # does not know the package and it is not missing; where it does not, the
+    # package cannot be said to be uninstalled by it, and it is missing.
+    if here.must().started
+        assert !asked(scratch: scratch, search: search, one: nobody).is_err()
+        assert asked(scratch: scratch, search: search, one: tool).is_err()
+    else
+        assert asked(scratch: scratch, search: search, one: nobody).is_err()
+        assert !asked(scratch: scratch, search: search, one: tool).is_err()
+
+# The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
+# this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
+# named `zz9`.
+test "pkg-config's answer becomes the compiler's notes, in either pkgconf's words"
+    mac = "Package zz9 was not found in the pkg-config search path.\nPerhaps you should add the directory containing `zz9.pc'\nto the PKG_CONFIG_PATH environment variable\nPackage 'zz9' not found\n"
+    assert notes_of(mac).must() == ["  note: pkg-config said: Package zz9 was not found in the pkg-config search path.", "  note: Perhaps you should add the directory containing `zz9.pc'", "  note: to the PKG_CONFIG_PATH environment variable", "  note: Package 'zz9' not found"]
+    linux = "Package zz9 was not found in the pkg-config search path.\nPerhaps you should add the directory containing `zz9.pc'\nto the PKG_CONFIG_PATH environment variable\nPackage 'zz9', required by 'virtual:world', not found\n"
+    assert notes_of(linux).must()[3] == "  note: Package 'zz9', required by 'virtual:world', not found"
+
+    # `\r\n` is one line end, an empty line no note, and nothing said is
+    # still the note that says so.
+    assert notes_of("one\r\n\r\n  two  \n").must() == ["  note: pkg-config said: one", "  note: two"]
+    assert notes_of("").must() == ["  note: pkg-config said:"]
+
+    # But the LAST `\r\n` loses its `\n` to the trim before the pair is read,
+    # and the compiler writes the return left by its code (`not found<U+000D>`,
+    # measured 2026-10-04 with a `pkg-config` answering in CRLF lines), so that
+    # answer is refused here and its case judged on the file's own bytes.
+    assert notes_of("one\r\ntwo\r\n").is_err()
+
+    # What the compiler writes by its code is not rebuilt here: a tab, a lone
+    # return, and DEL and a C1 control, whose bytes no literal of this
+    # language spells, so `printf` writes them (POSIX, as the script cases).
+    assert notes_of("a\tb").is_err()
+    assert notes_of("a\rb").is_err()
+
+    if shell.can_run_scripts()
+        controls = shell.run(
+            scratch: "build/harness-selftest",
+            program: "/bin/sh",
+            words: ["/bin/sh", "-c", "printf 'a\\177b\\na\\302\\205b'"]
+        )
+        assert !controls.is_err()
+        two = strings.lines(controls.must().out)
+        assert two.len() == 2
+        assert notes_of(two[0]).is_err()
+        assert notes_of(two[1]).is_err()
+        assert !notes_of("café").is_err()
+
+test "an expectation's quotation is this machine's answer, and no other line moves"
+    scratch = "build/harness-selftest"
+    package = "heroes-absence-a-package-no-machine-has"
+    head = "error[ffi_package]: the package `" + package + "` is not installed on this machine\n  at x.hero:1:26\n"
+    foreign = head + "  note: pkg-config said: words another machine wrote\n  note: and a second line of them\n" + LAST_NOTE + "\n"
+    got = quoted_here(scratch: scratch, expected: foreign)
+    here = quotation(scratch: scratch, package: package)
+
+    if here.is_err()
+        # No `pkg-config` here, or one that knows the package: as written.
+        assert got == foreign
+    else
+        assert got == head + here.must().join("\n") + "\n" + LAST_NOTE + "\n"
+        assert quoted_here(scratch: scratch, expected: got) == got
+
+    # No frame, no change: a header's message, and a package's message whose
+    # closing note is missing.
+    header = "error[ffi_missing_header]: `gone.h` is not on this machine's include path\n"
+    assert quoted_here(scratch: scratch, expected: header) == header
+    unclosed = head + "  note: pkg-config said: words\n"
+    assert quoted_here(scratch: scratch, expected: unclosed) == unclosed
+
+test "a case's directory is where clang looks beside it"
+    assert directory_of("tests/golden/unsupported/x.hero") == "tests/golden/unsupported"
+    assert directory_of("x.hero") == "."
+
+test "a program's witness reads the file it was given, its modules, and what the compiler blames beside them"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/absence-sources"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/db").is_err()
+    assert !write_file(path: tree + "/main.hero", text: "use db/store\n\nfunction main()\n    print(1)\n").is_err()
+    assert !write_file(path: tree + "/db/store.hero", text: "extern \"" + NOWHERE + "\"  #~ ffi_missing_header\n    function seven() -> i32\n").is_err()
+    blamed = absences(
+        missing_header_said(header: NOWHERE, tail: " — clang looked and did not find it", at: tree + "/db/store.hero:1:1")
+    )
+    read = read_sources(path: tree + "/main.hero", modules: [], named: blamed)
+    assert !read.is_err()
+    assert read.must().len() == 2
+    assert read.must()[1].path == tree + "/db/store.hero"
+    assert binds_of(read.must()).headers == [NOWHERE]
+
+    # The module's own mark keys by its file, which is how the place pins it.
+    assert marks_of(read.must()) == [tree + "/db/store.hero:1:ffi_missing_header"]
+
+    # A file outside the program's directory is never read on the compiler's
+    # word, and one that cannot be read fails the question.
+    outside = absences(missing_header_said(header: NOWHERE, tail: "", at: "elsewhere/x.hero:1:1"))
+    assert read_sources(path: tree + "/main.hero", modules: [], named: outside).must().len() == 1
+    gone = absences(missing_header_said(header: NOWHERE, tail: "", at: tree + "/db/gone.hero:1:1"))
+    assert read_sources(path: tree + "/main.hero", modules: [], named: gone).is_err()
+    assert bound_by(path: "p/main.hero", count: 1) == "p/main.hero binds"
+    assert bound_by(path: "p/main.hero", count: 2) == "p/main.hero and the one other module read with it bind"
+    assert bound_by(path: "p/main.hero", count: 4) == "p/main.hero and the 3 other modules read with it bind"
+    assert inside(dir: ".", file: "x.hero")
+    assert !inside(dir: ".", file: "a/x.hero")
+    assert inside(dir: "a", file: "a/b/x.hero")
+    assert !inside(dir: "a", file: "ab/x.hero")
+
+test "a refused skip says why only where the compiler named a library"
+    nothing: str? = fail(code: "none", msg: "the compiler names nothing this machine lacks")
+    assert refused(nothing) == ""
+    refuted: str? = fail(code: "refuted", msg: "clang finds `stdio.h`")
+    assert refused(refuted) == "clang finds `stdio.h`"
+    skipped: str? = ok("this machine lacks it")
+    assert refused(skipped) == ""
+
+# **The premise the driver's sentence about `pkg-config` rests on**, owed its
+# test (`.claude/rules/module-shape.md`): that sentence names a package and no
+# file, so its witness finds the `package` group only in the files a suite
+# hands the compiler, a program's root, and every root holds a `main`. A
+# `package` group moved into a module would read as bound by nothing on a
+# machine with no `pkg-config`, and its case would go red there rather than
+# be skipped; this fires first, on every machine.
+test "every package group sits in a program's root, where the pkg-config witness reads"
+    roots: [str] = ["examples", "tests/golden"]
+    nothing: [str] = []
+    seen: i64 @ 0
+
+    for root in roots
+        listed_files = shell.list_tree(scratch: "build/harness-selftest", dir: root, skip: nothing)
+        assert !listed_files.is_err()
+
+        for file in listed_files.must()
+            if !strings.ends_with(text: file, suffix: ".hero")
+                continue
+            text = read_file(file)
+
+            if text.is_err()
+                continue
+
+            if binds(text.must()).packages.len() > 0
+                seen @ seen + 1
+                assert strings.contains(text: text.must(), needle: "function main")
+
+    # Nineteen such roots on 2026-10-04, counted by a grep for the same lines:
+    # `examples/raylib` and `examples/sdl`, eight `check/` cases, five `run/`
+    # and four `unsupported/`. A walk that finds fewer is not reaching the tree.
+    assert seen >= 19
+
+# An absence with no code and no place, for the tests that ask what a case
+# binds or what the machine lacks.
+function an(kind: str, name: str, owner: str) -> Absence
+    return Absence(kind: kind, name: name, owner: owner, code: "", file: "", line: 0)

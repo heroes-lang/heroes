@@ -3,3 +3,7 @@
     **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 6, read `improvement`); measured by the coordinator at batch 8's gate, 2026-10-04.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): the net reads green over a changed message (`.claude/rules/diagnostics-and-goldens.md` § An instrument watches the world), in the class batch 8 repaired in `ffi_missing_header` and `ffi_package` (226, 232, 237).
+
+    **2026-10-04, batch 9's harness lane**: repaired at `64112e4f`, gated by its cases and the net's own tests (no `selfhost/` line moved); the net is owed at the batch's close.
+
+    **2026-10-04, batch 9's harness lane, on the coordinator's ruling that it is this item's own cause**: the same words-only skip in `run`, `lines`, `corpus`, `warnings`, `emission`, `determinism`, `special` and the surface rows repaired at `9de942c2`, gated by its cases, the net's own tests and each of those suites whole; `suite_annotations.hero`'s `machine_answered` and its `DIRECTORIES` line are owed at the merge, another lane's file this batch; the net is owed at the batch's close.

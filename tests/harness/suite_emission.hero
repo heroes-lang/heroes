@@ -51,6 +51,7 @@
 #   - the SKIP FLOOR: a machine missing every C library says so instead of
 #     reporting green, as every other suite here does.
 
+use absence
 use report
 use floors
 use shell
@@ -241,9 +242,18 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         # would have reported "one file missing" and buried the reason. Every
         # program in the list above emits, measured, `fixedbugs/` included:
         # `--emit-c` never calls clang, so a wrong FFI binding still has C.
+        #
+        # A program this machine cannot emit for a library it lacks is skipped,
+        # by name, and floored below. It is the machine's only where the
+        # program binds what the compiler says is missing and the machine,
+        # asked, lacks it (`absence`); until defect 246 the compiler's words
+        # alone made the skip.
         if said.must().code != 0
-            if shell.machine_lacks_the_library(said.must().err)
+            lacks = absence.machine_lacks(scratch: scratch, path: one.source, expected: "", said: said.must().err)
+
+            if !lacks.is_err()
                 skipped @ skipped + 1
+                report.keep_skip(@r, label: "emission/" + one.label, detail: "  " + lacks.must())
             else if said.must().code == 1 && read_file(one.stored).is_err()
                 # **EXIT 1 IS THE PROGRAM BEING REFUSED, AND SINCE 2026-09-16
                 # THAT IS A PASS** (defect 048, panel 157 R1 and R3). `--emit-c`
@@ -272,6 +282,10 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
 
                 if said.must().code == 1
                     blame @ blame + "  exit 1 is the program REFUSED, which is legal since defect 048 — but " + one.stored + " still blesses an artifact it may no longer have; retire that file\n"
+                why = absence.refused(lacks)
+
+                if why.len() > 0
+                    blame @ blame + "  not skipped for a missing library: " + why + "\n"
                 report.keep_failure(@r, label: "emission/" + one.label, detail: blame + said.must().err)
             continue
         judge(@r, one: one, emitted: said.must().out, update: update)
@@ -630,3 +644,53 @@ test "a blessing refuses a capture that does not open with the emitter's header,
     assert !is_a_capture(emitted: stub_header(of: "other.hero"), of: "x.hero")
     assert is_a_capture(emitted: stub_header(of: "x.hero") + "#include", of: "x.hero")
     assert !is_a_capture(emitted: "", of: "x.hero")
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
+# the compiler's words for the machine's. A header the machine has, said to be
+# missing, is judged and fails; a header no machine has, which the program
+# binds, is skipped by name, and alone it is a third of the sweep, which the
+# floor refuses.
+test "fixedbugs: a program that cannot emit is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/emission-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/store-has").is_err()
+    assert !shell.mkdir_all(tree + "/store-lacks").is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+
+    # Blessed, so the rule for a refused program with nothing blessed is not
+    # what answers: only the witness can.
+    blessed = tree + "/store-has/has.c"
+    assert !write_file(path: blessed, text: "int main(void) { return 0; }\n").is_err()
+    refuted = sweep(
+        scratch: scratch,
+        compiler: compiler.must(),
+        store: tree + "/store-has",
+        programs: [Program(source: has.must(), stored: blessed, label: "has")],
+        update: false,
+        least: 1
+    )
+    assert !refuted.is_err()
+    assert refuted.must().failed == 1
+    assert refuted.must().skips.len() == 0
+    assert strings.contains(text: refuted.must().failures[0], needle: "clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused = sweep(
+        scratch: scratch,
+        compiler: compiler.must(),
+        store: tree + "/store-lacks",
+        programs: [Program(source: lacks.must(), stored: tree + "/store-lacks/lacks.c", label: "lacks")],
+        update: false,
+        least: 1
+    )
+    assert !excused.is_err()
+    assert excused.must().skips.len() == 1
+    assert strings.starts_with(text: excused.must().skips[0], prefix: "SKIP emission/lacks\n")
+    assert excused.must().failed == 1
+    assert strings.contains(text: excused.must().failures[0], needle: "1 of 1 programs were skipped")
