@@ -852,6 +852,19 @@ HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks) {
     return hero_bytes_shown(value, (int64_t)strlen(value), status, marks);
 }
 
+/* One argument as the shown read gives a file (defect 281): HERO_OS_OK and the
+ * argument where it is UTF-8; HERO_OS_NOT_TEXT, the marks and the shown text
+ * where it is not, so a message can name its bytes, where the compiler could
+ * say only *argument 2 is not UTF-8*. The bytes are `main`'s and only read.
+ * Out of range is the panic `hero_args_at` gives (§4.9). */
+HeroStr hero_args_shown(int64_t index, int64_t *status, int64_t *marks) {
+    if (index < 0 || index >= hero_args_count()) {
+        hero_panic("argument index out of range");
+    }
+    const char *word = hero_argv[index + 1];
+    return hero_bytes_shown(word, (int64_t)strlen(word), status, marks);
+}
+
 int64_t hero_file_write(const char *path, HeroStr text) {
     hero_fs_why_code = 0;
     FILE *file = fopen(path, "wb");

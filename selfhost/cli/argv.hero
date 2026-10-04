@@ -228,6 +228,56 @@ function unknown_flag(command: cli_table.Command, arg: str) -> str
 
     return "`" + command.name + "` does not accept `" + arg + "` — it accepts " + accepted.join(", ")
 
+# A command line holding an argument that is not UTF-8, told by what that
+# argument is to the command (defect 281): the lines of the refusal. `given`
+# holds every argument, the one at `at` as its bytes written by their value
+# (`caf<0xE9>.hero`, which no command, flag or `--` is spelled as), and the
+# line is read against the table with no question asked of the machine:
+#
+# - what is no command and no flag is refused in this parser's own words,
+#   which name it;
+# - an argument after `run`'s `--` is the program's, which `heroes run` passes
+#   on as a `str`, and the program's author reaches it by building the
+#   program and reading `args_checked()`;
+# - any other is the compiler's own, a file or a flag's value: a file is told
+#   as defect 239's walk tells one, and a value is asked again in UTF-8.
+#
+# Until that day every one of them was told *build the program with `heroes
+# build` and read it with `args_checked()`*, a program author's repair handed
+# to the compiler's user, a misspelled flag and an `-o` included.
+function unheld(given: [str], at: i64) -> [str]
+    match parse(given, dir_probe: unasked)
+        .err e => return ["error: " + e.msg]
+        .ok inv =>
+            dash: i64 @ -1
+            index: i64 @ 1
+
+            while index < given.len() && dash < 0
+                if given[index] == "--"
+                    dash @ index
+                index @ index + 1
+
+            if inv.tag == .run_cmd && dash > 0 && at > dash
+                return [
+                    "error: argument " + (at + 1).to_str() + ", `" + given[at] + "`, is for the program and is not UTF-8, and `heroes run` passes a program's arguments as Heroes `str`s, which are UTF-8 (spec § 3 Types)"
+                    "note: build the program with `heroes build`, run it with this argument, and read it with `args_checked()`"
+                ]
+
+            if at > 0 && !value_of(inv, spelling: given[at - 1]).is_err()
+                return [
+                    "error: the value of `" + given[at - 1] + "`, `" + given[at] + "`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
+                ]
+            return [
+                "error: the name of `" + given[at] + "` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
+            ]
+
+# No question asked of the machine: a line read for a refusal is read for
+# what its words are, never for whether a directory a flag names is there,
+# which its value written by its bytes is not.
+function unasked(path: str) -> bool
+    _ = path
+    return true
+
 ## Tests
 
 function yes_dir(path: str) -> bool
@@ -300,3 +350,43 @@ test "repeatable flags accumulate, -o keeps the first, -- feeds run only"
     assert ran.program_args[0] == "-o"
     sep: [str] = ["check", "m.hero", "--"]
     assert parse(sep, dir_probe: yes_dir).is_err()
+
+# Defect 281: an argument that is not UTF-8 is told by what it is to the
+# command, as `main` hands it over, its bytes written by their value; only an
+# argument after `run`'s `--` is the program's and draws the program author's
+# advice. The table is the one the compiler reads, so a flag or a command it
+# does not know is told by the parser's own refusal.
+test "an argument that is not UTF-8 is told by what it is to the command (defect 281)"
+    file: [str] = ["check", "caf<0xE9>.hero"]
+    assert unheld(file, at: 1) == ["error: the name of `caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"]
+    out: [str] = ["build", "x.hero", "-o", "caf<0xE9>"]
+    assert unheld(out, at: 3) == ["error: the value of `-o`, `caf<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"]
+
+    # A directory's value is never asked of the machine, which holds no
+    # directory by the written name and would refuse it as absent.
+    searched: [str] = ["build", "x.hero", "--include", "inc<0xE9>"]
+    assert unheld(searched, at: 3)[0] == "error: the value of `--include`, `inc<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8"
+    command: [str] = ["<0xE9>"]
+    assert unheld(command, at: 0) == ["error: unknown command `<0xE9>` — the commands are lex, parse, check, build, run, test, fmt, doctor, mutate, probe, measure, grammar, this"]
+    flag: [str] = ["check", "x.hero", "--<0xE9>"]
+    assert unheld(flag, at: 2) == ["error: `check` does not accept `--<0xE9>` — it accepts " + flag_list(name: "check")]
+    program: [str] = ["run", "x.hero", "--", "-o", "<0xE9>"]
+    assert unheld(program, at: 4) == ["error: argument 5, `<0xE9>`, is for the program and is not UTF-8, and `heroes run` passes a program's arguments as Heroes `str`s, which are UTF-8 (spec § 3 Types)", "note: build the program with `heroes build`, run it with this argument, and read it with `args_checked()`"]
+
+    # The file `run` runs is the compiler's own, and `--` anywhere else is the
+    # parser's refusal.
+    ran: [str] = ["run", "caf<0xE9>.hero", "--", "a"]
+    assert unheld(ran, at: 1)[0] == "error: the name of `caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
+    misplaced: [str] = ["check", "x.hero", "--", "<0xE9>"]
+    assert unheld(misplaced, at: 3) == ["error: `--` passes arguments to the program, and `check` does not run one — only `heroes run` does"]
+
+# The flags the table gives a command, as `unknown_flag` lists them.
+function flag_list(name: str) -> str
+    spellings: [str] @ []
+
+    for c in cli_table.commands()
+        if c.name == name
+            for f in c.flags
+                spellings @ spellings.push(f.spelling)
+
+    return spellings.join(", ")

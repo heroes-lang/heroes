@@ -116,6 +116,14 @@ HeroStr hero_args_at(int64_t index);
  * so nothing here allocates and nothing here can leak. */
 const char *hero_args_raw(int64_t index);
 
+/* The same argument read as the shown read reads a file (defect 281):
+ * HERO_OS_OK and the argument where it is UTF-8, HERO_OS_NOT_TEXT with marks
+ * and the shown text where it is not, counted as `hero_file_read_shown`
+ * counts them, so the compiler can name an argument of its own by its bytes.
+ * Bound in `selfhost/cli/process.hero`'s own group, like the reads above; out
+ * of range is `hero_args_at`'s panic. */
+HeroStr hero_args_shown(int64_t index, int64_t *status, int64_t *marks);
+
 /* Ends the program with this status, and never returns.
  *
  * `_Noreturn` is not decoration: without it clang's flow analysis treats the
