@@ -17,6 +17,8 @@ use cli/process
 use cli/publish
 use cli/clang_floor
 use cli/strings
+use module/reading
+use not_text
 
 record Check
     name: str
@@ -44,7 +46,7 @@ function capture(program: str, words: [str], build_dir: str) -> str?
     out_path = publish.private_name(build_dir + "/doctor-out.txt")
     process.mkdir_all(build_dir)?
     ran = process.run(program: program, words: words, out: out_path, err: process.discard())
-    said = read_file(out_path)
+    said = said_back(out_path)
     publish.discard(out_path)
 
     if !ran.started
@@ -56,6 +58,20 @@ function capture(program: str, words: [str], build_dir: str) -> str?
     if said.is_err()
         return fail(code: "none", msg: "nothing was said")
     return ok(first_line(said.must()))
+
+# What a child wrote at `path`, read back as words a row can quote (defect
+# 337): its text where every byte is UTF-8, and where one is not, each such
+# byte written by its value, `<0xE9>`; a line ended `\r\n` read as one ended
+# `\n`. A failure only where nothing could be read back. **This read was
+# `read_file` until 2026-10-05**, which refuses such a file whole: a clang
+# whose `--version` named a folder in Latin-1 on its third line was told
+# `not found — install a C toolchain`, at exit 2, the floor row gone
+# (measured on this Mac with a stand-in `clang` first on the `PATH`). It is
+# `cli/read_back.hero`'s `words`, lane b11-misc's reading of clang's own
+# words at `aeef17c1`, written here until the two lanes meet.
+function said_back(path: str) -> str?
+    read = reading.source_text(path)?
+    return ok(strings.without_returns(not_text.bytes_written(read.text, faults: read.faults)))
 
 function first_line(text: str) -> str
     run: [str] @ []
@@ -215,16 +231,16 @@ function linked_and_ran(dir: str, source: str) -> str?
         return fail(code: "none", msg: "clang linked a C program, and it did not run to its end")
     return ok("clang compiled, linked and ran a C program")
 
-# The first line clang wrote, or its exit code where it wrote none that this
-# compiler can read. clang on Windows ends its lines `\r\n`
-# (`clang_floor.hero` has where that was measured), and the `\r` would stand
-# inside the quotes.
+# The first line clang wrote, or its exit code where it wrote none. Read as
+# `said_back` reads, so a linker's words in its own code page are quoted with
+# each byte that is not UTF-8 written by its value, never dropped (defect 337),
+# and a line clang on Windows ends `\r\n` carries no `\r` inside the quotes.
 function first_said(path: str, code: i64) -> str
-    said = read_file(path)
+    said = said_back(path)
 
     if said.is_err()
-        return "it exited " + code.to_str() + " and said nothing this compiler can read"
-    line = first_line(strings.without_returns(said.must()))
+        return "it exited " + code.to_str() + " and wrote nothing that could be read back"
+    line = first_line(said.must())
 
     if line.len() == 0
         return "it exited " + code.to_str() + " and said nothing"
@@ -337,6 +353,35 @@ test "Windows' toolchain is asked a C program linked and run, and a refusal is t
         assert mine.detail == "clang compiled, linked and ran a C program"
     else
         assert mine.name == "xcode CLT" || mine.name == "cc"
+
+# Defect 337 at doctor's own read: a toolchain's answer holding a byte that
+# is not UTF-8 is read whole, that byte written by its value, never taken for
+# silence. Two programs of a few lines answer `--version` as such a clang
+# would, on every platform: the byte on a later line, then on the first. A
+# `\n` they write is Windows' `\r\n` there, and reads as one line end.
+test "a version answer holding a byte that is not UTF-8 is read, never taken for silence (defect 337)"
+    dir = "build/selftest-doctor-337"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    answers = [
+        ["later", "clang version 99.0.0\\nInstalledDir: /opt/caf\\xe9/bin\\n", "clang version 99.0.0"]
+        ["first", "clang version 99.0.0 (caf\\xe9)\\nInstalledDir: /opt/bin\\n", "clang version 99.0.0 (caf<0xE9>)"]
+    ]
+
+    for answer in answers
+        unit = dir + "/" + answer[0] + ".c"
+        program = dir + "/" + answer[0] + process.exe_suffix()
+        assert !write_file(path: unit, text: "#include <stdio.h>\nint main(void) { return fputs(\"" + answer[1] + "\", stdout) < 0; }\n").is_err()
+        built = process.run(
+            program: "clang",
+            words: ["clang", unit, "-o", program],
+            out: process.discard(),
+            err: process.discard()
+        )
+        assert built.started && built.code == 0
+        assert capture(program: program, words: [program, "--version"], build_dir: dir).must() == answer[2]
+
+    assert !process.remove_tree(dir).is_err()
 
 # Defect 276: a hint naming no runtime is a failed row saying what it names.
 test "doctor's runtime row tells a HEROES_RUNTIME that names no runtime by what it names (defect 276)"
