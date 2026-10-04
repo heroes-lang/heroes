@@ -33,6 +33,7 @@ use swap_words
 use indent_runs
 use not_text
 use file_start
+use refused_runs
 
 ## The output
 
@@ -263,23 +264,28 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     # The joins of the lines left open, weighed now that every token of the
     # joined lines exists (defect 129).
     line_joins.weigh(@l, text)
+
+    # A refused character told once a run, at most eight times a text
+    # (defect 282, `refused_runs.hero`), where each was a message; a refused
+    # break moves with the diagnostic it names.
+    said = refused_runs.told_once(l.diagnostics, text: text)
     refused: [state.Break] @ []
 
-    for b in l.breaks
+    for b in refused_runs.renumbered(l.breaks, at: said.at)
         if b.diagnostic >= 0
             refused @ refused.push(b)
 
     if l.heads.len() == 0
         return LexOutput(
             tokens: l.tokens,
-            diagnostics: l.diagnostics,
+            diagnostics: said.diagnostics,
             breaks: refused,
             closes: l.closes,
             swaps: l.swaps
         )
     return LexOutput(
         tokens: without_heads(l.tokens, heads: l.heads),
-        diagnostics: l.diagnostics,
+        diagnostics: said.diagnostics,
         breaks: refused,
         closes: l.closes,
         swaps: l.swaps
@@ -368,6 +374,24 @@ test "a byte-order mark is told once, at it, and the file is read from after it"
         now = marked_breaks.diagnostics[marked_breaks.breaks[k].diagnostic]
         assert now.code == was.code
         assert now.span.start == was.span.start + 3
+
+# Defect 282: a refused character told once a run and at most eight times a
+# text, the rest counted; a refused break after them still names its own
+# diagnostic, the join's, whose place their counting moved.
+test "refused characters are told once a run and eight times a text, and a break keeps its diagnostic"
+    bytes: [u8] = [1]
+    one = bytes.validated_bytes().must()
+    flood = lex_one(one.repeat(79) + "\n" + one.repeat(79) + "\n")
+    assert flood.diagnostics.len() == 2
+    assert flood.diagnostics[0].notes == ["the first of 79 in a row"]
+    spread = "$ $ $ $ $ $ $ $ $ $ $ $\ny = a +\n1\n"
+    out = lex_one(spread)
+    assert out.diagnostics.len() == 9
+    assert out.diagnostics[7].notes == ["4 more characters of this file are not part of the language's syntax either, not told one by one"]
+    assert out.breaks.len() == 1
+    the_join = out.diagnostics[out.breaks[0].diagnostic]
+    assert the_join.code != "unexpected_character"
+    assert the_join.span.start == lex_one("y = a +\n1\n").diagnostics[0].span.start + 24
 
 # Defect 247: UTF-16 with no mark over ASCII, which is UTF-8, every other
 # byte NUL: one message, the file not read, where each NUL was one.
