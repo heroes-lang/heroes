@@ -18,6 +18,7 @@ use modules
 use resolve
 use rename_fit
 use checker
+use not_text
 use check/state
 use check/holes
 use print/scopes
@@ -101,7 +102,9 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
     if kept.len() == 0
         return fail(code: "none", msg: "nothing to report, carry on")
 
-    if argv.has(inv, spelling: "--apply")
+    # A root that is not UTF-8 is never handed back, by stdout or in place: its
+    # text is what the compiler can show, not what its author wrote (panel 189).
+    if argv.has(inv, spelling: "--apply") && !not_text.in_root(s)
         # The repair is the artifact here, so the diagnostics stay
         # quiet: a caller that wants both runs the command twice. A round
         # that cannot read the program it judges writes nothing, and says

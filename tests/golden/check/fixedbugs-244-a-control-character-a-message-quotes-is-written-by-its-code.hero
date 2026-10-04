@@ -1,0 +1,12 @@
+# Defect 244, 2026-10-04. Symptom: a diagnostic wrote a source line's control
+# characters raw, in the excerpt under it and wherever its message or fix
+# quoted one, so the terminal showing the message read them as its own: an
+# ESC began a sequence that coloured or cleared the screen, a lone carriage
+# return wrote the rest of the line over its start. Cause: the renderers
+# printed the text as it stood. Each control character but a line end and a
+# tab is written by its code now, `<U+001B>`, in both forms, the caret padded
+# under it by that width. The string below holds a backslash before an ESC
+# byte, which `unknown_escape` quotes; this file holds that byte on purpose.
+
+function main()
+    print("a\b")  #~ unknown_escape

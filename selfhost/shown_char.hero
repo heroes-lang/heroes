@@ -28,6 +28,62 @@ function named(ch: str) -> str
         return "the invisible character " + u_plus(code)
     return "`" + ch + "` (" + u_plus(code) + ")"
 
+# A text as a diagnostic writes it to a terminal (defect 244): each control
+# character but a line end and a tab, C0's, DEL and C1's, by its code between
+# angle brackets, `<U+001B>`, the form `cli/shell_split.shown` gives
+# pkg-config's answer (defect 237). Written raw, a source line's bytes reached
+# the terminal that shows the message: an ESC began a sequence that coloured
+# or cleared it, a lone carriage return sent the cursor back over the line, and
+# a file in UTF-16 filled it with NULs. A line end stays, since a message
+# breaks its own lines; a tab stays, since the caret under an excerpt copies
+# the line's tabs (`diag_render.caret`).
+function visible(text: str) -> str
+    if !holds_control(text)
+        return text
+    kept: [str] @ []
+
+    for ch in text.chars()
+        if is_control(ch)
+            kept @ kept.push(written(ch))
+        else
+            kept @ kept.push(ch)
+
+    return kept.join("")
+
+# How many columns `ch` takes once `visible` has written it: its code's
+# width for a control character, one for any other.
+function width(ch: str) -> i64
+    if is_control(ch)
+        return written(ch).len()
+    return 1
+
+function written(ch: str) -> str
+    return "<" + u_plus(code_point(ch)) + ">"
+
+# A character `visible` writes by its code: below 0x20 but a line end and a
+# tab, 0x7f, and 0x80 to 0x9f.
+function is_control(ch: str) -> bool
+    code = code_point(ch)
+    return code < 32 && code != 10 && code != 9 || code >= 127 && code < 160
+
+# Whether any byte of `text` begins such a character, asked of the bytes, so
+# that a text holding none, every line of nearly every program, is handed back
+# as it is. C1's characters are 0xC2 0x80 to 0xC2 0x9F in UTF-8.
+function holds_control(text: str) -> bool
+    at: i64 @ 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b < 32 && b != '\n' && b != '\t' || b == 127
+            return true
+
+        if b == 194 && at + 1 < text.len() && text[at + 1] >= 128 && text[at + 1] < 160
+            return true
+        at @ at + 1
+
+    return false
+
 # The characters above ASCII a terminal shows as nothing, or that change how
 # it shows what follows, so writing one between backquotes shows the reader an
 # empty pair or reorders the rest of the diagnostic's line: the spaces other
@@ -78,11 +134,16 @@ constant UNSEEN: [i64]
         917999
     ]
 
+# **The table is named once a call** (defect 282): a `constant` of an array
+# is built where it is named, so each `UNSEEN` in the loop built all 38
+# entries again, three times an entry walked, and a file of 8 KB of no-break
+# spaces cost 5 billion instructions for its 7,900 messages.
 function unseen(code: i64) -> bool
+    ranges = UNSEEN
     at: i64 @ 0
 
-    while at + 1 < UNSEEN.len()
-        if code >= UNSEEN[at] && code <= UNSEEN[at + 1]
+    while at + 1 < ranges.len()
+        if code >= ranges[at] && code <= ranges[at + 1]
             return true
         at @ at + 2
 
@@ -178,11 +239,13 @@ constant DEFAULT_IGNORABLE: [i64]
         921599
     ]
 
+# Named once a call, as `unseen`'s table is (defect 282).
 function default_ignorable(code: i64) -> bool
+    ranges = DEFAULT_IGNORABLE
     at: i64 @ 0
 
-    while at + 1 < DEFAULT_IGNORABLE.len()
-        if code >= DEFAULT_IGNORABLE[at] && code <= DEFAULT_IGNORABLE[at + 1]
+    while at + 1 < ranges.len()
+        if code >= ranges[at] && code <= ranges[at + 1]
             return true
         at @ at + 2
 
@@ -210,6 +273,28 @@ test "a character a terminal shows as nothing, or that reorders the line, is its
     assert !unseen(8191)
     assert !unseen(8208)
     assert UNSEEN.len() % 2 == 0
+
+# One character from its UTF-8 bytes, since the language writes no character
+# by its code (spec § 2 Literals).
+function of(bytes: [u8]) -> str
+    return bytes.validated_bytes().must()
+
+test "a control character is written by its code, a line end and a tab are kept, and a text holding none is itself (defect 244)"
+    esc = of([27])
+    assert visible("x = 1 " + esc + "[31mred") == "x = 1 <U+001B>[31mred"
+    assert visible("a\rb") == "a<U+000D>b"
+    assert visible("del" + of([127])) == "del<U+007F>"
+    assert visible("c1 " + of([194, 155]) + "31m") == "c1 <U+009B>31m"
+    assert visible("bell" + of([7])) == "bell<U+0007>"
+    assert visible("two\nlines\tand a tab") == "two\nlines\tand a tab"
+    nbsp = of([194, 160])
+    assert visible("café, € and " + nbsp) == "café, € and " + nbsp
+    assert width(esc) == 8
+    assert width("\t") == 1
+    assert width("é") == 1
+    assert !holds_control("plain")
+    assert holds_control(of([194, 133]))
+    assert !holds_control(nbsp)
 
 test "the code is read from every length of UTF-8"
     assert code_point("A") == 65

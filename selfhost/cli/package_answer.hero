@@ -1,0 +1,81 @@
+# What pkg-config answered, read as text where it is text and told where it
+# is not (defect 241, panel 189's R8; design.md §4.19). Its answer and its
+# complaint come back as files under `build/`, and `read_file` failed one
+# that is not UTF-8 as `not_text`, which `libraries.resolve_packages` took for
+# no answer: the flags a package's `.pc` names were dropped and the build went
+# on at exit 0, and a complaint that is not UTF-8 was told as nothing at all.
+# Both are read here through the compiler's own read of a source
+# (`module/reading.source_text`), which holds a file that is not UTF-8 with
+# its bytes, so each such byte is written by its value, as clang writes one
+# it will not show.
+#
+# Its own module because `cli/libraries.hero` stands at its ceiling.
+
+use module/reading
+use not_text
+
+# The words pkg-config answered for `package`, or the package failure that
+# stops the build. An answer that is not UTF-8 holds a flag no `str` carries,
+# so it can be neither checked against the list nor handed to clang as one
+# word, and it is never taken for no answer; one that cannot be read back is
+# not taken for none either. The message opens with the package marker, which
+# `emit/ffi_build.package_problem` turns into the author's `ffi_package`.
+function answer(path: str, package: str) -> str?
+    read = reading.source_text(path)
+
+    if read.is_err()
+        return fail(
+            code: "failed",
+            msg: "heroes-ffi-package `" + package + "` answered pkg-config's question, and its answer could not be read back from " + path
+        )
+
+    if read.must().faults.len() == 0
+        return ok(read.must().text)
+    return fail(
+        code: "failed",
+        msg: "heroes-ffi-package `" + package + "` answered with bytes that are not UTF-8, `" + one_line(not_text.bytes_written(read.must().text, faults: read.must().faults)) + "`, so its flags can be neither checked nor handed to clang\n  save the package's `.pc` file as UTF-8, or name the library directly with `link`"
+    )
+
+# What pkg-config said when it refused, each byte of it that is not UTF-8
+# written by its value, `<0xE9>`; "" where it said nothing, or nothing could
+# be read back.
+function complaint(path: str) -> str
+    read = reading.source_text(path)
+
+    if read.is_err()
+        return ""
+    return not_text.bytes_written(read.must().text, faults: read.must().faults)
+
+# The answer on one line, its line ends dropped: pkg-config ends its answer
+# with one, and the message quotes the words.
+function one_line(text: str) -> str
+    kept: [str] @ []
+
+    for ch in text.chars()
+        if ch != "\n" && ch != "\r"
+            kept @ kept.push(ch)
+
+    return kept.join("")
+
+## Tests
+
+# Defect 241's two answers, committed as the bytes pkg-config gave for a `.pc`
+# whose words hold a Latin-1 `é`: its flags, and its complaint for a package
+# required by name that is not there.
+test "an answer that is not UTF-8 stops the build naming its bytes, and a complaint that is not is told with them"
+    fixtures = "tests/golden/surface-fixtures/notext241/"
+
+    match answer(path: fixtures + "answer-latin1.txt", package: "u")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "failed"
+            assert e.msg == "heroes-ffi-package `u` answered with bytes that are not UTF-8, `-DX=caf<0xE9> -I/nowhere`, so its flags can be neither checked nor handed to clang\n  save the package's `.pc` file as UTF-8, or name the library directly with `link`"
+
+    said = complaint(fixtures + "complaint-latin1.txt")
+    assert said == "Package caf<0xE9>x was not found in the pkg-config search path.\nPackage 'caf<0xE9>x', required by 'u3', not found\n"
+
+    # Text is itself, and a file that is not there is no answer anyone gave.
+    assert !write_file(path: "build/selftest-package-answer.txt", text: "-I/inc -lz\n").is_err()
+    assert answer(path: "build/selftest-package-answer.txt", package: "z").must() == "-I/inc -lz\n"
+    assert complaint("build/selftest-package-answer-none.txt") == ""
+    assert answer(path: "build/selftest-package-answer-none.txt", package: "z").is_err()

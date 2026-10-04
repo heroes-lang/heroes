@@ -177,7 +177,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         found = cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
 
         for item in found
-            source = read_file(item.source)
+            source = cases.shown(item.source)
             expectation = read_file(item.expected)
 
             if source.is_err() || expectation.is_err()
@@ -187,7 +187,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                     detail: "  cannot read the case or its expectation"
                 )
             else
-                claimed = sorted(claimed_by(source.must()))
+                claimed = sorted(claimed_by(source.must().text))
                 reported = sorted(reported_by(expectation.must()))
                 annotated @ annotated + reported.len()
 

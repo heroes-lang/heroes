@@ -34,6 +34,8 @@
 # callable across a module boundary, so these are the route every other
 # module takes.
 
+use not_text
+
 extern "hero_os.h"
     function hero_run_discard_path() -> str
     function hero_run_exe_suffix() -> str
@@ -54,15 +56,16 @@ extern "hero_os.h"
     function hero_dir_remove_tree(path: cstr lent) -> i64
     function hero_os_pid() -> i64
     function hero_run_serial() -> i64
+    # `lent`, as every name handed to it above: read while it runs, kept never.
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
 
 extern "stdlib.h"
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
     function hero_dir_at(index: i64) -> str
     function hero_dir_release()
-    # C11 says `keeps` in words wherever a function keeps and says nothing
-    # where it does not; `getenv`'s `name` is *the string to match*, and the
-    # ffi seat measured that it does not alias it (panel 171).
-    function getenv(name: cstr lent) -> cstr
 
 # What a finished program answered.
 #
@@ -184,35 +187,104 @@ function rename_over(from: str, to: str) -> ()?
         return fail(code: "rename_failed", msg: "could not move " + from + " to " + to + because())
     return ok()
 
-# One environment variable, or "" where it is unset OR unreadable.
-#
-# **This killed the compiler until 2026-08-24, and the null test
-# everybody looked at was not the reason**: `getenv` also answers a
-# pointer to whatever bytes the environment holds, and `to_str` aborts
-# on bytes that are not UTF-8. `HEROES_RUNTIME=$'\xff\xfe' heroes
-# doctor` was exit 134 (panel 089). `validated` subsumes both cases,
-# and "" is right for both because every call site asks only whether
-# the string is empty.
+# What a walk found under a directory: every file whose name is UTF-8, as a
+# path, and every file whose name is not, its bytes that are not UTF-8
+# written by their value, `only/caf<0xE9>.hero`, which no `str` can open but
+# a message can name (defect 239). The runtime's `hero_dir_at` panicked on
+# such a name, `probe` and `mutate` exit 134 on Linux, and on Windows exit 127
+# over `café.hero`, `FindFirstFileA` answering in the ANSI code page; the
+# caller now chooses, a `.hero` file it cannot open being one it cannot read.
+record Walked
+    files: [str]
+    unnamed: [str]
+
 # Every FILE under `dir`, recursively, relative paths joined with `/` on
 # every platform. The runtime holds the listing until it is read, and this
 # releases it on the way out — the leak gate panics at exit otherwise.
-function files_under(dir: str) -> [str]?
+function walk(dir: str) -> Walked?
     found = hero_dir_scan(root: dir.cstr(), want: 0, recursive: 1)
 
     if found < 0
         return fail(code: "cannot_walk", msg: "cannot read " + dir)
     out: [str] @ []
+    unnamed: [str] @ []
     at: i64 @ 0
 
     while at < found
-        out @ out.push(dir + "/" + hero_dir_at(index: at))
+        status: i64 @ 0
+        marks: i64 @ 0
+        name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
+
+        if status == HERO_OS_OK
+            out @ out.push(dir + "/" + name)
+        else
+            unnamed @ unnamed.push(dir + "/" + written_value(answer: name, marks: marks))
         at @ at + 1
 
     hero_dir_release()
-    return ok(out)
+    return ok(Walked(files: out, unnamed: unnamed))
 
-function env(name: str) -> str
-    return validated(c: getenv(name: name.cstr())).default("")
+# Every file under `dir`, or the failure naming the first whose name is not
+# UTF-8: for a caller that must open every file it is given.
+function files_under(dir: str) -> [str]?
+    walked = walk(dir)?
+
+    if walked.unnamed.len() > 0
+        return fail(code: "not_text", msg: unnamed_said(walked.unnamed[0]))
+    return ok(walked.files)
+
+# What a file whose name is not UTF-8 is told as, its bytes by their value.
+function unnamed_said(written: str) -> str
+    return "the name of `" + written + "` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
+
+# One environment variable: "" where it is unset, its value where that is
+# UTF-8, and a failure naming the variable where it is set and not UTF-8,
+# which the caller tells, at its place. The failure does not quote the
+# value: a variable may hold a secret (the key `measure --refresh` reads),
+# and a variable that names a place is quoted by its caller through
+# `env_written`.
+#
+# **This killed the compiler until 2026-08-24**: `getenv` answers a pointer
+# to whatever bytes the environment holds, and `to_str` aborts on bytes that
+# are not UTF-8, so `HEROES_RUNTIME=$'\xff\xfe' heroes doctor` was exit 134
+# (panel 089). **And then it read such a value as unset** (defect 243), ""
+# for both: a `HEROES_RUNTIME` naming a real runtime was answered *looked in:
+# the given hint* and told to set what was set, and with a `./runtime` beside
+# the program the build went on against that one, no word said. The runtime
+# reads the value as the shown read reads a file (`hero_env_shown`), so a
+# value that is not text is held, and named.
+function env(name: str) -> str?
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_FOUND
+        return ok("")
+
+    if status == HERO_OS_OK
+        return ok(got)
+    return fail(
+        code: "not_text",
+        msg: "`" + name + "` is set, and its value is not UTF-8, which a value this compiler reads must be"
+    )
+
+# A variable's value as a message may quote it, each byte that is not UTF-8
+# written by its value, `<0xE9>`; "" where it is unset. For a variable that
+# names a place, never for one that may hold a secret.
+function env_written(name: str) -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+    return written_value(answer: got, marks: marks)
+
+# The runtime's answer for a value, its marks before its shown text, as the
+# value with each byte that is not UTF-8 written by its value.
+function written_value(answer: str, marks: i64) -> str
+    shown = answer.slice(from: marks, to: answer.len())
+    return not_text.bytes_written(
+        shown,
+        faults: not_text.faults_of(marks: answer.slice(from: 0, to: marks), text: shown)
+    )
 
 # This process's own id, as the operating system numbers it: what makes a
 # file under `build/` one that no other `heroes` process in the same tree
@@ -306,5 +378,49 @@ test "the filesystem answers the shell utility's question, not C's"
     assert !landed.is_err()
     assert landed.must() == "NEW"
 
-test "an unset variable is empty"
-    assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""
+# Defect 239: a name that is not UTF-8 never panics the walk, and is named
+# by its bytes. Only C can make one, so a program of three lines does, with
+# the byte 0xE9 in `caf<E9>.hero`: Linux keeps the name, Windows' narrow
+# `fopen` makes `café.hero` and its `FindFirstFileA` answers 0xE9 again in
+# the ANSI code page, and APFS refuses a name that is not UTF-8, where this
+# test then asserts only that the walk is whole.
+test "a file whose name is not UTF-8 is named by its bytes, and the walk never panics (defect 239)"
+    dir = "build/selftest-walk-names"
+    assert !remove_tree(dir).is_err()
+    assert !mkdir_all(dir + "/only").is_err()
+    assert !write_file(path: dir + "/only/plain.hero", text: "function main()\n    print(1)\n").is_err()
+    maker = dir + "/maker" + exe_suffix()
+    source = "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"" + dir + "/only/caf\\xe9.hero\", \"wb\");\n    if (f == NULL) return 3;\n    fputs(\"x\", f);\n    return fclose(f) == 0 ? 0 : 4;\n}\n"
+    assert !write_file(path: dir + "/maker.c", text: source).is_err()
+    built = run(
+        program: "clang",
+        words: ["clang", dir + "/maker.c", "-o", maker],
+        out: discard(),
+        err: dir + "/maker-err.txt"
+    )
+    assert built.started && built.code == 0
+    made = run(program: maker, words: [maker], out: discard(), err: discard())
+    assert made.started
+    walked = walk(dir + "/only").must()
+    assert walked.files == [dir + "/only/plain.hero"]
+
+    if made.code == 0
+        assert walked.unnamed == [dir + "/only/caf<0xE9>.hero"]
+
+        match files_under(dir + "/only")
+            .ok _  => assert false
+            .err e => assert e.msg == "the name of `" + dir + "/only/caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
+    else
+        assert walked.unnamed.len() == 0
+
+test "an unset variable is empty, and a set one is its value"
+    assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS").must() == ""
+    assert env_written(name: "HEROES_NO_SUCH_VARIABLE_EXISTS") == ""
+    assert env(name: "PATH").must().len() > 0
+
+# Defect 243: a value that is not UTF-8 is held and named, never read as
+# unset. No test can set one, so how it is quoted is asked of the runtime's
+# answer for `/nowhere/rt` and the byte 0xE9, its marks first.
+test "a value that is not UTF-8 is quoted with each such byte written by its value"
+    assert written_value(answer: "E9/nowhere/rt�", marks: 2) == "/nowhere/rt<0xE9>"
+    assert written_value(answer: "/plain", marks: 0) == "/plain"

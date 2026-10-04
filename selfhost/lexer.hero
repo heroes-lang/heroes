@@ -31,6 +31,10 @@ use scan
 use escape
 use swap_words
 use indent_runs
+use not_text
+use file_start
+use refused_runs
+use head_names
 
 ## The output
 
@@ -85,13 +89,24 @@ function lex(s: source.Source) -> LexOutput
 # lines as its body, so a program of two modules each refused alone ran at
 # exit 0. The level and the open brackets already stopped at a file's end;
 # now the declarations do too.
+#
+# **A file that is not UTF-8 is told and never lexed** (panel 189): its text
+# is what the compiler can show of it, not what its author wrote, so it is an
+# empty file here holding `not_text.told`'s diagnostics alone.
 function lex_files(s: source.Source) -> [LexOutput]
     out: [LexOutput] @ []
     index: i64 @ 0
 
     for entry in s.files
         _ = entry
-        out @ out.push(moved(lex_one(source_extent.text_of(s, index)), offset: s.files[index].start))
+        told = not_text.told(s, index)
+
+        if told.len() > 0
+            unread: LexOutput @ moved(lex_one(""), offset: s.files[index].start)
+            unread.diagnostics @ told
+            out @ out.push(unread)
+        else
+            out @ out.push(moved(lex_one(source_extent.text_of(s, index)), offset: s.files[index].start))
         index @ index + 1
 
     return out
@@ -186,7 +201,34 @@ function lex_apart(text: str) -> LexOutput
 function lex_bodies(text: str) -> LexOutput
     return lexed(text, apart: true, bodies: true)
 
+# What a file's first bytes say comes first (`file_start.hero`): a UTF-8
+# byte-order mark is told once, at it, and the text after it read as the
+# file (defect 242), where the mark read as a character set the first line
+# one column deep and its first indented line was told a false
+# `unexpected_block`; and a text in UTF-16 with no mark is told once and not
+# read (defect 247), where each of its NULs was a message.
 function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
+    utf16 = file_start.utf16_told(text)
+
+    if utf16.len() > 0
+        unread: LexOutput @ lexed("", apart: apart, bodies: bodies)
+        unread.diagnostics @ utf16
+        return unread
+    mark = file_start.mark_length(text)
+
+    if mark > 0
+        after: LexOutput @ moved(
+            lexed(text.slice(from: mark, to: text.len()), apart: apart, bodies: bodies),
+            offset: mark
+        )
+        told: [diag.Diagnostic] @ [file_start.marked(mark)]
+
+        for d in after.diagnostics
+            told @ told.push(d)
+
+        after.diagnostics @ told
+        after.breaks @ file_start.behind(after.breaks, by: 1)
+        return after
     l: state.LexState @ state.new_state()
     l.apart @ apart
     l.bodies @ bodies
@@ -223,23 +265,33 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     # The joins of the lines left open, weighed now that every token of the
     # joined lines exists (defect 129).
     line_joins.weigh(@l, text)
+
+    # An escape inside a header's name left to the head that judges the
+    # name (defect 250, `head_names.told_by_heads`); a refused character told
+    # once a run, at most eight times a text (defect 282, `refused_runs`); a
+    # refused break moves with the diagnostic it names.
+    left = refused_runs.without(
+        l.diagnostics,
+        dropped: head_names.told_by_heads(l.diagnostics, tokens: l.tokens, text: text)
+    )
+    said = refused_runs.told_once(left.diagnostics, text: text)
     refused: [state.Break] @ []
 
-    for b in l.breaks
+    for b in refused_runs.renumbered(l.breaks, at: refused_runs.through(first: left.at, then: said.at))
         if b.diagnostic >= 0
             refused @ refused.push(b)
 
     if l.heads.len() == 0
         return LexOutput(
             tokens: l.tokens,
-            diagnostics: l.diagnostics,
+            diagnostics: said.diagnostics,
             breaks: refused,
             closes: l.closes,
             swaps: l.swaps
         )
     return LexOutput(
         tokens: without_heads(l.tokens, heads: l.heads),
-        diagnostics: l.diagnostics,
+        diagnostics: said.diagnostics,
         breaks: refused,
         closes: l.closes,
         swaps: l.swaps
@@ -278,6 +330,96 @@ function kind_line(tokens: [token.Token]) -> str
         names @ names.push(token.kind_name(t.kind))
 
     return names.join(" ")
+
+# Panel 189: a file that is not UTF-8 is told and never lexed, and the files
+# beside it are lexed as they always were.
+test "a file that is not text is told and not lexed; the files beside it are"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "use geom\n\nfunction main()\n    print(geom.two())\n")
+        source.user_file(name: "geom.hero", text: "# g�om\nfunction two() -> i64\n    return 2\n")
+    ]
+    s: source.Source @ source.from_files(inputs)
+    s.faults @ [source.Fault(at: s.files[1].start + 3, byte: 233)]
+    files = lex_files(s)
+    assert files[0].diagnostics.len() == 0
+    assert files[0].tokens.len() > 1
+    assert files[1].diagnostics.len() == 1
+    assert files[1].diagnostics[0].code == "not_text"
+    assert files[1].tokens.len() == 1
+
+# Defect 242: a byte-order mark opening a file, as PowerShell writes it,
+# told once at it, its fix certain, and the file read from after it: the
+# stream is the stream of the file without it, moved by the mark's width.
+test "a byte-order mark is told once, at it, and the file is read from after it"
+    bytes: [u8] = [239, 187, 191]
+    bom = bytes.validated_bytes().must()
+    plain = "function main()\n    print(1)\n"
+    marked = lex_one(bom + plain)
+    assert marked.diagnostics.len() == 1
+    assert marked.diagnostics[0].code == "unexpected_character"
+    assert marked.diagnostics[0].span.start == 0
+    assert marked.diagnostics[0].span.end == 3
+    assert marked.diagnostics[0].fixes[0].certainty == .certain
+    assert kind_line(marked.tokens) == kind_line(lex_one(plain).tokens)
+    assert marked.tokens[0].span.start == 3
+    twice = lex_one(bom + bom + plain)
+    assert twice.diagnostics.len() == 1
+    assert twice.diagnostics[0].span.end == 6
+    crlf = lex_one(bom + "function main()\r\n    print(1)\r\n")
+    assert crlf.diagnostics.len() == 1
+
+    # A refused break names its diagnostic by its place among the file's,
+    # which the mark's message moves by one (`parse/apart` reads it there).
+    broken = "y = a +\n1\nx = b\n+ c\nz = d +\nreturn 1\n"
+    plain_breaks = lex_one(broken)
+    marked_breaks = lex_one(bom + broken)
+    assert marked_breaks.breaks.len() == plain_breaks.breaks.len()
+
+    for k in range(from: 0, to: plain_breaks.breaks.len())
+        was = plain_breaks.diagnostics[plain_breaks.breaks[k].diagnostic]
+        now = marked_breaks.diagnostics[marked_breaks.breaks[k].diagnostic]
+        assert now.code == was.code
+        assert now.span.start == was.span.start + 3
+
+# Defect 282: a refused character told once a run and at most eight times a
+# text, the rest counted; a refused break after them still names its own
+# diagnostic, the join's, whose place their counting moved.
+test "refused characters are told once a run and eight times a text, and a break keeps its diagnostic"
+    bytes: [u8] = [1]
+    one = bytes.validated_bytes().must()
+    flood = lex_one(one.repeat(79) + "\n" + one.repeat(79) + "\n")
+    assert flood.diagnostics.len() == 2
+    assert flood.diagnostics[0].notes == ["the first of 79 in a row"]
+    spread = "$ $ $ $ $ $ $ $ $ $ $ $\ny = a +\n1\n"
+    out = lex_one(spread)
+    assert out.diagnostics.len() == 9
+    assert out.diagnostics[7].notes == ["4 more characters of this file are not part of the language's syntax either, not told one by one"]
+    assert out.breaks.len() == 1
+    the_join = out.diagnostics[out.breaks[0].diagnostic]
+    assert the_join.code != "unexpected_character"
+    assert the_join.span.start == lex_one("y = a +\n1\n").diagnostics[0].span.start + 24
+
+# Defect 250: an escape the language does not have inside a header's name
+# is the head's to tell (`escape_in_header_name`, at the parser), so the
+# lexer says nothing of it there; elsewhere it says what it always said.
+test "an escape inside a header's name is left to the head, and told everywhere else"
+    for text in ["extern \"a\\db.h\"\n    function seven() -> i32\n", "extern \"\\db.h\"\n    function seven() -> i32\n", "extern \"a\\u{41}.h\"\n    function seven() -> i32\n"]
+        assert lex_one(text).diagnostics.len() == 0
+
+    for text in ["extern \"ab.h\" link \"a\\db\"\n    function seven() -> i32\n", "function main()\n    print(\"a\\db\")\n"]
+        said = lex_one(text).diagnostics
+        assert said.len() == 1
+        assert said[0].code == "unknown_escape"
+
+# Defect 247: UTF-16 with no mark over ASCII, which is UTF-8, every other
+# byte NUL: one message, the file not read, where each NUL was one.
+test "a text in UTF-16 with no mark is told once and not read"
+    text = read_file("tests/golden/surface-fixtures/notext247/utf16le-ascii.txt").must()
+    out = lex_one(text)
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unexpected_character"
+    assert out.diagnostics[0].notes.len() == 2
+    assert kind_line(out.tokens) == "eof"
 
 test "a whole program lexes to the stream the parser expects"
     out = lex_one("function main()\n    x = 5\n")

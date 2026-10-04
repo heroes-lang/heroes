@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-227-a-character-cut-short.hero:6:13: error[not_text]: the bytes 0xE2 at 6:13 and 0x82 at 6:14 are not UTF-8, and a `.hero` file is UTF-8 text

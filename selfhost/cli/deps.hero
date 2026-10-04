@@ -79,7 +79,9 @@
 # a recompile. One line per dependency after it, `<digest> <path>`.
 
 use cli/digest
+use cli/files
 use cli/process
+use module/reading as file_reading
 
 # One file's content digest, computed at most once per build.
 #
@@ -91,17 +93,22 @@ use cli/process
 # A file that cannot be read answers `absent` rather than a digest, and
 # that is a valid answer rather than an error: a header that vanished
 # must invalidate the object. It cannot collide with a real digest,
-# which is always sixteen hex characters.
+# which is always sixteen characters.
 function digest_of(path: str, @memo: {str: str}) -> str
     known = memo[path]
 
     if !known.is_err()
         return known.must()
-    text = read_file(path)
+
+    # A header that is not UTF-8 is C all the same, and is keyed by its bytes
+    # rather than taken for absent, which rebuilt its unit at every build;
+    # its key is one no header of text can have (panel 189's R6,
+    # `module/reading.key_of`).
+    read = file_reading.key_of(path)
     answer: str @ "absent"
 
-    if !text.is_err()
-        answer @ digest.digest(text.must())
+    if !read.is_err()
+        answer @ read.must()
     memo[path] @ answer
     return answer
 
@@ -400,6 +407,37 @@ test "a record goes stale when what it recorded changes, and names its artifacts
     again: {str: str} @ {}
     second = digest.digest(rows_of(depfile: dir + "/listing.d", skip: dir + "/", @again).must())
     assert second != first
+
+# Panel 189's R6, the ffi-pragmatist's case 5 made to fire at the record a
+# compile is reused by: a header that is not UTF-8, recorded, then replaced by
+# a header of text spelling what the route keyed the first by, a line saying
+# so and the runtime's whole answer. The route's record still vouched, and the
+# stale object printed 4 at exit 0 where clang refuses the new header; the
+# record goes stale now whatever the new text spells, so the unit is compiled
+# again and clang judges it.
+test "a record over a header that is not UTF-8 goes stale when a header of text takes its place"
+    dir = "build/selftest-deps-not-text"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/key").is_err()
+    watched = dir + "/lib.h"
+
+    # A second name for the committed header holding 0xE9. Nothing is written
+    # through it: the name is replaced below, and the committed file stays.
+    assert !files.second_name(existing: "tests/golden/surface-fixtures/notext227/latin1.h", name: watched).is_err()
+    assert !write_file(path: dir + "/key/listing.d", text: "dep: " + watched + "\n").is_err()
+    writing: {str: str} @ {}
+    rows = rows_of(depfile: dir + "/key/listing.d", skip: dir + "/key/", @writing).must()
+    assert rows[0] == 'n'
+    assert !write_file(path: dir + "/key/deps.txt", text: pointer_text(rows)).is_err()
+    before: {str: str} @ {}
+    assert !vouched(dir + "/key/deps.txt", @before).is_err()
+    shown = file_reading.keyed(watched).must().text
+
+    for spelled in ["not UTF-8, 2 bytes of marks:\nE9" + shown, "E9" + shown, shown]
+        assert !write_file(path: dir + "/next.h", text: spelled).is_err()
+        assert !process.rename_over(from: dir + "/next.h", to: watched).is_err()
+        after: {str: str} @ {}
+        assert vouched(dir + "/key/deps.txt", @after).is_err()
 
 test "a prefix test on a path with an accent in it does not abort"
     for either in [false, true]

@@ -124,12 +124,30 @@ void hero_dir_release(void) {
 }
 
 /* The name at that index, as an owned `str`. Out of range is a panic, which is
- * what an out-of-range index does everywhere else in this language (§4.9). */
+ * what an out-of-range index does everywhere else in this language (§4.9).
+ * So is a name that is not UTF-8, which `hero_str_from_bytes` refuses: the
+ * compiler's own walk asks `hero_dir_at_shown` below instead (defect 239). */
 HeroStr hero_dir_at(int64_t index) {
     if (index < 0 || index >= hero_dir_count) {
         hero_panic("a directory listing was read out of range");
     }
     return hero_str_from_bytes(hero_dir_names[index], (int64_t)strlen(hero_dir_names[index]));
+}
+
+/* The name at that index as the shown read gives a file (defect 239):
+ * HERO_OS_OK and the name where it is UTF-8; HERO_OS_NOT_TEXT, the marks and
+ * the shown name where it is not, which a `str` can hold and a message can
+ * name, where `hero_dir_at` panicked, `probe` and `mutate` exit 134 over a
+ * folder holding `caf<E9>.hero` on Linux and exit 127 over one holding
+ * `café.hero` on Windows, whose `FindFirstFileA` answers in the ANSI code
+ * page. One converter, `hero_bytes_shown` (parts/os.c), for a file, a value
+ * and a name. Out of range is the panic `hero_dir_at` gives. */
+HeroStr hero_dir_at_shown(int64_t index, int64_t *status, int64_t *marks) {
+    if (index < 0 || index >= hero_dir_count) {
+        hero_panic("a directory listing was read out of range");
+    }
+    const char *name = hero_dir_names[index];
+    return hero_bytes_shown(name, (int64_t)strlen(name), status, marks);
 }
 
 /* Delete a path and everything under it. `rm -rf`: a path that is not there is

@@ -3,3 +3,5 @@
     **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 3); reproduced by the coordinator, 2026-10-04.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, the backslash; each message is true.
+
+    Repaired at `d21696f9`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

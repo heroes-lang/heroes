@@ -5,3 +5,5 @@
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message, *looked in: the given hint* for a hint never read, with a route telling the author to set what they set. The seat read it `adjacent` on Linux; the coordinator classes it by the list's *a false message*.
 
     **2026-10-04, panel 189's compiler-engineer and the coordinator**: the hint read as unset falls through to a `./runtime` beside the program when one is there, so the build succeeds against a runtime the author did not name, no word said (its Q6; run by the coordinator with a hint that is not UTF-8 and a copy of the runtime beside `p.hero`, exit 0, `<scratchpad>/filings-b8/probe/rt243/`). The fall-through itself, for any hint that names nothing, is defect 276.
+
+    Repaired at `ea5c22ca`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
