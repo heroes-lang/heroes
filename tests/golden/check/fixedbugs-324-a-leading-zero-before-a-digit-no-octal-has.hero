@@ -1,0 +1,14 @@
+# fixedbugs, defect 324, lane b10-cli, 2026-10-04.
+#
+# A zero before an `8` or a `9`: `leading_zero` advised the octal reading as
+# well, `0o9` for `09`, which is refused, `9` being no octal digit (C refuses
+# `09` as an octal constant too). The one reading such a number has is
+# decimal, and it is the one fix offered: `9`, `8_1`. The advice is
+# `selfhost/number.hero`'s test of defect 324; this brief form shows the
+# headline.
+
+function main()
+    a = 09     #~ leading_zero
+    b = 0_9    #~ leading_zero
+    c = 08_1   #~ leading_zero
+    print(a, b, c)

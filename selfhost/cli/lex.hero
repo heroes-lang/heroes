@@ -12,6 +12,7 @@ use token
 use source
 use lexer
 use diag
+use shown_char
 use cli/table as cli_table
 use cli/argv
 use cli/io
@@ -45,9 +46,11 @@ function json(tokens: [token.Token], s: source.Source) -> str
 
     rows: [str] @ ["[\n"]
     index: i64 @ 0
+    w: Walk @ started()
 
     for t in shown_tokens
-        found = source.locate(s, t.span.start)
+        w @ moved(s, w: w, offset: t.span.start)
+        found = placed(s, w: w)
         comma: str @ ","
 
         if index == shown_tokens.len() - 1
@@ -59,14 +62,24 @@ function json(tokens: [token.Token], s: source.Source) -> str
     rows @ rows.push("]\n")
     return rows.join("")
 
+# **The text dump is read on a terminal, so a token's control characters are
+# written by their code** (defect 290), each but a line end and a tab as a
+# diagnostic writes them, `<U+001B>` (`shown_char.visible`, defect 244): a
+# string literal may hold an ESC raw, and the dump handed it to the terminal
+# that shows the dump, where `[2J` cleared the screen. The JSON form is the
+# exact one, its escapes `json_text`'s. Asked of each token's text, the one
+# part of a row the file wrote, so the bytes asked are the file's and not the
+# dump's, four times as many (defect 256's measure).
 function text_dump(tokens: [token.Token], s: source.Source) -> str
     rows: [str] @ []
+    w: Walk @ started()
 
     for t in tokens
         if !source.is_root(s, t.span.start)
             continue
-        found = source.locate(s, t.span.start)
-        word = shown(t, s)
+        w @ moved(s, w: w, offset: t.span.start)
+        found = placed(s, w: w)
+        word = shown_char.visible(shown(t, s))
         at = found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind)
         row: str @ at + "\n"
 
@@ -75,6 +88,56 @@ function text_dump(tokens: [token.Token], s: source.Source) -> str
         rows @ rows.push(row)
 
     return rows.join("")
+
+# **Where each token stands, `source.locate`'s line and column, found in one
+# walk of the text** (defect 256). `locate` counts a column's characters from
+# the start of its line, so a dump asking it once per token walked each line
+# once per token on it: `lex --dump-tokens` over one line of 2,000 joined
+# strings retired 30.3 billion instructions against 99.5 million for `lex`
+# alone (this Mac, 2026-10-04; a count, not a duration). The walk goes
+# forward from the last token placed, a line at a time, and counts the
+# characters between two tokens once. A token before the last, which the
+# lexer never writes, is placed by `source.line_col` itself.
+record Walk
+    # The index in `line_starts` of the line holding `at`.
+    line: i64
+    # The offset of the last token placed, and its column.
+    at: i64
+    col: i64
+
+function started() -> Walk
+    return Walk(line: 0, at: 0, col: 1)
+
+function moved(s: source.Source, w: Walk, offset: i64) -> Walk
+    if offset < w.at
+        p = source.line_col(s, offset)
+        return Walk(line: p.line - 1, at: offset, col: p.col)
+    line: i64 @ w.line
+
+    while line + 1 < s.line_starts.len() && s.line_starts[line + 1] <= offset
+        line @ line + 1
+
+    if line != w.line
+        return Walk(line: line, at: offset, col: 1 + characters(s.text, from: s.line_starts[line], to: offset))
+    return Walk(line: line, at: offset, col: w.col + characters(s.text, from: w.at, to: offset))
+
+# The place `locate` gives a token of the root file, the one file a dump
+# shows, whose lines are its own from the first.
+function placed(s: source.Source, w: Walk) -> source.Location
+    return source.Location(file: s.files[0].name, line: w.line + 1 - s.files[0].lines_before, col: w.col)
+
+# How many characters begin in the bytes `from` to `to`: every byte but a
+# continuation byte, which is what `chars().len()` counts of a `str`.
+function characters(text: str, from: i64, to: i64) -> i64
+    count: i64 @ 0
+    at: i64 @ from
+
+    while at < to
+        if text[at] < 128 || text[at] >= 192
+            count @ count + 1
+        at @ at + 1
+
+    return count
 
 # Layout tokens carry no text, so printing their (empty) slice would
 # be noise.
@@ -102,6 +165,56 @@ test "the dump is root-only, layout tokens stay wordless, json escapes"
     j = json(out.tokens, s)
     assert has_text(text: j, needle: "{\"kind\": \"kw_constant\", \"text\": \"constant\", \"line\": 1, \"col\": 1},")
     assert json_text.json_string("a\"b\\c\nd\te") == "a\\\"b\\\\c\\nd\\te"
+
+# Defect 290's string, an ESC and a clear-screen, and the two kinds beside it
+# a terminal also acts on, DEL and C1's CSI: none reaches the text dump raw,
+# and the JSON dump escapes each, so neither hands a terminal a sequence.
+test "a token's control characters are written by their code in the text dump, and escaped in the JSON one (defect 290)"
+    esc = bytes_of([27])
+    del = bytes_of([127])
+    csi = bytes_of([194, 155])
+    text = "function main()\n    x = \"" + esc + "[2Jboom\"\n    print(x + \"" + del + csi + "31m\")\n"
+    s = source.new_source(name: "t.hero", text: text)
+    out = lexer.lex(s)
+    dumped = text_dump(out.tokens, s)
+    assert has_text(text: dumped, needle: "2:9 str \"<U+001B>[2Jboom\"\n")
+    assert has_text(text: dumped, needle: "\"<U+007F><U+009B>31m\"")
+    assert !shown_char.holds_control(dumped)
+    j = json(out.tokens, s)
+    assert has_text(text: j, needle: "\\u001b[2Jboom")
+    assert has_text(text: j, needle: "\\u007f\\u009b31m")
+    assert !shown_char.holds_control(j)
+
+# Defect 256: the walk places every token of the root where `source.locate`
+# does, over lines of several widths, characters of one to four bytes and a
+# tab, with the library after the root, and a token before the last as well.
+test "one walk places every token where locate does (defect 256)"
+    text = "function main()\n\ts = \"é€😀\" + \"x\"\n    print(s)  # ünïcode ✓\n\nconstant A: i64\n    1\n"
+    s = source.with_library(name: "t.hero", user: text, library: "constant HIDDEN: i64\n    9\n")
+    out = lexer.lex(s)
+    w: Walk @ started()
+    count: i64 @ 0
+
+    for t in out.tokens
+        if !source.is_root(s, t.span.start)
+            continue
+        w @ moved(s, w: w, offset: t.span.start)
+        got = placed(s, w: w)
+        want = source.locate(s, t.span.start)
+        assert got.file == want.file
+        assert got.line == want.line
+        assert got.col == want.col
+        count @ count + 1
+
+    assert count > 20
+    back = moved(s, w: w, offset: 2)
+    assert placed(s, w: back).line == 1
+    assert placed(s, w: back).col == source.locate(s, 2).col
+
+# A text from its UTF-8 bytes, since a string literal names no control
+# character by its code (spec § 2 Literals).
+function bytes_of(bytes: [u8]) -> str
+    return bytes.validated_bytes().must()
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

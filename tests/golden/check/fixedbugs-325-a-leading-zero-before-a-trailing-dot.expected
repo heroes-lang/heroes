@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-325-a-leading-zero-before-a-trailing-dot.hero:8:11: error[leading_zero]: `07` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-leading-zero-before-a-trailing-dot.hero:8:14: error[expected_field_name]: expected a field or function name after `.`, found `)`

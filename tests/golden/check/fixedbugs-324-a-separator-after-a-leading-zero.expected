@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:12:9: error[leading_zero]: `0_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:13:9: error[leading_zero]: `00_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:14:9: error[leading_zero]: `0_7_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:15:10: error[leading_zero]: `0_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:16:9: error[leading_zero]: `0_0` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:17:9: error[leading_zero]: `0_00_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-separator-after-a-leading-zero.hero:18:9: error[leading_zero]: `0_1_0` starts with a zero, and this language reads no meaning into that

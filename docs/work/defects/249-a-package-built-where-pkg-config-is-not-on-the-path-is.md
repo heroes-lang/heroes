@@ -3,3 +3,5 @@
     **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 2); reproduced by the coordinator, 2026-10-04.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than design.md §4.17 asks: no code, no place, no route.
+
+    Repaired at `c0b4de70`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The harness half this item names, `shell.machine_lacks_the_library` at `tests/harness/shell.hero:582`, was removed by defect 246's repair (`9de942c2`), and `tests/harness/absence.hero` reads the repaired message as it read the bare line.

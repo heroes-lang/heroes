@@ -1,0 +1,7 @@
+- [ ] **324 — `leading_zero`'s advice for a number whose zero is followed by `_`, `0_7`, offers `_7` and `0o_7`, and the compiler refuses both** | `x = 0_7`: `leading_zero`'s note says *Write `0o_7` for the octal value, or `_7` for the decimal one*, and its two `guess` fixes write the same; `_7` is a name, `unknown_name`, and `0o_7` is `misplaced_separator` (batch 9's round compiler at `38d6c6b1`, run by the coordinator 2026-10-04, `<scratchpad>/p324/`); the brief golden `check/leading-zero.hero` hides it, `check` without `--brief` shows it | `selfhost/number.hero:120` to `:135` (`stripped`, the number with its zero taken off and its separator left leading) · **class: blocking**
+
+    **Origin:** lane b10-harness, 2026-10-04, found beside 289 (the `full` form's first reading); reproduced by the coordinator; filed for lane b10-cli, no lane of batch 10 holding `number.hero`.
+
+    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message, advice that writes two programs the compiler refuses; both fixes are `guess`, so no `--apply` writes them.
+
+    Repaired at `f065c0af`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The harness lane's `full` form, `tests/golden/full/`, is not on this branch, so a case there is the merge's.

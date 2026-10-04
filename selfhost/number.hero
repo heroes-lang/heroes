@@ -16,6 +16,7 @@ use diag
 use state
 use digits
 use bytes
+use leading_zeros
 
 ## What a run of digits turned out to be
 
@@ -110,31 +111,31 @@ function number(@l: state.LexState, text: str)
     # A leading zero is NOT octal here, and the whole reason this diagnostic
     # exists is that it is octal almost everywhere else: `print(0700)` printed
     # `700` before the rule existed (panel 041 § D1). The reading is genuinely
-    # ambiguous, so NEITHER fix is certain — the note names both.
-    leading_zero = run.count > 1 && !run.faulted && text[start] == '0' && byte_at(text, l.pos) != '.'
+    # ambiguous, so NEITHER fix is certain — the note names both. What it says
+    # and offers is `leading_zeros.hero`'s, every fix a literal the compiler
+    # accepts (defect 324).
+    #
+    # **A fraction is the one thing after the digits that spares them** (defect
+    # 325): `07.5` means nothing octal anywhere, C included, and stays legal.
+    # The test was any `.`, so `0700.to_str()` passed as a call on the integer
+    # 700, at exit 0, the decimal reading this refusal exists for, and `07.`
+    # and `07..9` were told only of their dots. It is now the float's own test,
+    # a `.` and a digit, so the integers it refuses are every one a zero opens.
+    fraction_follows = byte_at(text, l.pos) == '.' && bytes.is_digit(byte_at(text, l.pos + 1))
+    leading_zero = run.count > 1 && !run.faulted && text[start] == '0' && !fraction_follows
 
     if leading_zero
-        span = token.Span(start: start, end: l.pos)
-        written = text.slice(from: start, to: l.pos)
-        stripped = strip_leading_zeros(written)
-        d: diag.Diagnostic @ diag.new_diagnostic(
-            code: "leading_zero",
-            message: "`" + written + "` starts with a zero, and this language reads no meaning into that",
-            span: span
+        follows: str @ ""
+
+        if l.pos < text.len()
+            follows @ bytes.char_at(text, l.pos)
+        state.error_token(
+            @l,
+            leading_zeros.told(written: text.slice(from: start, to: l.pos), span: token.Span(start: start, end: l.pos), follows: follows)
         )
-        d.notes @ d.notes.push(
-            "C, and every language that copied it, reads a leading zero as octal — so `" + written + "` is a number a reader will size wrong. Write `0o" + stripped + "` for the octal value, or `" + stripped + "` for the decimal one"
-        )
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "octal: `0o" + stripped + "`", replacement: "0o" + stripped, span: span, certainty: .guess)
-        )
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "decimal: `" + stripped + "`", replacement: stripped, span: span, certainty: .guess)
-        )
-        state.error_token(@l, d)
         return
 
-    if byte_at(text, l.pos) == '.' && bytes.is_digit(byte_at(text, l.pos + 1))
+    if fraction_follows
         l.pos @ l.pos + 1
         _ = digit_run(@l, text, .decimal)
         kind @ .float_lit
@@ -320,18 +321,6 @@ function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
 
     return run
 
-## Helpers
-
-function strip_leading_zeros(s: str) -> str
-    i: i64 @ 0
-
-    while i < s.len() && s[i] == '0'
-        i @ i + 1
-
-    if i >= s.len()
-        return "0"
-    return s.slice(from: i, to: s.len())
-
 test "one token for a float, and the dot stays for UFCS"
     l: state.LexState @ state.new_state()
     number(@l, "1.5")
@@ -435,6 +424,77 @@ test "a leading zero is never octal and both fixes are guesses"
     assert z.tokens[0].kind == .float_lit
     assert z.diagnostics.len() == 0
 
+# Defect 324: every fix applied where it stands is scanned again, and is one
+# literal the scanner accepts whole, with the value of the reading it names;
+# with a letter after the digits none is offered, and a separator that
+# doubles or trails faults first, as it always did.
+test "every fix of a leading zero is a literal the scanner accepts, with the value of its reading (defect 324)"
+    assert fixed_values("0_7") == [7, 7]
+    assert fixed_values("00_7") == [7, 7]
+    assert fixed_values("0_7_7") == [63, 77]
+    assert fixed_values("0_00_7") == [7, 7]
+    assert fixed_values("0_1_0") == [8, 10]
+    assert fixed_values("0_0") == [0, 0]
+    assert fixed_values("00_00") == [0, 0]
+    assert fixed_values("0700") == [448, 700]
+    assert fixed_values("07_7") == [63, 77]
+    assert fixed_values("09") == [9]
+    assert fixed_values("0_9") == [9]
+    assert fixed_values("08_1") == [81]
+    assert fixed_values("00x7") == [7]
+    assert fixed_values("0_0x7") == [7]
+    assert fixed_values("00b1") == [1]
+    assert fixed_values("00o7") == [7]
+
+    for joined in ["0644u", "07e3", "00X7", "0_7e3"]
+        l: state.LexState @ state.new_state()
+        number(@l, joined)
+        assert l.diagnostics[0].code == "leading_zero"
+        assert l.diagnostics[0].fixes.len() == 0
+
+    for faulted in ["0__7", "0_"]
+        f: state.LexState @ state.new_state()
+        number(@f, faulted)
+        assert f.diagnostics.len() == 1
+        assert f.diagnostics[0].code == "misplaced_separator"
+
+# Defect 325: what follows a leading-zero integer's digits spares it only where
+# it is a fraction. A call, a field, a dot alone and two dots do not, and each
+# fix is a literal the scanner reads whole before the call; a fraction, with a
+# call after it or not, and a lone zero with one, stay as they were.
+test "a leading zero is refused whatever follows its digits but a fraction (defect 325)"
+    for written in ["0700.to_str()", "0_7.to_str()", "00.to_str()", "0700.to_str().len()", "07.", "07..9", "0700.y"]
+        l: state.LexState @ state.new_state()
+        number(@l, written)
+        assert l.diagnostics.len() == 1
+        assert l.diagnostics[0].code == "leading_zero"
+        assert l.tokens[0].kind == .error
+
+    called: state.LexState @ state.new_state()
+    number(@called, "0700.to_str()")
+    assert called.diagnostics[0].fixes.len() == 2
+
+    for fix in called.diagnostics[0].fixes
+        m: state.LexState @ state.new_state()
+        number(@m, fix.replacement + ".to_str()")
+        assert m.diagnostics.len() == 0
+        assert m.tokens[0].kind == .int_lit
+        assert m.pos == fix.replacement.len()
+
+    assert digits.decode_int(called.diagnostics[0].fixes[0].replacement).must() == 448
+    assert digits.decode_int(called.diagnostics[0].fixes[1].replacement).must() == 700
+
+    for float_written in ["0.5", "00.5", "07.5", "0700.5", "0700.5.to_str()"]
+        f: state.LexState @ state.new_state()
+        number(@f, float_written)
+        assert f.diagnostics.len() == 0
+        assert f.tokens[0].kind == .float_lit
+
+    lone: state.LexState @ state.new_state()
+    number(@lone, "0.to_str()")
+    assert lone.diagnostics.len() == 0
+    assert lone.tokens[0].kind == .int_lit
+
 test "an exponent is refused where it is written"
     l: state.LexState @ state.new_state()
     number(@l, "1e300")
@@ -467,3 +527,23 @@ test "a based literal fails loudly, never by splitting"
     number(@t, "1_")
     assert t.tokens[0].kind == .error
     assert t.diagnostics[0].code == "misplaced_separator"
+
+# Each fix of `written`'s leading zero applied where it stands, the text
+# scanned again, and the value of the one literal it is; -1 where it is not one
+# literal the scanner accepts whole.
+function fixed_values(written: str) -> [i64]
+    l: state.LexState @ state.new_state()
+    number(@l, written)
+    out: [i64] @ []
+
+    for fix in l.diagnostics[0].fixes
+        text = fix.replacement + written.slice(from: l.diagnostics[0].span.end, to: written.len())
+        m: state.LexState @ state.new_state()
+        number(@m, text)
+
+        if m.diagnostics.len() > 0 || m.pos != text.len() || m.tokens.len() != 1 || m.tokens[0].kind != .int_lit
+            out @ out.push(-1)
+        else
+            out @ out.push(digits.decode_int(text).must())
+
+    return out

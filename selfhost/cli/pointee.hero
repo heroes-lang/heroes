@@ -201,7 +201,10 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     check_err = publish.private_name(dir + "/check-stderr.txt")
     check_line: [str] @ strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
     check_line @ check_line.push(check_c)
-    checked = toolchain.run_clang(
+
+    # The question is the check's, and a header's warning in what clang says
+    # is the program's own compile's to tell (defect 248).
+    checked = toolchain.asked_of_clang(
         line: check_line,
         what: "checking what the extern out-parameters point at",
         err_path: check_err
@@ -210,7 +213,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     said: str @ "ok\n"
 
     if checked.is_err()
-        said @ failure_text(checked)
+        said @ failure_note(checked)
 
     # The record last, after the two files it names by its digest: a
     # reader that finds it finds the answer and the verdict of the headers
