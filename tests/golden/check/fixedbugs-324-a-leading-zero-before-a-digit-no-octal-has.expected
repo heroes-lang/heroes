@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-324-a-leading-zero-before-a-digit-no-octal-has.hero:11:9: error[leading_zero]: `09` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-leading-zero-before-a-digit-no-octal-has.hero:12:9: error[leading_zero]: `0_9` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-324-a-leading-zero-before-a-digit-no-octal-has.hero:13:9: error[leading_zero]: `08_1` starts with a zero, and this language reads no meaning into that

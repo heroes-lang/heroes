@@ -1,0 +1,134 @@
+# What `leading_zero` tells of a decimal literal a zero opens, and the advice
+# it gives (design.md §4.3, §4.17; panel 041 § D1; defect 324). Its own
+# module, out of `number.hero`, which scans the literal and stood at its
+# ceiling: that file finds the mistake, this one words it and the programs it
+# offers.
+#
+# **Every piece of advice is a literal the compiler accepts, with the value of
+# the reading it names** (defect 324). The advice was the digits with their
+# zeros taken off, so `0_7` kept the separator the zero had stood before, and
+# both readings it offered, `0o_7` and `_7`, were refused, a separator out of
+# place and a name. Now:
+# - the zeros go, and the separators among them (`significant`);
+# - the octal reading is offered only where every digit is octal: `09` has
+#   none, C itself refusing it as an octal constant, so its one reading is
+#   decimal;
+# - zeros before a base's marker, `00x7`, are the prefix's one zero written
+#   more than once, and one zero is the advice;
+# - any other letter after the digits would run into a fix's replacement,
+#   `0644u` becoming `0o644u`, so no fix is offered there and a note says why.
+#
+# Neither reading is `certain`, as before: the compiler does not know which
+# the author meant (`tests/golden/check/leading-zero.hero` says why).
+
+use token
+use diag
+use digits
+use bytes
+
+# `written` is the digits a zero opens, `span` where they stand, and
+# `follows` the character after them, "" at the end of the text.
+function told(written: str, span: token.Span, follows: str) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "leading_zero",
+        message: "`" + written + "` starts with a zero, and this language reads no meaning into that",
+        span: span
+    )
+    value = significant(written)
+
+    if value == "0" && follows.len() > 0 && !digits.from_marker(follows[0]).is_err()
+        d.notes @ d.notes.push(
+            "`" + written + "` stands before `" + follows + "`, the marker of a base, whose literal opens with one zero: `0" + follows + "` and its digits"
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "one zero before `" + follows + "`: `0`", replacement: "0", span: span, certainty: .guess)
+        )
+        return d
+    stray = not_octal(value)
+    readings: str @ "Write `0o" + value + "` for the octal value, or `" + value + "` for the decimal one"
+
+    if stray.len() > 0
+        readings @ "It has no octal reading, `" + stray + "` being no octal digit, so write `" + value + "` for the decimal value"
+    d.notes @ d.notes.push(
+        "C, and every language that copied it, reads a leading zero as octal — so `" + written + "` is a number a reader will size wrong. " + readings
+    )
+
+    if joins(follows)
+        d.notes @ d.notes.push(
+            "`" + follows + "` follows the digits, and a fix would run into it, so none is offered: write the number as one of those, and what follows it apart"
+        )
+        return d
+
+    if stray.len() == 0
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "octal: `0o" + value + "`", replacement: "0o" + value, span: span, certainty: .guess)
+        )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "decimal: `" + value + "`", replacement: value, span: span, certainty: .guess)
+    )
+    return d
+
+# The digits with the zeros that open them taken off, and the separators among
+# those zeros: what stands after the prefix in either reading. "0" where
+# nothing but zeros was written. `written` is a run the scanner accepted, so a
+# separator stands between two digits, and what is left opens with a digit.
+function significant(written: str) -> str
+    at: i64 @ 0
+
+    while at < written.len() && (written[at] == '0' || written[at] == '_')
+        at @ at + 1
+
+    if at >= written.len()
+        return "0"
+    return written.slice(from: at, to: written.len())
+
+# The first of `value`'s digits that is no octal digit, `8` or `9`, or "".
+function not_octal(value: str) -> str
+    at: i64 @ 0
+
+    while at < value.len()
+        if value[at] == '8' || value[at] == '9'
+            return value.slice(from: at, to: at + 1)
+        at @ at + 1
+
+    return ""
+
+# Whether a replacement would run into `follows`: a letter, a digit, a
+# separator or a character beyond ASCII would be read on with it.
+function joins(follows: str) -> bool
+    if follows.len() == 0
+        return false
+    return bytes.is_alnum(follows[0]) || follows[0] == '_' || follows[0] >= 128
+
+## Tests
+
+# Defect 324: each fix, scanned again as a literal of its own by `digits`, has
+# the value of the reading it names; the zeros and the separators among them
+# go together.
+test "the advice is the digits without their zeros and the separators among them"
+    assert significant("0_7") == "7"
+    assert significant("00_7") == "7"
+    assert significant("0_7_7") == "7_7"
+    assert significant("0_00_7") == "7"
+    assert significant("0_1_0") == "1_0"
+    assert significant("0700") == "700"
+    assert significant("00_00") == "0"
+    assert significant("0_0") == "0"
+    assert not_octal("7_7") == ""
+    assert not_octal("8_1") == "8"
+    assert not_octal("19") == "9"
+    told_77 = told(written: "0_7_7", span: token.Span(start: 0, end: 5), follows: "")
+    assert told_77.fixes.len() == 2
+    assert told_77.fixes[0].replacement == "0o7_7"
+    assert digits.decode_u64(told_77.fixes[0].replacement).must() == 63
+    assert told_77.fixes[1].replacement == "7_7"
+    assert digits.decode_u64(told_77.fixes[1].replacement).must() == 77
+    nine = told(written: "0_9", span: token.Span(start: 0, end: 3), follows: ")")
+    assert nine.fixes.len() == 1
+    assert nine.fixes[0].replacement == "9"
+    prefixed = told(written: "00", span: token.Span(start: 0, end: 2), follows: "x")
+    assert prefixed.fixes.len() == 1
+    assert prefixed.fixes[0].replacement == "0"
+    suffixed = told(written: "0644", span: token.Span(start: 0, end: 4), follows: "u")
+    assert suffixed.fixes.len() == 0
+    assert suffixed.notes.len() == 2

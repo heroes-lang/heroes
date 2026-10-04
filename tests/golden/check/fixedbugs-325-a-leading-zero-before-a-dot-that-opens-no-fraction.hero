@@ -1,0 +1,9 @@
+# fixedbugs, defect 325, lane b10-cli, 2026-10-04.
+#
+# A dot after a leading-zero integer that opens no fraction, `07.` and the
+# range other languages write `07..9`: each was told of its dot alone,
+# `expected_field_name`, the zero passing as the decimal 7. The zero is told
+# now, and the dot as before.
+
+function main()
+    print(07..9)    #~ leading_zero expected_field_name

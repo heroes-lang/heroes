@@ -264,19 +264,24 @@ function judged(a: Asking, sum: str, text: str) -> ()?
     line: [str] @ ["clang", "-fsyntax-only", "-ferror-limit=0"]
     line @ searched(a, line: line)
     line @ line.push(check_c)
-    checked = toolchain.run_clang(
+
+    # A header's warning in what clang says is the program's own compile's to
+    # tell, as the pointee check's is (defect 248).
+    checked = toolchain.asked_of_clang(
         line: line,
         what: "checking the header's layout of the group records",
         err_path: err_path
     )
     publish.discard(err_path)
-
-    if checked.is_err() && code_of(checked) != "clang"
-        return checked
     said: str @ "ok\n"
 
-    if checked.is_err()
-        said @ pointee.failure_text(checked)
+    match checked
+        .ok _ => said @ "ok\n"
+        .err e =>
+            if e.code != "clang"
+                return fail(code: e.code, msg: e.msg)
+            said @ e.msg
+
     publish.write_whole(path: verdict, text: said, keyed: true)?
 
     if checked.is_err()
@@ -285,11 +290,6 @@ function judged(a: Asking, sum: str, text: str) -> ()?
 
 function searched(a: Asking, line: [str]) -> [str]
     return strings.with_all(list: line, more: a.words)
-
-function code_of(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.code
 
 ## Tests
 

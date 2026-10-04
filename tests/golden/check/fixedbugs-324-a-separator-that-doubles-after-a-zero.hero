@@ -1,0 +1,10 @@
+# fixedbugs, defect 324, lane b10-cli, 2026-10-04.
+#
+# Beside the shapes `leading_zero` advises: a separator that doubles or trails
+# after the zero is the separator's mistake, told first and alone, so no
+# leading zero's advice is given for `0__7` or `0_`, as before the repair.
+
+function main()
+    a = 0__7    #~ misplaced_separator
+    b = 0_      #~ misplaced_separator
+    print(a, b)

@@ -4,4 +4,6 @@
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): 244's reason, what a terminal shows is no longer what the compiler wrote; the lane left the class to the coordinator, a dump being an artifact as well as a message.
 
+    Repaired at `28cef56d`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
     Repaired at `2ef4d589`, 2026-10-04, lane b10-ir, its `build --dump-ir` half (`selfhost/ir/print.hero`, the same cause: the string table and a test's title written raw), gated by its case and the compiler's own tests; lane b10-cli's line names the dumps' half; the net is owed at the batch's close.

@@ -310,15 +310,13 @@ function resolve_packages(packages: [str], build_dir: str) -> [str]?
         # option: until panel 188 `package "--atleast-pkgconfig-version=0"`
         # was answered with nothing at exit 0 and the group accepted.
         if !ran.started
-            return fail(
-                code: "no_pkg_config",
-                msg: "pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is"
-            )
+            return fail(code: "no_pkg_config", msg: package_answer.unasked(package: package, why: ran.why))
 
+        # Installed or not is asked of `pkg-config`, never assumed (defect 292).
         if ran.code != 0
             return fail(
                 code: "failed",
-                msg: "heroes-ffi-package `" + package + "` is not installed on this machine\n  pkg-config said: " + shell_split.shown(strings.trimmed(complained), keep_lines: true) + "\n  install its development files, or name the library directly with `link`"
+                msg: package_answer.refused(package: package, complained: complained, build_dir: build_dir)
             )
         filtered = filter_words(package: package, said: answered?)
 
@@ -516,6 +514,59 @@ test "the C runtime's own libraries are folded in where the machine folds them"
     assert !in_the_c_runtime(library: "curl")
     assert !in_the_c_runtime(library: "pthread")
     assert !in_the_c_runtime(library: "")
+
+# Defect 292, asked of this machine's own `pkg-config`: a `.pc` written here,
+# named by its path, which `pkg-config` reads as that file, its `Requires:`
+# naming a package no machine has, is installed and refused; a path holding no
+# `.pc` is not installed. Every `pkg-config` measured reads such a file by one
+# of `package_answer.installed`'s two spellings (pkgconf 3.0.7 and 1.8.1 and
+# pkg-config 0.29.2, 2026-10-04), so this fires where one no longer does.
+test "a package pkg-config reads and refuses is told installed, and one it cannot find not installed (defect 292)"
+    dir = "build/selftest-package-292"
+    assert !process.mkdir_all(dir).is_err()
+    pc = dir + "/r292.pc"
+    assert !write_file(path: pc, text: "Name: r292\nDescription: requires a package no machine has\nVersion: 1\nRequires: heroes-package-no-machine-has-292\nCflags: -I/nowhere\nLibs:\n").is_err()
+    tool = process.run(
+        program: "pkg-config",
+        words: ["pkg-config", "--version"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    # Where none starts, as on the Windows box, the package is defect 249's,
+    # told by the reason the machine gave (defect 323).
+    if !tool.started
+        match resolve_packages(packages: [pc], build_dir: dir)
+            .ok => assert false
+            .err e =>
+                assert e.code == "no_pkg_config"
+                assert e.msg == package_answer.unasked(package: pc, why: tool.why)
+
+    if tool.started
+        match resolve_packages(packages: [pc], build_dir: dir)
+            .ok => assert false
+            .err e =>
+                assert strings.starts_with(
+                    text: e.msg,
+                    prefix: "heroes-ffi-package `" + pc + "` is installed, and pkg-config cannot give its flags\n  pkg-config said: "
+                )
+                assert has_text(text: e.msg, needle: "heroes-package-no-machine-has-292")
+                assert strings.ends_with(
+                    text: e.msg,
+                    suffix: "\n  install what pkg-config says it lacks, or name the library directly with `link`"
+                )
+
+        match resolve_packages(packages: [dir + "/absent292.pc"], build_dir: dir)
+            .ok => assert false
+            .err e =>
+                assert strings.starts_with(
+                    text: e.msg,
+                    prefix: "heroes-ffi-package `" + dir + "/absent292.pc` is not installed on this machine\n  pkg-config said: "
+                )
+                assert strings.ends_with(
+                    text: e.msg,
+                    suffix: "\n  install its development files, or name the library directly with `link`"
+                )
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

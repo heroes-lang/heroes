@@ -33,13 +33,21 @@ function escaped_byte(byte: u8) -> str
     if byte == 12
         return "\\f"
 
-    if byte < 32
+    if byte < 32 || byte == 127
         # `.must()` where it cannot fail, and the language is right to ask:
         # `to_i64` answers a `T?` because a conversion may not fit, and a
         # `u8` fitting an `i64` is the one case where that is impossible.
-        wide = to_i64(byte).must()
-        return "\\u00" + nibble(wide / 16) + nibble(wide % 16)
+        return code_escaped(to_i64(byte).must())
     return ""
+
+# `\u00XX`, the only form JSON has for a control character.
+function code_escaped(code: i64) -> str
+    return "\\u00" + nibble(code / 16) + nibble(code % 16)
+
+# Whether a C1 control character, U+0080 to U+009F, begins at `at`: in UTF-8
+# the bytes 0xC2 and 0x80 to 0x9F, whose second byte is the code.
+function c1_at(text: str, at: i64) -> bool
+    return text[at] == 194 && at + 1 < text.len() && text[at + 1] >= 128 && text[at + 1] < 160
 
 # One hex digit. Written here rather than reached for, because the only
 # candidate — `digest.hex8` — answers eight of them and slicing two off the
@@ -57,20 +65,32 @@ function nibble(value: i64) -> str
 # does not. The spec is ASCII-only syntax but its prose is not: it carries
 # em dashes and section signs, and a version of this that escaped them by
 # hand would have counted a different document than the one on disk.
+#
+# **But for DEL and C1's controls, U+0080 to U+009F** (defect 290): JSON
+# allows both raw, and a terminal acts on them as it acts on an ESC, so `lex
+# --dump-tokens --json` over a string holding C1's CSI handed it one. Each is
+# written `\u00XX`, which decodes to the same character, so what a reader of
+# the JSON receives is unchanged. A C1 character is two bytes, 0xC2 and its
+# code, so the walk asks the pair and cuts before 0xC2, a lead byte.
 function json_string(text: str) -> str
     parts: [str] @ []
     at: i64 @ 0
     plain: i64 @ 0
 
     while at < text.len()
-        one = escaped_byte(text[at])
+        one: str @ escaped_byte(text[at])
+        width: i64 @ 1
+
+        if one.len() == 0 && c1_at(text, at: at)
+            one @ code_escaped(to_i64(text[at + 1]).must())
+            width @ 2
 
         if one.len() > 0
             run = text.slice(from: plain, to: at)
             parts @ parts.push(run)
             parts @ parts.push(one)
-            plain @ at + 1
-        at @ at + 1
+            plain @ at + width
+        at @ at + width
 
     if plain == 0
         return text
@@ -97,3 +117,16 @@ test "a run of plain text is copied once rather than byte by byte"
 
 test "bytes above ASCII pass through, because the transport is UTF-8"
     assert json_string("an em dash — and a section §1.6") == "an em dash — and a section §1.6"
+
+# Defect 290: the two kinds JSON allows raw and a terminal acts on, each
+# escaped wherever it stands, and the characters beside C1's in UTF-8, a
+# no-break space (0xC2 0xA0) and `é` (0xC3 0xA9), left as they are.
+test "DEL and C1's controls are escaped, and the characters beside them are not (defect 290)"
+    del: [u8] = [127]
+    csi: [u8] = [194, 155]
+    first: [u8] = [194, 128]
+    nbsp: [u8] = [194, 160]
+    assert json_string("a" + del.validated_bytes().must() + "b") == "a\\u007fb"
+    assert json_string(csi.validated_bytes().must() + "31m") == "\\u009b31m"
+    assert json_string("x" + first.validated_bytes().must()) == "x\\u0080"
+    assert json_string("café" + nbsp.validated_bytes().must()) == "café" + nbsp.validated_bytes().must()

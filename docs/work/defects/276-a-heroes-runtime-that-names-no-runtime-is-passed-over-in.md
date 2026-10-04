@@ -5,3 +5,5 @@
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a silence where a word is owed, the build otherwise as the ruled search order allows; whether a set hint that fails ends the search is a ruling, and the decoy it lets in is what panel 020's ABI stamp and the runtime's cache key were written against.
 
     **2026-10-04, lane b9-notext, defect 277's repair**: the places a set hint that names nothing falls through to are now `./runtime` and then every directory above the compiler's executable, so the silence this item names now reaches further (its report, *For you to decide*).
+
+    Repaired at `700047fe`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Decided as the batch's brief asked, on defect 243's precedent: a set hint is the one place looked in, and one naming no runtime is exit 2 saying what is missing there.

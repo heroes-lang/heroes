@@ -5,9 +5,12 @@
 # installed compiler found no runtime without the variable while its own
 # help said *beside the compiler*; and the message naming the places looked
 # in. Its own module, out of `toolchain.hero`, for the ceiling and along a
-# seam: where things are, against what is built from them.
+# seam: where things are, against what is built from them. And what is
+# missing at a place, which is what a `HEROES_RUNTIME` naming no runtime is
+# told (defect 276).
 
 use cli/process
+use module/reading
 
 # `runtime/parts/fs.c` is the C, and names each platform's call.
 extern "hero_os.h"
@@ -54,13 +57,34 @@ function ancestors(path: str, either: bool) -> [str]
 
     return out
 
-# The places named, as they were looked in, and the way to name another.
-function not_found(hint: str, beside: Beside) -> str
-    places: [str] @ []
+# What is missing of a runtime at `dir`, one reason a file, or none where
+# both of its files read. Present is what is asked, and a C source that is
+# not UTF-8 is present (panel 189): `reading.source_text` reads one.
+function missing_at(dir: str) -> [str]
+    out: [str] @ []
 
-    if hint.len() > 0
-        places @ places.push("`" + hint + "` (HEROES_RUNTIME)")
-    places @ places.push("./runtime")
+    for name in ["heroes_runtime.h", "runtime.c"]
+        path = dir + "/" + name
+
+        match reading.source_text(path)
+            .ok _ => continue
+            .err e =>
+                if e.code == "file_not_found"
+                    out @ out.push("no file at `" + path + "`")
+                else
+                    out @ out.push("`" + path + "` cannot be read")
+
+    return out
+
+# The refusal of a `HEROES_RUNTIME` naming no runtime, `missing` what is not
+# there (defect 276), in the words defect 243 refuses one that is not UTF-8.
+function unheld(hint: str, missing: [str]) -> str
+    return "`HEROES_RUNTIME` is set to `" + hint + "`, and no Heroes runtime is there: " + missing.join("; ") + "\n  set HEROES_RUNTIME to the directory holding heroes_runtime.h and runtime.c, or unset it to look in ./runtime and beside the compiler"
+
+# The places named, as they were looked in, and the way to name another:
+# where no `HEROES_RUNTIME` is set, since one that is set is the only place.
+function not_found(beside: Beside) -> str
+    places: [str] @ ["./runtime"]
 
     if beside.above.len() > 0
         places @ places.push("runtime/ in `" + beside.above[0] + "` and every directory above it")
@@ -81,11 +105,20 @@ test "the runtime is looked for under every directory above the compiler, neares
     assert here.why == ""
     assert here.above.len() > 0
     assert process.is_directory(path: here.above[0])
-    told = not_found(hint: "", beside: Beside(above: ["/opt/heroes/bin", "/opt/heroes"], why: ""))
+    told = not_found(Beside(above: ["/opt/heroes/bin", "/opt/heroes"], why: ""))
     assert told == "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: ./runtime, runtime/ in `/opt/heroes/bin` and every directory above it\n  set HEROES_RUNTIME=<dir> to say where it is"
     none: [str] = []
-    hinted = not_found(
-        hint: "/nowhere",
-        beside: Beside(above: none, why: "this machine did not say where the compiler is")
-    )
-    assert hinted == "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: `/nowhere` (HEROES_RUNTIME), ./runtime, nothing beside the compiler, since this machine did not say where the compiler is\n  set HEROES_RUNTIME=<dir> to say where it is"
+    unsaid = not_found(Beside(above: none, why: "this machine did not say where the compiler is"))
+    assert unsaid == "cannot find the Heroes runtime (heroes_runtime.h and runtime.c).\n  looked in: ./runtime, nothing beside the compiler, since this machine did not say where the compiler is\n  set HEROES_RUNTIME=<dir> to say where it is"
+
+# Defect 276: what is missing of a runtime, file by file, where nothing is,
+# where a file stands in the directory's place, and where one of the two is.
+test "what a place lacks of a runtime is said file by file"
+    dir = "build/selftest-runtime-places-276"
+    assert !process.mkdir_all(dir).is_err()
+    assert missing_at("runtime").len() == 0
+    assert missing_at(dir + "/nowhere") == ["no file at `" + dir + "/nowhere/heroes_runtime.h`", "no file at `" + dir + "/nowhere/runtime.c`"]
+    assert missing_at("runtime/runtime.c") == ["no file at `runtime/runtime.c/heroes_runtime.h`", "no file at `runtime/runtime.c/runtime.c`"]
+    assert !write_file(path: dir + "/heroes_runtime.h", text: "/* a header and no runtime.c */\n").is_err()
+    assert missing_at(dir) == ["no file at `" + dir + "/runtime.c`"]
+    assert unheld(hint: dir, missing: missing_at(dir)) == "`HEROES_RUNTIME` is set to `" + dir + "`, and no Heroes runtime is there: no file at `" + dir + "/runtime.c`\n  set HEROES_RUNTIME to the directory holding heroes_runtime.h and runtime.c, or unset it to look in ./runtime and beside the compiler"

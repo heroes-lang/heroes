@@ -268,6 +268,15 @@ function env(name: str) -> str?
         msg: "`" + name + "` is set, and its value is not UTF-8, which a value this compiler reads must be"
     )
 
+# Whether `name` is set at all, empty included, which `env` answers as unset:
+# a `PKG_CONFIG_LIBDIR` set empty leaves `pkg-config` no default directory
+# (defect 292, `cli/package_answer.hero`).
+function is_set(name: str) -> bool
+    status: i64 @ 0
+    marks: i64 @ 0
+    _ = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+    return status != HERO_OS_NOT_FOUND
+
 # A variable's value as a message may quote it, each byte that is not UTF-8
 # written by its value, `<0xE9>`; "" where it is unset. For a variable that
 # names a place, never for one that may hold a secret.

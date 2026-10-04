@@ -33,7 +33,7 @@ function run_parse(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
         return .diagnostics_exit
 
     if argv.has(inv, spelling: "--dump-ast")
-        io.print_artifact(text: dump.dump_ast(out.tree, s, out.uses, out.decls))
+        io.print_artifact(text: dump.shown_ast(out.tree, s, out.uses, out.decls))
     return .ok_exit
 
 # heroes fmt <file.hero> [--in-place]: stdout by default like gofmt;
