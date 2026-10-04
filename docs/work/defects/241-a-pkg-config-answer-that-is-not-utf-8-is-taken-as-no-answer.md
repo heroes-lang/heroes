@@ -3,3 +3,5 @@
     **Origin:** batch 8's FFI lane beside 237, 2026-10-04 (its report's addendum), handed to panel 189 as a shape of its Q6; reproduced by the coordinator on the round's compiler the same night.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a wrong build accepted at exit 0: the flags a package names dropped in silence.
+
+    Repaired at `4de7cc2a`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
