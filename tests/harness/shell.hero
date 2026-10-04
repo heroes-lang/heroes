@@ -907,8 +907,25 @@ function some_compiler() -> str?
             msg: "HEROES_COMPILER is set to `" + env_written(name: "HEROES_COMPILER") + "`, which is not UTF-8, and this harness runs a compiler by a path it can hold: set it in UTF-8, or name the compiler, -- <compiler>"
         )
 
-    if named.must().len() > 0 && exists(named.must())
-        return ok(named.must())
+    # **And one that names nothing is a refusal too** (defect 316,
+    # 2026-10-04). It was passed over in silence for the first candidate, so a
+    # value with a slip in it, or one naming a compiler since moved, had the
+    # net judge `./heroes` without a word. The value is asked as the machine
+    # spells a program, its suffix added where it has one, as the candidates
+    # below are. An empty value is no value, as the compiler's own `env` reads
+    # an empty `HEROES_RUNTIME` (`selfhost/cli/process.hero`).
+    hint = named.must()
+
+    if hint.len() > 0
+        if exists(hint)
+            return ok(hint)
+
+        if exists(hint + exe_suffix())
+            return ok(hint + exe_suffix())
+        return fail(
+            code: "absent",
+            msg: "HEROES_COMPILER is set to `" + hint + "`, and no file is there, so it names no compiler: set it to one, unset it, or name the compiler, -- <compiler>"
+        )
 
     for path in CANDIDATES
         if exists(path)
@@ -1238,21 +1255,8 @@ test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named,
     if !can_run_scripts()
         return
     scratch = own_scratch()
-    dir = scratch + "/env-values"
-    assert !remove_tree(dir).is_err()
-    assert !mkdir_all(dir).is_err()
-
-    for name in ["absence", "mark_readers", "shell", "strings"]
-        text = read_file("tests/harness/" + name + ".hero")
-        assert !text.is_err()
-        assert !write_file(path: dir + "/" + name + ".hero", text: text.must()).is_err()
-
-    assert !write_file(path: dir + "/main.hero", text: ENV_PROBE).is_err()
     compiler = some_compiler().must()
-    probe = dir + "/probe" + exe_suffix()
-    built = run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/main.hero", "-o", probe])
-    assert !built.is_err()
-    assert built.must().code == 0
+    probe = env_probe(scratch).must()
     bad = run(
         scratch: scratch,
         program: "/bin/sh",
@@ -1289,10 +1293,58 @@ test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named,
     assert !unset.is_err()
     assert strings.contains(text: unset.must().out, needle: "compiler ok ")
     assert strings.contains(text: unset.must().out, needle: "runtime ok \n")
-    assert !remove_tree(dir).is_err()
     assert !remove_tree(scratch).is_err()
 
-# The program the test above builds over the harness's own modules.
+# DEFECT 316, held as a test (2026-10-04): a `HEROES_COMPILER` that is UTF-8
+# and names nothing is a refusal naming it, where it was passed over in
+# silence for `./heroes` and the net judged a compiler nobody named; a value
+# with a stray space names nothing too. An empty value is no value, and the
+# candidates are asked.
+test "fixedbugs: a HEROES_COMPILER that names nothing is refused, never passed over (defect 316)"
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    probe = env_probe(scratch).must()
+
+    for value in ["/nonexistent/heroes", " ./heroes"]
+        told = run(
+            scratch: scratch,
+            program: "/bin/sh",
+            words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$1\" exec \"$0\"", probe, value]
+        )
+        assert !told.is_err()
+        assert strings.contains(
+            text: told.must().out,
+            needle: "compiler absent: HEROES_COMPILER is set to `" + value + "`, and no file is there, so it names no compiler"
+        )
+
+    empty = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "HEROES_COMPILER= exec \"$0\"", probe])
+    assert !empty.is_err()
+    assert strings.contains(text: empty.must().out, needle: "compiler ok ")
+    assert !remove_tree(scratch).is_err()
+
+# `ENV_PROBE` built over the harness's own modules, byte for byte, under
+# `scratch`, so the readers of `HEROES_COMPILER` and `HEROES_RUNTIME` are
+# asked from a child's environment as the net reads them.
+function env_probe(scratch: str) -> str?
+    dir = scratch + "/env-values"
+    remove_tree(dir)?
+    mkdir_all(dir)?
+
+    for name in ["absence", "mark_readers", "shell", "strings"]
+        text = read_file("tests/harness/" + name + ".hero")?
+        write_file(path: dir + "/" + name + ".hero", text: text)?
+
+    write_file(path: dir + "/main.hero", text: ENV_PROBE)?
+    compiler = some_compiler()?
+    probe = dir + "/probe" + exe_suffix()
+    built = run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/main.hero", "-o", probe])?
+
+    if built.code != 0
+        return fail(code: "unbuilt", msg: "the probe did not build: " + built.err)
+    return ok(probe)
+
+# The program the two tests above build over the harness's own modules.
 constant ENV_PROBE: str
     "use absence\nuse shell\n\nfunction main()\n    match shell.some_compiler()\n        .ok path => print(\"compiler ok \" + path)\n        .err e   => print(\"compiler \" + e.code + \": \" + e.msg)\n\n    match absence.runtime_hint()\n        .ok value => print(\"runtime ok \" + value)\n        .err e    => print(\"runtime \" + e.code + \": \" + e.msg)\n\n    match shell.env(name: \"HEROES_RUNTIME\")\n        .ok value => print(\"env ok \" + value)\n        .err e    => print(\"env \" + e.code + \": \" + e.msg)\n"
 
