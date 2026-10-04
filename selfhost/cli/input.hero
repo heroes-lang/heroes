@@ -99,3 +99,22 @@ test "a module that is there and cannot be read fails loud, as the root does"
 
     if !files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero").is_err()
         assert read_compilation(path: dir + "/linked.hero", library: "").is_err()
+
+# DEFECT 274: a file that is there is never `file_not_found`. A mode of 000
+# makes one an ordinary user may not read, on this Mac and on Linux; as root,
+# and on Windows, where a mode keeps read-only alone, the file still reads, and
+# then it must read whole. The mode is given back before anything is asserted,
+# so the next run can remove the file on every platform.
+test "a file that is there and may not be read is read_failed, never file_not_found"
+    dir = "build/selftest-read-locked"
+    path = dir + "/locked.txt"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: path, text: "secret\n").is_err()
+    assert !files.set_mode(path: path, mode: 0).is_err()
+    got = read_file(path)
+    assert !files.set_mode(path: path, mode: 420).is_err()
+
+    match got
+        .ok text => assert text == "secret\n"
+        .err e   => assert e.code == "read_failed"
