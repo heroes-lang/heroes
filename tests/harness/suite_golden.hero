@@ -1,11 +1,12 @@
-# The four golden suites that ask one question with four sets of
+# The five golden suites that ask one question with five sets of
 # parameters: run one command per case, diff ONE stream against the
 # `.expected` file, and check how the compiler ended.
 #
 # Ports golden.rs:124 (`check/`), :220 (`ir/`), :459 (`unsupported/`) and
-# :520 (`emit/`). One runner rather than four, because the four differ
-# only in the verb, the flag, which stream carries the artifact and the
-# exit code the case must produce — and a second copy is a second place
+# :520 (`emit/`), and since defect 211 (2026-10-04) asks `check/`'s question
+# of the control arm (`permissive/`). One runner rather than five, because
+# they differ only in the verb, the flags, which stream carries the artifact
+# and the exit code the case must produce, and a second copy is a second place
 # for the exit-code rule to drift. What is deliberately NOT folded in is
 # anything carrying a second question: the `#~` annotation invariant, the
 # IR dump's determinism, the `#line` sweep and the certain-fix suite each
@@ -39,18 +40,18 @@ use floors
 use shell
 use strings
 
-# One suite, as data.
+# One suite, as data. `flags` follow the verb and the case, in their order.
 record Shape
     name: str
     dir: str
     verb: str
-    flag: str
+    flags: [str]
     on_stderr: bool
     want_code: i64
     least: i64
 
     # **Whether this shape's floor is watched for DECAY as well as for a walk
-    # that found nothing.** The four real shapes set it; the cases below build
+    # that found nothing.** The five real shapes set it; the cases below build
     # Shapes over two-file trees with a floor of 1, and calling those outgrown
     # would turn every case red. The flag is the seam between a floor that is a
     # measurement of the tree and one that is a fixture.
@@ -100,7 +101,7 @@ function shape_check() -> Shape
         name: "check",
         dir: "tests/golden/check",
         verb: "check",
-        flag: "--brief",
+        flags: ["--brief"],
         on_stderr: true,
         want_code: 1,
         least: 393,
@@ -114,7 +115,7 @@ function shape_ir() -> Shape
         name: "ir",
         dir: "tests/golden/ir",
         verb: "build",
-        flag: "--dump-ir",
+        flags: ["--dump-ir"],
         on_stderr: false,
         want_code: 0,
         least: 23,
@@ -128,7 +129,7 @@ function shape_emit() -> Shape
         name: "emit",
         dir: "tests/golden/emit",
         verb: "build",
-        flag: "--emit-c",
+        flags: ["--emit-c"],
         on_stderr: false,
         want_code: 0,
         least: 6,
@@ -168,13 +169,43 @@ function shape_unsupported() -> Shape
         name: "unsupported",
         dir: "tests/golden/unsupported",
         verb: "build",
-        flag: "",
+        flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
         least: 118,
         watched: true,
         silent_stdout: true,
         library_skip: true
+    )
+
+constant NO_FLAGS: [str]
+    []
+
+# `permissive/` is `check/` asked of Part 11's control arm: the same verb and
+# the same brief form, with `--permissive`, which drops the diagnostics that
+# exist for the thesis (`selfhost/diag.hero`'s `is_thesis_rule`) at every stage
+# and reads the parse as a language without them does (`selfhost/parse.hero`'s
+# `control`). A case's `#~` marks there are the control arm's diagnostics, where
+# in `check/` they are the normal arm's, which is why the arm has a directory of
+# its own.
+#
+# **No golden form ran it until defect 211** (panel 187's R3, 2026-10-03): the
+# surface rows ask its exit code and its silence (`suite_surface.hero`,
+# `permissive drops them`), never its words, so a control-arm row could not be
+# pinned, and Part 11's control arm could say anything else with every golden
+# green. **4 cases on 2026-10-04**, the count, and so the floor.
+function shape_permissive() -> Shape
+    return Shape(
+        name: "permissive",
+        dir: "tests/golden/permissive",
+        verb: "check",
+        flags: ["--brief", "--permissive"],
+        on_stderr: true,
+        want_code: 1,
+        least: 4,
+        watched: true,
+        silent_stdout: false,
+        library_skip: false
     )
 
 # `only` narrows the form to the cases whose name holds it (cases.matching);
@@ -201,8 +232,9 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
         else
             line: [str] @ [compiler, shape.verb, item.source]
 
-            if shape.flag.len() > 0
-                line @ line.push(shape.flag)
+            for flag in shape.flags
+                line @ line.push(flag)
+
             said = shell.run(scratch: scratch, program: compiler, words: line)
 
             if said.is_err()
@@ -351,7 +383,7 @@ test "a diagnostics suite passes on a match and fails on either half"
         name: "check",
         dir: tree.must(),
         verb: "check",
-        flag: "--brief",
+        flags: ["--brief"],
         on_stderr: true,
         want_code: 1,
         least: 1,
@@ -400,7 +432,7 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
         name: "ir",
         dir: tree.must(),
         verb: "build",
-        flag: "--dump-ir",
+        flags: ["--dump-ir"],
         on_stderr: false,
         want_code: 0,
         least: 1,
@@ -423,6 +455,40 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
     assert !red.is_err()
     assert red.must().failed == 1
 
+# Defect 211: the control arm's form is `check` with `--brief` and
+# `--permissive`, in that order, after the case. The stub answers with its own
+# arguments, one per line, so the form's real shape, pointed at a one-case tree,
+# passes only while it asks the control arm.
+test "fixedbugs: the control arm's form runs check with --brief and --permissive"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = one_case_tree(scratch: scratch, name: "permissive", expectation: "")
+    assert !tree.is_err()
+    asked = "check\n" + tree.must() + "/x.hero\n--brief\n--permissive\n"
+    assert !write_file(path: tree.must() + "/x.expected", text: asked).is_err()
+    path = scratch + "/stub-argv.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s\\n' \"$@\" 1>&2\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
+    assert !made.is_err()
+    form: Shape @ shape_permissive()
+    form.dir @ tree.must()
+    form.least @ 1
+    form.watched @ false
+    got = run_all(scratch: scratch, compiler: path, shape: form, only: "")
+    assert !got.is_err()
+    assert got.must().passed == 1
+    assert got.must().failed == 0
+
+    # The normal arm's form, over the same case, is not asking the same thing.
+    plain: Shape @ shape_check()
+    plain.dir @ tree.must()
+    plain.least @ 1
+    plain.watched @ false
+    other = run_all(scratch: scratch, compiler: path, shape: plain, only: "")
+    assert !other.is_err()
+    assert other.must().failed == 1
+
 test "a refusal that writes an artifact fails, and so does a suite below its floor"
     # POSIX is this case's subject, and this machine answers for itself
     # (can_run_scripts carries the measurement).
@@ -435,7 +501,7 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
         name: "unsupported",
         dir: tree.must(),
         verb: "build",
-        flag: "",
+        flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
         least: 1,
@@ -459,7 +525,7 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
         name: "unsupported",
         dir: tree.must(),
         verb: "build",
-        flag: "",
+        flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
         least: 2,
@@ -705,7 +771,7 @@ function refusing(dir: str) -> Shape
         name: "unsupported",
         dir: dir,
         verb: "build",
-        flag: "",
+        flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
         least: 1,
