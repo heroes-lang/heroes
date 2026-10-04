@@ -1,0 +1,92 @@
+# Fixed 2026-10-04, defect 208, lane b9-emit: the other side of the line
+# `fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop` draws. Only a
+# `break` behind a jump word of its block is no way out of its loop; every
+# other `break` lets its loop finish, as panel 184's R4 reads it, by its
+# syntax. So a `while true` holding one still lets the function run off its
+# end, told `missing_return` as before the repair, beside the refusal of a
+# `break` that never runs where there is one.
+
+# A `break` that runs, then one behind it: two mistakes, two messages.
+function a_live_break_then_a_dead_one(n: i64) -> i64  #~ missing_return
+    while true
+        if n > 3
+            break
+            break  #~ unreachable_statement
+
+# A `break` that may run elsewhere in the loop.
+function a_live_break_beside_a_dead_one(n: i64, a: bool) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while true
+        if a
+            break
+
+        if m > 3
+            return m
+            break  #~ unreachable_statement
+        m @ m + 1
+
+# After `exit(code:)`, `assert false` or an `if` every branch of which
+# returns, a statement stays legal (R4 refuses only what follows a jump
+# word), so a `break` there is the loop's own.
+function a_break_after_exit(n: i64) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while true
+        if m > 3
+            exit(code: 1)
+            break
+        m @ m + 1
+
+function a_break_after_assert_false(n: i64) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while true
+        if m > 3
+            assert false
+            break
+        m @ m + 1
+
+function a_break_after_an_if_that_returns(n: i64) -> i64  #~ missing_return
+    m: i64 @ n
+
+    while true
+        if m > 3
+            if m > 4
+                return m
+            else
+                return 0
+            break
+        m @ m + 1
+
+# A dead `break` of a loop inside is that loop's, and so is one of a `for`:
+# the outer loop has none, ends its path, and only the refusal is told.
+function a_dead_break_of_an_inner_loop(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        while true
+            if m > 3
+                return m
+                break  #~ unreachable_statement
+            m @ m + 1
+
+function a_dead_break_of_a_for(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        for i in [1, 2]
+            if m > i
+                return m
+                break  #~ unreachable_statement
+
+        m @ m + 1
+
+function main()
+    print(a_live_break_then_a_dead_one(n: 1))
+    print(a_live_break_beside_a_dead_one(n: 1, a: false))
+    print(a_break_after_exit(n: 1))
+    print(a_break_after_assert_false(n: 1))
+    print(a_break_after_an_if_that_returns(n: 1))
+    print(a_dead_break_of_an_inner_loop(n: 1))
+    print(a_dead_break_of_a_for(n: 1))

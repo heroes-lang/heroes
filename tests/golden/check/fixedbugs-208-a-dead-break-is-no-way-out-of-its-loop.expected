@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:21:13: error[unreachable_statement]: this statement never runs: the `return` at line 20 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:28:9: error[unreachable_statement]: this statement never runs: the `return` at line 27 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:39:13: error[unreachable_statement]: this statement never runs: the `continue` at line 38 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:49:13: error[unreachable_statement]: this statement never runs: the `return` at line 47 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:60:13: error[unreachable_statement]: this statement never runs: the `return` at line 59 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:71:13: error[unreachable_statement]: this statement never runs: the `return` at line 70 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:83:17: error[unreachable_statement]: this statement never runs: the `return` at line 82 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:95:13: error[unreachable_statement]: this statement never runs: the `return` at line 94 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:105:13: error[unreachable_statement]: this statement never runs: the `return` at line 104 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:115:13: error[unreachable_statement]: this statement never runs: the `return` at line 114 leaves its block first
+tests/golden/check/fixedbugs-208-a-dead-break-is-no-way-out-of-its-loop.hero:127:17: error[unreachable_statement]: this statement never runs: the `return` at line 126 leaves its block first
