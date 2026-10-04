@@ -534,8 +534,11 @@ constant REFUSED: [str]
 # because neither was ever written into a record — the first claims the
 # mechanism a sitting has yet to choose, the second describes only half of what
 # the row closes, the other half being a fixed-array literal of 256 elements.
+# **86 -> 87 on 2026-10-04**, `M-issue-files`, opened by author instruction at
+# row 83: every item one file of `issues/`. Its plan was written as
+# `M-issue-cards` and never committed under it, so no record carries that name.
 constant ROWS: i64
-    86
+    87
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -1435,7 +1438,8 @@ constant RATIFICATION_MARKER: str
 #
 #   - the defects it names are EXACTLY the ones open at that tag, so a later
 #     mistake cannot shelter behind a row written for two others;
-#   - every done record it names exists under `docs/records/done/`;
+#   - every done record it names exists, under `docs/records/done/` until
+#     2026-10-04 and in `ISSUES` by the same name since;
 #   - not one of those defects is open TODAY, read from the working tree.
 #
 # So the row fails loudly the day somebody reopens 061 or deletes the record
@@ -1466,7 +1470,8 @@ constant TAGGED_OVER: [str]
 #
 #   - the numbers are EXACTLY the ones open at that tag, so a defect the tag
 #     forgot cannot shelter behind a row written for the ones it carried;
-#   - the log entry exists under `docs/records/log/`;
+#   - the log entry exists, under `docs/records/log/` until 2026-10-04 and in
+#     `ISSUES` by the same name since;
 #   - each defect's own item, in the list AS IT WAS at the tag, says
 #     `CARRIED_MARKER` and names that entry, so the carrying is written where
 #     the defect is and not only here.
@@ -2535,7 +2540,7 @@ function rotated(@r: report.Report, present: [str])
 #
 # A PATH HAS NO SPACE IN IT, and that sentence is the whole function. The first
 # draft took everything from the tree's name to the first `.md`, and the map's
-# own preamble then read as a path: it names the tree, says `docs/records/log/`, and
+# own preamble then read as a path: it names the tree, said `docs/records/log/` on 2026-09-12, and
 # mentions `design.md` nine words later, so the two were sewn into one name that
 # git does not track and the check reported the preamble as a missing entry. It
 # was right to fire and wrong about what it had found. So the name ends where a
@@ -3035,6 +3040,7 @@ constant MOVED: [str]
         "docs/work/DEFECTS.md -> issues/README.md"
         "docs/learn/README.md -> issues/README.md"
         "docs/work/defects -> issues"
+        "docs/learn -> issues"
         "docs/records/done -> issues"
         "docs/records/log -> issues"
     ]
@@ -3229,7 +3235,9 @@ function moved_to(part: str) -> str
         if !mark.is_err()
             head @ strings.trimmed(written.slice(from: 0, to: mark.must()))
 
-        if head == part
+        # A directory is cited with its slash as often as without, and a row
+        # names it without: `docs/records/done/` is the row `docs/records/done`.
+        if head == part || head + "/" == part
             return strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
 
     return ""
@@ -4142,7 +4150,7 @@ constant RECORD_LIST: str
 # author's instruction of that day, meant as: *everything goes into a top-level
 # issues folder, it is more orderly; change the rules, toward a final
 # definition*). Every item this project tracks is one file here, in the folder
-# of the day its name carries, `issues/YYYY-MM/DD/`, open and closed side by
+# of the day its name carries, `issues/<year-month>/<day>/`, open and closed side by
 # side, and **nothing moves when one closes**: the box is ticked where it
 # stands, so a link to the file, GitHub's included, stays good for ever.
 #

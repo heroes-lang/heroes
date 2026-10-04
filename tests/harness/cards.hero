@@ -386,21 +386,28 @@ function is_issue_url(text: str) -> bool
 # the card that fact's structured home and the prose its account; these are
 # the readings `records/cards` holds the two to agree with.
 
-# The first day written YYYY-MM-DD in the paragraph that opens `**Origin:**`,
-# or the empty string where the body has no such paragraph or it names no day.
+# The first day written YYYY-MM-DD in the paragraph that opens with
+# `**Origin:**`, a body line that STARTS with it, or the empty string where the
+# body has no such paragraph or it names no day. **A line that starts with it,
+# and not the words anywhere** (2026-10-04): a decision that explains the rule
+# quotes `**Origin:**` mid-sentence, and fourteen files did, the first read of
+# this function taking the day after the quotation for the issue's birth.
 function origin_day(body: str) -> str
-    at = strings.index_of(text: body, needle: "**Origin:**")
+    rows = strings.lines(body)
+    i: i64 @ 0
 
-    if at.is_err()
+    while i < rows.len() && !strings.starts_with(text: strings.trimmed(rows[i]), prefix: "**Origin:**")
+        i @ i + 1
+
+    if i == rows.len()
         return ""
-    rest = body.slice(from: at.must(), to: body.len())
-    end = strings.index_of(text: rest, needle: "\n\n")
-    paragraph: str @ rest
+    paragraph: [str] @ []
 
-    if !end.is_err()
-        paragraph @ rest.slice(from: 0, to: end.must())
+    while i < rows.len() && strings.trimmed(rows[i]) != ""
+        paragraph @ paragraph.push(rows[i])
+        i @ i + 1
 
-    return first_day(paragraph)
+    return first_day(paragraph.join("\n"))
 
 # The first YYYY-MM-DD in `text` that is a day of the calendar and stands
 # alone, no digit before it or after it.
@@ -700,6 +707,11 @@ test "the body's own readings: the origin's day, the repairs, the first field's 
     assert origin_day(body) == "2026-09-03"
     assert origin_day("- [ ] **x** | y | z\n") == ""
     assert origin_day("- [ ] x\n\n    **Origin:** the author.\n\n    2026-09-01 below\n") == ""
+
+    # The words quoted mid-sentence are not the paragraph: a decision explaining
+    # the rule names `**Origin:**` and a day after it that is not its birth.
+    assert origin_day("# A rule\n\nThe day the `**Origin:**` names, since 2026-09-12.\n") == ""
+    assert origin_day("# A rule\n\nThe `**Origin:**` words.\n\n    **Origin:** a lane, 2026-10-01.\n") == "2026-10-01"
     assert repaired_hashes(body) == ["5ba5296c", "c539f58d"]
     assert repaired_hashes("Repaired at `not a hash`").len() == 0
     assert first_field_milestone("- [ ] **M-ir-lowering** | a | b") == "M-ir-lowering"

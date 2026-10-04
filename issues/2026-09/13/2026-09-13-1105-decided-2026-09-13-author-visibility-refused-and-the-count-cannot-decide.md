@@ -2,7 +2,7 @@
 kind: decision
 area: design
 milestone: none
-filed: 2026-09-13
+filed: 2026-08-26
 commit: bc2bd4eee7423df6c8e861da4becc7dd8b9a1446
 github: none
 ---

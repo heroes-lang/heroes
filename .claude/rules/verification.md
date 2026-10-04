@@ -5,6 +5,7 @@ paths:
   - "examples/**"
   - "spec/**"
   - "docs/**"
+  - "issues/**"
   - ".claude/**"
 ---
 
@@ -31,7 +32,7 @@ grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 # the bare group names of a suite that builds `"tests/golden/" + group`
 for f in tests/harness/suite_*.hero; do
   printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  { grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+)"' "$f"
+  { grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+|issues)"' "$f"
     if grep -q '"tests/golden/" +' "$f"; then
       for d in $(ls tests/golden); do
         grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" "$f" && echo "\"tests/golden/$d\""
@@ -71,7 +72,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
-| `docs/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
+| `docs/**`, `issues/**`, `DESIGN-LOG.md`, `CLAUDE.md`, `.claude/**` | `records` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
 
@@ -188,7 +189,7 @@ and every bracket broken after every token, over every file. So:
 > --family single` and `--family bracket` over `selfhost`, `tests` and
 > `examples`, and `heroes probe` over the fixtures with no stride, and push
 > only over exit 0**, or over exit 2 on the failures `suite_probe`'s rows
-> name as an open defect's. A failure is a finding for `docs/work/defects/`
+> name as an open defect's. A failure is a finding filed as a `defect` issue
 > or a repair in the same lane, never a reason to skip the run.
 
 Its cost, measured 2026-09-28 on one module and carried to the tree by
@@ -424,10 +425,11 @@ commits, 11 merges each with a coordinator's gate, 10 repair commits, 8 gates of
   million lines of churn, about 21 whole-file rewrites, and **21 of 58 merges
   carried a seed conflict**, every one settled by rebuilding. A repair commit's
   body says *seed not regenerated, awaiting the batch gate*, in about fifteen
-  lines: the class, the cases, the gate line. Its file in `docs/work/defects/`
-  stays `- [ ]` and gains one dated body line, *Repaired at `<hash>`, gated by
-  its cases and the compiler's own tests; the net is owed at the batch's
-  close*, so that no sentence says closed before the net has said it.
+  lines: the class, the cases, the gate line. Its issue file stays `- [ ]` and
+  gains one dated body line, *Repaired at `<hash>`, gated by its cases and the
+  compiler's own tests; the net is owed at the batch's close*, and its card's
+  `commit` takes that hash whole, so that no sentence says closed before the
+  net has said it.
 
 **Before the first repair of a cluster, attack the shapes beside all of its
 defects in one pass** (CL-061, CL-078): on the night counted above the shapes
@@ -528,11 +530,11 @@ between the batch's base and head, at each step the compiler rebuilt from
 five steps. The culprit
 alone is redone, with the other repairs' cases in view; where the culprit is
 the interaction of two repairs, the later one is redone and the record says so.
-**Green**: each repaired defect's file is moved by `git mv` to
-`docs/records/done/` as `YYYY-MM-DD-HHMM-defect-NNN-<slug>.md`, ticked and
-given its *The repair* section (`docs/work/DEFECTS.md`, since 2026-10-04), the
-ROADMAP's count moves with the files, and the closing commit carries the
-counts.
+**Green**: each repaired defect's issue is ticked where it stands and given its
+*The repair* section, nothing moving (`.claude/rules/records.md` § The issues,
+since 2026-10-04; it was moved by `git mv` into `docs/records/done/` that day
+only), the ROADMAP's count moves with the ticks, and the closing commit carries
+the counts.
 
 **CL-054 is discharged at the batch, not per repair**: *run the suite you did
 not expect to move* is what the full net is, and a repair defers it knowingly,
