@@ -1,0 +1,5 @@
+- [ ] **325 — a number with a leading zero followed by a method call, `0700.to_str()`, passes `check` and is read as decimal, the reading `leading_zero` exists to refuse** | `print(0700.to_str())`: `check` exit 0 and the program prints `700`, where `print(0700)` is refused `leading_zero`, the language reading no meaning into a leading zero and C reading it as octal 448 (batch 9's round compiler at `db34bb1c`, run by the coordinator 2026-10-04, `<scratchpad>/p325/`; found on lane b10-cli's compiler at `56cb4513` the same): the check that lets `0.5` through as a fraction lets a method call through too | `selfhost/number.hero` (the leading-zero check and what it lets follow the digits) · panel 041, which closed the silent decimal reading · defect 324 · **class: blocking**
+
+    **Origin:** lane b10-cli, 2026-10-04, found beside 324 and reproduced by the coordinator; filed in the lane that holds `number.hero`.
+
+    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted with a wrong value (`.claude/rules/verification.md` § Bounded discovery): a number an author from C reads as 448 prints 700 at exit 0.
