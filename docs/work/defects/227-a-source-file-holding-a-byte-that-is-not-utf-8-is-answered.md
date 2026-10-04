@@ -4,4 +4,4 @@
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, and a false message (the file was read).
 
-    Repaired at `5e4f2efb`, 2026-10-04, panel 189's resolution as provisional, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+    Repaired at `5e4f2efb` and `649adb9b`, 2026-10-04, panel 189's resolution as provisional, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
