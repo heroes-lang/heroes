@@ -18,3 +18,7 @@ github: none
     transcribe them under their `kind:learn` label when the author wants them
     there. GitHub sets an issue's own dates when it is created, so the body's
     first line carries the filed and closed days.
+
+    **2026-10-05, the author's *5a*** (`issues/2026-10/05/2026-10-05-0027-the-author-answers-1c-2a-3a-4a-5a-6b-7a.md`):
+    the `learn` questions are not transcribed, so the question this item left
+    to the transcription is settled.

@@ -16,3 +16,7 @@ github: none
     every time (CLAUDE.md § Hard stops), so this waits for the author's yes; the
     issue forms of `.github/ISSUE_TEMPLATE/` name the labels already, and GitHub
     applies a label only once it exists.
+
+    **2026-10-05, the author's *3a* and *4a*** (`issues/2026-10/05/2026-10-05-0027-the-author-answers-1c-2a-3a-4a-5a-6b-7a.md`):
+    the 36 labels are created with M-issue-files' push; the 83 milestones wait
+    for the transcription, so this item stays open for them.

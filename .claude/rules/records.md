@@ -192,7 +192,13 @@ verb renders it (a sitting's question, CLAUDE.md § 4):
   `Settled by <commit>` for the rest: GitHub links a bare hash to its commit, so
   no pull request is needed;
 - `github:` in the file is the truth of the mapping, and an issue that disagrees
-  with its file is the one corrected.
+  with its file is the one corrected;
+- **a `learn` issue is not transcribed** (the author's *5a*, 2026-10-05): none
+  is ever ticked, so on a public tracker each would stand open for ever, and
+  it stays a file with its card;
+- **a sitting is not a GitHub Discussion** (the author's *6b*, 2026-10-05): it
+  stays a file of `docs/panel/`, linked from the decision issue that ratifies
+  it.
 
 How each value of the cards written on 2026-10-04 was derived, rule by rule and
 with its count, is that day's decision issue,
