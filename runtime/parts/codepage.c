@@ -33,8 +33,14 @@
 
 /* The XML, byte for byte panel 189's `utf8.manifest`, 368 bytes. In
  * `.rsrc$02`, the section a resource's bytes live in; `used` keeps a variable
- * nothing in C reads. */
-__attribute__((section(".rsrc$02"), used)) static const char hero_codepage_manifest[] =
+ * nothing in C reads. **Its assembler name is given**, because the tree below
+ * names it in assembly and 32-bit Windows spells a C name with a leading
+ * underscore: without the label `i686-pc-windows-msvc` linked nothing,
+ * *undefined symbol: hero_codepage_manifest*, while `x86_64` and `aarch64`
+ * linked one MANIFEST of 368 bytes; with it all three do, and those two
+ * sections are byte-identical (clang and lld-link 22.1.8 on this Mac,
+ * 2026-10-05, panel 191's R8; not run on either machine). */
+__attribute__((section(".rsrc$02"), used)) static const char hero_codepage_manifest[] __asm__("hero_codepage_manifest") =
     "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
     "<assembly manifestVersion=\"1.0\" xmlns=\"urn:schemas-microsoft-com:asm.v1\">\n"
     "  <application xmlns=\"urn:schemas-microsoft-com:asm.v3\">\n"
