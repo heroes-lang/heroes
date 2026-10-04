@@ -3,3 +3,5 @@
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:25 to 00:31 (`docs/panel/189-reports/ffi-pragmatist.md`, *A C header's digest*); filed apart by the coordinator.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): one warning, two copies, one naming an internal file.
+
+    Repaired at `50aaac0b`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `cli/pointee_wants.hero` was not needed.
