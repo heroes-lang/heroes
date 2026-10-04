@@ -209,6 +209,7 @@ function build_beside(index: i64) -> i64
     t.build @ TOGETHER_BUILD + "-" + process.pid().to_str()
     none: [str] = []
     memo: {str: str} @ {}
+    told: {str: bool} @ {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false)
     made = units.tu_object(
         t,
@@ -220,7 +221,8 @@ function build_beside(index: i64) -> i64
         package_flags: none,
         source_dir: "",
         search_include: none,
-        @memo
+        @memo,
+        @told
     )
 
     if runtime.is_err() || made.is_err()
@@ -288,8 +290,9 @@ test "a binary's home is named by every word of its link line, and an author's -
     assert binary_home(t, line: ["a b"], name: "p") != binary_home(t, line: ["a", "b"], name: "p")
     none: [str] = []
     memo: {str: str} @ {}
+    told: {str: bool} @ {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
-    made = units.tu_object(t, module: "linkprobe", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    made = units.tu_object(t, module: "linkprobe", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
     )
     wanted = t.build + "/app" + process.exe_suffix()
     binary = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(wanted), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must(
@@ -330,8 +333,9 @@ test "a link over a package's compile words carries none of them and prints noth
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
     memo: {str: str} @ {}
+    told: {str: bool} @ {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
-    made = units.tu_object(t, module: "linkwords", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    made = units.tu_object(t, module: "linkwords", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
     )
     words = ["-F" + t.build, "-I" + t.build, "-DHERO_LINK_WORDS=1", "-UHERO_LINK_WORDS"]
     line = link_line(

@@ -52,6 +52,7 @@ use cli/toolchain
 use cli/libraries
 use cli/compiling
 use cli/strings
+use cli/clang_told
 
 # The distinct components of a compilation, in file-table order: the
 # root first, then each `use`d module, then the library. The order is
@@ -100,7 +101,13 @@ function components(s: source.Source) -> [str]
 # directories met under one key, and that was a sentence of the text, not a
 # fact the key asked. The words come after `words:`, so no key written before
 # names the same text.
-function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}) -> str?
+#
+# **What clang said is printed through `told`, the build's one record of it**
+# (defect 327, `cli/clang_told.hero`): a bound header is compiled by every
+# unit that includes it, and its warning was printed once per unit and again
+# per round. What is kept for the replay is clang's whole text, so another
+# build tells it again.
+function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str, sanitize: bool, search: str, package_flags: [str], source_dir: str, search_include: [str], @memo: {str: str}, @told: {str: bool}) -> str?
     words = compiling.unit_words(
         compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, package_flags: package_flags, runtime: t.runtime, source_dir: source_dir)
     )
@@ -124,8 +131,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         object = object_of(dir: dir, module: module, sum: known.must())
 
         if process.path_exists(object) && !kept.is_err()
-            if kept.must().len() > 0
-                io.eprint_raw(text: kept.must())
+            replayed = clang_told.fresh(kept.must(), @told)
+
+            if replayed.len() > 0
+                io.eprint_raw(text: replayed)
             return ok(object)
 
     # THE C IS PUBLISHED BEFORE CLANG READS IT, and it is keyed: the
@@ -181,7 +190,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
 
     if strings.trimmed(compiled.must()).len() > 0
         said @ compiled.must()
-        io.eprint_raw(text: said)
+    shown = clang_told.fresh(said, @told)
+
+    if shown.len() > 0
+        io.eprint_raw(text: shown)
     rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
     publish.discard(depfile)
 
@@ -260,16 +272,17 @@ test "a unit compiled under one clang answer is compiled again under another (de
     text = "#include <stdint.h>\nint64_t heroes_key_probe(void);\nint64_t heroes_key_probe(void) { return 1; }\n"
     none: [str] = []
     memo: {str: str} @ {}
-    first = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    told: {str: bool} @ {}
+    first = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
     )
-    second = tu_object(other, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    second = tu_object(other, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
     )
 
     # Another directory, compiled there, and the first still the first's.
     assert first != second
     assert process.path_exists(path: first)
     assert process.path_exists(path: second)
-    again = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).must(
+    again = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
     )
     assert again == first
 
@@ -288,18 +301,19 @@ test "a record vouches only for the object its own compile made, and one whose o
     text = "#include \"vouch.h\"\nint64_t heroes_vouch(void);\nint64_t heroes_vouch(void) { return VOUCH; }\n"
     none: [str] = []
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
+    told: {str: bool} @ {}
     one: {str: str} @ {}
-    first = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @one).must(
+    first = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @one, @told).must(
     )
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
     two: {str: str} @ {}
-    second = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @two).must(
+    second = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @two, @told).must(
     )
     assert second != first
     assert process.path_exists(first)
     assert !process.remove_file(second).is_err()
     three: {str: str} @ {}
-    third = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @three).must(
+    third = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @three, @told).must(
     )
     assert third == second
     assert process.path_exists(third)
@@ -321,19 +335,20 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
     text = "#include <stdint.h>\nint64_t heroes_package_value(void);\nint64_t heroes_package_value(void) { return HEROES_PACKAGE_VALUE; }\n"
     none: [str] = []
     memo: {str: str} @ {}
+    told: {str: bool} @ {}
 
     # Without the package's word the unit does not compile, and nothing is
     # kept for the compile that has it to find.
-    assert tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo).is_err(
+    assert tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).is_err(
     )
-    seven = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7"], source_dir: "", search_include: none, @memo).must(
+    seven = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7"], source_dir: "", search_include: none, @memo, @told).must(
     )
-    eight = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=8"], source_dir: "", search_include: none, @memo).must(
+    eight = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=8"], source_dir: "", search_include: none, @memo, @told).must(
     )
     assert eight != seven
 
     # A link word is no compile's: the same words, the same object.
-    linked = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"], source_dir: "", search_include: none, @memo).must(
+    linked = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"], source_dir: "", search_include: none, @memo, @told).must(
     )
     assert linked == seven
 
@@ -359,9 +374,10 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
     text = "#include <stdint.h>\n#include <beside.h>\nint64_t heroes_beside(void);\nint64_t heroes_beside(void) { return HERO_BESIDE; }\n"
     none: [str] = []
     memo: {str: str} @ {}
-    first = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: one, search_include: none, @memo).must(
+    told: {str: bool} @ {}
+    first = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: one, search_include: none, @memo, @told).must(
     )
-    second = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: two, search_include: none, @memo).must(
+    second = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: two, search_include: none, @memo, @told).must(
     )
     assert first != second
     assert process.path_exists(path: first)

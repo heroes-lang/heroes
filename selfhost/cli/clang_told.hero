@@ -1,0 +1,238 @@
+# Each of clang's diagnostics told once a build (defect 327; design.md
+# §4.17). A header is compiled by every unit that includes it: the program's
+# own, each module's, and `library.c` wherever a group's record is used. So
+# one warning in a bound header reached the author once per unit, and again
+# from the warm replay of the struct-tag round's second pass: three copies of
+# one `#warning` for a program of one module, measured on this Mac. The build
+# now keeps what it has printed, and a unit prints only what it has not.
+#
+# **What one diagnostic is, read from clang's text**: its first line,
+# `file:line:col: warning: ...` or a driver's `clang: warning: ...`, and every
+# line after it up to the next such line that is not a note, its excerpt and
+# its notes included. The `In file included from` lines above it say where
+# the unit reached it, which differs from unit to unit, so they are no part of
+# what is compared, and they are printed with the diagnostic they lead. clang
+# writes them only where the include stack changed since the diagnostic
+# before, so one left out stands for the one above it in the same file, and
+# is printed in front of a kept diagnostic whose leader was not.
+#
+# A unit whose text repeats nothing is printed as clang wrote it. One that
+# repeats loses those diagnostics and its `N warnings generated.`, which
+# counts what clang said and no longer what is shown.
+
+use bytes
+use cli/strings
+
+# One diagnostic as clang wrote it: the include lines above it, its own lines,
+# and the file its first line places it in, "" where it names none.
+record Said
+    chain: [str]
+    lines: [str]
+    file: str
+
+# What `said` holds that `told` does not, as it is printed; `told` gains every
+# diagnostic `said` holds.
+function fresh(said: str, @told: {str: bool}) -> str
+    kept: [str] @ []
+    repeated: bool @ false
+    above: [str] @ []
+    above_file: str @ ""
+    above_shown: bool @ true
+
+    for one in diagnostics_of(said)
+        key = one.lines.join("\n")
+        chain: [str] @ one.chain
+
+        if chain.len() == 0 && one.file.len() > 0 && one.file == above_file
+            chain @ above
+
+        if !told[key].is_err()
+            repeated @ true
+            above_shown @ false
+        else
+            told[key] @ true
+
+            if one.chain.len() > 0
+                kept @ strings.with_all(list: kept, more: one.chain)
+            else if !above_shown
+                kept @ strings.with_all(list: kept, more: chain)
+            kept @ strings.with_all(list: kept, more: one.lines)
+            above_shown @ true
+        above @ chain
+        above_file @ one.file
+
+    if !repeated
+        return said
+
+    if kept.len() == 0
+        return ""
+    return kept.join("\n") + "\n"
+
+# `said` in diagnostics: a line that opens one starts it, a note goes on the
+# one above, an include line waits for the diagnostic it leads, and clang's
+# tally is no diagnostic's. A line before any diagnostic is one of its own.
+function diagnostics_of(said: str) -> [Said]
+    out: [Said] @ []
+    waiting: [str] @ []
+    current: Said @ Said(chain: [], lines: [], file: "")
+    open: bool @ false
+
+    for line in lines_of(said)
+        if strings.starts_with(text: line, prefix: "In file included from ")
+            waiting @ waiting.push(line)
+        else if is_tally(line)
+            continue
+        else if opens(line) && !(open && waiting.len() == 0 && is_note(line))
+            if open
+                out @ out.push(current)
+            current @ Said(chain: waiting, lines: [line], file: file_of(line))
+            waiting @ []
+            open @ true
+        else if open
+            current.lines @ strings.with_all(list: current.lines, more: waiting)
+            current.lines @ current.lines.push(line)
+            waiting @ []
+        else
+            current @ Said(chain: waiting, lines: [line], file: "")
+            waiting @ []
+            open @ true
+
+    if open
+        current.lines @ strings.with_all(list: current.lines, more: waiting)
+        out @ out.push(current)
+    else if waiting.len() > 0
+        out @ out.push(Said(chain: [], lines: waiting, file: ""))
+    return out
+
+# The text's lines, its last line end ending the last of them.
+function lines_of(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# The words clang's first line of a diagnostic carries after its place.
+constant LEVELS: [str]
+    [
+        "warning: "
+        "error: "
+        "fatal error: "
+        "note: "
+        "remark: "
+    ]
+
+# Whether `line` opens a diagnostic: it names a level after a place, or
+# begins with one, and it does not begin with a space, as every line of an
+# excerpt does.
+function opens(line: str) -> bool
+    return level_at(line) >= 0
+
+# Where the place before a level ends in `line`, at its `: `, 0 where the
+# line begins with the level, and -1 where it opens no diagnostic.
+function level_at(line: str) -> i64
+    if line.len() == 0 || line[0] == ' '
+        return -1
+
+    for level in LEVELS
+        if strings.starts_with(text: line, prefix: level)
+            return 0
+
+    at: i64 @ 0
+
+    while at + 2 < line.len()
+        if line[at] == ':' && line[at + 1] == ' '
+            for level in LEVELS
+                if bytes.bytes_at(text: line, at: at + 2, needle: level)
+                    return at
+        at @ at + 1
+
+    return -1
+
+function is_note(line: str) -> bool
+    at = level_at(line)
+
+    if at < 0
+        return false
+
+    if at == 0
+        return strings.starts_with(text: line, prefix: "note: ")
+    return bytes.bytes_at(text: line, at: at + 2, needle: "note: ")
+
+# The file a diagnostic's first line places it in: its place without the
+# `:line:col` after the file, "" where it names no place.
+function file_of(line: str) -> str
+    at = level_at(line)
+
+    if at <= 0
+        return ""
+    place = line.slice(from: 0, to: at)
+    return without_number(without_number(place))
+
+# `place` without a last `:<digits>`, or `place` where it ends in none.
+function without_number(place: str) -> str
+    at: i64 @ place.len()
+
+    while at > 0 && place[at - 1] >= '0' && place[at - 1] <= '9'
+        at @ at - 1
+
+    if at == place.len() || at == 0 || place[at - 1] != ':'
+        return place
+    return place.slice(from: 0, to: at - 1)
+
+# clang's tally of a unit, `1 warning generated.` or `2 warnings and 1 error
+# generated.`.
+function is_tally(line: str) -> bool
+    return line.len() > 0 && line[0] >= '0' && line[0] <= '9' && strings.ends_with(text: line, suffix: " generated.")
+
+## Tests
+
+constant HEADER_WARNING: str
+    "./warned.h:2:2: warning: \"a header warning\" [-W#warnings]\n    2 | #warning \"a header warning\"\n      |  ^\n"
+
+# Defect 327's shape, as Apple clang 21 wrote it for two units including one
+# header: the second unit's copy is not printed, its tally with it.
+test "a header's warning is told once a build, whichever units include it (defect 327)"
+    told: {str: bool} @ {}
+    first = "In file included from build/tu-1/rec.c:5:\n" + HEADER_WARNING + "1 warning generated.\n"
+    second = "In file included from build/tu-2/library.c:5:\n" + HEADER_WARNING + "1 warning generated.\n"
+    assert fresh(first, @told) == first
+    assert fresh(second, @told) == ""
+    assert fresh(first, @told) == ""
+
+    # A unit's own warning, at a place no other unit has, is printed beside
+    # the header's repeated one, which is left out with its include line.
+    own = "build/tu-3/main.c:9:5: warning: unused variable 'x' [-Wunused-variable]\n    9 |     int x;\n      |         ^\n"
+    third = "In file included from build/tu-3/main.c:5:\n" + HEADER_WARNING + own + "2 warnings generated.\n"
+    assert fresh(third, @told) == own
+
+# clang leaves the include lines out of a diagnostic in the file of the one
+# above, so where that one is left out, the kept one is printed with them.
+test "a kept diagnostic is printed with the include lines its repeated neighbour led (defect 327)"
+    told: {str: bool} @ {}
+    other = "./warned.h:3:2: warning: \"a second warning\" [-W#warnings]\n    3 | #warning \"a second warning\"\n      |  ^\n"
+    assert fresh("In file included from build/tu-1/a.c:5:\n" + HEADER_WARNING, @told).len() > 0
+    later = "In file included from build/tu-2/b.c:5:\n" + HEADER_WARNING + other + "2 warnings generated.\n"
+    assert fresh(later, @told) == "In file included from build/tu-2/b.c:5:\n" + other
+
+    # A note goes with the diagnostic above it, and a place is read without
+    # its line and column.
+    noted = diagnostics_of(
+        "a.h:1:2: warning: w\na.h:1:1: note: here\nb.c:4:1: error: e\n1 warning and 1 error generated.\n"
+    )
+    assert noted.len() == 2
+    assert noted[0].lines.len() == 2
+    assert noted[0].file == "a.h"
+    assert noted[1].lines == ["b.c:4:1: error: e"]
+    assert file_of("C:\\inc\\a.h:12:3: warning: w") == "C:\\inc\\a.h"
+    assert file_of("clang: warning: argument unused during compilation") == "clang"
+    assert file_of("warning: no place") == ""
+    assert !opens("    2 | #warning \"x: warning: y\"")
