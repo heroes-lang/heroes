@@ -25,8 +25,8 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
    wrong one. An item that asks *what is true* belongs in `LEARN.md` however
    interesting; one that names the milestone which will do it belongs in
    `SCHEDULED.md`; one that describes a compiler **defect**, a crash or a wrong
-   answer at exit 0, belongs in `DEFECTS.md` and is not a decision at all. Move
-   it rather than answering it.
+   answer at exit 0, belongs in `docs/work/defects/`, a file of its own, and is
+   not a decision at all. Move it rather than answering it.
 
 2. **Verify before asking. This is the rule the skill exists for.** Run the
    thing. A queue entry is a claim from the day it was written, and entries
@@ -73,13 +73,17 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
    forbids** — every count in this project reads the `- [ ] ` line, and a body
    under one is invisible to none of them; what is forbidden is prose at column
    zero, which is how `DEFECTS.md` came to carry five paragraphs about defects
-   already in the record. Nothing lives outside the two banners.
+   already in the record. Nothing lives outside the two banners. **The defects
+   left that shared shape on 2026-10-04**: each is a file of
+   `docs/work/defects/` holding its one item in this shape, with no banner,
+   and `docs/work/DEFECTS.md` is the list's front page.
 
    **The first field is what the instrument reads, which is why it differs by
    file**: the sitting in `DECIDE.md` (`panel NNN`, padded — `records/lists`'
    neighbour `queued` scans the item LINE for it), the milestone in
-   `SCHEDULED.md`, the defect number in `DEFECTS.md`. Put a sitting's number in
-   a body and every pending panel reports as unqueued, silently.
+   `SCHEDULED.md`, the defect number in a file of `docs/work/defects/`. Put a
+   sitting's number in a body and every pending panel reports as unqueued,
+   silently.
 
    `tests/harness/suite_records.hero`'s **`records/lists`** is the executor:
    no `- [x]` in a work list, no `- [ ]` in the record, nothing outside the

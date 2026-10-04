@@ -4,8 +4,10 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 52 defects · 0 decisions.** They live in `docs/work/DEFECTS.md` and
-`docs/work/DECIDE.md`, whose `**OPEN:**` banners are what this line must equal.
+**Open: 52 defects · 0 decisions.** The defects are the files of
+`docs/work/defects/`, one each since 2026-10-04 (their rules
+`docs/work/DEFECTS.md`), and the decisions the items under
+`docs/work/DECIDE.md`'s `**OPEN:**` banner; this line must equal both.
 A preamble, these two counts and the tables are the whole of this file — author
 instruction 2026-09-16, `.claude/rules/records.md` § A live list is a preamble,
 a count and its items — and the counts get an instrument rather than a
