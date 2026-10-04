@@ -5,3 +5,5 @@
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message, a package installed told not installed.
 
     Repaired at `8f5ceb39`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    Repaired again at `72b6a6f7`, 2026-10-04 (lane b10-cli), on the coordinator's decision that pkg-config 0.29.2, which refuses `--maximum-traverse-depth`, must not fall back to *not installed*: installed is asked by two per-package questions and the search path, measured on pkgconf 3.0.7 and 1.8.1 and pkg-config 0.29.2; gated by its cases and the compiler's own tests; the net is owed at the batch's close.
