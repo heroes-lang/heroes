@@ -62,6 +62,7 @@ use parse/refused_literal
 use token
 use separator_runs
 use line_opens
+use parse/loop_habit
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below
@@ -103,7 +104,7 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         cursor.error(
             @c,
             code: "expected_end_of_line",
-            message: "expected the end of the line, found " + refused_literal.found(c, text) + " — one statement per line, no semicolons",
+            message: "expected the end of the line, found " + refused_literal.found(c, text) + " — " + loop_habit.past_a_statement(c, text, from: from),
             span: cursor.current_span(c)
         )
     brace_habit.skip_line(@c, text)
