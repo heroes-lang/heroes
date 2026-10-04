@@ -31,9 +31,11 @@
 # comment provokes nothing — and only the `.hero` cases produce
 # diagnostics.
 
+use absence
 use cases
 use report
 use floors
+use mark_readers
 use shell
 use strings
 
@@ -41,7 +43,24 @@ use strings
 # diagnostic system precisely so that it inherits this invariant (panel
 # 020, the historian's decisive row): a report outside `Diagnostic` would
 # be the only test class in the repo exempt from §9.
+#
+# `permissive/` since defect 211 (2026-10-04): the control arm's own form
+# (`suite_golden.hero`'s `shape_permissive`), whose marks are what
+# `check --permissive` says. Until then its cases were pinned by their
+# `.expected` alone, the one golden directory with an expectation this sweep
+# did not hold to its source.
 constant DIRECTORIES: [str]
+    [
+        "tests/golden/check"
+        "tests/golden/unsupported"
+        "tests/golden/permissive"
+    ]
+
+# The directories whose marks witness a thesis rule firing: the normal arm's.
+# Never the control arm's, which drops every thesis rule by construction
+# (`selfhost/diag.hero`'s `is_thesis_rule`), so a thesis code marked there
+# would pin the control arm failing to drop it, never the rule firing.
+constant NORMAL_ARM: [str]
     [
         "tests/golden/check"
         "tests/golden/unsupported"
@@ -100,9 +119,11 @@ constant RUN_ROOTS: [str]
 # is the method this comment already described: put the floor where it cannot
 # pass and read the true count out of the failure.
 #
-# The total is machine-independent by construction, which is why it can be a
-# floor at the real count: a mark this machine cannot ask is counted in
-# `stepped_aside` rather than dropped.
+# Until 2026-10-04 the total counted a mark this machine could not ask, as
+# stepped aside, so that it could be read the same on every machine; then a
+# machine asking nothing of the run roots read what one asking all of them
+# did. Since defect 246 it counts what was asked, and `floored` below says
+# what a machine that steps programs aside owes instead.
 #
 # **420 until 2026-09-27, 527 from the merge of defects 109, 110 and 115
 # onto panel 180's landing**: the 117 bracket shapes and the new goldens of
@@ -187,14 +208,12 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                     detail: "  cannot read the case or its expectation"
                 )
             else
-                claimed = sorted(claimed_by(source.must().text))
-                reported = sorted(reported_by(expectation.must()))
+                claimed = sorted(mark_readers.claimed_by(source.must().text))
+                reported = sorted(mark_readers.reported_by(expectation.must()))
                 annotated @ annotated + reported.len()
 
-                # `claimed` spells each mark `<line>:<code>`; the witness is the code.
-                for mark in claimed
-                    parts = strings.split_on(text: mark, byte: 58)
-                    witnessed[parts[parts.len() - 1]] @ true
+                for code in witness_codes(dir: dir, claimed: claimed)
+                    witnessed[code] @ true
 
                 if claimed != reported
                     report.keep_failure(
@@ -208,22 +227,57 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     if only != ""
         return ok(r)
     every_thesis_rule_has_a_witness(@r, witnessed: witnessed)
-    stepped_aside: i64 @ 0
+    run = run_roots(@r, scratch: scratch, compiler: compiler, roots: RUN_ROOTS)?
+    floored(@r, expected: annotated, run: run, floor: LEAST)
+    return ok(r)
 
-    for group in groups(scratch)?
-        annotated @ annotated + one_group(@r, scratch: scratch, compiler: compiler, group: group, @stepped_aside)
+# What the run roots' half counted: the diagnostics its groups pinned, and the
+# marks of the programs it stepped aside for a library this machine lacks.
+record Asked
+    marks: i64
+    stepped: i64
 
-    # The floor counts what this machine could ask plus what it honestly could
-    # not: a mark that stepped aside for a missing header is accounted, never
-    # absorbed — so a machine that skips EVERYTHING still goes red here.
+# The run roots' half: every group under `roots`, each program in it asked.
+function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str]) -> Asked?
+    marks: i64 @ 0
+    stepped: i64 @ 0
+
+    for group in groups(scratch: scratch, roots: roots)?
+        marks @ marks + one_group(@r, scratch: scratch, compiler: compiler, group: group, @stepped)
+
+    return ok(Asked(marks: marks, stepped: stepped))
+
+# The floor, and what a machine that cannot ask owes it.
+#
+# **A mark stepped aside does not count toward the floor**, the coordinator's
+# ruling on defect 246 (2026-10-04): a skip is not a pass. Until then the floor
+# read the marks asked plus the marks stepped aside, and the comment above that
+# call said a machine skipping everything still went red here; the sum said
+# green.
+#
+# **The ruling alone could not make that sentence true, measured.** On this
+# Mac on 2026-10-04 the expectation half pinned 3228 diagnostics and the run
+# roots 133, nothing stepped aside, against a floor of 2779: a machine stepping
+# aside every program of the run roots would still read 3228, above it. So
+# the run roots also answer to the rule the `unsupported` form keeps
+# (`suite_golden.hero`): a third of their marks stepped aside is a machine not
+# asking them, red, each skip named all the same.
+function floored(@r: report.Report, expected: i64, run: Asked, floor: i64)
     floors.check(
         @r,
         label: "annotations",
-        found: annotated + stepped_aside,
-        floor: LEAST,
-        what: "annotated diagnostics, " + annotated.to_str() + " asked and " + stepped_aside.to_str() + " this machine cannot ask"
+        found: expected + run.marks,
+        floor: floor,
+        what: "annotated diagnostics asked (" + run.stepped.to_str() + " more stepped aside for a library this machine lacks, which no floor counts)"
     )
-    return ok(r)
+    held = run.marks + run.stepped
+
+    if run.stepped > 0 && run.stepped * 3 >= held
+        report.keep_failure(
+            @r,
+            label: "annotations",
+            detail: "  " + run.stepped.to_str() + " of the " + held.to_str() + " marks the run roots hold were stepped aside for a library this machine lacks: this machine is not asking them"
+        )
 
 # SWEEP 001'S AUDIT S13, PORTED AT LAST (2026-09-03). The thesis rules —
 # the codes `check --permissive` drops, which is what makes it Part 11's
@@ -269,10 +323,32 @@ function every_thesis_rule_has_a_witness(@r: report.Report, witnessed: {str: boo
             report.keep_failure(
                 @r,
                 label: "annotations/thesis",
-                detail: "  `" + code + "` is a thesis rule (`check --permissive` drops it), and no case under " + DIRECTORIES.join(" or ") + " annotates it — Part 11's control arm counts a rule nobody can show firing"
+                detail: "  `" + code + "` is a thesis rule (`check --permissive` drops it), and no case under " + NORMAL_ARM.join(" or ") + " annotates it — Part 11's control arm counts a rule nobody can show firing"
             )
         else
             report.keep_pass(@r)
+
+# The codes a case's marks witness firing, `claimed` spelling each mark
+# `<line>:<code>`: every one under the normal arm's directories, none under the
+# control arm's (`NORMAL_ARM` says why).
+function witness_codes(dir: str, claimed: [str]) -> [str]
+    out: [str] @ []
+
+    if !holds(names: NORMAL_ARM, name: dir)
+        return out
+
+    for mark in claimed
+        parts = strings.split_on(text: mark, byte: 58)
+        out @ out.push(parts[parts.len() - 1])
+
+    return out
+
+function holds(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
 
 # The quoted codes between `function is_thesis_rule` and the loop that
 # reads them, in the order written. Anything else on those lines is not a
@@ -295,15 +371,16 @@ function thesis_codes(diag_source: str) -> [str]
 
     return out
 
-# Every directory whose cases carry no `.expected`: `fixedbugs/` flat,
-# plus each subdirectory of `surface-fixtures/`. Discovered rather than
-# listed, because a list of directories is a premise about the tree and
-# premises expire in silence (CLAUDE.md §11) — a new fixture directory
-# joins this sweep by existing.
-function groups(scratch: str) -> [str]?
+# Every directory whose cases carry no `.expected`: under each of `roots`,
+# the root itself where it holds a case (`fixedbugs/`, flat), and each of its
+# subdirectories (`surface-fixtures/`). Discovered rather than listed,
+# because a list of directories is a premise about the tree and premises
+# expire in silence (CLAUDE.md §11) — a new fixture directory joins this
+# sweep by existing.
+function groups(scratch: str, roots: [str]) -> [str]?
     out: [str] @ []
 
-    for root in RUN_ROOTS
+    for root in roots
         holds_cases: bool @ false
 
         for entry in shell.list_entries(scratch: scratch, dir: root)?
@@ -320,7 +397,8 @@ function groups(scratch: str) -> [str]?
 
 # One group: run every program in it, pool what the compiler said, and
 # compare against every annotation in it. Returns how many diagnostics
-# were pinned, for the floor.
+# were pinned, for the floor; `stepped_aside` gains the marks of each
+# program this machine cannot ask.
 function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @stepped_aside: i64) -> i64
     label = "annotations/" + group
     files = shell.list_entries(scratch: scratch, dir: group)
@@ -328,9 +406,8 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     if files.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot list " + group)
         return 0
-    claimed: [str] @ []
-    said: str @ ""
-    ran: i64 @ 0
+    paths: [str] @ []
+    texts: [str] @ []
 
     for path in files.must()
         if !strings.ends_with(text: path, suffix: ".hero")
@@ -340,9 +417,34 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
         if text.is_err()
             report.keep_failure(@r, label: label, detail: "  cannot read " + path)
             return 0
-        marks = claimed_by(text.must())
+        paths @ paths.push(path)
+        texts @ texts.push(text.must())
 
-        if strings.contains(text: text.must(), needle: "function main")
+    # **A group holding no mark is no case of this sweep**: nothing of it is
+    # ever compared, so nothing of it is run, and nothing of it is stepped
+    # aside by name. The formatter's fixtures bind `x.h`, a header no machine
+    # has, and named sixteen skips *judged where that is* on every run, of
+    # programs no machine judges (measured 2026-10-04, the first run of the
+    # step-aside below).
+    marked: i64 @ 0
+
+    for text in texts
+        marked @ marked + mark_readers.claimed_by(text).len()
+
+    if marked == 0
+        return 0
+    claimed: [str] @ []
+    said: str @ ""
+    ran: i64 @ 0
+    refusals: [str] @ []
+    at: i64 @ 0
+
+    while at < paths.len()
+        path = paths[at]
+        marks = mark_readers.claimed_by(texts[at])
+        at @ at + 1
+
+        if strings.contains(text: texts[at - 1], needle: "function main")
             asked = provoked(scratch: scratch, compiler: compiler, path: path)
 
             if asked.is_err()
@@ -354,18 +456,36 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
                 return 0
             out = asked.must()
 
-            # **A file this machine cannot ask steps aside, marks and all.**
+            # **A program this machine cannot ask steps aside, marks and all,
+            # and only where the case and the machine say so** (defect 246).
             # `ffi-a-field-the-header-has-as-an-array.hero` binds `dirent.h`,
             # which Windows does not have, so the compiler answers
-            # `ffi_missing_header` where the annotation pins `ffi_field_type`
-            # — the machine's answer, not the program's, the same class every
-            # other suite already skips. The guard is the annotations' own:
-            # a case whose marks EXPECT the missing-header code (that golden
-            # exists) claims it and is never skipped. The file's marks leave
-            # the count with it, so the floor below stays honest.
-            if machine_answered(out: out, marks: marks)
+            # `ffi_missing_header` where the mark pins `ffi_field_type`: the
+            # machine's answer, judged where the header is (the author's *A* of
+            # 2026-10-03). Until 2026-10-04 the compiler's words alone made the
+            # step-aside, unnamed: a header this machine has, said to be
+            # missing, stepped its program aside green; and the guard meant to
+            # keep a case whose marks expect the code compared each
+            # `<line>:<code>` mark to a bare code, so it never held. Now
+            # `absence` asks the case's own marks at the place told, what its
+            # program binds, and the machine; the step-aside is a named skip,
+            # and a refused one says why beside any disagreement.
+            lacks = absence.machine_lacks_among(
+                scratch: scratch,
+                path: path,
+                modules: read_with(path: path, paths: paths, texts: texts),
+                expected: "",
+                said: out
+            )
+
+            if !lacks.is_err()
                 stepped_aside @ stepped_aside + marks.len()
+                report.keep_skip(@r, label: label, detail: "  " + path + ": " + lacks.must())
                 continue
+            why = absence.refused(lacks)
+
+            if why.len() > 0
+                refusals @ refusals.push(path + ": " + why)
             said @ said + out
             ran @ ran + 1
 
@@ -382,39 +502,34 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
             detail: "  " + claimed.len().to_str() + " annotations here and no program with a `main` to provoke them:\n    " + claimed.join("\n    ")
         )
         return 0
-    reported = sorted(reported_with_file(said))
+    reported = sorted(mark_readers.reported_with_file(said))
 
     if sorted(claimed) != reported
-        report.keep_failure(
-            @r,
-            label: label,
-            detail: "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now."
-        )
+        detail: str @ "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now."
+
+        for one in refusals
+            detail @ detail + "\n  not skipped for a missing library: " + one
+
+        report.keep_failure(@r, label: label, detail: detail)
         return 0
     report.keep_pass(@r)
     return reported.len()
 
-# Whether the output is the MACHINE's answer rather than the program's: a
-# header or a package this machine does not have, unclaimed by the file's own
-# annotations. Both codes are real expectations elsewhere, which is why the
-# marks are consulted rather than the codes alone.
-function machine_answered(out: str, marks: [str]) -> bool
-    hit: bool @ false
+# The sources `absence` reads for what the program at `path` binds: `path`
+# first, then each file of its group that holds no `main`, a module some
+# program of the group uses. Never another program: `fixedbugs/` is one group
+# of thirty-eight programs, each its own, and a header a neighbour binds is
+# not one this program does.
+function read_with(path: str, paths: [str], texts: [str]) -> [str]
+    out: [str] @ [path]
+    at: i64 @ 0
 
-    if strings.contains(text: out, needle: "error[ffi_missing_header]") && !holds_mark(marks, code: "ffi_missing_header")
-        hit @ true
+    while at < paths.len()
+        if paths[at] != path && !strings.contains(text: texts[at], needle: "function main")
+            out @ out.push(paths[at])
+        at @ at + 1
 
-    if strings.contains(text: out, needle: "error[ffi_package]") && !holds_mark(marks, code: "ffi_package")
-        hit @ true
-
-    return hit
-
-function holds_mark(marks: [str], code: str) -> bool
-    for mark in marks
-        if mark == code
-            return true
-
-    return false
+    return out
 
 # What the compiler says about one program: `check` first, and `build`
 # when check is silent, because an FFI diagnostic only reaches clang on a
@@ -443,34 +558,6 @@ function why_not(got: str?) -> str
         .ok _  => ""
         .err e => e.msg
 
-# Every diagnostic in real compiler output, as `<file>:<line>:<code>`.
-# The rich form only: this reads what the compiler prints by default, and
-# by default it prints §4.17's form, whose `  at <file>:<line>:<col>` line
-# carries both halves the comparison needs.
-function reported_with_file(text: str) -> [str]
-    found: [str] @ []
-    pending: str @ ""
-
-    for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "  at ")
-            if pending.len() > 0
-                rest = strings.without_prefix(text: row, prefix: "  at ")
-                parts = strings.split_on(text: rest, byte: 58)
-
-                if parts.len() > 2
-                    number = strings.to_number(parts[1])
-
-                    if !number.is_err()
-                        found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + pending)
-                pending @ ""
-            continue
-        code = code_of(row)
-
-        if !code.is_err()
-            pending @ code.must()
-
-    return found
-
 # Both sides are compared as sorted `<line>:<code>` strings: Heroes sorts
 # numbers, strings and bools and not records (spec § 11 Built-ins), and the pair is
 # what the comparison is about. The order is the same on both sides, which
@@ -478,213 +565,13 @@ function reported_with_file(text: str) -> [str]
 function sorted(marks: [str]) -> [str]
     return marks.sort()
 
-# Every annotation in a case, with `#~v` resolved to the next line.
-#
-# **A MARK IS NOT A SENTENCE QUOTING ONE**, and this project has now paid
-# for that distinction twice. Step 1 of M-separate-compilation found the
-# `ORDER:` inventory was a grep returning **10 hits in 8 files, four of
-# them prose**; this function had the same hole, found the day the sweep
-# below started reading directories that contain README-shaped comments.
-# `externsignature/wrong.hero` explains in its header comment where its
-# annotation lives — and the sentence contains the two characters, so
-# every word after them was read as a diagnostic code: `annotation`,
-# `belongs`, `the`, `own`.
-#
-# The rule is one line and it is about position rather than vocabulary: a
-# row whose first non-blank character is `#` is PROSE unless the mark is
-# the very next thing. A real mark either opens its own comment (`#~ code`)
-# or trails code (`… -> i64    #~ ffi_return_type`), and in the second
-# case the row does not start with `#` at all. Filtering on what a code
-# looks like would not have worked here: `annotation` and `belongs` are
-# both perfectly good snake_case.
-function claimed_by(text: str) -> [str]
-    found: [str] @ []
-    rows = strings.lines(text)
-    line: i64 @ 0
-
-    for row in rows
-        line @ line + 1
-
-        for mark in marks_in(row: row, line: line)
-            found @ found.push(mark)
-
-    return found
-
-# One row's marks, which is where the reader's whole rule lives — pulled out
-# of `claimed_by` on 2026-09-12 so a test can reach the rule rather than
-# imitate it, which is how the `v` defect below survived.
-function marks_in(row: str, line: i64) -> [str]
-    found: [str] @ []
-    opener = strings.trimmed(row)
-
-    if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
-        return found
-    at = strings.index_of(text: row, needle: "#~")
-
-    if at.is_err()
-        return found
-
-    # One comment may carry both forms: `#~ empty_record #~v empty_variant`.
-    after = row.slice(from: at.must() + 2, to: row.len())
-
-    for chunk in strings.split_text(text: after, separator: "#~")
-        # **The `v` is tested BEFORE the trim, and that is the whole rule.**
-        # `#~v <code>` marks the next line and `#~ <code>` marks this one, so
-        # the marker is the character immediately after `#~` — trim first and
-        # `#~ variant_in_value_position` reads as `#~v` plus the code
-        # `ariant_in_value_position`, silently.
-        #
-        # Found 2026-09-12, at the first golden that ever annotated a code
-        # beginning with `v`. Two codes do, `variant_in_value_position` and
-        # `variant_not_callable`, and neither had ever been annotated, so the
-        # hole was real for as long as this reader has existed and nothing had
-        # walked into it.
-        delta: i64 @ 0
-        codes: str @ strings.trimmed(chunk)
-
-        if strings.starts_with(text: chunk, prefix: "v")
-            delta @ 1
-            codes @ strings.trimmed(strings.without_prefix(text: chunk, prefix: "v"))
-
-        for code in strings.words(codes)
-            found @ found.push((line + delta).to_str() + ":" + code)
-
-    return found
-
-# Every diagnostic in an expectation, as `<line>:<code>`.
-#
-# Two forms, because two commands print diagnostics: `check --brief`'s
-# one-liner `<file>:<line>:<col>: <kind>[<code>]: <message>`, and §4.17's
-# rich form, whose code and location are on consecutive lines. The KIND is
-# read rather than assumed — `error` was the only one until `unsupported`
-# arrived, and hard-coding it would have quietly exempted the new kind
-# from the invariant.
-function reported_by(text: str) -> [str]
-    found: [str] @ []
-    pending: str @ ""
-
-    for row in strings.lines(text)
-        if strings.starts_with(text: row, prefix: "  at ")
-            if pending.len() > 0
-                rest = strings.without_prefix(text: row, prefix: "  at ")
-                parts = strings.split_on(text: rest, byte: 58)
-
-                if parts.len() > 1
-                    number = strings.to_number(parts[1])
-
-                    if !number.is_err()
-                        found @ found.push(number.must().to_str() + ":" + pending)
-                pending @ ""
-            continue
-        code = code_of(row)
-
-        if code.is_err()
-            continue
-
-        # The one-line form carries its own location; the rich form's
-        # headline does not, so it waits for the `at` line.
-        parts = strings.split_on(text: row, byte: 58)
-        placed: bool @ false
-
-        if parts.len() > 1
-            number = strings.to_number(strings.trimmed(parts[1]))
-
-            if !number.is_err()
-                found @ found.push(number.must().to_str() + ":" + code.must())
-                placed @ true
-
-        if !placed
-            pending @ code.must()
-
-    return found
-
-# The `<code>` out of `…<kind>[<code>]:…`, for any kind.
-function code_of(row: str) -> str?
-    open = strings.index_of(text: row, needle: "[")
-
-    if open.is_err()
-        return fail(code: "none", msg: "no bracket")
-    tail = row.slice(from: open.must(), to: row.len())
-    close = strings.index_of(text: tail, needle: "]")
-
-    if close.is_err()
-        return fail(code: "none", msg: "no closing bracket")
-    before = row.slice(from: 0, to: open.must())
-    kind = last_word(before)
-
-    if kind.len() == 0 || !all_lower(kind)
-        return fail(code: "none", msg: "the word before the bracket is not a kind")
-    code = row.slice(from: open.must() + 1, to: open.must() + close.must())
-
-    # Digits belong: `indentation_not_multiple_of_4` is a code.
-    if code.len() == 0 || !all_code(code)
-        return fail(code: "none", msg: "the bracket does not hold a code")
-    return ok(code)
-
-# The word before the bracket, cut at a space or a colon.
-function last_word(text: str) -> str
-    start: i64 @ 0
-    i: i64 @ 0
-
-    while i < text.len()
-        if text[i] == 32 || text[i] == 58
-            start @ i + 1
-        i @ i + 1
-
-    return text.slice(from: start, to: text.len())
-
-function all_lower(text: str) -> bool
-    for i in range(from: 0, to: text.len())
-        if text[i] < 97 || text[i] > 122
-            return false
-
-    return true
-
-function all_code(text: str) -> bool
-    for i in range(from: 0, to: text.len())
-        byte = text[i]
-        lower = byte >= 97 && byte <= 122
-        digit = byte >= 48 && byte <= 57
-
-        if !lower && !digit && byte != 95
-            return false
-
-    return true
-
-test "an annotation is read on its line, and #~v on the next"
-    marks = claimed_by("function main()\n    x = 1   #~ unused_binding\n    y = 2   #~v empty_record\n")
-    assert marks.len() == 2
-    assert marks[0] == "2:unused_binding"
-    assert marks[1] == "4:empty_record"
-
-test "one comment may carry both forms and several codes"
-    marks = claimed_by("a   #~ one two #~v three\n")
-    assert marks.len() == 3
-    assert marks.sort() == ["1:one", "1:two", "2:three"]
-
-test "the one-line form carries its own location"
-    said = reported_by("x.hero:3:5: error[unused_binding]: `x` is never read\n")
-    assert said == ["3:unused_binding"]
-
-test "the rich form waits for its `at` line, whatever the kind"
-    text = "unsupported[pointer_element]: a `ptr` cannot live in a container\n  at x.hero:31:5\n     |\n  31 |     handles: [ptr] @ []\n     |     ^^^^^^^^^^^^^^^^^^^\n  note: a note in brackets [not_a_code]\n"
-    assert reported_by(text) == ["31:pointer_element"]
-
-test "a bracket that is not a code is not a diagnostic"
-    assert code_of("  note: install it [somewhere else]").is_err()
-    assert code_of("no brackets at all").is_err()
-    assert code_of("  Perhaps `x.pc'").is_err()
-    assert code_of("error[ffi_package]: ...").must() == "ffi_package"
-    assert code_of("unsupported[unit_field]: ...").must() == "unit_field"
-    assert code_of("x.hero:1:1: error[indentation_not_multiple_of_4]: ...").must() == "indentation_not_multiple_of_4"
-
 test "a case whose annotation disagrees with its diagnostic is caught"
     # The whole point: this is what a regenerator cannot fake, because it
     # would have to edit the .hero as well.
-    claimed = sorted(claimed_by("a   #~ unused_binding\n"))
-    reported = sorted(reported_by("x.hero:1:1: error[unused_variant]: ...\n"))
+    claimed = sorted(mark_readers.claimed_by("a   #~ unused_binding\n"))
+    reported = sorted(mark_readers.reported_by("x.hero:1:1: error[unused_variant]: ...\n"))
     assert claimed != reported
-    same = sorted(reported_by("x.hero:1:1: error[unused_binding]: ...\n"))
+    same = sorted(mark_readers.reported_by("x.hero:1:1: error[unused_binding]: ...\n"))
     assert claimed == same
 
 test "the thesis list is read from the source, one quoted code per line, and stops at its loop"
@@ -720,27 +607,161 @@ test "a thesis rule with no witness is one failure, and the real list is found"
     every_thesis_rule_has_a_witness(@red, witnessed: one_short)
     assert red.failed == 1
 
-test "a code beginning with `v` is this line's, not the next one's"
-    # The reader tested for `v` AFTER trimming until 2026-09-12, so
-    # `#~ variant_in_value_position` was read as `#~v` plus the code
-    # `ariant_in_value_position` — a whole class of codes that could not be
-    # annotated, silently, for as long as this file has existed. Two codes are
-    # in that class and neither had ever been annotated, which is why nothing
-    # found it until a golden needed one.
-    here = marks_in(row: "    print(Shape::circle)  #~ variant_in_value_position", line: 16)
+# Defect 211, its last reader (2026-10-04): the control arm's cases are swept
+# as every other case with an expectation, each mark held to it, and they
+# witness no thesis rule. Until then this sweep never opened the directory, so
+# the narrowed run below selected nothing.
+test "fixedbugs: the control arm's cases are held to their marks, and witness no thesis rule"
+    # Every case so named is judged, counted from the directories themselves
+    # rather than from a number written here: four on the day this was
+    # written, all of them the control arm's.
+    scratch = "build/harness-selftest"
+    arm = cases.collect(scratch: scratch, dir: "tests/golden/permissive").must()
+    in_arm = cases.matching(found: arm, only: "the-control-arm").len()
+    assert in_arm >= 4
+    named: i64 @ 0
 
-    assert here.len() == 1
-    assert here[0] == "16:variant_in_value_position"
+    for dir in DIRECTORIES
+        named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: dir).must(), only: "the-control-arm").len()
 
-    # And the real next-line marker still marks the next line.
-    next_one = marks_in(row: "    #~v variant_not_callable", line: 16)
+    swept = run_all(scratch: scratch, compiler: "", only: "the-control-arm")
+    assert !swept.is_err()
+    assert swept.must().passed == named
+    assert swept.must().passed >= in_arm
+    assert swept.must().failed == 0
 
-    assert next_one.len() == 1
-    assert next_one[0] == "17:variant_not_callable"
+    # A mark there names what `check --permissive` said; the normal arm's
+    # marks are the ones that show a rule firing.
+    assert witness_codes(dir: "tests/golden/permissive", claimed: ["3:unused_binding"]).len() == 0
+    assert witness_codes(dir: "tests/golden/check", claimed: ["3:unused_binding"]) == ["unused_binding"]
 
-    # Both forms in one comment, which the reader has always allowed.
-    both = marks_in(row: "    x  #~ empty_record #~v variant_not_callable", line: 3)
+    # **The premise the exclusion rests on, owed its test**
+    # (`.claude/rules/module-shape.md`): the control arm drops every thesis
+    # rule, so no case of its directory marks one. A case that did would pin
+    # the control arm failing to drop it, green in both forms.
+    listed = thesis_codes(read_file(THESIS_LIST).must())
+    seen: i64 @ 0
 
-    assert both.len() == 2
-    assert both[0] == "3:empty_record"
-    assert both[1] == "4:variant_not_callable"
+    for item in arm
+        for mark in mark_readers.claimed_by(read_file(item.source).must())
+            parts = strings.split_on(text: mark, byte: 58)
+            assert !holds(names: listed, name: parts[parts.len() - 1])
+            seen @ seen + 1
+
+    assert seen >= 5
+
+# DEFECT 246 at its last reader, held as a test (2026-10-04). The run roots'
+# step-aside asked the compiler's words alone and named nothing, and the guard
+# meant to keep a case whose marks expect the code compared each
+# `<line>:<code>` mark to a bare code, so it never held. Five groups of one
+# program each, a stand-in compiler answering each with its `.said` file
+# (`absence.said_stub`): a header no machine has, which the program binds, is
+# stepped aside by name; `stdio.h` said to be missing is judged, clang finding
+# it; a header the program does not bind is judged; a mark pinning the missing
+# header where it is told keeps its case judged, and it holds; an ordinary
+# diagnostic is judged and holds; a group holding no mark is not run. Under
+# the old rule the first stepped aside unnamed and the next three stepped
+# aside too: 1 passed, 0 failed, no skip.
+test "fixedbugs: a run-root program steps aside only where its case and the machine say so, by name"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    root = scratch + "/annotations-246"
+    assert !shell.remove_tree(root).is_err()
+    nowhere = absence.NOWHERE
+    marked = "  #~ ffi_return_type"
+    told = " — clang looked and did not find it"
+    lacks = root + "/a-lacks/main.hero"
+    assert !plant(path: lacks, source: program(header: nowhere, on_head: "", on_function: marked), said: absence.missing_header_said(header: nowhere, tail: told, at: lacks + ":1:1")).is_err()
+    has = root + "/b-has/main.hero"
+    assert !plant(path: has, source: program(header: "stdio.h", on_head: "", on_function: marked), said: absence.missing_header_said(header: "stdio.h", tail: told, at: has + ":1:1")).is_err()
+    unbound = root + "/c-unbound/main.hero"
+    assert !plant(path: unbound, source: program(header: "stdio.h", on_head: "", on_function: marked), said: absence.missing_header_said(header: nowhere, tail: told, at: unbound + ":1:1")).is_err()
+    pinned = root + "/d-pinned/main.hero"
+    assert !plant(path: pinned, source: program(header: nowhere, on_head: "  #~ ffi_missing_header", on_function: ""), said: absence.missing_header_said(header: nowhere, tail: told, at: pinned + ":1:1")).is_err()
+    judged = root + "/e-judged/main.hero"
+    said = "error[ffi_return_type]: the header says `seven` returns `long`, and this group says `i32`\n  at " + judged + ":2:5\n"
+    assert !plant(path: judged, source: program(header: "stdio.h", on_head: "", on_function: marked), said: said).is_err()
+
+    # A group holding no mark is no case here: never run, never named.
+    unmarked = root + "/f-unmarked/main.hero"
+    assert !plant(path: unmarked, source: program(header: nowhere, on_head: "", on_function: ""), said: absence.missing_header_said(header: nowhere, tail: told, at: unmarked + ":1:1")).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    got: report.Report @ report.empty()
+    run = run_roots(@got, scratch: scratch, compiler: compiler.must(), roots: [root])
+    assert !run.is_err()
+    assert run.must().marks == 2
+    assert run.must().stepped == 1
+    assert got.passed == 2
+    assert got.failed == 2
+    assert got.skips.len() == 1
+    assert strings.starts_with(text: got.skips[0], prefix: "SKIP annotations/" + root + "/a-lacks\n")
+    assert strings.contains(text: got.skips[0], needle: "which clang does not find")
+
+    # Each judged case says why the compiler's word was not taken.
+    assert strings.contains(
+        text: got.failures[0],
+        needle: "not skipped for a missing library: " + has + ": clang finds `stdio.h`"
+    )
+    assert strings.contains(text: got.failures[1], needle: "binds no such header")
+
+# The ruling on defect 246's floor (the coordinator, 2026-10-04): a mark
+# stepped aside is not a pass. Measured on this Mac the same day, the
+# expectation half alone (3228) clears the floor (2779), so a machine stepping
+# aside every run-root program is red only by the third `floored` keeps.
+test "fixedbugs: a machine stepping every run-root program aside reads red, and no skip counts toward the floor"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    root = scratch + "/annotations-246-all"
+    assert !shell.remove_tree(root).is_err()
+
+    for name in ["a", "b"]
+        path = root + "/" + name + "/main.hero"
+        said = absence.missing_header_said(
+            header: absence.NOWHERE,
+            tail: " — clang looked and did not find it",
+            at: path + ":1:1"
+        )
+        assert !plant(path: path, source: program(header: absence.NOWHERE, on_head: "", on_function: "  #~ ffi_return_type"), said: said).is_err()
+
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    got: report.Report @ report.empty()
+    run = run_roots(@got, scratch: scratch, compiler: compiler.must(), roots: [root]).must()
+    assert run.marks == 0
+    assert run.stepped == 2
+    assert got.skips.len() == 2
+    assert got.failed == 0
+
+    # The expectation half alone holds its floor; the third turns it red.
+    all_aside: report.Report @ report.empty()
+    floored(@all_aside, expected: 10, run: run, floor: 10)
+    assert all_aside.failed == 1
+    assert strings.contains(text: all_aside.failures[0], needle: "this machine is not asking them")
+
+    # A floor the asked marks miss is red, where the old sum, asked and
+    # stepped aside together (10 + 9 + 1), read it green.
+    ruled: report.Report @ report.empty()
+    floored(@ruled, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20)
+    assert ruled.failed == 1
+
+    # A machine that lacks a library or two is green, each skip named where it
+    # is made: this Mac's counts, six marks moved from asked to stepped aside.
+    few: report.Report @ report.empty()
+    floored(@few, expected: 3228, run: Asked(marks: 127, stepped: 6), floor: 2779)
+    assert few.failed == 0
+    assert few.passed == 1
+
+# A program for the tests above: one group binding `header`, `on_head` after
+# its head and `on_function` after its function, each a mark or nothing.
+function program(header: str, on_head: str, on_function: str) -> str
+    return "extern \"" + header + "\"" + on_head + "\n    function seven() -> i32" + on_function + "\n\nfunction main()\n    print(seven())\n"
+
+# A program at `path`, and beside it what `absence.said_stub` answers for it.
+function plant(path: str, source: str, said: str) -> ()?
+    shell.mkdir_all(absence.directory_of(path))?
+    write_file(path: path, text: source)?
+    write_file(path: strings.without_suffix(text: path, suffix: ".hero") + ".said", text: said)?
+    return ok()

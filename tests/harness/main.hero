@@ -114,11 +114,20 @@ function main()
 
     # No compiler named: ask the machine which one is here (shell.some_compiler
     # — the seed-built one first, the bootstrap last), so the same invocation
-    # works before and after `archive/bootstrap-rs/` is archived.
-    compiler: str @ shell.some_compiler()
+    # works before and after `archive/bootstrap-rs/` is archived. A
+    # `HEROES_COMPILER` that is not UTF-8 is told and ends the run, where until
+    # defect 243 it read as unset and the net judged another compiler.
+    compiler: str @ ""
 
     if given.len() > 0
         compiler @ given[0]
+    else
+        found = shell.some_compiler()
+
+        if found.is_err()
+            print("harness: " + reason(found))
+            exit(2)
+        compiler @ found.must()
     only: str @ ""
 
     if given.len() > 1
@@ -181,7 +190,7 @@ function main()
             got = suite_golden.run_all(scratch: scratch, compiler: compiler, shape: form, only: pick)
 
             if got.is_err()
-                print("harness: the " + form.name + "/ suite could not run")
+                print("harness: the " + form.name + "/ suite could not run" + why(got))
                 exit(2)
             print(
                 "  " + shown(name: form.name, pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
@@ -196,7 +205,7 @@ function main()
         got = suite_run.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
-            print("harness: the run/ suite could not run")
+            print("harness: the run/ suite could not run" + why(got))
             exit(2)
         print(
             "  " + shown(name: "run", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
@@ -211,7 +220,7 @@ function main()
         got = suite_annotations.run_all(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
-            print("harness: the annotations sweep could not run")
+            print("harness: the annotations sweep could not run" + why(got))
             exit(2)
         print(
             "  " + shown(name: "annotations", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
@@ -223,7 +232,7 @@ function main()
         got = suite_determinism.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the determinism suite could not run")
+            print("harness: the determinism suite could not run" + why(got))
             exit(2)
         print("  determinism: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -236,7 +245,7 @@ function main()
         got = suite_emission.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the emission suite could not run")
+            print("harness: the emission suite could not run" + why(got))
             exit(2)
         print("  emission: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -249,7 +258,7 @@ function main()
         got = suite_descriptors.run_all(scratch: scratch)
 
         if got.is_err()
-            print("harness: the descriptors suite could not run")
+            print("harness: the descriptors suite could not run" + why(got))
             exit(2)
         print("  descriptors: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -261,7 +270,7 @@ function main()
         got = suite_wholes.run_all(scratch: scratch)
 
         if got.is_err()
-            print("harness: the wholes suite could not run")
+            print("harness: the wholes suite could not run" + why(got))
             exit(2)
         print("  wholes: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -273,7 +282,7 @@ function main()
         got = suite_cache.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the cache suite could not run")
+            print("harness: the cache suite could not run" + why(got))
             exit(2)
         print("  cache: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -286,7 +295,7 @@ function main()
         got = suite_units.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the units suite could not run")
+            print("harness: the units suite could not run" + why(got))
             exit(2)
         print("  units: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -296,7 +305,7 @@ function main()
         got = suite_fixes.run_default(scratch: scratch, compiler: compiler, only: pick)
 
         if got.is_err()
-            print("harness: the fixes suite could not run")
+            print("harness: the fixes suite could not run" + why(got))
             exit(2)
         print(
             "  " + shown(name: "fixes", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
@@ -308,7 +317,7 @@ function main()
         got = suite_lines.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the lines sweep could not run")
+            print("harness: the lines sweep could not run" + why(got))
             exit(2)
         print("  lines: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -318,7 +327,7 @@ function main()
         got = suite_corpus.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the corpus suite could not run")
+            print("harness: the corpus suite could not run" + why(got))
             exit(2)
         print("  corpus: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -328,7 +337,7 @@ function main()
         got = suite_warnings.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the warnings gate could not run")
+            print("harness: the warnings gate could not run" + why(got))
             exit(2)
         print("  warnings: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -340,7 +349,7 @@ function main()
         got = suite_records.run_all(scratch)
 
         if got.is_err()
-            print("harness: the record checks could not run")
+            print("harness: the record checks could not run" + why(got))
             exit(2)
         print("  records: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -350,7 +359,7 @@ function main()
         got = suite_surface.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the surface suite could not run")
+            print("harness: the surface suite could not run" + why(got))
             exit(2)
         print("  surface: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -360,7 +369,7 @@ function main()
         got = suite_special.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the special cases could not run")
+            print("harness: the special cases could not run" + why(got))
             exit(2)
         print("  special: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -372,7 +381,7 @@ function main()
         got = suite_spec.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the spec checks could not run")
+            print("harness: the spec checks could not run" + why(got))
             exit(2)
         print("  spec: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -382,7 +391,7 @@ function main()
         got = suite_grammar.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the grammar checks could not run")
+            print("harness: the grammar checks could not run" + why(got))
             exit(2)
         print("  grammar: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -392,7 +401,7 @@ function main()
         got = suite_layout.run_all(scratch: scratch, only: pick)
 
         if got.is_err()
-            print("harness: the layout check could not run")
+            print("harness: the layout check could not run" + why(got))
             exit(2)
         print(
             "  " + shown(name: "layout", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
@@ -408,7 +417,7 @@ function main()
         got = suite_canonical.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the canonical check could not run")
+            print("harness: the canonical check could not run" + why(got))
             exit(2)
         print("  canonical: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -420,7 +429,7 @@ function main()
         got = suite_probe.run_all(scratch: scratch, compiler: compiler)
 
         if got.is_err()
-            print("harness: the probe rows could not run")
+            print("harness: the probe rows could not run" + why(got))
             exit(2)
         print("  probe: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -432,7 +441,7 @@ function main()
         got = suite_order.run_all(scratch)
 
         if got.is_err()
-            print("harness: the order check could not run")
+            print("harness: the order check could not run" + why(got))
             exit(2)
         print("  order: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -446,7 +455,7 @@ function main()
         got = suite_runtime.run_all(scratch)
 
         if got.is_err()
-            print("harness: the runtime invariants could not run")
+            print("harness: the runtime invariants could not run" + why(got))
             exit(2)
         print("  runtime: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
@@ -488,6 +497,21 @@ function takes_cases(suite: str) -> bool
 
     return false
 
+# Why a suite could not run, for the line that says so: the error its run
+# carried, which names what stopped it. Every such line dropped it until
+# 2026-10-04, when a walk learned to refuse a name that is not UTF-8 by name
+# rather than panic (defect 239), and the name would have been lost here.
+function why(got: report.Report?) -> str
+    return match got
+        .ok _  => ""
+        .err e => ": " + e.msg
+
+# Why no compiler could be chosen, as `shell.some_compiler` says it.
+function reason(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
 # The suite's line says when it was narrowed, so a filtered count is never
 # read as the whole suite's.
 function shown(name: str, pick: str) -> str
@@ -509,3 +533,9 @@ test "the third word binds the suites that walk cases and no other"
 test "a narrowed suite says so on its line"
     assert shown(name: "check", pick: "") == "check"
     assert shown(name: "check", pick: "fixedbugs-133") == "check (only fixedbugs-133)"
+
+test "a suite that could not run says what stopped it"
+    stopped: report.Report? = fail(code: "not_text", msg: "the name of `x/caf<0xE9>.hero` is not UTF-8")
+    assert why(stopped) == ": the name of `x/caf<0xE9>.hero` is not UTF-8"
+    ran: report.Report? = ok(report.empty())
+    assert why(ran) == ""
