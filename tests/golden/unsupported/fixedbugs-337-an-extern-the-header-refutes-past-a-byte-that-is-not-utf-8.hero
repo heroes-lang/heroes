@@ -1,0 +1,20 @@
+# fixedbugs, defect 337, lane b11-misc, 2026-10-04.
+#
+# SYMPTOM: a header whose `#line` names a file holding the byte 0xE9 makes
+# clang print every location after it with that byte as it is, and an extern
+# the header refutes, `-> i32` over `int64_t`, was `internal error: compiling
+# the generated C failed:` over an empty line at exit 2, where the same header
+# without the `#line` tells `ffi_return_type` at exit 1.
+#
+# CAUSE: clang's error stream was read back with `read_file`, which refuses a
+# file holding a byte that is not UTF-8, and the refusal was taken for
+# silence, so no marker in it was read.
+#
+# FIX: every reader of clang's words reads them through `cli/read_back.hero`,
+# each such byte written by its value, `<0xE9>`.
+
+extern "fixedbugs-337-located.h"
+    function wide_count() -> i32  #~ ffi_return_type
+
+function main()
+    print(wide_count())
