@@ -21,6 +21,7 @@ use swap_words
 use parse/decl
 use parse/which_arm
 use parse/joined_lines as seams
+use text_outline
 
 ## A reading's diagnostics, in the order of the text
 
@@ -45,7 +46,7 @@ function sorted(diagnostics: [diag.Diagnostic]) -> Sorted
 
 # Whether `s` holds one of `d`'s code at `d`'s offset.
 function says(s: Sorted, d: diag.Diagnostic) -> bool
-    i: i64 @ seams.last_at_most(s.starts, at: d.span.start - 1) + 1
+    i: i64 @ text_outline.last_at_most(s.starts, at: d.span.start - 1) + 1
 
     while i < s.starts.len() && s.starts[i] == d.span.start
         if s.diagnostics[i].code == d.code
@@ -56,7 +57,7 @@ function says(s: Sorted, d: diag.Diagnostic) -> bool
 
 # Whether `s` holds one that begins in `from` .. `to`.
 function any_in(s: Sorted, from: i64, to: i64) -> bool
-    i = seams.last_at_most(s.starts, at: from - 1) + 1
+    i = text_outline.last_at_most(s.starts, at: from - 1) + 1
     return i < s.starts.len() && s.starts[i] < to
 
 # The readings' diagnostics: the joined one's, said and held, and what
@@ -119,7 +120,7 @@ function errors_in(tokens: [token.Token], swaps: [swap_words.Swap]) -> [i64]
 
 # Whether one of `starts`, which ascend, stands in `from` .. `to`.
 function starts_in(starts: [i64], from: i64, to: i64) -> bool
-    i = seams.last_at_most(starts, at: from - 1) + 1
+    i = text_outline.last_at_most(starts, at: from - 1) + 1
     return i < starts.len() && starts[i] < to
 
 # The file read apart and as bodies (`lexer.lex_bodies`), its parser

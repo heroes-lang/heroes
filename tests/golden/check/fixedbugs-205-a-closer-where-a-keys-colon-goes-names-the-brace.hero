@@ -1,0 +1,49 @@
+# Fixed defect 205, 2026-10-04 (lane b9-recovery; found by lane rec187 beside
+# defect 203). Symptom: a closer of another kind where a map entry's `:` goes,
+# `m = {1: 2` over `print(x) )`, was told `expected_map_entry_colon`, *found
+# `)`*, naming no `{` and no `}`: the line read as the map's next key, and the
+# closer the lexer closed the `{` with standing where its `:` goes. Cause: the
+# `:`'s message was `line_end.expect_after`'s alone, where the separator's
+# names the `{` still open and both edits since panel 187's R6
+# (`list_line.another_kind`). It names them now (`list_line.entry_colon`): the
+# line as the map's last entry, its `:` and value then owed with its `}`, or
+# a statement the map took in. The shapes: a call, a name before a `]`, a key
+# on the `{`'s own line, inside a call's brackets, a string key, after a
+# written `,`; and a line that holds its `:`, the separator's as before.
+
+function f(m: {i64: i64}) -> i64
+    return 1
+
+function a_call_below(x: i64)
+    m = {1: 2
+    print(x) )  #~ expected_map_entry_colon
+
+function a_name_below(y: i64)
+    m = {1: 2
+    y]  #~ expected_map_entry_colon
+
+function on_its_own_line()
+    m = {1: 2, 3 )  #~ expected_map_entry_colon
+    print(1)
+
+function inside_a_call(x: i64)
+    k = f({1: 2
+    x) )  #~ expected_map_entry_colon
+    print(k)
+
+function a_string_key()
+    m = {1: 2
+    "k" )  #~ expected_map_entry_colon
+    print(1)
+
+function after_a_comma(x: i64)
+    m = {1: 2,
+    print(x) )  #~ expected_map_entry_colon
+
+function a_whole_entry()
+    m = {1: 2
+    3: 4 )  #~ expected_separator
+    print(1)
+
+function main()
+    print(1)

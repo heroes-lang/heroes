@@ -230,6 +230,25 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
         )
     return false
 
+# The `:` owed after a map entry's key at the cursor, `line_end.expect_after`'s;
+# where a closer of another kind stands there for the map's `}`, `{1: 2` over
+# `print(x) )`, its message names the `{` and both edits, as the separator's
+# does (`another_kind`, defect 205): the line is the map's last entry, which
+# owes its `:` and value and its `}`, or a statement the map took in.
+function entry_colon(@c: cursor.Cursor, text: str, open: i64)
+    what = "`:` between a map's key and its value"
+    tail = another_kind(c, text: text, what: "entry", closer: .rbrace, open: open)
+
+    if tail == "" || cursor.at(c, .rbrace) || line_end.said_here(c)
+        _ = line_end.expect_after(@c, text: text, kind: .colon, code: "expected_map_entry_colon", what: what)
+        return
+    cursor.error(
+        @c,
+        code: "expected_map_entry_colon",
+        message: "expected " + what + ", found " + cursor.found(c, text) + tail,
+        span: cursor.current_span(c)
+    )
+
 # A closer of another kind where the separator goes stands for the literal's
 # own, `[1, 2` over `print(x) )`: the message names the opener still open and
 # where, and both edits, so that it is true whether the line is the literal's
