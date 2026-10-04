@@ -1,0 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-14
+commit: 1945659f34e230570fe3796cf1da08f20917d148
+github: none
+---
+
+- [x] panel 052 | **SCHEDULED 2026-08-14** as `M-struct-passing`, ROADMAP order row **1**, ahead of `M-selfhost-probe` — design.md §1.12's completeness clause over Principle 0's silence. Was: struct-by-value is the whole remaining wall, **356 of 1159 entry points, 31%**. The ffi-pragmatist's *"not past 254 of 600"* prediction is unscored and the milestone's own close scores it | docs/ROADMAP.md · docs/panel/052 | the largest single measured gap in the FFI, given a milestone rather than an argument

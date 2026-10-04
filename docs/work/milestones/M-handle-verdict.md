@@ -221,31 +221,3 @@ position no handle can reach, so the live question is whether a fourteenth place
 should now recommend the handle; the **§ 3 routing clause**, which is the defect
 the sitting turned out to be about; and whether `ptr` is an FFI type or a core
 type.
-
-*******************************************************************************
-**OPEN: 0**
-
-    **Origin:** author decision 2026-09-13, ratifying panel 145. Panel 139 had
-    reserved the type's name — `unsafe_ptr`, or a family — for that sitting *by
-    name*, and no seat's brief carried it; the sitting recorded that it was not
-    deciding it rather than deciding it by omission, and put it to the author.
-
-    **The author declined both offered answers** — keep `ptr`, or rename now —
-    **and ordered a sitting of its own, after step 4.** The reason is the
-    strongest thing said about the question all evening: today a rename would be
-    argued over **27 `extern` lines in `examples/` that name a `ptr`**, and the
-    handle form removes most reasons to write a bare `ptr` at all. So the sitting
-    that argues the name should argue over **what is left**, which is a number
-    nobody can have until the form has landed and the bindings are rewritten.
-
-    **What it may not do**: sit before step 4. **What it is owed at its
-    opening**: the count of bare `ptr` remaining in `examples/`, `selfhost/` and
-    `tests/golden/run/` after the rewrite, per position — parameter, result,
-    field, binding — because the argument for a name that says *unsafe* rests on
-    how often a reader still meets one. **What it inherits**: the historian's
-    survey at panel 145, whose finding was about **typing** and not naming —
-    Swift's regret is that `OpaquePointer` cannot tell two handles apart, not
-    that it is called `OpaquePointer` — so the precedent does not transfer and
-    the sitting must find its own.
-
-*******************************************************************************

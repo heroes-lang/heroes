@@ -1,0 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-12
+commit: ec5558bef7a0e7934ec69fce6dab1b6d45dcb362
+github: none
+---
+
+- [x] Covered | panel 025 | **CLOSED, panel 035 R4 — refused. Measured by running every draft: each wrong spelling is a loud diagnostic that prints the rule, so +35 buys at most one round trip that a message already prevents.** The gap no candidate closed, now costed at **+35** (not the ~15 the judge guessed): **the spec never says how a variant case is constructed.** Declaring is there, matching is there, building is not — and it hits every AST program, which is the language's reason to exist. Decide whether it lands, and whether it goes in the record-construction rule or the `variant` example | docs/panel/025 R5 · scratchpad/cand-d.md · spec line 78 | a reader can declare the type the language exists for and not build a value of it

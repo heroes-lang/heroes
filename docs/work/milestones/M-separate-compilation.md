@@ -47,8 +47,3 @@ units to learn that it may reuse their objects. **A cache cannot skip the work
 that computes its own key.** The frontend is now ~18% of a build where the open
 item measured 83%, so an incremental frontend is the smaller half; the emission
 is the larger one. Both numbers are in `docs/work/SCHEDULED.md (retired 2026-09-12)` with their dates.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

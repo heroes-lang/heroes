@@ -36,8 +36,3 @@ the spec and should add it to the ordered one; and before M-core-packages, for
 the reason § The chain gives for every ruling on the language's shape: the
 packages are the largest body of Heroes that will be written against this
 document, and a form that lands after them is a form they were written without.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

@@ -1,0 +1,7 @@
+384,385c384,386
+< fails `null_cstr`; `f.validated_bytes()` does the same for a field of bytes,
+< reading to its first zero or the whole field, and either fails `not_text`.
+---
+> fails `null_cstr`; `f.validated_bytes()` does the same for a field of bytes
+> or a `[u8]` (`[104, 105]` gives `hi`), reading to its first zero or the whole
+> field, and either fails `not_text`.

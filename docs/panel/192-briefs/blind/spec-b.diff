@@ -1,0 +1,8 @@
+47,48c47,50
+< - Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
+<   of `\"` in a character literal. Any other escape is a compile error.
+---
+> - Seven escapes, and no others: `\n` `\t` `\r` `\\` `\"` and `\u{...}`, a code
+>   point in hex that is not 0 or a surrogate (`\u{e9}` is `é`), in a string,
+>   `\'` instead of `\"` in a character literal. Any other escape is a compile
+>   error.
