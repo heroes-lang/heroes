@@ -73,9 +73,32 @@ record Writer
     # every multi-line lowering walk off the end of the author's file.
     intent: Claim
     generated: str
+    # Each file's name as a `#line` spells it, made once (defect 262):
+    # the generated file's with the writer, and the last source file's
+    # kept beside its name, since a unit's lines come from one file at a
+    # time. The compiler's own fused emission writes 586,947 `#line`s
+    # naming 403 files, its lines turning from one source file to another
+    # 408 times, and a name was spelled at every directive, 1,174,304 times
+    # with the per-module units (measured 2026-10-04).
+    generated_name: str
+    named_file: str
+    named: str
 
 function new_writer(module: str) -> Writer
-    return Writer(chunk: [], chunks: [], pushed: 0, claim: .no_claim, intent: .no_claim, generated: module + ".c")
+    generated = module + ".c"
+    generated_name = c_text.line_name(generated)
+
+    return Writer(
+        chunk: [],
+        chunks: [],
+        pushed: 0,
+        claim: .no_claim,
+        intent: .no_claim,
+        generated: generated,
+        generated_name: generated_name,
+        named_file: generated,
+        named: generated_name
+    )
 
 # One line of C. Everything goes through here, which is what keeps the
 # count honest. A claim on the generated file stays true for free under
@@ -118,8 +141,22 @@ function push_line(@w: Writer, text: str)
 # being honoured.
 function restore(@w: Writer, file: str, at: i64)
     w.claim @ .no_claim
-    push_line(@w, text: c_text.line_directive(at: at, file: file))
+    name = spelled(@w, file)
+    push_line(@w, text: c_text.line_at(at: at, name: name))
     w.claim @ .at(file: file, line: at)
+
+# A file's name as its `#line` spells it, escaped once rather than at every
+# directive (defect 262): the generated file's was spelled with the writer,
+# and a source file's is spelled when the lines turn to it and kept while
+# they stay there.
+function spelled(@w: Writer, file: str) -> str
+    if file == w.generated
+        return w.generated_name
+
+    if file != w.named_file
+        w.named_file @ file
+        w.named @ c_text.line_name(file)
+    return w.named
 
 function blank(@w: Writer)
     line(@w, text: "")
@@ -174,7 +211,8 @@ function directive(@w: Writer, file: str, at: i64)
     # directive is about to replace. push, not line: writing a #line
     # must not ask whether one is needed.
     w.claim @ .no_claim
-    push_line(@w, text: c_text.line_directive(at: at, file: file))
+    name = spelled(@w, file)
+    push_line(@w, text: c_text.line_at(at: at, name: name))
     w.claim @ .at(file: file, line: at)
     w.intent @ w.claim
 
@@ -225,6 +263,24 @@ test "asking for what is already intended emits nothing"
     at_file(@again, file: "a.hero", at: 6)
     line(@again, text: "z;")
     assert finish(again) == "#line 5 \"a.hero\"\n#line 6 \"a.hero\"\nz;\n"
+
+test "a file's #line spelling is kept across a restore, the generated file and a turn to another file (defect 262)"
+    w: Writer @ new_writer("m")
+    at_file(@w, file: "dé/a\"b.hero", at: 3)
+    line(@w, text: "x;")
+    line(@w, text: "y;")
+    at_generated(@w)
+    line(@w, text: "z;")
+    at_file(@w, file: "dé/a\"b.hero", at: 4)
+    line(@w, text: "u;")
+    at_file(@w, file: "t??).hero", at: 1)
+    line(@w, text: "v;")
+    at_file(@w, file: "dé/a\"b.hero", at: 5)
+    line(@w, text: "w;")
+
+    # The second `#line 3` is the restore; `m.c` names the line after its
+    # own; the name spelled first is spelled again after another file's.
+    assert finish(w) == "#line 3 \"dé/a\\\"b.hero\"\nx;\n#line 3 \"dé/a\\\"b.hero\"\ny;\n#line 6 \"m.c\"\nz;\n#line 4 \"dé/a\\\"b.hero\"\nu;\n#line 1 \"t?\\?).hero\"\nv;\n#line 5 \"dé/a\\\"b.hero\"\nw;\n"
 
 test "the chunk flush loses no line and adds none"
     w: Writer @ new_writer("m")
