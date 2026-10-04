@@ -183,8 +183,15 @@ constant RUN_ROOTS: [str]
 # R2 on top of what reached the trunk inside the quarter since the last raise,
 # took the count past 2148 by more than a quarter, and on the merged tree the
 # suite found 2779.
+#
+# **3581 at batch 9's gate, 2026-10-04**: the cases of batch 8 and batch 9,
+# lane b9-recovery's twelve families among them, and `tests/golden/permissive`
+# swept since defect 211 (lane b9-annot, which also stopped counting a mark
+# stepped aside for a library the machine lacks), took the count past 2779 by
+# more than a quarter, and on the merged tree the suite found 3581, none
+# stepped aside.
 constant LEAST: i64
-    2779
+    3581
 
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the
