@@ -158,8 +158,12 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, "-fno-crash-diagnostics", c_file, "-o", staged]
     )
-    compiled = toolchain.run_clang(line: line, what: "compiling the generated C", err_path: err_path)
-    captured = read_file(err_path)
+
+    # **What clang said is read once, and the words printed are the words
+    # replayed** (defect 337): the replay below read the stream a second time
+    # with `read_file`, so a warning holding a byte that is not UTF-8 replayed
+    # as nothing on every warm build after the first.
+    compiled = toolchain.asked_of_clang(line: line, what: "compiling the generated C", err_path: err_path)
     publish.discard(err_path)
 
     if compiled.is_err()
@@ -172,7 +176,12 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # path on screen — printing the path here unconditionally sent
         # `build/tu-…` into diagnostics the surface rows pin as
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
-        return fail(code: failure_code(compiled), msg: failure_note(compiled) + "\nthe generated C is at " + c_file)
+        return fail(code: said_code(compiled), msg: failure_text(compiled) + "\nthe generated C is at " + c_file)
+    said: str @ ""
+
+    if strings.trimmed(compiled.must()).len() > 0
+        said @ compiled.must()
+        io.eprint_raw(text: said)
     rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
     publish.discard(depfile)
 
@@ -190,21 +199,17 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # predecessor's file replayed warnings, with the line numbers of a
     # header that had been repaired, on every warm build after it. That is
     # the mirror of the swallowed warning the replay exists for, and the
-    # same instrument, `suite_warnings`, catches both. Unreadable stderr
-    # writes EMPTY: a compile whose warnings are unknown replays none
-    # rather than somebody else's.
-    kept_text: str @ ""
-
-    if !captured.is_err()
-        kept_text @ captured.must()
-
+    # same instrument, `suite_warnings`, catches both. Stderr that could not
+    # be read back writes EMPTY: a compile whose warnings are unknown
+    # replays none rather than somebody else's.
+    #
     # THE RECORD IS PUBLISHED LAST, so whichever record a reader finds names
     # an object and warnings already in place, compiled from exactly the
     # files it lists. Both are keyed: the directory names the text and the
     # configuration, the digest every file the compile read.
     object = object_of(dir: dir, module: module, sum: sum)
     publish.publish(staged: staged, path: object, keyed: true)?
-    publish.write_whole(path: warnings_of(dir: dir, sum: sum), text: kept_text, keyed: true)?
+    publish.write_whole(path: warnings_of(dir: dir, sum: sum), text: said, keyed: true)?
 
     # Keyed in the one sense a record can be: any record another build
     # published names artifacts of its own compile, and they are there.
@@ -234,6 +239,13 @@ function failure_text(failed: str?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
+
+# The same code of a run that handed back what clang said
+# (`toolchain.asked_of_clang`).
+function said_code(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
 
 ## Tests
 
