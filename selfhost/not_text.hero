@@ -101,6 +101,24 @@ function first_said(name: str, text: str, faults: [source.Fault]) -> str
         return head + "and no other line holds one"
     return head + "and " + lines.to_str() + " lines hold one"
 
+# A text a tool answered, its bytes that are not UTF-8 written by their
+# value, `<0xE9>`, as clang writes one it will not show (defect 241): what
+# pkg-config said, quoted in a message, never a source, which is told by line
+# instead. Each fault stands for one U+FFFD of the shown text, ascending.
+function bytes_written(text: str, faults: [source.Fault]) -> str
+    if faults.len() == 0
+        return text
+    pieces: [str] @ []
+    from: i64 @ 0
+
+    for one in faults
+        pieces @ pieces.push(text.slice(from: from, to: one.at))
+        pieces @ pieces.push("<" + shown(one.byte) + ">")
+        from @ one.at + 3
+
+    pieces @ pieces.push(text.slice(from: from, to: text.len()))
+    return pieces.join("")
+
 # Whether the file named, the root, holds a byte that is not text: what
 # `check --apply` asks before it hands a text back, by stdout or in place.
 function in_root(s: source.Source) -> bool
@@ -397,6 +415,11 @@ test "the reading names what the bytes prove, and names no encoding for a byte t
     # the note names neither.
     oem = told(shown_source(text: "x �\n", bytes: [130]), 0)
     assert oem[0].notes[0] == "0x82 here belongs to an encoding other than UTF-8, which one the bytes do not say, and no character of this file is UTF-8 above ASCII: save the file as UTF-8"
+
+test "a tool's answer writes each byte that is not text by its value (defect 241)"
+    s = shown_source(text: "-DX=caf� -I/x �\n", bytes: [233, 255])
+    assert bytes_written(s.text, faults: s.faults) == "-DX=caf<0xE9> -I/x <0xFF>\n"
+    assert bytes_written("plain", faults: s.faults.slice(from: 0, to: 0)) == "plain"
 
 test "a root holding such a byte is what --apply refuses, and a tool is told where"
     s = shown_source(text: "# caf�\n", bytes: [233])
