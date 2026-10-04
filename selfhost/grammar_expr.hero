@@ -564,13 +564,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             reading @ false
         else
             key = parse_expr(@c, @a, text)
-            _ = line_end.expect_after(
-                @c,
-                text: text,
-                kind: .colon,
-                code: "expected_map_entry_colon",
-                what: "`:` between a map's key and its value"
-            )
+            list_line.entry_colon(@c, text: text, open: at)
             value = parse_expr(@c, @a, text)
             entries @ entries.push(ast.MapEntry(key: key, value: value))
 

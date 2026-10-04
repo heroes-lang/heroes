@@ -5,10 +5,13 @@
 #
 # | entry | called by |
 # |---|---|
-# | `lines_of`, `line_at`, `inside_a_break`, `apart_line_start`, `opens_a_line_below`, `line_below_ends`, `cause_of`, `last_at_most` | `parse/apart` |
+# | `lines_of`, `line_at`, `inside_a_break`, `apart_line_start`, `opens_a_line_below`, `line_below_ends`, `cause_of` | `parse/apart` |
+#
+# Each question is a binary search, `text_outline.last_at_most` (a copy here until defect 205).
 
 use token
 use lexer
+use text_outline
 
 # One joined line that holds refused breaks, by the offsets the comparison
 # needs: where it begins (`from`), where it ends (`to`) and the first word
@@ -130,26 +133,9 @@ function word_after(tokens: [token.Token], at: i64) -> i64
 
     return tokens[i].span.start
 
-# The index of the last of `ascending` that is at most `at`, or -1: a binary
-# search, which every question below is, so that a file of many breaks costs
-# its size times a logarithm.
-function last_at_most(ascending: [i64], at: i64) -> i64
-    low: i64 @ 0
-    high: i64 @ ascending.len()
-
-    while low < high
-        middle = (low + high) / 2
-
-        if ascending[middle] <= at
-            low @ middle + 1
-        else
-            high @ middle
-
-    return low - 1
-
 # The line whose text, or the first word after it, holds `at`, or -1.
 function line_at(lines: [Line], froms: [i64], at: i64) -> i64
-    i = last_at_most(froms, at: at)
+    i = text_outline.last_at_most(froms, at: at)
 
     if i < 0 || at > lines[i].after
         return -1
@@ -157,7 +143,7 @@ function line_at(lines: [Line], froms: [i64], at: i64) -> i64
 
 # Whether `at` stands inside one of the line's breaks.
 function inside_a_break(line: Line, at: i64) -> bool
-    i = last_at_most(line.owns, at: at)
+    i = text_outline.last_at_most(line.owns, at: at)
     return i >= 0 && at < line.own_ends[i]
 
 # Where the apart reading's line holding `at` begins: the joined line's start,
@@ -166,7 +152,7 @@ function inside_a_break(line: Line, at: i64) -> bool
 function apart_line_start(line: Line, at: i64) -> i64
     if at >= line.to
         return at
-    i = last_at_most(line.belows, at: at)
+    i = text_outline.last_at_most(line.belows, at: at)
 
     if i < 0
         return line.from
@@ -174,13 +160,13 @@ function apart_line_start(line: Line, at: i64) -> i64
 
 # Whether `at` is where the line below one of the line's breaks begins.
 function opens_a_line_below(line: Line, at: i64) -> bool
-    i = last_at_most(line.belows, at: at)
+    i = text_outline.last_at_most(line.belows, at: at)
     return i >= 0 && line.belows[i] == at
 
 # Where the line below the break whose line below begins at `at` ends: at the
 # line below the next break, or at the joined line's end.
 function line_below_ends(line: Line, at: i64) -> i64
-    i = last_at_most(line.belows, at: at)
+    i = text_outline.last_at_most(line.belows, at: at)
 
     if i + 1 < line.belows.len()
         return line.belows[i + 1]
@@ -188,7 +174,7 @@ function line_below_ends(line: Line, at: i64) -> i64
 
 # The refusal of the last break before `at` on the line, else of its first.
 function cause_of(line: Line, at: i64) -> token.Span
-    i = last_at_most(line.belows, at: at)
+    i = text_outline.last_at_most(line.belows, at: at)
 
     if i < 0
         return line.causes[0]
