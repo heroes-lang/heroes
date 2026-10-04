@@ -716,6 +716,17 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # effect, and nowhere else (`Checker.tail`, defect 135).
     tail = c.tail
 
+    # Whether a jump word has stood in this block, and what the loop's
+    # `Checker.broke` held once it had: a `break` in a statement after one
+    # never runs and is refused there (`path_end.after_a_jump`), so it is no
+    # way out of its loop, and a `while true` it stands in still ends its
+    # path, rather than being told a second time as `missing_return` (defect
+    # 208). Read through `path_end.broke_of`: a field of `c` read here copies
+    # the whole `Checker` into this frame, which every nested block recurses
+    # through.
+    jumped: bool @ false
+    broke: bool @ false
+
     for sid in body.stmts
         here: Want @ .nothing
 
@@ -724,6 +735,12 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         c.tail @ tail && index == last && want == .nothing
         got = statement(@c, a, r, s, decls, id: sid, want: here)
         c.tail @ tail
+
+        if jumped
+            c.broke @ broke
+        else if path_end.is_jump(a, at: sid)
+            jumped @ true
+            broke @ path_end.broke_of(@c)
 
         # The first statement that leaves is how the block leaves, since
         # nothing after it runs: a refused `break` before a `return` makes
