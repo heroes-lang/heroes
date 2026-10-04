@@ -73,11 +73,30 @@ function complaint(path: str) -> str
 # the not-installed sentence is word for word the one the net reads as a
 # machine lacking the library (`tests/harness/absence.hero`).
 function refused(package: str, complained: str, build_dir: str) -> str
-    said = "\n  pkg-config said: " + shell_split.shown(strings.trimmed(complained), keep_lines: true)
+    return worded(
+        package: package,
+        complained: complained,
+        present: installed(package: package, build_dir: build_dir)
+    )
 
-    if installed(package: package, build_dir: build_dir)
-        return "heroes-ffi-package `" + package + "` is installed, and pkg-config cannot give its flags" + said + "\n  install what pkg-config says it lacks, or name the library directly with `link`"
-    return "heroes-ffi-package `" + package + "` is not installed on this machine" + said + "\n  install its development files, or name the library directly with `link`"
+# The refusal's words, `present` where `installed` said the package is. **A
+# complaint that holds no word is told as none** (defect 326): the note read
+# *pkg-config said:* over nothing, and an installed package's way out sent the
+# author after what pkg-config said it lacks, where it had said nothing.
+function worded(package: str, complained: str, present: bool) -> str
+    said = strings.trimmed(complained)
+    note: str @ "\n  pkg-config said: " + shell_split.shown(said, keep_lines: true)
+
+    if said.len() == 0
+        note @ "\n  pkg-config gave no reason"
+
+    if present
+        way: str @ "install what pkg-config says it lacks, or name the library directly with `link`"
+
+        if said.len() == 0
+            way @ "name the library directly with `link`"
+        return "heroes-ffi-package `" + package + "` is installed, and pkg-config cannot give its flags" + note + "\n  " + way
+    return "heroes-ffi-package `" + package + "` is not installed on this machine" + note + "\n  install its development files, or name the library directly with `link`"
 
 # What the author is told where `pkg-config` could not be started, so nothing
 # could be asked about `package` (defect 249): the package's `ffi_package` at
@@ -251,6 +270,27 @@ test "pkg-config's lines ended by a return and a line end are read as lines (def
     assert shell_split.words(package: "z", said: answered).must() == ["-DSEVEN=7", "-lz"]
     assert !write_file(path: complaint_path, text: "one\rtwo\r").is_err()
     assert complaint(complaint_path) == "one\rtwo\r"
+
+# Defect 326: a `pkg-config` that refuses and writes nothing, or nothing but
+# spaces and line ends, `\r\n` ones read back as such, is told it gave no
+# reason under either head; the diagnostic made of it holds no note without
+# words, and where it said something the note quotes it, as before.
+test "a refusal pkg-config gave no reason for is told as one, under either head (defect 326)"
+    blank = "build/selftest-package-326.txt"
+    assert !write_file(path: blank, text: "  \r\n").is_err()
+
+    for complained in ["", "  \n\n", complaint(blank)]
+        assert worded(package: "zlib", complained: complained, present: false) == "heroes-ffi-package `zlib` is not installed on this machine\n  pkg-config gave no reason\n  install its development files, or name the library directly with `link`"
+        assert worded(package: "zlib", complained: complained, present: true) == "heroes-ffi-package `zlib` is installed, and pkg-config cannot give its flags\n  pkg-config gave no reason\n  name the library directly with `link`"
+
+    assert worded(package: "zlib", complained: "Package zlib was not found\n", present: false) == "heroes-ffi-package `zlib` is not installed on this machine\n  pkg-config said: Package zlib was not found\n  install its development files, or name the library directly with `link`"
+    text = "extern \"zlib.h\" package \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "silent.hero", text: text)
+    head = "heroes-ffi-package `zlib` is installed, and pkg-config cannot give its flags"
+    d = ffi_build.package_problem(s, parsed.decls, stderr: worded(package: "zlib", complained: "", present: true), line: head).must(
+    )
+    assert d.notes == ["pkg-config gave no reason", "name the library directly with `link`"]
 
 # Defect 292's search path, as the three measured `pkg-config`s read it: an
 # entry left empty names no directory, and Windows parts at `;`; a `.pc` or

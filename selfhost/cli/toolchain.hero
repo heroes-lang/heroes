@@ -222,7 +222,15 @@ function asked_of_clang(line: [str], what: str, err_path: str) -> str?
             code: "crashed",
             msg: what + " stopped: clang died on the C instead of judging it (" + died + "), so nothing in it was refused"
         )
-    return fail(code: "clang", msg: what + " failed:\n" + noise)
+    return fail(code: "clang", msg: refusal(what: what, code: ran.code, noise: noise))
+
+# What clang's refusal says: its own words under what failed, or where it
+# wrote none, that it said nothing and how it exited (defect 326's shape),
+# where `linking failed:` stood over an empty line.
+function refusal(what: str, code: i64, noise: str) -> str
+    if strings.trimmed(noise).len() == 0
+        return what + " failed: clang exited " + code.to_str() + " and said nothing"
+    return what + " failed:\n" + noise
 
 # Compile the runtime once and cache it, keyed on its own contents,
 # the level and the compiler. A stale relink is silent, so the key is
@@ -350,6 +358,14 @@ test "clang's words holding a byte that is not UTF-8 are kept whole, a refusal's
             assert e.code == "clang"
             assert has_text(text: e.msg, needle: "caf<0xE9>.h:1:2: warning:")
             assert has_text(text: e.msg, needle: "heroes-ffi-return wide_count i32")
+
+# Defect 326's shape at clang: a refusal with no word in it, or only line ends,
+# says so and how clang exited, where `linking failed:` stood over an empty
+# line; one with words carries them under what failed, as it did.
+test "a clang that refused and said nothing is told so, never as an empty line (defect 326)"
+    assert refusal(what: "linking", code: 1, noise: "") == "linking failed: clang exited 1 and said nothing"
+    assert refusal(what: "linking", code: 1, noise: "\n\n") == "linking failed: clang exited 1 and said nothing"
+    assert refusal(what: "linking", code: 1, noise: "ld: symbol(s) not found\n") == "linking failed:\nld: symbol(s) not found\n"
 
 test "the toolchain finds the real runtime and compiles it through system()"
     found = locate_toolchain(hint: "", fingerprint: "port-test")
