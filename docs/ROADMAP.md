@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 78 defects · 1 decision.** The defects are the open issues whose card
+**Open: 77 defects · 1 decision.** The defects are the open issues whose card
 says `kind: defect` and the decisions the open ones that say `kind: decision`,
 files of `issues/` since 2026-10-04 (their rules `issues/README.md`); this line
 must equal both.
@@ -25,7 +25,7 @@ against a banner reading 3.
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **6838** on the vendored ranks and **9060** on the reader's own, against a ceiling of **10240**. The milestone spent six rows of `docs/measurements/010-spec-budget-ledger.md`: four in § 13 for what a C call does with a handle (panels 175 to 177, 8270 to 8861 real) and two for where a line breaks inside brackets and ends outside them (panels 180 and 181, 8861 to 9060) |
 | The contract | **7875** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-28 when § Verification gained the author's rule that a lane lives under `.claude/worktrees/` |
-| Records | sittings **179** · journals **62**, numbered files only · milestone files **51** · measurements **37** · issues **2,106** in `issues/`, 569 open, since 2026-10-04 · `docs/records/book/beats/` **129** |
+| Records | sittings **179** · journals **62**, numbered files only · milestone files **51** · measurements **37** · issues **2,106** in `issues/`, 568 open, since 2026-10-04 · `docs/records/book/beats/` **129** |
 | Waiting on the author | **panel 189's ratification**, the one item on the decision list (with the critic's two-arm run, about 1.4 to 2.0 USD, the author's to fund or not); batch 8 closed on 2026-10-04, 29 defects, its four platforms green on the closing code, its push to be asked for |
 
 **Re-measured 2026-09-28 at the close, the full net on a compiler built from

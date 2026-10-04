@@ -3289,9 +3289,9 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
     # because `known` carries every directory as well as every file.
     return exists_or_prefixes(token: part, known: known)
 
-# Where a file of a retired tree went, by the rule `.claude/rules/records.md`
-# § The issues gives, or the empty string where `part` is no such file or the
-# file it names is not there. A log entry and a record shared one name, and
+# Where a file of a retired tree went, by the rule
+# `.claude/rules/records.md` § The issues gives, or the empty string where
+# `part` is no such file or the file it names is not there. A log entry and a record shared one name, and
 # the log's took `-decided` (`SHARED_NAME`).
 function issue_redirect(part: str, known: {str: bool}) -> str
     name = strings.base_name(part)
@@ -4206,9 +4206,9 @@ function issue_home(name: str) -> str
 # EVERY ISSUE CARRIES ITS CARD, AND THE CARD SAYS WHAT THE FILE ALREADY SAYS.
 #
 # The card is what makes two thousand files one set GitHub can take (`kind`,
-# `area`, `milestone`, `filed`, `commit`, `github`, `.claude/rules/records.md`
-# § The issues), and three of its values state in a structured line what the
-# item states in prose: `commit` and a body's `Repaired at`, `filed` and the day
+# `area`, `milestone`, `filed`, `commit`, `github`;
+# `.claude/rules/records.md` § The issues), and three of its values state in a
+# structured line what the item states in prose: `commit` and a body's `Repaired at`, `filed` and the day
 # its `**Origin:**` names, `milestone` and an item's first field. The card is
 # their structured home and the prose their account, and this check holds the
 # two to agree, so that neither can drift from the other in silence.
