@@ -93,13 +93,19 @@ record Corpus
 # separator to be confused by), and the listing file under `build/` goes with
 # it.
 function corpus(dir: str) -> Corpus?
-    walked = process.files_under(dir: dir)
+    walked = process.walk(dir: dir)
 
     if walked.is_err()
         return fail(code: "no_corpus", msg: unread_corpus(dir))
     paths: [str] @ []
 
-    for path in walked.must()
+    # A program named in bytes that are not UTF-8 cannot be opened, so the
+    # corpus cannot be read (defect 239); a file of another kind is not one.
+    for path in walked.must().unnamed
+        if ends_hero(path)
+            return fail(code: "no_corpus", msg: process.unnamed_said(path))
+
+    for path in walked.must().files
         if ends_hero(path)
             paths @ paths.push(path)
 

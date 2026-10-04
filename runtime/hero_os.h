@@ -305,6 +305,11 @@ int64_t hero_os_pid(void);
 int64_t hero_dir_scan(const char *root, int64_t want, int64_t recursive);
 HeroStr hero_dir_at(int64_t index);
 
+/* The name at that index read as `hero_file_read_shown` reads a file: a name
+ * that is not UTF-8 is HERO_OS_NOT_TEXT with marks, never a panic (defect
+ * 239). Bound in `selfhost/cli/process.hero`'s own group. */
+HeroStr hero_dir_at_shown(int64_t index, int64_t *status, int64_t *marks);
+
 /* Release the listing once its names have been read. A listing nobody releases
  * is a leak the gate reports at exit. */
 void hero_dir_release(void);

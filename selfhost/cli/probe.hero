@@ -158,13 +158,17 @@ function gathered(paths: [str]) -> [Root]?
         if !process.is_directory(path: path)
             out @ out.push(Root(path: path, files: [path], seeds: 0))
             continue
-        walked = process.files_under(dir: path)
+        walked = process.walk(dir: path)
 
         if walked.is_err()
             return fail(code: "no_path", msg: "cannot read the directory " + path)
         files: [str] @ []
 
-        for one in walked.must()
+        for one in walked.must().unnamed
+            if bytes.bytes_at(text: one, at: one.len() - 5, needle: ".hero")
+                return fail(code: "no_path", msg: process.unnamed_said(one))
+
+        for one in walked.must().files
             if bytes.bytes_at(text: one, at: one.len() - 5, needle: ".hero")
                 files @ files.push(one)
 
