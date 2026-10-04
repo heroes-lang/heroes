@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-324-a-separator-that-doubles-after-a-zero.hero:8:10: error[misplaced_separator]: `_` groups digits, so it goes between two of them
+tests/golden/check/fixedbugs-324-a-separator-that-doubles-after-a-zero.hero:9:10: error[misplaced_separator]: `_` groups digits, so it goes between two of them
