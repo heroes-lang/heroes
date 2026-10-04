@@ -1,0 +1,23 @@
+0:
+1:a
+2:ab
+3:abc
+4:abcd
+5:abcde
+6:abcdef
+7:abcdefg
+8:abcdefgh
+9:abcdefghi
+10:abcdefghij
+11:abcdefghijk
+12:abcdefghijk!
+0 ok a0 1
+1 ok a1b 2
+2 err two a2bc 3
+3 ok a3bcda3 4
+4 ok a4bcd40 5
+5 ok a5b 6
+6 ok a6bcd60e-a6bcd60-a6bcd 7
+7 err seven no sevens 8
+8 ok a8bcd80e-a8bcd80-a8bcda8bca8b 9
+16 in,in,odd,rest,in,in,odd,in,in,odd,rest,in,in,odd,rest,in

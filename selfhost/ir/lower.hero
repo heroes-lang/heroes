@@ -32,6 +32,7 @@ use ir/questions
 use ir/emissions
 use ir/flatten
 use ir/owned_release
+use ir/exits
 use parse
 use resolve
 use checker
@@ -48,6 +49,10 @@ function lower(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Sou
     while index < decls.len()
         declaration(@b, a, r, c, s, decls, index)
         index @ index + 1
+
+    # One exit where a function has two or more ways out (panel 190): a pass
+    # of its own, so the walk above lowers every return as it always did.
+    exits.run(@b.out.program, unit: table.unit_ty(c.types))
 
     # The resolver's stable sort, called across the module boundary
     # rather than copied: two sorts that could disagree are two answers
@@ -363,25 +368,39 @@ test "? branches on the tag, and the error edge is a real exit edge"
     assert propagate_at >= 0
 
     # The propagate block reads the failure payload, wraps it UNCHANGED
-    # as err, and returns — an exit edge like any return.
-    match f.blocks[propagate_at].term
-        .return_term ret                                      => assert !ret.value.is_err()
-        .jump | .branch | .switch_term | .unreachable | .open => assert false
-
-    wrapped: bool @ false
+    # as err, and leaves by an exit edge like any return: `outer` has two
+    # ways out, so it stores the wrapped value into the return slot and
+    # jumps to the one exit, which returns it (panel 190).
+    wrapped: i64 @ 0 - 1
 
     for inst in f.blocks[propagate_at].insts
         match inst.op
             .construct con =>
                 match con.shape
-                    .err_shape                                 => wrapped @ true
+                    .err_shape                                 => wrapped @ inst.dest.must()
                     .record_shape | .case_shape | .array_shape => continue
                     .map_shape | .ok_shape | .fail_shape       => continue
             .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call                  => continue
             .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
             .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
-    assert wrapped
+    assert wrapped >= 0
+    leaving = f.blocks[propagate_at].insts[f.blocks[propagate_at].insts.len() - 1]
+
+    match leaving.op
+        .store st =>
+            assert containers.is_return_slot(f.slots[st.place.root])
+            assert st.value == wrapped
+        .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => assert false
+        .field | .index | .map_get | .len_of | .tag_of | .payload                               => assert false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => assert false
+
+    match f.blocks[propagate_at].term
+        .jump j =>
+            match f.blocks[j.to].term
+                .return_term ret                                      => assert !ret.value.is_err()
+                .jump | .branch | .switch_term | .unreachable | .open => assert false
+        .branch | .switch_term | .return_term | .unreachable | .open => assert false
 
 test "an @ argument is a place, and a record construction is not a call"
     got = lowered(
@@ -594,8 +613,8 @@ test "an @ argument through an index is handed over as a temporary and stored ba
 
                                 # The callee sees a whole synthetic slot, never the array.
                                 match f.slots[io.place.root].kind
-                                    .synthetic_slot           => handed_over @ io.place.path.length == 0
-                                    .param_slot | .local_slot => handed_over @ false
+                                    .synthetic_slot                          => handed_over @ io.place.path.length == 0
+                                    .param_slot | .local_slot | .return_slot => handed_over @ false
                 .store st =>
                     for step in containers.steps_of(f, st.place.path)
                         match step

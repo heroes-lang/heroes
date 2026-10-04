@@ -244,6 +244,7 @@ int64_t h_main_first_in(int64_t h0_index) {
 #line 245 "main.c"
     hero_thread_guard("main.first_in");
     int64_t h1_at;
+    int64_t h2_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -261,6 +262,7 @@ int64_t h_main_first_in(int64_t h0_index) {
     int64_t t15;
     int64_t t16;
     int64_t t17;
+    int64_t t18;
     goto bb0;
 bb0:
 #line 48 "examples/firsthit/main.hero"
@@ -304,7 +306,9 @@ bb3:
 #line 55 "examples/firsthit/main.hero"
     t17 = h_main_NOWHERE();
 #line 55 "examples/firsthit/main.hero"
-    return t17;
+    h2_ret0 = t17;
+#line 55 "examples/firsthit/main.hero"
+    goto bb7;
 #line 55 "examples/firsthit/main.hero"
 bb4:
 #line 53 "examples/firsthit/main.hero"
@@ -322,12 +326,20 @@ bb5:
 #line 52 "examples/firsthit/main.hero"
     t13 = h1_at;
 #line 52 "examples/firsthit/main.hero"
-    return t13;
+    h2_ret0 = t13;
+#line 52 "examples/firsthit/main.hero"
+    goto bb7;
 #line 52 "examples/firsthit/main.hero"
 bb6:
 #line 52 "examples/firsthit/main.hero"
     goto bb4;
-#line 331 "main.c"
+#line 52 "examples/firsthit/main.hero"
+bb7:
+#line 47 "examples/firsthit/main.hero"
+    t18 = h2_ret0;
+#line 47 "examples/firsthit/main.hero"
+    return t18;
+#line 343 "main.c"
 }
 
 int64_t h_0cb_main_first_in(int64_t h0_index) {
@@ -337,7 +349,7 @@ int64_t h_0cb_main_first_in(int64_t h0_index) {
 
 #line 57 "examples/firsthit/main.hero"
 int64_t h_main_first_at_once(void) {
-#line 341 "main.c"
+#line 353 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_best;
@@ -388,15 +400,15 @@ bb0:
     t34 = h7_own7;
 #line 58 "examples/firsthit/main.hero"
     h7_own7 = t1;
-#line 392 "main.c"
+#line 404 "main.c"
     hero_array_decref(t34);
 #line 58 "examples/firsthit/main.hero"
     t35 = h0_handles;
-#line 396 "main.c"
+#line 408 "main.c"
     hero_array_incref(t1);
 #line 58 "examples/firsthit/main.hero"
     h0_handles = t1;
-#line 400 "main.c"
+#line 412 "main.c"
     hero_array_decref(t35);
 #line 59 "examples/firsthit/main.hero"
     t2 = INT64_C(0);
@@ -444,11 +456,11 @@ bb3:
     t15 = h0_handles;
 #line 67 "examples/firsthit/main.hero"
     t36 = h3_xs0;
-#line 448 "main.c"
+#line 460 "main.c"
     hero_array_incref(t15);
 #line 67 "examples/firsthit/main.hero"
     h3_xs0 = t15;
-#line 452 "main.c"
+#line 464 "main.c"
     hero_array_decref(t36);
 #line 67 "examples/firsthit/main.hero"
     t16 = INT64_C(0);
@@ -508,13 +520,13 @@ bb6:
 bb7:
 #line 73 "examples/firsthit/main.hero"
     t33 = h2_best;
-#line 512 "main.c"
+#line 524 "main.c"
     hero_array_decref(h0_handles);
 #line 73 "examples/firsthit/main.hero"
-#line 515 "main.c"
+#line 527 "main.c"
     hero_array_decref(h3_xs0);
 #line 73 "examples/firsthit/main.hero"
-#line 518 "main.c"
+#line 530 "main.c"
     hero_array_decref(h7_own7);
     return t33;
 bb8:
@@ -530,13 +542,14 @@ bb9:
 bb10:
 #line 71 "examples/firsthit/main.hero"
     goto bb8;
-#line 534 "main.c"
+#line 546 "main.c"
 }
 
 #line 75 "examples/firsthit/main.hero"
 int64_t h_main_first_alone(void) {
-#line 539 "main.c"
+#line 551 "main.c"
     int64_t h0_at;
+    int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -550,6 +563,7 @@ int64_t h_main_first_alone(void) {
     int64_t t11;
     int64_t t12;
     int64_t t13;
+    int64_t t14;
     goto bb0;
 bb0:
 #line 76 "examples/firsthit/main.hero"
@@ -585,7 +599,9 @@ bb3:
 #line 83 "examples/firsthit/main.hero"
     t13 = h_main_NOWHERE();
 #line 83 "examples/firsthit/main.hero"
-    return t13;
+    h1_ret0 = t13;
+#line 83 "examples/firsthit/main.hero"
+    goto bb7;
 #line 83 "examples/firsthit/main.hero"
 bb4:
 #line 81 "examples/firsthit/main.hero"
@@ -603,17 +619,25 @@ bb5:
 #line 80 "examples/firsthit/main.hero"
     t9 = h0_at;
 #line 80 "examples/firsthit/main.hero"
-    return t9;
+    h1_ret0 = t9;
+#line 80 "examples/firsthit/main.hero"
+    goto bb7;
 #line 80 "examples/firsthit/main.hero"
 bb6:
 #line 80 "examples/firsthit/main.hero"
     goto bb4;
-#line 612 "main.c"
+#line 80 "examples/firsthit/main.hero"
+bb7:
+#line 75 "examples/firsthit/main.hero"
+    t14 = h1_ret0;
+#line 75 "examples/firsthit/main.hero"
+    return t14;
+#line 636 "main.c"
 }
 
 #line 85 "examples/firsthit/main.hero"
 void h_main_main(void) {
-#line 617 "main.c"
+#line 641 "main.c"
     HeroStr t1;
     int64_t t2;
     goto bb0;
@@ -630,7 +654,7 @@ bb0:
     hero_print_end();
 #line 86 "examples/firsthit/main.hero"
     return;
-#line 634 "main.c"
+#line 658 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

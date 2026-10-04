@@ -98,6 +98,7 @@ int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor)
 #line 99 "coreblocks.c"
     int64_t h2_i;
     int64_t h3_v;
+    int64_t h4_ret0;
     int64_t t1;
     int64_t t2;
     HeroArrayHeader * t3;
@@ -121,6 +122,7 @@ int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor)
     int64_t t21;
     int64_t t22;
     int64_t t23;
+    int64_t t24;
     goto bb0;
 bb0:
 #line 6 "tests/golden/ir/core-blocks.hero"
@@ -176,7 +178,9 @@ bb3:
 #line 19 "tests/golden/ir/core-blocks.hero"
     if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow();
 #line 19 "tests/golden/ir/core-blocks.hero"
-    return t23;
+    h4_ret0 = t23;
+#line 19 "tests/golden/ir/core-blocks.hero"
+    goto bb10;
 #line 19 "tests/golden/ir/core-blocks.hero"
 bb4:
 #line 15 "tests/golden/ir/core-blocks.hero"
@@ -212,17 +216,25 @@ bb8:
 #line 16 "tests/golden/ir/core-blocks.hero"
     t20 = h3_v;
 #line 16 "tests/golden/ir/core-blocks.hero"
-    return t20;
+    h4_ret0 = t20;
+#line 16 "tests/golden/ir/core-blocks.hero"
+    goto bb10;
 #line 16 "tests/golden/ir/core-blocks.hero"
 bb9:
 #line 16 "tests/golden/ir/core-blocks.hero"
     goto bb7;
-#line 221 "coreblocks.c"
+#line 16 "tests/golden/ir/core-blocks.hero"
+bb10:
+#line 5 "tests/golden/ir/core-blocks.hero"
+    t24 = h4_ret0;
+#line 5 "tests/golden/ir/core-blocks.hero"
+    return t24;
+#line 233 "coreblocks.c"
 }
 
 #line 21 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
-#line 226 "coreblocks.c"
+#line 238 "coreblocks.c"
     int64_t h1_s0;
     HeroStr h2_r0 = {0};
     int64_t t1;
@@ -257,10 +269,10 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
-#line 261 "coreblocks.c"
+#line 273 "coreblocks.c"
     hero_str_incref(t11);
 #line 22 "tests/golden/ir/core-blocks.hero"
-#line 264 "coreblocks.c"
+#line 276 "coreblocks.c"
     hero_str_decref(h2_r0);
     return t11;
 bb2:
@@ -268,11 +280,11 @@ bb2:
     t8 = HERO_STR_LIT(hero_str_1073a930);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
-#line 272 "coreblocks.c"
+#line 284 "coreblocks.c"
     hero_str_incref(t8);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
-#line 276 "coreblocks.c"
+#line 288 "coreblocks.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
@@ -290,11 +302,11 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_1d4996);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
-#line 294 "coreblocks.c"
+#line 306 "coreblocks.c"
     hero_str_incref(t9);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
-#line 298 "coreblocks.c"
+#line 310 "coreblocks.c"
     hero_str_decref(t13);
     goto bb1;
 bb5:
@@ -304,11 +316,11 @@ bb6:
     t10 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
-#line 308 "coreblocks.c"
+#line 320 "coreblocks.c"
     hero_str_incref(t10);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
-#line 312 "coreblocks.c"
+#line 324 "coreblocks.c"
     hero_str_decref(t14);
     goto bb1;
 }

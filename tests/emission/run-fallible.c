@@ -107,8 +107,9 @@ void h_fallible_main(void);
 #line 18 "tests/golden/run/fallible.hero"
 h_0opt_e201354 h_fallible_half(int64_t h0_n) {
 #line 110 "fallible.c"
-    h_0opt_e201354 h1_own1 = {0};
+    h_0opt_e201354 h1_ret0 = {0};
     h_0opt_e201354 h2_own2 = {0};
+    h_0opt_e201354 h3_own3 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -123,6 +124,7 @@ h_0opt_e201354 h_fallible_half(int64_t h0_n) {
     h_0opt_e201354 t12;
     h_0opt_e201354 t13;
     h_0opt_e201354 t14;
+    h_0opt_e201354 t15;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/fallible.hero"
@@ -147,29 +149,24 @@ bb1:
     t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 21 "tests/golden/run/fallible.hero"
     t11 = HERO_STR_LIT(hero_str_7fc615fd);
-#line 151 "fallible.c"
+#line 153 "fallible.c"
     hero_str_incref(t10);
 #line 21 "tests/golden/run/fallible.hero"
-#line 154 "fallible.c"
+#line 156 "fallible.c"
     hero_str_incref(t11);
 #line 21 "tests/golden/run/fallible.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
 #line 21 "tests/golden/run/fallible.hero"
-    t13 = h1_own1;
+    t14 = h2_own2;
 #line 21 "tests/golden/run/fallible.hero"
-    h1_own1 = t12;
-#line 162 "fallible.c"
-    h_0opt_e201354_release(&t13);
+    h2_own2 = t12;
+#line 164 "fallible.c"
+    h_0opt_e201354_release(&t14);
 #line 21 "tests/golden/run/fallible.hero"
-#line 165 "fallible.c"
-    h_0opt_e201354_retain(&t12);
+    h1_ret0 = t12;
 #line 21 "tests/golden/run/fallible.hero"
-#line 168 "fallible.c"
-    h_0opt_e201354_release(&h1_own1);
+    goto bb4;
 #line 21 "tests/golden/run/fallible.hero"
-#line 171 "fallible.c"
-    h_0opt_e201354_release(&h2_own2);
-    return t12;
 bb2:
 #line 20 "tests/golden/run/fallible.hero"
     t6 = h0_n;
@@ -184,28 +181,37 @@ bb2:
 #line 20 "tests/golden/run/fallible.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8};
 #line 20 "tests/golden/run/fallible.hero"
-    t14 = h2_own2;
+    t15 = h3_own3;
 #line 20 "tests/golden/run/fallible.hero"
-    h2_own2 = t9;
-#line 191 "fallible.c"
-    h_0opt_e201354_release(&t14);
+    h3_own3 = t9;
+#line 188 "fallible.c"
+    h_0opt_e201354_release(&t15);
 #line 20 "tests/golden/run/fallible.hero"
-#line 194 "fallible.c"
-    h_0opt_e201354_retain(&t9);
+    h1_ret0 = t9;
 #line 20 "tests/golden/run/fallible.hero"
-#line 197 "fallible.c"
-    h_0opt_e201354_release(&h1_own1);
+    goto bb4;
 #line 20 "tests/golden/run/fallible.hero"
-#line 200 "fallible.c"
-    h_0opt_e201354_release(&h2_own2);
-    return t9;
 bb3:
+#line 20 "tests/golden/run/fallible.hero"
     goto bb1;
+#line 20 "tests/golden/run/fallible.hero"
+bb4:
+#line 18 "tests/golden/run/fallible.hero"
+    t13 = h1_ret0;
+#line 202 "fallible.c"
+    h_0opt_e201354_retain(&t13);
+#line 18 "tests/golden/run/fallible.hero"
+#line 205 "fallible.c"
+    h_0opt_e201354_release(&h2_own2);
+#line 18 "tests/golden/run/fallible.hero"
+#line 208 "fallible.c"
+    h_0opt_e201354_release(&h3_own3);
+    return t13;
 }
 
 #line 23 "tests/golden/run/fallible.hero"
 void h_fallible_main(void) {
-#line 209 "fallible.c"
+#line 215 "fallible.c"
     h_0opt_e201354 h0_f0 = {0};
     int64_t h1_r0;
     int64_t h2_a;
@@ -290,15 +296,15 @@ bb0:
     t46 = h7_own7;
 #line 24 "tests/golden/run/fallible.hero"
     h7_own7 = t2;
-#line 294 "fallible.c"
+#line 300 "fallible.c"
     h_0opt_e201354_release(&t46);
 #line 24 "tests/golden/run/fallible.hero"
     t47 = h0_f0;
-#line 298 "fallible.c"
+#line 304 "fallible.c"
     h_0opt_e201354_retain(&t2);
 #line 24 "tests/golden/run/fallible.hero"
     h0_f0 = t2;
-#line 302 "fallible.c"
+#line 308 "fallible.c"
     h_0opt_e201354_release(&t47);
 #line 24 "tests/golden/run/fallible.hero"
     t3 = h0_f0;
@@ -348,15 +354,15 @@ bb3:
     t48 = h8_own8;
 #line 26 "tests/golden/run/fallible.hero"
     h8_own8 = t13;
-#line 352 "fallible.c"
+#line 358 "fallible.c"
     h_0opt_e201354_release(&t48);
 #line 26 "tests/golden/run/fallible.hero"
     t49 = h3_f1;
-#line 356 "fallible.c"
+#line 362 "fallible.c"
     h_0opt_e201354_retain(&t13);
 #line 26 "tests/golden/run/fallible.hero"
     h3_f1 = t13;
-#line 360 "fallible.c"
+#line 366 "fallible.c"
     h_0opt_e201354_release(&t49);
 #line 26 "tests/golden/run/fallible.hero"
     t14 = h3_f1;
@@ -378,15 +384,15 @@ bb3:
     t50 = h9_own9;
 #line 30 "tests/golden/run/fallible.hero"
     h9_own9 = t19;
-#line 382 "fallible.c"
+#line 388 "fallible.c"
     h_0opt_e201354_release(&t50);
 #line 30 "tests/golden/run/fallible.hero"
     t51 = h4_s0;
-#line 386 "fallible.c"
+#line 392 "fallible.c"
     h_0opt_e201354_retain(&t19);
 #line 30 "tests/golden/run/fallible.hero"
     h4_s0 = t19;
-#line 390 "fallible.c"
+#line 396 "fallible.c"
     h_0opt_e201354_release(&t51);
 #line 30 "tests/golden/run/fallible.hero"
     t20 = h4_s0;
@@ -412,7 +418,7 @@ bb4:
     t52 = h10_own10;
 #line 36 "tests/golden/run/fallible.hero"
     h10_own10 = t32;
-#line 416 "fallible.c"
+#line 422 "fallible.c"
     h_0opt_e201354_release(&t52);
 #line 36 "tests/golden/run/fallible.hero"
     t33 = INT64_C(4);
@@ -422,7 +428,7 @@ bb4:
     t53 = h11_own11;
 #line 36 "tests/golden/run/fallible.hero"
     h11_own11 = t34;
-#line 426 "fallible.c"
+#line 432 "fallible.c"
     h_0opt_e201354_release(&t53);
 #line 36 "tests/golden/run/fallible.hero"
     t35 = h_0opt_e201354_eq(&t32, &t34);
@@ -438,7 +444,7 @@ bb4:
     t54 = h12_own12;
 #line 37 "tests/golden/run/fallible.hero"
     h12_own12 = t37;
-#line 442 "fallible.c"
+#line 448 "fallible.c"
     h_0opt_e201354_release(&t54);
 #line 37 "tests/golden/run/fallible.hero"
     t38 = INT64_C(6);
@@ -448,7 +454,7 @@ bb4:
     t55 = h13_own13;
 #line 37 "tests/golden/run/fallible.hero"
     h13_own13 = t39;
-#line 452 "fallible.c"
+#line 458 "fallible.c"
     h_0opt_e201354_release(&t55);
 #line 37 "tests/golden/run/fallible.hero"
     t40 = h_0opt_e201354_eq(&t37, &t39);
@@ -464,7 +470,7 @@ bb4:
     t56 = h14_own14;
 #line 38 "tests/golden/run/fallible.hero"
     h14_own14 = t42;
-#line 468 "fallible.c"
+#line 474 "fallible.c"
     h_0opt_e201354_release(&t56);
 #line 38 "tests/golden/run/fallible.hero"
     t43 = INT64_C(5);
@@ -474,7 +480,7 @@ bb4:
     t57 = h15_own15;
 #line 38 "tests/golden/run/fallible.hero"
     h15_own15 = t44;
-#line 478 "fallible.c"
+#line 484 "fallible.c"
     h_0opt_e201354_release(&t57);
 #line 38 "tests/golden/run/fallible.hero"
     t45 = h_0opt_e201354_eq(&t42, &t44);
@@ -482,43 +488,43 @@ bb4:
     hero_print_bool(t45);
 #line 38 "tests/golden/run/fallible.hero"
     hero_print_end();
-#line 486 "fallible.c"
+#line 492 "fallible.c"
     h_0opt_e201354_release(&h0_f0);
 #line 38 "tests/golden/run/fallible.hero"
-#line 489 "fallible.c"
+#line 495 "fallible.c"
     h_0opt_e201354_release(&h3_f1);
 #line 38 "tests/golden/run/fallible.hero"
-#line 492 "fallible.c"
+#line 498 "fallible.c"
     h_0opt_e201354_release(&h4_s0);
 #line 38 "tests/golden/run/fallible.hero"
-#line 495 "fallible.c"
+#line 501 "fallible.c"
     hero_failure_release(&h6_e);
 #line 38 "tests/golden/run/fallible.hero"
-#line 498 "fallible.c"
+#line 504 "fallible.c"
     h_0opt_e201354_release(&h7_own7);
 #line 38 "tests/golden/run/fallible.hero"
-#line 501 "fallible.c"
+#line 507 "fallible.c"
     h_0opt_e201354_release(&h8_own8);
 #line 38 "tests/golden/run/fallible.hero"
-#line 504 "fallible.c"
+#line 510 "fallible.c"
     h_0opt_e201354_release(&h9_own9);
 #line 38 "tests/golden/run/fallible.hero"
-#line 507 "fallible.c"
+#line 513 "fallible.c"
     h_0opt_e201354_release(&h10_own10);
 #line 38 "tests/golden/run/fallible.hero"
-#line 510 "fallible.c"
+#line 516 "fallible.c"
     h_0opt_e201354_release(&h11_own11);
 #line 38 "tests/golden/run/fallible.hero"
-#line 513 "fallible.c"
+#line 519 "fallible.c"
     h_0opt_e201354_release(&h12_own12);
 #line 38 "tests/golden/run/fallible.hero"
-#line 516 "fallible.c"
+#line 522 "fallible.c"
     h_0opt_e201354_release(&h13_own13);
 #line 38 "tests/golden/run/fallible.hero"
-#line 519 "fallible.c"
+#line 525 "fallible.c"
     h_0opt_e201354_release(&h14_own14);
 #line 38 "tests/golden/run/fallible.hero"
-#line 522 "fallible.c"
+#line 528 "fallible.c"
     h_0opt_e201354_release(&h15_own15);
     return;
 bb5:
@@ -544,11 +550,11 @@ bb6:
     t26 = t25.as.err;
 #line 32 "tests/golden/run/fallible.hero"
     t58 = h6_e;
-#line 548 "fallible.c"
+#line 554 "fallible.c"
     hero_failure_retain(&t26);
 #line 32 "tests/golden/run/fallible.hero"
     h6_e = t26;
-#line 552 "fallible.c"
+#line 558 "fallible.c"
     hero_failure_release(&t58);
 #line 32 "tests/golden/run/fallible.hero"
     t27 = h6_e;
@@ -566,7 +572,7 @@ bb6:
     hero_print_end();
 #line 32 "tests/golden/run/fallible.hero"
     goto bb4;
-#line 570 "fallible.c"
+#line 576 "fallible.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

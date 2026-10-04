@@ -1,0 +1,154 @@
+# One exit for a function that leaves from two or more places (design.md
+# Part 5; panel 190's route A-star, defect 231).
+#
+# The ownership pass writes its sweep into every block that returns
+# (`ir/own.hero`), so a function of many returns and many owned slots grew
+# as their product, in its IR and in its C: 481,201 releases for 402 returns
+# over 1,200 slots, and on the Windows box the 800-return shape killed clang
+# for memory. This pass runs once lowering is done and before anything
+# verifies it: where a function has two or more returning blocks, each keeps
+# its instructions up to its copy-outs, stores what it returns into the
+# function's return slot and jumps to one new exit block, which copies out
+# every `@` parameter, loads the slot and returns it. One block returns, so
+# one sweep is written. A function with one way out is left exactly as
+# lowering made it.
+#
+# The return slot BORROWS (`containers.SlotKind`'s `return_slot`): the value
+# stored is owned by a slot the sweep releases, by a parameter, or by nobody
+# (a literal), and the exit's rule 4 retains it for the caller before that
+# sweep runs. Between the store and the retain only the jump and the
+# copy-outs run, and a copy-out releases nothing; `ir/one_exit.hero` holds
+# the verifier to it.
+#
+# Asked of the value in hand, never of how lowering builds a return: a
+# function is merged only when every returning block ends in exactly the
+# copy-outs of its `@` parameters, in order, and, when it has a result,
+# returns a value. Anything else is left as lowering made it, and the
+# verifier refuses it (panel 190's R3: the merge is total or loud), but for
+# one shape it names: a function with a result that falls off its end, which
+# only a hole lets past the checker, and of which no binary is ever made.
+
+use token
+use ir
+use ir/containers
+
+# The return slot's name, for the reader of a dump: what makes it the return
+# slot is its kind.
+constant RETURN_SLOT: str
+    "$ret0"
+
+function run(@p: containers.Program, unit: i64)
+    merged: [containers.Function] @ []
+
+    for f in p.functions
+        merged @ merged.push(merge(f, unit: unit))
+
+    p.functions @ merged
+
+function merge(f: containers.Function, unit: i64) -> containers.Function
+    returning: [i64] @ []
+    at: i64 @ 0
+
+    for blk in f.blocks
+        if returns(blk.term)
+            returning @ returning.push(at)
+        at @ at + 1
+
+    if returning.len() < 2
+        return f
+    outs = mutable_params(f)
+    valued = f.result != unit
+
+    for r in returning
+        if !ends_in_copy_outs(f.blocks[r].insts, outs: outs)
+            return f
+
+        if valued && returned(f.blocks[r].term).is_err()
+            return f
+
+    worked: containers.Function @ f
+    exit_at = worked.blocks.len()
+    first = f.blocks[returning[0]].insts
+    exit_insts: [ir.Inst] @ first.slice(from: first.len() - outs.len(), to: first.len())
+    term: ir.Term @ .return_term(value: fail(code: "none", msg: "bare return"))
+    slot: i64 @ 0 - 1
+
+    if valued
+        slot @ worked.slots.len()
+        worked.slots @ worked.slots.push(containers.Slot(name: RETURN_SLOT, ty: f.result, kind: .return_slot))
+        loaded = worked.values.len()
+        worked.values @ worked.values.push(f.result)
+        exit_insts @ exit_insts.push(
+            ir.Inst(dest: ok(loaded), op: .load(place: whole(slot)), ty: f.result, span: f.span)
+        )
+        term @ .return_term(value: ok(loaded))
+
+    for r in returning
+        insts = f.blocks[r].insts
+        kept: [ir.Inst] @ insts.slice(from: 0, to: insts.len() - outs.len())
+
+        # The store carries the span of what it returns, so `#line` sends a
+        # reader to the `return`, not to the function's header.
+        if valued
+            span: token.Span @ f.span
+
+            if kept.len() > 0
+                span @ kept[kept.len() - 1].span
+            value = returned(f.blocks[r].term).must()
+            kept @ kept.push(
+                ir.Inst(dest: fail(code: "none", msg: "void"), op: .store(place: whole(slot), value: value), ty: f.result, span: span)
+            )
+        worked.blocks[r].insts @ kept
+        worked.blocks[r].term @ .jump(to: exit_at)
+
+    worked.blocks @ worked.blocks.push(containers.Block(preds: returning, insts: exit_insts, term: term, note: "exit"))
+    return worked
+
+function returns(term: ir.Term) -> bool
+    return match term
+        .return_term                                          => true
+        .jump | .branch | .switch_term | .unreachable | .open => false
+
+# The value a returning block hands back, when it hands one back.
+function returned(term: ir.Term) -> i64?
+    match term
+        .return_term ret                                      => return ret.value
+        .jump | .branch | .switch_term | .unreachable | .open => return fail(code: "none", msg: "not a return")
+
+    return fail(code: "none", msg: "unreached")
+
+# The `@` parameters, in declaration order: what every exit owes a copy-out.
+function mutable_params(f: containers.Function) -> [i64]
+    out: [i64] @ []
+
+    for slot_id in f.params
+        match f.slots[slot_id].kind
+            .param_slot ps =>
+                if ps.mutable
+                    out @ out.push(slot_id)
+            .local_slot | .synthetic_slot | .return_slot => continue
+
+    return out
+
+# Whether a block's last instructions are exactly one copy-out per `@`
+# parameter, in their order: what lowering writes before every return.
+function ends_in_copy_outs(insts: [ir.Inst], outs: [i64]) -> bool
+    if insts.len() < outs.len()
+        return false
+    at: i64 @ insts.len() - outs.len()
+
+    for param in outs
+        match insts[at].op
+            .copy_out co =>
+                if co.param != param
+                    return false
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => return false
+            .field | .index | .map_get | .len_of | .tag_of | .payload                           => return false
+            .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing         => return false
+
+        at @ at + 1
+
+    return true
+
+function whole(root: i64) -> ir.Place
+    return ir.Place(root: root, path: ir.Run(start: 0, length: 0))

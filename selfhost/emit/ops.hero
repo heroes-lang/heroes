@@ -299,7 +299,7 @@ function guard_arguments(p: containers.Program, c: state.Checked, decls: [ast.De
                 .param_slot ps =>
                     if ps.mutable
                         is_out @ true
-                .local_slot | .synthetic_slot => is_out @ is_out
+                .local_slot | .synthetic_slot | .return_slot => is_out @ is_out
 
         if is_cstr && !is_out
             out @ out.push("hero_cstr_nonnull(" + argument + ")")

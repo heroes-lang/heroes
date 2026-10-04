@@ -183,6 +183,7 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
     __attribute__((unused)) const char * h3_tail;
     int64_t h4_rc;
     int64_t h5_value;
+    int64_t h6_ret0;
     sqlite3_stmt * t1;
     const char * t2;
     sqlite3 * t3;
@@ -208,6 +209,7 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
     int64_t t23;
     sqlite3_stmt * t24;
     int64_t t26;
+    int64_t t27;
     goto bb0;
 bb0:
 #line 81 "examples/sqlite/main.hero"
@@ -273,7 +275,9 @@ bb2:
 #line 92 "examples/sqlite/main.hero"
     if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow();
 #line 92 "examples/sqlite/main.hero"
-    return t13;
+    h6_ret0 = t13;
+#line 92 "examples/sqlite/main.hero"
+    goto bb7;
 #line 92 "examples/sqlite/main.hero"
 bb3:
 #line 92 "examples/sqlite/main.hero"
@@ -297,7 +301,9 @@ bb4:
 #line 98 "examples/sqlite/main.hero"
     t26 = h5_value;
 #line 98 "examples/sqlite/main.hero"
-    return t26;
+    h6_ret0 = t26;
+#line 98 "examples/sqlite/main.hero"
+    goto bb7;
 #line 98 "examples/sqlite/main.hero"
 bb5:
 #line 96 "examples/sqlite/main.hero"
@@ -316,12 +322,18 @@ bb5:
 bb6:
 #line 96 "examples/sqlite/main.hero"
     goto bb4;
-#line 320 "main.c"
+#line 96 "examples/sqlite/main.hero"
+bb7:
+#line 80 "examples/sqlite/main.hero"
+    t27 = h6_ret0;
+#line 80 "examples/sqlite/main.hero"
+    return t27;
+#line 332 "main.c"
 }
 
 #line 100 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 325 "main.c"
+#line 337 "main.c"
     sqlite3 * h0_db;
     sqlite3 * t1;
     HeroStr t2;
@@ -421,7 +433,7 @@ bb1:
 #line 119 "examples/sqlite/main.hero"
     }
 #line 119 "examples/sqlite/main.hero"
-    return;
+    goto bb4;
 #line 119 "examples/sqlite/main.hero"
 bb2:
 #line 112 "examples/sqlite/main.hero"
@@ -445,12 +457,16 @@ bb2:
 #line 113 "examples/sqlite/main.hero"
     }
 #line 113 "examples/sqlite/main.hero"
-    return;
+    goto bb4;
 #line 113 "examples/sqlite/main.hero"
 bb3:
 #line 113 "examples/sqlite/main.hero"
     goto bb1;
-#line 454 "main.c"
+#line 113 "examples/sqlite/main.hero"
+bb4:
+#line 113 "examples/sqlite/main.hero"
+    return;
+#line 470 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
     return hero_handle_eq(*a, *b);

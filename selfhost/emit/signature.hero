@@ -98,7 +98,7 @@ function one_param(f: containers.Function, c: state.Checked, names: ctype.Names,
         .param_slot ps =>
             if ps.mutable
                 is_mutable @ true
-        .local_slot | .synthetic_slot => is_mutable @ is_mutable
+        .local_slot | .synthetic_slot | .return_slot => is_mutable @ is_mutable
 
     if is_mutable
         return ty + " *" + mangle.out_param(index: slot_id, name: declared.name)
