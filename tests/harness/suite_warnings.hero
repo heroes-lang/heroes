@@ -205,7 +205,7 @@ test "a warning naming another program is told apart from one naming this progra
 test "fixedbugs: a program that cannot build is skipped only where the machine lacks what it binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/warnings-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -227,3 +227,4 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert excused.passed == 0
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP warnings/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()

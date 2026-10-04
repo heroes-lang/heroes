@@ -104,7 +104,7 @@ test "the filter keeps the cases whose name holds the word, and an empty word ke
     assert matching(found: three, only: "zzz").len() == 0
 
 test "the collector pairs, orders and refuses a half pair"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/cases"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -123,9 +123,10 @@ test "the collector pairs, orders and refuses a half pair"
     assert found.must()[0].name == "a"
     assert found.must()[1].name == "b"
     assert found.must()[0].expected == tree + "/a.expected"
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a source with no expectation stops the harness by name"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/half"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -137,9 +138,10 @@ test "a source with no expectation stops the harness by name"
         .err e => e.code
 
     assert code == "half_pair"
+    assert !shell.remove_tree(scratch).is_err()
 
 test "an expectation with no source stops the harness by name"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/orphan"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -151,3 +153,4 @@ test "an expectation with no source stops the harness by name"
         .err e => e.code
 
     assert code == "orphan"
+    assert !shell.remove_tree(scratch).is_err()

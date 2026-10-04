@@ -261,7 +261,12 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     # A serial makes the second impossible rather than loud, and the first
     # impossible too: an orphan holds a name nobody will ask for again. It comes
     # from the runtime because this language has no mutable global (spec § 2).
-    serial = hero_run_serial().to_str()
+    #
+    # **And the process's id before it** (defect 320, 2026-10-04): the serial
+    # counts this process's calls, so two processes that share a directory
+    # wrote `stdout-1` at once, which is what two runs of the net's own tests
+    # in one tree did, every test a process of its own.
+    serial = pid().to_str() + "-" + hero_run_serial().to_str()
     out_path = scratch + "/stdout-" + serial
     err_path = scratch + "/stderr-" + serial
     hero_run_reset()
@@ -296,7 +301,15 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
         # operating system's own reason rides along rather than being asked
         # for later, because `hero_run_why` answers about the LAST call and a
         # caller that holds a `Run` may have made others since.
-        return ok(Run(code: -1, out: "", err: "", started: false, why: hero_run_why()))
+        why = hero_run_why()
+
+        # The captures were opened before the program was asked for, so they
+        # go here too (defect 320, 2026-10-04): two empty files per program
+        # that never started, which stayed at two while the names repeated
+        # and grew by two a run once they carried the process's id.
+        _ = hero_fs_remove(path: out_path.cstr())
+        _ = hero_fs_remove(path: err_path.cstr())
+        return ok(Run(code: -1, out: "", err: "", started: false, why: why))
     out = captured(path: out_path, stream: "stdout")
     err = captured(path: err_path, stream: "stderr")
 
@@ -735,7 +748,7 @@ function exe_suffix() -> str
 # asks this and steps aside where the answer is no; the net's own suites
 # never call it, so nothing the compiler is judged on can hide behind it.
 function can_run_scripts() -> bool
-    said = attempted(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+    said = attempted(scratch: SELFTEST, program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
 
     if said.is_err()
         return false
@@ -931,6 +944,24 @@ function remove_tree(path: str) -> ()?
         return fail(code: "cannot_run", msg: "cannot remove " + path)
     return ok()
 
+# THE NET'S OWN TESTS, EACH IN A DIRECTORY NO OTHER LIVE PROCESS USES (defect
+# 320, 2026-10-04). `heroes test` runs every test in a process of its own, and
+# the tests wrote their files under one fixed `build/harness-selftest`, so two
+# runs of this file in one tree ran the same test over the same files at the
+# same moment: 13 and 14 failures where either run alone read 0, measured that
+# day, every one a test reading another's files. A test that writes files asks
+# for this directory, made fresh, since a process that had the same id before
+# may have left one, and removes it as it ends; one that fails leaves it for
+# whoever reads why, as the net leaves its own when a suite cannot run.
+constant SELFTEST: str
+    "build/harness-selftest"
+
+function own_scratch() -> str
+    dir = SELFTEST + "/" + pid().to_str()
+    _ = remove_tree(dir).is_err()
+    _ = mkdir_all(dir).is_err()
+    return dir
+
 # This process's id — the one number no other process running now shares,
 # which is what a scratch directory's name needs (main.hero).
 function pid() -> i64
@@ -993,7 +1024,7 @@ test "a command's two streams come back apart, with its status"
     # (shell.hero::can_run_scripts carries the measurement).
     if !can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = own_scratch()
     assert !mkdir_all(scratch).is_err()
 
     # **`/bin/sh` is the PROGRAM here, and that is the honest shape.** The
@@ -1014,6 +1045,7 @@ test "a command's two streams come back apart, with its status"
 
     assert said.must().err == "to err"
     assert said.must().code == 3
+    assert !remove_tree(scratch).is_err()
 
 # **THE CAPTURES DO NOT PILE UP, and this is the instrument that says so.**
 #
@@ -1035,7 +1067,7 @@ test "a command's two streams come back apart, with its status"
 test "the captures are removed, so a run cannot fill the disk with them"
     if !can_run_scripts()
         return
-    scratch = "build/harness-captures"
+    scratch = own_scratch()
     assert !remove_tree(scratch).is_err()
     assert !mkdir_all(scratch).is_err()
 
@@ -1066,7 +1098,7 @@ test "the directory walk keeps a filename that contains a newline"
     # Panel 085 R4's falsifier, kept as a test: this is the case `ls`
     # splits in two at exit 0. If the NUL route ever stops working, this
     # is what fires, and the harness stops trusting its own case list.
-    scratch = "build/harness-selftest"
+    scratch = own_scratch()
     hostile = scratch + "/hostile"
     assert !remove_tree(hostile).is_err()
     assert !mkdir_all(hostile).is_err()
@@ -1089,6 +1121,7 @@ test "the directory walk keeps a filename that contains a newline"
             readable @ readable + 1
 
     assert readable == 3
+    assert !remove_tree(scratch).is_err()
 
 test "fixedbugs: the watchdog is a runtime limit, because no probe could name the program"
     # Symptom: 271 of 357 net checks failed on the Windows leg with
@@ -1137,7 +1170,7 @@ test "a name that is not UTF-8 is written by its bytes, and a U+FFFD it holds st
 # as 0xE9 in its ANSI code page, so both run the real path. This Mac's APFS
 # refuses the name (errno 92), and there the test asserts the walks whole.
 test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (defect 239)"
-    scratch = "build/harness-selftest"
+    scratch = own_scratch()
     dir = scratch + "/walk-names"
     only = dir + "/only"
     nothing: [str] = []
@@ -1181,6 +1214,7 @@ test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (
     # The runtime removes a tree by its names' bytes, so none is left behind.
     assert !remove_tree(dir).is_err()
     assert !exists(dir)
+    assert !remove_tree(scratch).is_err()
 
 # A program that makes, under `only`, a file and a directory whose names hold
 # the byte 0xE9, and a file inside that directory: exit 3 where the file
@@ -1203,7 +1237,7 @@ function refused_walk(got: [str]?) -> str
 test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named, never read as unset (defect 243)"
     if !can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = own_scratch()
     dir = scratch + "/env-values"
     assert !remove_tree(dir).is_err()
     assert !mkdir_all(dir).is_err()
@@ -1256,6 +1290,7 @@ test "fixedbugs: a HEROES_COMPILER or HEROES_RUNTIME that is not UTF-8 is named,
     assert strings.contains(text: unset.must().out, needle: "compiler ok ")
     assert strings.contains(text: unset.must().out, needle: "runtime ok \n")
     assert !remove_tree(dir).is_err()
+    assert !remove_tree(scratch).is_err()
 
 # The program the test above builds over the harness's own modules.
 constant ENV_PROBE: str
@@ -1272,9 +1307,7 @@ constant ENV_PROBE: str
 test "fixedbugs: a child that writes bytes that are not UTF-8 ran, and its refusal says so (defect 317)"
     if !can_run_scripts()
         return
-    scratch = "build/harness-selftest/not-text-317"
-    assert !remove_tree(scratch).is_err()
-    assert !mkdir_all(scratch).is_err()
+    scratch = own_scratch()
     told = "/bin/sh ran and exited "
     because = ", and what it wrote is not UTF-8, which every stream this harness reads must be: "
     assert said_by(scratch: scratch, script: "printf 'caf\\351'") == told + "0" + because + "on stdout 1 byte is not, in `caf<0xE9>`"
@@ -1329,3 +1362,28 @@ function captures_left(dir: str) -> i64
             left @ left + 1
 
     return left
+
+# DEFECT 320, held as a test (2026-10-04). Two runs of the net's own tests in
+# one tree run the same test at the same moment, each test a process of its
+# own, so a run's captures and a test's files are named by the process that
+# makes them: a capture holds this process's id before its serial, as a child
+# listing the directory while it runs shows, and a test's own directory holds
+# the id and starts empty, whatever an earlier process of that id left there.
+test "fixedbugs: a capture and a test's files are named by the process that makes them (defect 320)"
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    assert scratch == SELFTEST + "/" + pid().to_str()
+    assert !write_file(path: scratch + "/left-over", text: "").is_err()
+    assert own_scratch() == scratch
+    assert list_entries(scratch: scratch, dir: scratch).must().len() == 0
+    listed = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "ls \"$0\"", scratch])
+    assert !listed.is_err()
+    assert strings.contains(text: listed.must().out, needle: "stdout-" + pid().to_str() + "-")
+    assert strings.contains(text: listed.must().out, needle: "stderr-" + pid().to_str() + "-")
+
+    # A program that never starts leaves no capture either.
+    absent = attempted(scratch: scratch, program: "heroes-no-such-program", words: ["heroes-no-such-program"])
+    assert !absent.must().started
+    assert captures_left(scratch) == 0
+    assert !remove_tree(scratch).is_err()
