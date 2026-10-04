@@ -20,9 +20,9 @@ use checker
 # The slots every returning block owes a release, in slot order: a local or
 # synthetic slot of a counted type. Rules 1 and 2 of `ir/own.hero`, read
 # back: a plain parameter is borrowed and an `@` parameter is copied out, so
-# neither is owed. Asked once per function since defect 218, where it was
-# asked again by every returning block, with a walk of the parameters for
-# every slot.
+# neither is owed, and the return slot borrows (panel 190). Asked once per
+# function since defect 218, where it was asked again by every returning
+# block, with a walk of the parameters for every slot.
 function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
     is_param: [bool] @ []
 
@@ -41,7 +41,7 @@ function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
 
         match slot.kind
             .local_slot | .synthetic_slot => counted @ layout.is_refcounted(c, slot.ty)
-            .param_slot                   => counted @ counted
+            .param_slot | .return_slot    => counted @ counted
 
         if counted && !is_param[index]
             owed @ owed.push(index)

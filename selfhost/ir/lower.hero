@@ -594,8 +594,8 @@ test "an @ argument through an index is handed over as a temporary and stored ba
 
                                 # The callee sees a whole synthetic slot, never the array.
                                 match f.slots[io.place.root].kind
-                                    .synthetic_slot           => handed_over @ io.place.path.length == 0
-                                    .param_slot | .local_slot => handed_over @ false
+                                    .synthetic_slot                          => handed_over @ io.place.path.length == 0
+                                    .param_slot | .local_slot | .return_slot => handed_over @ false
                 .store st =>
                     for step in containers.steps_of(f, st.place.path)
                         match step

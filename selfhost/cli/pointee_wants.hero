@@ -62,7 +62,7 @@ function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
         .param_slot ps =>
             if ps.mutable
                 mutable @ true
-        .local_slot | .synthetic_slot => mutable @ mutable
+        .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
     if !mutable
         return fail(code: "none", msg: "not an @ parameter")
@@ -99,7 +99,7 @@ function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) 
         .param_slot ps =>
             if ps.mutable
                 mutable @ true
-        .local_slot | .synthetic_slot => mutable @ mutable
+        .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
     if !mutable
         return fail(code: "none", msg: "not an @ parameter")

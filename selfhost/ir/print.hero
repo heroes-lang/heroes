@@ -153,7 +153,7 @@ function header(f: containers.Function, c: state.Checked, s: source.Source, decl
                     .param_slot ps =>
                         if ps.mutable
                             marker @ "@"
-                    .local_slot | .synthetic_slot => continue
+                    .local_slot | .synthetic_slot | .return_slot => continue
 
                 params @ params.push(
                     marker + f.slots[slot_id].name + ": " + render.render_ty(c.types, s, decls, f.slots[slot_id].ty, f.generics)

@@ -207,7 +207,7 @@ function is_cast_out(c: state.Checked, slot: containers.Slot) -> bool
         .param_slot ps =>
             if ps.mutable
                 mutable @ true
-        .local_slot | .synthetic_slot => mutable @ mutable
+        .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
     if !mutable
         return false
@@ -266,7 +266,7 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
             .param_slot ps =>
                 if ps.mutable
                     mutable @ true
-            .local_slot | .synthetic_slot => mutable @ mutable
+            .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
         spelled: str @ c_type.must()
 

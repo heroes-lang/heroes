@@ -137,6 +137,7 @@ function is_mutable(slot: containers.Slot) -> bool
         .param_slot ps  => ps.mutable
         .local_slot     => false
         .synthetic_slot => false
+        .return_slot    => false
 
 # What the thunk hands on: the parameter's own C name, which for a `@`
 # parameter is the pointer the signature declares.
