@@ -1,0 +1,50 @@
+# Fixed defect 197, 2026-10-04 (lane b9-recovery; panel 187's cause A4, row
+# 131-41a). Symptom: `function f(g: (function(i64 -> i64)` over its body cost
+# four messages: the two openers the lexer finds still open, the `)` the type
+# reader asked for at the `->`, and the `->` it asked for at the line's end,
+# where the `->` and the result stood inside the parentheses. Cause: met at
+# the `->`, the reader passed the bracket whole, the result with it, to the
+# `)` the lexer pairs with its `(`, and then asked for the `->` it had passed.
+# It reads the `->` and the result where they stand now, up to that `)`
+# (`parse/type.function_parts`), and the message at the `->` says the `)`
+# written past the result goes before it (`data_errors.arrow_inside_parameters`):
+# the lexer's pairing too, so each opener it names still open is owed a `)`
+# once that one moves. A function type whose `->` stands past its `)` is read
+# as before (`in_place`).
+
+function two_left_open(g: (function(i64 -> i64)  #~ unclosed_bracket unclosed_bracket expected_function_type_params_close
+    print(1)
+
+function one_left_open(g: (function(i64 -> i64))  #~ unclosed_bracket expected_function_type_params_close
+    print(1)
+
+function none_left_open(g: (function(i64, i64 -> i64)))  #~ expected_function_type_params_close
+    print(1)
+
+function generic<A>(g: (function(A -> A)))  #~ expected_function_type_params_close
+    print(1)
+
+function no_parameters(g: (function( -> i64)))  #~ expected_type
+    print(1)
+
+function no_result(g: (function(i64 -> )))  #~ expected_function_type_params_close expected_type
+    print(1)
+
+function a_parameter_past_the_result(g: (function(i64 -> i64, i64)))  #~ expected_function_type_params_close
+    print(1)
+
+function in_place(g: (function(i64) -> i64))
+    print(1)
+
+record Holder
+    g: (function(i64 -> i64)  #~ unclosed_bracket expected_function_type_params_close
+
+function as_a_result() -> (function(i64 -> i64)  #~ unclosed_bracket expected_function_type_params_close
+    print(1)
+
+function as_a_binding(d: (function(i64) -> i64))
+    g: (function(i64 -> i64) @ d  #~ unclosed_bracket expected_function_type_params_close
+    print(1)
+
+function main()
+    print(1)

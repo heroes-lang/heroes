@@ -221,6 +221,7 @@ record FunctionParts
 
 function function_parts(@c: cursor.Cursor, @a: ast.Ast, text: str) -> FunctionParts
     labels: [token.Span] @ []
+    open = c.pos
     params = function_params(@c, @a, text, @labels)
     _ = line_end.expect_after(
         @c,
@@ -229,7 +230,13 @@ function function_parts(@c: cursor.Cursor, @a: ast.Ast, text: str) -> FunctionPa
         code: "expected_function_type_arrow",
         what: "`->` and the result type — a function type always states what it returns, `()` when nothing"
     )
-    return FunctionParts(params: params, labels: labels, result: parse_type(@c, @a, text))
+    result = parse_type(@c, @a, text)
+
+    # `function(i64 -> i64)`, the `->` told inside (`function_params`) and read
+    # there, up to the `)` the lexer pairs with the `(` (defect 197).
+    if c.tokens[open].kind == .lparen
+        unclosed.recover_past_pair(@c, text, open: open)
+    return FunctionParts(params: params, labels: labels, result: result)
 
 # `function(i64) -> i64` where a type goes, its parentheses left out: read
 # as the type it means, so the signature goes on to its body (defect 133's
@@ -304,7 +311,11 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
     if unclosed.never_closed(c, text, open: at)
         return params
 
-    if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
+    # `function(i64 -> i64)`: `function_parts` reads up to its `)` (defect 197).
+    if cursor.at(c, .arrow)
+        if !line_end.said_here(c)
+            cursor.push_diagnostic(@c.diagnostics, data_errors.arrow_inside_parameters(cursor.current_span(c)))
+    else if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
         unclosed.recover_past_pair(@c, text, open: at)
     return params
 
