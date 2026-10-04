@@ -3,3 +3,5 @@
     **Origin:** panel 189's compiler-engineer, 2026-10-04, its Q6 (*with a `./runtime` folder next to the program, that build silently succeeds against the wrong runtime*, `docs/panel/189-reports/compiler-engineer.md`), for a hint not UTF-8; run by the coordinator for a hint that is UTF-8 and names nothing, the same.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a silence where a word is owed, the build otherwise as the ruled search order allows; whether a set hint that fails ends the search is a ruling, and the decoy it lets in is what panel 020's ABI stamp and the runtime's cache key were written against.
+
+    **2026-10-04, lane b9-notext, defect 277's repair**: the places a set hint that names nothing falls through to are now `./runtime` and then every directory above the compiler's executable, so the silence this item names now reaches further (its report, *For you to decide*).
