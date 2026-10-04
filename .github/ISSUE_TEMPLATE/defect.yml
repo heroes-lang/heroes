@@ -1,6 +1,6 @@
 name: A program does the wrong thing
 description: A program that compiles and should not, one that fails and should not, or a diagnostic that does not tell you how to fix your program.
-labels: ["defect"]
+labels: ["kind:defect"]
 body:
   - type: markdown
     attributes:
@@ -11,6 +11,11 @@ body:
 
         Everything below is asked for because a defect nobody can reproduce is a
         rumour. If you have only some of it, send it anyway.
+
+        The project files every defect, its own and yours, as one file of
+        `issues/` with these sections, and adds the day it was found, its class
+        and, when it closes, the repair and the commit that made it.
+        `.claude/rules/records.md` § The issues is the shape.
   - type: textarea
     id: program
     attributes:
@@ -29,7 +34,7 @@ body:
   - type: textarea
     id: happened
     attributes:
-      label: What happened
+      label: What happens
       description: The output, verbatim, and the exit code if you have it (`echo $?`). An abort message and a compiler diagnostic are both useful, and so is silence at exit 0 where you expected neither.
       render: text
     validations:
@@ -43,6 +48,13 @@ body:
         say that: a silence in the spec is often the finding.
     validations:
       required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where to look
+      description: Optional. If you know where the cause is, the sentence of the spec, the file of the compiler or the runtime, name it.
+    validations:
+      required: false
   - type: input
     id: version
     attributes:
