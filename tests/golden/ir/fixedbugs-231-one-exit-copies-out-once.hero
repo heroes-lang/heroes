@@ -1,0 +1,28 @@
+# Defect 231, panel 190's R10 (2026-10-04): a function with an `@`
+# parameter and three ways out, one of them the early return a `?` lowers to,
+# leaves by one exit. Each way out stores what it returns into `$ret0` and
+# jumps there; the exit copies `r` out once, loads the slot, retains what it
+# loaded and releases every slot the function owns, once. Until that sitting
+# each of the three returning blocks carried its own copy-out and its own
+# sweep. `known` has two ways out and no `@` parameter; `main` has one, and
+# lowering leaves it as it was.
+
+record Reader
+    words: [str]
+    pos: i64
+
+function known(word: str) -> str?
+    if word == "x"
+        return fail(code: "unknown", msg: word)
+    return ok(word + "!")
+
+function next(@r: Reader) -> str?
+    if r.pos >= r.words.len()
+        return fail(code: "end", msg: "no more words")
+    word = r.words[r.pos]
+    r.pos @ r.pos + 1
+    return ok(known(word)?)
+
+function main()
+    r: Reader @ Reader(words: ["a", "x"], pos: 0)
+    print(next(@r).default("-"), next(@r).default("-"), next(@r).default("-"), r.pos)
