@@ -2,10 +2,10 @@
 # over the corpus.
 #
 # Ports golden.rs:811 and corpus.rs:382. Two directories of cases and
-# fourteen real programs, each through `build` (-O0) and `run` (-O2),
-# because the two verbs are the two optimisation levels and clang's
-# warnings reach stderr even on success — a warning nobody sees cannot
-# falsify anything.
+# fourteen real programs, each built at -O0 and at -O2, because clang's
+# warnings differ by level and reach stderr even on success — a warning
+# nobody sees cannot falsify anything. It ran `build` and `run` for the two
+# levels until defect 299 (below, `judge`).
 #
 # WHY A ZERO-WARNING BAR AND NOT A LIST OF ACCEPTABLE ONES: the flag set
 # has `-Werror=` on four warnings and plain `-W` on
@@ -54,32 +54,79 @@ constant EXAMPLES: str
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
+    judged: i64 @ 0
+    skipped: i64 @ 0
 
     for dir in GOLDEN_DIRS
         for item in cases.collect(scratch: scratch, dir: dir)?
-            judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
+            judge(@r, @skipped, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
+            judged @ judged + 1
 
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         main = dir + "/main.hero"
 
         if read_file(main).is_err()
             continue
-        judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + strings.base_name(path: dir), main: main)
+        judge(
+            @r,
+            @skipped,
+            scratch: scratch,
+            compiler: compiler,
+            label: "warnings/" + strings.base_name(path: dir),
+            main: main
+        )
+        judged @ judged + 1
 
+    # **A skip is not a pass, and a machine skipping a third of the programs
+    # is not judging them** (defect 299, 2026-10-04): every other form that
+    # skips for a missing library holds this floor, and this one held none,
+    # so a machine lacking every library read green with nothing judged.
+    if starved(skipped: skipped, found: judged)
+        report.keep_failure(
+            @r,
+            label: "warnings",
+            detail: "  " + skipped.to_str() + " of " + judged.to_str() + " programs were skipped for a missing library — this machine is not testing the warnings"
+        )
     return ok(r)
 
-# One program under both verbs, and no warning under either.
-function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str)
-    for verb in ["build", "run"]
-        said = shell.run_guarded(
-            scratch: scratch,
-            words: [compiler, verb, main]
-        )
+# A machine that skipped a third of the programs for libraries it lacks: the
+# floor `run`, `lines` and the golden forms hold.
+function starved(skipped: i64, found: i64) -> bool
+    return skipped > 0 && skipped * 3 >= found
+
+# The two levels a program is built at, as `build` spells them.
+constant LEVELS: [str]
+    [
+        "-O0"
+        "-O2"
+    ]
+
+# One program built at both levels, and no warning at either; `skipped`
+# gains one where the machine lacks a library the program binds.
+#
+# **A build that fails is a failure, and the build is asked at -O2 as at
+# -O0** (defect 299, 2026-10-04). A build that exited non-zero for a reason
+# other than a library this machine lacks fell through to the warning scan,
+# and with no `warning:` line on its stderr it read as passing: a planted
+# compiler that refused every program read `1 passed, 0 failed` (measured
+# that day). And -O2 was asked through `run`, which builds through the same
+# `produce` as `build -O2` (`selfhost/cli/verbs.hero`, the two verbs differing
+# in their default level and in running the binary after) and then answers
+# with the PROGRAM's exit code, so a build that failed and a program that
+# exited 1 could not be told apart, and a program's own stderr was scanned
+# for warnings as well. `build -O2` asks the build alone.
+function judge(@r: report.Report, @skipped: i64, scratch: str, compiler: str, label: str, main: str)
+    for level in LEVELS
+        said = shell.run_guarded(scratch: scratch, words: [compiler, "build", main, level])
 
         # The refusal's own words (defect 317): it names the compiler and
         # why there is no verdict, a stream that is not UTF-8 among them.
         if said.is_err()
-            report.keep_failure(@r, label: label, detail: "  `" + verb + " " + main + "`: " + shell.refusal(said))
+            report.keep_failure(
+                @r,
+                label: label + " at " + level,
+                detail: "  `build " + main + " " + level + "`: " + shell.refusal(said)
+            )
             return
 
         # A program this machine cannot build for a library it lacks says
@@ -87,22 +134,21 @@ function judge(@r: report.Report, scratch: str, compiler: str, label: str, main:
         # where the program binds what the compiler says is missing and the
         # machine, asked, lacks it (`absence`); until defect 246 the compiler's
         # words alone dropped the program, with no pass, no failure and no
-        # line. A word the machine refutes is a program that did not build.
+        # line. Any other build that fails is a failure, said with its exit.
         if said.must().code != 0
             lacks = absence.machine_lacks(scratch: scratch, path: main, expected: "", said: said.must().err)
 
             if !lacks.is_err()
+                skipped @ skipped + 1
                 report.keep_skip(@r, label: label, detail: "  " + lacks.must())
                 return
+            detail: str @ "  `build " + main + " " + level + "` exited " + said.must().code.to_str() + ", so its C was never judged for warnings:\n    " + strings.trimmed(said.must().err)
             why = absence.refused(lacks)
 
             if why.len() > 0
-                report.keep_failure(
-                    @r,
-                    label: label + " under `" + verb + "`",
-                    detail: "  " + main + " did not build, and not for a library this machine lacks: " + why + "\n    " + said.must().err
-                )
-                return
+                detail @ detail + "\n  not skipped for a missing library: " + why
+            report.keep_failure(@r, label: label + " at " + level, detail: detail)
+            return
         noise = warnings_in(said.must().err)
 
         if noise.len() > 0
@@ -111,13 +157,13 @@ function judge(@r: report.Report, scratch: str, compiler: str, label: str, main:
             if blamed.len() > 0
                 report.keep_failure(
                     @r,
-                    label: label + " under `" + verb + "`",
+                    label: label + " at " + level,
                     detail: "  this invocation was building " + main + " and its stderr carried warnings about " + blamed + ":\n    " + noise.join("\n    ") + "\n  a warning names the program it is about, so one program's warnings reaching another's\n  stderr is a misattribution and not a finding (defect 057). Look for a file two clang\n  invocations share: before 2026-09-17 every one of them wrote `build/clang-stderr.txt`."
                 )
                 return
             report.keep_failure(
                 @r,
-                label: label + " under `" + verb + "`",
+                label: label + " at " + level,
                 detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    ")
             )
             return
@@ -214,7 +260,9 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
     assert !has.is_err()
     refuted: report.Report @ report.empty()
-    judge(@refuted, scratch: scratch, compiler: compiler.must(), label: "warnings/has", main: has.must())
+    none: i64 @ 0
+    judge(@refuted, @none, scratch: scratch, compiler: compiler.must(), label: "warnings/has", main: has.must())
+    assert none == 0
     assert refuted.failed == 1
     assert refuted.passed == 0
     assert refuted.skips.len() == 0
@@ -222,9 +270,65 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @ report.empty()
-    judge(@excused, scratch: scratch, compiler: compiler.must(), label: "warnings/lacks", main: lacks.must())
+    one: i64 @ 0
+    judge(@excused, @one, scratch: scratch, compiler: compiler.must(), label: "warnings/lacks", main: lacks.must())
+    assert one == 1
     assert excused.failed == 0
     assert excused.passed == 0
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP warnings/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 299, held as a test (2026-10-04). A build that fails for a reason
+# that is not a library this machine lacks is a failure, said with its exit,
+# where it read as passing: a stand-in compiler refusing every program, its
+# stderr holding no `warning:` line, read `1 passed, 0 failed`. The build is
+# asked at -O2 as at -O0, so one that fails at -O2 alone is told at -O2. And
+# the skips hold the third every other form that skips holds.
+test "fixedbugs: a build that fails is a failure at either level, and the skips are floored (defect 299)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    main = scratch + "/x.hero"
+    assert !write_file(path: main, text: "function main()\n    print(1)\n").is_err()
+    always = stub_compiler(scratch: scratch, name: "stub-refuses.sh", body: "printf 'error[boom]: the build failed\\n  at x.hero:1:1\\n' 1>&2\nexit 1").must(
+    )
+    refused: report.Report @ report.empty()
+    none: i64 @ 0
+    judge(@refused, @none, scratch: scratch, compiler: always, label: "warnings/x", main: main)
+    assert refused.passed == 0
+    assert refused.failed == 1
+    assert strings.starts_with(text: refused.failures[0], prefix: "FAIL warnings/x at -O0\n")
+    assert strings.contains(
+        text: refused.failures[0],
+        needle: " -O0` exited 1, so its C was never judged for warnings:\n    error[boom]: the build failed"
+    )
+    late = stub_compiler(scratch: scratch, name: "stub-late.sh", body: "case \" $* \" in *' -O2 '*) printf 'error[boom]: at -O2 alone\\n' 1>&2; exit 1 ;; esac\nexit 0").must(
+    )
+    at_o2: report.Report @ report.empty()
+    judge(@at_o2, @none, scratch: scratch, compiler: late, label: "warnings/x", main: main)
+    assert at_o2.failed == 1
+    assert strings.starts_with(text: at_o2.failures[0], prefix: "FAIL warnings/x at -O2\n")
+    clean = stub_compiler(scratch: scratch, name: "stub-clean.sh", body: "exit 0").must()
+    quiet: report.Report @ report.empty()
+    judge(@quiet, @none, scratch: scratch, compiler: clean, label: "warnings/x", main: main)
+    assert quiet.passed == 1
+    assert quiet.failed == 0
+    assert none == 0
+
+    # The floor: a third of the programs skipped is a machine not judging them.
+    assert starved(skipped: 3, found: 3)
+    assert starved(skipped: 2, found: 6)
+    assert !starved(skipped: 1, found: 4)
+    assert !starved(skipped: 0, found: 3)
+    assert !shell.remove_tree(scratch).is_err()
+
+# A stand-in compiler: a POSIX script of `body`, made executable.
+function stub_compiler(scratch: str, name: str, body: str) -> str?
+    path = scratch + "/" + name
+    write_file(path: path, text: "#!/bin/sh\n" + body + "\n")?
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
+    return ok(path)
