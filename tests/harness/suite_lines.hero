@@ -39,6 +39,7 @@
 # library), so a claim on anything else that does not name its own next line
 # fails here rather than passing unread.
 
+use absence
 use cases
 use report
 use floors
@@ -75,9 +76,10 @@ constant LIBRARY_FILE: str
 # skipped, a compiler that broke `--emit-c` for one case included. So this
 # number floors the TREE alone now, and a skip is what `run`, `emission`,
 # `determinism`, `corpus` and the golden forms already call one: a case
-# whose build says the machine lacks its library
-# (`shell.machine_lacks_the_library`), counted, the suite red when the skips
-# reach a third of the tree; every other failure to emit is a failure.
+# whose build says the machine lacks a library the case binds, and the
+# machine, asked, agrees (`absence.machine_lacks`, defect 246), named,
+# counted, the suite red when the skips reach a third of the tree; every other
+# failure to emit is a failure.
 constant LEAST: i64
     235
 
@@ -89,42 +91,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     skipped: i64 @ 0
 
     for item in found
-        said = shell.run(
-            scratch: scratch,
-            program: compiler,
-            words: [compiler, "build", item.source, "--emit-c"]
-        )
-
-        if said.is_err()
-            report.keep_failure(
-                @r,
-                label: "lines/" + item.name,
-                detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(said)
-            )
-            continue
-
-        if said.must().code != 0
-            # A case this machine cannot emit for a library it lacks is not
-            # evidence either way, and a skip is not a pass: counted below.
-            if shell.machine_lacks_the_library(said.must().err)
-                skipped @ skipped + 1
-            else
-                report.keep_failure(
-                    @r,
-                    label: "lines/" + item.name,
-                    detail: "  " + item.source + " did not emit (exit " + said.must().code.to_str() + "), and nothing says this machine lacks a library:\n    " + said.must().err
-                )
-            continue
-        wrong = offences(c: said.must().out, source: item.source)
-
-        if wrong.len() == 0
-            report.keep_pass(@r)
-        else
-            report.keep_failure(
-                @r,
-                label: "lines/" + item.name,
-                detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, or a restore of the generated file not naming its own next line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
-            )
+        one_case(@r, @skipped, scratch: scratch, compiler: compiler, item: item)
 
     if starved(skipped: skipped, found: found.len())
         report.keep_failure(
@@ -134,11 +101,105 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         )
     return ok(r)
 
+# One case: its C emitted, then every `#line` claim in it asked of the
+# author's file.
+#
+# A case this machine cannot emit for a library it lacks is not evidence either
+# way, and a skip is not a pass: named, and counted for the caller's floor. It
+# is the machine's only where `absence.machine_lacks` says so, the case binding
+# what the compiler says is missing and the machine, asked, lacking it; until
+# defect 246 the compiler's words alone made the skip, and a compiler saying
+# `stdio.h` was missing on a Mac that has it read green here (measured
+# 2026-10-04: 268 passed, 0 failed over one such case, 269 and 0 without it).
+function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, item: cases.Case)
+    said = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", item.source, "--emit-c"]
+    )
+
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "lines/" + item.name,
+            detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(said)
+        )
+        return
+
+    if said.must().code != 0
+        lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: "", said: said.must().err)
+
+        if !lacks.is_err()
+            skipped @ skipped + 1
+            report.keep_skip(@r, label: "lines/" + item.name, detail: "  " + lacks.must())
+            return
+        detail: str @ "  " + item.source + " did not emit (exit " + said.must().code.to_str() + "):\n    " + said.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "lines/" + item.name, detail: detail)
+        return
+    wrong = offences(c: said.must().out, source: item.source)
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "lines/" + item.name,
+        detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, or a restore of the generated file not naming its own next line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
+    )
+
 # A machine that skipped a third of the tree for libraries it lacks is not
 # running the corpus, whatever the rest read: the rule `run` and the golden
 # forms already hold (2026-10-02).
 function starved(skipped: i64, found: i64) -> bool
     return skipped > 0 && skipped * 3 >= found
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
+# the compiler's words for the machine's. A header the machine has, said to be
+# missing, is judged and fails; a header no machine has, which the case binds,
+# is skipped by name.
+test "fixedbugs: a case that cannot emit is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/lines-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    judged: report.Report @ report.empty()
+    none_skipped: i64 @ 0
+    one_case(
+        @judged,
+        @none_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        item: cases.Case(source: has.must(), expected: "", name: "has")
+    )
+    assert judged.failed == 1
+    assert none_skipped == 0
+    assert judged.skips.len() == 0
+    assert strings.contains(text: judged.failures[0], needle: "clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused: report.Report @ report.empty()
+    one_skipped: i64 @ 0
+    one_case(
+        @excused,
+        @one_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        item: cases.Case(source: lacks.must(), expected: "", name: "lacks")
+    )
+    assert excused.failed == 0
+    assert one_skipped == 1
+    assert excused.skips.len() == 1
+    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP lines/lacks\n")
 
 test "a few skips for a missing library pass, a third of the tree does not"
     assert !starved(skipped: 0, found: 235)

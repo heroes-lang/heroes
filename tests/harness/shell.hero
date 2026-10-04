@@ -569,33 +569,6 @@ function env(name: str) -> str
         return ""
     return got.validated().default("")
 
-# Whether a refusal is this MACHINE's answer rather than the compiler's.
-#
-# Two codes, both about a library that is not installed (golden.rs:939 —
-# raylib on the Windows leg, which carries clang and no pkg-config). It
-# lives here rather than in a suite because several suites ask it, and
-# because the question is about the machine, which is what this module
-# is: `run/` may skip building such a case. Every caller that skips must
-# also floor its skips: a machine missing every library would otherwise
-# report green having tested nothing.
-#
-# **It asks the compiler's words alone, and the compiler is the thing under
-# test.** `unsupported/` asked it until defect 246 (2026-10-04), and read
-# green over a changed missing-library message, a header this Mac has said to
-# be missing, and a second message beside the expected one. It now asks
-# `absence.machine_lacks`, which takes these words as a candidate and asks the
-# expectation, the case and the machine before it skips; a caller here skips
-# on the words.
-function machine_lacks_the_library(text: str) -> bool
-    # Three spellings of one answer, and all three are the MACHINE's rather
-    # than the program's: a package the machine cannot find, a header it does
-    # not have, and a `pkg-config` that is not installed at all — the third is
-    # `cli_libraries.hero:187`'s own wording, and it was missing here until
-    # the Windows VPS answered it for four `run/` cases that name raylib
-    # (measured 2026-08-31: 4 failed as "did not build" on a machine that
-    # simply has no pkg-config).
-    return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]") || strings.contains(text: text, needle: "pkg-config is not on this machine")
-
 # The compilers this harness's own test blocks may use, in the order they are
 # tried. Read as: whatever the caller named, then the binary in the repository
 # root — the one every command in CLAUDE.md § Commands and the ROADMAP's *Verify

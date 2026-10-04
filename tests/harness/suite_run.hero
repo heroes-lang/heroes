@@ -35,6 +35,7 @@
 # would be the defect. `expectation.hero` carries the reasoning and the
 # two things the line does not do.
 
+use absence
 use cases
 use expectation
 use report
@@ -130,16 +131,23 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         return false
 
     # The machine's own answer, before the case's: a runner with no
-    # pkg-config was never given raylib, and that is nobody's defect.
-    if shell.machine_lacks_the_library(built.must().err)
-        return true
-
+    # pkg-config was never given raylib, and that is nobody's defect. It is
+    # the machine's only where the case binds what the compiler says is
+    # missing and the machine, asked, lacks it (`absence.machine_lacks`); until
+    # defect 246 the compiler's words alone made the skip, before even its
+    # exit code was read.
     if built.must().code != 0
-        report.keep_failure(
-            @r,
-            label: "run/" + item.name,
-            detail: "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err
-        )
+        lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: "", said: built.must().err)
+
+        if !lacks.is_err()
+            report.keep_skip(@r, label: "run/" + item.name, detail: "  " + lacks.must())
+            return true
+        detail: str @ "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "run/" + item.name, detail: detail)
         return false
 
     at_o0 = shell.run(scratch: scratch, program: binary, words: [binary])
@@ -263,3 +271,48 @@ test "a program that does not build is a failure naming clang's words"
     )
     assert r.failed == 1
     assert strings.contains(text: r.failures[0], needle: "did not build")
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
+# the compiler's words for the machine's, before even reading its exit code. A
+# header the machine has, said to be missing, is judged and fails; a header no
+# machine has, which the case binds, is skipped by name.
+test "fixedbugs: a program that does not build is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/run-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    want = expectation.split("7\n").must()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    refuted: report.Report @ report.empty()
+    took = one_case(
+        scratch: scratch,
+        compiler: compiler.must(),
+        binaries: scratch + "/binaries",
+        item: cases.Case(source: has.must(), expected: "", name: "has"),
+        want: want,
+        r: @refuted
+    )
+    assert !took
+    assert refuted.failed == 1
+    assert refuted.skips.len() == 0
+    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused: report.Report @ report.empty()
+    skipped = one_case(
+        scratch: scratch,
+        compiler: compiler.must(),
+        binaries: scratch + "/binaries",
+        item: cases.Case(source: lacks.must(), expected: "", name: "lacks"),
+        want: want,
+        r: @excused
+    )
+    assert skipped
+    assert excused.failed == 0
+    assert excused.skips.len() == 1
+    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP run/lacks\n")

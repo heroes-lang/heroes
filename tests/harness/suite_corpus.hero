@@ -31,6 +31,7 @@
 #      counter is the only leak instrument there is — so the corpus must
 #      keep a path that still CROSSES the gate.
 
+use absence
 use expectation
 use report
 use floors
@@ -169,15 +170,29 @@ function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: r
             report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
             return false
 
-        if shell.machine_lacks_the_library(said.must().err)
-            return true
-
+        # A program this machine cannot build for a library it lacks is
+        # skipped, by name, and floored by the caller. It is the machine's only
+        # where the program binds what the compiler says is missing, in any of
+        # its modules, and the machine, asked, lacks it (`absence`); until
+        # defect 246 the compiler's words alone made the skip.
         if said.must().code != 0
-            report.keep_failure(
-                @r,
-                label: "corpus/" + name + " at " + level,
-                detail: "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
+            lacks = absence.machine_lacks_among(
+                scratch: scratch,
+                path: main,
+                modules: module_paths(scratch: scratch, dir: dir),
+                expected: "",
+                said: said.must().err
             )
+
+            if !lacks.is_err()
+                report.keep_skip(@r, label: "corpus/" + name, detail: "  " + lacks.must())
+                return true
+            detail: str @ "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
+            why = absence.refused(lacks)
+
+            if why.len() > 0
+                detail @ detail + "\n  not skipped for a missing library: " + why
+            report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: detail)
             return false
 
         if strings.contains(text: said.must().out, needle: "FAIL ")
@@ -366,6 +381,23 @@ function module_texts(scratch: str, dir: str) -> [str]?
 
     return ok(texts)
 
+# Every module of the program, as the paths the compiler names them by. A
+# directory that cannot be walked answers none, and the witness then reads the
+# root alone, which can only refuse a skip.
+function module_paths(scratch: str, dir: str) -> [str]
+    out: [str] @ []
+    nothing: [str] = []
+    walked = shell.list_tree(scratch: scratch, dir: dir, skip: nothing)
+
+    if walked.is_err()
+        return out
+
+    for entry in walked.must()
+        if strings.ends_with(text: entry, suffix: ".hero")
+            out @ out.push(entry)
+
+    return out
+
 # Whether any module has a TOP-LEVEL declaration with this opening — a
 # line starting at column 0, so the word inside a comment or a string does
 # not count.
@@ -414,3 +446,53 @@ test "arguments come from main.args, one per line, quoted"
     # The words arrive whole: the middle one holds a space and the last
     # an apostrophe, and neither needs a quote to survive the trip.
     assert passed_after_dashes(tree) == ["--", "one", "two words", "it's"]
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
+# the compiler's words for the machine's. A header the machine has, said to be
+# missing, is judged and fails; a header no machine has, bound in a module of
+# the program and blamed there, is skipped by name.
+test "fixedbugs: a program whose tests cannot build is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/corpus-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/has").is_err()
+    assert !shell.mkdir_all(tree + "/lacks/db").is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    has = absence.planted_case(dir: tree + "/has", name: "main", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    refuted: report.Report @ report.empty()
+    took = one_program(
+        scratch: scratch,
+        compiler: compiler.must(),
+        binaries: scratch + "/corpus-binaries",
+        dir: tree + "/has",
+        r: @refuted
+    )
+    assert !took
+    assert refuted.failed == 1
+    assert refuted.skips.len() == 0
+    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    lacks = tree + "/lacks"
+    assert !write_file(path: lacks + "/main.hero", text: "use db/store\n\nfunction main()\n    print(store.seven())\n").is_err()
+    assert !write_file(path: lacks + "/db/store.hero", text: "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32\n").is_err()
+    told = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: lacks + "/db/store.hero:2:5"
+    )
+    assert !write_file(path: lacks + "/main.said", text: told).is_err()
+    excused: report.Report @ report.empty()
+    skipped = one_program(
+        scratch: scratch,
+        compiler: compiler.must(),
+        binaries: scratch + "/corpus-binaries",
+        dir: lacks,
+        r: @excused
+    )
+    assert skipped
+    assert excused.failed == 0
+    assert excused.skips.len() == 1
+    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP corpus/lacks\n")
