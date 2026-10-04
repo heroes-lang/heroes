@@ -22,6 +22,7 @@ use parse/decl
 use parse/which_arm
 use parse/joined_lines as seams
 use text_outline
+use word_place
 
 ## A reading's diagnostics, in the order of the text
 
@@ -129,11 +130,7 @@ function starts_in(starts: [i64], from: i64, to: i64) -> bool
 # compilation's text, and a blank line before its first token lexes to
 # nothing.
 function read_bodies(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.Diagnostic]
-    start: i64 @ apart.tokens[0].span.start
-
-    while start > 0 && text[start - 1] != '\n'
-        start @ start - 1
-
+    start = word_place.line_start(text, at: apart.tokens[0].span.start)
     end = apart.tokens[apart.tokens.len() - 1].span.start
     return read_apart(
         lexer.moved(lexer.lex_bodies(text.slice(from: start, to: end)), offset: start),
