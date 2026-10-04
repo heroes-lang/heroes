@@ -66,6 +66,11 @@ function is_return_slot(slot: Slot) -> bool
         .return_slot                                => true
         .param_slot | .local_slot | .synthetic_slot => false
 
+# The same question asked of a place's root, which the verifier may meet
+# naming a slot that does not exist: false there, and named elsewhere.
+function is_return_root(f: Function, root: i64) -> bool
+    return root >= 0 && root < f.slots.len() && is_return_slot(f.slots[root])
+
 # One basic block: where control can arrive from, what happens, and the
 # single edge out. preds and note are both there for the READER: their
 # absence was measured on a five-block function, and "what is this

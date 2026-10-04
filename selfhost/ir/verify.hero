@@ -41,6 +41,7 @@ use ir/inout
 use ir/uses
 use ir/values
 use ir/phases
+use ir/one_exit
 
 # Whether this function's implementation is C's: an extern function's
 # code, or an extern constant's value (§4.19, panel 038). Both have no
@@ -94,6 +95,7 @@ function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [
             index @ index + 1
 
         values.check(f, label: label, problems: @problems)
+        one_exit.check(p, f, c, label: label, problems: @problems)
 
     return problems
 
