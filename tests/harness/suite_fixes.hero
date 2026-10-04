@@ -566,7 +566,7 @@ test "the fixes suite catches a wrong application and a repair that does not che
     broken = "function main()\n    mask = 0XFF\n    print(mask)\n"
     assert !write_file(path: tree + "/u.hero", text: broken).is_err()
     assert !write_file(path: tree + "/u.expected", text: "").is_err()
-    compiler = shell.some_compiler()
+    compiler = shell.some_compiler().must()
     assert compiler.len() > 0
 
     # What the compiler actually applies, captured once and stored as the
@@ -610,7 +610,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     geom = "function dist2(a: i64, b: i64) -> i64\n    return a * a + b * b\n"
     assert !write_file(path: tree + "/typo/main.hero", text: main).is_err()
     assert !write_file(path: tree + "/typo/geom.hero", text: geom).is_err()
-    compiler = shell.some_compiler()
+    compiler = shell.some_compiler().must()
     assert compiler.len() > 0
     applied = shell.run(
         scratch: scratch,
@@ -687,7 +687,7 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     tree = scratch + "/untouched"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
-    compiler = shell.some_compiler()
+    compiler = shell.some_compiler().must()
     assert compiler.len() > 0
 
     # An unused binding: its fix is a `guess`, so nothing is applied.
@@ -751,7 +751,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/typo/lib").is_err()
     assert !shell.mkdir_all(tree + "/holey").is_err()
-    compiler = shell.some_compiler()
+    compiler = shell.some_compiler().must()
     assert compiler.len() > 0
 
     # A root whose `certain` fix exists only where its module resolves, and the
