@@ -100,10 +100,15 @@ static HeroStr hero_fs_found_path(const char *path) {
 #if defined(_WIN32)
 /* Is `path` a symbolic link or a junction (a reparse point that NAMES another
  * file) rather than a file some filter keeps a reparse point on, as a cloud
- * placeholder is? `FindFirstFileA` reports the tag in `dwReserved0`. */
+ * placeholder is? `FindFirstFileW` reports the tag in `dwReserved0`. */
 static int hero_fs_is_surrogate(const char *path) {
-    WIN32_FIND_DATAA found;
-    HANDLE h = FindFirstFileA(path, &found);
+    /* Wide, as the directory walk is (parts/codepage.c): a name whose UTF-8
+     * passes 260 bytes failed the narrow call and read as no link at all. */
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return 0;
+    WIN32_FIND_DATAW found;
+    HANDLE h = FindFirstFileW(wide, &found);
+    hero_release(wide);
     if (h == INVALID_HANDLE_VALUE) return 0;
     FindClose(h);
     return (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
@@ -132,9 +137,15 @@ HeroStr hero_fs_landing(const char *path) {
         hero_fs_why_code = (int64_t)GetLastError();
         return hero_str_from_bytes("", 0);
     }
-    char final[HERO_FS_PATH_MAX];
-    DWORD got = GetFinalPathNameByHandleA(h, final, (DWORD)sizeof final, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
-    if (got == 0 || got >= (DWORD)sizeof final) {
+    /* WIDE, and carried back as the listing carries a name (parts/codepage.c):
+     * the narrow door answered a target holding a surrogate standing alone
+     * as U+FFFD under the UTF-8 code page, valid text naming a file that is
+     * not there, which the write below then made beside the link (defect
+     * 238). As bytes it is not UTF-8, and `hero_fs_found_path` refuses it as
+     * Linux's arm refuses a target whose bytes are not. */
+    wchar_t final[HERO_FS_PATH_MAX];
+    DWORD got = GetFinalPathNameByHandleW(h, final, (DWORD)HERO_FS_PATH_MAX, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+    if (got == 0 || got >= (DWORD)HERO_FS_PATH_MAX) {
         hero_fs_why_code = got == 0 ? (int64_t)GetLastError() : (int64_t)ERROR_FILENAME_EXCED_RANGE;
         CloseHandle(h);
         return hero_str_from_bytes("", 0);
@@ -142,9 +153,13 @@ HeroStr hero_fs_landing(const char *path) {
     CloseHandle(h);
     /* `\\?\C:\dir\name` for a path on a drive: the prefix goes, so the name
      * reads as the author writes one. A UNC or volume path keeps it. */
-    const char *at = final;
-    if (got > 6 && strncmp(final, "\\\\?\\", 4) == 0 && final[5] == ':') at = final + 4;
-    return hero_fs_found_path(at);
+    const wchar_t *at = final;
+    if (got > 6 && wcsncmp(final, L"\\\\?\\", 4) == 0 && final[5] == L':') at = final + 4;
+    int64_t length = 0;
+    char *bytes = hero_win_bytes(at, &length);
+    HeroStr found = hero_fs_found_path(bytes);
+    hero_release(bytes);
+    return found;
 #else
     char current[HERO_FS_PATH_MAX];
     size_t length = strlen(path);

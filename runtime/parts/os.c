@@ -496,6 +496,10 @@ static void hero_lease_crash_install(void) {
 void hero_args_set(int argc, char **argv) {
     hero_stdout_is_bytes();
     hero_streams_survive_abort();
+    /* Before anything of the program runs, and after the streams, so the refusal
+     * is seen: a Windows that ignores the UTF-8 code page this runtime carries
+     * would read every name above ASCII as another (parts/codepage.c). */
+    hero_codepage_require_utf8();
     /* The stack guard goes up here, before a program's first line, because
      * this is the one call every generated `main` makes first — so the
      * emitted C and the ABI stamp are untouched (panel 104). */
@@ -841,15 +845,53 @@ HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks) 
  * compiler read such a value as unset, so a `HEROES_RUNTIME` naming a real
  * runtime was told to be set, and a `./runtime` beside the program was used
  * instead without a word. `getenv`'s answer is the environment's own and is
- * only read, never kept: the result is a copy. */
+ * only read, never kept: the result is a copy.
+ *
+ * ON WINDOWS THE VALUE IS ASKED OF THE PROCESS'S OWN BLOCK, WIDE, and carried
+ * back as a listing carries a name (parts/codepage.c). The C runtime's narrow
+ * environment is converted from that block in the ANSI code page, where a
+ * surrogate standing alone became U+FFFD under the UTF-8 one, valid text the
+ * compiler then looked in as another directory (defect 238); its wide table
+ * is converted back from the narrow one, so `_wgetenv` holds the same loss. */
 HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks) {
     *marks = 0;
+#if defined(_WIN32)
+    wchar_t *wide_name = hero_win_wide(name, NULL);
+    if (wide_name == NULL) {
+        *status = HERO_OS_NOT_FOUND;
+        return hero_str_from_bytes("", 0);
+    }
+    /* The size first, then the value; asked again where another thread grew
+     * it between the two, which a single answer cannot see. */
+    DWORD room = GetEnvironmentVariableW(wide_name, NULL, 0);
+    while (room > 0) {
+        wchar_t *value = hero_alloc((size_t)room * sizeof *value);
+        SetLastError(0);
+        DWORD got = GetEnvironmentVariableW(wide_name, value, room);
+        if (got < room && !(got == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND)) {
+            hero_release(wide_name);
+            value[got] = 0;
+            int64_t length = 0;
+            char *bytes = hero_win_bytes(value, &length);
+            hero_release(value);
+            HeroStr shown = hero_bytes_shown(bytes, length, status, marks);
+            hero_release(bytes);
+            return shown;
+        }
+        hero_release(value);
+        room = got;
+    }
+    hero_release(wide_name);
+    *status = HERO_OS_NOT_FOUND;
+    return hero_str_from_bytes("", 0);
+#else
     const char *value = getenv(name);
     if (value == NULL) {
         *status = HERO_OS_NOT_FOUND;
         return hero_str_from_bytes("", 0);
     }
     return hero_bytes_shown(value, (int64_t)strlen(value), status, marks);
+#endif
 }
 
 /* One argument as the shown read gives a file (defect 281): HERO_OS_OK and the
