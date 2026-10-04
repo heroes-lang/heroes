@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-04
-commit: aeef17c1dd84d496a524b83b60ae1e3355348d6d
+commit: 70c9f3a95685f518d5ee6da60c63b4568c050c9c
 github: none
 ---
 
@@ -18,3 +18,5 @@ github: none
     Repaired at `aeef17c1`, 2026-10-04 (lane b11-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The question answered by a run on this Mac with the real clang, a header's `#line 1 "caf\351.h"` before a `#warning`: the extern the header refutes was `internal error` at exit 2, and the same header without the `#line` gives `ffi_return_type` at exit 1, so the item reads `blocking` by § Bounded discovery; its class line is left for the coordinator.
 
     **2026-10-05, the shapes with this cause the repair has not reached** (lane b11-misc's report): `deps.rows_of` reads clang's dependency listing with `read_file`, so a listing holding a header path that is not UTF-8 would be told *clang wrote no dependency listing* (Linux only, unrun); `doctor.capture` (`selfhost/cli/doctor.hero`, lane b11-windows's file) and `refresh.hero` read a child's output the same way (unrun; `refresh` is a paid command); the pointee and layout JSON dumps are read with `read_file` (the lane infers LLVM's JSON writer replaces bytes that are not UTF-8, unrun). Each is this item's cause, a child's words refused whole for one byte, so each stays a row of 337 (§ Bounded discovery) and is owed before it closes.
+
+    Repaired at `70c9f3a9`, 2026-10-05 (lane b11-misc), the rows above but `doctor.capture`, which is lane b11-windows's, gated by their cases and the compiler's own tests; the net is owed at the batch's close. `deps.rows_of` was run by hand with a stand-in clang adding a path holding 0xE9 to each listing (exit 2 before, exit 0 after, its records `absent` and never vouching) and is held by a compiler test over a listing committed as bytes; the JSON dumps were measured to hold U+FFFD where a `#line` name held the byte; `refresh.hero` is unrun, a paid command, its read `read_back.words`, tested.
