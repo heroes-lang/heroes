@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 2ee246cadc5b3095d8ae7b8db9fd6f85dbdb8b16
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** the coordinator, 2026-10-04, reading at batch 9's gate the goldens its census moved (panel 187's R2, a worse move filed by its class); each shape run on both compilers. Where the junk is a stray closer, `variant T )` over nothing, the block is empty indeed and the two messages name two mistakes, as `check/panel-187-a-heads-line-that-goes-on-is-told-once` pins.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, both true, no fix certain; the trunk's one message named the empty block and not the member on the head's line, so it cost a second exchange, which the round's two messages do not.
+
+    Repaired at `2ee246ca`, 2026-10-05 (lane b11-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
