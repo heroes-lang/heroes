@@ -44,10 +44,11 @@ done
 **`golden` is not one of the twenty**, measured 2026-09-09, and finding out
 why corrected the map: `suite_golden.hero` runs as **four FORMS**, and their
 names are the selectors — `check`, `ir`, `emit`, `unsupported`
-(`tests/harness/main.hero:135-140`). So `-- <compiler> golden` selects nothing
+(`tests/harness/main.hero`, the `forms` list in `main`). So `-- <compiler> golden` selects nothing
 and prints no line, and a suite name that selects nothing is a green run that
 tested nothing. That is the failure this paragraph exists to prevent, and it
-happened here first.
+happened here first. **Five forms since 2026-10-04**: `permissive`, `check`'s
+question asked of the control arm, `check --permissive` (defect 211).
 
 ## What gates what, measured 2026-09-09
 
@@ -59,6 +60,7 @@ happened here first.
 | `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
+| `tests/golden/permissive/**` | **`permissive`**, and `annotations` once `suite_annotations.hero` lists the directory (owed by defect 211, 2026-10-04) |
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |

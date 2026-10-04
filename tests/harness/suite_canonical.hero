@@ -39,6 +39,11 @@
 #     diagnostic is an input, and canonicalising an input changes what the
 #     test tests.
 #
+# `tests/golden/permissive/` joined them on 2026-10-04 (defect 211), for the
+# same three: it is `check/`'s question asked of the control arm, three of its
+# four cases are refused by the parser, and every expectation cites a line and
+# a column.
+#
 # `archive/` is excluded because nothing builds it and CLAUDE.md §5
 # declares the Rust it holds spent. `tests/emission/` and
 # `tests/golden/**/*.expected` hold no `.hero` at all.
@@ -168,12 +173,14 @@ test "the walk names the directories that were swept, and the floor is under the
     assert LEAST <= 844
     assert LEAST > 742
 
-test "the two exempt directories are named nowhere in the walk"
-    # tests/golden/check and tests/golden/unsupported are the test's data
-    # rather than the project's source, and the reasons are measured at the
-    # top of this file. This asserts the exemption rather than trusting the
-    # list to stay right: 23 of those files cannot be parsed at all, and
-    # a walk that reached them would report the compiler broken.
+test "the exempt directories are named nowhere in the walk"
+    # tests/golden/check, tests/golden/unsupported and tests/golden/permissive
+    # are the test's data rather than the project's source, and the reasons are
+    # measured at the top of this file. This asserts the exemption rather than
+    # trusting the list to stay right: 23 of the first two's files could not be
+    # parsed at all on 2026-08-26, and a walk that reached such a file would
+    # report the compiler broken.
     for dir in SOURCE_DIRS
         assert dir != "tests/golden/check"
         assert dir != "tests/golden/unsupported"
+        assert dir != "tests/golden/permissive"

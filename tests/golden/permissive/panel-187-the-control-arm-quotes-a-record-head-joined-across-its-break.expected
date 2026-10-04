@@ -1,0 +1,2 @@
+tests/golden/permissive/panel-187-the-control-arm-quotes-a-record-head-joined-across-its-break.hero:12:6: error[expected_end_of_line]: expected the end of the line after `record x`, found `:` — its fields go on the lines below it, one level deeper
+tests/golden/permissive/panel-187-the-control-arm-quotes-a-record-head-joined-across-its-break.hero:13:7: error[expected_field_type]: expected `:` and the field's type, found a name (`i64`)

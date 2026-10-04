@@ -1,0 +1,12 @@
+# Defect 211, 2026-10-04: no golden form ran the control arm, `check
+# --permissive`, Part 11's measurement with the thesis rules dropped, so what
+# it says could change with every golden green (panel 187's R3). Here, at a
+# later stage: the normal arm stops at the names stage on `n`, bound and never
+# read (`unused_binding`, a thesis rule), so the type error under it waits for
+# another round; the control arm drops the thesis rule and the type stage
+# speaks (`selfhost/cli/check.hero`'s `kept_of`).
+
+function main()
+    n = 3
+    x: i64 @ "a"  #~ type_mismatch
+    print(x)
