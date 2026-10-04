@@ -1,8 +1,8 @@
 # Text the program supplies, spelled for each place C reads it: a string
 # literal, the name in a `#line`, a header in an `#include`, and a block
-# comment (design.md §3.1; CLAUDE.md §7; defect 207, 2026-10-03). Every
-# writer of one of the four goes through here, so a character C reads as
-# more than itself is answered in one place.
+# comment (design.md §3.1; CLAUDE.md §7; defects 207, 2026-10-03, and 240,
+# 2026-10-04). Every writer of one of the four goes through here, so a
+# character C reads as more than itself is answered in one place.
 #
 # **The `?` that would end a trigraph.** C's translation phase 1 reads `??`
 # before one of `=` `(` `/` `)` `'` `<` `!` `>` `-` as one character (C11
@@ -27,6 +27,10 @@
 # comment opening every unit took the source's path as it came, so a
 # directory `a*` closed it at exit 2 and a path holding `/*` drew
 # `-Wcomment`.
+#
+# **Until defect 240** a `#line` name was spelled as a literal is, so a byte
+# above ASCII or a control byte took an octal escape, which every clang read
+# until 23 refused it there: `line_name` writes what each clang reads.
 
 # A C string literal holding exactly `text`'s bytes, quotes included. Octal
 # escapes for every byte below a space or above `~`, three digits always,
@@ -88,11 +92,77 @@ function ends_trigraph(text: str, at: i64) -> bool
     last = text[at + 1]
     return last == '=' || last == '(' || last == '/' || last == ')' || last == '\'' || last == '<' || last == '!' || last == '>' || last == '-'
 
-# The `#line` that names `file` from line `at` on: the name as a literal,
-# which C decodes, so a diagnostic and the debugger name the file the
-# program was read from, whatever its name holds.
+# The `#line` that names `file` from line `at` on, so a diagnostic and the
+# debugger name the file the program was read from, whatever its name holds.
 function line_directive(at: i64, file: str) -> str
-    return "#line " + at.to_str() + " " + literal(file)
+    return line_at(at: at, name: line_name(file))
+
+# The `#line` naming, from line `at` on, the file whose name `line_name`
+# spelled as `name`: the writer spells each file once and writes the
+# spelling at every line it names (defect 262).
+function line_at(at: i64, name: str) -> str
+    return "#line " + at.to_str() + " " + name
+
+# A file's name as a `#line` gives it, quotes included: every byte as itself
+# but five, each written as the simple escape C has for it, `\"` and `\\`
+# (a raw `"` ends the name and a raw `\` begins an escape), `\n` and `\r` (a
+# raw one ends the directive), and `\?` for a `?` that would end a trigraph.
+# **Never a numeric escape** (defect 240): clang 23 reads a `#line` name as
+# an unevaluated string literal and refuses one, *invalid escape sequence
+# '\303' in an unevaluated string literal*, so a program whose path held a
+# byte above ASCII or a control byte built nowhere clang was 23. Measured
+# 2026-10-04 under `-std=gnu11` and `-std=c11` with the compiler's own flags
+# on Apple clang 21.0.0 (two builds), Homebrew clang 22.1.8, Debian clang
+# 17.0.6, 18.1.8, 19.1.7, 20.1.8, 22.1.8 and 23.1.2, and Ubuntu clang
+# 18.1.3: each reads a raw character of two, three and four bytes, a raw
+# control byte other than a line end (a tab, 0x01, 0x07, 0x08, 0x0B, 0x0C,
+# 0x1B, 0x1F, 0x7F) and the five escapes as written, with no warning, in
+# the name a diagnostic prints and the one `__FILE__` holds. A `str` holds
+# UTF-8 and nothing else, so a raw byte above ASCII always stands in a
+# well-formed character, which is all clang asks of one.
+#
+# A NUL has no spelling: clang keeps the name as a C string, so every
+# spelling of one cuts the name there (and a raw one draws
+# `-Wnull-character`), on every clang above. No file is named with one
+# either, POSIX and Windows refusing it in a path, and every name that
+# reaches here is a path the compiler was given or found, or a name of its
+# own; one that held a NUL would name another file, so it stops here.
+function line_name(file: str) -> str
+    parts: [str] @ ["\""]
+    plain: i64 @ 0
+    i: i64 @ 0
+
+    while i < file.len()
+        byte = file[i]
+        escape: str @ ""
+        assert byte != 0
+
+        if byte == '"'
+            escape @ "\\\""
+        else if byte == '\\'
+            escape @ "\\\\"
+        else if byte == '\n'
+            escape @ "\\n"
+        else if byte == '\r'
+            escape @ "\\r"
+        else if ends_trigraph(file, at: i)
+            escape @ "\\?"
+
+        # Every escaped byte is ASCII, so a run between two never begins or
+        # ends inside a character.
+        if escape.len() > 0
+            if i > plain
+                parts @ parts.push(file.slice(from: plain, to: i))
+            parts @ parts.push(escape)
+            plain @ i + 1
+        i @ i + 1
+
+    if plain == 0
+        return "\"" + file + "\""
+
+    if plain < file.len()
+        parts @ parts.push(file.slice(from: plain, to: file.len()))
+    return parts.push("\"").join("")
 
 # One `#include <...>` per header, in the order given, each as `header_lines`
 # spells it.
@@ -191,6 +261,30 @@ test "a #line names the file the program was read from, whatever its name holds 
     assert line_directive(at: 3, file: "a\"b/p.hero") == "#line 3 \"a\\\"b/p.hero\""
     assert line_directive(at: 3, file: "n\nl/p.hero") == "#line 3 \"n\\nl/p.hero\""
     assert line_directive(at: 3, file: "t??)/p.hero") == "#line 3 \"t?\\?)/p.hero\""
+
+test "a #line name holds every byte as itself but five, and never a numeric escape (defect 240)"
+    # Characters of two, three and four bytes, in a file's name and in a
+    # directory's, stay themselves: clang 23 refuses `\303\251`.
+    assert line_name("café.hero") == "\"café.hero\""
+    assert line_name("dé/€/😀.hero") == "\"dé/€/😀.hero\""
+    assert line_directive(at: 1, file: "café.hero") == "#line 1 \"café.hero\""
+
+    # A tab stays itself, as every control byte but a line end does; a
+    # carriage return is `\r`, where the literal's `\015` is refused there.
+    assert line_name("tab\there.hero") == "\"tab\there.hero\""
+    assert line_name("cr\rx.hero") == "\"cr\\rx.hero\""
+    assert line_name("lf\nx.hero") == "\"lf\\nx.hero\""
+
+    # The five beside a character above ASCII, and a run of `?`s decided
+    # pair by pair as a literal decides it.
+    assert line_name("é\"é\\é??=é") == "\"é\\\"é\\\\é?\\?=é\""
+    assert line_name("???)") == "\"??\\?)\""
+    assert line_name("") == "\"\""
+    assert line_at(at: 12, name: line_name("dé/p.hero")) == "#line 12 \"dé/p.hero\""
+
+    # A string literal is evaluated, where a numeric escape is C's own and
+    # every clang reads one, so it keeps them.
+    assert literal("café") == "\"caf\\303\\251\""
 
 test "a header name is split by a line splice where it would hold a trigraph, its closing bracket included (defect 207)"
     assert header_lines("stdio.h") == ["#include <stdio.h>"]

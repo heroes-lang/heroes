@@ -3,3 +3,5 @@
     **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:33 to 00:38 (`docs/panel/189-reports/ffi-pragmatist.md`, *A route for the Windows boundary, compiled*), met on defect 238's route; filed apart by the coordinator.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused at exit 2 by the compiler's own C, on clang 23.
+
+    Repaired at `59e17a14`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
