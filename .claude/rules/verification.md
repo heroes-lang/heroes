@@ -60,7 +60,7 @@ question asked of the control arm, `check --permissive` (defect 211).
 | `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
-| `tests/golden/permissive/**` | **`permissive`**, and `annotations` once `suite_annotations.hero` lists the directory (owed by defect 211, 2026-10-04) |
+| `tests/golden/permissive/**` | **`permissive`** `annotations` `canonical` |
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
