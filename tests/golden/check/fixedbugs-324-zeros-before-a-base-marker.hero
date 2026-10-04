@@ -1,0 +1,12 @@
+# fixedbugs, defect 324, lane b10-cli, 2026-10-04.
+#
+# Zeros before a base's marker, `00x7`: the prefix's one zero written more
+# than once. `leading_zero` advised `0o0` for the zeros, which runs into the
+# `x` after them as a digit no octal number has. The advice is now one zero,
+# `0x7` once applied. The letters after the zeros are still told a second
+# time, `expected_end_of_line`, as they were; the advice is
+# `selfhost/number.hero`'s test of defect 324.
+
+function main()
+    a = 00x7    #~ leading_zero expected_end_of_line
+    print(a)

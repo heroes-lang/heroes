@@ -1,0 +1,19 @@
+# fixedbugs, defect 324, lane b10-cli, 2026-10-04.
+#
+# A zero, then `_`: `leading_zero` advised the digits with their zeros taken
+# off and the separator left leading, `0o_7` and `_7` for `0_7`, a separator
+# out of place and a name, both refused. The zeros now go with the separators
+# among them: `0_7` is offered `0o7` and `7`, `0_7_7` `0o7_7` and `7_7`, each
+# a literal with the value of its reading. This form is brief and shows the
+# headline alone; the advice, each fix scanned again and its value read, is
+# `selfhost/number.hero`'s test of defect 324.
+
+function main()
+    a = 0_7      #~ leading_zero
+    b = 00_7     #~ leading_zero
+    c = 0_7_7    #~ leading_zero
+    d = -0_7     #~ leading_zero
+    e = 0_0      #~ leading_zero
+    f = 0_00_7   #~ leading_zero
+    g = 0_1_0    #~ leading_zero
+    print(a, b, c, d, e, f, g)

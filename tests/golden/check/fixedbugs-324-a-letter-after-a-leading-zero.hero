@@ -1,0 +1,11 @@
+# fixedbugs, defect 324, lane b10-cli, 2026-10-04.
+#
+# A letter after the digits a zero opens, C's `0644u` or an exponent: any fix
+# of the digits alone runs into it, `0o644u` a digit no octal number has,
+# `644u` a name after a number. No fix is offered there now, and a note says
+# why. The letter is still told a second time, `expected_end_of_line`, as it
+# was; the advice is `selfhost/number.hero`'s test of defect 324.
+
+function main()
+    a = 0644u    #~ leading_zero expected_end_of_line
+    print(a)
