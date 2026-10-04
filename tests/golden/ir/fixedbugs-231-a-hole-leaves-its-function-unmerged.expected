@@ -1,0 +1,51 @@
+function capped(n: i64) -> i64
+    bb0  entry
+        $t1: i64 = load n
+        $t2: i64 = const 10
+        $t3: bool = gt $t1, $t2
+        branch $t3 -> bb2 else bb3
+    bb1  if: join    preds bb3
+        $t5: ? = ???
+        return
+    bb2  if: then    preds bb0
+        $t4: i64 = const 10
+        return $t4
+    bb3  if: else    preds bb0
+        jump bb1
+
+function scaled(n: i64) -> i64
+    slots  $ret0: i64
+    bb0  entry
+        $t1: i64 = load n
+        $t2: i64 = const 10
+        $t3: bool = gt $t1, $t2
+        branch $t3 -> bb2 else bb3
+    bb1  if: join    preds bb3
+        $t7: i64 = load n
+        store $ret0 <- $t7
+        jump bb4
+    bb2  if: then    preds bb0
+        $t4: i64 = load n
+        $t5: i64 = const 2
+        $t6: i64 = mul! $t4, $t5
+        store $ret0 <- $t6
+        jump bb4
+    bb3  if: else    preds bb0
+        jump bb1
+    bb4  exit    preds bb1, bb2
+        $t8: i64 = load $ret0
+        return $t8
+
+function main()
+    bb0  entry
+        $t1: i64 = const 3
+        $t2: i64 = call heroes capped($t1)
+        $t3: i64 = const 4
+        $t4: i64 = call heroes scaled($t3)
+        call builtin print($t2, $t4) variadic
+        return
+hole at tests/golden/ir/fixedbugs-231-a-hole-leaves-its-function-unmerged.hero:19:9
+  position: statement — any type, or none
+  this function returns: i64
+  in scope:
+    n: i64

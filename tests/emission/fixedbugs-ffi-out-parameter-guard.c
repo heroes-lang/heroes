@@ -183,7 +183,7 @@ bb1:
 #line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_end();
 #line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    return;
+    goto bb4;
 #line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb2:
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
@@ -193,12 +193,16 @@ bb2:
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     hero_print_end();
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    return;
+    goto bb4;
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb3:
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     goto bb1;
-#line 202 "ffioutparameterguard.c"
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+bb4:
+#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+    return;
+#line 206 "ffioutparameterguard.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

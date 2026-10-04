@@ -20,9 +20,9 @@ use checker
 # The slots every returning block owes a release, in slot order: a local or
 # synthetic slot of a counted type. Rules 1 and 2 of `ir/own.hero`, read
 # back: a plain parameter is borrowed and an `@` parameter is copied out, so
-# neither is owed. Asked once per function since defect 218, where it was
-# asked again by every returning block, with a walk of the parameters for
-# every slot.
+# neither is owed, and the return slot borrows (panel 190). Asked once per
+# function since defect 218, where it was asked again by every returning
+# block, with a walk of the parameters for every slot.
 function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
     is_param: [bool] @ []
 
@@ -41,7 +41,7 @@ function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
 
         match slot.kind
             .local_slot | .synthetic_slot => counted @ layout.is_refcounted(c, slot.ty)
-            .param_slot                   => counted @ counted
+            .param_slot | .return_slot    => counted @ counted
 
         if counted && !is_param[index]
             owed @ owed.push(index)
@@ -173,12 +173,20 @@ function releases(blk: containers.Block) -> Releases
 # The values the block's stores take are gathered in one walk (defect 218):
 # the question was asked by walking the whole block again for every owning
 # temporary in it, the square of a block's length.
-function owning_temporaries_move_into_slots(blk: containers.Block, c: state.Checked, label: str, @problems: [str])
+#
+# **A store into the return slot takes nothing** (panel 190's R2): that slot
+# borrows and no sweep releases it, so rule 5 must move the value first.
+function owning_temporaries_move_into_slots(f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
     stored: {i64: bool} @ {}
+    borrowed: {i64: bool} @ {}
 
     for one in blk.insts
         match one.op
-            .store st                                                                               => stored[st.value] @ true
+            .store st =>
+                if containers.is_return_root(f, root: st.place.root)
+                    borrowed[st.value] @ true
+                else
+                    stored[st.value] @ true
             .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => continue
             .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
             .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
@@ -188,13 +196,13 @@ function owning_temporaries_move_into_slots(blk: containers.Block, c: state.Chec
             continue
         dest = inst.dest.must()
 
-        if !owning.allocates(inst.op) || !layout.is_refcounted(c, inst.ty)
+        if !owning.allocates(inst.op) || !layout.is_refcounted(c, inst.ty) || !stored[dest].is_err()
             continue
+        why: str @ "no store in this block takes it — a temporary never carries ownership across an edge"
 
-        if stored[dest].is_err()
-            problems @ problems.push(
-                label + "$" + dest.to_str() + " owns a reference and no store in this block takes it — a temporary never carries ownership across an edge"
-            )
+        if !borrowed[dest].is_err()
+            why @ "only the return slot takes it: that slot borrows, so nothing would release it"
+        problems @ problems.push(label + "$" + dest.to_str() + " owns a reference and " + why)
 
 ## Tests
 
@@ -405,8 +413,10 @@ test "an owning temporary no store in its block takes is named, and one a store 
         span: span
     )
     returns: ir.Term = .return_term(value: fail(code: "none", msg: "no value"))
+    f = one_slot([], term: returns)
     lone: [str] @ []
     owning_temporaries_move_into_slots(
+        f,
         containers.Block(preds: [], insts: [concat], term: returns, note: "t"),
         c,
         label: "f: ",
@@ -417,12 +427,14 @@ test "an owning temporary no store in its block takes is named, and one a store 
     # Moved, in either order: the store is looked for anywhere in the block.
     moved: [str] @ []
     owning_temporaries_move_into_slots(
+        f,
         containers.Block(preds: [], insts: [concat, store], term: returns, note: "t"),
         c,
         label: "f: ",
         problems: @moved
     )
     owning_temporaries_move_into_slots(
+        f,
         containers.Block(preds: [], insts: [store, concat], term: returns, note: "t"),
         c,
         label: "f: ",
@@ -432,12 +444,59 @@ test "an owning temporary no store in its block takes is named, and one a store 
     # An `i64` sum allocates nothing, so nothing is owed.
     sum = ir.Inst(dest: ok(4), op: .binary(op: .add, left: 1, right: 2), ty: table.int_ty_id(c.types), span: span)
     owning_temporaries_move_into_slots(
+        f,
         containers.Block(preds: [], insts: [sum], term: returns, note: "t"),
         c,
         label: "f: ",
         problems: @moved
     )
     assert moved.len() == 0
+
+test "an owning temporary only the return slot takes is named, and one a slot of its own takes as well is not"
+    # Panel 190's R2: the return slot borrows, so its store is no taker.
+    c = checked("function f()\n    return\n")
+    text_ty = table.str_ty(c.types)
+    span = token.Span(start: 0, end: 1)
+    returns: ir.Term = .return_term(value: fail(code: "none", msg: "no value"))
+    f: containers.Function @ one_slot([], term: returns)
+    f.slots @ [
+        containers.Slot(name: "$own0", ty: text_ty, kind: .synthetic_slot)
+        containers.Slot(name: "$ret0", ty: text_ty, kind: .return_slot)
+    ]
+    concat = ir.Inst(dest: ok(3), op: .binary(op: .add, left: 1, right: 2), ty: text_ty, span: span)
+    void: i64? = fail(code: "none", msg: "void")
+    into_own = ir.Inst(
+        dest: void,
+        op: .store(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)), value: 3),
+        ty: text_ty,
+        span: span
+    )
+    into_ret = ir.Inst(
+        dest: void,
+        op: .store(place: ir.Place(root: 1, path: ir.Run(start: 0, length: 0)), value: 3),
+        ty: text_ty,
+        span: span
+    )
+    alone: [str] @ []
+    owning_temporaries_move_into_slots(
+        f,
+        containers.Block(preds: [], insts: [concat, into_ret], term: .jump(to: 1), note: "t"),
+        c,
+        label: "f: ",
+        problems: @alone
+    )
+    assert alone == ["f: $3 owns a reference and only the return slot takes it: that slot borrows, so nothing would release it"]
+
+    # Rule 5's move first, then the return site's plain copy: quiet.
+    both: [str] @ []
+    owning_temporaries_move_into_slots(
+        f,
+        containers.Block(preds: [], insts: [concat, into_own, into_ret], term: .jump(to: 1), note: "t"),
+        c,
+        label: "f: ",
+        problems: @both
+    )
+    assert both.len() == 0
 
 test "a local or synthetic slot of a counted type is owed, a parameter or a number is not"
     c = checked("function f()\n    return\n")

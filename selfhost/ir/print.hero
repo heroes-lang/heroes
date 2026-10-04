@@ -32,6 +32,7 @@ use check/table
 use check/state
 use check/render
 use inventory
+use shown_char
 use ir
 use ir/containers
 use ir/layout
@@ -45,7 +46,8 @@ use ir/lower
 # the literals the SHOWN functions read — the table is program-wide, so
 # the library's own literals live in it, and a dump that listed them
 # would be answering about a file the author cannot open. Indices are
-# the real ones: this filters the list, it does not renumber it.
+# the real ones: this filters the list, it does not renumber it. A control
+# character reaches the terminal by its code, `<U+001B>`, never raw (290).
 function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     live: [bool] @ []
     i: i64 @ 0
@@ -100,7 +102,7 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
             rows @ rows.push(one(f, c, s, decls))
             shown @ shown + 1
 
-    return rows.join("")
+    return shown_char.visible(rows.join(""))
 
 function one(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     rows: [str] @ [header(f, c, s, decls)]
@@ -153,7 +155,7 @@ function header(f: containers.Function, c: state.Checked, s: source.Source, decl
                     .param_slot ps =>
                         if ps.mutable
                             marker @ "@"
-                    .local_slot | .synthetic_slot => continue
+                    .local_slot | .synthetic_slot | .return_slot => continue
 
                 params @ params.push(
                     marker + f.slots[slot_id].name + ": " + render.render_ty(c.types, s, decls, f.slots[slot_id].ty, f.generics)
@@ -582,3 +584,15 @@ test "strings are escaped and listed once, and the linkage is spelled"
     assert has(text: got, needle: "strings")
     assert has(text: got, needle: "\"line one\\nline two\"")
     assert has(text: got, needle: "call builtin print($t1) variadic")
+
+# Defect 290: a string literal and a test's title may hold an ESC raw, and the
+# string table and the header wrote it to the terminal that showed the dump.
+test "the dump writes a string's control characters by their code, never raw (defect 290)"
+    escs: [u8] = [27]
+    esc = escs.validated_bytes().must()
+    got = dumped(
+        "test \"title " + esc + "[2J\"\n    assert 1 == 1\n\nfunction main()\n    print(\"" + esc + "[2Jboom\")\n"
+    )
+    assert !shown_char.holds_control(got)
+    assert has(text: got, needle: "\"<U+001B>[2Jboom\"")
+    assert has(text: got, needle: "test \"title <U+001B>[2J\"")

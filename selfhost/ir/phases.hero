@@ -169,7 +169,7 @@ function check(p: containers.Program, f: containers.Function, blk: containers.Bl
             no_generic_survives(blk, known: known, label: label, problems: @problems)
             no_error_survives(f, blk, c, known: known, label: label, problems: @problems)
             released.released_on_return(f, blk, owed: known.owed, label: label, problems: @problems)
-            released.owning_temporaries_move_into_slots(blk, c, label: label, problems: @problems)
+            released.owning_temporaries_move_into_slots(f, blk, c, label: label, problems: @problems)
             place_store.verify(blk, f, c, label: label, problems: @problems)
 
 # Every type in this block is concrete. Checked at mono AND at owned,

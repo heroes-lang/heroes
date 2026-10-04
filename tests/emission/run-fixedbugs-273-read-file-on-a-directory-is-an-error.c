@@ -364,15 +364,16 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 365 "fixedbugs273readfileonadirectoryisanerror.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
-    HeroStr h3_own3 = {0};
-    h_0opt_f87774a h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    HeroStr h9_own9 = {0};
+    h_0opt_f87774a h3_ret0 = {0};
+    HeroStr h4_own4 = {0};
+    h_0opt_f87774a h5_own5 = {0};
+    HeroStr h6_own6 = {0};
+    h_0opt_f87774a h7_own7 = {0};
+    HeroStr h8_own8 = {0};
+    h_0opt_f87774a h9_own9 = {0};
     HeroStr h10_own10 = {0};
-    h_0opt_f87774a h11_own11 = {0};
+    HeroStr h11_own11 = {0};
+    h_0opt_f87774a h12_own12 = {0};
     int64_t t1;
     HeroStr t2;
     const char * t3;
@@ -405,16 +406,17 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
     HeroStr t30;
     HeroStr t31;
     h_0opt_f87774a t32;
-    HeroStr t33;
+    h_0opt_f87774a t33;
     HeroStr t34;
-    h_0opt_f87774a t35;
-    HeroStr t36;
-    h_0opt_f87774a t37;
-    HeroStr t38;
-    h_0opt_f87774a t39;
-    HeroStr t40;
+    HeroStr t35;
+    h_0opt_f87774a t36;
+    HeroStr t37;
+    h_0opt_f87774a t38;
+    HeroStr t39;
+    h_0opt_f87774a t40;
     HeroStr t41;
-    h_0opt_f87774a t42;
+    HeroStr t42;
+    h_0opt_f87774a t43;
     goto bb0;
 bb0:
 #line 167 "<heroes library>"
@@ -428,19 +430,19 @@ bb0:
 #line 168 "<heroes library>"
     t4 = hero_file_read(hero_cstr_nonnull(t3), (void *)&h1_status);
 #line 168 "<heroes library>"
-    t33 = h3_own3;
+    t34 = h4_own4;
 #line 168 "<heroes library>"
-    h3_own3 = t4;
-#line 435 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(t33);
+    h4_own4 = t4;
+#line 437 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(t34);
 #line 168 "<heroes library>"
-    t34 = h2_text;
-#line 439 "fixedbugs273readfileonadirectoryisanerror.c"
+    t35 = h2_text;
+#line 441 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t4);
 #line 168 "<heroes library>"
     h2_text = t4;
-#line 443 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(t34);
+#line 445 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(t35);
 #line 169 "<heroes library>"
     t5 = h1_status;
 #line 169 "<heroes library>"
@@ -463,52 +465,25 @@ bb1:
 bb2:
 #line 170 "<heroes library>"
     t8 = h2_text;
-#line 467 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 469 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t8);
 #line 170 "<heroes library>"
     t9 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t8};
 #line 170 "<heroes library>"
-    t35 = h4_own4;
+    t36 = h5_own5;
 #line 170 "<heroes library>"
-    h4_own4 = t9;
-#line 475 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&t35);
+    h5_own5 = t9;
+#line 477 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&t36);
 #line 170 "<heroes library>"
-#line 478 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_retain(&t9);
+    h3_ret0 = t9;
 #line 170 "<heroes library>"
-#line 481 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h2_text);
+    goto bb10;
 #line 170 "<heroes library>"
-#line 484 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h3_own3);
-#line 170 "<heroes library>"
-#line 487 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 170 "<heroes library>"
-#line 490 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h5_own5);
-#line 170 "<heroes library>"
-#line 493 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h6_own6);
-#line 170 "<heroes library>"
-#line 496 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h7_own7);
-#line 170 "<heroes library>"
-#line 499 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h8_own8);
-#line 170 "<heroes library>"
-#line 502 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h9_own9);
-#line 170 "<heroes library>"
-#line 505 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h10_own10);
-#line 170 "<heroes library>"
-#line 508 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h11_own11);
-    return t9;
 bb3:
+#line 170 "<heroes library>"
     goto bb1;
+#line 170 "<heroes library>"
 bb4:
 #line 176 "<heroes library>"
     t18 = h1_status;
@@ -529,61 +504,34 @@ bb5:
 #line 172 "<heroes library>"
     t16 = hero_str_concat(t14, t15);
 #line 172 "<heroes library>"
-    t36 = h5_own5;
+    t37 = h6_own6;
 #line 172 "<heroes library>"
-    h5_own5 = t16;
-#line 536 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(t36);
+    h6_own6 = t16;
+#line 511 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(t37);
 #line 172 "<heroes library>"
-#line 539 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 514 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t13);
 #line 172 "<heroes library>"
-#line 542 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 517 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t16);
 #line 172 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t13, .msg = t16}};
 #line 172 "<heroes library>"
-    t37 = h6_own6;
+    t38 = h7_own7;
 #line 172 "<heroes library>"
-    h6_own6 = t17;
-#line 550 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&t37);
+    h7_own7 = t17;
+#line 525 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&t38);
 #line 172 "<heroes library>"
-#line 553 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_retain(&t17);
+    h3_ret0 = t17;
 #line 172 "<heroes library>"
-#line 556 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h2_text);
+    goto bb10;
 #line 172 "<heroes library>"
-#line 559 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h3_own3);
-#line 172 "<heroes library>"
-#line 562 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 172 "<heroes library>"
-#line 565 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h5_own5);
-#line 172 "<heroes library>"
-#line 568 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h6_own6);
-#line 172 "<heroes library>"
-#line 571 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h7_own7);
-#line 172 "<heroes library>"
-#line 574 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h8_own8);
-#line 172 "<heroes library>"
-#line 577 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h9_own9);
-#line 172 "<heroes library>"
-#line 580 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h10_own10);
-#line 172 "<heroes library>"
-#line 583 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h11_own11);
-    return t17;
 bb6:
+#line 172 "<heroes library>"
     goto bb4;
+#line 172 "<heroes library>"
 bb7:
 #line 178 "<heroes library>"
     t28 = HERO_STR_LIT(hero_str_3e46668);
@@ -594,59 +542,30 @@ bb7:
 #line 178 "<heroes library>"
     t31 = hero_str_concat(t29, t30);
 #line 178 "<heroes library>"
-    t38 = h7_own7;
+    t39 = h8_own8;
 #line 178 "<heroes library>"
-    h7_own7 = t31;
-#line 601 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(t38);
+    h8_own8 = t31;
+#line 549 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(t39);
 #line 178 "<heroes library>"
-#line 604 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 552 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t28);
 #line 178 "<heroes library>"
-#line 607 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 555 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t31);
 #line 178 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t28, .msg = t31}};
 #line 178 "<heroes library>"
-    t39 = h8_own8;
+    t40 = h9_own9;
 #line 178 "<heroes library>"
-    h8_own8 = t32;
-#line 615 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&t39);
+    h9_own9 = t32;
+#line 563 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&t40);
 #line 178 "<heroes library>"
-#line 618 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_retain(&t32);
+    h3_ret0 = t32;
 #line 178 "<heroes library>"
-#line 621 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h2_text);
+    goto bb10;
 #line 178 "<heroes library>"
-#line 624 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h3_own3);
-#line 178 "<heroes library>"
-#line 627 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 178 "<heroes library>"
-#line 630 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h5_own5);
-#line 178 "<heroes library>"
-#line 633 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h6_own6);
-#line 178 "<heroes library>"
-#line 636 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h7_own7);
-#line 178 "<heroes library>"
-#line 639 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h8_own8);
-#line 178 "<heroes library>"
-#line 642 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h9_own9);
-#line 178 "<heroes library>"
-#line 645 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h10_own10);
-#line 178 "<heroes library>"
-#line 648 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h11_own11);
-    return t32;
 bb8:
 #line 177 "<heroes library>"
     t21 = HERO_STR_LIT(hero_str_34624695);
@@ -657,71 +576,80 @@ bb8:
 #line 177 "<heroes library>"
     t24 = hero_str_concat(t22, t23);
 #line 177 "<heroes library>"
-    t40 = h9_own9;
+    t41 = h10_own10;
 #line 177 "<heroes library>"
-    h9_own9 = t24;
-#line 664 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(t40);
+    h10_own10 = t24;
+#line 583 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(t41);
 #line 177 "<heroes library>"
     t25 = HERO_STR_LIT(hero_str_612f4355);
 #line 177 "<heroes library>"
     t26 = hero_str_concat(t24, t25);
 #line 177 "<heroes library>"
-    t41 = h10_own10;
+    t42 = h11_own11;
 #line 177 "<heroes library>"
-    h10_own10 = t26;
-#line 674 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(t41);
+    h11_own11 = t26;
+#line 593 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(t42);
 #line 177 "<heroes library>"
-#line 677 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 596 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
-#line 680 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 599 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_incref(t26);
 #line 177 "<heroes library>"
     t27 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t21, .msg = t26}};
 #line 177 "<heroes library>"
-    t42 = h11_own11;
+    t43 = h12_own12;
 #line 177 "<heroes library>"
-    h11_own11 = t27;
-#line 688 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&t42);
+    h12_own12 = t27;
+#line 607 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&t43);
 #line 177 "<heroes library>"
-#line 691 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_retain(&t27);
+    h3_ret0 = t27;
 #line 177 "<heroes library>"
-#line 694 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h2_text);
+    goto bb10;
 #line 177 "<heroes library>"
-#line 697 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h3_own3);
-#line 177 "<heroes library>"
-#line 700 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 177 "<heroes library>"
-#line 703 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h5_own5);
-#line 177 "<heroes library>"
-#line 706 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h6_own6);
-#line 177 "<heroes library>"
-#line 709 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h7_own7);
-#line 177 "<heroes library>"
-#line 712 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h8_own8);
-#line 177 "<heroes library>"
-#line 715 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h9_own9);
-#line 177 "<heroes library>"
-#line 718 "fixedbugs273readfileonadirectoryisanerror.c"
-    hero_str_decref(h10_own10);
-#line 177 "<heroes library>"
-#line 721 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h11_own11);
-    return t27;
 bb9:
+#line 177 "<heroes library>"
     goto bb7;
+#line 177 "<heroes library>"
+bb10:
+#line 166 "<heroes library>"
+    t33 = h3_ret0;
+#line 621 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_retain(&t33);
+#line 166 "<heroes library>"
+#line 624 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(h2_text);
+#line 166 "<heroes library>"
+#line 627 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(h4_own4);
+#line 166 "<heroes library>"
+#line 630 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&h5_own5);
+#line 166 "<heroes library>"
+#line 633 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(h6_own6);
+#line 166 "<heroes library>"
+#line 636 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&h7_own7);
+#line 166 "<heroes library>"
+#line 639 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(h8_own8);
+#line 166 "<heroes library>"
+#line 642 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&h9_own9);
+#line 166 "<heroes library>"
+#line 645 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(h10_own10);
+#line 166 "<heroes library>"
+#line 648 "fixedbugs273readfileonadirectoryisanerror.c"
+    hero_str_decref(h11_own11);
+#line 166 "<heroes library>"
+#line 651 "fixedbugs273readfileonadirectoryisanerror.c"
+    h_0opt_f87774a_release(&h12_own12);
+    return t33;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -1,0 +1,137 @@
+# Defect 231, panel 190's R10 (2026-10-04): functions of many ways out over
+# many counted slots, every way out taken. Until that sitting each returning
+# block released every slot its function owns, so the IR and the C grew as
+# returns times slots, and at 800 returns clang died for memory on the
+# Windows box. Now each way out stores what it returns into the function's
+# return slot and jumps to one exit, which copies the `@` parameters out,
+# retains what it returns and releases every slot once. Each line below is
+# one way out, built at -O0 and -O2 and run under the sanitizers, with the
+# leak check every `main` runs: a value released early or twice, or never,
+# fails here, and so does a copy-out missed on one way out.
+
+# The defect's own shape, small: thirteen ways out, each over the strings
+# built before it.
+function ladder(x: i64) -> str
+    s0 = x.to_str() + ":"
+
+    if x == 0
+        return s0
+    s1 = s0 + "a"
+
+    if x == 1
+        return s1
+    s2 = s1 + "b"
+
+    if x == 2
+        return s2
+    s3 = s2 + "c"
+
+    if x == 3
+        return s3
+    s4 = s3 + "d"
+
+    if x == 4
+        return s4
+    s5 = s4 + "e"
+
+    if x == 5
+        return s5
+    s6 = s5 + "f"
+
+    if x == 6
+        return s6
+    s7 = s6 + "g"
+
+    if x == 7
+        return s7
+    s8 = s7 + "h"
+
+    if x == 8
+        return s8
+    s9 = s8 + "i"
+
+    if x == 9
+        return s9
+    s10 = s9 + "j"
+
+    if x == 10
+        return s10
+    s11 = s10 + "k"
+
+    if x == 11
+        return s11
+    return s11 + "!"
+
+# Nine ways out of a `T?`: `ok`, `fail`, the early return a `?` lowers to,
+# and the last; `count` is copied out on every one of them.
+function pick(x: i64, @count: i64) -> str?
+    count @ count + 1
+    s0 = "a" + x.to_str()
+
+    if x == 0
+        return ok(s0)
+    s1 = s0 + "b"
+
+    if x == 1
+        return ok(s1)
+    s2 = s1 + "c"
+
+    if x == 2
+        return fail(code: "two", msg: s2)
+    s3 = s2 + "d"
+
+    if x == 3
+        return ok(s3 + s0)
+    n = tens(x)?
+    s4 = s3 + n.to_str()
+
+    if x == 4
+        return ok(s4)
+    s5 = s4 + "e"
+
+    if x == 5
+        return ok(s5.slice(from: 0, to: 3))
+    s6 = [s5, s4, s3].join("-")
+
+    if x == 6
+        return ok(s6)
+    return ok(s6 + s2 + s1)
+
+function tens(x: i64) -> i64?
+    if x == 7
+        return fail(code: "seven", msg: "no sevens")
+    return ok(x * 10)
+
+# A `()` function: two bare returns and the edge that falls off the end, a
+# counted `@` parameter copied out on each.
+function tally(x: i64, @seen: [str])
+    seen @ seen.push("in")
+
+    if x % 2 == 0
+        return
+    seen @ seen.push("odd")
+
+    if x % 3 == 0
+        return
+    seen @ seen.push("rest")
+
+function main()
+    x: i64 @ 0
+
+    while x < 13
+        print(ladder(x))
+        x @ x + 1
+
+    count: i64 @ 0
+    seen: [str] @ []
+    x @ 0
+
+    while x < 9
+        match pick(x: x, count: @count)
+            .ok s  => print(x, " ok ", s, " ", count)
+            .err e => print(x, " err ", e.code, " ", e.msg, " ", count)
+
+        tally(x, seen: @seen)
+        x @ x + 1
+
+    print(seen.len(), " ", seen.join(","))

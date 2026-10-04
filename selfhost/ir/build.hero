@@ -310,7 +310,7 @@ function mutable_params(b: Lowering) -> [i64]
             .param_slot p =>
                 if p.mutable
                     out @ out.push(slot_id)
-            .local_slot | .synthetic_slot => continue
+            .local_slot | .synthetic_slot | .return_slot => continue
 
     return out
 

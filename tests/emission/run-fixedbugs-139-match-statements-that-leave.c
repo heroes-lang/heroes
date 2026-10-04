@@ -129,11 +129,13 @@ void h_fixedbugs139matchstatementsthatleave_main(void);
 int64_t h_fixedbugs139matchstatementsthatleave_all_return(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
 #line 131 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h1_s0;
+    int64_t h2_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
     h_fixedbugs139matchstatementsthatleave_Color t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
+    int64_t t6;
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -159,20 +161,31 @@ bb2:
 #line 21 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t4 = INT64_C(1);
 #line 21 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t4;
+    h2_ret0 = t4;
+#line 21 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
 #line 21 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb3:
 #line 22 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t5 = INT64_C(2);
 #line 22 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t5;
-#line 170 "fixedbugs139matchstatementsthatleave.c"
+    h2_ret0 = t5;
+#line 22 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
+#line 22 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb4:
+#line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t6 = h2_ret0;
+#line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t6;
+#line 182 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_block_arms(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 175 "fixedbugs139matchstatementsthatleave.c"
+#line 187 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h1_s0;
+    int64_t h2_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
     h_fixedbugs139matchstatementsthatleave_Color t2;
     int64_t t3;
@@ -180,6 +193,7 @@ int64_t h_fixedbugs139matchstatementsthatleave_block_arms(h_fixedbugs139matchsta
     int64_t t5;
     int64_t t6;
     int64_t t7;
+    int64_t t8;
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -211,7 +225,9 @@ bb2:
 #line 28 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t5 = INT64_C(3);
 #line 28 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t5;
+    h2_ret0 = t5;
+#line 28 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
 #line 28 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb3:
 #line 30 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -223,14 +239,23 @@ bb3:
 #line 31 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t7 = INT64_C(4);
 #line 31 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t7;
-#line 228 "fixedbugs139matchstatementsthatleave.c"
+    h2_ret0 = t7;
+#line 31 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
+#line 31 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb4:
+#line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t8 = h2_ret0;
+#line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t8;
+#line 252 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_arm_if_else(h_fixedbugs139matchstatementsthatleave_Color h0_c, int64_t h1_n) {
-#line 233 "fixedbugs139matchstatementsthatleave.c"
+#line 257 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
+    int64_t h3_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
     h_fixedbugs139matchstatementsthatleave_Color t2;
     int64_t t3;
@@ -240,6 +265,7 @@ int64_t h_fixedbugs139matchstatementsthatleave_arm_if_else(h_fixedbugs139matchst
     int64_t t7;
     int64_t t8;
     int64_t t9;
+    int64_t t10;
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -275,27 +301,40 @@ bb3:
 #line 40 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t9 = INT64_C(7);
 #line 40 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t9;
+    h3_ret0 = t9;
+#line 40 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
 #line 40 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb5:
 #line 37 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t7 = INT64_C(5);
 #line 37 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t7;
+    h3_ret0 = t7;
+#line 37 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
 #line 37 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb6:
 #line 39 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t8 = INT64_C(6);
 #line 39 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t8;
-#line 292 "fixedbugs139matchstatementsthatleave.c"
+    h3_ret0 = t8;
+#line 39 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
+#line 39 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb7:
+#line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t10 = h3_ret0;
+#line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t10;
+#line 330 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_both_branches(h_fixedbugs139matchstatementsthatleave_Color h0_c, bool h1_b) {
-#line 297 "fixedbugs139matchstatementsthatleave.c"
+#line 335 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     h_fixedbugs139matchstatementsthatleave_Color h3_s1;
+    int64_t h4_ret0;
     bool t1;
     h_fixedbugs139matchstatementsthatleave_Color t2;
     h_fixedbugs139matchstatementsthatleave_Color t3;
@@ -307,6 +346,7 @@ int64_t h_fixedbugs139matchstatementsthatleave_both_branches(h_fixedbugs139match
     int64_t t9;
     int64_t t10;
     int64_t t11;
+    int64_t t12;
     goto bb0;
 bb0:
 #line 43 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -358,33 +398,48 @@ bb5:
 #line 45 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t5 = INT64_C(8);
 #line 45 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t5;
+    h4_ret0 = t5;
+#line 45 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb10;
 #line 45 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb6:
 #line 46 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t6 = INT64_C(9);
 #line 46 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t6;
+    h4_ret0 = t6;
+#line 46 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb10;
 #line 46 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb8:
 #line 49 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t10 = INT64_C(10);
 #line 49 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t10;
+    h4_ret0 = t10;
+#line 49 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb10;
 #line 49 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb9:
 #line 50 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t11 = INT64_C(11);
 #line 50 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t11;
-#line 381 "fixedbugs139matchstatementsthatleave.c"
+    h4_ret0 = t11;
+#line 50 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb10;
+#line 50 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb10:
+#line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t12 = h4_ret0;
+#line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t12;
+#line 435 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_else_if_chain(h_fixedbugs139matchstatementsthatleave_Color h0_c, int64_t h1_n) {
-#line 386 "fixedbugs139matchstatementsthatleave.c"
+#line 440 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     h_fixedbugs139matchstatementsthatleave_Color h3_s1;
+    int64_t h4_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -402,6 +457,7 @@ int64_t h_fixedbugs139matchstatementsthatleave_else_if_chain(h_fixedbugs139match
     int64_t t15;
     int64_t t16;
     int64_t t17;
+    int64_t t18;
     goto bb0;
 bb0:
 #line 53 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -447,13 +503,17 @@ bb5:
 #line 55 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t7 = INT64_C(12);
 #line 55 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t7;
+    h4_ret0 = t7;
+#line 55 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb12;
 #line 55 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb6:
 #line 56 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t8 = INT64_C(13);
 #line 56 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t8;
+    h4_ret0 = t8;
+#line 56 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb12;
 #line 56 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
 #line 58 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -479,27 +539,40 @@ bb8:
 #line 62 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t17 = INT64_C(16);
 #line 62 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t17;
+    h4_ret0 = t17;
+#line 62 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb12;
 #line 62 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb10:
 #line 59 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t15 = INT64_C(14);
 #line 59 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t15;
+    h4_ret0 = t15;
+#line 59 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb12;
 #line 59 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb11:
 #line 60 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t16 = INT64_C(15);
 #line 60 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t16;
-#line 496 "fixedbugs139matchstatementsthatleave.c"
+    h4_ret0 = t16;
+#line 60 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb12;
+#line 60 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb12:
+#line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t18 = h4_ret0;
+#line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t18;
+#line 568 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_nested(h_fixedbugs139matchstatementsthatleave_Color h0_c, h_fixedbugs139matchstatementsthatleave_Color h1_d) {
-#line 501 "fixedbugs139matchstatementsthatleave.c"
+#line 573 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     h_fixedbugs139matchstatementsthatleave_Color h3_s1;
+    int64_t h4_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
     h_fixedbugs139matchstatementsthatleave_Color t2;
     int64_t t3;
@@ -509,6 +582,7 @@ int64_t h_fixedbugs139matchstatementsthatleave_nested(h_fixedbugs139matchstateme
     int64_t t7;
     int64_t t8;
     int64_t t9;
+    int64_t t10;
     goto bb0;
 bb0:
 #line 65 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -554,31 +628,45 @@ bb3:
 #line 70 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t9 = INT64_C(19);
 #line 70 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t9;
+    h4_ret0 = t9;
+#line 70 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
 #line 70 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb5:
 #line 68 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t7 = INT64_C(17);
 #line 68 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t7;
+    h4_ret0 = t7;
+#line 68 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
 #line 68 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb6:
 #line 69 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t8 = INT64_C(18);
 #line 69 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t8;
-#line 571 "fixedbugs139matchstatementsthatleave.c"
+    h4_ret0 = t8;
+#line 69 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
+#line 69 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb7:
+#line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t10 = h4_ret0;
+#line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t10;
+#line 657 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_shades(h_fixedbugs139matchstatementsthatleave_Shade h0_c) {
-#line 576 "fixedbugs139matchstatementsthatleave.c"
+#line 662 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Shade h1_s0;
+    int64_t h2_ret0;
     h_fixedbugs139matchstatementsthatleave_Shade t1;
     h_fixedbugs139matchstatementsthatleave_Shade t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
+    int64_t t6;
     goto bb0;
 bb0:
 #line 73 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -606,26 +694,38 @@ bb2:
 #line 74 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t4 = INT64_C(20);
 #line 74 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t4;
+    h2_ret0 = t4;
+#line 74 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
 #line 74 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb3:
 #line 75 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t5 = INT64_C(21);
 #line 75 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t5;
-#line 617 "fixedbugs139matchstatementsthatleave.c"
+    h2_ret0 = t5;
+#line 75 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
+#line 75 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb4:
+#line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t6 = h2_ret0;
+#line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t6;
+#line 715 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_on_an_i64(int64_t h0_n) {
-#line 622 "fixedbugs139matchstatementsthatleave.c"
+#line 720 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_s0;
+    int64_t h2_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
     bool t4;
     int64_t t5;
     int64_t t6;
+    int64_t t7;
     goto bb0;
 bb0:
 #line 78 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -645,7 +745,9 @@ bb2:
 #line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t5 = INT64_C(22);
 #line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t5;
+    h2_ret0 = t5;
+#line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb5;
 #line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb3:
 #line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -655,13 +757,21 @@ bb4:
 #line 80 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t6 = INT64_C(23);
 #line 80 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t6;
-#line 660 "fixedbugs139matchstatementsthatleave.c"
+    h2_ret0 = t6;
+#line 80 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb5;
+#line 80 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb5:
+#line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t7 = h2_ret0;
+#line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t7;
+#line 770 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 82 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_in_a_loop(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 665 "fixedbugs139matchstatementsthatleave.c"
+#line 775 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_n;
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     int64_t t1;
@@ -735,17 +845,18 @@ bb5:
 bb6:
 #line 92 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb1;
-#line 739 "fixedbugs139matchstatementsthatleave.c"
+#line 849 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_in_a_for(HeroArrayHeader * h0_xs) {
-#line 744 "fixedbugs139matchstatementsthatleave.c"
+#line 854 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_total;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_x;
     int64_t h5_s0;
+    int64_t h6_ret0;
     int64_t t1;
     HeroArrayHeader * t2;
     int64_t t3;
@@ -771,7 +882,8 @@ int64_t h_fixedbugs139matchstatementsthatleave_in_a_for(HeroArrayHeader * h0_xs)
     int64_t t23;
     int64_t t24;
     int64_t t25;
-    HeroArrayHeader * t26;
+    int64_t t26;
+    HeroArrayHeader * t27;
     goto bb0;
 bb0:
 #line 95 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -781,13 +893,13 @@ bb0:
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t2 = h0_xs;
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    t26 = h2_xs0;
-#line 786 "fixedbugs139matchstatementsthatleave.c"
+    t27 = h2_xs0;
+#line 898 "fixedbugs139matchstatementsthatleave.c"
     hero_array_incref(t2);
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h2_xs0 = t2;
-#line 790 "fixedbugs139matchstatementsthatleave.c"
-    hero_array_decref(t26);
+#line 902 "fixedbugs139matchstatementsthatleave.c"
+    hero_array_decref(t27);
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t3 = INT64_C(0);
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -844,13 +956,19 @@ bb3:
 bb4:
 #line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t25 = h1_total;
-#line 848 "fixedbugs139matchstatementsthatleave.c"
-    hero_array_decref(h2_xs0);
-    return t25;
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    h6_ret0 = t25;
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb11;
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb5:
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb3;
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb6:
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb3;
+#line 103 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
 #line 98 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t15 = h5_s0;
@@ -864,11 +982,15 @@ bb7:
 bb8:
 #line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t18 = INT64_C(-1);
-#line 868 "fixedbugs139matchstatementsthatleave.c"
-    hero_array_decref(h2_xs0);
-    return t18;
+#line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    h6_ret0 = t18;
+#line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb11;
+#line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb9:
+#line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb10;
+#line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb10:
 #line 101 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t19 = h1_total;
@@ -880,14 +1002,21 @@ bb10:
     h1_total = t21;
 #line 101 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb5;
-#line 884 "fixedbugs139matchstatementsthatleave.c"
+#line 101 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb11:
+#line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t26 = h6_ret0;
+#line 1010 "fixedbugs139matchstatementsthatleave.c"
+    hero_array_decref(h2_xs0);
+    return t26;
 }
 
 #line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_two_in_sequence(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 889 "fixedbugs139matchstatementsthatleave.c"
+#line 1017 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h1_s0;
     h_fixedbugs139matchstatementsthatleave_Color h2_s1;
+    int64_t h3_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
     h_fixedbugs139matchstatementsthatleave_Color t2;
     int64_t t3;
@@ -898,6 +1027,7 @@ int64_t h_fixedbugs139matchstatementsthatleave_two_in_sequence(h_fixedbugs139mat
     int64_t t8;
     int64_t t9;
     int64_t t10;
+    int64_t t11;
     goto bb0;
 bb0:
 #line 106 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -963,19 +1093,29 @@ bb5:
 #line 111 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t9 = INT64_C(26);
 #line 111 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t9;
+    h3_ret0 = t9;
+#line 111 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
 #line 111 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb6:
 #line 112 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t10 = INT64_C(27);
 #line 112 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t10;
-#line 974 "fixedbugs139matchstatementsthatleave.c"
+    h3_ret0 = t10;
+#line 112 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb7;
+#line 112 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb7:
+#line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t11 = h3_ret0;
+#line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t11;
+#line 1114 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 114 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_value_if(bool h0_b) {
-#line 979 "fixedbugs139matchstatementsthatleave.c"
+#line 1119 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_r0;
     int64_t h2_s0;
     int64_t h3_s1;
@@ -1105,12 +1245,12 @@ bb11:
     hero_print_end();
 #line 124 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb8;
-#line 1109 "fixedbugs139matchstatementsthatleave.c"
+#line 1249 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 130 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_value_match(int64_t h0_k) {
-#line 1114 "fixedbugs139matchstatementsthatleave.c"
+#line 1254 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_s0;
     int64_t h2_r0;
     int64_t h3_s1;
@@ -1256,19 +1396,21 @@ bb12:
     hero_print_end();
 #line 141 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb9;
-#line 1260 "fixedbugs139matchstatementsthatleave.c"
+#line 1400 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_checked_if_one_branch_returns(bool h0_b) {
-#line 1265 "fixedbugs139matchstatementsthatleave.c"
+#line 1405 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_r0;
     int64_t h2_x;
+    int64_t h3_ret0;
     bool t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
     int64_t t5;
+    int64_t t6;
     goto bb0;
 bb0:
 #line 148 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -1284,13 +1426,17 @@ bb1:
 #line 153 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t5 = h2_x;
 #line 153 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t5;
+    h3_ret0 = t5;
+#line 153 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
 #line 153 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb2:
 #line 149 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t2 = INT64_C(36);
 #line 149 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    return t2;
+    h3_ret0 = t2;
+#line 149 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    goto bb4;
 #line 149 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb3:
 #line 151 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
@@ -1299,12 +1445,18 @@ bb3:
     h1_r0 = t3;
 #line 148 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb1;
-#line 1303 "fixedbugs139matchstatementsthatleave.c"
+#line 148 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+bb4:
+#line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    t6 = h3_ret0;
+#line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+    return t6;
+#line 1455 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 155 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 void h_fixedbugs139matchstatementsthatleave_main(void) {
-#line 1308 "fixedbugs139matchstatementsthatleave.c"
+#line 1460 "fixedbugs139matchstatementsthatleave.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     h_fixedbugs139matchstatementsthatleave_Color t1;
@@ -1589,7 +1741,7 @@ bb0:
     t75 = h0_own0;
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h0_own0 = t54;
-#line 1593 "fixedbugs139matchstatementsthatleave.c"
+#line 1745 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t75);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t55 = h_fixedbugs139matchstatementsthatleave_in_a_for(t54);
@@ -1621,7 +1773,7 @@ bb0:
     t76 = h1_own1;
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h1_own1 = t59;
-#line 1625 "fixedbugs139matchstatementsthatleave.c"
+#line 1777 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t76);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t60 = h_fixedbugs139matchstatementsthatleave_in_a_for(t59);
@@ -1685,10 +1837,10 @@ bb0:
     hero_print_int(t74);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     hero_print_end();
-#line 1689 "fixedbugs139matchstatementsthatleave.c"
+#line 1841 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h0_own0);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-#line 1692 "fixedbugs139matchstatementsthatleave.c"
+#line 1844 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h1_own1);
     return;
 }

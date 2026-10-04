@@ -136,6 +136,7 @@ function slot_is_mutable(slot: containers.Slot) -> bool
         .param_slot ps  => ps.mutable
         .local_slot ls  => ls.mutable
         .synthetic_slot => false
+        .return_slot    => false
 
 # What a lend is: where the author wrote it, the name it is rooted at, whether
 # they may write that name, and the value it takes its address from.

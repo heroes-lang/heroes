@@ -94,6 +94,7 @@ int64_t h_functions_fib(int64_t h0_n);
 #line 6 "tests/golden/run/functions.hero"
 bool h_functions_is_even(int64_t h0_n) {
 #line 97 "functions.c"
+    bool h1_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -102,6 +103,7 @@ bool h_functions_is_even(int64_t h0_n) {
     int64_t t6;
     int64_t t7;
     bool t8;
+    bool t9;
     goto bb0;
 bb0:
 #line 7 "tests/golden/run/functions.hero"
@@ -123,23 +125,34 @@ bb1:
 #line 9 "tests/golden/run/functions.hero"
     t8 = h_functions_is_odd(t7);
 #line 9 "tests/golden/run/functions.hero"
-    return t8;
+    h1_ret0 = t8;
+#line 9 "tests/golden/run/functions.hero"
+    goto bb4;
 #line 9 "tests/golden/run/functions.hero"
 bb2:
 #line 8 "tests/golden/run/functions.hero"
     t4 = true;
 #line 8 "tests/golden/run/functions.hero"
-    return t4;
+    h1_ret0 = t4;
+#line 8 "tests/golden/run/functions.hero"
+    goto bb4;
 #line 8 "tests/golden/run/functions.hero"
 bb3:
 #line 8 "tests/golden/run/functions.hero"
     goto bb1;
-#line 138 "functions.c"
+#line 8 "tests/golden/run/functions.hero"
+bb4:
+#line 6 "tests/golden/run/functions.hero"
+    t9 = h1_ret0;
+#line 6 "tests/golden/run/functions.hero"
+    return t9;
+#line 150 "functions.c"
 }
 
 #line 11 "tests/golden/run/functions.hero"
 bool h_functions_is_odd(int64_t h0_n) {
-#line 143 "functions.c"
+#line 155 "functions.c"
+    bool h1_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -148,6 +161,7 @@ bool h_functions_is_odd(int64_t h0_n) {
     int64_t t6;
     int64_t t7;
     bool t8;
+    bool t9;
     goto bb0;
 bb0:
 #line 12 "tests/golden/run/functions.hero"
@@ -169,23 +183,33 @@ bb1:
 #line 14 "tests/golden/run/functions.hero"
     t8 = h_functions_is_even(t7);
 #line 14 "tests/golden/run/functions.hero"
-    return t8;
+    h1_ret0 = t8;
+#line 14 "tests/golden/run/functions.hero"
+    goto bb4;
 #line 14 "tests/golden/run/functions.hero"
 bb2:
 #line 13 "tests/golden/run/functions.hero"
     t4 = false;
 #line 13 "tests/golden/run/functions.hero"
-    return t4;
+    h1_ret0 = t4;
+#line 13 "tests/golden/run/functions.hero"
+    goto bb4;
 #line 13 "tests/golden/run/functions.hero"
 bb3:
 #line 13 "tests/golden/run/functions.hero"
     goto bb1;
-#line 184 "functions.c"
+#line 13 "tests/golden/run/functions.hero"
+bb4:
+#line 11 "tests/golden/run/functions.hero"
+    t9 = h1_ret0;
+#line 11 "tests/golden/run/functions.hero"
+    return t9;
+#line 208 "functions.c"
 }
 
 #line 16 "tests/golden/run/functions.hero"
 void h_functions_main(void) {
-#line 189 "functions.c"
+#line 213 "functions.c"
     int64_t t1;
     bool t2;
     int64_t t3;
@@ -220,12 +244,13 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/functions.hero"
     return;
-#line 224 "functions.c"
+#line 248 "functions.c"
 }
 
 #line 21 "tests/golden/run/functions.hero"
 int64_t h_functions_fib(int64_t h0_n) {
-#line 229 "functions.c"
+#line 253 "functions.c"
+    int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -239,6 +264,7 @@ int64_t h_functions_fib(int64_t h0_n) {
     int64_t t11;
     int64_t t12;
     int64_t t13;
+    int64_t t14;
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/functions.hero"
@@ -270,18 +296,28 @@ bb1:
 #line 24 "tests/golden/run/functions.hero"
     if (__builtin_add_overflow(t8, t12, &t13)) hero_panic_overflow();
 #line 24 "tests/golden/run/functions.hero"
-    return t13;
+    h1_ret0 = t13;
+#line 24 "tests/golden/run/functions.hero"
+    goto bb4;
 #line 24 "tests/golden/run/functions.hero"
 bb2:
 #line 23 "tests/golden/run/functions.hero"
     t4 = h0_n;
 #line 23 "tests/golden/run/functions.hero"
-    return t4;
+    h1_ret0 = t4;
+#line 23 "tests/golden/run/functions.hero"
+    goto bb4;
 #line 23 "tests/golden/run/functions.hero"
 bb3:
 #line 23 "tests/golden/run/functions.hero"
     goto bb1;
-#line 285 "functions.c"
+#line 23 "tests/golden/run/functions.hero"
+bb4:
+#line 21 "tests/golden/run/functions.hero"
+    t14 = h1_ret0;
+#line 21 "tests/golden/run/functions.hero"
+    return t14;
+#line 321 "functions.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
