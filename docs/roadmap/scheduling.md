@@ -373,6 +373,16 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   a count over the table, and `site/src/lib/chain.ts`, which refuses a gap at
   build time, read the same table in a site build of 186 pages that completed.
 
+**2026-10-04, M-issue-files opened at row 83, ahead of every scheduled row, by
+author instruction.** The author asked, that evening, for every defect, decision
+and closed record to have the structure of one GitHub issue, then for one
+top-level folder holding them all (`.claude/rules/records.md` § The issues; the
+decision is `issues/2026-10/04/2026-10-04-2308-every-item-becomes-an-issue-file.md`).
+It is placed last in number and first in order because the lists it replaces are
+where every other milestone's work is filed: a milestone opened before it would
+file its items into a shape that was being retired. No row moved; § The chain
+holds 83 rows with no gap.
+
 ---
 
 ---
