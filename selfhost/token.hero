@@ -166,6 +166,41 @@ function begins_an_expression(kind: TokenKind) -> bool
 function made(kind: TokenKind, start: i64, end: i64) -> Token
     return Token(kind: kind, span: Span(start: start, end: end))
 
+## What a line may begin or hold
+
+# Whether a token only ever goes on with a line above it and begins none of
+# its own: an operator but the three that also begin a value, `-`, `!` and
+# `~`; a separator or a closer; `else` and `in`. Enumerated, so a new token
+# kind is answered for, not defaulted. Moved here from `parse/orphans` with
+# defect 193, a table of kinds that reads no parse.
+function continues_a_line(kind: TokenKind) -> bool
+    return match kind
+        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge      => true
+        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .comma       => true
+        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket      => true
+        .rbrace | .kw_else | .kw_in                                                        => true
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece   => false
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if         => false
+        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function     => false
+        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue          => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator => false
+        .indent | .dedent | .eof | .error                                                  => false
+
+# A token spec § 8's `Pattern` is written with, or the `|` that joins two.
+# ENUMERATED, so that a new kind is answered for here. Moved here from
+# `parse/margin_arms` with defect 193, a table of kinds that reads no parse.
+function of_a_pattern(k: TokenKind) -> bool
+    return match k
+        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment             => true
+        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant        => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true      => false
+        .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow  => false
+        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus      => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and        => false
+        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent   => false
+        .dedent | .eof | .error                                                                 => false
+
 ## The stable names
 
 # Stable lowercase name, used by `heroes lex --json` and the snapshots. These

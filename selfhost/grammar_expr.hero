@@ -20,8 +20,8 @@
 # `match_expr` reaches `arm`, which reaches both `statement` and `block`;
 # `annotated` reaches `parse_type` in another module, which reaches nothing here
 # — the one edge that leaves the knot and the reason `parse_type` stays its own
-# file. `arm` reads its patterns with `parse/arm_pattern`, which since defect
-# 124 reaches nothing here either, and refuses a declaration as its body with
+# file. `arm` reads its patterns with `parse/operator_arm`, through
+# `parse/arm_pattern`, neither of which reaches anything here, and refuses a declaration as its body with
 # `parse/arm_body`, which reaches nothing here; nor do `parse/annotation`,
 # `parse/margin_arms` and `parse/broken_arm`, which `annotated`, `match_expr`
 # and `arm` ask what a failed type, a misplaced arm or a broken one owes, nor
@@ -1169,18 +1169,12 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
 
     if lead.is_err()
         return fail(code: "no_pattern", msg: "the arm has no pattern")
-    patterns: [ast.Pattern] @ lead.must().patterns
-    joining: bool @ true
 
-    while joining && cursor.eat(@c, .pipe)
-        more = arm_pattern.read(@c, @a, text)
+    # An arm broken before its `=>` goes on at it (`parse/broken_arm`), and
+    # one whose `=>` was owed at junk at a `=>` past it (defect 193).
+    missed = !broken_arm.arrow(@c, text, own_block: own_block)
 
-        if more.is_err()
-            return fail(code: "no_pattern", msg: "a joined pattern is missing")
-        patterns @ patterns.push(more.must())
-
-    # An arm broken before its `=>` goes on at it (`parse/broken_arm`).
-    if !broken_arm.arrow(@c, text, own_block: own_block)
+    if missed && !(operator_arm.to_the_arrow(@c) && cursor.eat(@c, .fat_arrow))
         return fail(code: "no_arrow", msg: "the arm has no `=>`")
 
     # One statement, or a block — the same two shapes every other body has
@@ -1202,12 +1196,12 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
         body @ .one_stmt(at: at)
     broken_arm.close_its_block(@c, from: head.pos)
 
-    # A pattern begun with an operator was told, and the arm read past it for
-    # its own mistakes (`parse/operator_arm`).
-    if lead.must().told
-        return fail(code: "no_pattern", msg: "the arm's pattern began with an operator")
+    # A pattern or a `=>` refused was told, and the arm read past it for its
+    # own mistakes (`parse/operator_arm`).
+    if lead.must().told || missed
+        return fail(code: "no_pattern", msg: "the arm's pattern or its `=>` was refused")
     return ok(
-        ast.Arm(patterns: patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+        ast.Arm(patterns: lead.must().patterns, body: body, span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
     )
 
 ## Tests — the precedence table, read back off real token streams
