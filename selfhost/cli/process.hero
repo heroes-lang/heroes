@@ -58,6 +58,7 @@ extern "hero_os.h"
     function hero_run_serial() -> i64
     # `lent`, as every name handed to it above: read while it runs, kept never.
     function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
     constant HERO_OS_OK: i64
     constant HERO_OS_NOT_FOUND: i64
 
@@ -186,23 +187,55 @@ function rename_over(from: str, to: str) -> ()?
         return fail(code: "rename_failed", msg: "could not move " + from + " to " + to + because())
     return ok()
 
+# What a walk found under a directory: every file whose name is UTF-8, as a
+# path, and every file whose name is not, its bytes that are not UTF-8
+# written by their value, `only/caf<0xE9>.hero`, which no `str` can open but
+# a message can name (defect 239). The runtime's `hero_dir_at` panicked on
+# such a name, `probe` and `mutate` exit 134 on Linux, and on Windows exit 127
+# over `café.hero`, `FindFirstFileA` answering in the ANSI code page; the
+# caller now chooses, a `.hero` file it cannot open being one it cannot read.
+record Walked
+    files: [str]
+    unnamed: [str]
+
 # Every FILE under `dir`, recursively, relative paths joined with `/` on
 # every platform. The runtime holds the listing until it is read, and this
 # releases it on the way out — the leak gate panics at exit otherwise.
-function files_under(dir: str) -> [str]?
+function walk(dir: str) -> Walked?
     found = hero_dir_scan(root: dir.cstr(), want: 0, recursive: 1)
 
     if found < 0
         return fail(code: "cannot_walk", msg: "cannot read " + dir)
     out: [str] @ []
+    unnamed: [str] @ []
     at: i64 @ 0
 
     while at < found
-        out @ out.push(dir + "/" + hero_dir_at(index: at))
+        status: i64 @ 0
+        marks: i64 @ 0
+        name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
+
+        if status == HERO_OS_OK
+            out @ out.push(dir + "/" + name)
+        else
+            unnamed @ unnamed.push(dir + "/" + written_value(answer: name, marks: marks))
         at @ at + 1
 
     hero_dir_release()
-    return ok(out)
+    return ok(Walked(files: out, unnamed: unnamed))
+
+# Every file under `dir`, or the failure naming the first whose name is not
+# UTF-8: for a caller that must open every file it is given.
+function files_under(dir: str) -> [str]?
+    walked = walk(dir)?
+
+    if walked.unnamed.len() > 0
+        return fail(code: "not_text", msg: unnamed_said(walked.unnamed[0]))
+    return ok(walked.files)
+
+# What a file whose name is not UTF-8 is told as, its bytes by their value.
+function unnamed_said(written: str) -> str
+    return "the name of `" + written + "` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
 
 # One environment variable: "" where it is unset, its value where that is
 # UTF-8, and a failure naming the variable where it is set and not UTF-8,
@@ -344,6 +377,41 @@ test "the filesystem answers the shell utility's question, not C's"
     landed = read_file(root + "/to")
     assert !landed.is_err()
     assert landed.must() == "NEW"
+
+# Defect 239: a name that is not UTF-8 never panics the walk, and is named
+# by its bytes. Only C can make one, so a program of three lines does, with
+# the byte 0xE9 in `caf<E9>.hero`: Linux keeps the name, Windows' narrow
+# `fopen` makes `café.hero` and its `FindFirstFileA` answers 0xE9 again in
+# the ANSI code page, and APFS refuses a name that is not UTF-8, where this
+# test then asserts only that the walk is whole.
+test "a file whose name is not UTF-8 is named by its bytes, and the walk never panics (defect 239)"
+    dir = "build/selftest-walk-names"
+    assert !remove_tree(dir).is_err()
+    assert !mkdir_all(dir + "/only").is_err()
+    assert !write_file(path: dir + "/only/plain.hero", text: "function main()\n    print(1)\n").is_err()
+    maker = dir + "/maker" + exe_suffix()
+    source = "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"" + dir + "/only/caf\\xe9.hero\", \"wb\");\n    if (f == NULL) return 3;\n    fputs(\"x\", f);\n    return fclose(f) == 0 ? 0 : 4;\n}\n"
+    assert !write_file(path: dir + "/maker.c", text: source).is_err()
+    built = run(
+        program: "clang",
+        words: ["clang", dir + "/maker.c", "-o", maker],
+        out: discard(),
+        err: dir + "/maker-err.txt"
+    )
+    assert built.started && built.code == 0
+    made = run(program: maker, words: [maker], out: discard(), err: discard())
+    assert made.started
+    walked = walk(dir + "/only").must()
+    assert walked.files == [dir + "/only/plain.hero"]
+
+    if made.code == 0
+        assert walked.unnamed == [dir + "/only/caf<0xE9>.hero"]
+
+        match files_under(dir + "/only")
+            .ok _  => assert false
+            .err e => assert e.msg == "the name of `" + dir + "/only/caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
+    else
+        assert walked.unnamed.len() == 0
 
 test "an unset variable is empty, and a set one is its value"
     assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS").must() == ""

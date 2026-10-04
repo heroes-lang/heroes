@@ -820,7 +820,7 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
 /* The compiler's read of a file it will SHOW (panel 189, defect 227): what
  * `hero_file_read` answers, and for a file that read whole and is not UTF-8,
  * what a `str` can hold of it instead of nothing. `hero_os.h` states the shape
- * of the result; `hero_bytes_shown` below says why each choice was made.
+ * of the result; `hero_bytes_shown` above says why each choice was made.
  *
  * Never handed to a writer: what the compiler builds of it is a diagnostic
  * (selfhost/not_text.hero), and the text is never lexed. */
