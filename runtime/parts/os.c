@@ -642,9 +642,14 @@ static int hero_file_kind(FILE *file, size_t *first_room) {
  * translates newlines, and a language whose `str` is measured in bytes cannot have
  * a file grow one byte per line on one platform. */
 HeroStr hero_file_read(const char *path, int64_t *status) {
+    /* NOT_FOUND only where nothing is at the path (defect 274, 2026-10-04): a
+     * file of mode 000 was `file_not_found`, *no file at* a path where a file
+     * is, and Windows' `fopen` of a directory fails EACCES. `ENOTDIR` is a path
+     * through a file, where nothing can be. */
+    errno = 0;
     FILE *file = fopen(path, "rb");
     if (file == NULL) {
-        *status = HERO_OS_NOT_FOUND;
+        *status = (errno == ENOENT || errno == ENOTDIR) ? HERO_OS_NOT_FOUND : HERO_OS_FAILED;
         return hero_str_from_bytes("", 0);
     }
     size_t room = 0;
