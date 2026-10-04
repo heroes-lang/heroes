@@ -52,6 +52,23 @@ function jump_word(a: ast.Ast, at: i64) -> str
         .bind | .declare | .mutate | .assert_stmt | .while_stmt => ""
         .for_in | .expr_stmt | .error                           => ""
 
+# Whether a statement is a jump word: what `walk.block` asks of each, so
+# that a `break` after one, which never runs, is no loop's way out (defect
+# 208). A bool, so the frame every nested block recurses through holds no
+# text for it.
+function is_jump(a: ast.Ast, at: i64) -> bool
+    return jump_word(a, at: at) != ""
+
+# The loop's `Checker.broke` as it stands, which `walk.block` keeps once a
+# jump word has stood (defect 208). A call of its own, because a field of `c`
+# read in `block` copies the whole `Checker`, 184 bytes, into a frame every
+# nested block recurses through, and this frame comes and goes. Measured
+# 2026-10-04 on `match` tails nested as each arm's last line: `check`
+# survived 3,198 levels before the repair, 3,187 with the field read in
+# `block`, and 3,195 through this call.
+function broke_of(@c: state.Checker) -> bool
+    return c.broke
+
 # A block's statements after its first jump word, told at the first that
 # never runs, once per block, since every line after it is the same mistake
 # (design.md §4.17), and never at a line the parser has already refused,
@@ -101,7 +118,10 @@ function aborts(a: ast.Ast, s: source.Source, value: i64) -> bool
 
 # `while true` with no `break` of its own, which never finishes. `broken` is
 # the walk's `Checker.broke` for this loop's body: a `break` of a loop inside
-# it is that loop's.
+# it is that loop's, and one after a jump word in its block never runs and
+# is refused there, so it is nobody's (`walk.block`, defect 208). Still the
+# syntax: which statements a jump word leaves behind is what the refusal
+# above reads.
 function forever(a: ast.Ast, s: source.Source, cond: i64, broken: bool) -> bool
     return !broken && literal(a, s, at: cond, word: "true")
 

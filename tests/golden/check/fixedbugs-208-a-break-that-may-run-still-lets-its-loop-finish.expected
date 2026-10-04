@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:10:50: error[missing_return]: `a_live_break_then_a_dead_one` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:14:13: error[unreachable_statement]: this statement never runs: the `break` at line 13 leaves its block first
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:17:61: error[missing_return]: `a_live_break_beside_a_dead_one` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:26:13: error[unreachable_statement]: this statement never runs: the `return` at line 25 leaves its block first
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:32:40: error[missing_return]: `a_break_after_exit` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:41:48: error[missing_return]: `a_break_after_assert_false` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:50:54: error[missing_return]: `a_break_after_an_if_that_returns` must return `i64`, and one path through it returns nothing
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:71:17: error[unreachable_statement]: this statement never runs: the `return` at line 70 leaves its block first
+tests/golden/check/fixedbugs-208-a-break-that-may-run-still-lets-its-loop-finish.hero:81:17: error[unreachable_statement]: this statement never runs: the `return` at line 80 leaves its block first

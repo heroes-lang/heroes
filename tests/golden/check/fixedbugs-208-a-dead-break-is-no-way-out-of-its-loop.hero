@@ -1,0 +1,143 @@
+# Fixed 2026-10-04, defect 208, lane b9-emit. Symptom: a `break` after a
+# `return` inside a `while true` was told twice, `unreachable_statement` at
+# the `break` and `missing_return` on the function, for one mistake: deleting
+# the `break` silenced both. Cause: the checker walks every statement of a
+# block, the ones a jump word leaves behind included, and a `break` among
+# them counted as the loop's way out (`Checker.broke`), so the loop could
+# finish and the function run off its end (`check/walk.hero`'s `block`, read
+# by `check/path_end.hero`'s `forever`). Now a `break` in a statement after a
+# jump word of its block, which never runs and is refused there, is no way
+# out of its loop: each function below is told once, where the statement
+# that never runs stands. Still the syntax, never a value: which statements
+# a jump word leaves behind is what the refusal reads.
+
+# The defect's own shape.
+function reproducer(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        if m > 3
+            return m
+            break  #~ unreachable_statement
+        m @ m + 1
+
+# In the loop's own body.
+function in_the_loop_body(n: i64) -> i64
+    while true
+        return n
+        break  #~ unreachable_statement
+
+# After `continue`.
+function after_continue(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        m @ m + 1
+
+        if m > 3
+            continue
+            break  #~ unreachable_statement
+
+# Nested in a statement that never runs.
+function nested_in_a_dead_if(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        if m > 3
+            return m
+
+            if m > 5  #~ unreachable_statement
+                break
+        m @ m + 1
+
+# Behind another statement that never runs, which is the one told.
+function padded(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        if m > 3
+            return m
+            print(m)  #~ unreachable_statement
+            break
+        m @ m + 1
+
+# Two of them.
+function two_dead_breaks(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        if m > 3
+            return m
+            break  #~ unreachable_statement
+            break
+        m @ m + 1
+
+# In a `match` arm's block.
+function in_a_match_arm(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        match m
+            4 =>
+                return m
+                break  #~ unreachable_statement
+            _ => m @ m + 1
+
+# In an `else`.
+function in_an_else(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        if m < 3
+            m @ m + 1
+        else
+            return m
+            break  #~ unreachable_statement
+
+# In a generic function.
+function generic<T>(x: T, n: i64) -> i64
+    m: i64 @ n
+    _ = x
+
+    while true
+        if m > 3
+            return m
+            break  #~ unreachable_statement
+        m @ m + 1
+
+# In a value `if`'s branch and a value `match`'s arm.
+function in_a_value_if(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        x = if m > 3
+            return m
+            break  #~ unreachable_statement
+        else
+            1
+        m @ m + x
+
+function in_a_value_arm(n: i64) -> i64
+    m: i64 @ n
+
+    while true
+        x = match m
+            4 =>
+                return m
+                break  #~ unreachable_statement
+            _ => 1
+
+        m @ m + x
+
+function main()
+    print(reproducer(n: 1))
+    print(in_the_loop_body(n: 1))
+    print(after_continue(n: 1))
+    print(nested_in_a_dead_if(n: 1))
+    print(padded(n: 1))
+    print(two_dead_breaks(n: 1))
+    print(in_a_match_arm(n: 1))
+    print(in_an_else(n: 1))
+    print(generic(x: "a", n: 1))
+    print(in_a_value_if(n: 1))
+    print(in_a_value_arm(n: 1))
