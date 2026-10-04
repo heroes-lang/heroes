@@ -26,7 +26,16 @@ function root_end(s: source.Source) -> i64
 # appended to it removed. Anything that hands a program BACK — `fmt`,
 # applied fixes — must go through this, or it writes the whole compilation
 # into one of its files.
+#
+# **Never a root that is not UTF-8** (panel 189): its text is the one the
+# compiler can show, U+FFFD for each byte that is not text, and handing it
+# back would write U+FFFD over the author's bytes. Every writer asks first
+# (`check --apply`, and `fmt` refuses a file with diagnostics); this stops the
+# one that forgets, by name, before it writes.
 function user_text(s: source.Source) -> str
+    for one in s.faults
+        assert one.at >= root_end(s)
+
     return text_of(s, 0)
 
 # One file's own text, byte for byte as its author wrote it: the joiner after

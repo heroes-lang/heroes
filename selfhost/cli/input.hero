@@ -20,6 +20,7 @@
 
 use source
 use modules
+use module/reading
 use cli/process
 use cli/files
 
@@ -27,12 +28,21 @@ use cli/files
 # reaches through use, and the library last (§1.11). Doing it here is
 # what keeps lex, parse, check, build, run, test and fmt looking at
 # the same text.
+#
+# A file of it that is not UTF-8 is read all the same, as `reading.source_text`
+# holds one, and its faults are the Source's: what is told about it is the
+# lexer's first word (`not_text.hero`), at exit 1, for every verb (panel 189).
 function read_compilation(path: str, library: str) -> source.Source?
-    root = read_file(path)
+    root = reading.source_text(path)
 
     if root.is_err()
         return fail(code: "unreadable", msg: "cannot read `" + path + "`")
-    return modules.load_text(path: path, root_text: root.must(), library: library)
+
+    # Never lexed, not even for its `use` lines: a binary named on the command
+    # line took ten minutes of discovery's lexing to be told (panel 189).
+    if root.must().faults.len() > 0
+        return ok(reading.rooted(source.new_source(name: path, text: root.must().text), root: root.must().faults))
+    return modules.load_text(path: path, root_text: root.must().text, library: library)
 
 # THE ROOT FILE ALONE, for `fmt` and only for `fmt`.
 #
@@ -51,11 +61,11 @@ function read_compilation(path: str, library: str) -> source.Source?
 # why the refusal narrows: a syntax error in a sibling module no longer
 # stops `fmt` from formatting the file you named.
 function read_root_only(path: str) -> source.Source?
-    root = read_file(path)
+    root = reading.source_text(path)
 
     if root.is_err()
         return fail(code: "unreadable", msg: "cannot read `" + path + "`")
-    return ok(source.new_source(name: path, text: root.must()))
+    return ok(reading.rooted(source.new_source(name: path, text: root.must().text), root: root.must().faults))
 
 ## Tests
 

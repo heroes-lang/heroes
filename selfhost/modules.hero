@@ -107,6 +107,7 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
     files: [source.InputFile] @ [source.user_file(name: path, text: root_text)]
     seen: [str] @ [module_names.stem_of(path)]
     pending: [i64] @ [0]
+    each: [[source.Fault]] @ []
 
     while pending.len() > 0
         index = pending[pending.len() - 1]
@@ -124,19 +125,18 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
             if already
                 continue
             opened = open_directory(path) + module + ".hero"
-            found = read_file(opened)
+            found = reading.source_text(opened)
+            seen @ seen.push(module)
 
             if found.is_err()
-                # Nothing there is said on the use line, by errors(); a file there
-                # that cannot be read stops the load, as the root's does (defect 236).
+                # Nothing there is told on the use line; a file there that cannot be read stops the load (defect 236).
                 reading.nothing_at(opened: opened, named: directory_text(path) + module + ".hero")?
-                seen @ seen.push(module)
                 continue
-            seen @ seen.push(module)
             files @ files.push(
-                source.InputFile(name: directory_text(path) + module + ".hero", module: module, text: found.must(), is_library: false)
+                source.InputFile(name: directory_text(path) + module + ".hero", module: module, text: found.must().text, is_library: false)
             )
-            added @ added.push(files.len() - 1)
+            each @ each.push(found.must().faults)
+            added @ reading.followed(added, file: found.must(), at: files.len() - 1)
 
         # files is in source order; pending is reversed so that
         # popping it scans in source order too. Both orders are
@@ -150,7 +150,7 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
     files @ files.push(
         source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: library, is_library: true)
     )
-    return ok(source.from_files(files))
+    return ok(reading.placed(source.from_files(files), modules: each))
 
 ## The graph's own errors — against the finished Source
 

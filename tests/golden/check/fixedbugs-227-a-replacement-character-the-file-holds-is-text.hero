@@ -1,0 +1,9 @@
+# Defect 227, panel 189, the control: a U+FFFD the file holds is text, as it
+# was before, and no `not_text` is told for it. The one diagnostic is the
+# deliberate mistake on the line after it, so the case exits 1 as its form
+# asks.
+
+function main()
+    print("a�b")
+    x: i64 @ "text"  #~ type_mismatch
+    print(x)

@@ -1,0 +1,26 @@
+# Defect 227, panel 189's R3: one diagnostic for each line holding a byte that
+# is not UTF-8, at most eight, the last one told saying how many more lines
+# hold one, and a line of five such bytes names the first and counts them.
+# Ten lines below hold a Latin-1 byte, the first of them five; the ninth and
+# the tenth are counted, not told. Not UTF-8 on purpose.
+
+#~v not_text
+# éèàùì five Latin-1 letters on one line
+#~v not_text
+# line 2: café
+#~v not_text
+# line 3: café
+#~v not_text
+# line 4: café
+#~v not_text
+# line 5: café
+#~v not_text
+# line 6: café
+#~v not_text
+# line 7: café
+#~v not_text
+# line 8: café
+# line 9: café, counted
+# line 10: café, counted
+function main()
+    print("ok")

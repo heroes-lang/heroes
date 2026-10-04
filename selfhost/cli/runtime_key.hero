@@ -1,4 +1,4 @@
-# What the runtime is made of, as the text its cache key is taken from.
+# What the runtime is made of, as the keys its cache key is taken from.
 #
 # Split out of `cli_toolchain` at M-argv-execution, along a seam that
 # names a concern rather than at a line count: the toolchain owns WHAT
@@ -14,6 +14,9 @@
 # carries, so a seam only exists where the arrows already point one way.
 
 use bytes
+use module/reading
+use cli/files
+use cli/process
 
 # The runtime's whole contents — EVERY file, not the two entry points:
 # runtime.c is assembled from parts/, so hashing only the file clang
@@ -36,16 +39,23 @@ use bytes
 # yields IS the set the old glob collected, and a part that stops being
 # included stops being compiled, which is the property the key is
 # supposed to track.
-function runtime_text(runtime: str) -> str?
+#
+# **Each file is keyed alone, and the keys joined** (panel 189's R6). The
+# answer was the files' texts joined, so a part read as text and a part that
+# is not UTF-8 could spell one answer between them (the ffi-pragmatist's case
+# 5, at a header), and two runtimes whose texts are cut apart at another place
+# joined to one; sixteen characters a file, each of `module/reading.key_of`'s
+# two kinds, are one answer for one set of bytes. A part that is not UTF-8 is
+# C all the same and no longer refuses the runtime.
+function runtime_keys(runtime: str) -> str?
     entry = runtime + "/runtime.c"
-    root = read_file(entry)?
-    gathered: [str] @ [root]
+    root = reading.keyed(entry)?
+    each: [str] @ [root.key]
 
-    for name in included_names(text: root)
-        one = read_file(runtime + "/" + name)?
-        gathered @ gathered.push(one)
+    for name in included_names(text: root.text)
+        each @ each.push(reading.key_of(runtime + "/" + name)?)
 
-    return ok(gathered.join(""))
+    return ok(each.join(""))
 
 # Every `#include "…"` target in the text, in the order written. The
 # quoted form only: `<stdio.h>` is the platform's and is not ours to
@@ -95,6 +105,36 @@ test "the includes are read by their bytes, whatever a line holds above ASCII"
     assert included_names(text: text) == ["parts/a.c", "café.h", "parts/b.c"]
     assert included_names(text: "").len() == 0
     assert included_names(text: "#include \"").len() == 0
+
+# Panel 189's R6 at the runtime's key: two runtimes holding one text cut at
+# another place between their parts key apart, and a part that is not UTF-8
+# keys apart from a part of text spelling the runtime's answer for it.
+test "every file of the runtime is keyed alone, so a text cut apart elsewhere, or a part that is not UTF-8, keys apart"
+    dir = "build/selftest-runtime-keys"
+    assert !process.remove_tree(dir).is_err()
+    root = "#include \"a.c\"\n#include \"b.c\"\n"
+
+    for side in ["one", "two", "three", "four"]
+        assert !process.mkdir_all(dir + "/" + side).is_err()
+        assert !write_file(path: dir + "/" + side + "/runtime.c", text: root).is_err()
+        assert !write_file(path: dir + "/" + side + "/b.c", text: "int b;\n").is_err()
+
+    assert !write_file(path: dir + "/one/a.c", text: "int a;\nint").is_err()
+    assert !write_file(path: dir + "/one/b.c", text: " b;\n").is_err()
+    assert !write_file(path: dir + "/two/a.c", text: "int a;\n").is_err()
+    one = runtime_keys(dir + "/one").must()
+    assert one.len() == 48
+    assert one != runtime_keys(dir + "/two").must()
+
+    # A part holding 0xE9, a second name for the committed header (nothing is
+    # written through it), against a part of text spelling the runtime's
+    # answer for it after a line, what the route keyed it by.
+    assert !files.second_name(existing: "tests/golden/surface-fixtures/notext227/latin1.h", name: dir + "/three/a.c").is_err()
+    shown = reading.keyed(dir + "/three/a.c").must().text
+    assert !write_file(path: dir + "/four/a.c", text: "not UTF-8, 2 bytes of marks:\nE9" + shown).is_err()
+    three = runtime_keys(dir + "/three").must()
+    assert three[16] == 'n'
+    assert three != runtime_keys(dir + "/four").must()
 
 test "the repository's own runtime names every part it includes"
     names = included_names(text: read_file("runtime/runtime.c").must())

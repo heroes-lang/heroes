@@ -1,0 +1,12 @@
+# Defect 227, panel 189: one diagnostic per line holding a byte that is not
+# UTF-8, its caret on the line's first such byte, which only text precedes;
+# a string, a character literal and an `f` literal each hold one here. Not
+# UTF-8 on purpose, as the file before it.
+
+function main()
+    x = 1
+    print("café e tè")  #~ not_text
+    c: u8 @ "a"[0]
+
+    if c == 'é'  #~ not_text
+        print(f"café {x}")  #~ not_text
