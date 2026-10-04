@@ -21,14 +21,18 @@
 # - a suite has a FLOOR. `tests/golden/ir` losing nineteen files would
 #   otherwise report green over the one that remained — the shape §9 calls
 #   an invariant that cannot fail;
-# - a skip is not a pass. `unsupported/` may skip a case whose diagnostic
-#   says this machine lacks the library, and the count is floored: a
-#   machine skipping everything says so instead of reporting green.
+# - a skip is not a pass. `unsupported/` may skip a case this machine cannot
+#   judge, a library the case binds that the machine lacks, and only where
+#   the expectation, the case and the machine all say so, never the
+#   compiler's words alone (`absence.hero`, defect 246). Each skip is named,
+#   and the count is floored: a machine skipping everything says so instead
+#   of reporting green.
 #
 # UPDATE_GOLDEN is not implemented and must not be — CLAUDE.md §9 forbids
 # it in `check/` and `ir/`, and a flag that cannot be typed is a rule that
 # cannot be broken by accident.
 
+use absence
 use cases
 use report
 use floors
@@ -207,15 +211,18 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
                     label: shape.name + "/" + item.name,
                     detail: "  cannot run the compiler on " + item.source
                 )
-            else if shape.library_skip && said.must().err != expectation.must() && shell.machine_lacks_the_library(said.must().err)
-                # The comparison comes FIRST and the skip only applies
-                # where the two disagree: a case whose expectation IS a
-                # missing-library diagnostic is testing exactly that, and
-                # a skip keyed on the message alone would silence it
-                # everywhere (golden.rs:476).
-                skipped @ skipped + 1
+            else if shape.library_skip
+                judged_or_skipped(
+                    @r,
+                    @skipped,
+                    scratch: scratch,
+                    shape: shape,
+                    item: item,
+                    expected: expectation.must(),
+                    said: said.must()
+                )
             else
-                verdict(@r, shape: shape, item: item, expected: expectation.must(), said: said.must())
+                verdict(@r, shape: shape, item: item, expected: expectation.must(), said: said.must(), refused: "")
 
     if skipped > 0 && skipped * 3 >= found.len()
         report.keep_failure(
@@ -225,10 +232,50 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
         )
     return ok(r)
 
+# One case of a form that may skip for a missing library, `unsupported/`.
+#
+# It is judged against what the compiler would write on THIS machine
+# (`absence.quoted_here`: the three expectations that quote `pkg-config` take
+# this machine's answer), and skipped only where `absence.machine_lacks` finds
+# the difference is the machine's: a library neither the expectation nor the
+# case's own `#~` marks make its subject, which the case binds and the machine,
+# asked, lacks. The skip is kept by name.
+#
+# **The comparison came first before defect 246 too, and it was not enough.**
+# A case whose expectation IS a missing-library message differs from a changed
+# one, and the changed one still holds the words, so 21 cases read green over
+# any change to their message; and nothing asked whether the machine lacked
+# what the compiler said it did. A skip refused says why beside the mismatch,
+# so the reader knows the compiler named a library and was not believed.
+function judged_or_skipped(@r: report.Report, @skipped: i64, scratch: str, shape: Shape, item: cases.Case, expected: str, said: shell.Run)
+    here = absence.quoted_here(scratch: scratch, expected: expected)
+
+    if said.err == here
+        verdict(@r, shape: shape, item: item, expected: here, said: said, refused: "")
+        return
+    lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: here, said: said.err)
+
+    if !lacks.is_err()
+        skipped @ skipped + 1
+        report.keep_skip(@r, label: shape.name + "/" + item.name, detail: "  " + lacks.must())
+        return
+    verdict(@r, shape: shape, item: item, expected: here, said: said, refused: refusal_of(lacks))
+
+# Why a skip was refused, or "" where the compiler named nothing missing at
+# all, which is an ordinary mismatch and says nothing more.
+function refusal_of(lacks: str?) -> str
+    code = match lacks
+        .ok _  => "none"
+        .err e => e.code
+
+    if code == "none"
+        return ""
+    return absence.message_of(lacks)
+
 # One case's questions, in the order a reader wants them: what it
 # printed, whether it wrote an artifact it should not have, then how it
-# ended.
-function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: str, said: shell.Run)
+# ended. `refused` is why the case was not skipped, where a skip was asked.
+function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: str, said: shell.Run, refused: str)
     label = shape.name + "/" + item.name
     actual: str @ said.out
 
@@ -236,11 +283,11 @@ function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: st
         actual @ said.err
 
     if actual != expected
-        report.keep_failure(
-            @r,
-            label: label,
-            detail: report.mismatch(what: item.source, expected: expected, actual: actual)
-        )
+        detail: str @ report.mismatch(what: item.source, expected: expected, actual: actual)
+
+        if refused.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + refused
+        report.keep_failure(@r, label: label, detail: detail)
         return
 
     if shape.silent_stdout && said.out.len() > 0
@@ -433,11 +480,230 @@ test "a machine missing the library skips, but a machine missing every library f
     if !shell.can_run_scripts()
         return
     scratch = "build/harness-selftest"
-    tree = one_case_tree(scratch: scratch, name: "skipping", expectation: SAID)
+    tree = fresh_tree(scratch: scratch, name: "skipping")
     assert !tree.is_err()
-    refuse = Shape(
+
+    # Until defect 246 this stub said `error[ffi_package]: pkg-config does not
+    # know raylib`, a sentence no compiler writes, for a case that binds
+    # nothing, and the words alone made it a skip. A skip now needs a library
+    # the case binds and the machine lacks: a header no machine has.
+    missing = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    assert !planted(tree: tree.must(), name: "x", source: binding(NOWHERE), expected: SAID, said: missing).is_err()
+    compiler = said_stub(scratch)
+    assert !compiler.is_err()
+    got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(tree.must()), only: "")
+    assert !got.is_err()
+
+    # One case, one skip: that is 100% skipped, which the floor refuses, and
+    # the skip is named all the same.
+    assert got.must().passed == 0
+    assert got.must().failed == 1
+    assert got.must().skips.len() == 1
+    assert strings.contains(text: got.must().failures[0], needle: "not testing the refusals")
+
+# DEFECT 246's reproducer, held as a test (2026-10-04). A case whose expectation
+# IS a missing-library message was counted as skipped when its message changed,
+# since the changed text still held the words: `unsupported` read `136 passed,
+# 0 failed` over one such change on the real tree. Each case below changes one
+# part of such a message and must FAIL, never skip: the header's own words, a
+# header reached through another, a package's note, the expected message with
+# a second one beside it; and, where only the PLACE says the message is the
+# case's subject, a header misnamed where the case pins one (defect 232's
+# class), an expectation whose words are past reading, and a mark of the case's
+# own where its expectation lost the code.
+test "fixedbugs: a changed missing-library message fails, and is never skipped"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = fresh_tree(scratch: scratch, name: "changed")
+    assert !tree.is_err()
+    dir = tree.must()
+    direct = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    reworded = header_missing(header: NOWHERE, tail: " — clang looked and found nothing", at: "x.hero:1:1")
+    assert !planted(tree: dir, name: "a-words", source: binding(NOWHERE), expected: direct, said: reworded).is_err()
+    outer = ", and `heroes-golden-outer.h`, the header this group names, includes it"
+    through = header_missing(header: NOWHERE, tail: outer + " at line 1", at: "x.hero:1:1")
+    moved = header_missing(header: NOWHERE, tail: outer + " through `heroes-golden-mid.h`", at: "x.hero:1:1")
+    assert !planted(tree: dir, name: "b-through", source: binding("heroes-golden-outer.h"), expected: through, said: moved).is_err()
+    package = "error[ffi_package]: the package `heroes-golden-gone` is not installed on this machine\n  at x.hero:1:26\n"
+    told = package + "  note: install its development files, or name the library directly with `link`\n"
+    retold = package + "  note: install it\n"
+    asking = "extern \"stdio.h\" package \"heroes-golden-gone\"\n    function seven() -> i32\n"
+    assert !planted(tree: dir, name: "c-package", source: asking, expected: told, said: retold).is_err()
+    second = direct + "error[unused_binding]: a second message nobody expected\n  at x.hero:5:5\n"
+    assert !planted(tree: dir, name: "d-padded", source: binding(NOWHERE), expected: direct, said: second).is_err()
+
+    # The case's group reaches the header named, and no machine has the cut
+    # name either, so only the place keeps this from reading as the machine's.
+    spot = dir + "/e-misnamed.hero:1:1"
+    pinned_here = header_missing(header: NOWHERE, tail: outer + " at line 1", at: spot)
+    cut = header_missing(header: "heroes-golden-a-header", tail: outer + " at line 1", at: spot)
+    assert !planted(tree: dir, name: "e-misnamed", source: binding("heroes-golden-outer.h"), expected: pinned_here, said: cut).is_err()
+    told_at = "error[ffi_package]: the package `heroes-golden-gone` is not installed on this machine\n  at " + dir + "/f-unread.hero:1:26\n"
+    unread = "error[ffi_package]: the package `heroes-golden-gone` is not on this machine at all\n  at " + dir + "/f-unread.hero:1:26\n"
+    assert !planted(tree: dir, name: "f-unread", source: asking, expected: unread, said: told_at).is_err()
+    marked = "extern \"stdio.h\" package \"heroes-golden-gone\"  #~ ffi_package\n    function seven() -> i32\n"
+    lost = "error[ffi_pakage]: the package `heroes-golden-gone` is not installed on this machine\n  at " + dir + "/g-marked.hero:1:26\n"
+    told_marked = "error[ffi_package]: the package `heroes-golden-gone` is not installed on this machine\n  at " + dir + "/g-marked.hero:1:26\n"
+    assert !planted(tree: dir, name: "g-marked", source: marked, expected: lost, said: told_marked).is_err()
+    compiler = said_stub(scratch)
+    assert !compiler.is_err()
+    got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
+    assert !got.is_err()
+    assert got.must().passed == 0
+    assert got.must().failed == 7
+    assert got.must().skips.len() == 0
+
+    # And each failure says why the compiler's word was not taken.
+    for failure in got.must().failures
+        assert strings.contains(
+            text: failure,
+            needle: "not skipped for a missing library: the expectation names the same missing library"
+        )
+
+test "a library the case binds and this machine lacks is skipped by name, among cases judged"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = fresh_tree(scratch: scratch, name: "lacking")
+    assert !tree.is_err()
+    dir = tree.must()
+
+    for name in ["a", "b", "c"]
+        assert !planted(tree: dir, name: name, source: binding("stdio.h"), expected: REFUSED, said: REFUSED).is_err()
+
+    missing = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    assert !planted(tree: dir, name: "d", source: binding(NOWHERE), expected: REFUSED, said: missing).is_err()
+    compiler = said_stub(scratch)
+    assert !compiler.is_err()
+    got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
+    assert !got.is_err()
+
+    # One skip in four is under the floor's third, so the run is green and
+    # the skip is a line of its own, naming the case and clang's answer.
+    assert got.must().passed == 3
+    assert got.must().failed == 0
+    assert got.must().skips.len() == 1
+    assert strings.starts_with(text: got.must().skips[0], prefix: "SKIP unsupported/d\n")
+    assert strings.contains(text: got.must().skips[0], needle: "which clang does not find")
+
+test "a library said to be missing is judged where the machine has it, or the case binds none"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = fresh_tree(scratch: scratch, name: "refuted")
+    assert !tree.is_err()
+    dir = tree.must()
+
+    # `stdio.h` is on every machine this compiler builds on, so clang finds it
+    # and the compiler's word is refuted.
+    has = header_missing(header: "stdio.h", tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    assert !planted(tree: dir, name: "a-has", source: binding("stdio.h"), expected: REFUSED, said: has).is_err()
+
+    # A header missing everywhere, but one no group of this case names.
+    elsewhere = header_missing(header: NOWHERE, tail: " — clang looked and did not find it", at: "x.hero:1:1")
+    assert !planted(tree: dir, name: "b-unbound", source: binding("stdio.h"), expected: REFUSED, said: elsewhere).is_err()
+    compiler = said_stub(scratch)
+    assert !compiler.is_err()
+    got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
+    assert !got.is_err()
+    assert got.must().passed == 0
+    assert got.must().failed == 2
+    assert got.must().skips.len() == 0
+    assert strings.contains(text: got.must().failures[0], needle: "clang finds `stdio.h`")
+    assert strings.contains(text: got.must().failures[1], needle: "binds no such header")
+
+test "a pkg-config said to be missing is believed only where it does not start"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = fresh_tree(scratch: scratch, name: "tool")
+    assert !tree.is_err()
+    asking = "extern \"stdio.h\" package \"heroes-golden-gone\"\n    function seven() -> i32\n"
+    absent = "pkg-config is not on this machine, and `package \"heroes-golden-gone\"` asks it where the library is\n"
+    assert !planted(tree: tree.must(), name: "x", source: asking, expected: REFUSED, said: absent).is_err()
+    compiler = said_stub(scratch)
+    assert !compiler.is_err()
+    got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(tree.must()), only: "")
+    assert !got.is_err()
+    here = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--version"])
+    assert !here.is_err()
+
+    # Each branch is this machine's fact: where `pkg-config` runs, the word is
+    # refuted and the case judged; where it does not, the case is skipped by
+    # name, and as the only case it is refused by the floor.
+    if here.must().started
+        assert got.must().failed == 1
+        assert got.must().skips.len() == 0
+        assert strings.contains(text: got.must().failures[0], needle: "`pkg-config` runs on this machine")
+    else
+        assert got.must().skips.len() == 1
+        assert got.must().failed == 1
+
+test "an expectation quoting pkg-config is judged on this machine's answer, and the compiler's own lines still are"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    package = "heroes-golden-gone"
+    notes = absence.quotation(scratch: scratch, package: package)
+
+    # No `pkg-config` here, or an answer the rebuild refuses: then the
+    # expectation is judged as written, which the tests above already hold.
+    if notes.is_err()
+        return
+    head = "error[ffi_package]: the package `" + package + "` is not installed on this machine\n"
+    last = "  note: install its development files, or name the library directly with `link`\n"
+    quoted = notes.must().join("\n") + "\n" + last
+    foreign = head + "  at x.hero:1:26\n  note: pkg-config said: Package " + package + " was not found, in another machine's words\n" + last
+    tree = fresh_tree(scratch: scratch, name: "quoted")
+    assert !tree.is_err()
+    dir = tree.must()
+    asking = "extern \"stdio.h\" package \"" + package + "\"\n    function seven() -> i32\n"
+    assert !planted(tree: dir, name: "a-same", source: asking, expected: foreign, said: head + "  at x.hero:1:26\n" + quoted).is_err()
+
+    # The quotation is this machine's; the place the compiler names is its own.
+    assert !planted(tree: dir, name: "b-moved", source: asking, expected: foreign, said: head + "  at x.hero:1:27\n" + quoted).is_err()
+    compiler = said_stub(scratch)
+    assert !compiler.is_err()
+    got = run_all(scratch: scratch, compiler: compiler.must(), shape: refusing(dir), only: "")
+    assert !got.is_err()
+    assert got.must().passed == 1
+    assert got.must().failed == 1
+    assert got.must().skips.len() == 0
+    assert strings.contains(text: got.must().failures[0], needle: "unsupported/b-moved")
+
+# A stand-in compiler that answers each case with that case's own `.said` file,
+# on stderr, at exit 1, so one tree can hold cases the compiler answers
+# differently: a skip among judged cases needs it.
+function said_stub(scratch: str) -> str?
+    path = scratch + "/stub-said.sh"
+    write_file(path: path, text: "#!/bin/sh\ncat \"${2%.hero}.said\" 1>&2\nexit 1\n")?
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
+    return ok(path)
+
+# An empty golden tree under `scratch`.
+function fresh_tree(scratch: str, name: str) -> str?
+    tree = scratch + "/" + name
+    shell.remove_tree(tree)?
+    shell.mkdir_all(tree)?
+    return ok(tree)
+
+# One case planted in `tree`: its source, its expectation, and what
+# `said_stub` answers for it. `.said` is no extension `cases.collect` reads.
+function planted(tree: str, name: str, source: str, expected: str, said: str) -> ()?
+    write_file(path: tree + "/" + name + ".hero", text: source)?
+    write_file(path: tree + "/" + name + ".expected", text: expected)?
+    write_file(path: tree + "/" + name + ".said", text: said)?
+    return ok()
+
+# The `unsupported` form over a test tree, floored at one.
+function refusing(dir: str) -> Shape
+    return Shape(
         name: "unsupported",
-        dir: tree.must(),
+        dir: dir,
         verb: "build",
         flag: "",
         on_stderr: true,
@@ -447,21 +713,26 @@ test "a machine missing the library skips, but a machine missing every library f
         silent_stdout: true,
         library_skip: true
     )
-    absent = stub(
-        scratch: scratch,
-        name: "stub-nolib.sh",
-        says: "x.hero:1:1: error[ffi_package]: pkg-config does not know raylib\n",
-        on_stderr: true,
-        ends: 1
-    )
-    assert !absent.is_err()
-    got = run_all(scratch: scratch, compiler: absent.must(), shape: refuse, only: "")
-    assert !got.is_err()
 
-    # One case, one skip: that is 100% skipped, which the floor refuses.
-    assert got.must().passed == 0
-    assert got.must().failed == 1
-    assert strings.contains(text: got.must().failures[0], needle: "not testing the refusals")
+# A case's source: one group binding `header`.
+function binding(header: str) -> str
+    return "extern \"" + header + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
+
+# The compiler's words for a header clang did not find, as
+# `selfhost/emit/ffi_build.hero` writes them, `tail` after the header's close
+# and `at` the place it is told at.
+function header_missing(header: str, tail: str, at: str) -> str
+    return "error[ffi_missing_header]: `" + header + "` is not on this machine's include path" + tail + "\n  at " + at + "\n"
+
+# A refusal that names no missing library: what a case expects where the
+# machine has everything it binds.
+constant REFUSED: str
+    "error[ffi_return_type]: the header says `seven` returns `long`, and this group says `i32`\n  at x.hero:2:5\n"
+
+# A header no machine has, which is what makes clang's answer the same on every
+# machine these tests run on.
+constant NOWHERE: str
+    "heroes-golden-a-header-no-machine-has.h"
 
 # Quoting for the CONTENT of a shell script this test writes, which is
 # not the same job `shell.sq` had. That one wrapped a filename on its way

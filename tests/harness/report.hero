@@ -11,15 +11,24 @@
 # Failures are held and printed at the end rather than as they happen, so
 # the progress line stays one line per suite and the diffs are together
 # at the bottom where a reader looks first.
+#
+# **A skip is a third outcome, and it is NAMED** (defect 246, 2026-10-04). A
+# case this machine cannot judge, a library it lacks, is neither a pass nor a
+# failure, and until that day it was nothing at all: a count the floor read and
+# no line anybody could. The author's answer *A* of 2026-10-03 skips such a case
+# "there by name" (`.claude/rules/platforms.md`), so each skip is kept with its
+# reason and printed beside the failures, and the reader of a green run sees
+# which cases it did not judge.
 
 record Report
     passed: i64
     failed: i64
     failures: [str]
+    skips: [str]
 
 function empty() -> Report
     none: [str] = []
-    return Report(passed: 0, failed: 0, failures: none)
+    return Report(passed: 0, failed: 0, failures: none, skips: none)
 
 function keep_pass(@r: Report)
     r.passed @ r.passed + 1
@@ -27,6 +36,12 @@ function keep_pass(@r: Report)
 function keep_failure(@r: Report, label: str, detail: str)
     r.failed @ r.failed + 1
     r.failures @ r.failures.push("FAIL " + label + "\n" + detail)
+
+# A case this machine could not judge, and why: printed, never counted as a
+# pass. Whoever skips also floors its skips (`suite_golden.hero`), so a machine
+# that can judge nothing is a failure rather than a list of names.
+function keep_skip(@r: Report, label: str, detail: str)
+    r.skips @ r.skips.push("SKIP " + label + "\n" + detail)
 
 # Two texts, framed so the eye finds the edges. The frame is
 # golden.rs:145's, because a reader who has seen one of these should
@@ -42,10 +57,19 @@ function tally(one: Report, two: Report) -> Report
     for failure in two.failures
         merged @ merged.push(failure)
 
-    return Report(passed: one.passed + two.passed, failed: one.failed + two.failed, failures: merged)
+    skipped: [str] @ one.skips
 
-# Prints every failure, then the count. The bool is the exit verdict.
+    for skip in two.skips
+        skipped @ skipped.push(skip)
+
+    return Report(passed: one.passed + two.passed, failed: one.failed + two.failed, failures: merged, skips: skipped)
+
+# Prints every skip and every failure, then the count. The bool is the exit
+# verdict, and a skip does not move it.
 function verdict(r: Report, what: str) -> bool
+    for skip in r.skips
+        print(skip)
+
     for failure in r.failures
         print(failure)
 
@@ -75,3 +99,22 @@ test "two reports add up, failures included"
     assert both.passed == 1
     assert both.failed == 1
     assert both.failures.len() == 1
+
+test "a skip is named and kept, and it is neither a pass nor a failure"
+    r: Report @ empty()
+    keep_pass(@r)
+    keep_skip(@r, label: "unsupported/x", detail: "  clang does not find `gone.h` on this machine")
+    assert r.passed == 1
+    assert r.failed == 0
+    assert r.skips == ["SKIP unsupported/x\n  clang does not find `gone.h` on this machine"]
+
+    # A skip alone leaves the verdict green: what makes many skips a failure
+    # is the floor of whoever skips, not this record.
+    assert verdict(r, "self-test")
+
+    # And it travels with the tally, so the harness's last lines name it.
+    other: Report @ empty()
+    keep_skip(@other, label: "unsupported/y", detail: "  no `pkg-config` here")
+    both = tally(one: r, two: other)
+    assert both.skips.len() == 2
+    assert both.skips[1] == "SKIP unsupported/y\n  no `pkg-config` here"
