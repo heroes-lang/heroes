@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-03
-commit: none
+commit: 3e6f076e8b875613113f7f8b18b39d7a0a9221a4
 github: none
 ---
 
