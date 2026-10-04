@@ -918,10 +918,10 @@ function some_compiler() -> str?
 
     if hint.len() > 0
         if exists(hint)
-            return ok(hint)
+            return ok(started_as(hint))
 
         if exists(hint + exe_suffix())
-            return ok(hint + exe_suffix())
+            return ok(started_as(hint + exe_suffix()))
         return fail(
             code: "absent",
             msg: "HEROES_COMPILER is set to `" + hint + "`, and no file is there, so it names no compiler: set it to one, unset it, or name the compiler, -- <compiler>"
@@ -940,6 +940,29 @@ function some_compiler() -> str?
             return ok(path + exe_suffix())
 
     return fail(code: "none", msg: no_compiler_anywhere())
+
+# The name a compiler is checked by and started by: one string for both
+# (defect 331). `exists` asks for a name with no separator in the working
+# directory, as it asks for every path here, and the start of a program so
+# named searches the PATH (`execvp`), so with `HEROES_COMPILER=heroes` or
+# `-- heroes` the file checked was `./heroes` and the program judged was the
+# PATH's `heroes`, measured 2026-10-04 with a stub on the PATH. `./` makes the
+# name a path, which no start searches. A `\` and a drive's `:` part a path
+# only where Windows writes paths, and are bytes of a name elsewhere
+# (`selfhost/cli/runtime_places.hero`'s rule); the runtime says which machine
+# this is.
+function started_as(name: str) -> str
+    windows = exe_suffix() == ".exe"
+    at: i64 @ 0
+
+    while at < name.len()
+        if name[at] == '/' || windows && (name[at] == '\\' || name[at] == ':')
+            return name
+        at @ at + 1
+
+    if name.len() == 0
+        return name
+    return "./" + name
 
 # What to print when there is none — the four places, named.
 function no_compiler_anywhere() -> str
@@ -1323,19 +1346,77 @@ test "fixedbugs: a HEROES_COMPILER that names nothing is refused, never passed o
     assert strings.contains(text: empty.must().out, needle: "compiler ok ")
     assert !remove_tree(scratch).is_err()
 
+# DEFECT 331, held as a test (2026-10-04): a compiler named bare is the file
+# the harness checked, the working directory's, and never one the PATH holds.
+# A stub stands in each place, and a probe asking `some_compiler` and starting
+# its answer as every suite starts the compiler runs where the first stands.
+# Until that day it printed `checked heroes` and started the PATH's. Windows
+# searches the working directory before the PATH, and runs no script, so
+# there the rule is asserted of the names alone.
+test "fixedbugs: a compiler named bare is started as the file that was checked, never from the PATH (defect 331)"
+    assert started_as("heroes") == "./heroes"
+    assert started_as("./heroes") == "./heroes"
+    assert started_as("bin/heroes") == "bin/heroes"
+    assert started_as("/opt/heroes") == "/opt/heroes"
+    assert started_as("") == ""
+
+    if exe_suffix() == ".exe"
+        assert started_as("C:\\w\\heroes.exe") == "C:\\w\\heroes.exe"
+        assert started_as("bin\\heroes.exe") == "bin\\heroes.exe"
+        assert started_as("C:heroes.exe") == "C:heroes.exe"
+    else
+        assert started_as("a\\heroes") == "./a\\heroes"
+
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    here = scratch + "/bare-here"
+    elsewhere = scratch + "/bare-path"
+    assert !mkdir_all(here).is_err()
+    assert !mkdir_all(elsewhere).is_err()
+    assert !stub_named(path: here + "/heroes", says: "the working directory's", scratch: scratch).is_err()
+    assert !stub_named(path: elsewhere + "/heroes", says: "the PATH's", scratch: scratch).is_err()
+    probe = harness_probe(scratch: scratch, name: "bare-probe", main: START_PROBE).must()
+    ran = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "p=\"$PWD/$0\"; bin=\"$PWD/$2\"; cd \"$1\" && PATH=\"$bin:$PATH\" HEROES_COMPILER=heroes exec \"$p\"", probe, here, elsewhere]
+    )
+    assert !ran.is_err()
+    assert ran.must().out == "checked ./heroes\nstarted the working directory's\n"
+    assert !remove_tree(scratch).is_err()
+
+# A script at `path` that writes `says` and exits 0, made executable.
+function stub_named(path: str, says: str, scratch: str) -> ()?
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' \"" + says + "\"\n")?
+    made = run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
+    return ok()
+
+# The program the test above builds over the harness's own modules: what
+# `some_compiler` answers, and what the program so named says when started.
+constant START_PROBE: str
+    "use shell\n\nfunction main()\n    match shell.some_compiler()\n        .ok path =>\n            print(\"checked \" + path)\n\n            match shell.run(scratch: \"build/start-probe\", program: path, words: [path])\n                .ok r  => print(\"started \" + r.out)\n                .err e => print(\"not started: \" + e.msg)\n        .err e => print(\"refused \" + e.code + \": \" + e.msg)\n"
+
 # `ENV_PROBE` built over the harness's own modules, byte for byte, under
 # `scratch`, so the readers of `HEROES_COMPILER` and `HEROES_RUNTIME` are
 # asked from a child's environment as the net reads them.
 function env_probe(scratch: str) -> str?
-    dir = scratch + "/env-values"
+    return harness_probe(scratch: scratch, name: "env-values", main: ENV_PROBE)
+
+# `main` built over the harness's own modules under `scratch/name`.
+function harness_probe(scratch: str, name: str, main: str) -> str?
+    dir = scratch + "/" + name
     remove_tree(dir)?
     mkdir_all(dir)?
 
-    for name in ["absence", "mark_readers", "shell", "strings"]
-        text = read_file("tests/harness/" + name + ".hero")?
-        write_file(path: dir + "/" + name + ".hero", text: text)?
+    for module in ["absence", "mark_readers", "shell", "strings"]
+        text = read_file("tests/harness/" + module + ".hero")?
+        write_file(path: dir + "/" + module + ".hero", text: text)?
 
-    write_file(path: dir + "/main.hero", text: ENV_PROBE)?
+    write_file(path: dir + "/main.hero", text: main)?
     compiler = some_compiler()?
     probe = dir + "/probe" + exe_suffix()
     built = run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/main.hero", "-o", probe])?
