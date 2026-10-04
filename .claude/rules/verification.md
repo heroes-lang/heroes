@@ -318,6 +318,20 @@ cluster's files, then the oldest `adjacent`, then `improvement`; so no
 `blocking` item waits for others to be found, and when fewer than sixteen are
 open the batch takes them all.
 
+**A batch's own questions take the recommended answer** (the author's *5a*
+of 2026-10-04, meant as: *yes, a standing default for your recommended
+answers in batches*;
+`docs/records/log/2026-10-04-1236-the-author-answers-1a-2a-3a-4a-5a-6b.md`).
+A question a batch raises, which the coordinator would otherwise put to the
+author, is decided by the coordinator with the resolution it recommends. It
+rests on a measurement as any recommendation does (CLAUDE.md § 3), and the
+batch's closing commit says once which way each went, so the author can
+turn any of them. **Four kinds stay the author's every time**: a push or any
+outward-facing act, a panel's ratification, a paid run, and a destructive
+operation (CLAUDE.md § Hard stops). It is CLAUDE.md § 3's default for a
+milestone asked for in one `/step` (CL-002), applied to the unit the work
+now moves in.
+
 **Amended 2026-10-02 by author instruction**, meant as: *keep only the Mac
 as the development environment, and the other platforms only as activities
 before the final push, Linux included, above all the emulated one; Linux arm64
