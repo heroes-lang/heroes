@@ -23,6 +23,7 @@
 use module/reading
 use not_text
 use cli/process
+use cli/files
 use cli/shell_split
 use cli/strings
 use emit/ffi_build
@@ -80,12 +81,21 @@ function refused(package: str, complained: str) -> str
 # What the author is told where `pkg-config` could not be started, so nothing
 # could be asked about `package` (defect 249): the package's `ffi_package` at
 # its string, the marker first, and the way out, where it was a bare line with
-# no code, no place and no route. After the colon stands the sentence the net
-# reads as a machine without `pkg-config` (`tests/harness/absence.hero`'s
-# `TOOL_OPEN`), word for word, so the Windows box, which has none, still skips
-# the cases that ask it.
-function unasked(package: str) -> str
-    return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
+# no code, no place and no route.
+#
+# **What is said is the operating system's own reason** (defect 323), `why`, as
+# `toolchain.run_clang` asks it of clang. 2 is no program of that name on the
+# PATH (POSIX's `ENOENT`, Windows' `ERROR_FILE_NOT_FOUND`), and only it is *not
+# on this machine*, in the sentence the net reads as a machine without
+# `pkg-config` (`tests/harness/absence.hero`'s `TOOL_OPEN`), word for word, so
+# the Windows box, which has none, still skips the cases that ask it. Every
+# other reason is the machine refusing to start one that may well be there, a
+# file of mode 644 on the PATH answering 13 (`EACCES`) on this Mac: it was told
+# *not on this machine* all the same, and is named by its number now.
+function unasked(package: str, why: i64) -> str
+    if why == 2
+        return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
+    return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `package \"" + package + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
 
 # Whether `pkg-config` reads `package`'s own `.pc`, asked with no requirement
 # followed: `--maximum-traverse-depth=1 --modversion` is answered at exit 0
@@ -165,10 +175,37 @@ test "a package asked where pkg-config does not start is told at its string, wit
     parsed = parse.parse(text)
     s = source.new_source(name: "nopc.hero", text: text)
     head = "heroes-ffi-package `zlib` cannot be looked up: pkg-config is not on this machine, and `package \"zlib\"` asks it where the library is"
-    told = unasked("zlib")
+    told = unasked(package: "zlib", why: 2)
     assert told == head + "\n  install pkg-config, or name the library directly with `link`"
     d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
     assert d.code == "ffi_package"
     assert source.span_text(s, d.span) == "\"zlib\""
     assert d.message == "the package `zlib` cannot be looked up: pkg-config is not on this machine, and `package \"zlib\"` asks it where the library is"
     assert d.notes == ["install pkg-config, or name the library directly with `link`"]
+
+# Defect 323, made to fire: a file of mode 644 started by its path, which the
+# machine refuses, on Linux and macOS for 13 (`EACCES`), and the refusal that
+# reason gives names it and says nothing of a machine without `pkg-config`.
+# On Windows a mode does not keep a file from running and a name without
+# `.exe` is looked for as one, so there the refusal follows whatever number
+# the machine gave.
+test "a pkg-config the machine refuses to start is told by its reason, never as not on this machine (defect 323)"
+    dir = "build/selftest-package-323"
+    assert !process.mkdir_all(dir).is_err()
+    tool = dir + "/pkg-config"
+    assert !write_file(path: tool, text: "#!/bin/sh\necho 0.29.2\n").is_err()
+    assert !files.set_mode(path: tool, mode: 420).is_err()
+    ran = process.run(program: tool, words: [tool, "--version"], out: process.discard(), err: process.discard())
+    assert !ran.started
+    told = unasked(package: "zlib", why: ran.why)
+
+    if process.exe_suffix() != ".exe"
+        assert ran.why == 13
+        assert told == "heroes-ffi-package `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `package \"zlib\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
+        head = "heroes-ffi-package `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `package \"zlib\"` asks it where the library is"
+        text = "extern \"zlib.h\" package \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
+        parsed = parse.parse(text)
+        s = source.new_source(name: "refused.hero", text: text)
+        d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
+        assert d.code == "ffi_package"
+        assert source.span_text(s, d.span) == "\"zlib\""
