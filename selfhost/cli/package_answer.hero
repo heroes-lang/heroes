@@ -25,6 +25,9 @@ use not_text
 use cli/process
 use cli/shell_split
 use cli/strings
+use emit/ffi_build
+use parse
+use source
 
 # The words pkg-config answered for `package`, or the package failure that
 # stops the build. An answer that is not UTF-8 holds a flag no `str` carries,
@@ -73,6 +76,16 @@ function refused(package: str, complained: str) -> str
     if known(package)
         return "heroes-ffi-package `" + package + "` is installed, and pkg-config cannot give its flags" + said + "\n  install what pkg-config says it lacks, or name the library directly with `link`"
     return "heroes-ffi-package `" + package + "` is not installed on this machine" + said + "\n  install its development files, or name the library directly with `link`"
+
+# What the author is told where `pkg-config` could not be started, so nothing
+# could be asked about `package` (defect 249): the package's `ffi_package` at
+# its string, the marker first, and the way out, where it was a bare line with
+# no code, no place and no route. After the colon stands the sentence the net
+# reads as a machine without `pkg-config` (`tests/harness/absence.hero`'s
+# `TOOL_OPEN`), word for word, so the Windows box, which has none, still skips
+# the cases that ask it.
+function unasked(package: str) -> str
+    return "heroes-ffi-package `" + package + "` cannot be looked up: pkg-config is not on this machine, and `package \"" + package + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
 
 # Whether `pkg-config` reads `package`'s own `.pc`, asked with no requirement
 # followed: `--maximum-traverse-depth=1 --modversion` is answered at exit 0
@@ -142,3 +155,20 @@ test "pkg-config's lines ended by a return and a line end are read as lines (def
     assert shell_split.words(package: "z", said: answered).must() == ["-DSEVEN=7", "-lz"]
     assert !write_file(path: complaint_path, text: "one\rtwo\r").is_err()
     assert complaint(complaint_path) == "one\rtwo\r"
+
+# Defect 249: where `pkg-config` does not start, the refusal opens with the
+# package marker, so `emit/ffi_build.package_problem` reads it into the
+# group's `ffi_package` at its string, with the way out as its note; the bare
+# line it was named no code, no place and no route.
+test "a package asked where pkg-config does not start is told at its string, with the way out (defect 249)"
+    text = "extern \"zlib.h\" package \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "nopc.hero", text: text)
+    head = "heroes-ffi-package `zlib` cannot be looked up: pkg-config is not on this machine, and `package \"zlib\"` asks it where the library is"
+    told = unasked("zlib")
+    assert told == head + "\n  install pkg-config, or name the library directly with `link`"
+    d = ffi_build.package_problem(s, parsed.decls, stderr: told, line: head).must()
+    assert d.code == "ffi_package"
+    assert source.span_text(s, d.span) == "\"zlib\""
+    assert d.message == "the package `zlib` cannot be looked up: pkg-config is not on this machine, and `package \"zlib\"` asks it where the library is"
+    assert d.notes == ["install pkg-config, or name the library directly with `link`"]
