@@ -3,3 +3,5 @@
     **Origin:** the coordinator, 2026-10-04, at the shape beside panel 189's UTF-16 row (the ffi-pragmatist's *raw NULs in the excerpts*), measured on both compilers.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): truth: what a terminal shows of a message is no longer what the compiler wrote, and the one place batch 8 met these bytes it wrote them by their code.
+
+    Repaired at `e623499b`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

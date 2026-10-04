@@ -3,3 +3,5 @@
     **Origin:** panel 188's ffi-pragmatist, 2026-10-03, beside its sweep (its case `bad-utf8`); reproduced by the coordinator the same day.
 
     **Class: blocking**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, and a false message (the file was read).
+
+    Repaired at `5e4f2efb`, 2026-10-04, panel 189's resolution as provisional, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

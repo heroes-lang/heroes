@@ -3,3 +3,5 @@
     **Origin:** the coordinator, 2026-10-04, reading `locate_toolchain` for defect 276 against design.md's search order, and running the installed shape.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a ruled place the compiler does not search; its message is true, it names the two places it looked and the variable that reaches the third, and an installed compiler is not yet a shipped artifact.
+
+    Repaired at `7f875977`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
