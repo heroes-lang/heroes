@@ -139,6 +139,24 @@ function build_words(level: str, sanitize: bool) -> str
 # the whole point of the flag set: a warning nobody sees cannot
 # falsify anything.
 function run_clang(line: [str], what: str, err_path: str) -> ()?
+    said = asked_of_clang(line: line, what: what, err_path: err_path)?
+
+    if strings.trimmed(said).len() > 0
+        io.eprint_raw(text: said)
+    return ok()
+
+# **One clang line run as `run_clang` runs it, what clang said on success
+# handed back rather than printed** (defect 248): the question a probe asks
+# (`cli/pointee.hero`, `cli/layout.hero`), whose unit includes the program's
+# headers and compiles under a unit's words but their diagnostics
+# (`compiling.probe_words`, defect 163). A header's warning reached the
+# terminal from each probe's check unit, `build/pointee-<key>/check-<key>.c`,
+# a file the author never wrote, and again from the program's own unit, which
+# compiles the same headers under the flags that say what a warning is and is
+# where the author is told it: one warning, up to four copies. The probes'
+# dump and screen runs never printed theirs. A failure is `run_clang`'s, and
+# carries clang's whole text, warnings included, as a verdict always did.
+function asked_of_clang(line: [str], what: str, err_path: str) -> str?
     # **`discard()` and not `""`, because the empty path INHERITS.** Under the
     # net this compiler is a child whose stdout is a capture file, and a clang
     # that outlives it goes on holding that file: `docs/panel/174` route F, and
@@ -178,9 +196,7 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
         )
 
     if ran.code == 0
-        if strings.trimmed(noise).len() > 0
-            io.eprint_raw(text: noise)
-        return ok()
+        return ok(noise)
     died: str @ clang_died.died_by(noise)
 
     # **A C COMPILER THAT DIED REFUSED NOTHING** (defect 170, 2026-10-03), and
@@ -292,6 +308,18 @@ test "a HEROES_RUNTIME that names no runtime is refused, never passed over (defe
 
     assert process.is_directory(path: "runtime")
     assert locate_toolchain(hint: "runtime", fingerprint: "port-test").must().runtime == "runtime"
+
+# Defect 248: what clang says when it compiles a probe's unit is handed back
+# to the probe, a header's `#warning` in it; `run_clang` is the one that
+# prints, and no probe calls it.
+test "a probe's question hands back what clang said, a header's warning in it (defect 248)"
+    dir = "build/selftest-asked-248"
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/warns.h", text: "#warning \"a header warning\"\n#define SEVEN 7\n").is_err()
+    assert !write_file(path: dir + "/unit.c", text: "#include \"warns.h\"\nint seven(void) { return SEVEN; }\n").is_err()
+    said = asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/unit.c"], what: "a probe", err_path: dir + "/unit-stderr.txt").must(
+    )
+    assert has_text(text: said, needle: "a header warning")
 
 test "the toolchain finds the real runtime and compiles it through system()"
     found = locate_toolchain(hint: "", fingerprint: "port-test")
