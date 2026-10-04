@@ -1,0 +1,22 @@
+---
+kind: defect
+area: harness
+milestone: none
+filed: 2026-10-04
+commit: 57ef38577f274c32421691c37308c2251a91e717
+github: none
+---
+
+- [x] **317 — a child that writes bytes that are not UTF-8 is reported as a compiler that never ran, `cannot run the compiler on` a program it built** | `shell.run` over a shell printing `caf\351`: it fails `cannot_run`, *cannot read the captured stdout at ...*, and `suite_golden`, `suite_emission`, `suite_corpus` and `suite_fixes` then write *cannot run the compiler on <case>* of a compiler that ran and wrote its answer | `tests/harness/shell.hero` (`run`, the captured stdout and stderr read as text, `:289` and `:293`) · the four suites' *cannot run the compiler on* (`suite_golden.hero:244`, `suite_emission.hero:244`, `suite_corpus.hero:170` and `:266`, `suite_fixes.hero:130`) · **class: blocking**
+
+    **Origin:** lane b9-annot, 2026-10-04, each reproduced on its worktree's harness (its final reply's *Found beside*; scratch `<scratchpad>/batch9/annot/`); no case in the tree writes such bytes today, and a program writing them through C would.
+
+    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message from the net about the compiler it judges (truth); the lane's reading.
+
+    Repaired at `57ef3857`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.
+
+## The repair
+
+Repaired at `57ef3857`. `shell.run` read both captures as text, so a child writing bytes that are not UTF-8 failed as *cannot read the captured stdout*, and the suites wrote *cannot run the compiler on* of a compiler that ran. The captures are now read with the shown read and removed on every path, and such a stream is a refusal naming the program, its exit code, how many bytes are not UTF-8 and the text around the first; the 40 sites in 14 suites that put a sentence of their own in place of a refusal print the refusal. Its cases are three tests, in `shell.hero`, `suite_golden.hero` and `suite_run.hero`.
+
+**Closed 2026-10-04** with batch 10 (lanes b10-ir, b10-cli and b10-harness, merged into one round tree with the trunk at `761525bb`), its closing gate run on the round's head: the seed regenerated at `a134aa74`, 35,206,983 bytes, SHA-256 beginning `c79ffd5ad005c301`, its fixpoint by `cmp`, and the compiler's own tests 1,213, all passed; panel 191's sitting merged at `1dad1ac9`, no line of `selfhost/`, `runtime/`, `tests/` or the seed moving between; then on `1dad1ac9` the net's own tests 260, all passed, and the full net, 27 suites and `cache`, 5,321 passed and 0 failed. The census, the trunk's compiler at `761525bb` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 2,014, 3 moved, defect 325's own cases; `build --emit-c` over the 621 holding an `extern`, every exit the same, 34 files of C moved by defect 231's one exit and 15 of messages by the build cache's key alone. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, none with more or fewer messages in either arm, 26,329 readings differing by the mutant's file name alone; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked. The clock, on a still machine over the trunk's compiler source: `check` 5.64 s against the trunk's 5.63 s, and `build --emit-c` 69.4 and 70.2 s against 75.0 and 75.9 s.

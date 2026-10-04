@@ -1,0 +1,10 @@
+---
+kind: learn
+area: none
+milestone: M-generics-library
+filed: 2026-08-12
+commit: ec5558bef7a0e7934ec69fce6dab1b6d45dcb362
+github: none
+---
+
+- [x] Covered | M6 step 3 | **CLOSED, panel 035 R6 — refused at +23 on Principle 0: a new syntactic form for a type not on the closure list, with no Part 11 evidence. Queued instead: its message must teach rather than say `expected ')' … found a name (e300)`, which is what makes the refusal honest rather than a trap.** `1e300` does not lex. The spec shows `1e-06` and `1e+23` as `print` OUTPUT, and a program cannot read back what `print` writes. Decide whether exponent notation enters the float literal (a lexer change, so a panel) or whether the spec should stop showing a form it cannot parse | crates/heroes/src/lexer/ · spec line 155 | found while writing an abort golden, by trying the most natural way to spell a large float

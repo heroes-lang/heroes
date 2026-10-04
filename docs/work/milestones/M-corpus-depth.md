@@ -39,8 +39,3 @@ what names the third). The brief is the `SCHEDULED.md` item naming this
 milestone; the record is journal 032 at close. Cost is projected at **+1:15** on
 the corpus leg and checked at close against step 0's number; every FFI program is
 measured on the Mac, the Linux image and the Windows box before its commit.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

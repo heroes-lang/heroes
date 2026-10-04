@@ -1,0 +1,10 @@
+---
+kind: decision
+area: spec
+milestone: none
+filed: 2026-08-12
+commit: ec5558bef7a0e7934ec69fce6dab1b6d45dcb362
+github: none
+---
+
+- [x] Covered | panel 030 | **CLOSED, panel 035 R3 — and it was worse than reported: `main() -> int?` returning `fail` printed NOTHING and exited 0. `main` may no longer declare a result (`main_returns`), zero spec tokens, until M7 decides `exit(code)`.** Decide: **`main` cannot fail.** The llm-ergonomist wrote three programs from the spec alone and found that a Heroes calculator which fails prints its error and tells the shell it succeeded — `main` has no result type and `?` needs a fallible caller. Does that wait for M7's `exit(code)`, or does the language answer it earlier? | docs/panel/030 § The disagreement that is not resolved · spec/heroes-spec.md line 6 | it is a wrong program the spec invites today, found by writing rather than by reading

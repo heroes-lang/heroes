@@ -1,0 +1,22 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-04
+commit: e623499b9b5c0db8bc0494d03353b627b5c654f9
+github: none
+---
+
+- [x] **244 — a diagnostic's excerpt writes the source line's control characters raw, so a file's escape sequences reach the terminal that shows the message** | `function main()` over `    x = 1 <ESC>[31mred`: `check` exit 1, `unexpected_character` *the control character U+001B*, and the excerpt line carries the raw `ESC [ 3 1 m` to the terminal, two raw ESC bytes in the output; a two-line program in UTF-16 LE without a BOM puts 410 raw NUL bytes in `check`'s output (batch 8's round compiler at `1eb854c3` and the trunk's at `7d9f2e8f`, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/esc.hero` and `u16.hero`); that a cursor-moving sequence would then rewrite the lines above it is ECMA-48's, unrun here | `selfhost/diag_render.hero` (the excerpt under the gutter) · batch 8's 237, which writes `pkg-config`'s control characters by their code (`shell_split.shown`, `<U+001B>`), the same bytes from another door · **class: blocking**
+
+    **Origin:** the coordinator, 2026-10-04, at the shape beside panel 189's UTF-16 row (the ffi-pragmatist's *raw NULs in the excerpts*), measured on both compilers.
+
+    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): truth: what a terminal shows of a message is no longer what the compiler wrote, and the one place batch 8 met these bytes it wrote them by their code.
+
+    Repaired at `e623499b`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+## The repair
+
+Repaired at `e623499b`. A diagnostic writes every control character but a line end and a tab by its code, `<U+001B>`, in its excerpt and wherever a message, a note or a fix quotes one, the caret padded by that width. Its case is `check/fixedbugs-244-a-control-character-a-message-quotes-is-written-by-its-code`, with its `.fixed`.
+
+**Closed 2026-10-04** with batch 9 (lanes b9-notext, b9-emit, b9-harness, b9-recovery and b9-annot, merged into one round tree with the trunk at `f6a3122e`), its closing gate run on the round's head from `2c58b28e` to `662870e6`, no line of `selfhost/`, `runtime/` or the seed moving between, with the seed regenerated: 41,364,146 bytes, SHA-256 beginning `26ccaa9d96478a20`, its fixpoint by `cmp`; the compiler's own tests 1,190, all passed; the net's own tests 246, all passed; the full net, 27 suites, 5,268 passed and 0 failed, `fixes` read alone after `662870e6`, which stopped that suite copying the byte fixtures of defects 227 and 241 as text. The census, the trunk's compiler at `703af779` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 1,993, 34 moved, and `build --emit-c` over the 621 holding an `extern`, 3 files of C and 22 of messages moved, every one the batch's own. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 68 fewer messages in the normal arm and 71 in the control arm and none more; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked.

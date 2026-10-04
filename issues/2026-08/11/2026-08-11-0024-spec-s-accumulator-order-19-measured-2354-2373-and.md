@@ -1,0 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-11
+commit: 4b21fa75e7f2b70b08c5d4c5b3a1a4977084b6bf
+github: none
+---
+
+2026-08-11 | **Spec: `fold`'s accumulator order, +19 measured (2354 → 2373)** — and the step that lands generics is what makes the defect reachable (panel 029 R6). `fold` is refused by the gate today, so its silent divergence has never been observable: with accumulator and element sharing a type, **both** callback orders satisfy `types/builtins.rs:263` and exit 0. Four well-typed programs, one source text, four outputs, zero diagnostics. `sum`, `concat`, `max`, `min` and every string builder are same-typed folds. The spec is **behind design.md, not choosing**: design.md:2415 already fixes `reduce<A, B>(xs, initial, (function(B, A) -> B))` | the language's own defence against argument-order mistakes — mandatory labels on same-typed parameters — **cannot fire at a higher-order call site**, because the call site is inside `fold` and not in the author's file. The protection is off exactly where the hazard is | §1.4, §4.12, spec line 89 | 029, 012 |

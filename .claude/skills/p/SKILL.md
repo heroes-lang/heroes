@@ -127,7 +127,7 @@ Resuming the task already under way is not starting work, it is the default, and
 the only thing that may follow a glance.
 
 The one exception is the one that already stops every turn: a **push or other
-outward-facing act**, a **panel gate**, or an item of `docs/work/DECIDE.md` put
+outward-facing act**, a **panel gate**, or an open decision issue put
 to the author while a long build runs (CLAUDE.md § 3). Those pause the work
 whether or not anybody typed `/p`, and the glance names them on its `Now:` line
 because they are what changes what the author does next.

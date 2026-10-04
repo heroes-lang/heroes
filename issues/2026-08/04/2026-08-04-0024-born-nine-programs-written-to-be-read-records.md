@@ -1,0 +1,10 @@
+---
+kind: decision
+area: examples
+milestone: none
+filed: 2026-08-04
+commit: b01cca1775e5c44e1edfdb9250dc99e676bb315c
+github: none
+---
+
+2026-08-04 | `examples/gallery/` born: nine programs written to be read (records · variant+match · `T?` · loops · `@` copy-out · generics · strings · FFI · holes), each held to four properties by the suite — parses clean, resolves clean, canonical byte for byte, tree preserved by formatting | author instruction (`/goal`): "così comincio a dare un'occhiata estetica". All nine resolved on the first attempt, which is the datum: the resolver's rules do not fight code written without the resolver in mind. The corpus is now the widest regression surface the frontend has | §4.15, CLAUDE.md §9 | — |

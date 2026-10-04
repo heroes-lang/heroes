@@ -1,0 +1,12 @@
+---
+kind: decision
+area: process
+milestone: M-argv-execution
+filed: 2026-09-03
+commit: 367fc4892d2c04c2b8b3b4ef5e318894002e01b0
+github: none
+---
+
+- [x] **Ratify: the watchdog is a runtime call and the ABI sits at 18** (M-argv-execution step 18, provisional under CLAUDE.md §4). `hero_run_limit(seconds)` joins the process route; it answers 124 on a kill because that is the number coreutils used; it is not a parameter of `shell.run` — every harness call is guarded and less cannot be asked for. What a veto compels: an external watchdog program per platform, and the probe problem that killed three attempts returns. Recommendation: ratify — the panel-098 shape (a runtime route instead of a program with two meanings) applied to one more program.
+
+  **RATIFIED 2026-09-03** (author instruction, *"ratifica tutto"*). Verified before asking: `hero_run_limit` is declared at `runtime/hero_os.h:221`, defined at `runtime/parts/run.c:267`, `HERO_RUNTIME_ABI` is 18 at `runtime/heroes_runtime.h:37`, and `tests/harness/shell.hero:41` binds it. DESIGN-LOG line 2026-09-03.

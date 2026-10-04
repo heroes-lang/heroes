@@ -97,8 +97,3 @@ record is
 The contract moved to the reader's tokeniser at a ceiling of 12288; the delta
 gate landed in the same commit and fired on that commit's own edit; and the
 floors are checked from both sides, with eight re-based to today's count.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

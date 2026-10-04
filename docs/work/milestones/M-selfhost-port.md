@@ -14,8 +14,3 @@ anything. It was repaired here because this is the milestone that needed it:
 debugging a Heroes compiler written in Heroes is where the source mapping stops
 being a nicety. A golden runs lldb in batch mode and asserts that a breakpoint on
 a `.hero` line is hit (CLAUDE.md §9: every claim gets a test that makes it fire).
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************
