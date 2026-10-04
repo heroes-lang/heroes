@@ -49,11 +49,15 @@ use strings
 # `check --permissive` says. Until then its cases were pinned by their
 # `.expected` alone, the one golden directory with an expectation this sweep
 # did not hold to its source.
+#
+# `full/` since defect 289 (2026-10-04): `check`'s whole form, whose marks are
+# the normal arm's, so they witness its rules as `check/`'s do.
 constant DIRECTORIES: [str]
     [
         "tests/golden/check"
         "tests/golden/unsupported"
         "tests/golden/permissive"
+        "tests/golden/full"
     ]
 
 # The directories whose marks witness a thesis rule firing: the normal arm's.
@@ -64,6 +68,7 @@ constant NORMAL_ARM: [str]
     [
         "tests/golden/check"
         "tests/golden/unsupported"
+        "tests/golden/full"
     ]
 
 # **The second sweep, and why there had to be one** (author decision
@@ -193,6 +198,19 @@ constant RUN_ROOTS: [str]
 constant LEAST: i64
     3581
 
+# **The run roots' own floor** (defect 318, 2026-10-04): what the walk of
+# `RUN_ROOTS` reaches, asked or stepped aside. They hold 133 of the marks
+# `LEAST` counts (measured that day on this tree, 25 groups, none stepped
+# aside), so a walk of them that reached nothing left the total 133 short, and
+# the total floor caught that only while it stood within 133 of the count:
+# at 2779 under batch 9 the sweep read green with the run roots' half gone,
+# and at 3581 it reads so again once the expectation half grows 133 marks
+# past it, which the total's quarter of slack lets it do in silence. A mark
+# stepped aside is reached, as for the total, so the number is the tree's on
+# every platform.
+constant RUN_LEAST: i64
+    133
+
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the
 # floor, which are questions about the whole.
@@ -235,7 +253,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         return ok(r)
     every_thesis_rule_has_a_witness(@r, witnessed: witnessed)
     run = run_roots(@r, scratch: scratch, compiler: compiler, roots: RUN_ROOTS)?
-    floored(@r, expected: annotated, run: run, floor: LEAST)
+    floored(@r, expected: annotated, run: run, floor: LEAST, run_floor: RUN_LEAST)
     return ok(r)
 
 # What the run roots' half counted: the diagnostics its groups pinned, and the
@@ -279,15 +297,26 @@ function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str])
 # the tree, and a mark stepped aside was reached, so it counts as reached and
 # never as passed: the third above is what judges the skips, as the
 # `unsupported` form's floor is the tree's count, the same on every platform.
-function floored(@r: report.Report, expected: i64, run: Asked, floor: i64)
+#
+# **And the run roots answer to a floor of their own, `run_floor`** (defect
+# 318, 2026-10-04): the total cannot see them go, since they are 133 marks of
+# 3581 and the total's slack is a quarter (`RUN_LEAST` says how it read green).
+function floored(@r: report.Report, expected: i64, run: Asked, floor: i64, run_floor: i64)
+    held = run.marks + run.stepped
     floors.check(
         @r,
         label: "annotations",
-        found: expected + run.marks + run.stepped,
+        found: expected + held,
         floor: floor,
-        what: "annotated diagnostics found (" + run.stepped.to_str() + " of them stepped aside for a library this machine lacks, which the third below judges)"
+        what: "annotated diagnostics (" + run.stepped.to_str() + " of them stepped aside for a library this machine lacks, which the third below judges)"
     )
-    held = run.marks + run.stepped
+    floors.check(
+        @r,
+        label: "annotations/run-roots",
+        found: held,
+        floor: run_floor,
+        what: "annotated diagnostics in the run roots, " + RUN_ROOTS.join(" and ") + " (" + run.stepped.to_str() + " of them stepped aside)"
+    )
 
     if run.stepped > 0 && run.stepped * 3 >= held
         report.keep_failure(
@@ -453,76 +482,124 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     claimed: [str] @ []
     said: str @ ""
     ran: i64 @ 0
+    programs: i64 @ 0
     refusals: [str] @ []
+    asked_reach: {str: bool} @ {}
+    aside_reach: {str: bool} @ {}
     at: i64 @ 0
 
+    # The programs first, each asked or stepped aside with its own marks.
     while at < paths.len()
         path = paths[at]
-        marks = mark_readers.claimed_by(texts[at])
+        text = texts[at]
         at @ at + 1
 
-        if strings.contains(text: texts[at - 1], needle: "function main")
-            asked = provoked(scratch: scratch, compiler: compiler, path: path)
+        if !strings.contains(text: text, needle: "function main")
+            continue
+        programs @ programs + 1
+        marks = mark_readers.claimed_by(text)
+        reached = modules_reached(root: path, paths: paths, texts: texts)
+        asked = provoked(scratch: scratch, compiler: compiler, path: path)
 
-            if asked.is_err()
-                report.keep_failure(
-                    @r,
-                    label: label,
-                    detail: "  the compiler never ran on " + path + ":\n    " + why_not(asked)
-                )
-                return 0
-            out = asked.must()
+        # The refusal alone says what happened (defect 317): *the
+        # compiler never ran on* stood here before it, of a compiler that
+        # had run and written bytes that are not UTF-8.
+        if asked.is_err()
+            report.keep_failure(@r, label: label, detail: "  " + path + ": " + why_not(asked))
+            return 0
+        out = asked.must()
 
-            # **A program this machine cannot ask steps aside, marks and all,
-            # and only where the case and the machine say so** (defect 246).
-            # `ffi-a-field-the-header-has-as-an-array.hero` binds `dirent.h`,
-            # which Windows does not have, so the compiler answers
-            # `ffi_missing_header` where the mark pins `ffi_field_type`: the
-            # machine's answer, judged where the header is (the author's *A* of
-            # 2026-10-03). Until 2026-10-04 the compiler's words alone made the
-            # step-aside, unnamed: a header this machine has, said to be
-            # missing, stepped its program aside green; and the guard meant to
-            # keep a case whose marks expect the code compared each
-            # `<line>:<code>` mark to a bare code, so it never held. Now
-            # `absence` asks the case's own marks at the place told, what its
-            # program binds, and the machine; the step-aside is a named skip,
-            # and a refused one says why beside any disagreement.
-            lacks = absence.machine_lacks_among(
-                scratch: scratch,
-                path: path,
-                modules: read_with(path: path, paths: paths, texts: texts),
-                expected: "",
-                said: out
-            )
+        # **A program this machine cannot ask steps aside, marks and all,
+        # and only where the case and the machine say so** (defect 246).
+        # `ffi-a-field-the-header-has-as-an-array.hero` binds `dirent.h`,
+        # which Windows does not have, so the compiler answers
+        # `ffi_missing_header` where the mark pins `ffi_field_type`: the
+        # machine's answer, judged where the header is (the author's *A* of
+        # 2026-10-03). Until 2026-10-04 the compiler's words alone made the
+        # step-aside, unnamed: a header this machine has, said to be
+        # missing, stepped its program aside green; and the guard meant to
+        # keep a case whose marks expect the code compared each
+        # `<line>:<code>` mark to a bare code, so it never held. Now
+        # `absence` asks the case's own marks at the place told, what its
+        # program binds, and the machine; the step-aside is a named skip,
+        # and a refused one says why beside any disagreement.
+        lacks = absence.machine_lacks_among(
+            scratch: scratch,
+            path: path,
+            modules: shell.both(first: [path], second: reached),
+            expected: "",
+            said: out
+        )
 
-            if !lacks.is_err()
-                stepped_aside @ stepped_aside + marks.len()
-                report.keep_skip(@r, label: label, detail: "  " + path + ": " + lacks.must())
-                continue
-            why = absence.refused(lacks)
+        if !lacks.is_err()
+            stepped_aside @ stepped_aside + marks.len()
+            report.keep_skip(@r, label: label, detail: "  " + path + ": " + lacks.must())
 
-            if why.len() > 0
-                refusals @ refusals.push(path + ": " + why)
-            said @ said + out
-            ran @ ran + 1
+            for one in reached
+                aside_reach[one] @ true
+
+            continue
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            refusals @ refusals.push(path + ": " + why)
+        said @ said + out
+        ran @ ran + 1
+
+        for one in reached
+            asked_reach[one] @ true
 
         for mark in marks
             claimed @ claimed.push(path + ":" + mark)
+
+    # **Then the modules, each mark the program's that reaches it** (defect
+    # 319, 2026-10-04). A module's marks are provoked by a program that uses
+    # it, so they are judged where such a program was asked, and stepped aside
+    # with the programs that reach them where every one was stepped aside.
+    # Until that day they were claimed whatever became of their programs: a
+    # group whose only program stepped aside for a library this machine lacks,
+    # its mark in a module, was told *no program with a `main` to provoke
+    # them* of a program that has one, and beside a program judged, the
+    # module's mark was compared with what that program said. A mark in a
+    # module no program reaches is claimed, and nothing reports it.
+    unreached: [str] @ []
+    at @ 0
+
+    while at < paths.len()
+        path = paths[at]
+        text = texts[at]
+        at @ at + 1
+
+        if strings.contains(text: text, needle: "function main")
+            continue
+        marks = mark_readers.claimed_by(text)
+
+        if marks.len() == 0
+            continue
+
+        if asked_reach[path].is_err() && !aside_reach[path].is_err()
+            stepped_aside @ stepped_aside + marks.len()
+            continue
+
+        for mark in marks
+            claimed @ claimed.push(path + ":" + mark)
+
+            if asked_reach[path].is_err()
+                unreached @ unreached.push(path + ":" + mark)
 
     if claimed.len() == 0
         return 0
 
     if ran == 0
-        report.keep_failure(
-            @r,
-            label: label,
-            detail: "  " + claimed.len().to_str() + " annotations here and no program with a `main` to provoke them:\n    " + claimed.join("\n    ")
-        )
+        report.keep_failure(@r, label: label, detail: "  " + nothing_provokes(claimed: claimed, programs: programs))
         return 0
     reported = sorted(mark_readers.reported_with_file(said))
 
     if sorted(claimed) != reported
         detail: str @ "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now."
+
+        if unreached.len() > 0
+            detail @ detail + "\n  in a module no program of this group reaches by its `use` lines: " + unreached.join(" ")
 
         for one in refusals
             detail @ detail + "\n  not skipped for a missing library: " + one
@@ -532,19 +609,69 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     report.keep_pass(@r)
     return reported.len()
 
-# The sources `absence` reads for what the program at `path` binds: `path`
-# first, then each file of its group that holds no `main`, a module some
-# program of the group uses. Never another program: `fixedbugs/` is one group
-# of thirty-eight programs, each its own, and a header a neighbour binds is
-# not one this program does.
-function read_with(path: str, paths: [str], texts: [str]) -> [str]
-    out: [str] @ [path]
-    at: i64 @ 0
+# Why marks are claimed and no program was asked: a group with no program at
+# all, or one whose programs all stepped aside and none of which reaches the
+# module the marks are in.
+function nothing_provokes(claimed: [str], programs: i64) -> str
+    if programs == 0
+        return claimed.len().to_str() + " annotations here and no program with a `main` to provoke them:\n    " + claimed.join("\n    ")
+    return claimed.len().to_str() + " annotations here in a module no program of this group reaches by its `use` lines, so nothing provokes them:\n    " + claimed.join("\n    ")
 
-    while at < paths.len()
-        if paths[at] != path && !strings.contains(text: texts[at], needle: "function main")
-            out @ out.push(paths[at])
-        at @ at + 1
+# The modules of the group the program at `root` reaches by its `use` lines, its own and
+# those of every module it reaches, each resolved from the program's own
+# directory, as the language resolves every `use` of a compilation (spec § 1
+# Files and layout). They are the sources `absence` reads with the program
+# for what it binds, and the files whose marks are the program's. Never
+# another program: `fixedbugs/` is one group of thirty-eight programs, each its
+# own, and a header a neighbour binds is not one this program does. It read
+# every file of the group holding no `main` until defect 319 (2026-10-04),
+# the same premise that left a module's marks to the claim.
+function modules_reached(root: str, paths: [str], texts: [str]) -> [str]
+    home = absence.directory_of(root)
+    reached: [str] @ []
+    pending: [str] @ [root]
+    seen: {str: bool} @ {}
+    seen[root] @ true
+
+    while pending.len() > 0
+        current = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+        at: i64 @ 0
+
+        while at < paths.len() && paths[at] != current
+            at @ at + 1
+
+        if at == paths.len()
+            continue
+
+        for used in uses_of(texts[at])
+            target = home + "/" + used + ".hero"
+
+            if seen[target].is_err() && holds(names: paths, name: target)
+                seen[target] @ true
+                reached @ reached.push(target)
+                pending @ pending.push(target)
+
+    return reached
+
+# The paths a file's `use` lines name: `use syntax/decl as sd` names
+# `syntax/decl`. A `Use` is a line of its own at the top level (spec § 1's
+# production), so a line opening `use ` at its first byte is one, and a
+# comment or a mark after its path is not part of it.
+function uses_of(text: str) -> [str]
+    out: [str] @ []
+
+    for row in strings.lines(text)
+        if !strings.starts_with(text: row, prefix: "use ")
+            continue
+        words = strings.words(strings.without_prefix(text: row, prefix: "use "))
+
+        if words.len() == 0
+            continue
+        used = strings.split_on(text: words[0], byte: 35)[0]
+
+        if used.len() > 0
+            out @ out.push(used)
 
     return out
 
@@ -632,7 +759,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
     # Every case so named is judged, counted from the directories themselves
     # rather than from a number written here: four on the day this was
     # written, all of them the control arm's.
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     arm = cases.collect(scratch: scratch, dir: "tests/golden/permissive").must()
     in_arm = cases.matching(found: arm, only: "the-control-arm").len()
     assert in_arm >= 4
@@ -666,6 +793,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
             seen @ seen + 1
 
     assert seen >= 5
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246 at its last reader, held as a test (2026-10-04). The run roots'
 # step-aside asked the compiler's words alone and named nothing, and the guard
@@ -682,7 +810,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
 test "fixedbugs: a run-root program steps aside only where its case and the machine say so, by name"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     root = scratch + "/annotations-246"
     assert !shell.remove_tree(root).is_err()
     nowhere = absence.NOWHERE
@@ -722,6 +850,7 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
         needle: "not skipped for a missing library: " + has + ": clang finds `stdio.h`"
     )
     assert strings.contains(text: got.failures[1], needle: "binds no such header")
+    assert !shell.remove_tree(scratch).is_err()
 
 # The ruling on defect 246's floor (the coordinator, 2026-10-04): a mark
 # stepped aside is not a pass. Measured on this Mac the same day, the
@@ -732,7 +861,7 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
 test "fixedbugs: a machine stepping every run-root program aside reads red, and a skip counts toward the floor as reached"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     root = scratch + "/annotations-246-all"
     assert !shell.remove_tree(root).is_err()
 
@@ -756,17 +885,17 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
 
     # The expectation half alone holds its floor; the third turns it red.
     all_aside: report.Report @ report.empty()
-    floored(@all_aside, expected: 10, run: run, floor: 10)
+    floored(@all_aside, expected: 10, run: run, floor: 10, run_floor: 2)
     assert all_aside.failed == 1
     assert strings.contains(text: all_aside.failures[0], needle: "this machine is not asking them")
 
     # A floor the marks found miss is red; one they reach is green, the mark
     # stepped aside counted as reached (10 expected, 9 asked, 1 stepped aside).
     short: report.Report @ report.empty()
-    floored(@short, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 21)
+    floored(@short, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 21, run_floor: 10)
     assert short.failed == 1
     reached: report.Report @ report.empty()
-    floored(@reached, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20)
+    floored(@reached, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20, run_floor: 10)
     assert reached.failed == 0
 
     # The Windows box's counts at batch 9's leg: 3575 asked and six run-root
@@ -775,9 +904,150 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     # run-root marks less those six. Green, where the asked-only floor read it
     # red.
     box: report.Report @ report.empty()
-    floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581)
+    floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581, run_floor: 133)
     assert box.failed == 0
-    assert box.passed == 1
+    assert box.passed == 2
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 318, held as a test (2026-10-04): the run roots' half gone, its walk
+# reaching nothing, while the expectation half has grown 133 marks past the
+# total's floor: the total reads green, as it did under one floor, and the run
+# roots' own floor reads red, naming them.
+test "fixedbugs: the run roots' half going is red by a floor of its own, whatever the total reads (defect 318)"
+    gone: report.Report @ report.empty()
+    floored(@gone, expected: 3714, run: Asked(marks: 0, stepped: 0), floor: 3581, run_floor: 133)
+    assert gone.passed == 1
+    assert gone.failed == 1
+    assert strings.starts_with(text: gone.failures[0], prefix: "FAIL annotations/run-roots\n")
+    assert strings.contains(text: gone.failures[0], needle: "the walk found 0 annotated diagnostics in the run roots")
+
+# DEFECT 319, held as a test (2026-10-04). A module's marks are the programs'
+# that reach it by their `use` lines: stepped aside with them where every one
+# stepped aside for a library this machine lacks, judged where one was asked,
+# and told as reached by nothing where none reaches them. Until that day the
+# module's marks were claimed whatever became of their programs, and the first
+# three groups below read red: *no program with a `main` to provoke them* of a
+# program that has one, and a disagreement over a mark nobody could report.
+test "fixedbugs: a module's marks step aside with the programs that reach it, and only with them (defect 319)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    root = scratch + "/annotations-319"
+    assert !shell.remove_tree(root).is_err()
+    compiler = absence.said_stub(scratch).must()
+    using = "use bind\n\nfunction main()\n    print(bind.seven())\n"
+    judged = MARKED_STDIO + "\nfunction main()\n    print(seven())\n"
+
+    # The reproducer: the only program steps aside, its mark in a module.
+    a = root + "/a/g"
+    assert !plant(path: a + "/main.hero", source: using, said: lacking(a + "/bind.hero")).is_err()
+    assert !plant(path: a + "/bind.hero", source: marked_nowhere(), said: "").is_err()
+    alone = grouped(scratch: scratch, root: root + "/a", compiler: compiler)
+    assert alone.asked.marks == 0
+    assert alone.asked.stepped == 1
+    assert alone.got.failed == 0
+    assert alone.got.skips.len() == 1
+
+    # Beside a judged program, the module goes with the one that uses it.
+    b = root + "/b/g"
+    assert !plant(path: b + "/wrong.hero", source: using, said: lacking(b + "/bind.hero")).is_err()
+    assert !plant(path: b + "/bind.hero", source: marked_nowhere(), said: "").is_err()
+    assert !plant(path: b + "/right.hero", source: judged, said: wrong_type(b + "/right.hero")).is_err()
+    beside = grouped(scratch: scratch, root: root + "/b", compiler: compiler)
+    assert beside.asked.marks == 1
+    assert beside.asked.stepped == 1
+    assert beside.got.passed == 1
+    assert beside.got.failed == 0
+
+    # Two modules down: the program reaches the mark through another module.
+    c = root + "/c/g"
+    assert !plant(path: c + "/main.hero", source: "use mid\n\nfunction main()\n    print(mid.eight())\n", said: lacking(c + "/bind.hero")).is_err()
+    assert !plant(path: c + "/mid.hero", source: "use bind\n\nfunction eight() -> i32\n    return bind.seven() + 1\n", said: "").is_err()
+    assert !plant(path: c + "/bind.hero", source: marked_nowhere(), said: "").is_err()
+    deep = grouped(scratch: scratch, root: root + "/c", compiler: compiler)
+    assert deep.asked.stepped == 1
+    assert deep.got.failed == 0
+
+    # A module two programs use, one aside and one judged that reports it.
+    e = root + "/e/g"
+    aside = "use shared\nextern \"" + absence.NOWHERE + "\"\n    function nine() -> i32\n\nfunction main()\n    print(nine())\n"
+    assert !plant(path: e + "/aside.hero", source: aside, said: lacking(e + "/aside.hero")).is_err()
+    assert !plant(path: e + "/shared.hero", source: MARKED_STDIO, said: "").is_err()
+    assert !plant(path: e + "/judged.hero", source: "use shared\n\nfunction main()\n    print(shared.seven())\n", said: wrong_type(e + "/shared.hero")).is_err()
+    shared = grouped(scratch: scratch, root: root + "/e", compiler: compiler)
+    assert shared.asked.marks == 1
+    assert shared.asked.stepped == 0
+    assert shared.got.passed == 1
+    assert shared.got.failed == 0
+
+    # A marked module no program uses stays red, said as such, beside a judged
+    # program and where every program stepped aside; and a group with no
+    # program at all says that.
+    d = root + "/d/g"
+    assert !plant(path: d + "/main.hero", source: judged, said: wrong_type(d + "/main.hero")).is_err()
+    assert !plant(path: d + "/orphan.hero", source: MARKED_STDIO, said: "").is_err()
+    orphan = grouped(scratch: scratch, root: root + "/d", compiler: compiler)
+    assert orphan.got.failed == 1
+    assert strings.contains(
+        text: orphan.got.failures[0],
+        needle: "in a module no program of this group reaches by its `use` lines: " + d + "/orphan.hero:2:ffi_return_type"
+    )
+    f = root + "/f/g"
+    assert !plant(path: f + "/main.hero", source: program(header: absence.NOWHERE, on_head: "", on_function: ""), said: lacking(f + "/main.hero")).is_err()
+    assert !plant(path: f + "/orphan.hero", source: MARKED_STDIO, said: "").is_err()
+    nobody = grouped(scratch: scratch, root: root + "/f", compiler: compiler)
+    assert nobody.got.failed == 1
+    assert strings.contains(
+        text: nobody.got.failures[0],
+        needle: "1 annotations here in a module no program of this group reaches by its `use` lines, so nothing provokes them"
+    )
+    g = root + "/g/g"
+    assert !plant(path: g + "/lone.hero", source: MARKED_STDIO, said: "").is_err()
+    lone = grouped(scratch: scratch, root: root + "/g", compiler: compiler)
+    assert lone.got.failed == 1
+    assert strings.contains(
+        text: lone.got.failures[0],
+        needle: "1 annotations here and no program with a `main` to provoke them"
+    )
+    assert !shell.remove_tree(scratch).is_err()
+
+test "a `use` line names its path, and a program reaches the modules its uses name, from its own directory"
+    text = "use a\nuse syntax/decl as sd\n# use not\n    use indented\nuse b  #~ unused_binding\nuse c#x\nuser\n"
+    assert uses_of(text) == ["a", "syntax/decl", "b", "c"]
+    paths = ["g/main.hero", "g/a.hero", "g/b.hero", "g/c.hero", "g/other.hero"]
+    texts = ["use a\n\nfunction main()\n    print(1)\n", "use b\n", "use a\n", "", "use c\n"]
+    assert modules_reached(root: "g/main.hero", paths: paths, texts: texts) == ["g/a.hero", "g/b.hero"]
+    assert modules_reached(root: "g/other.hero", paths: paths, texts: texts) == ["g/c.hero"]
+
+# A group's run, for the test above.
+record Grouped
+    asked: Asked
+    got: report.Report
+
+function grouped(scratch: str, root: str, compiler: str) -> Grouped
+    got: report.Report @ report.empty()
+    asked = run_roots(@got, scratch: scratch, compiler: compiler, roots: [root]).must()
+    return Grouped(asked: asked, got: got)
+
+# What the stand-in compiler says of a program whose group binds a header no
+# machine has, told at `at`, the file that binds it.
+function lacking(at: str) -> str
+    return absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: " — clang looked and did not find it",
+        at: at + ":1:1"
+    )
+
+# What it says of a program whose group's line 2 is refused by the header.
+function wrong_type(at: str) -> str
+    return "error[ffi_return_type]: the header says `seven` returns `long`, and this group says `i32`\n  at " + at + ":2:5\n"
+
+# A module binding a header no machine has, its function marked.
+function marked_nowhere() -> str
+    return "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32  #~ ffi_return_type\n"
+
+constant MARKED_STDIO: str
+    "extern \"stdio.h\"\n    function seven() -> i32  #~ ffi_return_type\n"
 
 # A program for the tests above: one group binding `header`, `on_head` after
 # its head and `on_function` after its function, each a mark or nothing.

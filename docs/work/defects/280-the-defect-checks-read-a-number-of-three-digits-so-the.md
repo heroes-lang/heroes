@@ -3,3 +3,5 @@
     **Origin:** lane b8-defects, 2026-10-04 (its reply's *found beside*).
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a premise about the world, written loud (the check refuses the name rather than misreading it), 722 numbers away; no program moves.
+
+    Repaired at `6b361fc3`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.

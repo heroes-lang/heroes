@@ -35,6 +35,8 @@
 #   unsupported/  what the backend refuses — stderr, exit 1, no artifact
 #   permissive/   what Part 11's control arm, `check --permissive`, says,
 #                 the thesis rules dropped: stderr, exit 1
+#   full/         `check`'s whole form, the excerpt, the notes and the
+#                 fixes under each message: stderr, exit 1
 #   run/          every program at -O0, -O2 and --sanitize
 #   annotations   §9's `#~` invariant over check/ and unsupported/
 #   determinism   the IR dump twice, the C twice and through -o
@@ -180,6 +182,7 @@ function main()
         suite_golden.shape_emit()
         suite_golden.shape_unsupported()
         suite_golden.shape_permissive()
+        suite_golden.shape_full()
     ]
 
     total: report.Report @ report.empty()
@@ -487,11 +490,11 @@ function main()
     if !clean
         exit(1)
 
-# The suites the third word may narrow: the ones that walk cases (the five
+# The suites the third word may narrow: the ones that walk cases (the six
 # golden forms, `run`, `fixes`, `annotations`) and `layout`, which walks
 # modules and is asked about one file by the write-time hook.
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "run", "fixes", "annotations", "layout"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "fixes", "annotations", "layout"]
         if name == suite
             return true
 
@@ -523,6 +526,7 @@ function shown(name: str, pick: str) -> str
 test "the third word binds the suites that walk cases and no other"
     assert takes_cases("check")
     assert takes_cases("permissive")
+    assert takes_cases("full")
     assert takes_cases("run")
     assert takes_cases("fixes")
     assert takes_cases("layout")

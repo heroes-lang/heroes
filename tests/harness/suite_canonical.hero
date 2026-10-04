@@ -174,13 +174,15 @@ test "the walk names the directories that were swept, and the floor is under the
     assert LEAST > 742
 
 test "the exempt directories are named nowhere in the walk"
-    # tests/golden/check, tests/golden/unsupported and tests/golden/permissive
-    # are the test's data rather than the project's source, and the reasons are
-    # measured at the top of this file. This asserts the exemption rather than
-    # trusting the list to stay right: 23 of the first two's files could not be
-    # parsed at all on 2026-08-26, and a walk that reached such a file would
-    # report the compiler broken.
+    # tests/golden/check, tests/golden/unsupported, tests/golden/permissive
+    # and tests/golden/full are the test's data rather than the project's
+    # source, and the reasons are measured at the top of this file. This
+    # asserts the exemption rather than trusting the list to stay right: 23 of
+    # the first two's files could not be parsed at all on 2026-08-26, and a
+    # walk that reached such a file would report the compiler broken; a case
+    # of `full/` holds an ESC byte in a string on purpose (defect 289).
     for dir in SOURCE_DIRS
         assert dir != "tests/golden/check"
         assert dir != "tests/golden/unsupported"
         assert dir != "tests/golden/permissive"
+        assert dir != "tests/golden/full"

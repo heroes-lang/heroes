@@ -1,0 +1,7 @@
+error[base_prefix_case]: `0XFF` writes the base in uppercase — this language spells it `0x`
+  at tests/golden/full/fixedbugs-289-a-note-and-a-certain-fix.hero:8:12
+    |
+  8 |     mask = 0XFF  #~ base_prefix_case
+    |            ^^^^
+  note: there is exactly one way to write any program (§4.15). The hexadecimal digits themselves may be either case, so `0xFF` is the same value written correctly
+  fix (certain): write the prefix as `0x`

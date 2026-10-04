@@ -166,8 +166,14 @@ function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: r
             words: [compiler, "test", main, level]
         )
 
+        # The refusal's own words (defect 317): it names the compiler and why
+        # there is no verdict, a capture that is not UTF-8 among the reasons.
         if said.is_err()
-            report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at " + level,
+                detail: "  `test " + main + "`: " + shell.refusal(said)
+            )
             return false
 
         # A program this machine cannot build for a library it lacks is
@@ -238,11 +244,7 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     )
 
     if built.is_err() || built.must().code != 0
-        report.keep_failure(
-            @r,
-            label: "corpus/" + name,
-            detail: "  did not build:\n" + shell.complaint(built)
-        )
+        report.keep_failure(@r, label: "corpus/" + name, detail: "  building " + main + ": " + shell.ending(built))
         return
     at_o0 = ran(scratch: scratch, dir: dir, words: shell.both(first: [binary], second: passed))
 
@@ -263,7 +265,11 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     )
 
     if sanitised.is_err()
-        report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
+        report.keep_failure(
+            @r,
+            label: "corpus/" + name + " at --sanitize",
+            detail: "  `run " + main + " --sanitize`: " + shell.refusal(sanitised)
+        )
         return
 
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
@@ -297,7 +303,7 @@ function ran(scratch: str, dir: str, words: [str]) -> shell.Run?
 
 function judged(@r: report.Report, name: str, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
     if said.is_err()
-        report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot execute at " + level)
+        report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: "  " + shell.refusal(said))
         return true
     wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
 
@@ -434,7 +440,7 @@ test "the leak-gate check reads `exit(` off the program"
     assert !holds(modules: ["function main()\n    print(1)\n"], needle: "exit(")
 
 test "arguments come from main.args, one per line, quoted"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/corpus-args"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -446,6 +452,7 @@ test "arguments come from main.args, one per line, quoted"
     # The words arrive whole: the middle one holds a space and the last
     # an apostrophe, and neither needs a quote to survive the trip.
     assert passed_after_dashes(tree) == ["--", "one", "two words", "it's"]
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
 # the compiler's words for the machine's. A header the machine has, said to be
@@ -454,7 +461,7 @@ test "arguments come from main.args, one per line, quoted"
 test "fixedbugs: a program whose tests cannot build is skipped only where the machine lacks what it binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/corpus-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/has").is_err()
@@ -496,3 +503,4 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert excused.failed == 0
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP corpus/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()

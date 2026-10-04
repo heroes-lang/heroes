@@ -1,0 +1,9 @@
+# Defect 289, 2026-10-04: `check`'s whole form was pinned by no golden, every
+# `check/` case asking `--brief`, which prints neither the excerpt under a
+# message nor its notes nor its fixes. This form asks `check` alone. Here: a
+# message, its place, the line quoted under its gutter with a caret four
+# wide, one note, and one `certain` fix.
+
+function main()
+    mask = 0XFF  #~ base_prefix_case
+    print(mask)

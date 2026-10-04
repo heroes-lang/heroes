@@ -939,7 +939,7 @@ test "a case binds its groups' headers and packages, read as the language writes
     assert !needs(bound: bound, one: an(kind: "package", name: "other", owner: ""))
 
 test "clang is asked, and a header the machine has refutes the compiler"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     search = ["-I", "."]
     has = asked(scratch: scratch, search: search, one: an(kind: "header", name: "stdio.h", owner: ""))
     assert has.is_err()
@@ -950,9 +950,10 @@ test "clang is asked, and a header the machine has refutes the compiler"
         one: an(kind: "header", name: "heroes-absence-a-header-no-machine-has.h", owner: "")
     )
     assert !lacks.is_err()
+    assert !shell.remove_tree(scratch).is_err()
 
 test "pkg-config is asked as the compiler asks it, and a pkg-config that runs refutes its absence"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     search: [str] = []
     nobody = an(kind: "package", name: "heroes-absence-a-package-no-machine-has", owner: "")
     tool = an(kind: "pkg-config", name: "heroes-absence-a-package-no-machine-has", owner: "")
@@ -968,6 +969,7 @@ test "pkg-config is asked as the compiler asks it, and a pkg-config that runs re
     else
         assert asked(scratch: scratch, search: search, one: nobody).is_err()
         assert !asked(scratch: scratch, search: search, one: tool).is_err()
+    assert !shell.remove_tree(scratch).is_err()
 
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
@@ -1009,7 +1011,7 @@ test "pkg-config's answer becomes the compiler's notes, in either pkgconf's word
         assert !notes_of("café").is_err()
 
 test "an expectation's quotation is this machine's answer, and no other line moves"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     package = "heroes-absence-a-package-no-machine-has"
     head = "error[ffi_package]: the package `" + package + "` is not installed on this machine\n  at x.hero:1:26\n"
     foreign = head + "  note: pkg-config said: words another machine wrote\n  note: and a second line of them\n" + LAST_NOTE + "\n"
@@ -1029,13 +1031,14 @@ test "an expectation's quotation is this machine's answer, and no other line mov
     assert quoted_here(scratch: scratch, expected: header) == header
     unclosed = head + "  note: pkg-config said: words\n"
     assert quoted_here(scratch: scratch, expected: unclosed) == unclosed
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a case's directory is where clang looks beside it"
     assert directory_of("tests/golden/unsupported/x.hero") == "tests/golden/unsupported"
     assert directory_of("x.hero") == "."
 
 test "a program's witness reads the file it was given, its modules, and what the compiler blames beside them"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/absence-sources"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/db").is_err()
@@ -1066,13 +1069,14 @@ test "a program's witness reads the file it was given, its modules, and what the
     assert !inside(dir: ".", file: "a/x.hero")
     assert inside(dir: "a", file: "a/b/x.hero")
     assert !inside(dir: "a", file: "ab/x.hero")
+    assert !shell.remove_tree(scratch).is_err()
 
 # Defect 243 at the harness's second reader (2026-10-04): a `HEROES_RUNTIME`
 # that is not UTF-8 refuses the search, so no absence is believed, where it
 # read as unset and clang searched `runtime` in its place. The value itself is
 # read through a child's environment in `shell.hero`'s test of the same day.
 test "fixedbugs: a runtime hint that cannot be read refuses the search, and an unset one searches runtime"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     nothing: [str] = []
     none = Binds(headers: nothing, packages: nothing)
     unread: str? = fail(code: "unasked", msg: "HEROES_RUNTIME is set to `rt<0xE9>`, which is not UTF-8")
@@ -1083,6 +1087,7 @@ test "fixedbugs: a runtime hint that cannot be read refuses the search, and an u
     assert searched(scratch: scratch, dir: "cases", bound: none, hint: unset).must() == ["-I", "runtime", "-I", "cases"]
     named: str? = ok("elsewhere/rt")
     assert searched(scratch: scratch, dir: "cases", bound: none, hint: named).must() == ["-I", "elsewhere/rt", "-I", "cases"]
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a refused skip says why only where the compiler named a library"
     nothing: str? = fail(code: "none", msg: "the compiler names nothing this machine lacks")

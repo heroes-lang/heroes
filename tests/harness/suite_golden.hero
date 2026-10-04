@@ -1,10 +1,11 @@
-# The five golden suites that ask one question with five sets of
+# The six golden suites that ask one question with six sets of
 # parameters: run one command per case, diff ONE stream against the
 # `.expected` file, and check how the compiler ended.
 #
 # Ports golden.rs:124 (`check/`), :220 (`ir/`), :459 (`unsupported/`) and
 # :520 (`emit/`), and since defect 211 (2026-10-04) asks `check/`'s question
-# of the control arm (`permissive/`). One runner rather than five, because
+# of the control arm (`permissive/`), and since defect 289 the same day of the
+# whole form a message is written in (`full/`). One runner rather than six, because
 # they differ only in the verb, the flags, which stream carries the artifact
 # and the exit code the case must produce, and a second copy is a second place
 # for the exit-code rule to drift. What is deliberately NOT folded in is
@@ -51,7 +52,7 @@ record Shape
     least: i64
 
     # **Whether this shape's floor is watched for DECAY as well as for a walk
-    # that found nothing.** The five real shapes set it; the cases below build
+    # that found nothing.** The six real shapes set it; the cases below build
     # Shapes over two-file trees with a floor of 1, and calling those outgrown
     # would turn every case red. The flag is the seam between a floor that is a
     # measurement of the tree and one that is a fixture.
@@ -181,6 +182,28 @@ function shape_unsupported() -> Shape
 constant NO_FLAGS: [str]
     []
 
+# `full/` is `check/`'s question asked of the whole form (defect 289,
+# 2026-10-04): `check` with no `--brief`, so what is compared is every part
+# design.md §4.17 asks a message to carry, its place, the line quoted under its
+# gutter and caret, its notes and its fixes. Every `check/` case asks
+# `--brief`, which prints a message's first line alone, so a note, an excerpt
+# or a fix that changed moved no golden: 0 of 466 `check/` expectations held an
+# `at` line, counted at `703af779`, and defect 244's excerpt was pinned in its
+# message alone. **5 cases on 2026-10-04**, the count, and so the floor.
+function shape_full() -> Shape
+    return Shape(
+        name: "full",
+        dir: "tests/golden/full",
+        verb: "check",
+        flags: NO_FLAGS,
+        on_stderr: true,
+        want_code: 1,
+        least: 5,
+        watched: true,
+        silent_stdout: false,
+        library_skip: false
+    )
+
 # `permissive/` is `check/` asked of Part 11's control arm: the same verb and
 # the same brief form, with `--permissive`, which drops the diagnostics that
 # exist for the thesis (`selfhost/diag.hero`'s `is_thesis_rule`) at every stage
@@ -237,11 +260,14 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
 
             said = shell.run(scratch: scratch, program: compiler, words: line)
 
+            # The refusal's own words, never a sentence of this suite's: until
+            # defect 317 this said *cannot run the compiler on* of a compiler
+            # that ran and wrote bytes that are not UTF-8.
             if said.is_err()
                 report.keep_failure(
                     @r,
                     label: shape.name + "/" + item.name,
-                    detail: "  cannot run the compiler on " + item.source
+                    detail: "  " + item.source + ": " + shell.refusal(said)
                 )
             else if shape.library_skip
                 judged_or_skipped(
@@ -365,7 +391,7 @@ test "a diagnostics suite passes on a match and fails on either half"
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = one_case_tree(scratch: scratch, name: "check", expectation: SAID)
     assert !tree.is_err()
     form = Shape(
@@ -408,13 +434,14 @@ test "a diagnostics suite passes on a match and fails on either half"
     silent = run_all(scratch: scratch, compiler: quiet.must(), shape: form, only: "")
     assert !silent.is_err()
     assert silent.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "an artifact suite reads stdout, and a diagnostic on stderr does not save it"
     # POSIX is this case's subject, and this machine answers for itself
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = one_case_tree(scratch: scratch, name: "ir", expectation: "fn main:\n  bb0:\n")
     assert !tree.is_err()
     form = Shape(
@@ -443,6 +470,7 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
     red = run_all(scratch: scratch, compiler: misplaced.must(), shape: form, only: "")
     assert !red.is_err()
     assert red.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 # Defect 211: the control arm's form is `check` with `--brief` and
 # `--permissive`, in that order, after the case. The stub answers with its own
@@ -451,7 +479,7 @@ test "an artifact suite reads stdout, and a diagnostic on stderr does not save i
 test "fixedbugs: the control arm's form runs check with --brief and --permissive"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = one_case_tree(scratch: scratch, name: "permissive", expectation: "")
     assert !tree.is_err()
     asked = "check\n" + tree.must() + "/x.hero\n--brief\n--permissive\n"
@@ -477,13 +505,72 @@ test "fixedbugs: the control arm's form runs check with --brief and --permissive
     other = run_all(scratch: scratch, compiler: path, shape: plain, only: "")
     assert !other.is_err()
     assert other.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
+
+# Defect 289: the whole form is `check` and the case, with no other word, so
+# no `--brief` cuts what is compared. The stub answers with its own arguments,
+# one per line, so the form's real shape, pointed at a one-case tree, passes
+# only while it asks for the whole form, and `check`'s own form does not.
+test "fixedbugs: the whole form runs check with no other word (defect 289)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = one_case_tree(scratch: scratch, name: "full", expectation: "")
+    assert !tree.is_err()
+    assert !write_file(path: tree.must() + "/x.expected", text: "check\n" + tree.must() + "/x.hero\n").is_err()
+    path = scratch + "/stub-argv.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s\\n' \"$@\" 1>&2\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
+    assert !made.is_err()
+    form: Shape @ shape_full()
+    form.dir @ tree.must()
+    form.least @ 1
+    form.watched @ false
+    got = run_all(scratch: scratch, compiler: path, shape: form, only: "")
+    assert !got.is_err()
+    assert got.must().passed == 1
+    assert got.must().failed == 0
+    brief: Shape @ shape_check()
+    brief.dir @ tree.must()
+    brief.least @ 1
+    brief.watched @ false
+    other = run_all(scratch: scratch, compiler: path, shape: brief, only: "")
+    assert !other.is_err()
+    assert other.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 317 at the forms (2026-10-04): a compiler that writes bytes that are
+# not UTF-8 on stderr RAN, and its case fails in the refusal's words, naming
+# the byte, where it said *cannot run the compiler on*.
+test "fixedbugs: a compiler that writes bytes that are not UTF-8 is told as one that ran (defect 317)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = one_case_tree(scratch: scratch, name: "not-text-317", expectation: SAID)
+    assert !tree.is_err()
+    path = scratch + "/stub-latin.sh"
+    assert !write_file(path: path, text: "#!/bin/sh\nprintf 'x.hero:1:1: error[boom]: caf\\351\\n' 1>&2\nexit 1\n").is_err()
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
+    assert !made.is_err()
+    form: Shape @ shape_check()
+    form.dir @ tree.must()
+    form.least @ 1
+    form.watched @ false
+    got = run_all(scratch: scratch, compiler: path, shape: form, only: "")
+    assert !got.is_err()
+    assert got.must().failed == 1
+    failure = got.must().failures[0]
+    assert strings.contains(text: failure, needle: tree.must() + "/x.hero: " + path + " ran and exited 1")
+    assert strings.contains(text: failure, needle: "on stderr 1 byte is not, in `x.hero:1:1: error[boom]: caf<0xE9>`")
+    assert !strings.contains(text: failure, needle: "cannot run")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a refusal that writes an artifact fails, and so does a suite below its floor"
     # POSIX is this case's subject, and this machine answers for itself
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = one_case_tree(scratch: scratch, name: "unsupported", expectation: SAID)
     assert !tree.is_err()
     refuse = Shape(
@@ -528,13 +615,14 @@ test "a refusal that writes an artifact fails, and so does a suite below its flo
     assert !short.is_err()
     assert short.must().passed == 1
     assert short.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a machine missing the library skips, but a machine missing every library fails"
     # POSIX is this case's subject, and this machine answers for itself
     # (can_run_scripts carries the measurement).
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = fresh_tree(scratch: scratch, name: "skipping")
     assert !tree.is_err()
 
@@ -559,6 +647,7 @@ test "a machine missing the library skips, but a machine missing every library f
     assert got.must().failed == 1
     assert got.must().skips.len() == 1
     assert strings.contains(text: got.must().failures[0], needle: "not testing the refusals")
+    assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's reproducer, held as a test (2026-10-04). A case whose expectation
 # IS a missing-library message was counted as skipped when its message changed,
@@ -573,7 +662,7 @@ test "a machine missing the library skips, but a machine missing every library f
 test "fixedbugs: a changed missing-library message fails, and is never skipped"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = fresh_tree(scratch: scratch, name: "changed")
     assert !tree.is_err()
     dir = tree.must()
@@ -632,10 +721,12 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
             needle: "not skipped for a missing library: the expectation names the same missing library"
         )
 
+    assert !shell.remove_tree(scratch).is_err()
+
 test "a library the case binds and this machine lacks is skipped by name, among cases judged"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = fresh_tree(scratch: scratch, name: "lacking")
     assert !tree.is_err()
     dir = tree.must()
@@ -661,11 +752,12 @@ test "a library the case binds and this machine lacks is skipped by name, among 
     assert got.must().skips.len() == 1
     assert strings.starts_with(text: got.must().skips[0], prefix: "SKIP unsupported/d\n")
     assert strings.contains(text: got.must().skips[0], needle: "which clang does not find")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a library said to be missing is judged where the machine has it, or the case binds none"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = fresh_tree(scratch: scratch, name: "refuted")
     assert !tree.is_err()
     dir = tree.must()
@@ -691,11 +783,12 @@ test "a library said to be missing is judged where the machine has it, or the ca
     assert got.must().skips.len() == 0
     assert strings.contains(text: got.must().failures[0], needle: "clang finds `stdio.h`")
     assert strings.contains(text: got.must().failures[1], needle: "binds no such header")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a pkg-config said to be missing is believed only where it does not start"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = fresh_tree(scratch: scratch, name: "tool")
     assert !tree.is_err()
     asking = "extern \"stdio.h\" package \"heroes-golden-gone\"\n    function seven() -> i32\n"
@@ -718,17 +811,19 @@ test "a pkg-config said to be missing is believed only where it does not start"
     else
         assert got.must().skips.len() == 1
         assert got.must().failed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "an expectation quoting pkg-config is judged on this machine's answer, and the compiler's own lines still are"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     package = "heroes-golden-gone"
     notes = absence.quotation(scratch: scratch, package: package)
 
     # No `pkg-config` here, or an answer the rebuild refuses: then the
     # expectation is judged as written, which the tests above already hold.
     if notes.is_err()
+        assert !shell.remove_tree(scratch).is_err()
         return
     head = "error[ffi_package]: the package `" + package + "` is not installed on this machine\n"
     last = "  note: install its development files, or name the library directly with `link`\n"
@@ -750,6 +845,7 @@ test "an expectation quoting pkg-config is judged on this machine's answer, and 
     assert got.must().failed == 1
     assert got.must().skips.len() == 0
     assert strings.contains(text: got.must().failures[0], needle: "unsupported/b-moved")
+    assert !shell.remove_tree(scratch).is_err()
 
 # An empty golden tree under `scratch`.
 function fresh_tree(scratch: str, name: str) -> str?

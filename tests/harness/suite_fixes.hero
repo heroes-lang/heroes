@@ -126,8 +126,15 @@ function run_cases(scratch: str, compiler: str, dir: str, least: i64, only: str)
             words: [compiler, "check", item.source, "--apply"]
         )
 
+        # The refusal's own words, here and at every run below (defect 317):
+        # *cannot run the compiler on* was written of a compiler that ran and
+        # wrote bytes that are not UTF-8.
         if applied.is_err()
-            report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + item.source)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  `check " + item.source + " --apply`: " + shell.refusal(applied)
+            )
             continue
 
         if !present[repaired].is_err()
@@ -185,7 +192,7 @@ function judge_fixed(@r: report.Report, scratch: str, compiler: str, label: str,
     )
 
     if rechecked.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + repaired)
+        report.keep_failure(@r, label: label, detail: "  `check " + repaired + " --brief`: " + shell.refusal(rechecked))
         return
 
     if rechecked.must().code != 0
@@ -230,8 +237,12 @@ function judge_pinned(@r: report.Report, scratch: str, compiler: str, label: str
         words: [compiler, "check", pinned, "--apply"]
     )
 
-    if rechecked.is_err() || again.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + pinned)
+    if rechecked.is_err()
+        report.keep_failure(@r, label: label, detail: "  `check " + pinned + " --brief`: " + shell.refusal(rechecked))
+        return
+
+    if again.is_err()
+        report.keep_failure(@r, label: label, detail: "  `check " + pinned + " --apply`: " + shell.refusal(again))
         return
     report_pinned(
         @r,
@@ -438,8 +449,16 @@ function judge_in_place(@r: report.Report, scratch: str, compiler: str, label: s
     ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--apply", "--in-place"])
     after = read_file(placed)
 
-    if ran.is_err() || after.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot apply the fixes of the copy of " + source)
+    if ran.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `check " + placed + " --apply --in-place`, the copy of " + source + ": " + shell.refusal(ran)
+        )
+        return
+
+    if after.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + placed + ", the copy of " + source)
         return
 
     if !has_pinned
@@ -475,10 +494,32 @@ function judge_in_place(@r: report.Report, scratch: str, compiler: str, label: s
     again = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--apply", "--in-place"])
     twice = read_file(placed)
 
-    if clean.is_err() || again.is_err() || twice.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on the copy of " + source)
+    if clean.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `check --brief` over the copy of " + source + ": " + unclean(clean)
+        )
+        return
+
+    if again.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `check " + placed + " --apply --in-place` again, the copy of " + source + ": " + shell.refusal(again)
+        )
+        return
+
+    if twice.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + placed + ", the copy of " + source)
         return
     report_pinned(@r, label: label, pinned: pinned, want: want.must(), clean: clean.must(), again: twice.must())
+
+# Why `clean_roots` has no answer: the refusal of the run it stopped at.
+function unclean(got: bool?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # Does every `.hero` directly inside the copy check clean, as it stands?
 function clean_roots(scratch: str, compiler: str, copy: str, entries: [str]) -> bool?
@@ -505,7 +546,7 @@ function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, lab
     applied = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", source, "--apply"])
 
     if applied.is_err()
-        report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + source)
+        report.keep_failure(@r, label: label, detail: "  `check " + source + " --apply`: " + shell.refusal(applied))
         return
 
     if applied.must().out != want.must()
@@ -528,7 +569,7 @@ function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, lab
         rechecked = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", placed, "--brief"])
 
         if rechecked.is_err()
-            broken @ "cannot run the compiler on " + placed
+            broken @ "`check " + placed + " --brief`: " + shell.refusal(rechecked)
         else if rechecked.must().code != 0
             broken @ placed + " does not check clean after the fix in " + strings.base_name(path: source) + " — a `certain` fix that leaves the program broken is a `guess` that lied:\n" + rechecked.must().err
 
@@ -564,7 +605,7 @@ function parent_of(path: str) -> str
     return path.slice(from: 0, to: at)
 
 test "the fixes suite catches a wrong application and a repair that does not check clean"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/fixes"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -605,9 +646,10 @@ test "the fixes suite catches a wrong application and a repair that does not che
     assert !red.is_err()
     assert red.must().passed == 0
     assert strings.contains(text: red.must().failures[0], needle: "--apply")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the fixtures half applies across two files, re-checks the whole program, and catches a lie"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/fixtures"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/typo").is_err()
@@ -687,6 +729,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
     assert strings.contains(text: caught.must().failures[0], needle: "typo/main.hero")
     assert strings.contains(text: caught.must().failures[0], needle: "--apply")
     assert !strings.contains(text: caught.must().failures[0], needle: "does not check clean")
+    assert !shell.remove_tree(scratch).is_err()
 
 # Defect 129, 2026-09-28: a case with no answer file was skipped, so a join
 # that turned `certain` in a case whose every fix is a `guess` passed green.
@@ -694,7 +737,7 @@ test "the fixtures half applies across two files, re-checks the whole program, a
 # a diagnostic no `certain` fix repairs pins what `--apply` writes in an
 # `.applied`, which must not check clean and must not change a second time.
 test "a case with no answer is left as it is by --apply, and an applied answer is pinned"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/untouched"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -755,9 +798,10 @@ test "a case with no answer is left as it is by --apply, and an applied answer i
     assert !moved.is_err()
     assert moved.must().failed == 1
     assert strings.contains(text: moved.must().failures[0], needle: "--apply")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a fixture root with no answer is applied in a copy of its whole case and must be left as it is"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/untouched-fixtures"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/typo/lib").is_err()
@@ -804,6 +848,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     assert !promoted.is_err()
     assert promoted.must().failed == 1
     assert strings.contains(text: promoted.must().failures[0], needle: "is a `.fixed`")
+    assert !shell.remove_tree(scratch).is_err()
 
 # Batch 9's gate, 2026-10-04: a directory under the fixtures that holds no
 # `.hero` is no case of this suite, so nothing of it is copied, and bytes in
@@ -814,7 +859,7 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
 test "a fixture directory with no root is not copied, so its bytes that are not UTF-8 fail nothing"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/fixtures-bytes"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/bytes").is_err()
@@ -830,3 +875,4 @@ test "a fixture directory with no root is not copied, so its bytes that are not 
     assert !passed_over.is_err()
     assert passed_over.must().failed == 0
     assert passed_over.must().passed == 0
+    assert !shell.remove_tree(scratch).is_err()
