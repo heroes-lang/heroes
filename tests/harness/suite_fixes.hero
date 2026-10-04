@@ -312,23 +312,34 @@ function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> repo
     for case_dir in shell.list_directories(scratch: scratch, dir: dir)?
         entries = shell.list_entries(scratch: scratch, dir: case_dir)?
         present: {str: bool} @ {}
+        roots: i64 @ 0
 
         for entry in entries
             present[entry] @ true
 
+            if strings.ends_with(text: entry, suffix: ".hero")
+                roots @ roots + 1
+
         copy = scratch + "/fixed/" + strings.base_name(path: case_dir)
 
-        why = match copy_case(scratch: scratch, from: case_dir, to: copy)
-            .ok _  => ""
-            .err e => e.msg
+        # A directory holding no `.hero` has no root to judge, so nothing of
+        # it is copied, and its answer files are still asked what they answer
+        # for below. Batch 9's gate, 2026-10-04: the byte fixtures of defects
+        # 227 and 241 (`notext227`, `notext241`) are such directories, read by
+        # the compiler's own tests, and their bytes are not UTF-8 on purpose,
+        # which a copy through `read_file` refuses.
+        if roots > 0
+            why = match copy_case(scratch: scratch, from: case_dir, to: copy)
+                .ok _  => ""
+                .err e => e.msg
 
-        if why != ""
-            report.keep_failure(
-                @r,
-                label: "fixes/" + strings.base_name(path: case_dir),
-                detail: "  cannot copy the case: " + why
-            )
-            continue
+            if why != ""
+                report.keep_failure(
+                    @r,
+                    label: "fixes/" + strings.base_name(path: case_dir),
+                    detail: "  cannot copy the case: " + why
+                )
+                continue
 
         for entry in entries
             name = strings.base_name(path: case_dir) + "/" + strings.base_name(path: entry)
@@ -793,3 +804,29 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
     assert !promoted.is_err()
     assert promoted.must().failed == 1
     assert strings.contains(text: promoted.must().failures[0], needle: "is a `.fixed`")
+
+# Batch 9's gate, 2026-10-04: a directory under the fixtures that holds no
+# `.hero` is no case of this suite, so nothing of it is copied, and bytes in
+# it that are not UTF-8 fail nothing. The byte fixtures of defects 227 and 241
+# are such directories; with the copy asked of every directory, this reads
+# `cannot copy the case`. The bytes are written by `/bin/sh`, since a `str`
+# cannot hold them, so the case steps aside where no POSIX shell runs.
+test "a fixture directory with no root is not copied, so its bytes that are not UTF-8 fail nothing"
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/fixtures-bytes"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/bytes").is_err()
+    made = shell.run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "printf 'caf\\351' > " + tree + "/bytes/latin1.txt"]
+    )
+    assert !made.is_err()
+    assert made.must().code == 0
+    assert read_file(tree + "/bytes/latin1.txt").is_err()
+    passed_over = run_fixtures(scratch: scratch, compiler: "/nonexistent/heroes", dir: tree, least: 0)
+    assert !passed_over.is_err()
+    assert passed_over.must().failed == 0
+    assert passed_over.must().passed == 0
