@@ -1386,6 +1386,42 @@ test "fixedbugs: a compiler named bare is started as the file that was checked, 
     assert ran.must().out == "checked ./heroes\nstarted the working directory's\n"
     assert !remove_tree(scratch).is_err()
 
+# DEFECT 281, held as a test (2026-10-04): an argument of the compiler's own
+# that is not UTF-8 is named by its bytes and told by what it is to the
+# command, where every one drew a program author's advice; only an argument
+# after `run`'s `--` is the program's and draws it. Only a shell puts such
+# bytes in a command line here, so this asks for POSIX as the script cases do.
+test "fixedbugs: an argument of the compiler's own that is not UTF-8 is named by its bytes (defect 281)"
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    compiler = some_compiler().must()
+    file = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exec \"$0\" check \"$(printf 'caf\\351.hero')\"", compiler]
+    )
+    assert !file.is_err()
+    assert file.must().code == 2
+    assert file.must().err == "error: the name of `caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it\n"
+    out = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exec \"$0\" build x.hero -o \"$(printf 'caf\\351')\"", compiler]
+    )
+    assert !out.is_err()
+    assert out.must().code == 2
+    assert out.must().err == "error: the value of `-o`, `caf<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8\n"
+    program = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exec \"$0\" run x.hero -- \"$(printf '\\351')\"", compiler]
+    )
+    assert !program.is_err()
+    assert program.must().code == 2
+    assert program.must().err == "error: argument 4, `<0xE9>`, is for the program and is not UTF-8, and `heroes run` passes a program's arguments as Heroes `str`s, which are UTF-8 (spec § 3 Types)\nnote: build the program with `heroes build`, run it with this argument, and read it with `args_checked()`\n"
+    assert !remove_tree(scratch).is_err()
+
 # A script at `path` that writes `says` and exits 0, made executable.
 function stub_named(path: str, says: str, scratch: str) -> ()?
     write_file(path: path, text: "#!/bin/sh\nprintf '%s' \"" + says + "\"\n")?

@@ -76,6 +76,8 @@ constant VERSION: str
 extern "hero_os.h"
     function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
+    # An argument as the shown read gives a file (`arg_written` below).
+    function hero_args_shown(index: i64, @status: i64, @marks: i64) -> str
 
 constant STACK_BYTES: i64
     268435456
@@ -108,29 +110,37 @@ function command(_: i64) -> i64
     #
     # It cannot be carried instead of refused: a Heroes `str` IS UTF-8
     # (spec § 3 Types), so there is no value the compiler could hold that
-    # argument in. Refusing with the position named is the most `run` can
-    # honestly do, and it is exit 2 because the tool could not run rather
-    # than because the program is wrong (§10's contract). A program that
-    # needs such an argument reaches it through `args_checked()` itself,
-    # from a binary built with `heroes build`.
+    # argument in. It is exit 2 because the tool could not run rather than
+    # because the program is wrong (§10's contract). `/decide` answer `6a`,
+    # 2026-08-28; the same shape one department over is panels 089 and 090,
+    # the compiler killed by an environment variable.
     #
-    # `/decide` answer `6a`, 2026-08-28. The same shape one department
-    # over is panels 089 and 090: the compiler could be killed by an
-    # environment variable.
+    # **It is told by its bytes and by what it is to the command** (defect
+    # 281): it stands in the line written by its value, `caf<0xE9>.hero`, and
+    # `argv.unheld` reads the line for the refusal. Until then every such
+    # argument drew a program author's advice, *read it with
+    # `args_checked()`*, which fits one of them alone: an argument after
+    # `run`'s `--`, which is the program's.
     raw = args_checked()
     given: [str] @ []
+    unheld: i64 @ -1
     at: i64 @ 0
 
     for one in raw
-        if one.is_err()
-            io.eprint(
-                text: "error: argument " + (at + 1).to_str() + " is not UTF-8, and a Heroes `str` cannot hold it (spec § 3 Types)"
-            )
-            io.eprint(text: "note: build the program with `heroes build` and read it with `args_checked()`")
-            exit(code: 2)
-        given @ given.push(one.must())
+        if one.is_err() && unheld < 0
+            unheld @ at
+
+        match one
+            .ok word => given @ given.push(word)
+            .err _   => given @ given.push(arg_written(at))
+
         at @ at + 1
 
+    if unheld >= 0
+        for line in argv.unheld(given, at: unheld)
+            io.eprint(text: line)
+
+        exit(code: 2)
     parsed = argv.parse(given, dir_probe: process.is_directory)
 
     if parsed.is_err()
@@ -226,6 +236,16 @@ function command(_: i64) -> i64
         .grammar_cmd | .probe_cmd                                                       => verdict @ verdict
 
     return cli_table.exit_code(verdict)
+
+# Argument `index`, after the compiler's own name, as a message may quote it:
+# each byte that is not UTF-8 written by its value, `caf<0xE9>.hero`, as
+# `process.walk` names a file. `args_checked()` says which argument is not
+# text, and not what it holds.
+function arg_written(index: i64) -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_args_shown(index: index, status: @status, marks: @marks)
+    return process.written_value(answer: got, marks: marks)
 
 # The three verbs that need the toolchain, and the one place it is
 # located: a missing runtime is the tool being unable to run, which is
