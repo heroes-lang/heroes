@@ -13,6 +13,9 @@
 
 use module/reading
 use not_text
+use cli/process
+use cli/shell_split
+use cli/strings
 
 # The words pkg-config answered for `package`, or the package failure that
 # stops the build. An answer that is not UTF-8 holds a flag no `str` carries,
@@ -45,6 +48,39 @@ function complaint(path: str) -> str
     if read.is_err()
         return ""
     return not_text.bytes_written(read.must().text, faults: read.must().faults)
+
+# What the author is told when `pkg-config` refused `package` (defect 292):
+# the package not installed where `pkg-config` does not read its own `.pc`,
+# and where it does, the package installed and `pkg-config`'s own words on
+# what stands in the way, a package it requires or a version of one. Every
+# refusal was *not installed* until then, above `pkg-config` saying a package
+# the named one requires was not found. The message opens with the package
+# marker (`emit/ffi_build.package_problem` reads it into `ffi_package`), and
+# the not-installed sentence is word for word the one the net reads as a
+# machine lacking the library (`tests/harness/absence.hero`).
+function refused(package: str, complained: str) -> str
+    said = "\n  pkg-config said: " + shell_split.shown(strings.trimmed(complained), keep_lines: true)
+
+    if known(package)
+        return "heroes-ffi-package `" + package + "` is installed, and pkg-config cannot give its flags" + said + "\n  install what pkg-config says it lacks, or name the library directly with `link`"
+    return "heroes-ffi-package `" + package + "` is not installed on this machine" + said + "\n  install its development files, or name the library directly with `link`"
+
+# Whether `pkg-config` reads `package`'s own `.pc`, asked with no requirement
+# followed: `--maximum-traverse-depth=1 --modversion` is answered at exit 0
+# for a package whose `Requires:` names one the machine lacks, and at exit 1
+# for one not found, by pkgconf 3.0.7 (this Mac) and 1.8.1 (Debian, the Linux
+# arm64 image), measured 2026-10-04. Without the depth, 1.8.1 follows the
+# requirements for `--modversion`, `--path` and `--variable`, and both follow
+# them for `--exists`. A `pkg-config` that refuses the option answers no, so
+# its refusal reads as every refusal did before. Its words are not read.
+function known(package: str) -> bool
+    ran = process.run(
+        program: "pkg-config",
+        words: ["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", package],
+        out: process.discard(),
+        err: process.discard()
+    )
+    return ran.started && ran.code == 0
 
 # The answer on one line, its line ends dropped: pkg-config ends its answer
 # with one, and the message quotes the words.
