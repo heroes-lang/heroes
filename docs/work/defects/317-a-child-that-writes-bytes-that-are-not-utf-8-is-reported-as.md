@@ -1,7 +1,0 @@
-- [ ] **317 — a child that writes bytes that are not UTF-8 is reported as a compiler that never ran, `cannot run the compiler on` a program it built** | `shell.run` over a shell printing `caf\351`: it fails `cannot_run`, *cannot read the captured stdout at ...*, and `suite_golden`, `suite_emission`, `suite_corpus` and `suite_fixes` then write *cannot run the compiler on <case>* of a compiler that ran and wrote its answer | `tests/harness/shell.hero` (`run`, the captured stdout and stderr read as text, `:289` and `:293`) · the four suites' *cannot run the compiler on* (`suite_golden.hero:244`, `suite_emission.hero:244`, `suite_corpus.hero:170` and `:266`, `suite_fixes.hero:130`) · **class: blocking**
-
-    **Origin:** lane b9-annot, 2026-10-04, each reproduced on its worktree's harness (its final reply's *Found beside*; scratch `<scratchpad>/batch9/annot/`); no case in the tree writes such bytes today, and a program writing them through C would.
-
-    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message from the net about the compiler it judges (truth); the lane's reading.
-
-    Repaired at `57ef3857`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.
