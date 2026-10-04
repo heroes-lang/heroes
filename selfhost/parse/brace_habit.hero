@@ -45,6 +45,7 @@ use cursor
 use word_place
 use state
 use line_above
+use brace_layout
 use parse/laid_braces
 use parse/pairing
 
@@ -91,7 +92,10 @@ function opens_here(c: cursor.Cursor, text: str) -> bool
 # was read as a body, each entry's `:` a second mistake (lane X4,
 # 2026-09-29). A `>` that closes a record's or a variant's type parameters
 # is no operator, `record Pair<T> {` (`line_above.closes_type_parameters`,
-# asked of the same tokens; defect 135's class, lane recovery-b3).
+# asked of the same tokens; defect 135's class, lane recovery-b3). The list
+# is the lexer's, `brace_layout.value_follows`, but `:`, `->` and `=>`, which
+# that one counts for a type or an arm's value and this one leaves to the
+# body a `{` may open there; kept as a copy here until defect 196.
 function opens_a_value(c: cursor.Cursor, at: i64) -> bool
     i: i64 @ at - 1
 
@@ -101,20 +105,11 @@ function opens_a_value(c: cursor.Cursor, at: i64) -> bool
     if i < 0
         return false
     none: [state.Break] = []
+    k = c.tokens[i].kind
 
-    if c.tokens[i].kind == .gt && line_above.closes_type_parameters(c.tokens, breaks: none, at: i)
+    if k == .gt && line_above.closes_type_parameters(c.tokens, breaks: none, at: i)
         return false
-
-    return match c.tokens[i].kind
-        .eq | .at | .lparen | .lbracket | .lbrace | .comma | .kw_return | .kw_assert | .kw_in => true
-        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt      => true
-        .ge | .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .bang | .tilde        => true
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true         => false
-        .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if | .kw_match | .dot | .rparen      => false
-        .rbracket | .rbrace | .kw_constant | .kw_function | .kw_record | .kw_variant          => false
-        .kw_else | .kw_for | .kw_while | .kw_break | .kw_continue | .kw_test | .kw_extern     => false
-        .kw_use | .colon | .colon_colon | .question | .arrow | .fat_arrow | .comment          => false
-        .terminator | .indent | .dedent | .eof | .error                                       => false
+    return brace_layout.value_follows(k) && k != .colon && k != .arrow && k != .fat_arrow
 
 # Whether a `{` at `span` stands alone on its line: only a margin before it,
 # and it ends the line.
@@ -213,7 +208,7 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
         else if k == .rparen || k == .rbracket || k == .rbrace
             at: i64 @ open.len() - 1
 
-            while at >= 0 && !pairs(opener: open[at], shut: k)
+            while at >= 0 && token.closer_of(open[at]) != k
                 at @ at - 1
 
             if at >= 0
@@ -227,10 +222,6 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
                 )
                 return
         i @ i + 1
-
-# Whether the opener `opener` is closed by the closer `shut`.
-function pairs(opener: token.TokenKind, shut: token.TokenKind) -> bool
-    return opener == .lparen && shut == .rparen || opener == .lbracket && shut == .rbracket || opener == .lbrace && shut == .rbrace
 
 # Whether a report stands on the token at `at`.
 function told_at(c: cursor.Cursor, at: i64) -> bool

@@ -712,6 +712,7 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
 # The statements of the block whose indent is under the cursor; a block one
 # deeper, which no head opens, named and read (`parse/orphans`).
 function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
+    at = c.pos
     open = cursor.bump(@c).span
     stmts: [i64] @ []
     reading: bool @ true
@@ -720,10 +721,10 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
         cursor.skip_terminators(@c)
         k = cursor.current_kind(c)
 
-        if k == .dedent
-            _ = cursor.bump(@c)
+        if k == .eof || colon_habit.suite_ended(c, text, open: at)
             reading @ false
-        else if k == .eof
+        else if k == .dedent
+            _ = cursor.bump(@c)
             reading @ false
         else if k == .indent
             orphans.read(@c)

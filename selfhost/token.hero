@@ -116,6 +116,31 @@ function is_line_end(kind: TokenKind) -> bool
 function ends_a_line(kind: TokenKind) -> bool
     return is_line_end(kind) || kind == .eof
 
+## Brackets
+
+# Whether a token of `kind` closes a bracket.
+function is_closer(kind: TokenKind) -> bool
+    return kind == .rparen || kind == .rbracket || kind == .rbrace
+
+# The opener a closer closes, a `(` for any other kind; and the closer an
+# opener owes, a `)` for any other. Here since defect 196, from
+# `parse/pairing` and `parse/unclosed`, which kept one each.
+function opener_of(closer: TokenKind) -> TokenKind
+    if closer == .rbracket
+        return .lbracket
+
+    if closer == .rbrace
+        return .lbrace
+    return .lparen
+
+function closer_of(opener: TokenKind) -> TokenKind
+    if opener == .lbracket
+        return .rbracket
+
+    if opener == .lbrace
+        return .rbrace
+    return .rparen
+
 # Whether a token of `kind` can begin an expression, spec § 7's `Unary` and
 # `Primary`: what `while` needs after it to be a loop, so what a `certain`
 # *use `while`* for a `for` over a condition needs (defect 131's third

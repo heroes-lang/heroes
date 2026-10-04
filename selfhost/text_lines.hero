@@ -127,6 +127,19 @@ function margin_width(text: str, at: i64) -> i64
 
     return at - 1 - i
 
+# The line break the text uses on the line that holds `at`, which a fix that
+# writes a line writes: `\r\n` in a CRLF file. Moved here from
+# `parse/colon_habit.hero` with defect 196, a reading of the text alone.
+function line_break(text: str, at: i64) -> str
+    i: i64 @ at
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    if i > 0 && i < text.len() && text[i - 1] == '\r'
+        return "\r\n"
+    return "\n"
+
 ## Where one offset stands, said from another
 
 # Where the byte `at` stands, said from the line of the byte `from` at or

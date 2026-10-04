@@ -4,12 +4,17 @@
 # (`parse/colon_habit.hero:98`, its fix certain), and the next head's colon
 # is named a missing body (`parse/opening.hero:274`), found the `:`. Rows
 # 131-56a and 131-56b. Class (a): `adjacent`.
+#
+# Moved 2026-10-04 with defect 196's repair (lane b9-recovery): a suite inside
+# the one on its line is that one's report, one more certain fix of it, and is
+# read as its block (`parse/colon_habit.deeper`, `suite_ended`); it pins that
+# now, one message a line, its `.fixed` the same program.
 
 function two_colons(n: i64)
-    if n > 0: if n > 1: print(1)  #~ trailing_colon missing_body
+    if n > 0: if n > 1: print(1)  #~ trailing_colon
 
 function three_colons(n: i64)
-    if n > 0: if n > 1: if n > 2: print(1)  #~ trailing_colon missing_body
+    if n > 0: if n > 1: if n > 2: print(1)  #~ trailing_colon
 
 function main()
     print(1)
