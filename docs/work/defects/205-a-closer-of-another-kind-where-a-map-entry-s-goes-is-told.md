@@ -5,3 +5,5 @@
     **Why it is a defect.** As 203: one reading served, the other's repair a run more (design.md §4.17's measure).
 
     **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be.
+
+    Repaired at `9642191b` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
