@@ -47,7 +47,7 @@ use cli/process
 # joined to one; sixteen characters a file, each of `module/reading.key_of`'s
 # two kinds, are one answer for one set of bytes. A part that is not UTF-8 is
 # C all the same and no longer refuses the runtime.
-function runtime_keys(runtime: str) -> str?
+function each_file(runtime: str) -> str?
     entry = runtime + "/runtime.c"
     root = reading.keyed(entry)?
     each: [str] @ [root.key]
@@ -122,9 +122,9 @@ test "every file of the runtime is keyed alone, so a text cut apart elsewhere, o
     assert !write_file(path: dir + "/one/a.c", text: "int a;\nint").is_err()
     assert !write_file(path: dir + "/one/b.c", text: " b;\n").is_err()
     assert !write_file(path: dir + "/two/a.c", text: "int a;\n").is_err()
-    one = runtime_keys(dir + "/one").must()
+    one = each_file(dir + "/one").must()
     assert one.len() == 48
-    assert one != runtime_keys(dir + "/two").must()
+    assert one != each_file(dir + "/two").must()
 
     # A part holding 0xE9, a second name for the committed header (nothing is
     # written through it), against a part of text spelling the runtime's
@@ -132,9 +132,9 @@ test "every file of the runtime is keyed alone, so a text cut apart elsewhere, o
     assert !files.second_name(existing: "tests/golden/surface-fixtures/notext227/latin1.h", name: dir + "/three/a.c").is_err()
     shown = reading.keyed(dir + "/three/a.c").must().text
     assert !write_file(path: dir + "/four/a.c", text: "not UTF-8, 2 bytes of marks:\nE9" + shown).is_err()
-    three = runtime_keys(dir + "/three").must()
+    three = each_file(dir + "/three").must()
     assert three[16] == 'n'
-    assert three != runtime_keys(dir + "/four").must()
+    assert three != each_file(dir + "/four").must()
 
 test "the repository's own runtime names every part it includes"
     names = included_names(text: read_file("runtime/runtime.c").must())

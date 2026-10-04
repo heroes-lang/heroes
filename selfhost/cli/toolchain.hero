@@ -98,7 +98,7 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
         # Present is what is asked, and a C source that is not UTF-8 is present:
         # it was *cannot find the Heroes runtime* (panel 189).
         if !reading.source_text(candidate + "/heroes_runtime.h").is_err() && !reading.source_text(candidate + "/runtime.c").is_err()
-            gathered = runtime_key.runtime_keys(candidate)?
+            gathered = runtime_key.each_file(candidate)?
             said = clang_floor.identity(build_dir: "build", runtime: candidate, words: flags.flags())
 
             return ok(
