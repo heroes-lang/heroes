@@ -48,7 +48,9 @@ names are the selectors — `check`, `ir`, `emit`, `unsupported`
 and prints no line, and a suite name that selects nothing is a green run that
 tested nothing. That is the failure this paragraph exists to prevent, and it
 happened here first. **Five forms since 2026-10-04**: `permissive`, `check`'s
-question asked of the control arm, `check --permissive` (defect 211).
+question asked of the control arm, `check --permissive` (defect 211). **Six
+the same day**: `full`, `check` with no `--brief` over `tests/golden/full/`,
+which pins a diagnostic's notes and excerpts (defect 289).
 
 ## What gates what, measured 2026-09-09
 
@@ -61,6 +63,7 @@ question asked of the control arm, `check --permissive` (defect 211).
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
 | `tests/golden/permissive/**` | **`permissive`** `annotations` `canonical` |
+| `tests/golden/full/**` | **`full`** `annotations` `canonical` |
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
