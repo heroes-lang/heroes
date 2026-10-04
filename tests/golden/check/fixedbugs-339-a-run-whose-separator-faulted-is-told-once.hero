@@ -1,0 +1,18 @@
+# fixedbugs, defect 339, lane b11-misc, 2026-10-05.
+#
+# SYMPTOM: `1_u`, `0644_u` and `00_x7` were told twice: `misplaced_separator`
+# at the `_`, and then the letters after it as a name, `expected_end_of_line`,
+# or inside brackets `expected_args_close`.
+#
+# CAUSE: a decimal run whose separator faulted ended its error token where
+# the scan stopped, before the letters, which were scanned again as a name.
+#
+# FIX: the faulted run takes what joins it into its error token, as a leading
+# zero's refused literal does since defect 329 (`leading_zeros.joined_end`).
+
+function main()
+    a = 1_u    #~ misplaced_separator
+    b = 0644_u    #~ misplaced_separator
+    c = 00_x7    #~ misplaced_separator
+    print(1_u8)    #~ misplaced_separator
+    print(a, b, c)
