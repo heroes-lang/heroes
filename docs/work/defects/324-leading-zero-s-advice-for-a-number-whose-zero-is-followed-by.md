@@ -3,3 +3,5 @@
     **Origin:** lane b10-harness, 2026-10-04, found beside 289 (the `full` form's first reading); reproduced by the coordinator; filed for lane b10-cli, no lane of batch 10 holding `number.hero`.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message, advice that writes two programs the compiler refuses; both fixes are `guess`, so no `--apply` writes them.
+
+    Repaired at `f065c0af`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The harness lane's `full` form, `tests/golden/full/`, is not on this branch, so a case there is the merge's.
