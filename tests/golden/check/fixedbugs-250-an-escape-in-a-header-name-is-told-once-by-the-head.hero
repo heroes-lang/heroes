@@ -1,0 +1,19 @@
+# Defect 250, 2026-10-04. Symptom: `extern "a\db.h"` was told twice, the
+# lexer's `unknown_escape` first with the certain fix `\\d`, then the head's
+# `escape_in_header_name`, and the fix wrote `"a\\db.h"`, a name holding a
+# `\`, which the head refuses. Cause: the lexer told an escape inside the
+# string a group head judges whole. The head tells it now, once, and the
+# lexer says nothing of an escape there; a rooted name and an escape by its
+# code the same. A `link`'s name and a plain string keep the lexer's message.
+
+extern "a\db.h"  #~ escape_in_header_name
+    function seven() -> i32
+
+extern "\db.h"  #~ escape_in_header_name
+    function eight() -> i32
+
+extern "b\x41.h"  #~ escape_in_header_name
+    function nine() -> i32
+
+function main()
+    print(seven() + eight() + nine())
