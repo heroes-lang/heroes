@@ -3,3 +3,5 @@
     **Origin:** lane b9-annot, 2026-10-04, each reproduced on its worktree's harness (its final reply's *Found beside*; scratch `<scratchpad>/batch9/annot/`). The lane read it `adjacent`, *a false red only a new case can reach; by the letter it could be blocking*; the coordinator reads it `blocking` under the author's *5a*, the same class as 317, which is the same kind of message.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message from the net; the coordinator's reading, against the lane's `adjacent`, for one class over the two false messages the lane found.
+
+    Repaired at `a2d362c9`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.
