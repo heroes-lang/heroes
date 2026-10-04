@@ -225,6 +225,7 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
             told @ told.push(d)
 
         after.diagnostics @ told
+        after.breaks @ file_start.behind(after.breaks, by: 1)
         return after
     l: state.LexState @ state.new_state()
     l.apart @ apart
@@ -354,6 +355,19 @@ test "a byte-order mark is told once, at it, and the file is read from after it"
     assert twice.diagnostics[0].span.end == 6
     crlf = lex_one(bom + "function main()\r\n    print(1)\r\n")
     assert crlf.diagnostics.len() == 1
+
+    # A refused break names its diagnostic by its place among the file's,
+    # which the mark's message moves by one (`parse/apart` reads it there).
+    broken = "y = a +\n1\nx = b\n+ c\nz = d +\nreturn 1\n"
+    plain_breaks = lex_one(broken)
+    marked_breaks = lex_one(bom + broken)
+    assert marked_breaks.breaks.len() == plain_breaks.breaks.len()
+
+    for k in range(from: 0, to: plain_breaks.breaks.len())
+        was = plain_breaks.diagnostics[plain_breaks.breaks[k].diagnostic]
+        now = marked_breaks.diagnostics[marked_breaks.breaks[k].diagnostic]
+        assert now.code == was.code
+        assert now.span.start == was.span.start + 3
 
 # Defect 247: UTF-16 with no mark over ASCII, which is UTF-8, every other
 # byte NUL: one message, the file not read, where each NUL was one.
