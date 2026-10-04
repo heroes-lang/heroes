@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 86 defects · 1 decision.** The defects are the files of
+**Open: 87 defects · 1 decision.** The defects are the files of
 `docs/work/defects/`, one each since 2026-10-04 (their rules
 `docs/work/DEFECTS.md`), and the decisions the items under
 `docs/work/DECIDE.md`'s `**OPEN:**` banner; this line must equal both.
