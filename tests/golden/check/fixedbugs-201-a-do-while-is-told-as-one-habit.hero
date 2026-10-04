@@ -1,0 +1,41 @@
+# Fixed defect 201, 2026-10-04 (lane b9-recovery; panel 187's cause B4, row
+# 131-32). Symptom: `function main() {` over `do {`, a body and `} while (1 ==
+# 1)` was told the function's `{`, the `do {`'s `{` as a brace past a name,
+# and the body's mistake; the do-while itself, which no word of this language
+# writes, only once the braces were gone, as `unexpected_block` and a
+# `missing_body` for the `while`. The filed cause, the line past an inner `}`
+# left unread, does not reproduce on this tree: that line is read, its own
+# mistakes told (the last two functions). What hid the habit is its report:
+# the `{` told for a brace, the tail read in silence as that brace's
+# (`parse/loop_habit.do_tail`). The `{` of a `do` whose braces close on a line
+# a `while` goes on with is told as C's do-while now, with the loop that
+# replaces it (`loop_habit.past_a_statement`), its one report.
+
+function in_braces() {  #~ missing_body
+    do {  #~ expected_end_of_line
+        y = 3 4  #~ expected_end_of_line
+    } while (1 == 1)
+}
+
+function without_braces(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    } while (n > 0)
+
+function without_parentheses(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    } while n > 0
+
+function the_tails_own_mistake(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    } while (n > )  #~ expected_expression
+
+function past_an_inner_brace(n: i64)
+    if n > 0 {  #~ missing_body
+        print(n)
+    } z = 4 )  #~ expected_end_of_line
+
+function main()
+    print(1)

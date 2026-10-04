@@ -36,6 +36,7 @@
 # |---|---|
 # | `refuse` | `grammar_expr.for_stmt` |
 # | `do_tail` | `grammar_expr.while_stmt` |
+# | `past_a_statement` | `parse/statement_end.close` |
 
 use token
 use diag
@@ -132,6 +133,21 @@ function closer_after(c: cursor.Cursor, open: i64) -> i64
     return -1
 
 ## The tail of `do { ... } while (c)`
+
+# How what stands past the statement begun at token `from` is told, its
+# line's rule; but where the statement is `do` and the `{` under the cursor
+# opens braces that close on a line a `while` goes on with, C's do-while,
+# which no word here writes: told at that `{` for what it is, its one report,
+# the tail then read by `do_tail`. It was told as a brace past a name, and
+# its loop only once the braces went, `unexpected_block` and `missing_body`
+# beside it (defect 201).
+function past_a_statement(c: cursor.Cursor, text: str, from: i64) -> str
+    if c.pos == from + 1 && cursor.slice_of(text, c.tokens[from].span) == "do" && brace_habit.opens_here(c, text)
+        close = brace_habit.closer(c, open: c.pos)
+
+        if c.tokens[close].kind == .rbrace && c.tokens[close + 1].kind == .kw_while
+            return "C's `do { … } while (c)`, which runs its body before asking `c`, is no loop here: write the body under `while true`, ending it with `if !(c)` over `break`"
+    return "one statement per line, no semicolons"
 
 # Whether the `while` at token `head`, whose condition the cursor stands
 # after, is the tail of braces whose `}` stands before it on its line and
