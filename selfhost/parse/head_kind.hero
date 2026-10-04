@@ -35,8 +35,13 @@ constant ERR_UNNAMED: str
 
 # The declaration keyword the head line begun at token `word` names: one
 # further along the line at its own depth, or the one its first word is a
-# slip of; a failure where it names none.
+# slip of; a failure where it names none, and where `word` is the block's
+# own indent or `{`, at the top level with no head line, whose first line
+# named the block as its own head's (defect 195: `use geom` over an indented
+# `function g()` read its block as that function's statements).
 function named_by(c: cursor.Cursor, text: str, word: i64) -> token.TokenKind?
+    if c.tokens[word].kind == .indent || c.tokens[word].kind == .lbrace
+        return fail(code: ERR_UNNAMED, msg: "the block has no head line")
     depth: i64 @ 0
     i: i64 @ word + 1
 

@@ -33,6 +33,7 @@
 # |---|---|
 # | `arrow`, `close_its_block`, `crossed_its_dedent` | `grammar_expr.arm`, `grammar_expr.arms_of` |
 # | `arrow_below` | `parse/margin_arms` |
+# | `told_above` | `grammar_expr.statement_kind` |
 
 use token
 use diag
@@ -131,6 +132,26 @@ function joined_after(c: cursor.Cursor, text: str, at: i64) -> token.Span?
     if text_lines.newlines_between(text, from: c.tokens[at].span.end, to: c.tokens[next].span.start) == 0
         return fail(code: "same_line", msg: "the arm's value is on the `=>`'s line")
     return ok(token.Span(start: c.tokens[at].span.start, end: c.tokens[next].span.end))
+
+# Whether the `=>` under the cursor begins a line below one whose end an arm
+# was told `expected_arm_arrow` at, past more dedents than the arm may cross:
+# that arm's arrow, its mistake told there, which the statement reader passes
+# to read the arm's value for its own, where it told the line a second time
+# (defect 195).
+function told_above(c: cursor.Cursor) -> bool
+    i: i64 @ c.pos - 1
+
+    while i > 0 && (c.tokens[i].kind == .dedent || c.tokens[i].kind == .comment)
+        i @ i - 1
+
+    if !cursor.at(c, .fat_arrow) || c.tokens[i].kind != .terminator || c.tokens[i + 1].kind != .dedent
+        return false
+
+    for d in c.diagnostics
+        if d.code == "expected_arm_arrow" && d.span.start == c.tokens[i].span.start
+            return true
+
+    return false
 
 # Whether the arm begun at token `from` read its `=>` past a dedent: the
 # arms' block ended before it, and the arms end with it.

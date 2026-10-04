@@ -854,6 +854,10 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
 
     if k == .ident && cursor.peek(c, 1) == .colon
         return annotated(@c, @a, text)
+
+    # An arm's `=>` broken out past its block, told at the arm (defect 195).
+    if broken_arm.told_above(c)
+        _ = cursor.bump(@c)
     return expression_or_mutation(@c, @a, text)
 
 # Every statement ends at its line end, consumed here; what that owes is
