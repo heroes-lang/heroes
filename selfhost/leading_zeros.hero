@@ -143,7 +143,8 @@ function joining(b: u8) -> bool
 # Where what joins a refused literal's digits ends, from `at` (defect 329):
 # what `joining` takes, and a `.` before a digit once something has joined, as
 # a based literal's fraction runs (`number.fraction`), so `00x7.5` is one
-# literal. The run stops only between two characters.
+# literal. The run stops only between two characters. A decimal run whose
+# separator faulted is refused too, and `number` asks the same (defect 339).
 function joined_end(text: str, at: i64) -> i64
     end: i64 @ at
 
