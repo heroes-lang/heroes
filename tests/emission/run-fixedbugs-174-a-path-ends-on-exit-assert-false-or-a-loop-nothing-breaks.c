@@ -768,12 +768,14 @@ bb3:
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_defensive(int64_t h0_n) {
 #line 771 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+    int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
     int64_t t4;
     int64_t t5;
     int64_t t6;
+    int64_t t7;
     goto bb0;
 bb0:
 #line 97 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -793,23 +795,34 @@ bb1:
 #line 100 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t6 = INT64_C(0);
 #line 100 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t6;
+    h1_ret0 = t6;
+#line 100 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb4;
 #line 100 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb2:
 #line 98 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t4 = h0_n;
 #line 98 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t4;
+    h1_ret0 = t4;
+#line 98 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb4;
 #line 98 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb3:
 #line 98 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb1;
-#line 808 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 98 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+bb4:
+#line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    t7 = h1_ret0;
+#line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    return t7;
+#line 820 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_assert(int64_t h0_n) {
-#line 813 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 825 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+    int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -817,6 +830,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_asser
     HeroStr t5;
     bool t6;
     int64_t t7;
+    int64_t t8;
     goto bb0;
 bb0:
 #line 103 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -840,7 +854,9 @@ bb2:
 #line 104 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t4 = h0_n;
 #line 104 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t4;
+    h1_ret0 = t4;
+#line 104 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb6;
 #line 104 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb3:
 #line 104 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -850,19 +866,28 @@ bb4:
 #line 106 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t7 = INT64_C(0);
 #line 106 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t7;
+    h1_ret0 = t7;
+#line 106 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb6;
 #line 106 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb5:
 #line 105 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-#line 858 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 876 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert(t5);
     hero_unreachable();
+bb6:
+#line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    t8 = h1_ret0;
+#line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    return t8;
+#line 884 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_loop(int64_t h0_n) {
-#line 865 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 889 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_i;
+    int64_t h2_ret0;
     int64_t t1;
     bool t2;
     int64_t t3;
@@ -874,6 +899,7 @@ int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_loo
     int64_t t9;
     int64_t t10;
     int64_t t11;
+    int64_t t12;
     goto bb0;
 bb0:
 #line 109 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -909,7 +935,9 @@ bb3:
 #line 117 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t11 = INT64_C(0);
 #line 117 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t11;
+    h2_ret0 = t11;
+#line 117 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb7;
 #line 117 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb4:
 #line 114 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -927,22 +955,32 @@ bb5:
 #line 113 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t6 = h1_i;
 #line 113 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t6;
+    h2_ret0 = t6;
+#line 113 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb7;
 #line 113 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb6:
 #line 113 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb4;
-#line 936 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 113 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+bb7:
+#line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    t12 = h2_ret0;
+#line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    return t12;
+#line 972 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_if(int64_t h0_k) {
-#line 941 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 977 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+    int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
     int64_t t4;
     int64_t t5;
+    int64_t t6;
     goto bb0;
 bb0:
 #line 122 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -958,26 +996,38 @@ bb2:
 #line 123 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t4 = INT64_C(1);
 #line 123 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t4;
+    h1_ret0 = t4;
+#line 123 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb4;
 #line 123 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb3:
 #line 125 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t5 = INT64_C(2);
 #line 125 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t5;
-#line 969 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+    h1_ret0 = t5;
+#line 125 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb4;
+#line 125 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+bb4:
+#line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    t6 = h1_ret0;
+#line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    return t6;
+#line 1017 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_match(int64_t h0_k) {
-#line 974 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1022 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_s0;
+    int64_t h2_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
     bool t4;
     int64_t t5;
     int64_t t6;
+    int64_t t7;
     goto bb0;
 bb0:
 #line 131 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -997,7 +1047,9 @@ bb2:
 #line 132 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t5 = INT64_C(1);
 #line 132 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t5;
+    h2_ret0 = t5;
+#line 132 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb5;
 #line 132 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb3:
 #line 132 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
@@ -1007,13 +1059,21 @@ bb4:
 #line 133 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t6 = INT64_C(2);
 #line 133 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    return t6;
-#line 1012 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+    h2_ret0 = t6;
+#line 133 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    goto bb5;
+#line 133 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+bb5:
+#line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    t7 = h2_ret0;
+#line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
+    return t7;
+#line 1072 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 140 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish(void) {
-#line 1017 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1077 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     HeroStr t1;
     int64_t t2;
     HeroStr t3;
@@ -1037,12 +1097,12 @@ bb0:
     hero_print_end();
 #line 143 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return;
-#line 1041 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1101 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 145 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_main(void) {
-#line 1046 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1106 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1189,12 +1249,12 @@ bb0:
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish();
 #line 160 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return;
-#line 1193 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1253 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 219 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 1198 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1258 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -1204,7 +1264,7 @@ bb0:
     (void)hero_exit(t1);
 #line 220 "<heroes library>"
     return;
-#line 1208 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1268 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color_eq(const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *a, const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *b) {
     if (a->tag != b->tag) return false;

@@ -141,6 +141,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t 
     int64_t h3_r0;
     int64_t h4_s1;
     int64_t h5_x;
+    int64_t h6_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -154,6 +155,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t 
     int64_t t11;
     int64_t t12;
     int64_t t13;
+    int64_t t14;
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -177,7 +179,9 @@ bb1:
 #line 36 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = h5_x;
 #line 36 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
+    h6_ret0 = t13;
+#line 36 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 36 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 31 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -209,7 +213,9 @@ bb6:
 #line 32 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(1);
 #line 32 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
+    h6_ret0 = t9;
+#line 32 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 32 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 32 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -219,16 +225,25 @@ bb8:
 #line 33 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = INT64_C(2);
 #line 33 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
-#line 224 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h6_ret0 = t10;
+#line 33 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
+#line 33 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb9:
+#line 28 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t14 = h6_ret0;
+#line 28 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t14;
+#line 238 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 39 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_if_returns(int64_t h0_k) {
-#line 229 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 243 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_s0;
     int64_t h2_r0;
     int64_t h3_x;
+    int64_t h4_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -241,6 +256,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_if_returns(int64
     int64_t t10;
     int64_t t11;
     int64_t t12;
+    int64_t t13;
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -264,7 +280,9 @@ bb1:
 #line 48 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = h3_x;
 #line 48 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t12;
+    h4_ret0 = t12;
+#line 48 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 48 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 42 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -292,23 +310,34 @@ bb6:
 #line 43 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t8 = INT64_C(1);
 #line 43 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t8;
+    h4_ret0 = t8;
+#line 43 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 43 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 45 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(2);
 #line 45 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
-#line 303 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h4_ret0 = t9;
+#line 45 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 45 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 39 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t13 = h4_ret0;
+#line 39 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t13;
+#line 331 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_a_statement_first(int64_t h0_k) {
-#line 308 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 336 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_s0;
     int64_t h2_r0;
     int64_t h3_s1;
     int64_t h4_x;
+    int64_t h5_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -323,6 +352,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_a_statement_first(int6
     int64_t t12;
     int64_t t13;
     int64_t t14;
+    int64_t t15;
     goto bb0;
 bb0:
 #line 52 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -346,7 +376,9 @@ bb1:
 #line 61 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t14 = h4_x;
 #line 61 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t14;
+    h5_ret0 = t14;
+#line 61 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 61 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 54 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -384,7 +416,9 @@ bb6:
 #line 57 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = INT64_C(1);
 #line 57 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
+    h5_ret0 = t10;
+#line 57 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 57 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 57 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -394,16 +428,25 @@ bb8:
 #line 58 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t11 = INT64_C(2);
 #line 58 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t11;
-#line 399 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h5_ret0 = t11;
+#line 58 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
+#line 58 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb9:
+#line 51 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t15 = h5_ret0;
+#line 51 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t15;
+#line 441 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_outer_if(int64_t h0_k, int64_t h1_j) {
-#line 404 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 446 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_r0;
     int64_t h3_s0;
     int64_t h4_x;
+    int64_t h5_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -416,6 +459,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_outer_if(int64_t h0_k,
     int64_t t10;
     int64_t t11;
     int64_t t12;
+    int64_t t13;
     goto bb0;
 bb0:
 #line 65 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -435,7 +479,9 @@ bb1:
 #line 72 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = h4_x;
 #line 72 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t12;
+    h5_ret0 = t12;
+#line 72 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 72 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 66 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -463,7 +509,9 @@ bb5:
 #line 67 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t8 = INT64_C(1);
 #line 67 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t8;
+    h5_ret0 = t8;
+#line 67 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 67 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb6:
 #line 67 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -473,17 +521,26 @@ bb7:
 #line 68 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(2);
 #line 68 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
-#line 478 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h5_ret0 = t9;
+#line 68 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 68 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 64 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t13 = h5_ret0;
+#line 64 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t13;
+#line 534 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 75 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inline_head(int64_t h0_k, int64_t h1_j) {
-#line 483 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 539 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_s1;
     int64_t h5_x;
+    int64_t h6_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -497,6 +554,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inline_head(int64_t h0
     int64_t t11;
     int64_t t12;
     int64_t t13;
+    int64_t t14;
     goto bb0;
 bb0:
 #line 76 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -520,7 +578,9 @@ bb1:
 #line 82 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = h5_x;
 #line 82 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
+    h6_ret0 = t13;
+#line 82 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 82 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 77 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -552,7 +612,9 @@ bb6:
 #line 78 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(1);
 #line 78 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
+    h6_ret0 = t9;
+#line 78 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 78 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 78 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -562,16 +624,25 @@ bb8:
 #line 79 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = INT64_C(2);
 #line 79 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
-#line 567 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h6_ret0 = t10;
+#line 79 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
+#line 79 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb9:
+#line 75 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t14 = h6_ret0;
+#line 75 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t14;
+#line 637 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 85 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_returned_directly(int64_t h0_k, int64_t h1_j) {
-#line 572 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 642 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_s1;
+    int64_t h5_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -584,6 +655,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_returned_directly(int6
     int64_t t10;
     int64_t t11;
     int64_t t12;
+    int64_t t13;
     goto bb0;
 bb0:
 #line 86 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -603,7 +675,9 @@ bb1:
 #line 86 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = h3_r0;
 #line 86 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t12;
+    h5_ret0 = t12;
+#line 86 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 86 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 88 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -635,7 +709,9 @@ bb6:
 #line 89 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(1);
 #line 89 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
+    h5_ret0 = t9;
+#line 89 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 89 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 89 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -645,17 +721,26 @@ bb8:
 #line 90 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = INT64_C(2);
 #line 90 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
-#line 650 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h5_ret0 = t10;
+#line 90 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
+#line 90 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb9:
+#line 85 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t13 = h5_ret0;
+#line 85 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t13;
+#line 734 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_two_deep(int64_t h0_k, int64_t h1_j) {
-#line 655 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 739 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_s1;
     int64_t h5_x;
+    int64_t h6_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -673,6 +758,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_two_deep(int64_t h0_k,
     int64_t t15;
     int64_t t16;
     int64_t t17;
+    int64_t t18;
     goto bb0;
 bb0:
 #line 95 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -696,7 +782,9 @@ bb1:
 #line 106 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t17 = h5_x;
 #line 106 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t17;
+    h6_ret0 = t17;
+#line 106 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb12;
 #line 106 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 97 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -742,25 +830,37 @@ bb8:
 #line 103 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t14 = INT64_C(2);
 #line 103 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t14;
+    h6_ret0 = t14;
+#line 103 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb12;
 #line 103 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb10:
 #line 100 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = INT64_C(1);
 #line 100 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t12;
+    h6_ret0 = t12;
+#line 100 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb12;
 #line 100 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb11:
 #line 102 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = INT64_C(3);
 #line 102 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
-#line 759 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h6_ret0 = t13;
+#line 102 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb12;
+#line 102 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb12:
+#line 94 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t18 = h6_ret0;
+#line 94 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t18;
+#line 859 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_in_a_loop(HeroArrayHeader * h0_xs) {
-#line 764 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 864 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_total;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -805,11 +905,11 @@ bb0:
     t2 = h0_xs;
 #line 112 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t27 = h2_xs0;
-#line 809 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 909 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_incref(t2);
 #line 112 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     h2_xs0 = t2;
-#line 813 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 913 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_decref(t27);
 #line 112 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t3 = INT64_C(0);
@@ -867,7 +967,7 @@ bb3:
 bb4:
 #line 123 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t26 = h1_total;
-#line 871 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 971 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_decref(h2_xs0);
     return t26;
 bb5:
@@ -915,15 +1015,16 @@ bb10:
 bb11:
 #line 113 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     goto bb3;
-#line 919 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1019 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_value_if_arm(int64_t h0_k, int64_t h1_j) {
-#line 924 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1024 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_x;
+    int64_t h5_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -936,6 +1037,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_value_if_arm(int64_t h
     int64_t t10;
     int64_t t11;
     int64_t t12;
+    int64_t t13;
     goto bb0;
 bb0:
 #line 127 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -959,7 +1061,9 @@ bb1:
 #line 134 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = h4_x;
 #line 134 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t12;
+    h5_ret0 = t12;
+#line 134 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 134 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 128 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -987,23 +1091,34 @@ bb6:
 #line 129 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t8 = INT64_C(1);
 #line 129 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t8;
+    h5_ret0 = t8;
+#line 129 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 129 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 131 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(2);
 #line 131 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
-#line 998 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h5_ret0 = t9;
+#line 131 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 131 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t13 = h5_ret0;
+#line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t13;
+#line 1112 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 137 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked(int64_t h0_k, int64_t h1_j) {
-#line 1003 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1117 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_s1;
     int64_t h5_x;
+    int64_t h6_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1017,6 +1132,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked(int64_t h0_k, 
     int64_t t11;
     int64_t t12;
     int64_t t13;
+    int64_t t14;
     goto bb0;
 bb0:
 #line 138 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1040,7 +1156,9 @@ bb1:
 #line 145 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = h5_x;
 #line 145 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
+    h6_ret0 = t13;
+#line 145 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 145 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 140 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1072,7 +1190,9 @@ bb6:
 #line 141 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(2);
 #line 141 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
+    h6_ret0 = t9;
+#line 141 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
 #line 141 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 141 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1082,15 +1202,24 @@ bb8:
 #line 142 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = INT64_C(3);
 #line 142 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
-#line 1087 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h6_ret0 = t10;
+#line 142 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb9;
+#line 142 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb9:
+#line 137 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t14 = h6_ret0;
+#line 137 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t14;
+#line 1215 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 148 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_return_if(int64_t h0_k) {
-#line 1092 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1220 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_r0;
     int64_t h2_s0;
+    int64_t h3_ret0;
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -1102,6 +1231,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_return_if(int64_t h0_k
     int64_t t9;
     int64_t t10;
     int64_t t11;
+    int64_t t12;
     goto bb0;
 bb0:
 #line 149 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1117,7 +1247,9 @@ bb1:
 #line 149 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t11 = h1_r0;
 #line 149 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t11;
+    h3_ret0 = t11;
+#line 149 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 149 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 150 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1145,7 +1277,9 @@ bb5:
 #line 151 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t8 = INT64_C(1);
 #line 151 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t8;
+    h3_ret0 = t8;
+#line 151 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 151 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb6:
 #line 151 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1155,13 +1289,21 @@ bb7:
 #line 152 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(2);
 #line 152 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
-#line 1160 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h3_ret0 = t9;
+#line 152 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 152 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 148 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t12 = h3_ret0;
+#line 148 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t12;
+#line 1302 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 157 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_while_tail(int64_t h0_n) {
-#line 1165 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1307 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_i;
     int64_t h2_total;
     int64_t h3_s0;
@@ -1284,14 +1426,15 @@ bb9:
 bb10:
 #line 164 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     goto bb1;
-#line 1288 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1430 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 HeroStr h_fixedbugs175avalueblockwhoselastiformatchleaves_word(int64_t h0_k) {
-#line 1293 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1435 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_s0;
     HeroStr h2_r0 = {0};
+    HeroStr h3_ret0 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1309,6 +1452,7 @@ HeroStr h_fixedbugs175avalueblockwhoselastiformatchleaves_word(int64_t h0_k) {
     HeroStr t15;
     HeroStr t16;
     HeroStr t17;
+    HeroStr t18;
     goto bb0;
 bb0:
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1327,23 +1471,22 @@ bb0:
 bb1:
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t15 = h2_r0;
-#line 1331 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_incref(t15);
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-#line 1334 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_decref(h2_r0);
-    return t15;
+    h3_ret0 = t15;
+#line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb10;
+#line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 179 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t8 = HERO_STR_LIT(hero_str_1073a930);
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    t16 = h2_r0;
-#line 1342 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    t17 = h2_r0;
+#line 1485 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_str_incref(t8);
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     h2_r0 = t8;
-#line 1346 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_decref(t16);
+#line 1489 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    hero_str_decref(t17);
     goto bb1;
 bb3:
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1373,40 +1516,48 @@ bb6:
 #line 185 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t14 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    t17 = h2_r0;
-#line 1378 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    t18 = h2_r0;
+#line 1521 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_str_incref(t14);
 #line 178 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     h2_r0 = t14;
-#line 1382 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_decref(t17);
+#line 1525 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    hero_str_decref(t18);
     goto bb1;
 bb8:
 #line 182 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = HERO_STR_LIT(hero_str_1d4996);
-#line 1388 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_incref(t12);
 #line 182 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-#line 1391 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_decref(h2_r0);
-    return t12;
+    h3_ret0 = t12;
+#line 182 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb10;
+#line 182 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb9:
 #line 184 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = HERO_STR_LIT(hero_str_188c0f4b);
-#line 1397 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_str_incref(t13);
 #line 184 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-#line 1400 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h3_ret0 = t13;
+#line 184 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb10;
+#line 184 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb10:
+#line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t16 = h3_ret0;
+#line 1547 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    hero_str_incref(t16);
+#line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+#line 1550 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_str_decref(h2_r0);
-    return t13;
+    return t16;
 }
 
 #line 188 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h_fixedbugs175avalueblockwhoselastiformatchleaves_pair(int64_t h0_k) {
-#line 1407 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1557 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h1_s0;
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h2_r0;
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h3_p;
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h4_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1425,6 +1576,7 @@ h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h_fixedbugs175avalueblock
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t16;
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t17;
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t18;
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t19;
     goto bb0;
 bb0:
 #line 189 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1448,7 +1600,9 @@ bb1:
 #line 197 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t18 = h3_p;
 #line 197 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t18;
+    h4_ret0 = t18;
+#line 197 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 197 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 191 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1484,7 +1638,9 @@ bb6:
 #line 192 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair){.f_first = t8, .f_second = t9};
 #line 192 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
+    h4_ret0 = t10;
+#line 192 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 192 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 194 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1494,15 +1650,24 @@ bb7:
 #line 194 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = (h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair){.f_first = t11, .f_second = t12};
 #line 194 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
-#line 1499 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h4_ret0 = t13;
+#line 194 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 194 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 188 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t19 = h4_ret0;
+#line 188 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t19;
+#line 1663 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 200 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(h_fixedbugs175avalueblockwhoselastiformatchleaves_Color h0_c) {
-#line 1504 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1668 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Color h1_s0;
     int64_t h2_r0;
+    int64_t h3_ret0;
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t1;
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t2;
     int64_t t3;
@@ -1514,6 +1679,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(h_fixedbugs175av
     int64_t t9;
     int64_t t10;
     int64_t t11;
+    int64_t t12;
     goto bb0;
 bb0:
 #line 201 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1541,7 +1707,9 @@ bb1:
 #line 201 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t11 = h2_r0;
 #line 201 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t11;
+    h3_ret0 = t11;
+#line 201 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 201 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 202 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1573,22 +1741,33 @@ bb6:
 #line 205 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t8 = INT64_C(3);
 #line 205 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t8;
+    h3_ret0 = t8;
+#line 205 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 205 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb7:
 #line 207 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(4);
 #line 207 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
-#line 1584 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h3_ret0 = t9;
+#line 207 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 207 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 200 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t12 = h3_ret0;
+#line 200 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t12;
+#line 1762 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64_t h0_k, int64_t h1_j) {
-#line 1589 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1767 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_x;
+    int64_t h5_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1601,6 +1780,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64
     int64_t t10;
     int64_t t11;
     int64_t t12;
+    int64_t t13;
     goto bb0;
 bb0:
 #line 212 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1624,7 +1804,9 @@ bb1:
 #line 220 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t12 = h4_x;
 #line 220 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t12;
+    h5_ret0 = t12;
+#line 220 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
 #line 220 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 214 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1664,13 +1846,21 @@ bb7:
 #line 217 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t9 = INT64_C(2);
 #line 217 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t9;
-#line 1669 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h5_ret0 = t9;
+#line 217 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb8;
+#line 217 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb8:
+#line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t13 = h5_ret0;
+#line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t13;
+#line 1859 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 222 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(int64_t h0_k, int64_t h1_j) {
-#line 1674 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1864 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_s1;
@@ -1762,15 +1952,16 @@ bb8:
     h_library_exit(t10);
 #line 227 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     goto bb5;
-#line 1766 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1956 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_loops_or_returns(int64_t h0_k, int64_t h1_j) {
-#line 1771 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 1961 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_x;
+    int64_t h5_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1784,6 +1975,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_loops_or_returns(int64
     int64_t t11;
     int64_t t12;
     int64_t t13;
+    int64_t t14;
     goto bb0;
 bb0:
 #line 233 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1807,7 +1999,9 @@ bb1:
 #line 242 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = h4_x;
 #line 242 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
+    h5_ret0 = t13;
+#line 242 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb11;
 #line 242 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 235 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1843,7 +2037,9 @@ bb7:
 #line 239 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t10 = INT64_C(2);
 #line 239 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t10;
+    h5_ret0 = t10;
+#line 239 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb11;
 #line 239 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb8:
 #line 236 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1864,12 +2060,18 @@ bb9:
 bb10:
 #line 237 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     goto bb5;
-#line 1868 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 237 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb11:
+#line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t14 = h5_ret0;
+#line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t14;
+#line 2070 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 244 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h0_k, int64_t h1_j) {
-#line 1873 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2075 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h2_s0;
     int64_t h3_r0;
     int64_t h4_x;
@@ -1959,19 +2161,20 @@ bb8:
 #line 250 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb9:
 #line 248 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-#line 1963 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2165 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_panic_assert(t8);
     hero_unreachable();
 }
 
 #line 255 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(int64_t h0_k, int64_t h1_j, int64_t h2_m) {
-#line 1970 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2172 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t h3_s0;
     int64_t h4_r0;
     int64_t h5_s1;
     int64_t h6_s2;
     int64_t h7_x;
+    int64_t h8_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1990,6 +2193,7 @@ int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(int64_t h0_
     int64_t t16;
     int64_t t17;
     int64_t t18;
+    int64_t t19;
     goto bb0;
 bb0:
 #line 256 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -2013,7 +2217,9 @@ bb1:
 #line 266 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t18 = h7_x;
 #line 266 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t18;
+    h8_ret0 = t18;
+#line 266 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb13;
 #line 266 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb2:
 #line 258 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -2063,13 +2269,17 @@ bb8:
 #line 263 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t15 = INT64_C(3);
 #line 263 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t15;
+    h8_ret0 = t15;
+#line 263 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb13;
 #line 263 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb10:
 #line 261 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t13 = INT64_C(1);
 #line 261 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t13;
+    h8_ret0 = t13;
+#line 261 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb13;
 #line 261 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb11:
 #line 261 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -2079,13 +2289,21 @@ bb12:
 #line 262 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t14 = INT64_C(2);
 #line 262 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    return t14;
-#line 2084 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+    h8_ret0 = t14;
+#line 262 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    goto bb13;
+#line 262 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+bb13:
+#line 255 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    t19 = h8_ret0;
+#line 255 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
+    return t19;
+#line 2302 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 
 #line 268 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 void h_fixedbugs175avalueblockwhoselastiformatchleaves_main(void) {
-#line 2089 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2307 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h0_p;
     HeroArrayHeader * h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -2304,7 +2522,7 @@ bb0:
     t86 = h1_own1;
 #line 279 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     h1_own1 = t33;
-#line 2308 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2526 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_decref(t86);
 #line 279 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t34 = h_fixedbugs175avalueblockwhoselastiformatchleaves_in_a_loop(t33);
@@ -2356,7 +2574,7 @@ bb0:
     t87 = h2_own2;
 #line 284 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     h2_own2 = t46;
-#line 2360 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2578 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_str_decref(t87);
 #line 284 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     hero_print_str(t46);
@@ -2486,17 +2704,17 @@ bb0:
     hero_print_int(t85);
 #line 296 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     hero_print_end();
-#line 2490 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2708 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_array_decref(h1_own1);
 #line 296 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-#line 2493 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2711 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     hero_str_decref(h2_own2);
     return;
 }
 
 #line 219 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 2500 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2718 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -2506,7 +2724,7 @@ bb0:
     (void)hero_exit(t1);
 #line 220 "<heroes library>"
     return;
-#line 2510 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
+#line 2728 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs175avalueblockwhoselastiformatchleaves_Color_eq(const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *a, const h_fixedbugs175avalueblockwhoselastiformatchleaves_Color *b) {
     if (a->tag != b->tag) return false;

@@ -176,6 +176,7 @@ int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) {
     int64_t h5_xx;
     int64_t h6_yy;
     int64_t h7_nx;
+    int64_t h8_ret0;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -219,6 +220,7 @@ int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) {
     int64_t t41;
     int64_t t42;
     int64_t t43;
+    int64_t t44;
     goto bb0;
 bb0:
 #line 35 "examples/mandelbrot/main.hero"
@@ -300,7 +302,9 @@ bb3:
 #line 50 "examples/mandelbrot/main.hero"
     t43 = h_main_LIMIT();
 #line 50 "examples/mandelbrot/main.hero"
-    return t43;
+    h8_ret0 = t43;
+#line 50 "examples/mandelbrot/main.hero"
+    goto bb7;
 #line 50 "examples/mandelbrot/main.hero"
 bb4:
 #line 45 "examples/mandelbrot/main.hero"
@@ -358,17 +362,25 @@ bb5:
 #line 44 "examples/mandelbrot/main.hero"
     t24 = h4_n;
 #line 44 "examples/mandelbrot/main.hero"
-    return t24;
+    h8_ret0 = t24;
+#line 44 "examples/mandelbrot/main.hero"
+    goto bb7;
 #line 44 "examples/mandelbrot/main.hero"
 bb6:
 #line 44 "examples/mandelbrot/main.hero"
     goto bb4;
-#line 367 "main.c"
+#line 44 "examples/mandelbrot/main.hero"
+bb7:
+#line 34 "examples/mandelbrot/main.hero"
+    t44 = h8_ret0;
+#line 34 "examples/mandelbrot/main.hero"
+    return t44;
+#line 379 "main.c"
 }
 
 #line 53 "examples/mandelbrot/main.hero"
 int64_t h_main_row_total(int64_t h0_row) {
-#line 372 "main.c"
+#line 384 "main.c"
     int64_t h1_total;
     int64_t h2_cy;
     int64_t h3_col;
@@ -511,12 +523,12 @@ bb3:
     t34 = h1_total;
 #line 63 "examples/mandelbrot/main.hero"
     return t34;
-#line 515 "main.c"
+#line 527 "main.c"
 }
 
 #line 66 "examples/mandelbrot/main.hero"
 int64_t h_main_band(int64_t h0_index) {
-#line 520 "main.c"
+#line 532 "main.c"
     hero_thread_guard("main.band");
     int64_t h1_total;
     int64_t h2_row;
@@ -601,7 +613,7 @@ bb3:
     t19 = h1_total;
 #line 74 "examples/mandelbrot/main.hero"
     return t19;
-#line 605 "main.c"
+#line 617 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -611,7 +623,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 
 #line 76 "examples/mandelbrot/main.hero"
 int64_t h_main_together(void) {
-#line 615 "main.c"
+#line 627 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_total;
@@ -661,15 +673,15 @@ bb0:
     t34 = h6_own6;
 #line 77 "examples/mandelbrot/main.hero"
     h6_own6 = t1;
-#line 665 "main.c"
+#line 677 "main.c"
     hero_array_decref(t34);
 #line 77 "examples/mandelbrot/main.hero"
     t35 = h0_handles;
-#line 669 "main.c"
+#line 681 "main.c"
     hero_array_incref(t1);
 #line 77 "examples/mandelbrot/main.hero"
     h0_handles = t1;
-#line 673 "main.c"
+#line 685 "main.c"
     hero_array_decref(t35);
 #line 78 "examples/mandelbrot/main.hero"
     t2 = INT64_C(0);
@@ -725,11 +737,11 @@ bb3:
     t17 = h0_handles;
 #line 86 "examples/mandelbrot/main.hero"
     t36 = h3_xs0;
-#line 729 "main.c"
+#line 741 "main.c"
     hero_array_incref(t17);
 #line 86 "examples/mandelbrot/main.hero"
     h3_xs0 = t17;
-#line 733 "main.c"
+#line 745 "main.c"
     hero_array_decref(t36);
 #line 86 "examples/mandelbrot/main.hero"
     t18 = INT64_C(0);
@@ -787,20 +799,20 @@ bb6:
 bb7:
 #line 89 "examples/mandelbrot/main.hero"
     t33 = h2_total;
-#line 791 "main.c"
+#line 803 "main.c"
     hero_array_decref(h0_handles);
 #line 89 "examples/mandelbrot/main.hero"
-#line 794 "main.c"
+#line 806 "main.c"
     hero_array_decref(h3_xs0);
 #line 89 "examples/mandelbrot/main.hero"
-#line 797 "main.c"
+#line 809 "main.c"
     hero_array_decref(h6_own6);
     return t33;
 }
 
 #line 91 "examples/mandelbrot/main.hero"
 int64_t h_main_alone(void) {
-#line 804 "main.c"
+#line 816 "main.c"
     int64_t h0_total;
     int64_t h1_row;
     int64_t t1;
@@ -866,12 +878,12 @@ bb3:
     t13 = h0_total;
 #line 99 "examples/mandelbrot/main.hero"
     return t13;
-#line 870 "main.c"
+#line 882 "main.c"
 }
 
 #line 101 "examples/mandelbrot/main.hero"
 void h_main_main(void) {
-#line 875 "main.c"
+#line 887 "main.c"
     HeroStr t1;
     int64_t t2;
     HeroStr t3;
@@ -908,7 +920,7 @@ bb0:
     hero_print_end();
 #line 102 "examples/mandelbrot/main.hero"
     return;
-#line 912 "main.c"
+#line 924 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

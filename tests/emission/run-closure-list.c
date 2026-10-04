@@ -251,8 +251,9 @@ bb0:
 #line 34 "tests/golden/run/closure-list.hero"
 h_0opt_e201354 h_closurelist_halve(int64_t h0_n) {
 #line 254 "closurelist.c"
-    h_0opt_e201354 h1_own1 = {0};
+    h_0opt_e201354 h1_ret0 = {0};
     h_0opt_e201354 h2_own2 = {0};
+    h_0opt_e201354 h3_own3 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -267,6 +268,7 @@ h_0opt_e201354 h_closurelist_halve(int64_t h0_n) {
     h_0opt_e201354 t12;
     h_0opt_e201354 t13;
     h_0opt_e201354 t14;
+    h_0opt_e201354 t15;
     goto bb0;
 bb0:
 #line 35 "tests/golden/run/closure-list.hero"
@@ -300,61 +302,66 @@ bb1:
 #line 37 "tests/golden/run/closure-list.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11};
 #line 37 "tests/golden/run/closure-list.hero"
-    t13 = h1_own1;
+    t14 = h2_own2;
 #line 37 "tests/golden/run/closure-list.hero"
-    h1_own1 = t12;
-#line 307 "closurelist.c"
-    h_0opt_e201354_release(&t13);
+    h2_own2 = t12;
+#line 309 "closurelist.c"
+    h_0opt_e201354_release(&t14);
 #line 37 "tests/golden/run/closure-list.hero"
-#line 310 "closurelist.c"
-    h_0opt_e201354_retain(&t12);
+    h1_ret0 = t12;
 #line 37 "tests/golden/run/closure-list.hero"
-#line 313 "closurelist.c"
-    h_0opt_e201354_release(&h1_own1);
+    goto bb4;
 #line 37 "tests/golden/run/closure-list.hero"
-#line 316 "closurelist.c"
-    h_0opt_e201354_release(&h2_own2);
-    return t12;
 bb2:
 #line 36 "tests/golden/run/closure-list.hero"
     t6 = HERO_STR_LIT(hero_str_1d4477);
 #line 36 "tests/golden/run/closure-list.hero"
     t7 = HERO_STR_LIT(hero_str_60844662);
-#line 324 "closurelist.c"
+#line 321 "closurelist.c"
     hero_str_incref(t6);
 #line 36 "tests/golden/run/closure-list.hero"
-#line 327 "closurelist.c"
+#line 324 "closurelist.c"
     hero_str_incref(t7);
 #line 36 "tests/golden/run/closure-list.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
 #line 36 "tests/golden/run/closure-list.hero"
-    t14 = h2_own2;
+    t15 = h3_own3;
 #line 36 "tests/golden/run/closure-list.hero"
-    h2_own2 = t8;
-#line 335 "closurelist.c"
-    h_0opt_e201354_release(&t14);
+    h3_own3 = t8;
+#line 332 "closurelist.c"
+    h_0opt_e201354_release(&t15);
 #line 36 "tests/golden/run/closure-list.hero"
-#line 338 "closurelist.c"
-    h_0opt_e201354_retain(&t8);
+    h1_ret0 = t8;
 #line 36 "tests/golden/run/closure-list.hero"
-#line 341 "closurelist.c"
-    h_0opt_e201354_release(&h1_own1);
+    goto bb4;
 #line 36 "tests/golden/run/closure-list.hero"
-#line 344 "closurelist.c"
-    h_0opt_e201354_release(&h2_own2);
-    return t8;
 bb3:
+#line 36 "tests/golden/run/closure-list.hero"
     goto bb1;
+#line 36 "tests/golden/run/closure-list.hero"
+bb4:
+#line 34 "tests/golden/run/closure-list.hero"
+    t13 = h1_ret0;
+#line 346 "closurelist.c"
+    h_0opt_e201354_retain(&t13);
+#line 34 "tests/golden/run/closure-list.hero"
+#line 349 "closurelist.c"
+    h_0opt_e201354_release(&h2_own2);
+#line 34 "tests/golden/run/closure-list.hero"
+#line 352 "closurelist.c"
+    h_0opt_e201354_release(&h3_own3);
+    return t13;
 }
 
 #line 39 "tests/golden/run/closure-list.hero"
 h_0opt_e201354 h_closurelist_chain(int64_t h0_n) {
-#line 353 "closurelist.c"
+#line 359 "closurelist.c"
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_v;
-    h_0opt_e201354 h3_own3 = {0};
+    h_0opt_e201354 h3_ret0 = {0};
     h_0opt_e201354 h4_own4 = {0};
     h_0opt_e201354 h5_own5 = {0};
+    h_0opt_e201354 h6_own6 = {0};
     int64_t t1;
     h_0opt_e201354 t2;
     h_0opt_e201354 t3;
@@ -374,6 +381,7 @@ h_0opt_e201354 h_closurelist_chain(int64_t h0_n) {
     h_0opt_e201354 t17;
     h_0opt_e201354 t18;
     h_0opt_e201354 t19;
+    h_0opt_e201354 t20;
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/closure-list.hero"
@@ -381,19 +389,19 @@ bb0:
 #line 40 "tests/golden/run/closure-list.hero"
     t2 = h_closurelist_halve(t1);
 #line 40 "tests/golden/run/closure-list.hero"
-    t16 = h3_own3;
+    t17 = h4_own4;
 #line 40 "tests/golden/run/closure-list.hero"
-    h3_own3 = t2;
-#line 388 "closurelist.c"
-    h_0opt_e201354_release(&t16);
+    h4_own4 = t2;
+#line 396 "closurelist.c"
+    h_0opt_e201354_release(&t17);
 #line 40 "tests/golden/run/closure-list.hero"
-    t17 = h1_f0;
-#line 392 "closurelist.c"
+    t18 = h1_f0;
+#line 400 "closurelist.c"
     h_0opt_e201354_retain(&t2);
 #line 40 "tests/golden/run/closure-list.hero"
     h1_f0 = t2;
-#line 396 "closurelist.c"
-    h_0opt_e201354_release(&t17);
+#line 404 "closurelist.c"
+    h_0opt_e201354_release(&t18);
 #line 40 "tests/golden/run/closure-list.hero"
     t3 = h1_f0;
 #line 40 "tests/golden/run/closure-list.hero"
@@ -421,63 +429,59 @@ bb1:
 #line 41 "tests/golden/run/closure-list.hero"
     t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t14};
 #line 41 "tests/golden/run/closure-list.hero"
-    t18 = h4_own4;
+    t19 = h5_own5;
 #line 41 "tests/golden/run/closure-list.hero"
-    h4_own4 = t15;
-#line 428 "closurelist.c"
-    h_0opt_e201354_release(&t18);
+    h5_own5 = t15;
+#line 436 "closurelist.c"
+    h_0opt_e201354_release(&t19);
 #line 41 "tests/golden/run/closure-list.hero"
-#line 431 "closurelist.c"
-    h_0opt_e201354_retain(&t15);
+    h3_ret0 = t15;
 #line 41 "tests/golden/run/closure-list.hero"
-#line 434 "closurelist.c"
-    h_0opt_e201354_release(&h1_f0);
+    goto bb3;
 #line 41 "tests/golden/run/closure-list.hero"
-#line 437 "closurelist.c"
-    h_0opt_e201354_release(&h3_own3);
-#line 41 "tests/golden/run/closure-list.hero"
-#line 440 "closurelist.c"
-    h_0opt_e201354_release(&h4_own4);
-#line 41 "tests/golden/run/closure-list.hero"
-#line 443 "closurelist.c"
-    h_0opt_e201354_release(&h5_own5);
-    return t15;
 bb2:
 #line 40 "tests/golden/run/closure-list.hero"
     t7 = h1_f0;
 #line 40 "tests/golden/run/closure-list.hero"
     t8 = t7.as.err;
-#line 451 "closurelist.c"
+#line 448 "closurelist.c"
     hero_failure_retain(&t8);
 #line 40 "tests/golden/run/closure-list.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
 #line 40 "tests/golden/run/closure-list.hero"
-    t19 = h5_own5;
+    t20 = h6_own6;
 #line 40 "tests/golden/run/closure-list.hero"
-    h5_own5 = t9;
-#line 459 "closurelist.c"
-    h_0opt_e201354_release(&t19);
+    h6_own6 = t9;
+#line 456 "closurelist.c"
+    h_0opt_e201354_release(&t20);
 #line 40 "tests/golden/run/closure-list.hero"
-#line 462 "closurelist.c"
-    h_0opt_e201354_retain(&t9);
+    h3_ret0 = t9;
 #line 40 "tests/golden/run/closure-list.hero"
-#line 465 "closurelist.c"
+    goto bb3;
+#line 40 "tests/golden/run/closure-list.hero"
+bb3:
+#line 39 "tests/golden/run/closure-list.hero"
+    t16 = h3_ret0;
+#line 466 "closurelist.c"
+    h_0opt_e201354_retain(&t16);
+#line 39 "tests/golden/run/closure-list.hero"
+#line 469 "closurelist.c"
     h_0opt_e201354_release(&h1_f0);
-#line 40 "tests/golden/run/closure-list.hero"
-#line 468 "closurelist.c"
-    h_0opt_e201354_release(&h3_own3);
-#line 40 "tests/golden/run/closure-list.hero"
-#line 471 "closurelist.c"
+#line 39 "tests/golden/run/closure-list.hero"
+#line 472 "closurelist.c"
     h_0opt_e201354_release(&h4_own4);
-#line 40 "tests/golden/run/closure-list.hero"
-#line 474 "closurelist.c"
+#line 39 "tests/golden/run/closure-list.hero"
+#line 475 "closurelist.c"
     h_0opt_e201354_release(&h5_own5);
-    return t9;
+#line 39 "tests/golden/run/closure-list.hero"
+#line 478 "closurelist.c"
+    h_0opt_e201354_release(&h6_own6);
+    return t16;
 }
 
 #line 43 "tests/golden/run/closure-list.hero"
 HeroStr h_closurelist_show(int64_t h0_n) {
-#line 481 "closurelist.c"
+#line 485 "closurelist.c"
     HeroStr h1_own1 = {0};
     int64_t t1;
     HeroStr t2;
@@ -492,20 +496,20 @@ bb0:
     t3 = h1_own1;
 #line 44 "tests/golden/run/closure-list.hero"
     h1_own1 = t2;
-#line 496 "closurelist.c"
+#line 500 "closurelist.c"
     hero_str_decref(t3);
 #line 44 "tests/golden/run/closure-list.hero"
-#line 499 "closurelist.c"
+#line 503 "closurelist.c"
     hero_str_incref(t2);
 #line 44 "tests/golden/run/closure-list.hero"
-#line 502 "closurelist.c"
+#line 506 "closurelist.c"
     hero_str_decref(h1_own1);
     return t2;
 }
 
 #line 46 "tests/golden/run/closure-list.hero"
 void h_closurelist_main(void) {
-#line 509 "closurelist.c"
+#line 513 "closurelist.c"
     HeroArrayHeader * h0_xs = {0};
     HeroMapHeader * h1_m = {0};
     h_closurelist_Point h2_p;
@@ -679,15 +683,15 @@ bb0:
     t107 = h12_own12;
 #line 47 "tests/golden/run/closure-list.hero"
     h12_own12 = t4;
-#line 683 "closurelist.c"
+#line 687 "closurelist.c"
     hero_array_decref(t107);
 #line 47 "tests/golden/run/closure-list.hero"
     t108 = h0_xs;
-#line 687 "closurelist.c"
+#line 691 "closurelist.c"
     hero_array_incref(t4);
 #line 47 "tests/golden/run/closure-list.hero"
     h0_xs = t4;
-#line 691 "closurelist.c"
+#line 695 "closurelist.c"
     hero_array_decref(t108);
 #line 48 "tests/golden/run/closure-list.hero"
     t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -695,15 +699,15 @@ bb0:
     t109 = h13_own13;
 #line 48 "tests/golden/run/closure-list.hero"
     h13_own13 = t5;
-#line 699 "closurelist.c"
+#line 703 "closurelist.c"
     hero_map_decref(t109);
 #line 48 "tests/golden/run/closure-list.hero"
     t110 = h1_m;
-#line 703 "closurelist.c"
+#line 707 "closurelist.c"
     hero_map_incref(t5);
 #line 48 "tests/golden/run/closure-list.hero"
     h1_m = t5;
-#line 707 "closurelist.c"
+#line 711 "closurelist.c"
     hero_map_decref(t110);
 #line 49 "tests/golden/run/closure-list.hero"
     t6 = HERO_STR_LIT(hero_str_61);
@@ -735,7 +739,7 @@ bb0:
     t111 = h14_own14;
 #line 54 "tests/golden/run/closure-list.hero"
     h14_own14 = t14;
-#line 739 "closurelist.c"
+#line 743 "closurelist.c"
     hero_array_decref(t111);
 #line 54 "tests/golden/run/closure-list.hero"
     t15 = hero_array_sort(t14);
@@ -743,15 +747,15 @@ bb0:
     t112 = h15_own15;
 #line 54 "tests/golden/run/closure-list.hero"
     h15_own15 = t15;
-#line 747 "closurelist.c"
+#line 751 "closurelist.c"
     hero_array_decref(t112);
 #line 54 "tests/golden/run/closure-list.hero"
     t113 = h4_xs0;
-#line 751 "closurelist.c"
+#line 755 "closurelist.c"
     hero_array_incref(t15);
 #line 54 "tests/golden/run/closure-list.hero"
     h4_xs0 = t15;
-#line 755 "closurelist.c"
+#line 759 "closurelist.c"
     hero_array_decref(t113);
 #line 54 "tests/golden/run/closure-list.hero"
     t16 = INT64_C(0);
@@ -781,11 +785,11 @@ bb2:
     t23 = *(HeroStr const *)hero_array_at(t21, t22);
 #line 54 "tests/golden/run/closure-list.hero"
     t114 = h6_k;
-#line 785 "closurelist.c"
+#line 789 "closurelist.c"
     hero_str_incref(t23);
 #line 54 "tests/golden/run/closure-list.hero"
     h6_k = t23;
-#line 789 "closurelist.c"
+#line 793 "closurelist.c"
     hero_str_decref(t114);
 #line 55 "tests/golden/run/closure-list.hero"
     t24 = h3_total;
@@ -815,15 +819,15 @@ bb2:
     t115 = h16_own16;
 #line 55 "tests/golden/run/closure-list.hero"
     h16_own16 = t27;
-#line 819 "closurelist.c"
+#line 823 "closurelist.c"
     h_0opt_e201354_release(&t115);
 #line 55 "tests/golden/run/closure-list.hero"
     t116 = h7_f0;
-#line 823 "closurelist.c"
+#line 827 "closurelist.c"
     h_0opt_e201354_retain(&t27);
 #line 55 "tests/golden/run/closure-list.hero"
     h7_f0 = t27;
-#line 827 "closurelist.c"
+#line 831 "closurelist.c"
     h_0opt_e201354_release(&t116);
 #line 55 "tests/golden/run/closure-list.hero"
     t28 = h7_f0;
@@ -873,7 +877,7 @@ bb6:
     t32 = h7_f0;
 #line 55 "tests/golden/run/closure-list.hero"
     t33 = t32.as.err;
-#line 877 "closurelist.c"
+#line 881 "closurelist.c"
     hero_panic_must(t33);
     hero_unreachable();
 bb7:
@@ -923,15 +927,15 @@ bb9:
     t117 = h17_own17;
 #line 66 "tests/golden/run/closure-list.hero"
     h17_own17 = t68;
-#line 927 "closurelist.c"
+#line 931 "closurelist.c"
     h_0opt_e201354_release(&t117);
 #line 66 "tests/golden/run/closure-list.hero"
     t118 = h9_f1;
-#line 931 "closurelist.c"
+#line 935 "closurelist.c"
     h_0opt_e201354_retain(&t68);
 #line 66 "tests/golden/run/closure-list.hero"
     h9_f1 = t68;
-#line 935 "closurelist.c"
+#line 939 "closurelist.c"
     h_0opt_e201354_release(&t118);
 #line 66 "tests/golden/run/closure-list.hero"
     t69 = h9_f1;
@@ -1037,7 +1041,7 @@ bb15:
     t119 = h18_own18;
 #line 67 "tests/golden/run/closure-list.hero"
     h18_own18 = t84;
-#line 1041 "closurelist.c"
+#line 1045 "closurelist.c"
     hero_array_decref(t119);
 #line 67 "tests/golden/run/closure-list.hero"
     t85 = HERO_STR_LIT(hero_str_2c);
@@ -1047,7 +1051,7 @@ bb15:
     t120 = h19_own19;
 #line 67 "tests/golden/run/closure-list.hero"
     h19_own19 = t86;
-#line 1051 "closurelist.c"
+#line 1055 "closurelist.c"
     hero_str_decref(t120);
 #line 67 "tests/golden/run/closure-list.hero"
     hero_print_int(t80);
@@ -1065,7 +1069,7 @@ bb15:
     t121 = h20_own20;
 #line 68 "tests/golden/run/closure-list.hero"
     h20_own20 = t88;
-#line 1069 "closurelist.c"
+#line 1073 "closurelist.c"
     hero_array_decref(t121);
 #line 68 "tests/golden/run/closure-list.hero"
     t89 = INT64_C(0);
@@ -1083,7 +1087,7 @@ bb15:
     t122 = h21_own21;
 #line 68 "tests/golden/run/closure-list.hero"
     h21_own21 = t94;
-#line 1087 "closurelist.c"
+#line 1091 "closurelist.c"
     hero_str_decref(t122);
 #line 68 "tests/golden/run/closure-list.hero"
     t95 = 0x1.e666666666666p+0;
@@ -1101,15 +1105,15 @@ bb15:
     t123 = h22_own22;
 #line 68 "tests/golden/run/closure-list.hero"
     h22_own22 = t96;
-#line 1105 "closurelist.c"
+#line 1109 "closurelist.c"
     h_0opt_e201354_release(&t123);
 #line 68 "tests/golden/run/closure-list.hero"
     t124 = h11_f2;
-#line 1109 "closurelist.c"
+#line 1113 "closurelist.c"
     h_0opt_e201354_retain(&t96);
 #line 68 "tests/golden/run/closure-list.hero"
     h11_f2 = t96;
-#line 1113 "closurelist.c"
+#line 1117 "closurelist.c"
     h_0opt_e201354_release(&t124);
 #line 68 "tests/golden/run/closure-list.hero"
     t97 = h11_f2;
@@ -1141,58 +1145,58 @@ bb16:
     hero_print_f64(t106);
 #line 68 "tests/golden/run/closure-list.hero"
     hero_print_end();
-#line 1145 "closurelist.c"
+#line 1149 "closurelist.c"
     hero_array_decref(h0_xs);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1148 "closurelist.c"
+#line 1152 "closurelist.c"
     hero_map_decref(h1_m);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1151 "closurelist.c"
+#line 1155 "closurelist.c"
     hero_array_decref(h4_xs0);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1154 "closurelist.c"
+#line 1158 "closurelist.c"
     hero_str_decref(h6_k);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1157 "closurelist.c"
+#line 1161 "closurelist.c"
     h_0opt_e201354_release(&h7_f0);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1160 "closurelist.c"
+#line 1164 "closurelist.c"
     h_0opt_e201354_release(&h9_f1);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1163 "closurelist.c"
+#line 1167 "closurelist.c"
     h_0opt_e201354_release(&h11_f2);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1166 "closurelist.c"
+#line 1170 "closurelist.c"
     hero_array_decref(h12_own12);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1169 "closurelist.c"
+#line 1173 "closurelist.c"
     hero_map_decref(h13_own13);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1172 "closurelist.c"
+#line 1176 "closurelist.c"
     hero_array_decref(h14_own14);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1175 "closurelist.c"
+#line 1179 "closurelist.c"
     hero_array_decref(h15_own15);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1178 "closurelist.c"
+#line 1182 "closurelist.c"
     h_0opt_e201354_release(&h16_own16);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1181 "closurelist.c"
+#line 1185 "closurelist.c"
     h_0opt_e201354_release(&h17_own17);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1184 "closurelist.c"
+#line 1188 "closurelist.c"
     hero_array_decref(h18_own18);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1187 "closurelist.c"
+#line 1191 "closurelist.c"
     hero_str_decref(h19_own19);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1190 "closurelist.c"
+#line 1194 "closurelist.c"
     hero_array_decref(h20_own20);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1193 "closurelist.c"
+#line 1197 "closurelist.c"
     hero_str_decref(h21_own21);
 #line 68 "tests/golden/run/closure-list.hero"
-#line 1196 "closurelist.c"
+#line 1200 "closurelist.c"
     h_0opt_e201354_release(&h22_own22);
     return;
 bb17:
@@ -1200,7 +1204,7 @@ bb17:
     t101 = h11_f2;
 #line 68 "tests/golden/run/closure-list.hero"
     t102 = t101.as.err;
-#line 1204 "closurelist.c"
+#line 1208 "closurelist.c"
     hero_panic_must(t102);
     hero_unreachable();
 }
@@ -1209,7 +1213,7 @@ bb17:
 /* map<i64, str> */
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
-#line 1213 "closurelist.c"
+#line 1217 "closurelist.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -1245,25 +1249,25 @@ bb0:
     t20 = h6_own6;
 #line 37 "<heroes library>"
     h6_own6 = t1;
-#line 1249 "closurelist.c"
+#line 1253 "closurelist.c"
     hero_array_decref(t20);
 #line 37 "<heroes library>"
     t21 = h2_out;
-#line 1253 "closurelist.c"
+#line 1257 "closurelist.c"
     hero_array_incref(t1);
 #line 37 "<heroes library>"
     h2_out = t1;
-#line 1257 "closurelist.c"
+#line 1261 "closurelist.c"
     hero_array_decref(t21);
 #line 38 "<heroes library>"
     t2 = h0_xs;
 #line 38 "<heroes library>"
     t22 = h3_xs0;
-#line 1263 "closurelist.c"
+#line 1267 "closurelist.c"
     hero_array_incref(t2);
 #line 38 "<heroes library>"
     h3_xs0 = t2;
-#line 1267 "closurelist.c"
+#line 1271 "closurelist.c"
     hero_array_decref(t22);
 #line 38 "<heroes library>"
     t3 = INT64_C(0);
@@ -1303,7 +1307,7 @@ bb2:
     t23 = h7_own7;
 #line 39 "<heroes library>"
     h7_own7 = t14;
-#line 1307 "closurelist.c"
+#line 1311 "closurelist.c"
     hero_str_decref(t23);
 #line 39 "<heroes library>"
     hero_array_push_owned(&h2_out, &t14);
@@ -1325,19 +1329,19 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1329 "closurelist.c"
+#line 1333 "closurelist.c"
     hero_array_incref(t19);
 #line 40 "<heroes library>"
-#line 1332 "closurelist.c"
+#line 1336 "closurelist.c"
     hero_array_decref(h2_out);
 #line 40 "<heroes library>"
-#line 1335 "closurelist.c"
+#line 1339 "closurelist.c"
     hero_array_decref(h3_xs0);
 #line 40 "<heroes library>"
-#line 1338 "closurelist.c"
+#line 1342 "closurelist.c"
     hero_array_decref(h6_own6);
 #line 40 "<heroes library>"
-#line 1341 "closurelist.c"
+#line 1345 "closurelist.c"
     hero_str_decref(h7_own7);
     return t19;
 }

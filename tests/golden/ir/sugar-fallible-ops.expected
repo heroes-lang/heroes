@@ -1,11 +1,11 @@
 function widen(v: i64?) -> i64
-    slots  $f0: i64? · $f1: i64? · $r0: i64 · $f2: i64?
+    slots  $f0: i64? · $f1: i64? · $r0: i64 · $f2: i64? · $ret0: i64
     bb0  entry
         $t1: i64? = load v
-        $t24: i64? = load $f0
+        $t25: i64? = load $f0
         incref $t1
         store $f0 <- $t1
-        decref $t24
+        decref $t25
         $t2: i64? = load $f0
         $t3: i64 = tag $t2
         $t4: i64 = const 1
@@ -13,10 +13,10 @@ function widen(v: i64?) -> i64
         branch $t5 -> bb2 else bb3
     bb1  if: join    preds bb3
         $t15: i64? = load v
-        $t25: i64? = load $f2
+        $t26: i64? = load $f2
         incref $t15
         store $f2 <- $t15
-        decref $t25
+        decref $t26
         $t16: i64? = load $f2
         $t17: i64 = tag $t16
         $t18: i64 = const 0
@@ -24,10 +24,10 @@ function widen(v: i64?) -> i64
         branch $t19 -> bb7 else bb8
     bb2  if: then    preds bb0
         $t6: i64? = load v
-        $t26: i64? = load $f1
+        $t27: i64? = load $f1
         incref $t6
         store $f1 <- $t6
-        decref $t26
+        decref $t27
         $t7: i64? = load $f1
         $t8: i64 = tag $t7
         $t9: i64 = const 0
@@ -46,19 +46,21 @@ function widen(v: i64?) -> i64
         jump bb6
     bb6  default: join    preds bb4, bb5
         $t14: i64 = load $r0
-        decref_slot $f0
-        decref_slot $f1
-        decref_slot $f2
-        return $t14
+        store $ret0 <- $t14
+        jump bb9
     bb7  must: ok    preds bb1
         $t22: i64? = load $f2
         $t23: i64 = payload $t22 .ok
-        decref_slot $f0
-        decref_slot $f1
-        decref_slot $f2
-        return $t23
+        store $ret0 <- $t23
+        jump bb9
     bb8  must: abort    preds bb1
         $t20: i64? = load $f2
         $t21: the error (`code`, `msg`) = payload $t20 .err
         abort must($t21)
         unreachable
+    bb9  exit    preds bb6, bb7
+        $t24: i64 = load $ret0
+        decref_slot $f0
+        decref_slot $f1
+        decref_slot $f2
+        return $t24
