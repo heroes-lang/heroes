@@ -586,6 +586,13 @@ function run_all(scratch: str, only: str) -> report.Report?
         if strings.ends_with(text: path, suffix: ".hero") && (only == "" || strings.contains(text: path, needle: only))
             modules @ modules.push(path)
 
+    # **A narrowed walk that selected no module asked nothing, and records
+    # nothing** (defect 209, 2026-10-04), so the harness's own rule reads it:
+    # zero cases exit 2. The ceiling below is one case for every module the
+    # walk took, so a name no module has read `1 passed, 0 failed`.
+    if only != "" && modules.len() == 0
+        return ok(r)
+
     if only == ""
         floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
     over: [str] @ []
@@ -952,6 +959,21 @@ test "the ceiling is per file, and a decided file keeps its own"
     # arrives for defect 032's repair, an ADDITION, which is the direction this
     # assert exists to make somebody type. The reason is above DECIDED.
     assert DECIDED.len() == 18
+
+# DEFECT 209, held as a test (2026-10-04): a narrowed walk that selects no
+# module records nothing, where it read one pass, and one that selects a module
+# asks its ceiling.
+test "fixedbugs: a narrowed layout walk that selects no module records nothing (defect 209)"
+    scratch = shell.own_scratch()
+    none = run_all(scratch: scratch, only: "no-module-is-named-this")
+    assert !none.is_err()
+    assert none.must().passed == 0
+    assert none.must().failed == 0
+    one = run_all(scratch: scratch, only: "selfhost/ast.hero")
+    assert !one.is_err()
+    assert one.must().passed == 1
+    assert one.must().failed == 0
+    assert !shell.remove_tree(scratch).is_err()
 
 test "an append to the lexer's state through the field is found, and one in a comment is not"
     text = "function f(@l: LexState)\n    l.tokens @ l.tokens.push(t)\n    # l.tokens @ l.tokens.push(t) is the slow spelling\n    push_token(@l.tokens, t)\n"
