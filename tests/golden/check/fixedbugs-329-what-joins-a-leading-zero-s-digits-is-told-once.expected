@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:18:9: error[leading_zero]: `0644` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:19:9: error[leading_zero]: `007` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:20:9: error[leading_zero]: `0_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:21:9: error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:22:9: error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:23:9: error[leading_zero]: `0644` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:24:11: error[leading_zero]: `0644` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-329-what-joins-a-leading-zero-s-digits-is-told-once.hero:25:10: error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that

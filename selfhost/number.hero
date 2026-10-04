@@ -129,10 +129,18 @@ function number(@l: state.LexState, text: str)
 
         if l.pos < text.len()
             follows @ bytes.char_at(text, l.pos)
-        state.error_token(
-            @l,
-            leading_zeros.told(written: text.slice(from: start, to: l.pos), span: token.Span(start: start, end: l.pos), follows: follows)
+        d = leading_zeros.told(
+            written: text.slice(from: start, to: l.pos),
+            span: token.Span(start: start, end: l.pos),
+            follows: follows
         )
+
+        # **What joins the digits is this literal's, told in its note** (defect
+        # 329): `0644u` and `00x7` were told again, as a name after a number.
+        l.pos @ leading_zeros.joined_end(text, at: l.pos)
+
+        state.push_diagnostic(@l.diagnostics, d)
+        state.error_token_at(@l, start)
         return
 
     if fraction_follows
