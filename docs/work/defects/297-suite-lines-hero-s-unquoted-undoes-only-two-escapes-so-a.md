@@ -3,3 +3,5 @@
     **Origin:** lane b9-emit, 2026-10-04 (its reply's *found beside*).
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): an instrument that would misread a name no tracked path holds; no program moves.
+
+    Repaired at `f6c9d74d`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.
