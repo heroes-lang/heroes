@@ -3,3 +3,5 @@
     **Origin:** panel 187's R10 (filed beside the sitting), 2026-10-03, and the fourth round's differential reading (`scratchpad/inst-187/r4-differential.txt`, 2026-10-03): the port owes a frozen plan in the tree and the subtraction of an unmutated program's own messages.
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an instrument's home; no program moves.
+
+    **2026-10-04, batch 8's gate**: the comparator read beside the instrument, `<scratchpad>/inst-187/differential.py`, took a pair's *told* status for a boolean where the instrument writes a word, `same`, `other` or `hidden`, so a told second newly hidden, one of R2's three findings, could not be one. Repaired there and re-run: rounds 4 and 6 moved no told status, batch 8 moved one pair (defect 271). The port owes the comparison with the instrument, in the tree, with a test that makes each finding fire.

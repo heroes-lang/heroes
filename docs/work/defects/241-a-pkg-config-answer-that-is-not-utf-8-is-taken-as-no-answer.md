@@ -1,0 +1,5 @@
+- [ ] **241 — a `pkg-config` answer that is not UTF-8 is taken as no answer, so the package's flags are dropped and the build succeeds without them** | `extern "ab.h" package "u"` over `function seven() -> i32`, `u.pc` answering `Cflags: -DX=caf<e9> -I/nowhere` (`pkg-config --cflags u` prints those bytes): `build` exit 0, *wrote*, and neither `-DX` nor `-I/nowhere` reaches clang; the program prints 7 (batch 8's round compiler at `1eb854c3`, this Mac, Homebrew's `pkg-config`, 2026-10-04, `<scratchpad>/batch8/ffi/repro/r237/badutf.hero` with `pcbad/`) | `selfhost/cli/libraries.hero:286` (`resolve_packages`, the answer's read failing as not text and taken as no words) · panel 189's Q6 · **class: blocking**
+
+    **Origin:** batch 8's FFI lane beside 237, 2026-10-04 (its report's addendum), handed to panel 189 as a shape of its Q6; reproduced by the coordinator on the round's compiler the same night.
+
+    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a wrong build accepted at exit 0: the flags a package names dropped in silence.
