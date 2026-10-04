@@ -1,0 +1,5 @@
+error[unknown_name]: nothing named `missing_name` is in scope
+  at tests/golden/full/fixedbugs-289-a-column-counts-characters.hero:6:21
+    |
+  6 |     print("café 😀", missing_name)  #~ unknown_name
+    |                     ^^^^^^^^^^^^

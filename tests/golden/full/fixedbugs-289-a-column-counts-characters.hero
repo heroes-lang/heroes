@@ -1,0 +1,6 @@
+# Defect 289, 2026-10-04: the place and the caret of a message that stands
+# after characters of two and four bytes on its line, the column counted in
+# characters, as the caret is placed.
+
+function main()
+    print("café 😀", missing_name)  #~ unknown_name

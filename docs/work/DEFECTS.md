@@ -12,11 +12,13 @@ open count is the number of files there, which `records/counts` holds the
 ROADMAP's line to, and the directory's `.gitkeep` keeps it in every clone on the
 day it is empty, which is the goal.
 
-**A defect file** is `NNN-<slug>.md`, `NNN` its number in three digits and
-`<slug>` its title's words lowercased, every run of other characters one `-`,
-cut at a word boundary to at most 60 characters. It holds one item in the shape
-of `.claude/rules/records.md` § The lists, its line first and its body indented
-under it; `records/lists` and `records/defects` are the executors.
+**A defect file** is `NNN-<slug>.md`, `NNN` its number in three digits or more,
+padded to three and never past (the thousandth is `1000`; amended 2026-10-04,
+defect 280), and `<slug>` its title's words lowercased, every run of other
+characters one `-`, cut at a word boundary to at most 60 characters. It holds
+one item in the shape of `.claude/rules/records.md` § The lists, its line first
+and its body indented under it; `records/lists` and `records/defects` are the
+executors.
 
 **Filing** one is a new file with the number the coordinator issues, one above
 the highest in `docs/work/defects/` and `docs/records/done/`, read and never

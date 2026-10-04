@@ -58,8 +58,9 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "grammar"])
 
+    # The refusal's own words (defect 317).
     if said.is_err()
-        report.keep_failure(@r, label: "grammar/runs", detail: "  cannot run `" + compiler + " grammar`")
+        report.keep_failure(@r, label: "grammar/runs", detail: "  `" + compiler + " grammar`: " + shell.refusal(said))
         return ok(r)
 
     if said.must().code != 0

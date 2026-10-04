@@ -1,0 +1,8 @@
+error[leading_zero]: `0700` starts with a zero, and this language reads no meaning into that
+  at tests/golden/full/fixedbugs-289-a-note-and-two-guesses.hero:7:12
+    |
+  7 |     mode = 0700  #~ leading_zero
+    |            ^^^^
+  note: C, and every language that copied it, reads a leading zero as octal — so `0700` is a number a reader will size wrong. Write `0o700` for the octal value, or `700` for the decimal one
+  fix (guess): octal: `0o700`
+  fix (guess): decimal: `700`

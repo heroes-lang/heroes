@@ -1,0 +1,11 @@
+error[unused_binding]: `a` is bound and never read — remove the binding, or read it
+  at tests/golden/full/fixedbugs-289-each-excerpt-its-own-gutter.hero:7:5
+    |
+  7 |     a = 1  #~ unused_binding
+    |     ^
+
+error[unused_binding]: `b` is bound and never read — remove the binding, or read it
+  at tests/golden/full/fixedbugs-289-each-excerpt-its-own-gutter.hero:105:5
+      |
+  105 |     b = 2  #~ unused_binding
+      |     ^

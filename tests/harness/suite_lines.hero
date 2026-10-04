@@ -118,11 +118,14 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
         words: [compiler, "build", item.source, "--emit-c"]
     )
 
+    # The refusal alone says what happened (defect 317): *the compiler never
+    # ran on* stood here before it, of a compiler that had run and written
+    # bytes that are not UTF-8.
     if said.is_err()
         report.keep_failure(
             @r,
             label: "lines/" + item.name,
-            detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(said)
+            detail: "  `build " + item.source + " --emit-c`: " + shell.refusal(said)
         )
         return
 
@@ -164,7 +167,7 @@ function starved(skipped: i64, found: i64) -> bool
 test "fixedbugs: a case that cannot emit is skipped only where the machine lacks what it binds"
     if !shell.can_run_scripts()
         return
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines-absence"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -200,6 +203,7 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP lines/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a few skips for a missing library pass, a third of the tree does not"
     assert !starved(skipped: 0, found: 235)
@@ -234,10 +238,15 @@ function offences(c: str, source: str) -> [str]
 
             if !space.is_err()
                 number = strings.to_number(rest.slice(from: 0, to: space.must()))
+                named = unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
 
-                if !number.is_err()
+                if !number.is_err() && !named.is_err()
                     claim_line @ number.must()
-                    claim_file @ unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
+                    claim_file @ named.must()
+                else if !number.is_err()
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " `" + strings.trimmed(row) + "` names no file this walk can read: " + unread(named) + " (from " + source + ")"
+                    )
 
             # A restore of the generated file names the line after its own
             # (defect 185): it is the printer's count, and a count it got
@@ -257,10 +266,18 @@ function offences(c: str, source: str) -> [str]
                 text = read_file(claim_file)
                 readable @ !text.is_err()
 
+                # **A claim on a file this walk cannot read is an offence,
+                # never a pass** (defect 297, 2026-10-04): it was passed over
+                # in silence, which is how a name read wrongly hid, since the
+                # file it misnamed is not there. Said once for each run of
+                # claims on the file.
                 if readable
                     body @ strings.lines(text.must())
                 else
                     body @ []
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " a claim names " + claim_file + ", which this walk cannot read, so no line of it is asked (from " + source + ")"
+                    )
 
             if readable
                 why: str @ ""
@@ -292,15 +309,22 @@ function shown(wrong: [str]) -> str
         return wrong.join("\n")
     return wrong.slice(from: 0, to: 3).join("\n") + "\n    … and " + (wrong.len() - 3).to_str() + " more"
 
-# `"file.hero"` as `file.hero`, with C's two escapes undone.
+# `"file.hero"` as `file.hero`, each escape the emitter writes in a `#line`
+# name undone: `\"`, `\\`, `\n`, `\r` and `\?` (`selfhost/emit/c_text.hero`'s
+# `line_name`). Any other escape, and a backslash that ends the name, is no
+# name this walk can read, and says so.
+#
+# **It undid two until defect 297 (2026-10-04)**, by dropping the backslash
+# and keeping the byte after it, so `\n` read as `n` and a name holding a line
+# end named another file; since defect 240 the emitter writes three more, and
+# before it an octal escape for each byte above ASCII, read as its digits.
 #
 # **Cut beside a backslash and nowhere else** (found beside defect 110,
 # 2026-09-27): this copied the name a byte at a time, and the emitter writes
 # a path's own bytes into `#line`, so the first file named above ASCII would
 # have stopped the suite with `string slice splits a character`. A backslash
-# is one byte never inside another character; dropping it leaves the byte it
-# escapes at the head of the next run, whatever character that byte starts.
-function unquoted(text: str) -> str
+# and every byte it escapes are ASCII, never inside another character.
+function unquoted(text: str) -> str?
     body: str @ strings.trimmed(text)
 
     if body.len() >= 2 && body[0] == 34 && body[body.len() - 1] == 34
@@ -310,18 +334,52 @@ function unquoted(text: str) -> str
     i: i64 @ 0
 
     while i < body.len()
-        if body[i] == 92 && i + 1 < body.len()
+        if body[i] == 92
+            if i + 1 == body.len()
+                return fail(code: "escape", msg: "`" + body + "` ends with a backslash")
+            meant = undone(body[i + 1])
+
+            if meant.is_err()
+                return fail(
+                    code: "escape",
+                    msg: "`" + body + "` holds an escape at byte " + i.to_str() + " that the emitter does not write"
+                )
             parts @ parts.push(body.slice(from: start, to: i))
-            start @ i + 1
+            parts @ parts.push(meant.must())
+            start @ i + 2
             i @ i + 2
         else
             i @ i + 1
 
     parts @ parts.push(body.slice(from: start, to: body.len()))
-    return parts.join("")
+    return ok(parts.join(""))
+
+# The byte one escape of `line_name` stands for, after its backslash.
+function undone(byte: u8) -> str?
+    if byte == 34
+        return ok("\"")
+
+    if byte == 92
+        return ok("\\")
+
+    if byte == 110
+        return ok("\n")
+
+    if byte == 114
+        return ok("\r")
+
+    if byte == 63
+        return ok("?")
+    return fail(code: "escape", msg: "no escape of `line_name`")
+
+# Why a `#line` name could not be read, for its offence.
+function unread(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 test "a claim that lands on a real line is no offence, and the two bad shapes are"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -339,9 +397,10 @@ test "a claim that lands on a real line is no offence, and the two bad shapes ar
     past = "#line 9 " + quoted(tree + "/s.hero") + "\nint x;\n"
     assert offences(c: past, source: "t").len() == 1
     assert strings.contains(text: offences(c: past, source: "t")[0], needle: "past the end")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the count advances after the anchor, which is the defect this exists for"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines"
     assert !shell.mkdir_all(tree).is_err()
     assert !write_file(path: tree + "/s.hero", text: "function main()\n\n    print(1)\n").is_err()
@@ -352,6 +411,7 @@ test "the count advances after the anchor, which is the defect this exists for"
     drifting = "#line 1 " + quoted(tree + "/s.hero") + "\nint a;\nint b;\n"
     assert offences(c: drifting, source: "t").len() == 1
     assert strings.contains(text: offences(c: drifting, source: "t")[0], needle: ":2 is a blank line")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the library is nobody's line"
     assert offences(c: "#line 400 \"<heroes library>\"\nint x;\n", source: "t").len() == 0
@@ -377,13 +437,44 @@ test "a restore of the generated file names its own next line, and one short is 
     assert generated_claim("m.c")
 
 test "unquoted undoes C's escapes"
-    assert unquoted("\"a.hero\"") == "a.hero"
-    assert unquoted(" \"a.hero\" ") == "a.hero"
-    assert unquoted("\"a\\\\b.hero\"") == "a\\b.hero"
-    assert unquoted("\"a\\\"b.hero\"") == "a\"b.hero"
-    assert unquoted("\"café/é€😀.hero\"") == "café/é€😀.hero"
-    assert unquoted("\"é\\\\😀\\\"€\"") == "é\\😀\"€"
-    assert unquoted("\"\"") == ""
+    assert unquoted("\"a.hero\"").must() == "a.hero"
+    assert unquoted(" \"a.hero\" ").must() == "a.hero"
+    assert unquoted("\"a\\\\b.hero\"").must() == "a\\b.hero"
+    assert unquoted("\"a\\\"b.hero\"").must() == "a\"b.hero"
+    assert unquoted("\"café/é€😀.hero\"").must() == "café/é€😀.hero"
+    assert unquoted("\"é\\\\😀\\\"€\"").must() == "é\\😀\"€"
+    assert unquoted("\"\"").must() == ""
+
+# DEFECT 297, held as a test (2026-10-04). A `#line` name is read with the
+# five escapes `line_name` writes undone, so a name holding a line end, a
+# return or a `?` before a trigraph names its own file; any other escape and
+# a backslash ending the name are offences rather than another file's name;
+# and a claim on a file the walk cannot read is an offence, where it was
+# passed over in silence, which is how the old reading's wrong names hid.
+test "fixedbugs: a #line name is read with every escape the emitter writes, and one it cannot read is told (defect 297)"
+    assert unquoted("\"a\\nb.hero\"").must() == "a\nb.hero"
+    assert unquoted("\"a\\rb.hero\"").must() == "a\rb.hero"
+    assert unquoted("\"a?\\?).hero\"").must() == "a??).hero"
+    assert unquoted("\"a\\\\nb.hero\"").must() == "a\\nb.hero"
+    assert unquoted("\"a\\tb.hero\"").is_err()
+    assert unquoted("\"caf\\303\\251.hero\"").is_err()
+    assert unquoted("\"ab\\\"").is_err()
+    scratch = shell.own_scratch()
+
+    # A file named with a line end exists where the platform allows one: there
+    # the claim is asked of that file, and its blank second line is found.
+    if shell.can_run_scripts()
+        assert !write_file(path: scratch + "/a\nb.hero", text: "function main()\n\n    print(1)\n").is_err()
+        found = offences(c: "#line 2 \"" + scratch + "/a\\nb.hero\"\nint x;\n", source: "t")
+        assert found.len() == 1
+        assert strings.contains(text: found[0], needle: ":2 is a blank line")
+    unwritten = offences(c: "#line 1 \"caf\\303\\251.hero\"\nint x;\n", source: "t")
+    assert unwritten.len() == 1
+    assert strings.contains(text: unwritten[0], needle: "names no file this walk can read")
+    gone = offences(c: "#line 1 \"" + scratch + "/gone.hero\"\nint x;\n", source: "t")
+    assert gone.len() == 1
+    assert strings.contains(text: gone[0], needle: "/gone.hero, which this walk cannot read")
+    assert !shell.remove_tree(scratch).is_err()
 
 function quoted(path: str) -> str
     return "\"" + path + "\""

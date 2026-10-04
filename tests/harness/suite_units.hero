@@ -175,11 +175,10 @@ function emitted(scratch: str, compiler: str, dir: str) -> Emission?
         words: [compiler, "build", dir + "/unitprog.hero"]
     )
 
+    # How the build ended, in its own words (defect 317): *the build did not
+    # run* was written here of a build that ran and exited 1 as well.
     if built.is_err() || built.must().code != 0
-        return fail(
-            code: "cannot_run",
-            msg: "the build did not run: " + shell.complaint(built)
-        )
+        return fail(code: "cannot_run", msg: "`build " + dir + "/unitprog.hero`: " + shell.ending(built))
     paths = tu_sources(scratch)?
     texts: [str] @ []
 
@@ -205,7 +204,7 @@ function every_tu_is_emitted_identically_twice(@r: report.Report, scratch: str, 
         report.keep_failure(
             @r,
             label: label,
-            detail: "  a clean emission did not run twice under " + dir.must() + ":\n    " + why(one) + why(two)
+            detail: "  a clean emission, asked for twice under " + dir.must() + ", did not come back both times:\n    " + why(one) + why(two)
         )
         return
     first = one.must()

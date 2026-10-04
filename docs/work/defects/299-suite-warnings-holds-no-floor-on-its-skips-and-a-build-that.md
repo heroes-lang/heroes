@@ -3,3 +3,5 @@
     **Origin:** lane b9-harness, 2026-10-04 (its final reply's *found beside*), a reading.
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): an instrument's hole, unmeasured; if a planted failing build reads green, it is `blocking` by 246's reason.
+
+    Repaired at `dc03b34c`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.

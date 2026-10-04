@@ -3,3 +3,5 @@
     **Origin:** lane b9-harness, 2026-10-04 (its reply's *found beside*); counted by the coordinator.
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): coverage; no program moves.
+
+    Repaired at `27998f47`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.

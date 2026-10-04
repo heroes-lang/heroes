@@ -3,3 +3,5 @@
     **Origin:** lane b9-annot, 2026-10-04, each reproduced on its worktree's harness (its final reply's *Found beside*; scratch `<scratchpad>/batch9/annot/`); no case in the tree writes such bytes today, and a program writing them through C would.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a false message from the net about the compiler it judges (truth); the lane's reading.
+
+    Repaired at `57ef3857`, 2026-10-04, gated by its cases and the net's own tests; the net is owed at the batch's close.

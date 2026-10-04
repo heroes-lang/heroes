@@ -1,0 +1,8 @@
+# Defect 289, 2026-10-04: defect 244 writes a control character in an
+# excerpt by its code, `<U+001B>`, the caret padded under it by that width,
+# and its case is a `check/` golden in the brief form, which prints no
+# excerpt: the repair was pinned in the message alone. This file holds an
+# ESC byte after a backslash in a string on purpose.
+
+function main()
+    print("a\b")  #~ unknown_escape
