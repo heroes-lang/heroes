@@ -14,3 +14,6 @@ github: none
     a sitting's question (CLAUDE.md § 4), and CLAUDE.md § 10's stopping rule asks
     first whether a flag of an existing verb serves. Until it exists, the
     rendering rule is followed by hand, in the order the names read.
+
+    **2026-10-05, the author's *7a*** (`issues/2026-10/05/2026-10-05-0027-the-author-answers-1c-2a-3a-4a-5a-6b-7a.md`):
+    the sitting is convened when the author decides to transcribe, not before.

@@ -97,3 +97,6 @@ of a name that only mentioned it.
 author's *5a*), whose files are now issues, and the five lists of CLAUDE.md
 § 3, which are now views of one folder. Neither is deleted: both entries keep
 their words.
+
+**2026-10-05, the author answered *2a*: the folder stays the day**
+(`issues/2026-10/05/2026-10-05-0027-the-author-answers-1c-2a-3a-4a-5a-6b-7a.md`).
