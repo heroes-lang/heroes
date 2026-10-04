@@ -1,0 +1,13 @@
+- [x] **250 — a header name holding a backslash before a letter, `a\db.h`, is told twice, and the first message's certain fix writes the name the second refuses** | `extern "a\db.h"` over `function seven() -> i32`: `check` exit 1, `unknown_escape` at 1:10 with *fix (certain): escape the backslash: `\\d`*, and `escape_in_header_name` at 1:8; the certain fix writes `"a\\db.h"`, whose value holds `\`, which `escape_in_header_name` refuses (batch 8's round compiler at `1eb854c3`, 2026-10-04, `<scratchpad>/filings-b8/probe/esc.hero`) | the lexer's `unknown_escape` (`selfhost/lexer.hero`) · `selfhost/head_names.hero` (`escape_in_header_name`) · `.claude/rules/diagnostics-and-goldens.md` on a certain fix · **class: adjacent**
+
+    **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 3); reproduced by the coordinator, 2026-10-04.
+
+    **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, the backslash; each message is true.
+
+    Repaired at `d21696f9`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+## The repair
+
+Repaired at `d21696f9`. An escape in a header's name is told once, by the head, `escape_in_header_name`, where the lexer's `unknown_escape` came first with a certain fix the head then refused. Its case is `check/fixedbugs-250-an-escape-in-a-header-name-is-told-once-by-the-head`.
+
+**Closed 2026-10-04** with batch 9 (lanes b9-notext, b9-emit, b9-harness, b9-recovery and b9-annot, merged into one round tree with the trunk at `f6a3122e`), its closing gate run on the round's head from `2c58b28e` to `662870e6`, no line of `selfhost/`, `runtime/` or the seed moving between, with the seed regenerated: 41,364,146 bytes, SHA-256 beginning `26ccaa9d96478a20`, its fixpoint by `cmp`; the compiler's own tests 1,190, all passed; the net's own tests 246, all passed; the full net, 27 suites, 5,268 passed and 0 failed, `fixes` read alone after `662870e6`, which stopped that suite copying the byte fixtures of defects 227 and 241 as text. The census, the trunk's compiler at `703af779` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 1,993, 34 moved, and `build --emit-c` over the 621 holding an `extern`, 3 files of C and 22 of messages moved, every one the batch's own. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 68 fewer messages in the normal arm and 71 in the control arm and none more; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked.

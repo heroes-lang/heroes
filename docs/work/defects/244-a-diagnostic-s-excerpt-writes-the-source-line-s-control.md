@@ -1,7 +1,0 @@
-- [ ] **244 — a diagnostic's excerpt writes the source line's control characters raw, so a file's escape sequences reach the terminal that shows the message** | `function main()` over `    x = 1 <ESC>[31mred`: `check` exit 1, `unexpected_character` *the control character U+001B*, and the excerpt line carries the raw `ESC [ 3 1 m` to the terminal, two raw ESC bytes in the output; a two-line program in UTF-16 LE without a BOM puts 410 raw NUL bytes in `check`'s output (batch 8's round compiler at `1eb854c3` and the trunk's at `7d9f2e8f`, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/esc.hero` and `u16.hero`); that a cursor-moving sequence would then rewrite the lines above it is ECMA-48's, unrun here | `selfhost/diag_render.hero` (the excerpt under the gutter) · batch 8's 237, which writes `pkg-config`'s control characters by their code (`shell_split.shown`, `<U+001B>`), the same bytes from another door · **class: blocking**
-
-    **Origin:** the coordinator, 2026-10-04, at the shape beside panel 189's UTF-16 row (the ffi-pragmatist's *raw NULs in the excerpts*), measured on both compilers.
-
-    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): truth: what a terminal shows of a message is no longer what the compiler wrote, and the one place batch 8 met these bytes it wrote them by their code.
-
-    Repaired at `e623499b`, 2026-10-04, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
