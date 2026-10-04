@@ -271,10 +271,11 @@ HeroStr hero_uint_to_str(uint64_t v) {
 }
 
 HeroStr hero_bool_to_str(bool v) {
-    /* static blocks: to_str of a bool allocates nothing */
-    static const struct { HeroStrHeader h; char b[5]; } t = {{-1, HERO_STR_MAGIC}, "true"};
-    static const struct { HeroStrHeader h; char b[6]; } f = {{-1, HERO_STR_MAGIC}, "false"};
-    return v ? (HeroStr){t.b, 4} : (HeroStr){f.b, 5};
+    /* static blocks: to_str of a bool allocates nothing; sized by their
+     * literals, as every static text of the runtime is (defect 275) */
+    HERO_STR_STATIC(t, "true");
+    HERO_STR_STATIC(f, "false");
+    return v ? HERO_STR_LIT(t) : HERO_STR_LIT(f);
 }
 
 /* `to_str` of a `str` is the identity, and it must still hand back a reference so

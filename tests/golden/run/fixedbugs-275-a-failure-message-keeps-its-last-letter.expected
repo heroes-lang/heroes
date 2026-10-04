@@ -1,0 +1,5 @@
+not_text: these bytes are not valid UTF-8 (31)
+does_not_fit: the value is outside the target's range (39)
+missing_key: no such key (11)
+true (4)
+false (5)
