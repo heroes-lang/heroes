@@ -340,11 +340,21 @@ test "every flag a probe leaves out changes no predefined macro, here or on Linu
 # are the text's under `-std=c11`, where C reads trigraphs, as under the
 # compiler's own `-std=gnu11`. The name clang reports is the name written,
 # which every message mapped back to a `.hero` line and the debugger read.
-test "clang reads the emitter's spellings of a program's text as written, and says nothing about them (defect 207)"
+#
+# And a `#line` naming a file whose name holds characters of two, three and
+# four bytes and a tab, and where a name may hold them, both line ends
+# (defect 240): clang 23 refused the octal escapes such a name was written
+# with until then, and read the trunk's `odd` as written, so this test
+# passed there while `café.hero` did not build (2026-10-04).
+test "clang reads the emitter's spellings of a program's text as written, and says nothing about them (defects 207 and 240)"
     root = "build/selftest-c-text"
     assert !process.remove_tree(root).is_err()
     assert !process.mkdir_all(root + "/inc").is_err()
     odd = "t??=??(??/??)??'??<??!??>??-a*/x\"y\\q.hero"
+    wide: str @ "dé/€\t😀/p.hero"
+
+    if process.exe_suffix() != ".exe"
+        wide @ wide + "\r\n.hero"
     held = "what???) ??= ??( ??/ ??) ??' ??< ??! ??> ??- \"\\"
     bytes_of: [str] @ []
     i: i64 @ 0
@@ -358,7 +368,7 @@ test "clang reads the emitter's spellings of a program's text as written, and sa
     if process.exe_suffix() != ".exe"
         assert !write_file(path: root + "/inc/h??).h", text: "#define HEROES_C_TEXT 1\n").is_err()
         unit @ unit + c_text.includes(["h??).h"]).join("\n") + "\n#if HEROES_C_TEXT != 1\n#error the header was not read\n#endif\n"
-    unit @ unit + c_text.line_directive(at: 7, file: odd) + "\nint main(void) {\n    static const char got[] = " + c_text.literal(held) + ";\n"
+    unit @ unit + c_text.line_directive(at: 7, file: odd) + "\nint main(void) {\n" + c_text.line_directive(at: 9, file: wide) + "\n    static const char got[] = " + c_text.literal(held) + ";\n"
     unit @ unit + "    static const unsigned char want[] = {" + bytes_of.join(", ") + ", 0};\n"
     unit @ unit + "    return sizeof got != sizeof want || memcmp(got, want, sizeof want) != 0;\n}\n"
     assert !write_file(path: root + "/unit.c", text: unit).is_err()
@@ -372,16 +382,37 @@ test "clang reads the emitter's spellings of a program's text as written, and sa
         assert read_file(root + "/said.txt").must() == ""
         assert process.run(program: binary, words: [binary], out: process.discard(), err: process.discard()).code == 0
 
-    # The name, read back from clang's own diagnostic.
-    assert !write_file(path: root + "/named.c", text: c_text.line_directive(at: 7, file: odd) + "\n#error heroes-c-text\n").is_err()
-    named: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    named @ strings.with_all(list: named, more: ["-fsyntax-only", root + "/named.c"])
-    refused = process.run(program: "clang", words: named, out: process.discard(), err: root + "/said.txt")
-    said = read_file(root + "/said.txt").must()
-    assert refused.code != 0
-    assert process.holds(text: said, needle: odd + ":7:")
-    assert process.holds(text: said, needle: "heroes-c-text")
-    assert !process.holds(text: said, needle: "warning:")
+    # Each name, read back from clang's own diagnostic.
+    for file in [odd, wide]
+        assert !write_file(path: root + "/named.c", text: c_text.line_directive(at: 7, file: file) + "\n#error heroes-c-text\n").is_err()
+        named: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+        named @ strings.with_all(list: named, more: ["-fsyntax-only", root + "/named.c"])
+        refused = process.run(program: "clang", words: named, out: process.discard(), err: root + "/said.txt")
+        said = read_file(root + "/said.txt").must()
+        assert refused.code != 0
+        assert holds_bytes(text: said, needle: file + ":7:")
+        assert holds_bytes(text: said, needle: "heroes-c-text")
+        assert !holds_bytes(text: said, needle: "warning:")
+
+# Whether `needle` stands in `text`, asked of their bytes. `process.holds`
+# slices the text at every byte, so a text holding a character above ASCII,
+# as clang's answer naming `wide` does, stops it with *string slice splits a
+# character* (found beside defect 240, 2026-10-04); a byte read is never a
+# slice.
+function holds_bytes(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        k: i64 @ 0
+
+        while k < needle.len() && text[at + k] == needle[k]
+            k @ k + 1
+
+        if k == needle.len()
+            return true
+        at @ at + 1
+
+    return false
 
 # What clang predefines for C under `more`, read from an empty unit.
 function macros(more: [str]) -> str
