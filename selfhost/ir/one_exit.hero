@@ -223,6 +223,48 @@ function before(slot: str) -> str
 function unretained(slot: str) -> str
     return "does not retain what it loads from " + slot + " right after loading it: the slot only borrows, so the caller's reference is owed before anything else runs"
 
+# Panel 190's R4: the exit returns its load of the return slot, which is of
+# the result's type by construction, so `verify.check_return_type` would read
+# nothing on a merged function. What each way out stored there is read
+# instead, once, from the exit: a store of another type is the wrong return.
+function stored_types(f: containers.Function, blk: containers.Block, c: state.Checked, value: i64, at: str, @problems: [str])
+    root: i64 @ 0 - 1
+
+    for inst in blk.insts
+        if !inst.dest.is_err() && inst.dest.must() == value
+            match inst.op
+                .load ld =>
+                    if containers.is_return_root(f, root: ld.place.root) && ld.place.path.length == 0
+                        root @ ld.place.root
+                .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct             => root @ root
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => root @ root
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => root @ root
+
+    if root < 0
+        return
+    slot = "the return slot `" + f.slots[root].name + "`"
+
+    if f.slots[root].ty != f.result
+        problems @ problems.push(at + "returns " + slot + ", which is not of the function's result type")
+    index: i64 @ 0
+
+    for site in f.blocks
+        for inst in site.insts
+            match inst.op
+                .store st =>
+                    if st.place.root == root && st.value < f.values.len()
+                        got = containers.value_type(f, st.value)
+
+                        if got != f.result && got != table.error_ty(c.types)
+                            problems @ problems.push(
+                                at + "returns " + slot + ", and bb" + index.to_str() + " stores a value of the wrong type into it"
+                            )
+                .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+        index @ index + 1
+
 ## Tests
 
 # A merged function of two ways out, by hand: bb0 and bb1 each load `s` and
