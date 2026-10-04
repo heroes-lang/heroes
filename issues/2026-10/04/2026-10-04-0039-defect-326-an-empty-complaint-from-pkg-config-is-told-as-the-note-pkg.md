@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 98d01442aa2c00105d280af5a36fa3832109962b
 github: none
 ---
 
