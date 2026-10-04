@@ -1997,3 +1997,30 @@ open list `blocking` first, one lane per cluster of shared files, merged and
 gated once (`.claude/rules/verification.md` § The batch).
 Measured that day by the commits' dates: seven round gates in 27 hours,
 `e2d59fdb` to `da0ff6c9`, the seventh over one defect.
+
+## CL-080 — An item is one file of `issues/`, its path fixed for life, its card the structure GitHub takes
+2026-10-04 · author instruction · `.claude/rules/records.md` § The issues
+
+Meant as: *every defect, every decision and everything in the record should
+already have the structure to be copied one file to one GitHub issue*, and then:
+*why not a top-level issues folder? it is more orderly; we change the rules, but
+toward a final definition.*
+
+**What it cost not to have.** The record of 777 closed entries said nowhere what
+an entry WAS: the kind was guessed from a bold first field, in five shapes of
+line written over two months, and 121 entries had to be read one by one to be
+classed. Decisions had two homes, a ticked item in `docs/records/done/` when they
+passed through `DECIDE.md` and only a `docs/records/log/` entry when the author
+gave them directly, so the day's own decision to make the defect list one file
+per defect existed in the log and in no list. And the commit that settled an
+entry was written on 101 lines of 798: for the 1,111 entries the 2026-09-12
+rotations wrote, `git log` answered the rotation, and `git log -S` on the record
+answered `1945659f`, a bulk move, for 281 of them (the plan's blind review, run
+before a card was written).
+
+**What the shape buys.** One file one issue, so a transcription is a walk in
+name order; a path that never moves, so closing an issue breaks no link; and
+three facts the item states in prose given a structured home the instrument
+holds to agree with the prose, so neither drifts. The folder is the day, not the
+kind and not a numbered bucket, because a kind is corrected and a counter is the
+one number two lanes take at once (`records/numbering`).

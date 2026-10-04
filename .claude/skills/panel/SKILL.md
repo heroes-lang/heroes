@@ -1,6 +1,6 @@
 ---
 name: panel
-description: Convene the Heroes design panel on a proposal. Two lanes: the SOUNDNESS lane (compiler-engineer + ffi-pragmatist) for a change with no surface, no diagnostic and no spec token; the full five judges with differentiated inputs and falsifiable predictions for everything else. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks: adopts the most robust and complete provisional resolution, never the cheapest and never a compromise, and queues the author's ratification. Writes docs/panel/<NNN> and a DESIGN-LOG line.
+description: Convene the Heroes design panel on a proposal. Two lanes: the SOUNDNESS lane (compiler-engineer + ffi-pragmatist) for a change with no surface, no diagnostic and no spec token; the full five judges with differentiated inputs and falsifiable predictions for everything else. Mandatory before changing the language (spec/, design.md Parts 1-11, surface syntax/semantics, a diagnostic class, architecture). Never blocks: adopts the most robust and complete provisional resolution, never the cheapest and never a compromise, and queues the author's ratification. Writes docs/panel/<NNN> and a decision issue.
 ---
 
 # /panel <proposal> — the design panel
@@ -313,7 +313,8 @@ is a full panel.
      struck that word mid-sitting, and the two are not the same thing
      (`docs/records/contract/case-law.md` CL-040). It is marked `provisional — author
      ratification pending`, records what a veto would compel, and appends an
-     **open** item to `docs/work/DECIDE.md` naming the sitting as `panel NNN`.
+     **open** `decision` issue naming the sitting as `panel NNN`, a new file of
+     today's folder of `issues/` (`.claude/rules/records.md` § The issues).
      Work proceeds on the provisional
      default; the author's verdict is appended to this file when given (in
      `/decide` or whenever), with follow-up work if they overturn it.
@@ -326,7 +327,7 @@ is a full panel.
 
      **The file and the spelling are both load-bearing, and this line named the
      wrong file until 2026-08-26.** `tests/harness/suite_records.hero`'s
-     `verdicts` check reads `docs/work/DECIDE.md` and scans its `- [ ]` lines
+     `verdicts` check reads the open decision issues and scans their `- [ ]` lines
      for `panel NNN`: a `Pending` verdict is allowed to stand for as long as the
      author likes *provided an open item names it*, and that pair is the whole
      invariant. This line said `QUEUE.md` — the record — so a sitting that
@@ -338,5 +339,5 @@ is a full panel.
      harness next runs, score them and append the results — judges accrue
      track records.
 
-5. Write the `docs/records/log/` entry as its own file. Commit the panel file (and, separately, any
+5. File the sitting as a `decision` issue, closed the day it is filed. Commit the panel file (and, separately, any
    resulting `spec/` or `design.md` amendment, citing the sitting's own file).

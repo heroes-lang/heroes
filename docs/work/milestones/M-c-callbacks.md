@@ -40,8 +40,3 @@ entry of every function whose address the program takes, so the corruption is
 **unreachable rather than repaired**. `_Atomic` still appears nowhere in
 `runtime/`, and `cow.c`'s `if (a->refcount == 1)` is a test-and-mutate that an
 atomic would not fix in any case.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

@@ -30,8 +30,3 @@ agree or clang is being asked two different things.
 the marked declaration's unit, and that unit includes only its own groups'
 headers, so a freer declared in another module cannot be called. Anything that
 later widens where an `extern` is reachable from touches this.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

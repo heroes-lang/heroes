@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Teach the author one part of the compiler they want to understand, from the learning list (docs/learn/). Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
+description: Teach the author one part of the compiler they want to understand, from the open learn issues of issues/. Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
 ---
 
 # /learn [n] — understanding, only when asked for
@@ -13,8 +13,8 @@ does this teach you"* with *"the compiler is waiting on your answer"* is two
 different clocks in one room, and the second always wins.
 
 **Never convened by the assistant.** Not at a milestone close, not when the queue
-grows, not as a suggestion at the end of a step. `docs/learn/` is written by `/step`
-and read here, and the author decides when. Conversation in Italian, using
+grows, not as a suggestion at the end of a step. The `learn` issues are written
+by `/step` and read here, and the author decides when. Conversation in Italian, using
 `/where`'s canonical analogies; artifacts written here in English.
 
 ## The rule this skill is really about
@@ -66,8 +66,9 @@ in the message itself.
   hold — is distilled into `docs/ref/glossary/NNN-<concept>.md` (numbered in birth
   order, English, canonical analogies, origin cited, never deleted) and the
   glossary index is updated.
-- Tick the items in `LEARN.md` and leave them checked; the list is also the
-  record. Commit: `learn: <what was covered>`.
+- Tick each question covered where it stands, its card's `commit` set to
+  `self`; a ticked question is closed and stays where it is, as every issue
+  does. Commit: `learn: <what was covered>`.
 
 **Lessons stay impersonal — shapes and rules, never scores.** Nothing about how
 the author did is written anywhere, in this repository or in a message. What is
@@ -75,18 +76,22 @@ written is what the *code* teaches.
 
 ## Where the items are
 
-`docs/learn/`, and nowhere else. The queue was split into three lists
-on 2026-08-12 because one file held 192 open items of three kinds, and a list you
-have to filter before you can read it is a list nobody opens:
+The `learn` issues of `issues/` (`grep -rl "^kind: learn" issues/`), and
+nowhere else. The queue was split by kind on 2026-08-12 because one file held
+192 open items of three kinds, and a list you have to filter before you can read
+it is a list nobody opens; since 2026-10-04 the split is the card's `kind`
+(`.claude/rules/records.md` § The issues):
 
-- **`LEARN.md`** — what is true. This skill's, and only this skill's.
-- **`DECIDE.md`** — what *should* be true. `/decide`'s, because the compiler
+- **`learn`** — what is true. This skill's, and only this skill's.
+- **`decision`** — what *should* be true. `/decide`'s, because the compiler
   goes on behaving some way while it waits, which is a different urgency from
   wanting to understand.
-- **`SCHEDULED.md`** — work with a home, read by `/step` at the milestone that
-  names it.
+- **`feature`** and **`task`** — work with a home, read by `/step` at the
+  milestone their card names.
 
-`docs/records/done/` is the record: every ticked item lands there and stays.
+A closed issue is the record, and it stays where it was filed. The files named
+`LEARN.md`, `DECIDE.md` and `SCHEDULED.md` until 2026-10-04 (the second until
+that day, the other two until 2026-09-12) are retired.
 
 **This paragraph named `QUEUE.md` until 2026-09-07 and that file has not existed
 since 2026-08-26**, when the lists were renamed. Worse, the reason it gave was

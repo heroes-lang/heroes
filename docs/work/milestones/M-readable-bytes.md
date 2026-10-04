@@ -70,8 +70,3 @@ turned into a rule for every brief.
 roughly eighteen C headers. Every `char[N]` field among them lands on this wall,
 and a binding written before the wall moves is a binding rewritten after it.
 The same argument M-arm-platform used for its own position, one row over.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

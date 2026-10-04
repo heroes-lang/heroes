@@ -1,0 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-12
+commit: b39b6df8ad956787c10dd302d1989b5cada4176d
+github: none
+---
+
+2026-08-12 | **Panels 035 and 036 ratified by blanket author instruction, and the shape of the yes is recorded with it.** One instruction after a session summary, not a clause-by-clause reading. It settles the provisional resolutions as decisions; it settles nothing keyed to a measurement nobody has taken — panel 036's four llm-ergonomist first-try rates, the historian's five-year condition on built-in file reading, and the two deferrals (`compile`, `framework`) that wait on an acceptance test rather than on a verdict. **The 39 `# UNVERIFIED` adversarial goldens stay marked**: those are verifications, not decisions, and a blanket yes cannot make a reading happen | the project's own precedent (panels 013, 019): a record must not say more than what happened, and recording one yes as thirty-nine separate ones is the mistake the rule exists to prevent | — | 035, 036 |

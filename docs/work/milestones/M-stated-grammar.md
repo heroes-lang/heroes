@@ -56,8 +56,3 @@ from `File` — which is `ebnflint`'s class and Go's and grammarkdown's, costs n
 spec token, and is said in those words in `.claude/rules/spec-shape.md` and in
 the command's own output so that nobody inherits a stronger claim than the one
 that is true.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

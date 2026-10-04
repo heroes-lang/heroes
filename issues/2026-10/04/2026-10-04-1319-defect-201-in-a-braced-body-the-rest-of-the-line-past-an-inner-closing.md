@@ -1,0 +1,22 @@
+---
+kind: defect
+area: parse
+milestone: none
+filed: 2026-10-02
+commit: 3d70c67428fcfaa8ac44bc4d77a97bd5ceb70b94
+github: none
+---
+
+- [x] **201 — in a braced body, the rest of the line past an inner closing brace is not read** | `function main() {` over `do {`, a body and `} while (1 == 1)`: `missing_body` at the `{`, `expected_end_of_line` at the `do {` and in the body, and `while (1 == 1)` untold until the braces are gone | `selfhost/parse/braced_lines.hero:154` (`brace_habit.pass`, which passes the function's braces after its lines are read, the inner `}`'s line with them) · pinned by `tests/golden/check/panel-187-a-line-past-an-inner-closing-brace-is-dropped.hero` · **class: adjacent**
+
+    **Origin:** panel 187's compiler engineer, its § 1's cause B4 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's row 131-32, where `heroes lex --dump-tokens` shows the lexer hands the parser every token of that line; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03).
+
+    **Class: adjacent**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery, panel 187's R1): a mistake told only once another is fixed, class (b).
+
+    Repaired at `3d70c674` (2026-10-04, lane b9-recovery), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The filed cause, the line past an inner `}` unread, did not reproduce on `703af779`: what waited was the do-while, now told at its `{`.
+
+## The repair
+
+Repaired at `3d70c674`. The filed cause did not reproduce on the lane's base, the line past an inner `}` being read; what waited was C's do-while itself, now told at its `{` as the habit it is, with the loop that replaces it, the body under `while true` ending with `if !(c)` over `break`, which runs as written. Its cases are `fixedbugs-201-a-do-while-is-told-as-one-habit`, five shapes. Its pin, `panel-187-a-line-past-an-inner-closing-brace-is-dropped`, and `fixedbugs-131-the-tail-of-a-do-while` moved in words only, codes and places standing, read at the gate. A `}` with its `while` on the line below is filed as defect 303.
+
+**Closed 2026-10-04** with batch 9 (lanes b9-notext, b9-emit, b9-harness, b9-recovery and b9-annot, merged into one round tree with the trunk at `f6a3122e`), its closing gate run on the round's head from `2c58b28e` to `662870e6`, no line of `selfhost/`, `runtime/` or the seed moving between, with the seed regenerated: 41,364,146 bytes, SHA-256 beginning `26ccaa9d96478a20`, its fixpoint by `cmp`; the compiler's own tests 1,190, all passed; the net's own tests 246, all passed; the full net, 27 suites, 5,268 passed and 0 failed, `fixes` read alone after `662870e6`, which stopped that suite copying the byte fixtures of defects 227 and 241 as text. The census, the trunk's compiler at `703af779` against the round's over the tree's tracked files, each with its own runtime: `check --brief` over 1,993, 34 moved, and `build --emit-c` over the 621 holding an `extern`, 3 files of C and 22 of messages moved, every one the batch's own. Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 68 fewer messages in the normal arm and 71 in the control arm and none more; 15,842 pairs, no told second hidden. The site's build: 188 pages, 36 claims and 2 verb lists checked.

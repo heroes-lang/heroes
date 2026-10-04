@@ -1,0 +1,14 @@
+35,36c35,37
+< - Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
+<   carriage return or line end: a string is one line.
+---
+> - Syntax is ASCII-only; comments may contain any UTF-8 but a character that
+>   reorders a line, strings any but a raw control character, an invisible one,
+>   a carriage return or a line end: a string is one line.
+47,48c48,50
+< - Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
+<   of `\"` in a character literal. Any other escape is a compile error.
+---
+> - Seven escapes, and no others: `\n` `\t` `\r` `\\` `\"` and `\xNN`, a byte in
+>   hex from `01` to `7f` (`\x07` is the bell), in a string, `\'` instead of `\"`
+>   in a character literal. Any other escape is a compile error.

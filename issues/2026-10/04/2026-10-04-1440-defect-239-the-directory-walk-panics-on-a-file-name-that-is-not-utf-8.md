@@ -1,0 +1,26 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-10-04
+commit: 5ba5296c7571c0297a6e41ec1db07168e5eb1bda
+github: none
+---
+
+- [x] **239 — the directory walk panics on a file name that is not UTF-8, so `heroes probe` and `heroes mutate` abort over a folder a user can make** | Linux arm64 (Debian clang 22.1.8): `heroes probe only/` over a file `caf<e9>.hero`, `heroes probe onlydir/` over a directory `d<e9>`, and `heroes mutate only/`, exit 134, *panic: hero_str_from_bytes: not well-formed UTF-8*; the Windows box: `probe only/` and `mutate only/` over a folder holding `café.hero`, exit 127, the same panic, `FindFirstFileA` answering in code page 1252 (the trunk's compiler at `7d9f2e8f`, 2026-10-04, `<scratchpad>/189-ffi-pragmatist-cases/linux/inner.sh` and its `out-arm64.txt`, `win/names.sh`) | `runtime/parts/dir.c:127` (`hero_dir_at` hands each name to `hero_str_from_bytes`, which aborts on bytes that are not UTF-8) · `hero_str_try_from_bytes` (`runtime/parts/str.c:355`), the status `validated_bytes` already takes · `selfhost/cli/process.hero:199` (`files_under`, the one caller) · panel 189's Q6 · **class: blocking**
+
+    **Origin:** panel 189's ffi-pragmatist, 2026-10-04 00:21 to 00:29 (`docs/panel/189-reports/ffi-pragmatist.md`, *Names that are not UTF-8 on Linux arm64*), one cause on two platforms; not 227's, no file's contents being read; filed apart by the coordinator.
+
+    **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a panic in the compiler, exit 134 and 127, over a directory a user can make.
+
+    Repaired at `5ba5296c`, 2026-10-04, gated by the compiler's own tests, its case the platform legs' (this Mac's filesystem refuses the name); the net is owed at the batch's close.
+
+    **2026-10-04, batch 9's annot lane**: the harness's own walk (`tests/harness/shell.hero`, which still read `hero_dir_at`) repaired at `c539f58d`: each name read through `hero_dir_at_shown`, one that is not UTF-8 named by its bytes where it stops a walk, and passed over by a walk for a suffix it does not end in (`cache` and `units` walk `build/`, where the compiler's own test of this defect leaves `caf<0xE9>.hero` on Linux). Gated by its cases, the net's own tests and 13 suites whole (no `selfhost/` line moved); its real path is the platform legs' (APFS refuses the name); the net is owed at the batch's close.
+
+## The repair
+
+Repaired at `5ba5296c`, the harness's own walk at `c539f58d`. A file name that is not UTF-8 is named, `only/caf<0xE9>.hero`, never a panic: the runtime gives `hero_dir_at_shown`, `process.walk` answers the names it can hold and, apart, the ones it cannot, and `probe` and `mutate` refuse at exit 2 only a `.hero` file they cannot open. Its case makes such a name, which this Mac's APFS refuses (errno 92), so it is the platform legs' case.
+
+**Closed 2026-10-04** after batch 9's platform legs ran its cases on the tree that closes (`38d6c6b1`, the code of the batch's closing commit): Linux arm64, Debian clang 22.1.8 and the same image under clang 18.1.8, the compiler's tests 1,190, all passed, and its 21 suites at 0 failed under each; the Windows box, clang 23.1.1 on Windows Server 2025 at code page 1252, the compiler's tests 1,190, all passed, and its 21 suites at 0 failed, `annotations` read again on `0470afd5`'s file after the floor's revision (its first read, 678 passed and 1 failed, was the floor counting the asked marks alone, six stepped aside there for headers the box lacks). The batch's gate on this Mac is the closing commit's body and the twenty-two records closed with it.
+
+**Corrected underneath, 2026-10-04, panel 191** (`docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md`, R7): on Windows two sentences above are false, and they stand as written. **The message**: over a folder holding `café.hero`, a valid Unicode name, the repaired walk says *`walk1/caf<0xE9>.hero` is not UTF-8: rename it* at exit 2 (the compiler-engineer's row 7a, the trunk's runtime at `7f4c0cc5` on the box): the name needs no renaming, `FindFirstFileA` misread it in code page 1252, which is defect 238. **The case**: the name it makes on the box is made through narrow C, so the file on disk is that same valid `café.hero`, and the closing paragraph's green leg there measured 238's narrow door, not a name that is not UTF-8 (both seats, and the critic's § 6, item 3). On Linux both sentences hold. 238's landing repairs the message and rewrites the case's Windows branch to make a name holding a lone surrogate by `CreateFileW` (panel 191's R3).
