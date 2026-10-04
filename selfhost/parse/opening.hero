@@ -18,7 +18,7 @@
 # | refused nothing, and its line ends | none | parsed | named missing at the next line |
 # | refused nothing, and its line goes on | named as junk, then dropped | parsed | the body named missing, found the junk |
 # | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line inside brackets or refused that very token |
-# | refused something, a closer one too many past where it stopped | told, `if f(1 +) )` (defect 199) | as above | as above |
+# | any, a closer one too many past where it stopped or past its junk | told, `if f(1 +) )`, `function f(): i64 )` (defects 198, 199) | as above | as above |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
 # | any, its line ending with `{` or over a `{` alone | as above, up to the `{` | the `{` named missing, the braces parsed | — |
 #
@@ -174,7 +174,7 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
     if goes_on && body_below(c, text)
         junk(@c, text, missing: missing)
     else if refused_on_it
-        cursor.drop_rest_of_line(@c, from: head.pos)
+        brace_habit.drop_told(@c, text, from: head.pos)
         cursor.skip_terminators(@c)
         absent(@c, text, head: head, silent: unclosed.swallows_the_body(c, text, from: head.pos), missing: missing)
         return .none
@@ -191,7 +191,7 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
 
     if !goes_on
         return .none
-    cursor.drop_rest_of_line(@c, from: head.pos)
+    brace_habit.drop_told(@c, text, from: head.pos)
     cursor.skip_terminators(@c)
     return opening_at(@c, text, missing)
 

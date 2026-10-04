@@ -11,7 +11,7 @@
 #
 # Over members that are there, indented below a head whose line went on, the
 # head's junk is the one report, and the members are read; with none, the
-# head's own "empty" report is. **In braces** the members are read too,
+# junk and the head's own "empty" report both are. **In braces** the members are read too,
 # through the view `parse/braced_lines` lays out (lane X1's finding 1): until
 # 2026-09-29 a braced record, variant or group went whole, `y i64` inside it
 # unsaid. The braces and the `,` between members are the habit's debris, and
@@ -43,7 +43,7 @@ variant Below
 # What a head that owes members says where none is indented below it, and
 # where they stand once its line is dropped. Over members that are there,
 # indented or in braces, the head's junk is the one report; with nothing
-# below, `empty` is, the caller's own words and caret; and on the head's own
+# below, `empty` too, the caller's own words and caret; and on the head's own
 # line a word the lexer refused is its report already. Shared by a `record`,
 # a `variant` and an `extern` group, whose members the caller reads.
 #
@@ -83,15 +83,19 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
             cursor.push_diagnostic(@c.diagnostics, empty)
         return .braced(close: close)
 
-    if goes_on
-        cursor.skip_line(@c)
-
-    # Where the lexer spoke on the head's line its word is told, and the head
-    # with no members below lacks them as any does (defect 133's class, lane
-    # recovery-b7): `record P fn` was told the `fn` alone.
-    if !spoke && goes_on && cursor.at(c, .indent)
+    # The junk is told over members and over none, a closer one too many
+    # past it too, and `empty` beside it where none stand (defect 198):
+    # `record P )` was told `empty_record` alone and its `)` once fields were
+    # written. Where the lexer spoke on the head's line its word is told, and
+    # the head with no members lacks them as any does (defect 133's class,
+    # lane recovery-b7): `record P fn` was told the `fn` alone.
+    if !spoke && goes_on
         junk_after_head(@c, head: quoted, found: found, span: junk, members: members, generic: generic)
-    else if !cursor.at(c, .indent)
+
+    if goes_on
+        brace_habit.drop_told(@c, text, from: c.pos)
+
+    if !cursor.at(c, .indent)
         cursor.push_diagnostic(@c.diagnostics, empty)
 
     if cursor.at(c, .indent)
