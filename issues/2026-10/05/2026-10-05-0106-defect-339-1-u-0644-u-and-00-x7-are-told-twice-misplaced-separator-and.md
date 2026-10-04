@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: 368263a83e9764df934eb2ad1bfbb4d6e42d61f8
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-misc, 2026-10-05, beside defect 329's repair (its final report, *Found beside*): the cause is in the separator scan, not in 329's.
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, not one of `blocking`'s list.
+
+    Repaired at `368263a8`, 2026-10-05 (lane b11-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
