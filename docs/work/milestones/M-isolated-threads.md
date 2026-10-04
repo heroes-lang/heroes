@@ -57,8 +57,3 @@ that stopped matching when their objects went per-thread, four newly shared
 objects introduced by the repair itself, and a step-3 unit test pinning a fact
 step 4 changed. None would have survived a re-reading, because the reasoning was
 right each time and the list was short.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

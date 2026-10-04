@@ -82,8 +82,3 @@ compiler's own source, and from the corpus, **without** a distributed package in
 hand. That is the trade the author took; if the sitting finds it cannot rule
 without that case, the honest outcome is a conservative default and a return
 condition, not an invented one.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

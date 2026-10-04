@@ -23,8 +23,3 @@ honour:
   a stated rule with a fixture (`tests/golden/surface-fixtures/nested/`), not a
   defect; the historian's standing prediction on it (Zig #13970's shape) is
   scored the day a defect of that shape is filed.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

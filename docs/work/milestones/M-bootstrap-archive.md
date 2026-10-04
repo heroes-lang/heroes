@@ -18,8 +18,3 @@ found nine dead citations that predated the archive.
 **The one number carried forward**: the compiler's own tests cost 13 s through
 the Rust and ~16 minutes through the seed. That is the price of self-hosting, and
 it became its own decision — CI runs them at tags, the net on every push.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

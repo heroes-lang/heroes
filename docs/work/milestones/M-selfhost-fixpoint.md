@@ -14,8 +14,3 @@ the instrument that found that and two more — has the **bootstrap** as its
 expectation, so archiving it removes the only thing that can ask whether the two
 compilers agree; and `heroes measure` was not in the port, while design.md §1.6
 cited the bootstrap's `measure/gate.rs` as the spec budget's live enforcer.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

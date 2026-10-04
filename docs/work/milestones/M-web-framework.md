@@ -34,8 +34,3 @@ the package it wraps — in which case the honest outcome is one package and no
 framework. It is scored against the running application rather than argued, and
 M-closures-verdict sits eight rows earlier precisely so its answer is known
 first.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

@@ -34,8 +34,3 @@ stay legal.
 121 and needs none of its work to reach. What the sitting added is urgency: a
 hole makes the sound and the dangling spelling one brace apart, so the class has
 to be shut before a form lands that walks people into it.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

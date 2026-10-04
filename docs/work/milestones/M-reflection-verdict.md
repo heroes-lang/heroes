@@ -106,8 +106,3 @@ it is **674**, and the question was not refused by nothing after two sittings â€
 it was refused as *rendering a construction call*, on a measurement neither
 sitting had when that sentence was written: such a derive deletes **0 of 56**
 hand-written renderers, because every one targets a foreign notation.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************

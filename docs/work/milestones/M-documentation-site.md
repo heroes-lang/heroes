@@ -22,8 +22,3 @@ code block comes from `examples/`, and publishing is a hard stop.
   reading.
 - **Publishing stays a hard stop** (CLAUDE.md §14): the site is built here and
   goes outward only when the author says so.
-
-*******************************************************************************
-**OPEN: 0**
-
-*******************************************************************************
