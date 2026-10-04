@@ -207,18 +207,21 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
     int ok = 1;
 
 #if defined(_WIN32)
-    char *pattern = hero_alloc(room);
-    if (snprintf(pattern, room, "%s\\*", root) < 0) { ok = 0; }
-    WIN32_FIND_DATAA found;
-    HANDLE search = ok ? FindFirstFileA(pattern, &found) : INVALID_HANDLE_VALUE;
-    hero_release(pattern);
+    /* Wide, and a name carried back by `hero_win_name_bytes` (parts/codepage.c
+     * says why the narrow listing cannot be kept). */
+    wchar_t *pattern = hero_win_wide(root, L"\\*");
+    WIN32_FIND_DATAW found;
+    HANDLE search = pattern != NULL ? FindFirstFileW(pattern, &found) : INVALID_HANDLE_VALUE;
+    if (pattern != NULL) hero_release(pattern);
     if (search == INVALID_HANDLE_VALUE) {
         hero_release(child);
         hero_release(deeper);
         return 0;
     }
+    char held[3 * MAX_PATH + 1];
     do {
-        const char *name = found.cFileName;
+        if (hero_win_name_bytes(found.cFileName, held, sizeof held) < 0) { ok = 0; break; }
+        const char *name = held;
         if (!hero_dir_keep(name)) continue;
         int is_dir = (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
@@ -245,7 +248,10 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
             if (!hero_dir_walk(child, deeper, want, recursive)) { ok = 0; break; }
         }
 #if defined(_WIN32)
-    } while (FindNextFileA(search, &found));
+    } while (FindNextFileW(search, &found));
+    /* The end of a listing is ERROR_NO_MORE_FILES; any other reason is a
+     * listing cut short, said as a failure and never as the whole. */
+    if (ok && GetLastError() != ERROR_NO_MORE_FILES) ok = 0;
     FindClose(search);
 #else
     }

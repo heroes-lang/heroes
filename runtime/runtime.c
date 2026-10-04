@@ -177,6 +177,11 @@
  * the map shipped without, and the place store. Needs `[T]` for `keys`. */
 #include "parts/map-write.c"
 
+/* The code page a narrow name is read in on Windows, and the manifest that makes
+ * it UTF-8 (panel 191, defect 238). Before `os.c`, whose `hero_args_set` asks it
+ * first; empty elsewhere. */
+#include "parts/codepage.c"
+
 /* The program's three edges: files, arguments, exit status (M-ffi-ladder). Last,
  * because it needs `str` and nothing needs it. Its declarations live in their own
  * header, `hero_os.h`, which the **Heroes library** binds with `extern` — these
