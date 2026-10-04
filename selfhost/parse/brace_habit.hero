@@ -178,7 +178,8 @@ function drop_rest_of_line(@c: cursor.Cursor, text: str, from: i64)
 
 # The same, a closer one too many on what it drops told first: what a failed
 # statement drops (`parse/statement_end.close`), and what a head drops past
-# its refusal (`parse/opening.body_follows`, defect 199).
+# its refusal or its junk (`parse/opening.body_follows`,
+# `parse/members_below.no_members_below`; defects 199 and 198).
 function drop_told(@c: cursor.Cursor, text: str, from: i64)
     a_closer_too_many(@c, text, from: from)
     drop_rest_of_line(@c, text, from: from)
