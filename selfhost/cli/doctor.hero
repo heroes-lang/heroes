@@ -16,6 +16,7 @@ use cli/toolchain
 use cli/process
 use cli/publish
 use cli/clang_floor
+use cli/strings
 
 record Check
     name: str
@@ -82,11 +83,10 @@ function trim_ends(text: str) -> str
 
 # clang, the linker's home, the architecture, the runtime, and a
 # writable cache. The linker check is named after WHAT IT IS FOR and
-# asked in the platform's own words: it used to ask xcode-select
-# everywhere, which made doctor exit 1 on Linux — found the day CI
-# first ran on two platforms, which is the whole reason that CI exists.
-# The port asks `uname -s` rather than carrying a cfg: a fact about
-# the machine in hand, not a premise about which platforms exist.
+# asked in the platform's own words (`linker_home` below): it used to ask
+# xcode-select everywhere, which made doctor exit 1 on Linux — found the
+# day CI first ran on two platforms, which is the whole reason that CI
+# exists.
 function checks(build_dir: str, runtime_hint: str?) -> [Check]
     out: [Check] @ []
     clang = capture(program: "clang", words: ["clang", "--version"], build_dir: build_dir)
@@ -105,18 +105,7 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
         out @ out.push(
             Check(name: "clang floor", ok: floor_ok, detail: found + " against a floor of " + clang_floor.FLOOR.to_str() + " — the oldest clang this compiler is measured on")
         )
-    system_name = capture(program: "uname", words: ["uname", "-s"], build_dir: build_dir).default("unknown")
-
-    if system_name == "Darwin"
-        clt = capture(program: "xcode-select", words: ["xcode-select", "-p"], build_dir: build_dir)
-        out @ out.push(
-            Check(name: "xcode CLT", ok: !clt.is_err(), detail: clt.default("not found — run `xcode-select --install`"))
-        )
-    else
-        cc = capture(program: "cc", words: ["cc", "--version"], build_dir: build_dir)
-        out @ out.push(
-            Check(name: "cc", ok: !cc.is_err(), detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)"))
-        )
+    out @ out.push(linker_home(build_dir: build_dir))
     arch = capture(program: "uname", words: ["uname", "-m"], build_dir: build_dir).default("unknown")
     out @ out.push(Check(name: "arch", ok: true, detail: arch))
 
@@ -146,6 +135,100 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
         detail @ build_dir + "/ writable"
     out @ out.push(Check(name: "build cache", ok: cache_ok, detail: detail))
     return out
+
+# Where the linker and the C libraries live, asked as each platform's
+# toolchain answers it (defect 336). **Windows is asked first, and by the
+# runtime** (`exe_suffix()`, the question `flags.link_flags` asks): its shell
+# may have no `uname` at all, and Git's answers `MINGW64_NT-…`, which read as
+# Linux and drew Linux's `cc` row and advice, FAIL on the Windows box where
+# `heroes build` built and ran programs (panel 191's compiler-engineer). The
+# other two keep the words they had: `uname -s` asked, a fact about the
+# machine in hand rather than a premise about which platforms exist.
+function linker_home(build_dir: str) -> Check
+    if process.exe_suffix() == ".exe"
+        return msvc_row(links_here(build_dir: build_dir, source: LINK_PROBE))
+    system_name = capture(program: "uname", words: ["uname", "-s"], build_dir: build_dir).default("unknown")
+
+    if system_name == "Darwin"
+        clt = capture(program: "xcode-select", words: ["xcode-select", "-p"], build_dir: build_dir)
+        return Check(
+            name: "xcode CLT",
+            ok: !clt.is_err(),
+            detail: clt.default("not found — run `xcode-select --install`")
+        )
+    cc = capture(program: "cc", words: ["cc", "--version"], build_dir: build_dir)
+    return Check(
+        name: "cc",
+        ok: !cc.is_err(),
+        detail: cc.default("not found — install a C toolchain (build-essential, base-devel, …)")
+    )
+
+# Windows' question. There is no `cc` there to ask, and the CI's leg read it
+# green only because its image carries MinGW's gcc under that name, a compiler
+# this one does not use there. clang targets `x86_64-pc-windows-msvc`, links
+# against MSVC's libraries and a Windows SDK it finds by itself, and without
+# them every link fails, `lld-link: error: could not open 'libcmt.lib'`: so the
+# question is a C program compiled, linked and run, the check the box's own
+# record calls the one that matters
+# (`docs/ref/environment/windows/WINDOWS-MACHINE.md`).
+function msvc_row(linked: str?) -> Check
+    match linked
+        .ok said => return Check(name: "MSVC", ok: true, detail: said)
+        .err e   => return Check(name: "MSVC", ok: false, detail: e.msg + " — " + MSVC_ADVICE)
+
+constant MSVC_ADVICE: str
+    "install Visual Studio's Build Tools with their C++ tools (`Microsoft.VisualStudio.Component.VC.Tools.x86.x64`), which bring the MSVC libraries and a Windows SDK that clang finds by itself"
+
+# What the probe compiles: a header from the Windows SDK's C runtime, a call
+# into it, and an answer the program itself gives.
+constant LINK_PROBE: str
+    "#include <stdio.h>\nint main(void) { return fputs(\"linked\", stdout) < 0 ? 1 : 0; }\n"
+
+# `source` compiled, linked and run by this machine's clang, in a directory
+# of its own under `build_dir` that goes whole afterwards; ok with what was
+# done, or what stopped it in clang's own words, its first line.
+function links_here(build_dir: str, source: str) -> str?
+    dir = publish.private_name(build_dir + "/doctor-link")
+    process.mkdir_all(dir)?
+    answer = linked_and_ran(dir: dir, source: source)
+    _ = process.remove_tree(dir).is_err()
+    return answer
+
+function linked_and_ran(dir: str, source: str) -> str?
+    unit = dir + "/probe.c"
+    binary = dir + "/probe" + process.exe_suffix()
+    said = dir + "/said.txt"
+
+    if write_file(path: unit, text: source).is_err()
+        return fail(code: "none", msg: "cannot write " + unit + process.because())
+    built = process.run(program: "clang", words: ["clang", unit, "-o", binary], out: process.discard(), err: said)
+
+    if !built.started
+        return fail(code: "none", msg: "clang is not on this machine, so nothing was linked")
+
+    if built.code != 0
+        return fail(code: "none", msg: "clang could not link a C program: " + first_said(path: said, code: built.code))
+    ran = process.run(program: binary, words: [binary], out: said, err: process.discard())
+    answered = read_file(said)
+
+    if !ran.started || ran.code != 0 || answered.is_err() || answered.must() != "linked"
+        return fail(code: "none", msg: "clang linked a C program, and it did not run to its end")
+    return ok("clang compiled, linked and ran a C program")
+
+# The first line clang wrote, or its exit code where it wrote none that this
+# compiler can read. clang on Windows ends its lines `\r\n`
+# (`clang_floor.hero` has where that was measured), and the `\r` would stand
+# inside the quotes.
+function first_said(path: str, code: i64) -> str
+    said = read_file(path)
+
+    if said.is_err()
+        return "it exited " + code.to_str() + " and said nothing this compiler can read"
+    line = first_line(strings.without_returns(said.must()))
+
+    if line.len() == 0
+        return "it exited " + code.to_str() + " and said nothing"
+    return "`" + line + "`"
 
 function run_doctor(build_dir: str, runtime_hint: str?) -> cli_table.Exit
     all_ok: bool @ true
@@ -209,6 +292,11 @@ test "doctor finds this machine's toolchain, and the Zen is byte-exact"
     assert got[0].name == "clang"
     assert got[0].ok
 
+    # The linker's home, on a machine whose toolchain builds every program
+    # these tests build (defect 336: FAIL on the Windows box, which builds and
+    # runs them, asked Linux's question).
+    assert got[2].ok
+
     # The runtime and the cache are both real here.
     assert got[4].name == "runtime"
     assert got[4].ok
@@ -220,6 +308,35 @@ test "doctor finds this machine's toolchain, and the Zen is byte-exact"
     expected = "The Zen of Heroes\n\n 1. This language begins with a tribute to David Bowie.\n 2. It is made for language models; people can read it too.\n 3. A model may have read everything; each page must still explain itself.\n 4. What the eye can see is all there is: sound and vision.\n 5. There is one way to say each thing; every program sings in the same voice.\n 6. That way may not be obvious at first; the Starman already knows it.\n 7. The semantics are familiar; the syntax is new.\n 8. Turn and face the strange: every strange choice here is deliberate.\n 9. Nothing changes behind your back; every change signs its name.\n10. Every plausible mistake must become a compile error before the program runs.\n11. Unless you mark the gap with ???: an honest hole beats a confident guess.\n12. A compile-time error is an answer; a runtime error is an ambush.\n13. An error should tell you how to fix the program. Anything less is a complaint.\n14. Repeating a word is cheap; forgetting one can cost the whole program.\n15. The specification stays small under pressure; every word must earn its place.\n16. Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.\n17. When pretty code and safe code disagree, safe code wins.\n18. There is no standard library; C is the man who sold the world.\n19. Never crashing in the same car: what C might keep, Heroes assumes it keeps.\n20. We can be heroes, just for one day.\n"
     assert zen() == expected
     assert run_this() == .ok_exit
+
+# Defect 336: Windows is asked its own question, a C program compiled, linked
+# and run. The probe is asked here of this machine's clang, which links on all
+# three platforms these tests run on, and of a program no linker can link:
+# a refusal is told in clang's own words and carries Windows' advice, never
+# Linux's. Which row this machine gets is asked of the runtime, as the row is.
+test "Windows' toolchain is asked a C program linked and run, and a refusal is told in the linker's own words (defect 336)"
+    assert links_here(build_dir: "build", source: LINK_PROBE).must() == "clang compiled, linked and ran a C program"
+    unlinkable = "int heroes_no_such_symbol_336(void);\nint main(void) { return heroes_no_such_symbol_336(); }\n"
+    refused = links_here(build_dir: "build", source: unlinkable)
+
+    match refused
+        .ok _ => assert false
+        .err e =>
+            assert has_text(text: e.msg, needle: "clang could not link a C program: `")
+            assert !has_text(text: e.msg, needle: "\r")
+
+    row = msvc_row(refused)
+    assert !row.ok
+    assert has_text(text: row.detail, needle: "Microsoft.VisualStudio.Component.VC.Tools.x86.x64")
+    assert !has_text(text: row.detail, needle: "build-essential")
+    mine = linker_home(build_dir: "build")
+    assert mine.ok
+
+    if process.exe_suffix() == ".exe"
+        assert mine.name == "MSVC"
+        assert mine.detail == "clang compiled, linked and ran a C program"
+    else
+        assert mine.name == "xcode CLT" || mine.name == "cc"
 
 # Defect 276: a hint naming no runtime is a failed row saying what it names.
 test "doctor's runtime row tells a HEROES_RUNTIME that names no runtime by what it names (defect 276)"
