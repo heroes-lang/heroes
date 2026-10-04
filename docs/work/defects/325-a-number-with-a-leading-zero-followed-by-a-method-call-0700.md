@@ -3,3 +3,5 @@
     **Origin:** lane b10-cli, 2026-10-04, found beside 324 and reproduced by the coordinator; filed in the lane that holds `number.hero`.
 
     **Class: blocking**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted with a wrong value (`.claude/rules/verification.md` § Bounded discovery): a number an author from C reads as 448 prints 700 at exit 0.
+
+    Repaired at `2b673da3`, 2026-10-04 (lane b10-cli), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
