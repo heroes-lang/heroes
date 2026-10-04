@@ -641,51 +641,72 @@ static int hero_file_kind(FILE *file, size_t *first_room) {
  * Both modes are binary (`rb`/`wb`) for the sibling reason: text mode on Windows
  * translates newlines, and a language whose `str` is measured in bytes cannot have
  * a file grow one byte per line on one platform. */
-HeroStr hero_file_read(const char *path, int64_t *status) {
-    /* NOT_FOUND only where nothing is at the path (defect 274, 2026-10-04): a
-     * file of mode 000 was `file_not_found`, *no file at* a path where a file
-     * is, and Windows' `fopen` of a directory fails EACCES. `ENOTDIR` is a path
-     * through a file, where nothing can be. */
+/* The bytes of a file, whole, in a buffer `hero_release` frees, or NULL with
+ * `*status` saying why. The one read both `hero_file_read` and
+ * `hero_file_read_shown` make, split out of the first on 2026-10-04 (panel 189)
+ * so that a second copy of the walk cannot drift.
+ *
+ * **Defects 273 and 274 live here, and nowhere else** (panel 189's R7, the
+ * ffi-pragmatist's composition). `df453108` and `34836e73` repaired them in
+ * `hero_file_read`'s own body; the compiler reads every source, a header's
+ * key and the runtime's through `hero_file_read_shown`, and with the old read
+ * left there Linux arm64 died *out of memory* on a `use`d directory again,
+ * defect 236's test, measured by the ffi-pragmatist on both clangs.
+ *
+ * NOT_FOUND only where nothing is at the path (defect 274, 2026-10-04): a
+ * file of mode 000 was `file_not_found`, *no file at* a path where a file
+ * is, and Windows' `fopen` of a directory fails EACCES. `ENOTDIR` is a path
+ * through a file, where nothing can be. */
+static char *hero_file_bytes(const char *path, int64_t *got, int64_t *status) {
     errno = 0;
     FILE *file = fopen(path, "rb");
     if (file == NULL) {
         *status = (errno == ENOENT || errno == ENOTDIR) ? HERO_OS_NOT_FOUND : HERO_OS_FAILED;
-        return hero_str_from_bytes("", 0);
+        return NULL;
     }
     size_t room = 0;
     if (hero_file_kind(file, &room) != 0) {
         fclose(file);
         *status = HERO_OS_FAILED;
-        return hero_str_from_bytes("", 0);
+        return NULL;
     }
     char *buffer = hero_alloc(room);
-    size_t got = 0;
+    size_t count = 0;
     for (;;) {
-        if (got == room) {
+        if (count == room) {
             if (room > SIZE_MAX / 2) {
                 hero_release(buffer);
                 fclose(file);
                 *status = HERO_OS_FAILED;
-                return hero_str_from_bytes("", 0);
+                return NULL;
             }
             char *grown = hero_alloc(room * 2);
-            memcpy(grown, buffer, got);
+            memcpy(grown, buffer, count);
             hero_release(buffer);
             buffer = grown;
             room = room * 2;
         }
-        size_t want = room - got;
-        size_t n = fread(buffer + got, 1, want, file);
-        got += n;
+        size_t want = room - count;
+        size_t n = fread(buffer + count, 1, want, file);
+        count += n;
         if (n < want) break;
     }
     int failed = ferror(file);
     fclose(file);
-    if (failed || got > (size_t)INT64_MAX) {
+    if (failed || count > (size_t)INT64_MAX) {
         hero_release(buffer);
         *status = HERO_OS_FAILED;
-        return hero_str_from_bytes("", 0);
+        return NULL;
     }
+    *got = (int64_t)count;
+    *status = HERO_OS_OK;
+    return buffer;
+}
+
+HeroStr hero_file_read(const char *path, int64_t *status) {
+    int64_t got = 0;
+    char *buffer = hero_file_bytes(path, &got, status);
+    if (buffer == NULL) return hero_str_from_bytes("", 0);
     /* **The bytes are not text, and that is a value rather than a death** (panel
      * 087). `hero_str_from_bytes` aborts on ill-formed UTF-8, and that abort is
      * load-bearing everywhere else — `hero_str_chars` takes one byte off an
@@ -700,15 +721,106 @@ HeroStr hero_file_read(const char *path, int64_t *status) {
      * because `read_to_string` returns `Err`, and the Heroes port transcribed
      * that guard faithfully to `suite_records.hero:148` — where it could never
      * fire. defect 002 in `docs/work/DONE.md` is the record. */
-    if (!hero_utf8_valid(buffer, (int64_t)got)) {
+    if (!hero_utf8_valid(buffer, got)) {
         hero_release(buffer);
         *status = HERO_OS_NOT_TEXT;
         return hero_str_from_bytes("", 0);
     }
-    HeroStr text = hero_str_from_bytes(buffer, (int64_t)got);
+    HeroStr text = hero_str_from_bytes(buffer, got);
     hero_release(buffer);
     *status = HERO_OS_OK;
     return text;
+}
+
+/* The compiler's read of a file it will SHOW (panel 189, defect 227): what
+ * `hero_file_read` answers, and for a file that read whole and is not UTF-8,
+ * what a `str` can hold of it instead of nothing. `hero_os.h` states the shape
+ * of the result; here is why each choice was made.
+ *
+ * ONE U+FFFD PER BYTE, never per run and never per maximal subpart. Each byte
+ * that begins no well-formed sequence (`hero_utf8_sequence`, parts/str.c, the
+ * one judge) is replaced alone and the scan resumes at the next byte, so the
+ * shown text has exactly as many lines as the file and a byte's line is
+ * exact; a caret on the first such byte of a line has only text before it.
+ *
+ * THE MARKS ARE THE BYTES. Two characters for each U+FFFD of the shown text,
+ * in order: the replaced byte in upper-case hexadecimal, or `--` for a U+FFFD
+ * the file itself held, so a real U+FFFD in a string stays legal and no byte is
+ * lost. Marks and text travel in ONE string from ONE read, so they cannot
+ * describe two different versions of a file another process is writing.
+ *
+ * Never handed to a writer: what the compiler builds of it is a diagnostic
+ * (selfhost/not_text.hero), and the text is never lexed. */
+HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks) {
+    *marks = 0;
+    int64_t got = 0;
+    char *buffer = hero_file_bytes(path, &got, status);
+    if (buffer == NULL) return hero_str_from_bytes("", 0);
+    if (hero_utf8_valid(buffer, got)) {
+        HeroStr text = hero_str_from_bytes(buffer, got);
+        hero_release(buffer);
+        *status = HERO_OS_OK;
+        return text;
+    }
+    /* Each replaced byte grows by two (one byte to U+FFFD's three) and marks
+     * two; checked rather than assumed (design.md §1.12), though a file that
+     * large was never going to be read whole. */
+    if (got > INT64_MAX / 5) {
+        hero_release(buffer);
+        *status = HERO_OS_FAILED;
+        return hero_str_from_bytes("", 0);
+    }
+    int64_t replaced = 0;
+    int64_t held = 0;
+    int64_t i = 0;
+    while (i < got) {
+        int64_t n = hero_utf8_sequence(buffer, i, got);
+        if (n == 0) {
+            replaced += 1;
+            i += 1;
+            continue;
+        }
+        if (n == 3 && (unsigned char)buffer[i] == 0xEF && (unsigned char)buffer[i + 1] == 0xBF &&
+            (unsigned char)buffer[i + 2] == 0xBD)
+            held += 1;
+        i += n;
+    }
+    int64_t mark_bytes = 2 * (replaced + held);
+    int64_t size = mark_bytes + got + 2 * replaced;
+    char *out = hero_alloc((size_t)size + 1);
+    char *mark = out;
+    char *text = out + mark_bytes;
+    static const char hex[] = "0123456789ABCDEF";
+    i = 0;
+    while (i < got) {
+        int64_t n = hero_utf8_sequence(buffer, i, got);
+        if (n == 0) {
+            unsigned char b = (unsigned char)buffer[i];
+            *mark++ = hex[b >> 4];
+            *mark++ = hex[b & 0x0F];
+            *text++ = (char)0xEF;
+            *text++ = (char)0xBF;
+            *text++ = (char)0xBD;
+            i += 1;
+            continue;
+        }
+        if (n == 3 && (unsigned char)buffer[i] == 0xEF && (unsigned char)buffer[i + 1] == 0xBF &&
+            (unsigned char)buffer[i + 2] == 0xBD) {
+            *mark++ = '-';
+            *mark++ = '-';
+        }
+        memcpy(text, buffer + i, (size_t)n);
+        text += n;
+        i += n;
+    }
+    hero_release(buffer);
+    /* `hero_str_from_bytes` validates again, and a defect above aborts there
+     * by name rather than handing on a `str` that is not UTF-8. */
+    HeroStr shown = hero_str_from_bytes(out, size);
+    hero_release(out);
+    *marks = mark_bytes;
+    *status = HERO_OS_NOT_TEXT;
+    return shown;
 }
 
 int64_t hero_file_write(const char *path, HeroStr text) {

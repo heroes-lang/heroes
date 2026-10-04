@@ -1,0 +1,64 @@
+# Defect 227, panel 189: the compiler's read of a source file that is not
+# UTF-8, `hero_file_read_shown` (`runtime/parts/os.c`), run as a program so
+# that every platform's leg runs its C. Each byte that is not part of a
+# well-formed sequence is one U+FFFD in the text, and the marks before the
+# text name it, `--` for a U+FFFD the file itself held; a file of text comes
+# back whole with no marks, as `read_file` gives it.
+#
+# The fixture is built through C because no Heroes program can write a byte
+# that is not text (`fixedbugs-read-file-on-bytes-that-are-not-text.hero`
+# says why); `build/` for the path, for that case's reason.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "hero_os.h"
+    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+    constant HERO_OS_NOT_TEXT: i64
+
+constant NOT_TEXT: str
+    "build/heroes-golden-shown-not-text.bin"
+
+constant IS_TEXT: str
+    "build/heroes-golden-shown-text.txt"
+
+function put(path: str, bytes: [i64]) -> bool
+    handle = fopen(path: path.cstr(), mode: "wb".cstr())
+
+    if handle == nullptr
+        return false
+
+    for b in bytes
+        _ = fputc(c: b.to_i32().must(), stream: handle)
+
+    _ = fclose(stream: handle)
+    return true
+
+function said(path: str)
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+    print("status ", status == HERO_OS_OK, " ", status == HERO_OS_NOT_FOUND, " ", status == HERO_OS_NOT_TEXT)
+    print("marks [", got.slice(from: 0, to: marks), "]")
+    print("text [", got.slice(from: marks, to: got.len()), "] ", got.len() - marks, " bytes")
+
+function main()
+    # `a`, Latin-1's `é`, `b`, a U+FFFD the file holds, a line end, and a
+    # two-byte character cut by the end of the file.
+    if !put(path: NOT_TEXT, bytes: [97, 233, 98, 239, 191, 189, 10, 195])
+        print("cannot build the fixture")
+        return
+
+    said(NOT_TEXT)
+
+    # `café` in UTF-8: text, whole, no marks.
+    if !put(path: IS_TEXT, bytes: [99, 97, 102, 195, 169])
+        print("cannot build the fixture")
+        return
+
+    said(IS_TEXT)
+    said("build/heroes-golden-shown-no-such-file")

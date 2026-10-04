@@ -67,6 +67,17 @@ record Source
     # In load order, never empty, files[0] the root. Sorted by `start` by
     # construction, which is what lets `file_of` binary-search it.
     files: [FileEntry]
+    # Every byte of a file that is not UTF-8, where its U+FFFD stands in
+    # `text`, ascending; empty for a compilation of text (panel 189). Set by
+    # the read (`module/reading.hero`) and told by `not_text.hero`; a file
+    # holding one is never lexed (`lexer.lex_files`).
+    faults: [Fault]
+
+# A byte that is not part of a well-formed UTF-8 sequence: where the U+FFFD
+# that stands for it begins, and its value (panel 189, defect 227).
+record Fault
+    at: i64
+    byte: i64
 
 # The module component the library's own functions get, whatever is being
 # compiled: `range` is `h_library_range` in every program (panel 028 R3b —
@@ -156,7 +167,8 @@ function from_files(inputs: [InputFile]) -> Source
         newlines @ newlines + newlines_in(input.text)
 
     whole = pieces.join("")
-    return Source(name: name, text: whole, line_starts: starts_of(whole), files: table)
+    none: [Fault] = []
+    return Source(name: name, text: whole, line_starts: starts_of(whole), files: table, faults: none)
 
 # The '\n' count of one segment — what `starts_of(text).len() - 1` answers
 # for a whole text, without building the array.

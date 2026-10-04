@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-227-each-line-holding-such-a-byte-is-told.hero:8:15: error[not_text]: the bytes 0xE9 at 8:15 and 0xE8 at 8:20 are not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-each-line-holding-such-a-byte-is-told.hero:11:14: error[not_text]: the byte 0xE9 at 11:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-each-line-holding-such-a-byte-is-told.hero:12:20: error[not_text]: the byte 0xE9 at 12:20 is not UTF-8, and a `.hero` file is UTF-8 text

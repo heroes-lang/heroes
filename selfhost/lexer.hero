@@ -31,6 +31,7 @@ use scan
 use escape
 use swap_words
 use indent_runs
+use not_text
 
 ## The output
 
@@ -85,13 +86,24 @@ function lex(s: source.Source) -> LexOutput
 # lines as its body, so a program of two modules each refused alone ran at
 # exit 0. The level and the open brackets already stopped at a file's end;
 # now the declarations do too.
+#
+# **A file that is not UTF-8 is told and never lexed** (panel 189): its text
+# is what the compiler can show of it, not what its author wrote, so it is an
+# empty file here holding `not_text.told`'s diagnostics alone.
 function lex_files(s: source.Source) -> [LexOutput]
     out: [LexOutput] @ []
     index: i64 @ 0
 
     for entry in s.files
         _ = entry
-        out @ out.push(moved(lex_one(source_extent.text_of(s, index)), offset: s.files[index].start))
+        told = not_text.told(s, index)
+
+        if told.len() > 0
+            unread: LexOutput @ moved(lex_one(""), offset: s.files[index].start)
+            unread.diagnostics @ told
+            out @ out.push(unread)
+        else
+            out @ out.push(moved(lex_one(source_extent.text_of(s, index)), offset: s.files[index].start))
         index @ index + 1
 
     return out
@@ -278,6 +290,22 @@ function kind_line(tokens: [token.Token]) -> str
         names @ names.push(token.kind_name(t.kind))
 
     return names.join(" ")
+
+# Panel 189: a file that is not UTF-8 is told and never lexed, and the files
+# beside it are lexed as they always were.
+test "a file that is not text is told and not lexed; the files beside it are"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "use geom\n\nfunction main()\n    print(geom.two())\n")
+        source.user_file(name: "geom.hero", text: "# g�om\nfunction two() -> i64\n    return 2\n")
+    ]
+    s: source.Source @ source.from_files(inputs)
+    s.faults @ [source.Fault(at: s.files[1].start + 3, byte: 233)]
+    files = lex_files(s)
+    assert files[0].diagnostics.len() == 0
+    assert files[0].tokens.len() > 1
+    assert files[1].diagnostics.len() == 1
+    assert files[1].diagnostics[0].code == "not_text"
+    assert files[1].tokens.len() == 1
 
 test "a whole program lexes to the stream the parser expects"
     out = lex_one("function main()\n    x = 5\n")

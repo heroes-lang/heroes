@@ -33,6 +33,8 @@
 
 use cli/io
 use cli/argv
+use not_text
+use module/reading
 use cli/digest
 use measure/pinned
 use cli/table as cli_table
@@ -41,11 +43,18 @@ use measure/judged as budgets
 
 function run(inv: argv.Invocation) -> cli_table.Exit
     path = inv.file.default(budgets.SPEC)
-    text = read_file(path)
+    read = reading.source_text(path)
 
-    if text.is_err()
+    if read.is_err()
         io.eprint(text: "error: cannot read `" + path + "`")
         return .failed_exit
+
+    # A document that is not UTF-8 has no token count to give, and is told
+    # where its first such byte is rather than *cannot read* (panel 189).
+    if read.must().faults.len() > 0
+        io.eprint(text: "error: " + not_text.first_said(name: path, text: read.must().text, faults: read.must().faults))
+        return .failed_exit
+    text = read.must().text
 
     # **The vendored reading is taken BEFORE the refresh branch, since
     # 2026-09-12, and the order is the feature.** `--refresh` records the
@@ -53,7 +62,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
     # a digest it refused), so the offline tables must already have been read
     # when that branch is reached. It costs the spec's refresh two table reads it
     # does not use, which is milliseconds against a network round trip.
-    readings = vendored.readings_of(text.must())
+    readings = vendored.readings_of(text)
 
     if readings.is_err()
         io.eprint(text: "error: " + vendored.why(readings))
@@ -62,12 +71,12 @@ function run(inv: argv.Invocation) -> cli_table.Exit
     if argv.has(inv, spelling: "--refresh")
         return pinned.run_refresh(
             path: path,
-            text: text.must(),
+            text: text,
             spec: budgets.SPEC,
             contract: budgets.CONTRACT,
             vendored: vendored.highest(readings.must())
         )
-    return reported(path: path, here: digest.digest(text.must()), readings: readings.must())
+    return reported(path: path, here: digest.digest(text), readings: readings.must())
 
 # The report, byte for byte the bootstrap's: two readings, the binding
 # number, the spread, and the verdict against the ceiling. A breach is

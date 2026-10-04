@@ -1,6 +1,6 @@
 # Whether the file a `use` names is not there, or is there and cannot be read
 # (spec § 1 Files and layout; design.md §1.12; defect 236). Asked by
-# `modules.load_text` when `read_file` fails on a module's file, because that
+# `modules.load_text` when the read of a module's file fails, because that
 # failure does not say which: `read_file` answers `file_not_found` for a file
 # it may not open, measured on this Mac 2026-10-03 for a mode of 000 and for
 # a file in a directory it may not search, and the loader took every failure
@@ -9,9 +9,170 @@
 # Its own module because `modules.hero` may not grow (the layout check's
 # ceiling for it, 320), and because the question is the filesystem's, asked
 # through `cli/files` as every other question about what is at a path is.
+#
+# **And whether a file that is there is text** (panel 189, defect 227): every
+# source file the compilation holds is read here, the root by `cli/input`, so
+# a file that is not UTF-8 is held as what it is, a text the compiler can show
+# and a list of the bytes that are not text, instead of a failure that every
+# reader took for *cannot read*, or for absence.
 
+use source
+use diag
+use not_text
+use cli/digest
 use cli/files
 use cli/process
+
+# `runtime/parts/os.c` is the C, and `runtime/hero_os.h` says what the result
+# holds. `lent`: the call reads the path while it runs and keeps nothing.
+extern "hero_os.h"
+    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+    constant HERO_OS_NOT_TEXT: i64
+
+# A file as the compilation holds it: its own text where it is UTF-8; where it
+# is not, the text with each byte that is not part of a well-formed sequence
+# shown as one U+FFFD, and those bytes, `at` in this text (the file's own
+# offsets, which `placed` moves into the compilation's).
+record Text
+    text: str
+    faults: [source.Fault]
+
+# The file at `path`, or the failure `read_file` gives where nothing is there
+# (`file_not_found`) or it would not read (`read_failed`). A file that is not
+# UTF-8 is not a failure here: what to tell about it is `not_text.hero`'s.
+function source_text(path: str) -> Text?
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_FOUND
+        return fail(code: "file_not_found", msg: "no file at " + path)
+
+    if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
+        return fail(code: "read_failed", msg: "could not read " + path)
+
+    # A file of text has no marks, and comes back as it was read, uncopied.
+    if marks == 0
+        none: [source.Fault] = []
+        return ok(Text(text: got, faults: none))
+    shown = got.slice(from: marks, to: got.len())
+    return ok(Text(text: shown, faults: faults_of(marks: got.slice(from: 0, to: marks), text: shown)))
+
+# The marks read against the text they describe: two for each U+FFFD of the
+# text in order, the byte it stands for in hexadecimal, or `--` where the file
+# itself held a U+FFFD, which is text and no fault. A U+FFFD is the three bytes
+# EF BF BD, and a byte search finds only whole ones: EF leads and never
+# continues a character.
+#
+# **Bounded, and exact where it is told** (panel 189): every fault of the
+# first `not_text.TOLD` + 1 lines holding one, then the first of each further
+# line, which is what `not_text` names (eight lines told, a ninth to know there
+# are more) and counts (how many more). The compiler's own 8 MB binary named
+# as a source holds 3.8 million such bytes, and recording each cost 356 MB.
+function faults_of(marks: str, text: str) -> [source.Fault]
+    out: [source.Fault] @ []
+    at: i64 @ 0
+    mark: i64 @ 0
+    line: i64 @ 0
+    last: i64 @ -1
+    lines: i64 @ 0
+
+    while at + 2 < text.len() && mark + 1 < marks.len()
+        if text[at] == 239 && text[at + 1] == 191 && text[at + 2] == 189
+            if marks[mark] != '-' && (line != last || lines <= not_text.TOLD + 1)
+                if line != last
+                    lines @ lines + 1
+                out @ out.push(source.Fault(at: at, byte: hex(marks[mark]) * 16 + hex(marks[mark + 1])))
+                last @ line
+            mark @ mark + 2
+            at @ at + 3
+        else
+            if text[at] == '\n'
+                line @ line + 1
+            at @ at + 1
+
+    return out
+
+# One upper-case hexadecimal digit's value, as the runtime writes them.
+function hex(b: u8) -> i64
+    if b >= 'A'
+        return (b - 'A').to_i64().must() + 10
+    return (b - '0').to_i64().must()
+
+# A file read for a cache's key: the text a reader of it scans, which is its
+# own where it is UTF-8 and the shown text where it is not, and its key.
+record Keyed
+    text: str
+    key: str
+
+# One file's key, or the failure `source_text` gives: sixteen characters, the
+# same for the same bytes and different for different ones. A header and the
+# runtime's own sources are C, which may hold a byte that is not UTF-8, and
+# their keys are made here (panel 189); no fault is recorded, so a large file
+# costs no more than its text.
+#
+# **The two kinds of file cannot share a key** (panel 189's R6). A file of
+# text keys as its text's digest, as it always did. A file that is not UTF-8
+# keys as the digest of the runtime's whole answer, whose marks name every
+# byte its text shows as U+FFFD, so the two together are its bytes, with the
+# first character `n`, which `digest` never writes. Keyed as a TEXT, a line
+# saying so and that answer, a header of text spelling the line shared the
+# key, and the ffi-pragmatist's case 5 linked the stale object at exit 0.
+function key_of(path: str) -> str?
+    read = keyed(path)?
+    return ok(read.key)
+
+function keyed(path: str) -> Keyed?
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_FOUND
+        return fail(code: "file_not_found", msg: "no file at " + path)
+
+    if status == HERO_OS_OK
+        return ok(Keyed(text: got, key: digest.digest(got)))
+
+    if status != HERO_OS_NOT_TEXT
+        return fail(code: "read_failed", msg: "could not read " + path)
+    return ok(Keyed(text: got.slice(from: marks, to: got.len()), key: "n" + digest.digest(got).slice(from: 1, to: 16)))
+
+# The files whose `use` lines discovery reads next, and this one with them
+# where it is text: a file that is not UTF-8 is held to be told and never
+# lexed, not even for its `use` lines, which in a binary cost minutes of
+# refused characters (panel 189).
+function followed(added: [i64], file: Text, at: i64) -> [i64]
+    if file.faults.len() > 0
+        return added
+    return added.push(at)
+
+# A compilation's modules' faults, each file's moved from its own offsets into
+# the compilation's text: `modules[k]` holds file k + 1's, the root being
+# `rooted`'s and the library, always last, holding none.
+function placed(s: source.Source, modules: [[source.Fault]]) -> source.Source
+    out: source.Source @ s
+    index: i64 @ 1
+
+    for faults in modules
+        for one in faults
+            out.faults @ out.faults.push(source.Fault(at: one.at + s.files[index].start, byte: one.byte))
+
+        index @ index + 1
+
+    return out
+
+# The root's faults before the modules': the root begins the text, so its own
+# offsets are the compilation's and every one of them comes first.
+function rooted(s: source.Source, root: [source.Fault]) -> source.Source
+    out: source.Source @ s
+    out.faults @ root
+
+    for one in s.faults
+        out.faults @ out.faults.push(one)
+
+    return out
 
 # `ok()` where nothing is at `opened`, nor can be, which the loader takes for
 # an absent module and `modules.errors` tells on the `use` line; where
@@ -93,3 +254,105 @@ test "the directory that would hold a path is the path without its last part"
     assert holder("c.hero") == ""
     assert holder("/c.hero") == ""
     assert holder("a/") == "a"
+
+# Panel 189: the marks read against the shown text, a U+FFFD the file held told
+# apart from one that stands for a byte.
+test "the marks name each byte that is not text, and a U+FFFD the file held is text"
+    one = faults_of(marks: "E9", text: "caf�")
+    assert one.len() == 1
+    assert one[0].at == 3
+    assert one[0].byte == 233
+    held = faults_of(marks: "--80", text: "�a�")
+    assert held.len() == 1
+    assert held[0].at == 4
+    assert held[0].byte == 128
+    assert faults_of(marks: "", text: "plain").len() == 0
+    assert hex('0') == 0
+    assert hex('F') == 15
+
+test "a compilation's faults stand in its text, the root's first"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "# �\n")
+        source.user_file(name: "geom.hero", text: "x�\n")
+    ]
+    s = source.from_files(inputs)
+    in_geom: [[source.Fault]] = [[source.Fault(at: 1, byte: 233)]]
+    in_main: [source.Fault] = [source.Fault(at: 2, byte: 232)]
+    both = rooted(placed(s, modules: in_geom), root: in_main)
+    assert both.faults.len() == 2
+    assert both.faults[0].at == 2
+    assert both.faults[1].at == s.files[1].start + 1
+    assert both.faults[1].byte == 233
+
+test "a file of text keys as its text's digest, and a missing file fails as read_file does"
+    assert !write_file(path: "build/selftest-reading-key.h", text: "int x;\n").is_err()
+    assert key_of("build/selftest-reading-key.h").must() == digest.digest("int x;\n")
+    assert keyed("build/selftest-reading-key.h").must().text == "int x;\n"
+
+    match key_of("build/selftest-reading-no-such-header.h")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+# Panel 189's R6 at the key: a header holding the byte 0xE9, committed as
+# bytes, keys apart from every file of text, the one spelling what the route
+# keyed it by included (the ffi-pragmatist's case 5). `cli/deps.hero`'s test
+# holds the same at the record a compile is reused by.
+test "a file that is not UTF-8 has a key no file of text can have"
+    latin = "tests/golden/surface-fixtures/notext227/latin1.h"
+    held = keyed(latin).must()
+    assert held.key.len() == 16
+    assert held.key[0] == 'n'
+    assert held.text.len() > 0
+    status: i64 @ 0
+    marks: i64 @ 0
+    answer = hero_file_read_shown(path: latin.cstr(), status: @status, marks: @marks)
+    assert status == HERO_OS_NOT_TEXT
+    assert marks == 2
+
+    for spelled in ["not UTF-8, 2 bytes of marks:\n" + answer, answer, held.text]
+        assert !write_file(path: "build/selftest-reading-spelled.h", text: spelled).is_err()
+        assert key_of("build/selftest-reading-spelled.h").must() != held.key
+
+test "every fault of the first nine lines is kept, then the first of each line"
+    lines: [str] @ []
+    marks: [str] @ []
+
+    for _ in range(from: 0, to: 12)
+        lines @ lines.push("�x�")
+        marks @ marks.push("E9E8")
+
+    kept = faults_of(marks: marks.join(""), text: lines.join("\n") + "\n")
+    assert kept.len() == 21
+    assert kept[17].byte == 232
+    assert kept[18].byte == 233
+    assert kept[20].at == 11 * 8
+
+test "a file of text reads with no faults, and a missing one fails as read_file does"
+    assert !write_file(path: "build/selftest-reading-text.hero", text: "# café\n").is_err()
+    t = source_text("build/selftest-reading-text.hero").must()
+    assert t.text == "# café\n"
+    assert t.faults.len() == 0
+
+    match source_text("build/selftest-reading-no-such-file.hero")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+# What `not_text` tells of a file read here, alone in its compilation, as
+# `cli/input` holds a root that is not text.
+function told_of(path: str) -> [diag.Diagnostic]
+    read = source_text(path).must()
+    return not_text.told(rooted(source.new_source(name: path, text: read.text), root: read.faults), 0)
+
+# Panel 189's R4 on the bytes of committed files: NUL at every other byte is
+# UTF-16 with no mark, little-endian or big-endian by which byte is NUL, and
+# NUL elsewhere names no encoding.
+test "NUL at every other byte is told as UTF-16 with no mark, in either order, and NUL elsewhere is not"
+    fixtures = "tests/golden/surface-fixtures/notext227/"
+    little = told_of(fixtures + "utf16le-e-acute.txt")
+    assert little.len() == 1
+    assert little[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 little-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
+    big = told_of(fixtures + "utf16be-e-acute.txt")
+    assert big[0].notes[0] == "every other byte of the file is NUL, which is how UTF-16 big-endian writes ASCII and Latin-1, so it was saved as UTF-16 with no byte-order mark: save it as UTF-8"
+    elsewhere = told_of(fixtures + "nul-and-latin1.txt")
+    assert elsewhere[0].notes[0] == "the file also holds NUL bytes, which no source text holds: it is likely not a text file at all"
+    assert not_text.utf16_order(source_text(fixtures + "nul-and-latin1.txt").must().text) == ""

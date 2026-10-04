@@ -1,0 +1,12 @@
+# Defect 227, panel 189. Symptom: a source file holding one byte that is not
+# UTF-8 was answered *error: cannot read `p.hero`* at exit 2 by every verb,
+# where the file had read whole and its author could be told which line held
+# the byte. Cause: `read_file` fails `not_text` for it, and the CLI took every
+# failure for *cannot read*. The file is now held as the text the compiler can
+# show and told, `not_text` at its first such byte, at exit 1, and nothing else
+# of it is read. This file is not UTF-8 on purpose: the byte below is Latin-1.
+
+#~v not_text
+# perché, the word as a Latin-1 editor writes it
+function main()
+    print("ok")

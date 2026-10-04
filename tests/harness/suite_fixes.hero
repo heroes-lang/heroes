@@ -264,18 +264,33 @@ function report_pinned(@r: report.Report, label: str, pinned: str, want: str, cl
 # `--apply` writes the source back unchanged. Until 2026-09-28 such a case was
 # skipped, so a join that turned `certain` in a case whose every fix is a
 # `guess` passed green (defect 129, the coordinator's finding).
+#
+# A case that is not UTF-8 on purpose (defect 227) promises more: `--apply`
+# hands nothing back, because its text is the one the compiler can show and
+# not its author's (panel 189).
 function judge_untouched(@r: report.Report, label: str, source: str, out: str)
-    text = read_file(source)
+    text = cases.shown(source)
 
     if text.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot read " + source)
         return
 
-    if out != text.must()
+    if !text.must().is_text
+        if out.len() > 0
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  " + source + " is not UTF-8 and `--apply` handed back " + out.len().to_str() + " bytes of it, which would write U+FFFD over its author's bytes"
+            )
+        else
+            report.keep_pass(@r)
+        return
+
+    if out != text.must().text
         report.keep_failure(
             @r,
             label: label,
-            detail: "  a `certain` fix applies to " + source + " and no answer pins what it writes: a `.fixed` where the repaired program checks clean, an `.applied` where it keeps a diagnostic no `certain` fix repairs:\n" + report.mismatch(what: source + " --apply", expected: text.must(), actual: out)
+            detail: "  a `certain` fix applies to " + source + " and no answer pins what it writes: a `.fixed` where the repaired program checks clean, an `.applied` where it keeps a diagnostic no `certain` fix repairs:\n" + report.mismatch(what: source + " --apply", expected: text.must().text, actual: out)
         )
         return
     report.keep_pass(@r)

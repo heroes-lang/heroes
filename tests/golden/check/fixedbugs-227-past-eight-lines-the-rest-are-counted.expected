@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:8:3: error[not_text]: 5 bytes, the first 0xE9 at 8:3, are not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:10:14: error[not_text]: the byte 0xE9 at 10:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:12:14: error[not_text]: the byte 0xE9 at 12:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:14:14: error[not_text]: the byte 0xE9 at 14:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:16:14: error[not_text]: the byte 0xE9 at 16:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:18:14: error[not_text]: the byte 0xE9 at 18:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:20:14: error[not_text]: the byte 0xE9 at 20:14 is not UTF-8, and a `.hero` file is UTF-8 text
+tests/golden/check/fixedbugs-227-past-eight-lines-the-rest-are-counted.hero:22:14: error[not_text]: the byte 0xE9 at 22:14 is not UTF-8, and a `.hero` file is UTF-8 text

@@ -37,6 +37,7 @@
 use bytes
 use source
 use diag
+use module/reading
 use parse
 use cli/argv
 use cli/io
@@ -112,12 +113,12 @@ function run(inv: argv.Invocation) -> cli_table.Exit
 
     for k in range(from: 0, to: roots.len())
         for path in roots[k].files
-            text = read_file(path)
+            text = reading.source_text(path)
 
             if text.is_err()
                 io.eprint(text: "error: cannot read `" + path + "`")
                 return .failed_exit
-            s = source.new_source(name: path, text: text.must())
+            s = reading.rooted(source.new_source(name: path, text: text.must().text), root: text.must().faults)
             parsed = parse.parse_source(s)
 
             if parsed.diagnostics.len() > 0 && single
@@ -133,7 +134,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
                 )
                 refused @ refused + 1
                 continue
-            judge.probe_seed(@r, s: seed.read(path: path, text: text.must(), tokens: parsed.tokens))
+            judge.probe_seed(@r, s: seed.read(path: path, text: text.must().text, tokens: parsed.tokens))
             roots[k].seeds @ roots[k].seeds + 1
 
     io.print_artifact(text: report(roots: roots, r: r, refused: refused))

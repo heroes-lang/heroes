@@ -24,12 +24,16 @@
 # (DESIGN-LOG:389).
 
 use bytes
+use diag
+use source
 use cli/argv
 use cli/io
 use cli/table as cli_table
 use cli/process
 use library_source
 use modules
+use not_text
+use module/reading
 use mutate/ops
 use mutate/score
 
@@ -50,13 +54,14 @@ function run(inv: argv.Invocation) -> cli_table.Exit
     if found.is_err()
         io.eprint(text: "error: " + why(found))
         return .failed_exit
-    sources = found.must()
+    sources = found.must().programs
+    unread = found.must().unread
 
-    if sources.len() == 0
+    if sources.len() + unread.len() == 0
         io.eprint(text: "error: no `.hero` files under " + dir)
         return .failed_exit
     library = library_source.text()
-    refusal = refuse_a_corpus_that_does_not_compile(sources: sources, library: library)
+    refusal = refuse_a_corpus_that_does_not_compile(sources: sources, unread: unread, library: library)
 
     if !refusal.is_err()
         io.eprint(text: "error: " + refusal.must())
@@ -69,6 +74,14 @@ function run(inv: argv.Invocation) -> cli_table.Exit
         io.print_artifact(text: score.survivor_report(run_out.survivors))
     return .ok_exit
 
+# A corpus as read: its programs, and the line the compiler tells for each
+# file of it that is not UTF-8, which is a program the compiler refuses, so
+# the corpus is refused as one that does not compile (panel 189's R2, as
+# corrected: `surface`'s row holds `mutate`'s exit 2 and its corpus message).
+record Corpus
+    programs: [score.Program]
+    unread: [str]
+
 # Every `.hero` file under `dir`, sorted, with its text.
 #
 # **This was the last `find` in `selfhost/`, and Windows is why it is gone.**
@@ -79,7 +92,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
 # `-print0` (a name never becomes text on its way here, so there is no
 # separator to be confused by), and the listing file under `build/` goes with
 # it.
-function corpus(dir: str) -> [score.Program]?
+function corpus(dir: str) -> Corpus?
     walked = process.files_under(dir: dir)
 
     if walked.is_err()
@@ -91,15 +104,26 @@ function corpus(dir: str) -> [score.Program]?
             paths @ paths.push(path)
 
     out: [score.Program] @ []
+    unread: [str] @ []
 
     for path in paths.sort()
-        text = read_file(path)
+        text = reading.source_text(path)
 
         if text.is_err()
             return fail(code: "no_corpus", msg: "cannot read " + path)
-        out @ out.push(score.Program(name: path, checked_as: checked_name(dir: dir, path: path), text: text.must()))
 
-    return ok(out)
+        # A program that is not UTF-8 is one the compiler refuses, and is
+        # named with what it tells, its first `not_text` (panel 189).
+        if text.must().faults.len() > 0
+            s: source.Source @ source.new_source(name: path, text: text.must().text)
+            s.faults @ text.must().faults
+            unread @ unread.push(diag.render_line(not_text.told(s, 0)[0], s))
+            continue
+        out @ out.push(
+            score.Program(name: path, checked_as: checked_name(dir: dir, path: path), text: text.must().text)
+        )
+
+    return ok(Corpus(programs: out, unread: unread))
 
 # Why `dir` gave no corpus, named by what the path is. Every cause read
 # `cannot read <path>` until defect 117, a file the command reads perfectly
@@ -136,7 +160,7 @@ function checked_name(dir: str, path: str) -> str
     at: str @ own
 
     while at.len() >= floor.len()
-        if !read_file(at + "main.hero").is_err()
+        if !reading.source_text(at + "main.hero").is_err()
             return at + file
 
         if at.len() == floor.len()
@@ -173,8 +197,8 @@ function ends_hero(path: str) -> bool
 # Every program in the corpus must compile BEFORE anything is mutated. Every
 # offending file is listed rather than the first, because a corpus is usually
 # wrong in one way and fixing it one error per run is the slowest possible loop.
-function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library: str) -> str?
-    refused: [str] @ []
+function refuse_a_corpus_that_does_not_compile(sources: [score.Program], unread: [str], library: str) -> str?
+    refused: [str] @ unread
 
     for one in sources
         if !score.base_checks_clean(name: one.checked_as, text: one.text, library: library)
@@ -183,7 +207,7 @@ function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library
     if refused.len() == 0
         return fail(code: "clean", msg: "every program compiles")
     lines: [str] @ [
-        "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + sources.len().to_str() + " programs are already refused by `heroes check`:\n"
+        "this corpus does not compile, so its kill rate would be meaningless\n  " + refused.len().to_str() + " of " + (sources.len() + unread.len()).to_str() + " programs are already refused by `heroes check`:\n"
     ]
 
     for name in refused
@@ -193,7 +217,7 @@ function refuse_a_corpus_that_does_not_compile(sources: [score.Program], library
         lines.join("") + "  every mutant of a program that is already wrong is killed by the\n  diagnostic that was already there — run `heroes check` on each"
     )
 
-function why(got: [score.Program]?) -> str
+function why(got: Corpus?) -> str
     return match got
         .ok _  => ""
         .err e => e.msg

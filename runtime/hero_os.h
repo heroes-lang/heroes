@@ -59,6 +59,20 @@
  * absent. */
 HeroStr hero_file_read(const char *path, int64_t *status);
 
+/* The compiler's read of a source file it will tell about, never a program's
+ * (panel 189, defect 227): bound in `selfhost/module/reading.hero`'s own group,
+ * so no emitted program names it and the ABI stamp does not move (panel 089's
+ * reading: adding a function is self-guarding, an old runtime is an undefined
+ * symbol at link). `*status` is `hero_file_read`'s, and so is the result for
+ * every status but one. For HERO_OS_NOT_TEXT the result is the file as a `str`
+ * can hold it, preceded by its MARKS: each byte that is not part of a
+ * well-formed UTF-8 sequence is one U+FFFD in the text, and the marks give two
+ * characters for every U+FFFD of the text in order, that byte in upper-case
+ * hexadecimal or `--` for a U+FFFD the file itself held. `*marks` is how many
+ * bytes of the result are marks; the text is the rest. Zero for every other
+ * status. `parts/os.c` says why each choice was made. */
+HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks);
+
 /* The text, written whole, replacing whatever was there. Returns a status. */
 int64_t hero_file_write(const char *path, HeroStr text);
 
