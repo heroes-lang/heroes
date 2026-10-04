@@ -541,22 +541,23 @@ h_0opt_5a58f2ca h_main_route(HeroMapHeader * h0_lines, HeroStr h1_from, HeroStr 
     HeroStr h13_next = {0};
     h_0opt_473cb9ae h14_f2 = {0};
     bool h15_r0;
-    h_0opt_5a58f2ca h16_own16 = {0};
+    h_0opt_5a58f2ca h16_ret0 = {0};
     h_0opt_5a58f2ca h17_own17 = {0};
     h_0opt_5a58f2ca h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroMapHeader * h20_own20 = {0};
+    h_0opt_5a58f2ca h19_own19 = {0};
+    HeroArrayHeader * h20_own20 = {0};
     HeroMapHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    h_0opt_5a58f2ca h23_own23 = {0};
-    HeroArrayHeader * h24_own24 = {0};
-    HeroStr h25_own25 = {0};
+    HeroMapHeader * h22_own22 = {0};
+    HeroArrayHeader * h23_own23 = {0};
+    h_0opt_5a58f2ca h24_own24 = {0};
+    HeroArrayHeader * h25_own25 = {0};
     HeroStr h26_own26 = {0};
     HeroStr h27_own27 = {0};
-    h_0opt_5a58f2ca h28_own28 = {0};
-    h_0opt_473cb9ae h29_own29 = {0};
-    HeroArrayHeader * h30_own30 = {0};
-    h_0opt_5a58f2ca h31_own31 = {0};
+    HeroStr h28_own28 = {0};
+    h_0opt_5a58f2ca h29_own29 = {0};
+    h_0opt_473cb9ae h30_own30 = {0};
+    HeroArrayHeader * h31_own31 = {0};
+    h_0opt_5a58f2ca h32_own32 = {0};
     HeroMapHeader * t1;
     HeroStr t2;
     h_0opt_5a58f2ca t3;
@@ -650,26 +651,27 @@ h_0opt_5a58f2ca h_main_route(HeroMapHeader * h0_lines, HeroStr h1_from, HeroStr 
     h_0opt_5a58f2ca t93;
     h_0opt_5a58f2ca t94;
     h_0opt_5a58f2ca t95;
-    HeroArrayHeader * t96;
+    h_0opt_5a58f2ca t96;
     HeroArrayHeader * t97;
-    HeroMapHeader * t98;
+    HeroArrayHeader * t98;
     HeroMapHeader * t99;
     HeroMapHeader * t100;
     HeroMapHeader * t101;
-    HeroArrayHeader * t102;
-    h_0opt_5a58f2ca t103;
-    HeroStr t104;
-    HeroArrayHeader * t105;
+    HeroMapHeader * t102;
+    HeroArrayHeader * t103;
+    h_0opt_5a58f2ca t104;
+    HeroStr t105;
     HeroArrayHeader * t106;
-    HeroStr t107;
+    HeroArrayHeader * t107;
     HeroStr t108;
     HeroStr t109;
-    h_0opt_5a58f2ca t110;
-    HeroStr t111;
-    h_0opt_473cb9ae t112;
+    HeroStr t110;
+    h_0opt_5a58f2ca t111;
+    HeroStr t112;
     h_0opt_473cb9ae t113;
-    HeroArrayHeader * t114;
-    h_0opt_5a58f2ca t115;
+    h_0opt_473cb9ae t114;
+    HeroArrayHeader * t115;
+    h_0opt_5a58f2ca t116;
     goto bb0;
 bb0:
 #line 41 "examples/routes/main.hero"
@@ -695,19 +697,19 @@ bb0:
 #line 41 "examples/routes/main.hero"
     }
 #line 41 "examples/routes/main.hero"
-    t91 = h16_own16;
+    t92 = h17_own17;
 #line 41 "examples/routes/main.hero"
-    h16_own16 = t3;
-#line 702 "main.c"
-    h_0opt_5a58f2ca_release(&t91);
+    h17_own17 = t3;
+#line 704 "main.c"
+    h_0opt_5a58f2ca_release(&t92);
 #line 41 "examples/routes/main.hero"
-    t92 = h4_f0;
-#line 706 "main.c"
+    t93 = h4_f0;
+#line 708 "main.c"
     h_0opt_5a58f2ca_retain(&t3);
 #line 41 "examples/routes/main.hero"
     h4_f0 = t3;
-#line 710 "main.c"
-    h_0opt_5a58f2ca_release(&t92);
+#line 712 "main.c"
+    h_0opt_5a58f2ca_release(&t93);
 #line 41 "examples/routes/main.hero"
     t4 = h4_f0;
 #line 41 "examples/routes/main.hero"
@@ -755,19 +757,19 @@ bb2:
 #line 41 "examples/routes/main.hero"
     }
 #line 41 "examples/routes/main.hero"
-    t93 = h17_own17;
+    t94 = h18_own18;
 #line 41 "examples/routes/main.hero"
-    h17_own17 = t10;
-#line 762 "main.c"
-    h_0opt_5a58f2ca_release(&t93);
+    h18_own18 = t10;
+#line 764 "main.c"
+    h_0opt_5a58f2ca_release(&t94);
 #line 41 "examples/routes/main.hero"
-    t94 = h5_f1;
-#line 766 "main.c"
+    t95 = h5_f1;
+#line 768 "main.c"
     h_0opt_5a58f2ca_retain(&t10);
 #line 41 "examples/routes/main.hero"
     h5_f1 = t10;
-#line 770 "main.c"
-    h_0opt_5a58f2ca_release(&t94);
+#line 772 "main.c"
+    h_0opt_5a58f2ca_release(&t95);
 #line 41 "examples/routes/main.hero"
     t11 = h5_f1;
 #line 41 "examples/routes/main.hero"
@@ -792,100 +794,28 @@ bb4:
     t16 = HERO_STR_LIT(hero_str_6f4edbf2);
 #line 42 "examples/routes/main.hero"
     t17 = HERO_STR_LIT(hero_str_2c69722a);
-#line 796 "main.c"
+#line 798 "main.c"
     hero_str_incref(t16);
 #line 42 "examples/routes/main.hero"
-#line 799 "main.c"
+#line 801 "main.c"
     hero_str_incref(t17);
 #line 42 "examples/routes/main.hero"
     t18 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t16, .msg = t17}};
 #line 42 "examples/routes/main.hero"
-    t95 = h18_own18;
+    t96 = h19_own19;
 #line 42 "examples/routes/main.hero"
-    h18_own18 = t18;
-#line 807 "main.c"
-    h_0opt_5a58f2ca_release(&t95);
+    h19_own19 = t18;
+#line 809 "main.c"
+    h_0opt_5a58f2ca_release(&t96);
 #line 42 "examples/routes/main.hero"
-#line 810 "main.c"
-    h_0opt_5a58f2ca_retain(&t18);
+    h16_ret0 = t18;
 #line 42 "examples/routes/main.hero"
-#line 813 "main.c"
-    h_0opt_5a58f2ca_release(&h4_f0);
+    goto bb25;
 #line 42 "examples/routes/main.hero"
-#line 816 "main.c"
-    h_0opt_5a58f2ca_release(&h5_f1);
-#line 42 "examples/routes/main.hero"
-#line 819 "main.c"
-    hero_array_decref(h6_frontier);
-#line 42 "examples/routes/main.hero"
-#line 822 "main.c"
-    hero_map_decref(h7_came_from);
-#line 42 "examples/routes/main.hero"
-#line 825 "main.c"
-    hero_map_decref(h8_seen);
-#line 42 "examples/routes/main.hero"
-#line 828 "main.c"
-    hero_str_decref(h10_here);
-#line 42 "examples/routes/main.hero"
-#line 831 "main.c"
-    hero_array_decref(h11_xs0);
-#line 42 "examples/routes/main.hero"
-#line 834 "main.c"
-    hero_str_decref(h13_next);
-#line 42 "examples/routes/main.hero"
-#line 837 "main.c"
-    h_0opt_473cb9ae_release(&h14_f2);
-#line 42 "examples/routes/main.hero"
-#line 840 "main.c"
-    h_0opt_5a58f2ca_release(&h16_own16);
-#line 42 "examples/routes/main.hero"
-#line 843 "main.c"
-    h_0opt_5a58f2ca_release(&h17_own17);
-#line 42 "examples/routes/main.hero"
-#line 846 "main.c"
-    h_0opt_5a58f2ca_release(&h18_own18);
-#line 42 "examples/routes/main.hero"
-#line 849 "main.c"
-    hero_array_decref(h19_own19);
-#line 42 "examples/routes/main.hero"
-#line 852 "main.c"
-    hero_map_decref(h20_own20);
-#line 42 "examples/routes/main.hero"
-#line 855 "main.c"
-    hero_map_decref(h21_own21);
-#line 42 "examples/routes/main.hero"
-#line 858 "main.c"
-    hero_array_decref(h22_own22);
-#line 42 "examples/routes/main.hero"
-#line 861 "main.c"
-    h_0opt_5a58f2ca_release(&h23_own23);
-#line 42 "examples/routes/main.hero"
-#line 864 "main.c"
-    hero_array_decref(h24_own24);
-#line 42 "examples/routes/main.hero"
-#line 867 "main.c"
-    hero_str_decref(h25_own25);
-#line 42 "examples/routes/main.hero"
-#line 870 "main.c"
-    hero_str_decref(h26_own26);
-#line 42 "examples/routes/main.hero"
-#line 873 "main.c"
-    hero_str_decref(h27_own27);
-#line 42 "examples/routes/main.hero"
-#line 876 "main.c"
-    h_0opt_5a58f2ca_release(&h28_own28);
-#line 42 "examples/routes/main.hero"
-#line 879 "main.c"
-    h_0opt_473cb9ae_release(&h29_own29);
-#line 42 "examples/routes/main.hero"
-#line 882 "main.c"
-    hero_array_decref(h30_own30);
-#line 42 "examples/routes/main.hero"
-#line 885 "main.c"
-    h_0opt_5a58f2ca_release(&h31_own31);
-    return t18;
 bb5:
+#line 42 "examples/routes/main.hero"
     goto bb1;
+#line 42 "examples/routes/main.hero"
 bb6:
 #line 46 "examples/routes/main.hero"
     t25 = h1_from;
@@ -896,51 +826,51 @@ bb6:
 #line 46 "examples/routes/main.hero"
       hero_array_decref(t26); t26 = grown; }
 #line 46 "examples/routes/main.hero"
-    t96 = h19_own19;
+    t97 = h20_own20;
 #line 46 "examples/routes/main.hero"
-    h19_own19 = t26;
-#line 903 "main.c"
-    hero_array_decref(t96);
+    h20_own20 = t26;
+#line 833 "main.c"
+    hero_array_decref(t97);
 #line 46 "examples/routes/main.hero"
-    t97 = h6_frontier;
-#line 907 "main.c"
+    t98 = h6_frontier;
+#line 837 "main.c"
     hero_array_incref(t26);
 #line 46 "examples/routes/main.hero"
     h6_frontier = t26;
-#line 911 "main.c"
-    hero_array_decref(t97);
+#line 841 "main.c"
+    hero_array_decref(t98);
 #line 47 "examples/routes/main.hero"
     t27 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
 #line 47 "examples/routes/main.hero"
-    t98 = h20_own20;
+    t99 = h21_own21;
 #line 47 "examples/routes/main.hero"
-    h20_own20 = t27;
-#line 919 "main.c"
-    hero_map_decref(t98);
+    h21_own21 = t27;
+#line 849 "main.c"
+    hero_map_decref(t99);
 #line 47 "examples/routes/main.hero"
-    t99 = h7_came_from;
-#line 923 "main.c"
+    t100 = h7_came_from;
+#line 853 "main.c"
     hero_map_incref(t27);
 #line 47 "examples/routes/main.hero"
     h7_came_from = t27;
-#line 927 "main.c"
-    hero_map_decref(t99);
+#line 857 "main.c"
+    hero_map_decref(t100);
 #line 48 "examples/routes/main.hero"
     t28 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
 #line 48 "examples/routes/main.hero"
-    t100 = h21_own21;
+    t101 = h22_own22;
 #line 48 "examples/routes/main.hero"
-    h21_own21 = t28;
-#line 935 "main.c"
-    hero_map_decref(t100);
+    h22_own22 = t28;
+#line 865 "main.c"
+    hero_map_decref(t101);
 #line 48 "examples/routes/main.hero"
-    t101 = h8_seen;
-#line 939 "main.c"
+    t102 = h8_seen;
+#line 869 "main.c"
     hero_map_incref(t28);
 #line 48 "examples/routes/main.hero"
     h8_seen = t28;
-#line 943 "main.c"
-    hero_map_decref(t101);
+#line 873 "main.c"
+    hero_map_decref(t102);
 #line 49 "examples/routes/main.hero"
     t29 = h1_from;
 #line 49 "examples/routes/main.hero"
@@ -964,103 +894,31 @@ bb7:
 #line 45 "examples/routes/main.hero"
       hero_array_decref(t23); t23 = grown; }
 #line 45 "examples/routes/main.hero"
-    t102 = h22_own22;
+    t103 = h23_own23;
 #line 45 "examples/routes/main.hero"
-    h22_own22 = t23;
-#line 971 "main.c"
-    hero_array_decref(t102);
+    h23_own23 = t23;
+#line 901 "main.c"
+    hero_array_decref(t103);
 #line 45 "examples/routes/main.hero"
-#line 974 "main.c"
+#line 904 "main.c"
     hero_array_incref(t23);
 #line 45 "examples/routes/main.hero"
     t24 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t23};
 #line 45 "examples/routes/main.hero"
-    t103 = h23_own23;
+    t104 = h24_own24;
 #line 45 "examples/routes/main.hero"
-    h23_own23 = t24;
-#line 982 "main.c"
-    h_0opt_5a58f2ca_release(&t103);
+    h24_own24 = t24;
+#line 912 "main.c"
+    h_0opt_5a58f2ca_release(&t104);
 #line 45 "examples/routes/main.hero"
-#line 985 "main.c"
-    h_0opt_5a58f2ca_retain(&t24);
+    h16_ret0 = t24;
 #line 45 "examples/routes/main.hero"
-#line 988 "main.c"
-    h_0opt_5a58f2ca_release(&h4_f0);
+    goto bb25;
 #line 45 "examples/routes/main.hero"
-#line 991 "main.c"
-    h_0opt_5a58f2ca_release(&h5_f1);
-#line 45 "examples/routes/main.hero"
-#line 994 "main.c"
-    hero_array_decref(h6_frontier);
-#line 45 "examples/routes/main.hero"
-#line 997 "main.c"
-    hero_map_decref(h7_came_from);
-#line 45 "examples/routes/main.hero"
-#line 1000 "main.c"
-    hero_map_decref(h8_seen);
-#line 45 "examples/routes/main.hero"
-#line 1003 "main.c"
-    hero_str_decref(h10_here);
-#line 45 "examples/routes/main.hero"
-#line 1006 "main.c"
-    hero_array_decref(h11_xs0);
-#line 45 "examples/routes/main.hero"
-#line 1009 "main.c"
-    hero_str_decref(h13_next);
-#line 45 "examples/routes/main.hero"
-#line 1012 "main.c"
-    h_0opt_473cb9ae_release(&h14_f2);
-#line 45 "examples/routes/main.hero"
-#line 1015 "main.c"
-    h_0opt_5a58f2ca_release(&h16_own16);
-#line 45 "examples/routes/main.hero"
-#line 1018 "main.c"
-    h_0opt_5a58f2ca_release(&h17_own17);
-#line 45 "examples/routes/main.hero"
-#line 1021 "main.c"
-    h_0opt_5a58f2ca_release(&h18_own18);
-#line 45 "examples/routes/main.hero"
-#line 1024 "main.c"
-    hero_array_decref(h19_own19);
-#line 45 "examples/routes/main.hero"
-#line 1027 "main.c"
-    hero_map_decref(h20_own20);
-#line 45 "examples/routes/main.hero"
-#line 1030 "main.c"
-    hero_map_decref(h21_own21);
-#line 45 "examples/routes/main.hero"
-#line 1033 "main.c"
-    hero_array_decref(h22_own22);
-#line 45 "examples/routes/main.hero"
-#line 1036 "main.c"
-    h_0opt_5a58f2ca_release(&h23_own23);
-#line 45 "examples/routes/main.hero"
-#line 1039 "main.c"
-    hero_array_decref(h24_own24);
-#line 45 "examples/routes/main.hero"
-#line 1042 "main.c"
-    hero_str_decref(h25_own25);
-#line 45 "examples/routes/main.hero"
-#line 1045 "main.c"
-    hero_str_decref(h26_own26);
-#line 45 "examples/routes/main.hero"
-#line 1048 "main.c"
-    hero_str_decref(h27_own27);
-#line 45 "examples/routes/main.hero"
-#line 1051 "main.c"
-    h_0opt_5a58f2ca_release(&h28_own28);
-#line 45 "examples/routes/main.hero"
-#line 1054 "main.c"
-    h_0opt_473cb9ae_release(&h29_own29);
-#line 45 "examples/routes/main.hero"
-#line 1057 "main.c"
-    hero_array_decref(h30_own30);
-#line 45 "examples/routes/main.hero"
-#line 1060 "main.c"
-    h_0opt_5a58f2ca_release(&h31_own31);
-    return t24;
 bb8:
+#line 45 "examples/routes/main.hero"
     goto bb6;
+#line 45 "examples/routes/main.hero"
 bb9:
 #line 52 "examples/routes/main.hero"
     t32 = h9_at;
@@ -1081,13 +939,13 @@ bb10:
 #line 53 "examples/routes/main.hero"
     t38 = *(HeroStr const *)hero_array_at(t36, t37);
 #line 53 "examples/routes/main.hero"
-    t104 = h10_here;
-#line 1086 "main.c"
+    t105 = h10_here;
+#line 944 "main.c"
     hero_str_incref(t38);
 #line 53 "examples/routes/main.hero"
     h10_here = t38;
-#line 1090 "main.c"
-    hero_str_decref(t104);
+#line 948 "main.c"
+    hero_str_decref(t105);
 #line 54 "examples/routes/main.hero"
     t39 = h9_at;
 #line 54 "examples/routes/main.hero"
@@ -1103,19 +961,19 @@ bb10:
 #line 56 "examples/routes/main.hero"
     t44 = h_main_neighbours(t42, t43);
 #line 56 "examples/routes/main.hero"
-    t105 = h24_own24;
+    t106 = h25_own25;
 #line 56 "examples/routes/main.hero"
-    h24_own24 = t44;
-#line 1110 "main.c"
-    hero_array_decref(t105);
+    h25_own25 = t44;
+#line 968 "main.c"
+    hero_array_decref(t106);
 #line 56 "examples/routes/main.hero"
-    t106 = h11_xs0;
-#line 1114 "main.c"
+    t107 = h11_xs0;
+#line 972 "main.c"
     hero_array_incref(t44);
 #line 56 "examples/routes/main.hero"
     h11_xs0 = t44;
-#line 1118 "main.c"
-    hero_array_decref(t106);
+#line 976 "main.c"
+    hero_array_decref(t107);
 #line 56 "examples/routes/main.hero"
     t45 = INT64_C(0);
 #line 56 "examples/routes/main.hero"
@@ -1133,124 +991,50 @@ bb11:
 #line 66 "examples/routes/main.hero"
     t85 = hero_str_concat(t83, t84);
 #line 66 "examples/routes/main.hero"
-    t107 = h25_own25;
+    t108 = h26_own26;
 #line 66 "examples/routes/main.hero"
-    h25_own25 = t85;
-#line 1140 "main.c"
-    hero_str_decref(t107);
+    h26_own26 = t85;
+#line 998 "main.c"
+    hero_str_decref(t108);
 #line 66 "examples/routes/main.hero"
     t86 = HERO_STR_LIT(hero_str_4684c61);
 #line 66 "examples/routes/main.hero"
     t87 = hero_str_concat(t85, t86);
 #line 66 "examples/routes/main.hero"
-    t108 = h26_own26;
+    t109 = h27_own27;
 #line 66 "examples/routes/main.hero"
-    h26_own26 = t87;
-#line 1150 "main.c"
-    hero_str_decref(t108);
+    h27_own27 = t87;
+#line 1008 "main.c"
+    hero_str_decref(t109);
 #line 66 "examples/routes/main.hero"
     t88 = h2_to;
 #line 66 "examples/routes/main.hero"
     t89 = hero_str_concat(t87, t88);
 #line 66 "examples/routes/main.hero"
-    t109 = h27_own27;
+    t110 = h28_own28;
 #line 66 "examples/routes/main.hero"
-    h27_own27 = t89;
-#line 1160 "main.c"
-    hero_str_decref(t109);
+    h28_own28 = t89;
+#line 1018 "main.c"
+    hero_str_decref(t110);
 #line 66 "examples/routes/main.hero"
-#line 1163 "main.c"
+#line 1021 "main.c"
     hero_str_incref(t82);
 #line 66 "examples/routes/main.hero"
-#line 1166 "main.c"
+#line 1024 "main.c"
     hero_str_incref(t89);
 #line 66 "examples/routes/main.hero"
     t90 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t82, .msg = t89}};
 #line 66 "examples/routes/main.hero"
-    t110 = h28_own28;
+    t111 = h29_own29;
 #line 66 "examples/routes/main.hero"
-    h28_own28 = t90;
-#line 1174 "main.c"
-    h_0opt_5a58f2ca_release(&t110);
+    h29_own29 = t90;
+#line 1032 "main.c"
+    h_0opt_5a58f2ca_release(&t111);
 #line 66 "examples/routes/main.hero"
-#line 1177 "main.c"
-    h_0opt_5a58f2ca_retain(&t90);
+    h16_ret0 = t90;
 #line 66 "examples/routes/main.hero"
-#line 1180 "main.c"
-    h_0opt_5a58f2ca_release(&h4_f0);
+    goto bb25;
 #line 66 "examples/routes/main.hero"
-#line 1183 "main.c"
-    h_0opt_5a58f2ca_release(&h5_f1);
-#line 66 "examples/routes/main.hero"
-#line 1186 "main.c"
-    hero_array_decref(h6_frontier);
-#line 66 "examples/routes/main.hero"
-#line 1189 "main.c"
-    hero_map_decref(h7_came_from);
-#line 66 "examples/routes/main.hero"
-#line 1192 "main.c"
-    hero_map_decref(h8_seen);
-#line 66 "examples/routes/main.hero"
-#line 1195 "main.c"
-    hero_str_decref(h10_here);
-#line 66 "examples/routes/main.hero"
-#line 1198 "main.c"
-    hero_array_decref(h11_xs0);
-#line 66 "examples/routes/main.hero"
-#line 1201 "main.c"
-    hero_str_decref(h13_next);
-#line 66 "examples/routes/main.hero"
-#line 1204 "main.c"
-    h_0opt_473cb9ae_release(&h14_f2);
-#line 66 "examples/routes/main.hero"
-#line 1207 "main.c"
-    h_0opt_5a58f2ca_release(&h16_own16);
-#line 66 "examples/routes/main.hero"
-#line 1210 "main.c"
-    h_0opt_5a58f2ca_release(&h17_own17);
-#line 66 "examples/routes/main.hero"
-#line 1213 "main.c"
-    h_0opt_5a58f2ca_release(&h18_own18);
-#line 66 "examples/routes/main.hero"
-#line 1216 "main.c"
-    hero_array_decref(h19_own19);
-#line 66 "examples/routes/main.hero"
-#line 1219 "main.c"
-    hero_map_decref(h20_own20);
-#line 66 "examples/routes/main.hero"
-#line 1222 "main.c"
-    hero_map_decref(h21_own21);
-#line 66 "examples/routes/main.hero"
-#line 1225 "main.c"
-    hero_array_decref(h22_own22);
-#line 66 "examples/routes/main.hero"
-#line 1228 "main.c"
-    h_0opt_5a58f2ca_release(&h23_own23);
-#line 66 "examples/routes/main.hero"
-#line 1231 "main.c"
-    hero_array_decref(h24_own24);
-#line 66 "examples/routes/main.hero"
-#line 1234 "main.c"
-    hero_str_decref(h25_own25);
-#line 66 "examples/routes/main.hero"
-#line 1237 "main.c"
-    hero_str_decref(h26_own26);
-#line 66 "examples/routes/main.hero"
-#line 1240 "main.c"
-    hero_str_decref(h27_own27);
-#line 66 "examples/routes/main.hero"
-#line 1243 "main.c"
-    h_0opt_5a58f2ca_release(&h28_own28);
-#line 66 "examples/routes/main.hero"
-#line 1246 "main.c"
-    h_0opt_473cb9ae_release(&h29_own29);
-#line 66 "examples/routes/main.hero"
-#line 1249 "main.c"
-    hero_array_decref(h30_own30);
-#line 66 "examples/routes/main.hero"
-#line 1252 "main.c"
-    h_0opt_5a58f2ca_release(&h31_own31);
-    return t90;
 bb12:
 #line 56 "examples/routes/main.hero"
     t46 = h12_i0;
@@ -1271,13 +1055,13 @@ bb13:
 #line 56 "examples/routes/main.hero"
     t52 = *(HeroStr const *)hero_array_at(t50, t51);
 #line 56 "examples/routes/main.hero"
-    t111 = h13_next;
-#line 1276 "main.c"
+    t112 = h13_next;
+#line 1060 "main.c"
     hero_str_incref(t52);
 #line 56 "examples/routes/main.hero"
     h13_next = t52;
-#line 1280 "main.c"
-    hero_str_decref(t111);
+#line 1064 "main.c"
+    hero_str_decref(t112);
 #line 57 "examples/routes/main.hero"
     t53 = h8_seen;
 #line 57 "examples/routes/main.hero"
@@ -1301,19 +1085,19 @@ bb13:
 #line 57 "examples/routes/main.hero"
     }
 #line 57 "examples/routes/main.hero"
-    t112 = h29_own29;
+    t113 = h30_own30;
 #line 57 "examples/routes/main.hero"
-    h29_own29 = t55;
-#line 1308 "main.c"
-    h_0opt_473cb9ae_release(&t112);
+    h30_own30 = t55;
+#line 1092 "main.c"
+    h_0opt_473cb9ae_release(&t113);
 #line 57 "examples/routes/main.hero"
-    t113 = h14_f2;
-#line 1312 "main.c"
+    t114 = h14_f2;
+#line 1096 "main.c"
     h_0opt_473cb9ae_retain(&t55);
 #line 57 "examples/routes/main.hero"
     h14_f2 = t55;
-#line 1316 "main.c"
-    h_0opt_473cb9ae_release(&t113);
+#line 1100 "main.c"
+    h_0opt_473cb9ae_release(&t114);
 #line 57 "examples/routes/main.hero"
     t56 = h14_f2;
 #line 57 "examples/routes/main.hero"
@@ -1352,7 +1136,7 @@ bb16:
     t66 = h13_next;
 #line 60 "examples/routes/main.hero"
     t67 = h10_here;
-#line 1356 "main.c"
+#line 1140 "main.c"
     hero_str_incref(t67);
 #line 60 "examples/routes/main.hero"
     hero_map_set(&(h7_came_from), &t66, &t67);
@@ -1415,108 +1199,117 @@ bb23:
 #line 63 "examples/routes/main.hero"
     t74 = h_main_walked_back(t71, t72, t73);
 #line 63 "examples/routes/main.hero"
-    t114 = h30_own30;
+    t115 = h31_own31;
 #line 63 "examples/routes/main.hero"
-    h30_own30 = t74;
-#line 1422 "main.c"
-    hero_array_decref(t114);
+    h31_own31 = t74;
+#line 1206 "main.c"
+    hero_array_decref(t115);
 #line 63 "examples/routes/main.hero"
-#line 1425 "main.c"
+#line 1209 "main.c"
     hero_array_incref(t74);
 #line 63 "examples/routes/main.hero"
     t75 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t74};
 #line 63 "examples/routes/main.hero"
-    t115 = h31_own31;
+    t116 = h32_own32;
 #line 63 "examples/routes/main.hero"
-    h31_own31 = t75;
-#line 1433 "main.c"
-    h_0opt_5a58f2ca_release(&t115);
+    h32_own32 = t75;
+#line 1217 "main.c"
+    h_0opt_5a58f2ca_release(&t116);
 #line 63 "examples/routes/main.hero"
-#line 1436 "main.c"
-    h_0opt_5a58f2ca_retain(&t75);
+    h16_ret0 = t75;
 #line 63 "examples/routes/main.hero"
-#line 1439 "main.c"
-    h_0opt_5a58f2ca_release(&h4_f0);
+    goto bb25;
 #line 63 "examples/routes/main.hero"
-#line 1442 "main.c"
-    h_0opt_5a58f2ca_release(&h5_f1);
-#line 63 "examples/routes/main.hero"
-#line 1445 "main.c"
-    hero_array_decref(h6_frontier);
-#line 63 "examples/routes/main.hero"
-#line 1448 "main.c"
-    hero_map_decref(h7_came_from);
-#line 63 "examples/routes/main.hero"
-#line 1451 "main.c"
-    hero_map_decref(h8_seen);
-#line 63 "examples/routes/main.hero"
-#line 1454 "main.c"
-    hero_str_decref(h10_here);
-#line 63 "examples/routes/main.hero"
-#line 1457 "main.c"
-    hero_array_decref(h11_xs0);
-#line 63 "examples/routes/main.hero"
-#line 1460 "main.c"
-    hero_str_decref(h13_next);
-#line 63 "examples/routes/main.hero"
-#line 1463 "main.c"
-    h_0opt_473cb9ae_release(&h14_f2);
-#line 63 "examples/routes/main.hero"
-#line 1466 "main.c"
-    h_0opt_5a58f2ca_release(&h16_own16);
-#line 63 "examples/routes/main.hero"
-#line 1469 "main.c"
-    h_0opt_5a58f2ca_release(&h17_own17);
-#line 63 "examples/routes/main.hero"
-#line 1472 "main.c"
-    h_0opt_5a58f2ca_release(&h18_own18);
-#line 63 "examples/routes/main.hero"
-#line 1475 "main.c"
-    hero_array_decref(h19_own19);
-#line 63 "examples/routes/main.hero"
-#line 1478 "main.c"
-    hero_map_decref(h20_own20);
-#line 63 "examples/routes/main.hero"
-#line 1481 "main.c"
-    hero_map_decref(h21_own21);
-#line 63 "examples/routes/main.hero"
-#line 1484 "main.c"
-    hero_array_decref(h22_own22);
-#line 63 "examples/routes/main.hero"
-#line 1487 "main.c"
-    h_0opt_5a58f2ca_release(&h23_own23);
-#line 63 "examples/routes/main.hero"
-#line 1490 "main.c"
-    hero_array_decref(h24_own24);
-#line 63 "examples/routes/main.hero"
-#line 1493 "main.c"
-    hero_str_decref(h25_own25);
-#line 63 "examples/routes/main.hero"
-#line 1496 "main.c"
-    hero_str_decref(h26_own26);
-#line 63 "examples/routes/main.hero"
-#line 1499 "main.c"
-    hero_str_decref(h27_own27);
-#line 63 "examples/routes/main.hero"
-#line 1502 "main.c"
-    h_0opt_5a58f2ca_release(&h28_own28);
-#line 63 "examples/routes/main.hero"
-#line 1505 "main.c"
-    h_0opt_473cb9ae_release(&h29_own29);
-#line 63 "examples/routes/main.hero"
-#line 1508 "main.c"
-    hero_array_decref(h30_own30);
-#line 63 "examples/routes/main.hero"
-#line 1511 "main.c"
-    h_0opt_5a58f2ca_release(&h31_own31);
-    return t75;
 bb24:
+#line 63 "examples/routes/main.hero"
     goto bb22;
+#line 63 "examples/routes/main.hero"
+bb25:
+#line 40 "examples/routes/main.hero"
+    t91 = h16_ret0;
+#line 1231 "main.c"
+    h_0opt_5a58f2ca_retain(&t91);
+#line 40 "examples/routes/main.hero"
+#line 1234 "main.c"
+    h_0opt_5a58f2ca_release(&h4_f0);
+#line 40 "examples/routes/main.hero"
+#line 1237 "main.c"
+    h_0opt_5a58f2ca_release(&h5_f1);
+#line 40 "examples/routes/main.hero"
+#line 1240 "main.c"
+    hero_array_decref(h6_frontier);
+#line 40 "examples/routes/main.hero"
+#line 1243 "main.c"
+    hero_map_decref(h7_came_from);
+#line 40 "examples/routes/main.hero"
+#line 1246 "main.c"
+    hero_map_decref(h8_seen);
+#line 40 "examples/routes/main.hero"
+#line 1249 "main.c"
+    hero_str_decref(h10_here);
+#line 40 "examples/routes/main.hero"
+#line 1252 "main.c"
+    hero_array_decref(h11_xs0);
+#line 40 "examples/routes/main.hero"
+#line 1255 "main.c"
+    hero_str_decref(h13_next);
+#line 40 "examples/routes/main.hero"
+#line 1258 "main.c"
+    h_0opt_473cb9ae_release(&h14_f2);
+#line 40 "examples/routes/main.hero"
+#line 1261 "main.c"
+    h_0opt_5a58f2ca_release(&h17_own17);
+#line 40 "examples/routes/main.hero"
+#line 1264 "main.c"
+    h_0opt_5a58f2ca_release(&h18_own18);
+#line 40 "examples/routes/main.hero"
+#line 1267 "main.c"
+    h_0opt_5a58f2ca_release(&h19_own19);
+#line 40 "examples/routes/main.hero"
+#line 1270 "main.c"
+    hero_array_decref(h20_own20);
+#line 40 "examples/routes/main.hero"
+#line 1273 "main.c"
+    hero_map_decref(h21_own21);
+#line 40 "examples/routes/main.hero"
+#line 1276 "main.c"
+    hero_map_decref(h22_own22);
+#line 40 "examples/routes/main.hero"
+#line 1279 "main.c"
+    hero_array_decref(h23_own23);
+#line 40 "examples/routes/main.hero"
+#line 1282 "main.c"
+    h_0opt_5a58f2ca_release(&h24_own24);
+#line 40 "examples/routes/main.hero"
+#line 1285 "main.c"
+    hero_array_decref(h25_own25);
+#line 40 "examples/routes/main.hero"
+#line 1288 "main.c"
+    hero_str_decref(h26_own26);
+#line 40 "examples/routes/main.hero"
+#line 1291 "main.c"
+    hero_str_decref(h27_own27);
+#line 40 "examples/routes/main.hero"
+#line 1294 "main.c"
+    hero_str_decref(h28_own28);
+#line 40 "examples/routes/main.hero"
+#line 1297 "main.c"
+    h_0opt_5a58f2ca_release(&h29_own29);
+#line 40 "examples/routes/main.hero"
+#line 1300 "main.c"
+    h_0opt_473cb9ae_release(&h30_own30);
+#line 40 "examples/routes/main.hero"
+#line 1303 "main.c"
+    hero_array_decref(h31_own31);
+#line 40 "examples/routes/main.hero"
+#line 1306 "main.c"
+    h_0opt_5a58f2ca_release(&h32_own32);
+    return t91;
 }
 
 #line 72 "examples/routes/main.hero"
 HeroArrayHeader * h_main_walked_back(HeroMapHeader * h0_came_from, HeroStr h1_from, HeroStr h2_to) {
-#line 1520 "main.c"
+#line 1313 "main.c"
     HeroArrayHeader * h3_backwards = {0};
     HeroStr h4_here = {0};
     h_0opt_f87774a h5_f0 = {0};
@@ -1586,25 +1379,25 @@ bb0:
     t39 = h10_own10;
 #line 73 "examples/routes/main.hero"
     h10_own10 = t2;
-#line 1590 "main.c"
+#line 1383 "main.c"
     hero_array_decref(t39);
 #line 73 "examples/routes/main.hero"
     t40 = h3_backwards;
-#line 1594 "main.c"
+#line 1387 "main.c"
     hero_array_incref(t2);
 #line 73 "examples/routes/main.hero"
     h3_backwards = t2;
-#line 1598 "main.c"
+#line 1391 "main.c"
     hero_array_decref(t40);
 #line 74 "examples/routes/main.hero"
     t3 = h2_to;
 #line 74 "examples/routes/main.hero"
     t41 = h4_here;
-#line 1604 "main.c"
+#line 1397 "main.c"
     hero_str_incref(t3);
 #line 74 "examples/routes/main.hero"
     h4_here = t3;
-#line 1608 "main.c"
+#line 1401 "main.c"
     hero_str_decref(t41);
     goto bb1;
 bb1:
@@ -1644,15 +1437,15 @@ bb2:
     t42 = h11_own11;
 #line 77 "examples/routes/main.hero"
     h11_own11 = t9;
-#line 1648 "main.c"
+#line 1441 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 77 "examples/routes/main.hero"
     t43 = h5_f0;
-#line 1652 "main.c"
+#line 1445 "main.c"
     h_0opt_f87774a_retain(&t9);
 #line 77 "examples/routes/main.hero"
     h5_f0 = t9;
-#line 1656 "main.c"
+#line 1449 "main.c"
     h_0opt_f87774a_release(&t43);
 #line 77 "examples/routes/main.hero"
     t10 = h5_f0;
@@ -1672,15 +1465,15 @@ bb3:
     t44 = h12_own12;
 #line 81 "examples/routes/main.hero"
     h12_own12 = t22;
-#line 1676 "main.c"
+#line 1469 "main.c"
     hero_array_decref(t44);
 #line 81 "examples/routes/main.hero"
     t45 = h8_forwards;
-#line 1680 "main.c"
+#line 1473 "main.c"
     hero_array_incref(t22);
 #line 81 "examples/routes/main.hero"
     h8_forwards = t22;
-#line 1684 "main.c"
+#line 1477 "main.c"
     hero_array_decref(t45);
 #line 82 "examples/routes/main.hero"
     t23 = h3_backwards;
@@ -1702,11 +1495,11 @@ bb4:
     t15 = t14.as.ok;
 #line 77 "examples/routes/main.hero"
     t46 = h6_r0;
-#line 1706 "main.c"
+#line 1499 "main.c"
     hero_str_incref(t15);
 #line 77 "examples/routes/main.hero"
     h6_r0 = t15;
-#line 1710 "main.c"
+#line 1503 "main.c"
     hero_str_decref(t46);
     goto bb6;
 bb5:
@@ -1714,11 +1507,11 @@ bb5:
     t16 = h1_from;
 #line 77 "examples/routes/main.hero"
     t47 = h6_r0;
-#line 1718 "main.c"
+#line 1511 "main.c"
     hero_str_incref(t16);
 #line 77 "examples/routes/main.hero"
     h6_r0 = t16;
-#line 1722 "main.c"
+#line 1515 "main.c"
     hero_str_decref(t47);
     goto bb6;
 bb6:
@@ -1726,11 +1519,11 @@ bb6:
     t17 = h6_r0;
 #line 77 "examples/routes/main.hero"
     t48 = h7_previous;
-#line 1730 "main.c"
+#line 1523 "main.c"
     hero_str_incref(t17);
 #line 77 "examples/routes/main.hero"
     h7_previous = t17;
-#line 1734 "main.c"
+#line 1527 "main.c"
     hero_str_decref(t48);
 #line 78 "examples/routes/main.hero"
     t19 = h7_previous;
@@ -1740,11 +1533,11 @@ bb6:
     t21 = h7_previous;
 #line 79 "examples/routes/main.hero"
     t49 = h4_here;
-#line 1744 "main.c"
+#line 1537 "main.c"
     hero_str_incref(t21);
 #line 79 "examples/routes/main.hero"
     h4_here = t21;
-#line 1748 "main.c"
+#line 1541 "main.c"
     hero_str_decref(t49);
     goto bb1;
 bb7:
@@ -1780,45 +1573,46 @@ bb8:
 bb9:
 #line 88 "examples/routes/main.hero"
     t38 = h8_forwards;
-#line 1784 "main.c"
+#line 1577 "main.c"
     hero_array_incref(t38);
 #line 88 "examples/routes/main.hero"
-#line 1787 "main.c"
+#line 1580 "main.c"
     hero_array_decref(h3_backwards);
 #line 88 "examples/routes/main.hero"
-#line 1790 "main.c"
+#line 1583 "main.c"
     hero_str_decref(h4_here);
 #line 88 "examples/routes/main.hero"
-#line 1793 "main.c"
+#line 1586 "main.c"
     h_0opt_f87774a_release(&h5_f0);
 #line 88 "examples/routes/main.hero"
-#line 1796 "main.c"
+#line 1589 "main.c"
     hero_str_decref(h6_r0);
 #line 88 "examples/routes/main.hero"
-#line 1799 "main.c"
+#line 1592 "main.c"
     hero_str_decref(h7_previous);
 #line 88 "examples/routes/main.hero"
-#line 1802 "main.c"
+#line 1595 "main.c"
     hero_array_decref(h8_forwards);
 #line 88 "examples/routes/main.hero"
-#line 1805 "main.c"
+#line 1598 "main.c"
     hero_array_decref(h10_own10);
 #line 88 "examples/routes/main.hero"
-#line 1808 "main.c"
+#line 1601 "main.c"
     h_0opt_f87774a_release(&h11_own11);
 #line 88 "examples/routes/main.hero"
-#line 1811 "main.c"
+#line 1604 "main.c"
     hero_array_decref(h12_own12);
     return t38;
 }
 
 #line 90 "examples/routes/main.hero"
 h_0opt_e201354 h_main_stops(HeroMapHeader * h0_lines, HeroStr h1_from, HeroStr h2_to) {
-#line 1818 "main.c"
+#line 1611 "main.c"
     h_0opt_5a58f2ca h3_f0 = {0};
-    h_0opt_5a58f2ca h4_own4 = {0};
-    h_0opt_e201354 h5_own5 = {0};
+    h_0opt_e201354 h4_ret0 = {0};
+    h_0opt_5a58f2ca h5_own5 = {0};
     h_0opt_e201354 h6_own6 = {0};
+    h_0opt_e201354 h7_own7 = {0};
     HeroMapHeader * t1;
     HeroStr t2;
     HeroStr t3;
@@ -1836,10 +1630,11 @@ h_0opt_e201354 h_main_stops(HeroMapHeader * h0_lines, HeroStr h1_from, HeroStr h
     int64_t t15;
     int64_t t16;
     h_0opt_e201354 t17;
-    h_0opt_5a58f2ca t18;
+    h_0opt_e201354 t18;
     h_0opt_5a58f2ca t19;
-    h_0opt_e201354 t20;
+    h_0opt_5a58f2ca t20;
     h_0opt_e201354 t21;
+    h_0opt_e201354 t22;
     goto bb0;
 bb0:
 #line 91 "examples/routes/main.hero"
@@ -1851,19 +1646,19 @@ bb0:
 #line 91 "examples/routes/main.hero"
     t4 = h_main_route(t1, t2, t3);
 #line 91 "examples/routes/main.hero"
-    t18 = h4_own4;
+    t19 = h5_own5;
 #line 91 "examples/routes/main.hero"
-    h4_own4 = t4;
-#line 1858 "main.c"
-    h_0opt_5a58f2ca_release(&t18);
+    h5_own5 = t4;
+#line 1653 "main.c"
+    h_0opt_5a58f2ca_release(&t19);
 #line 91 "examples/routes/main.hero"
-    t19 = h3_f0;
-#line 1862 "main.c"
+    t20 = h3_f0;
+#line 1657 "main.c"
     h_0opt_5a58f2ca_retain(&t4);
 #line 91 "examples/routes/main.hero"
     h3_f0 = t4;
-#line 1866 "main.c"
-    h_0opt_5a58f2ca_release(&t19);
+#line 1661 "main.c"
+    h_0opt_5a58f2ca_release(&t20);
 #line 91 "examples/routes/main.hero"
     t5 = h3_f0;
 #line 91 "examples/routes/main.hero"
@@ -1889,63 +1684,59 @@ bb1:
 #line 91 "examples/routes/main.hero"
     t17 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t16};
 #line 91 "examples/routes/main.hero"
-    t20 = h5_own5;
+    t21 = h6_own6;
 #line 91 "examples/routes/main.hero"
-    h5_own5 = t17;
-#line 1896 "main.c"
-    h_0opt_e201354_release(&t20);
+    h6_own6 = t17;
+#line 1691 "main.c"
+    h_0opt_e201354_release(&t21);
 #line 91 "examples/routes/main.hero"
-#line 1899 "main.c"
-    h_0opt_e201354_retain(&t17);
+    h4_ret0 = t17;
 #line 91 "examples/routes/main.hero"
-#line 1902 "main.c"
-    h_0opt_5a58f2ca_release(&h3_f0);
+    goto bb3;
 #line 91 "examples/routes/main.hero"
-#line 1905 "main.c"
-    h_0opt_5a58f2ca_release(&h4_own4);
-#line 91 "examples/routes/main.hero"
-#line 1908 "main.c"
-    h_0opt_e201354_release(&h5_own5);
-#line 91 "examples/routes/main.hero"
-#line 1911 "main.c"
-    h_0opt_e201354_release(&h6_own6);
-    return t17;
 bb2:
 #line 91 "examples/routes/main.hero"
     t9 = h3_f0;
 #line 91 "examples/routes/main.hero"
     t10 = t9.as.err;
-#line 1919 "main.c"
+#line 1703 "main.c"
     hero_failure_retain(&t10);
 #line 91 "examples/routes/main.hero"
     t11 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t10};
 #line 91 "examples/routes/main.hero"
-    t21 = h6_own6;
+    t22 = h7_own7;
 #line 91 "examples/routes/main.hero"
-    h6_own6 = t11;
-#line 1927 "main.c"
-    h_0opt_e201354_release(&t21);
+    h7_own7 = t11;
+#line 1711 "main.c"
+    h_0opt_e201354_release(&t22);
 #line 91 "examples/routes/main.hero"
-#line 1930 "main.c"
-    h_0opt_e201354_retain(&t11);
+    h4_ret0 = t11;
 #line 91 "examples/routes/main.hero"
-#line 1933 "main.c"
+    goto bb3;
+#line 91 "examples/routes/main.hero"
+bb3:
+#line 90 "examples/routes/main.hero"
+    t18 = h4_ret0;
+#line 1721 "main.c"
+    h_0opt_e201354_retain(&t18);
+#line 90 "examples/routes/main.hero"
+#line 1724 "main.c"
     h_0opt_5a58f2ca_release(&h3_f0);
-#line 91 "examples/routes/main.hero"
-#line 1936 "main.c"
-    h_0opt_5a58f2ca_release(&h4_own4);
-#line 91 "examples/routes/main.hero"
-#line 1939 "main.c"
-    h_0opt_e201354_release(&h5_own5);
-#line 91 "examples/routes/main.hero"
-#line 1942 "main.c"
+#line 90 "examples/routes/main.hero"
+#line 1727 "main.c"
+    h_0opt_5a58f2ca_release(&h5_own5);
+#line 90 "examples/routes/main.hero"
+#line 1730 "main.c"
     h_0opt_e201354_release(&h6_own6);
-    return t11;
+#line 90 "examples/routes/main.hero"
+#line 1733 "main.c"
+    h_0opt_e201354_release(&h7_own7);
+    return t18;
 }
 
 #line 93 "examples/routes/main.hero"
 void h_main_main(void) {
-#line 1949 "main.c"
+#line 1740 "main.c"
     HeroMapHeader * h0_lines = {0};
     h_0opt_5a58f2ca h1_f0 = {0};
     h_0opt_e201354 h2_f1 = {0};
@@ -2075,15 +1866,15 @@ bb0:
     t84 = h8_own8;
 #line 94 "examples/routes/main.hero"
     h8_own8 = t1;
-#line 2079 "main.c"
+#line 1870 "main.c"
     hero_map_decref(t84);
 #line 94 "examples/routes/main.hero"
     t85 = h0_lines;
-#line 2083 "main.c"
+#line 1874 "main.c"
     hero_map_incref(t1);
 #line 94 "examples/routes/main.hero"
     h0_lines = t1;
-#line 2087 "main.c"
+#line 1878 "main.c"
     hero_map_decref(t85);
 #line 96 "examples/routes/main.hero"
     t2 = h0_lines;
@@ -2097,15 +1888,15 @@ bb0:
     t86 = h9_own9;
 #line 96 "examples/routes/main.hero"
     h9_own9 = t5;
-#line 2101 "main.c"
+#line 1892 "main.c"
     h_0opt_5a58f2ca_release(&t86);
 #line 96 "examples/routes/main.hero"
     t87 = h1_f0;
-#line 2105 "main.c"
+#line 1896 "main.c"
     h_0opt_5a58f2ca_retain(&t5);
 #line 96 "examples/routes/main.hero"
     h1_f0 = t5;
-#line 2109 "main.c"
+#line 1900 "main.c"
     h_0opt_5a58f2ca_release(&t87);
 #line 96 "examples/routes/main.hero"
     t6 = h1_f0;
@@ -2131,7 +1922,7 @@ bb1:
     t88 = h10_own10;
 #line 96 "examples/routes/main.hero"
     h10_own10 = t15;
-#line 2135 "main.c"
+#line 1926 "main.c"
     hero_str_decref(t88);
 #line 96 "examples/routes/main.hero"
     hero_print_str(t15);
@@ -2149,15 +1940,15 @@ bb1:
     t89 = h11_own11;
 #line 97 "examples/routes/main.hero"
     h11_own11 = t19;
-#line 2153 "main.c"
+#line 1944 "main.c"
     h_0opt_e201354_release(&t89);
 #line 97 "examples/routes/main.hero"
     t90 = h2_f1;
-#line 2157 "main.c"
+#line 1948 "main.c"
     h_0opt_e201354_retain(&t19);
 #line 97 "examples/routes/main.hero"
     h2_f1 = t19;
-#line 2161 "main.c"
+#line 1952 "main.c"
     h_0opt_e201354_release(&t90);
 #line 97 "examples/routes/main.hero"
     t20 = h2_f1;
@@ -2175,7 +1966,7 @@ bb2:
     t10 = h1_f0;
 #line 96 "examples/routes/main.hero"
     t11 = t10.as.err;
-#line 2179 "main.c"
+#line 1970 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -2199,15 +1990,15 @@ bb3:
     t91 = h12_own12;
 #line 102 "examples/routes/main.hero"
     h12_own12 = t31;
-#line 2203 "main.c"
+#line 1994 "main.c"
     h_0opt_5a58f2ca_release(&t91);
 #line 102 "examples/routes/main.hero"
     t92 = h3_f2;
-#line 2207 "main.c"
+#line 1998 "main.c"
     h_0opt_5a58f2ca_retain(&t31);
 #line 102 "examples/routes/main.hero"
     h3_f2 = t31;
-#line 2211 "main.c"
+#line 2002 "main.c"
     h_0opt_5a58f2ca_release(&t92);
 #line 102 "examples/routes/main.hero"
     t32 = h3_f2;
@@ -2225,7 +2016,7 @@ bb4:
     t24 = h2_f1;
 #line 97 "examples/routes/main.hero"
     t25 = t24.as.err;
-#line 2229 "main.c"
+#line 2020 "main.c"
     hero_panic_must(t25);
     hero_unreachable();
 bb5:
@@ -2241,7 +2032,7 @@ bb5:
     t93 = h13_own13;
 #line 102 "examples/routes/main.hero"
     h13_own13 = t41;
-#line 2245 "main.c"
+#line 2036 "main.c"
     hero_str_decref(t93);
 #line 102 "examples/routes/main.hero"
     hero_print_str(t41);
@@ -2259,15 +2050,15 @@ bb5:
     t94 = h14_own14;
 #line 104 "examples/routes/main.hero"
     h14_own14 = t45;
-#line 2263 "main.c"
+#line 2054 "main.c"
     h_0opt_5a58f2ca_release(&t94);
 #line 104 "examples/routes/main.hero"
     t95 = h4_f3;
-#line 2267 "main.c"
+#line 2058 "main.c"
     h_0opt_5a58f2ca_retain(&t45);
 #line 104 "examples/routes/main.hero"
     h4_f3 = t45;
-#line 2271 "main.c"
+#line 2062 "main.c"
     h_0opt_5a58f2ca_release(&t95);
 #line 104 "examples/routes/main.hero"
     t46 = h4_f3;
@@ -2285,7 +2076,7 @@ bb6:
     t36 = h3_f2;
 #line 102 "examples/routes/main.hero"
     t37 = t36.as.err;
-#line 2289 "main.c"
+#line 2080 "main.c"
     hero_panic_must(t37);
     hero_unreachable();
 bb7:
@@ -2301,7 +2092,7 @@ bb7:
     t96 = h15_own15;
 #line 104 "examples/routes/main.hero"
     h15_own15 = t55;
-#line 2305 "main.c"
+#line 2096 "main.c"
     hero_str_decref(t96);
 #line 104 "examples/routes/main.hero"
     hero_print_str(t55);
@@ -2319,15 +2110,15 @@ bb7:
     t97 = h16_own16;
 #line 105 "examples/routes/main.hero"
     h16_own16 = t59;
-#line 2323 "main.c"
+#line 2114 "main.c"
     h_0opt_e201354_release(&t97);
 #line 105 "examples/routes/main.hero"
     t98 = h5_f4;
-#line 2327 "main.c"
+#line 2118 "main.c"
     h_0opt_e201354_retain(&t59);
 #line 105 "examples/routes/main.hero"
     h5_f4 = t59;
-#line 2331 "main.c"
+#line 2122 "main.c"
     h_0opt_e201354_release(&t98);
 #line 105 "examples/routes/main.hero"
     t60 = h5_f4;
@@ -2345,7 +2136,7 @@ bb8:
     t50 = h4_f3;
 #line 104 "examples/routes/main.hero"
     t51 = t50.as.err;
-#line 2349 "main.c"
+#line 2140 "main.c"
     hero_panic_must(t51);
     hero_unreachable();
 bb9:
@@ -2369,15 +2160,15 @@ bb9:
     t99 = h17_own17;
 #line 108 "examples/routes/main.hero"
     h17_own17 = t71;
-#line 2373 "main.c"
+#line 2164 "main.c"
     h_0opt_5a58f2ca_release(&t99);
 #line 108 "examples/routes/main.hero"
     t100 = h6_f5;
-#line 2377 "main.c"
+#line 2168 "main.c"
     h_0opt_5a58f2ca_retain(&t71);
 #line 108 "examples/routes/main.hero"
     h6_f5 = t71;
-#line 2381 "main.c"
+#line 2172 "main.c"
     h_0opt_5a58f2ca_release(&t100);
 #line 108 "examples/routes/main.hero"
     t72 = h6_f5;
@@ -2403,15 +2194,15 @@ bb9:
     t101 = h18_own18;
 #line 109 "examples/routes/main.hero"
     h18_own18 = t79;
-#line 2407 "main.c"
+#line 2198 "main.c"
     h_0opt_5a58f2ca_release(&t101);
 #line 109 "examples/routes/main.hero"
     t102 = h7_f6;
-#line 2411 "main.c"
+#line 2202 "main.c"
     h_0opt_5a58f2ca_retain(&t79);
 #line 109 "examples/routes/main.hero"
     h7_f6 = t79;
-#line 2415 "main.c"
+#line 2206 "main.c"
     h_0opt_5a58f2ca_release(&t102);
 #line 109 "examples/routes/main.hero"
     t80 = h7_f6;
@@ -2425,61 +2216,61 @@ bb9:
     hero_print_bool(t83);
 #line 109 "examples/routes/main.hero"
     hero_print_end();
-#line 2429 "main.c"
+#line 2220 "main.c"
     hero_map_decref(h0_lines);
 #line 109 "examples/routes/main.hero"
-#line 2432 "main.c"
+#line 2223 "main.c"
     h_0opt_5a58f2ca_release(&h1_f0);
 #line 109 "examples/routes/main.hero"
-#line 2435 "main.c"
+#line 2226 "main.c"
     h_0opt_e201354_release(&h2_f1);
 #line 109 "examples/routes/main.hero"
-#line 2438 "main.c"
+#line 2229 "main.c"
     h_0opt_5a58f2ca_release(&h3_f2);
 #line 109 "examples/routes/main.hero"
-#line 2441 "main.c"
+#line 2232 "main.c"
     h_0opt_5a58f2ca_release(&h4_f3);
 #line 109 "examples/routes/main.hero"
-#line 2444 "main.c"
+#line 2235 "main.c"
     h_0opt_e201354_release(&h5_f4);
 #line 109 "examples/routes/main.hero"
-#line 2447 "main.c"
+#line 2238 "main.c"
     h_0opt_5a58f2ca_release(&h6_f5);
 #line 109 "examples/routes/main.hero"
-#line 2450 "main.c"
+#line 2241 "main.c"
     h_0opt_5a58f2ca_release(&h7_f6);
 #line 109 "examples/routes/main.hero"
-#line 2453 "main.c"
+#line 2244 "main.c"
     hero_map_decref(h8_own8);
 #line 109 "examples/routes/main.hero"
-#line 2456 "main.c"
+#line 2247 "main.c"
     h_0opt_5a58f2ca_release(&h9_own9);
 #line 109 "examples/routes/main.hero"
-#line 2459 "main.c"
+#line 2250 "main.c"
     hero_str_decref(h10_own10);
 #line 109 "examples/routes/main.hero"
-#line 2462 "main.c"
+#line 2253 "main.c"
     h_0opt_e201354_release(&h11_own11);
 #line 109 "examples/routes/main.hero"
-#line 2465 "main.c"
+#line 2256 "main.c"
     h_0opt_5a58f2ca_release(&h12_own12);
 #line 109 "examples/routes/main.hero"
-#line 2468 "main.c"
+#line 2259 "main.c"
     hero_str_decref(h13_own13);
 #line 109 "examples/routes/main.hero"
-#line 2471 "main.c"
+#line 2262 "main.c"
     h_0opt_5a58f2ca_release(&h14_own14);
 #line 109 "examples/routes/main.hero"
-#line 2474 "main.c"
+#line 2265 "main.c"
     hero_str_decref(h15_own15);
 #line 109 "examples/routes/main.hero"
-#line 2477 "main.c"
+#line 2268 "main.c"
     h_0opt_e201354_release(&h16_own16);
 #line 109 "examples/routes/main.hero"
-#line 2480 "main.c"
+#line 2271 "main.c"
     h_0opt_5a58f2ca_release(&h17_own17);
 #line 109 "examples/routes/main.hero"
-#line 2483 "main.c"
+#line 2274 "main.c"
     h_0opt_5a58f2ca_release(&h18_own18);
     return;
 bb10:
@@ -2487,7 +2278,7 @@ bb10:
     t64 = h5_f4;
 #line 105 "examples/routes/main.hero"
     t65 = t64.as.err;
-#line 2491 "main.c"
+#line 2282 "main.c"
     hero_panic_must(t65);
     hero_unreachable();
 }

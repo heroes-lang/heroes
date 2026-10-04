@@ -3,7 +3,7 @@ strings
     1  "nothing to parse"
 
 function parsed(s: str) -> i64?
-    slots  $own1: i64? · $own2: i64?
+    slots  $ret0: i64? · $own2: i64? · $own3: i64?
     bb0  entry
         $t1: str = load s
         $t2: i64 = call builtin len($t1)
@@ -14,41 +14,43 @@ function parsed(s: str) -> i64?
         $t8: str = load s
         $t9: i64 = call builtin len($t8)
         $t10: i64? = construct ok($t9)
-        $t11: i64? = load $own1
-        store $own1 <- $t10
-        decref $t11
-        incref $t10
-        decref_slot $own1
-        decref_slot $own2
-        return $t10
+        $t12: i64? = load $own2
+        store $own2 <- $t10
+        decref $t12
+        store $ret0 <- $t10
+        jump bb4
     bb2  if: then    preds bb0
         $t5: str = const str 0
         $t6: str = const str 1
         incref $t5
         incref $t6
         $t7: i64? = construct fail($t5, $t6)
-        $t12: i64? = load $own2
-        store $own2 <- $t7
-        decref $t12
-        incref $t7
-        decref_slot $own1
-        decref_slot $own2
-        return $t7
+        $t13: i64? = load $own3
+        store $own3 <- $t7
+        decref $t13
+        store $ret0 <- $t7
+        jump bb4
     bb3  if: else    preds bb0
         jump bb1
+    bb4  exit    preds bb1, bb2
+        $t11: i64? = load $ret0
+        incref $t11
+        decref_slot $own2
+        decref_slot $own3
+        return $t11
 
 function advance_over(@r: Reader, s: str) -> i64?
-    slots  $f0: i64? · n: i64 · $own4: i64? · $own5: i64? · $own6: i64? · $own7: i64?
+    slots  $f0: i64? · n: i64 · $ret0: i64? · $own5: i64? · $own6: i64? · $own7: i64? · $own8: i64?
     bb0  entry
         $t1: str = load s
         $t2: i64? = call heroes parsed($t1)
-        $t23: i64? = load $own4
-        store $own4 <- $t2
-        decref $t23
-        $t24: i64? = load $f0
+        $t24: i64? = load $own5
+        store $own5 <- $t2
+        decref $t24
+        $t25: i64? = load $f0
         incref $t2
         store $f0 <- $t2
-        decref $t24
+        decref $t25
         $t3: i64? = load $f0
         $t4: i64 = tag $t3
         $t5: i64 = const 0
@@ -67,17 +69,11 @@ function advance_over(@r: Reader, s: str) -> i64?
         $t8: the error (`code`, `msg`) = payload $t7 .err
         incref $t8
         $t9: i64? = construct err($t8)
-        $t25: i64? = load $own5
-        store $own5 <- $t9
-        decref $t25
-        copyout r
-        incref $t9
-        decref_slot $f0
-        decref_slot $own4
-        decref_slot $own5
-        decref_slot $own6
-        decref_slot $own7
-        return $t9
+        $t26: i64? = load $own6
+        store $own6 <- $t9
+        decref $t26
+        store $ret0 <- $t9
+        jump bb6
     bb3  if: join    preds bb5
         $t17: Reader = load r
         $t18: i64 = field $t17.pos
@@ -86,30 +82,28 @@ function advance_over(@r: Reader, s: str) -> i64?
         store r.pos <- $t20
         $t21: i64 = load n
         $t22: i64? = construct ok($t21)
-        $t26: i64? = load $own6
-        store $own6 <- $t22
-        decref $t26
-        copyout r
-        incref $t22
-        decref_slot $f0
-        decref_slot $own4
-        decref_slot $own5
-        decref_slot $own6
-        decref_slot $own7
-        return $t22
+        $t27: i64? = load $own7
+        store $own7 <- $t22
+        decref $t27
+        store $ret0 <- $t22
+        jump bb6
     bb4  if: then    preds bb1
         $t15: i64 = const 0
         $t16: i64? = construct ok($t15)
-        $t27: i64? = load $own7
-        store $own7 <- $t16
-        decref $t27
+        $t28: i64? = load $own8
+        store $own8 <- $t16
+        decref $t28
+        store $ret0 <- $t16
+        jump bb6
+    bb5  if: else    preds bb1
+        jump bb3
+    bb6  exit    preds bb2, bb3, bb4
         copyout r
-        incref $t16
+        $t23: i64? = load $ret0
+        incref $t23
         decref_slot $f0
-        decref_slot $own4
         decref_slot $own5
         decref_slot $own6
         decref_slot $own7
-        return $t16
-    bb5  if: else    preds bb1
-        jump bb3
+        decref_slot $own8
+        return $t23

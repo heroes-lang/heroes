@@ -136,21 +136,22 @@ h_0opt_f87774a h_main_render(HeroStr h0_template, HeroMapHeader * h1_values) {
     h_0opt_f87774a h11_f0 = {0};
     h_0opt_f87774a h12_f1 = {0};
     bool h13_b0;
-    HeroArrayHeader * h14_own14 = {0};
-    HeroStr h15_own15 = {0};
+    h_0opt_f87774a h14_ret0 = {0};
+    HeroArrayHeader * h15_own15 = {0};
     HeroStr h16_own16 = {0};
-    h_0opt_f87774a h17_own17 = {0};
+    HeroStr h17_own17 = {0};
     h_0opt_f87774a h18_own18 = {0};
-    HeroStr h19_own19 = {0};
+    h_0opt_f87774a h19_own19 = {0};
     HeroStr h20_own20 = {0};
-    h_0opt_f87774a h21_own21 = {0};
-    HeroStr h22_own22 = {0};
+    HeroStr h21_own21 = {0};
+    h_0opt_f87774a h22_own22 = {0};
     HeroStr h23_own23 = {0};
     HeroStr h24_own24 = {0};
-    h_0opt_f87774a h25_own25 = {0};
+    HeroStr h25_own25 = {0};
     h_0opt_f87774a h26_own26 = {0};
     h_0opt_f87774a h27_own27 = {0};
     h_0opt_f87774a h28_own28 = {0};
+    h_0opt_f87774a h29_own29 = {0};
     HeroStr t1;
     HeroStr t2;
     bool t3;
@@ -252,56 +253,57 @@ h_0opt_f87774a h_main_render(HeroStr h0_template, HeroMapHeader * h1_values) {
     h_0opt_f87774a t99;
     HeroStr t100;
     h_0opt_f87774a t101;
-    HeroStr t102;
+    h_0opt_f87774a t102;
     HeroStr t103;
-    HeroArrayHeader * t104;
+    HeroStr t104;
     HeroArrayHeader * t105;
-    HeroStr t106;
+    HeroArrayHeader * t106;
     HeroStr t107;
     HeroStr t108;
     HeroStr t109;
     HeroStr t110;
     HeroStr t111;
-    h_0opt_f87774a t112;
+    HeroStr t112;
     h_0opt_f87774a t113;
     h_0opt_f87774a t114;
     h_0opt_f87774a t115;
     h_0opt_f87774a t116;
-    HeroStr t117;
+    h_0opt_f87774a t117;
     HeroStr t118;
-    h_0opt_f87774a t119;
-    HeroStr t120;
+    HeroStr t119;
+    h_0opt_f87774a t120;
     HeroStr t121;
     HeroStr t122;
     HeroStr t123;
     HeroStr t124;
     HeroStr t125;
-    h_0opt_f87774a t126;
+    HeroStr t126;
     h_0opt_f87774a t127;
     h_0opt_f87774a t128;
     h_0opt_f87774a t129;
+    h_0opt_f87774a t130;
     goto bb0;
 bb0:
 #line 23 "examples/template/main.hero"
     t1 = HERO_STR_LIT(hero_str_0);
 #line 23 "examples/template/main.hero"
-    t102 = h2_out;
-#line 290 "main.c"
+    t103 = h2_out;
+#line 292 "main.c"
     hero_str_incref(t1);
 #line 23 "examples/template/main.hero"
     h2_out = t1;
-#line 294 "main.c"
-    hero_str_decref(t102);
+#line 296 "main.c"
+    hero_str_decref(t103);
 #line 24 "examples/template/main.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 24 "examples/template/main.hero"
-    t103 = h3_key;
-#line 300 "main.c"
+    t104 = h3_key;
+#line 302 "main.c"
     hero_str_incref(t2);
 #line 24 "examples/template/main.hero"
     h3_key = t2;
-#line 304 "main.c"
-    hero_str_decref(t103);
+#line 306 "main.c"
+    hero_str_decref(t104);
 #line 25 "examples/template/main.hero"
     t3 = false;
 #line 25 "examples/template/main.hero"
@@ -319,19 +321,19 @@ bb0:
 #line 29 "examples/template/main.hero"
     t7 = hero_str_chars(t6);
 #line 29 "examples/template/main.hero"
-    t104 = h14_own14;
+    t105 = h15_own15;
 #line 29 "examples/template/main.hero"
-    h14_own14 = t7;
-#line 326 "main.c"
-    hero_array_decref(t104);
+    h15_own15 = t7;
+#line 328 "main.c"
+    hero_array_decref(t105);
 #line 29 "examples/template/main.hero"
-    t105 = h7_xs0;
-#line 330 "main.c"
+    t106 = h7_xs0;
+#line 332 "main.c"
     hero_array_incref(t7);
 #line 29 "examples/template/main.hero"
     h7_xs0 = t7;
-#line 334 "main.c"
-    hero_array_decref(t105);
+#line 336 "main.c"
+    hero_array_decref(t106);
 #line 29 "examples/template/main.hero"
     t8 = INT64_C(0);
 #line 29 "examples/template/main.hero"
@@ -359,13 +361,13 @@ bb2:
 #line 29 "examples/template/main.hero"
     t15 = *(HeroStr const *)hero_array_at(t13, t14);
 #line 29 "examples/template/main.hero"
-    t106 = h9_ch;
-#line 364 "main.c"
+    t107 = h9_ch;
+#line 366 "main.c"
     hero_str_incref(t15);
 #line 29 "examples/template/main.hero"
     h9_ch = t15;
-#line 368 "main.c"
-    hero_str_decref(t106);
+#line 370 "main.c"
+    hero_str_decref(t107);
 #line 30 "examples/template/main.hero"
     t16 = h5_pending;
 #line 30 "examples/template/main.hero"
@@ -421,13 +423,13 @@ bb8:
 #line 38 "examples/template/main.hero"
     t25 = HERO_STR_LIT(hero_str_0);
 #line 38 "examples/template/main.hero"
-    t107 = h3_key;
-#line 426 "main.c"
+    t108 = h3_key;
+#line 428 "main.c"
     hero_str_incref(t25);
 #line 38 "examples/template/main.hero"
     h3_key = t25;
-#line 430 "main.c"
-    hero_str_decref(t107);
+#line 432 "main.c"
+    hero_str_decref(t108);
     goto bb5;
 bb9:
 #line 35 "examples/template/main.hero"
@@ -437,19 +439,19 @@ bb9:
 #line 35 "examples/template/main.hero"
     t23 = hero_str_concat(t21, t22);
 #line 35 "examples/template/main.hero"
-    t108 = h15_own15;
+    t109 = h16_own16;
 #line 35 "examples/template/main.hero"
-    h15_own15 = t23;
-#line 444 "main.c"
-    hero_str_decref(t108);
+    h16_own16 = t23;
+#line 446 "main.c"
+    hero_str_decref(t109);
 #line 35 "examples/template/main.hero"
-    t109 = h2_out;
-#line 448 "main.c"
+    t110 = h2_out;
+#line 450 "main.c"
     hero_str_incref(t23);
 #line 35 "examples/template/main.hero"
     h2_out = t23;
-#line 452 "main.c"
-    hero_str_decref(t109);
+#line 454 "main.c"
+    hero_str_decref(t110);
     goto bb3;
 bb10:
     goto bb8;
@@ -505,19 +507,19 @@ bb16:
 #line 55 "examples/template/main.hero"
     t66 = hero_str_concat(t64, t65);
 #line 55 "examples/template/main.hero"
-    t110 = h16_own16;
+    t111 = h17_own17;
 #line 55 "examples/template/main.hero"
-    h16_own16 = t66;
-#line 512 "main.c"
-    hero_str_decref(t110);
+    h17_own17 = t66;
+#line 514 "main.c"
+    hero_str_decref(t111);
 #line 55 "examples/template/main.hero"
-    t111 = h3_key;
-#line 516 "main.c"
+    t112 = h3_key;
+#line 518 "main.c"
     hero_str_incref(t66);
 #line 55 "examples/template/main.hero"
     h3_key = t66;
-#line 520 "main.c"
-    hero_str_decref(t111);
+#line 522 "main.c"
+    hero_str_decref(t112);
     goto bb14;
 bb17:
 #line 49 "examples/template/main.hero"
@@ -543,29 +545,29 @@ bb17:
 #line 49 "examples/template/main.hero"
     }
 #line 49 "examples/template/main.hero"
-    t112 = h17_own17;
+    t113 = h18_own18;
 #line 49 "examples/template/main.hero"
-    h17_own17 = t40;
-#line 550 "main.c"
-    h_0opt_f87774a_release(&t112);
+    h18_own18 = t40;
+#line 552 "main.c"
+    h_0opt_f87774a_release(&t113);
 #line 49 "examples/template/main.hero"
-    t113 = h10_found;
-#line 554 "main.c"
+    t114 = h10_found;
+#line 556 "main.c"
     h_0opt_f87774a_retain(&t40);
 #line 49 "examples/template/main.hero"
     h10_found = t40;
-#line 558 "main.c"
-    h_0opt_f87774a_release(&t113);
+#line 560 "main.c"
+    h_0opt_f87774a_release(&t114);
 #line 51 "examples/template/main.hero"
     t41 = h10_found;
 #line 51 "examples/template/main.hero"
-    t114 = h11_f0;
-#line 564 "main.c"
+    t115 = h11_f0;
+#line 566 "main.c"
     h_0opt_f87774a_retain(&t41);
 #line 51 "examples/template/main.hero"
     h11_f0 = t41;
-#line 568 "main.c"
-    h_0opt_f87774a_release(&t114);
+#line 570 "main.c"
+    h_0opt_f87774a_release(&t115);
 #line 51 "examples/template/main.hero"
     t42 = h11_f0;
 #line 51 "examples/template/main.hero"
@@ -582,104 +584,41 @@ bb18:
     t35 = HERO_STR_LIT(hero_str_e326449);
 #line 48 "examples/template/main.hero"
     t36 = HERO_STR_LIT(hero_str_ee22d4e);
-#line 586 "main.c"
+#line 588 "main.c"
     hero_str_incref(t35);
 #line 48 "examples/template/main.hero"
-#line 589 "main.c"
+#line 591 "main.c"
     hero_str_incref(t36);
 #line 48 "examples/template/main.hero"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t35, .msg = t36}};
 #line 48 "examples/template/main.hero"
-    t115 = h18_own18;
+    t116 = h19_own19;
 #line 48 "examples/template/main.hero"
-    h18_own18 = t37;
-#line 597 "main.c"
-    h_0opt_f87774a_release(&t115);
+    h19_own19 = t37;
+#line 599 "main.c"
+    h_0opt_f87774a_release(&t116);
 #line 48 "examples/template/main.hero"
-#line 600 "main.c"
-    h_0opt_f87774a_retain(&t37);
+    h14_ret0 = t37;
 #line 48 "examples/template/main.hero"
-#line 603 "main.c"
-    hero_str_decref(h2_out);
+    goto bb45;
 #line 48 "examples/template/main.hero"
-#line 606 "main.c"
-    hero_str_decref(h3_key);
-#line 48 "examples/template/main.hero"
-#line 609 "main.c"
-    hero_array_decref(h7_xs0);
-#line 48 "examples/template/main.hero"
-#line 612 "main.c"
-    hero_str_decref(h9_ch);
-#line 48 "examples/template/main.hero"
-#line 615 "main.c"
-    h_0opt_f87774a_release(&h10_found);
-#line 48 "examples/template/main.hero"
-#line 618 "main.c"
-    h_0opt_f87774a_release(&h11_f0);
-#line 48 "examples/template/main.hero"
-#line 621 "main.c"
-    h_0opt_f87774a_release(&h12_f1);
-#line 48 "examples/template/main.hero"
-#line 624 "main.c"
-    hero_array_decref(h14_own14);
-#line 48 "examples/template/main.hero"
-#line 627 "main.c"
-    hero_str_decref(h15_own15);
-#line 48 "examples/template/main.hero"
-#line 630 "main.c"
-    hero_str_decref(h16_own16);
-#line 48 "examples/template/main.hero"
-#line 633 "main.c"
-    h_0opt_f87774a_release(&h17_own17);
-#line 48 "examples/template/main.hero"
-#line 636 "main.c"
-    h_0opt_f87774a_release(&h18_own18);
-#line 48 "examples/template/main.hero"
-#line 639 "main.c"
-    hero_str_decref(h19_own19);
-#line 48 "examples/template/main.hero"
-#line 642 "main.c"
-    hero_str_decref(h20_own20);
-#line 48 "examples/template/main.hero"
-#line 645 "main.c"
-    h_0opt_f87774a_release(&h21_own21);
-#line 48 "examples/template/main.hero"
-#line 648 "main.c"
-    hero_str_decref(h22_own22);
-#line 48 "examples/template/main.hero"
-#line 651 "main.c"
-    hero_str_decref(h23_own23);
-#line 48 "examples/template/main.hero"
-#line 654 "main.c"
-    hero_str_decref(h24_own24);
-#line 48 "examples/template/main.hero"
-#line 657 "main.c"
-    h_0opt_f87774a_release(&h25_own25);
-#line 48 "examples/template/main.hero"
-#line 660 "main.c"
-    h_0opt_f87774a_release(&h26_own26);
-#line 48 "examples/template/main.hero"
-#line 663 "main.c"
-    h_0opt_f87774a_release(&h27_own27);
-#line 48 "examples/template/main.hero"
-#line 666 "main.c"
-    h_0opt_f87774a_release(&h28_own28);
-    return t37;
 bb19:
+#line 48 "examples/template/main.hero"
     goto bb17;
+#line 48 "examples/template/main.hero"
 bb20:
 #line 53 "examples/template/main.hero"
     t53 = h2_out;
 #line 53 "examples/template/main.hero"
     t54 = h10_found;
 #line 53 "examples/template/main.hero"
-    t116 = h12_f1;
-#line 678 "main.c"
+    t117 = h12_f1;
+#line 617 "main.c"
     h_0opt_f87774a_retain(&t54);
 #line 53 "examples/template/main.hero"
     h12_f1 = t54;
-#line 682 "main.c"
-    h_0opt_f87774a_release(&t116);
+#line 621 "main.c"
+    h_0opt_f87774a_release(&t117);
 #line 53 "examples/template/main.hero"
     t55 = h12_f1;
 #line 53 "examples/template/main.hero"
@@ -701,107 +640,44 @@ bb21:
 #line 52 "examples/template/main.hero"
     t49 = hero_str_concat(t47, t48);
 #line 52 "examples/template/main.hero"
-    t117 = h19_own19;
+    t118 = h20_own20;
 #line 52 "examples/template/main.hero"
-    h19_own19 = t49;
-#line 708 "main.c"
-    hero_str_decref(t117);
+    h20_own20 = t49;
+#line 647 "main.c"
+    hero_str_decref(t118);
 #line 52 "examples/template/main.hero"
     t50 = HERO_STR_LIT(hero_str_35574a56);
 #line 52 "examples/template/main.hero"
     t51 = hero_str_concat(t49, t50);
 #line 52 "examples/template/main.hero"
-    t118 = h20_own20;
+    t119 = h21_own21;
 #line 52 "examples/template/main.hero"
-    h20_own20 = t51;
-#line 718 "main.c"
-    hero_str_decref(t118);
+    h21_own21 = t51;
+#line 657 "main.c"
+    hero_str_decref(t119);
 #line 52 "examples/template/main.hero"
-#line 721 "main.c"
+#line 660 "main.c"
     hero_str_incref(t46);
 #line 52 "examples/template/main.hero"
-#line 724 "main.c"
+#line 663 "main.c"
     hero_str_incref(t51);
 #line 52 "examples/template/main.hero"
     t52 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t46, .msg = t51}};
 #line 52 "examples/template/main.hero"
-    t119 = h21_own21;
+    t120 = h22_own22;
 #line 52 "examples/template/main.hero"
-    h21_own21 = t52;
-#line 732 "main.c"
-    h_0opt_f87774a_release(&t119);
+    h22_own22 = t52;
+#line 671 "main.c"
+    h_0opt_f87774a_release(&t120);
 #line 52 "examples/template/main.hero"
-#line 735 "main.c"
-    h_0opt_f87774a_retain(&t52);
+    h14_ret0 = t52;
 #line 52 "examples/template/main.hero"
-#line 738 "main.c"
-    hero_str_decref(h2_out);
+    goto bb45;
 #line 52 "examples/template/main.hero"
-#line 741 "main.c"
-    hero_str_decref(h3_key);
-#line 52 "examples/template/main.hero"
-#line 744 "main.c"
-    hero_array_decref(h7_xs0);
-#line 52 "examples/template/main.hero"
-#line 747 "main.c"
-    hero_str_decref(h9_ch);
-#line 52 "examples/template/main.hero"
-#line 750 "main.c"
-    h_0opt_f87774a_release(&h10_found);
-#line 52 "examples/template/main.hero"
-#line 753 "main.c"
-    h_0opt_f87774a_release(&h11_f0);
-#line 52 "examples/template/main.hero"
-#line 756 "main.c"
-    h_0opt_f87774a_release(&h12_f1);
-#line 52 "examples/template/main.hero"
-#line 759 "main.c"
-    hero_array_decref(h14_own14);
-#line 52 "examples/template/main.hero"
-#line 762 "main.c"
-    hero_str_decref(h15_own15);
-#line 52 "examples/template/main.hero"
-#line 765 "main.c"
-    hero_str_decref(h16_own16);
-#line 52 "examples/template/main.hero"
-#line 768 "main.c"
-    h_0opt_f87774a_release(&h17_own17);
-#line 52 "examples/template/main.hero"
-#line 771 "main.c"
-    h_0opt_f87774a_release(&h18_own18);
-#line 52 "examples/template/main.hero"
-#line 774 "main.c"
-    hero_str_decref(h19_own19);
-#line 52 "examples/template/main.hero"
-#line 777 "main.c"
-    hero_str_decref(h20_own20);
-#line 52 "examples/template/main.hero"
-#line 780 "main.c"
-    h_0opt_f87774a_release(&h21_own21);
-#line 52 "examples/template/main.hero"
-#line 783 "main.c"
-    hero_str_decref(h22_own22);
-#line 52 "examples/template/main.hero"
-#line 786 "main.c"
-    hero_str_decref(h23_own23);
-#line 52 "examples/template/main.hero"
-#line 789 "main.c"
-    hero_str_decref(h24_own24);
-#line 52 "examples/template/main.hero"
-#line 792 "main.c"
-    h_0opt_f87774a_release(&h25_own25);
-#line 52 "examples/template/main.hero"
-#line 795 "main.c"
-    h_0opt_f87774a_release(&h26_own26);
-#line 52 "examples/template/main.hero"
-#line 798 "main.c"
-    h_0opt_f87774a_release(&h27_own27);
-#line 52 "examples/template/main.hero"
-#line 801 "main.c"
-    h_0opt_f87774a_release(&h28_own28);
-    return t52;
 bb22:
+#line 52 "examples/template/main.hero"
     goto bb20;
+#line 52 "examples/template/main.hero"
 bb23:
 #line 53 "examples/template/main.hero"
     t61 = h12_f1;
@@ -810,26 +686,26 @@ bb23:
 #line 53 "examples/template/main.hero"
     t63 = hero_str_concat(t53, t62);
 #line 53 "examples/template/main.hero"
-    t120 = h22_own22;
+    t121 = h23_own23;
 #line 53 "examples/template/main.hero"
-    h22_own22 = t63;
-#line 817 "main.c"
-    hero_str_decref(t120);
+    h23_own23 = t63;
+#line 693 "main.c"
+    hero_str_decref(t121);
 #line 53 "examples/template/main.hero"
-    t121 = h2_out;
-#line 821 "main.c"
+    t122 = h2_out;
+#line 697 "main.c"
     hero_str_incref(t63);
 #line 53 "examples/template/main.hero"
     h2_out = t63;
-#line 825 "main.c"
-    hero_str_decref(t121);
+#line 701 "main.c"
+    hero_str_decref(t122);
     goto bb14;
 bb24:
 #line 53 "examples/template/main.hero"
     t59 = h12_f1;
 #line 53 "examples/template/main.hero"
     t60 = t59.as.err;
-#line 833 "main.c"
+#line 709 "main.c"
     hero_panic_must(t60);
     hero_unreachable();
 bb25:
@@ -890,19 +766,19 @@ bb32:
 #line 70 "examples/template/main.hero"
     t78 = hero_str_concat(t76, t77);
 #line 70 "examples/template/main.hero"
-    t122 = h23_own23;
+    t123 = h24_own24;
 #line 70 "examples/template/main.hero"
-    h23_own23 = t78;
-#line 897 "main.c"
-    hero_str_decref(t122);
+    h24_own24 = t78;
+#line 773 "main.c"
+    hero_str_decref(t123);
 #line 70 "examples/template/main.hero"
-    t123 = h2_out;
-#line 901 "main.c"
+    t124 = h2_out;
+#line 777 "main.c"
     hero_str_incref(t78);
 #line 70 "examples/template/main.hero"
     h2_out = t78;
-#line 905 "main.c"
-    hero_str_decref(t123);
+#line 781 "main.c"
+    hero_str_decref(t124);
     goto bb3;
 bb33:
     goto bb31;
@@ -914,110 +790,47 @@ bb34:
 #line 77 "examples/template/main.hero"
     t86 = hero_str_concat(t84, t85);
 #line 77 "examples/template/main.hero"
-    t124 = h24_own24;
+    t125 = h25_own25;
 #line 77 "examples/template/main.hero"
-    h24_own24 = t86;
-#line 921 "main.c"
-    hero_str_decref(t124);
+    h25_own25 = t86;
+#line 797 "main.c"
+    hero_str_decref(t125);
 #line 77 "examples/template/main.hero"
-    t125 = h2_out;
-#line 925 "main.c"
+    t126 = h2_out;
+#line 801 "main.c"
     hero_str_incref(t86);
 #line 77 "examples/template/main.hero"
     h2_out = t86;
-#line 929 "main.c"
-    hero_str_decref(t125);
+#line 805 "main.c"
+    hero_str_decref(t126);
     goto bb3;
 bb35:
 #line 76 "examples/template/main.hero"
     t81 = HERO_STR_LIT(hero_str_26657f26);
 #line 76 "examples/template/main.hero"
     t82 = HERO_STR_LIT(hero_str_6141d99c);
-#line 937 "main.c"
+#line 813 "main.c"
     hero_str_incref(t81);
 #line 76 "examples/template/main.hero"
-#line 940 "main.c"
+#line 816 "main.c"
     hero_str_incref(t82);
 #line 76 "examples/template/main.hero"
     t83 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t81, .msg = t82}};
 #line 76 "examples/template/main.hero"
-    t126 = h25_own25;
+    t127 = h26_own26;
 #line 76 "examples/template/main.hero"
-    h25_own25 = t83;
-#line 948 "main.c"
-    h_0opt_f87774a_release(&t126);
+    h26_own26 = t83;
+#line 824 "main.c"
+    h_0opt_f87774a_release(&t127);
 #line 76 "examples/template/main.hero"
-#line 951 "main.c"
-    h_0opt_f87774a_retain(&t83);
+    h14_ret0 = t83;
 #line 76 "examples/template/main.hero"
-#line 954 "main.c"
-    hero_str_decref(h2_out);
+    goto bb45;
 #line 76 "examples/template/main.hero"
-#line 957 "main.c"
-    hero_str_decref(h3_key);
-#line 76 "examples/template/main.hero"
-#line 960 "main.c"
-    hero_array_decref(h7_xs0);
-#line 76 "examples/template/main.hero"
-#line 963 "main.c"
-    hero_str_decref(h9_ch);
-#line 76 "examples/template/main.hero"
-#line 966 "main.c"
-    h_0opt_f87774a_release(&h10_found);
-#line 76 "examples/template/main.hero"
-#line 969 "main.c"
-    h_0opt_f87774a_release(&h11_f0);
-#line 76 "examples/template/main.hero"
-#line 972 "main.c"
-    h_0opt_f87774a_release(&h12_f1);
-#line 76 "examples/template/main.hero"
-#line 975 "main.c"
-    hero_array_decref(h14_own14);
-#line 76 "examples/template/main.hero"
-#line 978 "main.c"
-    hero_str_decref(h15_own15);
-#line 76 "examples/template/main.hero"
-#line 981 "main.c"
-    hero_str_decref(h16_own16);
-#line 76 "examples/template/main.hero"
-#line 984 "main.c"
-    h_0opt_f87774a_release(&h17_own17);
-#line 76 "examples/template/main.hero"
-#line 987 "main.c"
-    h_0opt_f87774a_release(&h18_own18);
-#line 76 "examples/template/main.hero"
-#line 990 "main.c"
-    hero_str_decref(h19_own19);
-#line 76 "examples/template/main.hero"
-#line 993 "main.c"
-    hero_str_decref(h20_own20);
-#line 76 "examples/template/main.hero"
-#line 996 "main.c"
-    h_0opt_f87774a_release(&h21_own21);
-#line 76 "examples/template/main.hero"
-#line 999 "main.c"
-    hero_str_decref(h22_own22);
-#line 76 "examples/template/main.hero"
-#line 1002 "main.c"
-    hero_str_decref(h23_own23);
-#line 76 "examples/template/main.hero"
-#line 1005 "main.c"
-    hero_str_decref(h24_own24);
-#line 76 "examples/template/main.hero"
-#line 1008 "main.c"
-    h_0opt_f87774a_release(&h25_own25);
-#line 76 "examples/template/main.hero"
-#line 1011 "main.c"
-    h_0opt_f87774a_release(&h26_own26);
-#line 76 "examples/template/main.hero"
-#line 1014 "main.c"
-    h_0opt_f87774a_release(&h27_own27);
-#line 76 "examples/template/main.hero"
-#line 1017 "main.c"
-    h_0opt_f87774a_release(&h28_own28);
-    return t83;
 bb36:
+#line 76 "examples/template/main.hero"
     goto bb34;
+#line 76 "examples/template/main.hero"
 bb37:
 #line 82 "examples/template/main.hero"
     t94 = h4_inside;
@@ -1031,174 +844,46 @@ bb38:
     t91 = HERO_STR_LIT(hero_str_26657f26);
 #line 80 "examples/template/main.hero"
     t92 = HERO_STR_LIT(hero_str_6141d99c);
-#line 1035 "main.c"
+#line 848 "main.c"
     hero_str_incref(t91);
 #line 80 "examples/template/main.hero"
-#line 1038 "main.c"
+#line 851 "main.c"
     hero_str_incref(t92);
 #line 80 "examples/template/main.hero"
     t93 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t91, .msg = t92}};
 #line 80 "examples/template/main.hero"
-    t127 = h26_own26;
+    t128 = h27_own27;
 #line 80 "examples/template/main.hero"
-    h26_own26 = t93;
-#line 1046 "main.c"
-    h_0opt_f87774a_release(&t127);
+    h27_own27 = t93;
+#line 859 "main.c"
+    h_0opt_f87774a_release(&t128);
 #line 80 "examples/template/main.hero"
-#line 1049 "main.c"
-    h_0opt_f87774a_retain(&t93);
+    h14_ret0 = t93;
 #line 80 "examples/template/main.hero"
-#line 1052 "main.c"
-    hero_str_decref(h2_out);
+    goto bb45;
 #line 80 "examples/template/main.hero"
-#line 1055 "main.c"
-    hero_str_decref(h3_key);
-#line 80 "examples/template/main.hero"
-#line 1058 "main.c"
-    hero_array_decref(h7_xs0);
-#line 80 "examples/template/main.hero"
-#line 1061 "main.c"
-    hero_str_decref(h9_ch);
-#line 80 "examples/template/main.hero"
-#line 1064 "main.c"
-    h_0opt_f87774a_release(&h10_found);
-#line 80 "examples/template/main.hero"
-#line 1067 "main.c"
-    h_0opt_f87774a_release(&h11_f0);
-#line 80 "examples/template/main.hero"
-#line 1070 "main.c"
-    h_0opt_f87774a_release(&h12_f1);
-#line 80 "examples/template/main.hero"
-#line 1073 "main.c"
-    hero_array_decref(h14_own14);
-#line 80 "examples/template/main.hero"
-#line 1076 "main.c"
-    hero_str_decref(h15_own15);
-#line 80 "examples/template/main.hero"
-#line 1079 "main.c"
-    hero_str_decref(h16_own16);
-#line 80 "examples/template/main.hero"
-#line 1082 "main.c"
-    h_0opt_f87774a_release(&h17_own17);
-#line 80 "examples/template/main.hero"
-#line 1085 "main.c"
-    h_0opt_f87774a_release(&h18_own18);
-#line 80 "examples/template/main.hero"
-#line 1088 "main.c"
-    hero_str_decref(h19_own19);
-#line 80 "examples/template/main.hero"
-#line 1091 "main.c"
-    hero_str_decref(h20_own20);
-#line 80 "examples/template/main.hero"
-#line 1094 "main.c"
-    h_0opt_f87774a_release(&h21_own21);
-#line 80 "examples/template/main.hero"
-#line 1097 "main.c"
-    hero_str_decref(h22_own22);
-#line 80 "examples/template/main.hero"
-#line 1100 "main.c"
-    hero_str_decref(h23_own23);
-#line 80 "examples/template/main.hero"
-#line 1103 "main.c"
-    hero_str_decref(h24_own24);
-#line 80 "examples/template/main.hero"
-#line 1106 "main.c"
-    h_0opt_f87774a_release(&h25_own25);
-#line 80 "examples/template/main.hero"
-#line 1109 "main.c"
-    h_0opt_f87774a_release(&h26_own26);
-#line 80 "examples/template/main.hero"
-#line 1112 "main.c"
-    h_0opt_f87774a_release(&h27_own27);
-#line 80 "examples/template/main.hero"
-#line 1115 "main.c"
-    h_0opt_f87774a_release(&h28_own28);
-    return t93;
 bb39:
+#line 80 "examples/template/main.hero"
     goto bb37;
+#line 80 "examples/template/main.hero"
 bb40:
 #line 85 "examples/template/main.hero"
     t100 = h2_out;
-#line 1123 "main.c"
+#line 873 "main.c"
     hero_str_incref(t100);
 #line 85 "examples/template/main.hero"
     t101 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t100};
 #line 85 "examples/template/main.hero"
-    t128 = h27_own27;
+    t129 = h28_own28;
 #line 85 "examples/template/main.hero"
-    h27_own27 = t101;
-#line 1131 "main.c"
-    h_0opt_f87774a_release(&t128);
+    h28_own28 = t101;
+#line 881 "main.c"
+    h_0opt_f87774a_release(&t129);
 #line 85 "examples/template/main.hero"
-#line 1134 "main.c"
-    h_0opt_f87774a_retain(&t101);
+    h14_ret0 = t101;
 #line 85 "examples/template/main.hero"
-#line 1137 "main.c"
-    hero_str_decref(h2_out);
+    goto bb45;
 #line 85 "examples/template/main.hero"
-#line 1140 "main.c"
-    hero_str_decref(h3_key);
-#line 85 "examples/template/main.hero"
-#line 1143 "main.c"
-    hero_array_decref(h7_xs0);
-#line 85 "examples/template/main.hero"
-#line 1146 "main.c"
-    hero_str_decref(h9_ch);
-#line 85 "examples/template/main.hero"
-#line 1149 "main.c"
-    h_0opt_f87774a_release(&h10_found);
-#line 85 "examples/template/main.hero"
-#line 1152 "main.c"
-    h_0opt_f87774a_release(&h11_f0);
-#line 85 "examples/template/main.hero"
-#line 1155 "main.c"
-    h_0opt_f87774a_release(&h12_f1);
-#line 85 "examples/template/main.hero"
-#line 1158 "main.c"
-    hero_array_decref(h14_own14);
-#line 85 "examples/template/main.hero"
-#line 1161 "main.c"
-    hero_str_decref(h15_own15);
-#line 85 "examples/template/main.hero"
-#line 1164 "main.c"
-    hero_str_decref(h16_own16);
-#line 85 "examples/template/main.hero"
-#line 1167 "main.c"
-    h_0opt_f87774a_release(&h17_own17);
-#line 85 "examples/template/main.hero"
-#line 1170 "main.c"
-    h_0opt_f87774a_release(&h18_own18);
-#line 85 "examples/template/main.hero"
-#line 1173 "main.c"
-    hero_str_decref(h19_own19);
-#line 85 "examples/template/main.hero"
-#line 1176 "main.c"
-    hero_str_decref(h20_own20);
-#line 85 "examples/template/main.hero"
-#line 1179 "main.c"
-    h_0opt_f87774a_release(&h21_own21);
-#line 85 "examples/template/main.hero"
-#line 1182 "main.c"
-    hero_str_decref(h22_own22);
-#line 85 "examples/template/main.hero"
-#line 1185 "main.c"
-    hero_str_decref(h23_own23);
-#line 85 "examples/template/main.hero"
-#line 1188 "main.c"
-    hero_str_decref(h24_own24);
-#line 85 "examples/template/main.hero"
-#line 1191 "main.c"
-    h_0opt_f87774a_release(&h25_own25);
-#line 85 "examples/template/main.hero"
-#line 1194 "main.c"
-    h_0opt_f87774a_release(&h26_own26);
-#line 85 "examples/template/main.hero"
-#line 1197 "main.c"
-    h_0opt_f87774a_release(&h27_own27);
-#line 85 "examples/template/main.hero"
-#line 1200 "main.c"
-    h_0opt_f87774a_release(&h28_own28);
-    return t101;
 bb41:
 #line 82 "examples/template/main.hero"
     t95 = h5_pending;
@@ -1218,96 +903,105 @@ bb43:
     t97 = HERO_STR_LIT(hero_str_1e3bb7d);
 #line 83 "examples/template/main.hero"
     t98 = HERO_STR_LIT(hero_str_5a790d4f);
-#line 1222 "main.c"
+#line 907 "main.c"
     hero_str_incref(t97);
 #line 83 "examples/template/main.hero"
-#line 1225 "main.c"
+#line 910 "main.c"
     hero_str_incref(t98);
 #line 83 "examples/template/main.hero"
     t99 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t97, .msg = t98}};
 #line 83 "examples/template/main.hero"
-    t129 = h28_own28;
+    t130 = h29_own29;
 #line 83 "examples/template/main.hero"
-    h28_own28 = t99;
-#line 1233 "main.c"
-    h_0opt_f87774a_release(&t129);
+    h29_own29 = t99;
+#line 918 "main.c"
+    h_0opt_f87774a_release(&t130);
 #line 83 "examples/template/main.hero"
-#line 1236 "main.c"
-    h_0opt_f87774a_retain(&t99);
+    h14_ret0 = t99;
 #line 83 "examples/template/main.hero"
-#line 1239 "main.c"
-    hero_str_decref(h2_out);
+    goto bb45;
 #line 83 "examples/template/main.hero"
-#line 1242 "main.c"
-    hero_str_decref(h3_key);
-#line 83 "examples/template/main.hero"
-#line 1245 "main.c"
-    hero_array_decref(h7_xs0);
-#line 83 "examples/template/main.hero"
-#line 1248 "main.c"
-    hero_str_decref(h9_ch);
-#line 83 "examples/template/main.hero"
-#line 1251 "main.c"
-    h_0opt_f87774a_release(&h10_found);
-#line 83 "examples/template/main.hero"
-#line 1254 "main.c"
-    h_0opt_f87774a_release(&h11_f0);
-#line 83 "examples/template/main.hero"
-#line 1257 "main.c"
-    h_0opt_f87774a_release(&h12_f1);
-#line 83 "examples/template/main.hero"
-#line 1260 "main.c"
-    hero_array_decref(h14_own14);
-#line 83 "examples/template/main.hero"
-#line 1263 "main.c"
-    hero_str_decref(h15_own15);
-#line 83 "examples/template/main.hero"
-#line 1266 "main.c"
-    hero_str_decref(h16_own16);
-#line 83 "examples/template/main.hero"
-#line 1269 "main.c"
-    h_0opt_f87774a_release(&h17_own17);
-#line 83 "examples/template/main.hero"
-#line 1272 "main.c"
-    h_0opt_f87774a_release(&h18_own18);
-#line 83 "examples/template/main.hero"
-#line 1275 "main.c"
-    hero_str_decref(h19_own19);
-#line 83 "examples/template/main.hero"
-#line 1278 "main.c"
-    hero_str_decref(h20_own20);
-#line 83 "examples/template/main.hero"
-#line 1281 "main.c"
-    h_0opt_f87774a_release(&h21_own21);
-#line 83 "examples/template/main.hero"
-#line 1284 "main.c"
-    hero_str_decref(h22_own22);
-#line 83 "examples/template/main.hero"
-#line 1287 "main.c"
-    hero_str_decref(h23_own23);
-#line 83 "examples/template/main.hero"
-#line 1290 "main.c"
-    hero_str_decref(h24_own24);
-#line 83 "examples/template/main.hero"
-#line 1293 "main.c"
-    h_0opt_f87774a_release(&h25_own25);
-#line 83 "examples/template/main.hero"
-#line 1296 "main.c"
-    h_0opt_f87774a_release(&h26_own26);
-#line 83 "examples/template/main.hero"
-#line 1299 "main.c"
-    h_0opt_f87774a_release(&h27_own27);
-#line 83 "examples/template/main.hero"
-#line 1302 "main.c"
-    h_0opt_f87774a_release(&h28_own28);
-    return t99;
 bb44:
+#line 83 "examples/template/main.hero"
     goto bb40;
+#line 83 "examples/template/main.hero"
+bb45:
+#line 22 "examples/template/main.hero"
+    t102 = h14_ret0;
+#line 932 "main.c"
+    h_0opt_f87774a_retain(&t102);
+#line 22 "examples/template/main.hero"
+#line 935 "main.c"
+    hero_str_decref(h2_out);
+#line 22 "examples/template/main.hero"
+#line 938 "main.c"
+    hero_str_decref(h3_key);
+#line 22 "examples/template/main.hero"
+#line 941 "main.c"
+    hero_array_decref(h7_xs0);
+#line 22 "examples/template/main.hero"
+#line 944 "main.c"
+    hero_str_decref(h9_ch);
+#line 22 "examples/template/main.hero"
+#line 947 "main.c"
+    h_0opt_f87774a_release(&h10_found);
+#line 22 "examples/template/main.hero"
+#line 950 "main.c"
+    h_0opt_f87774a_release(&h11_f0);
+#line 22 "examples/template/main.hero"
+#line 953 "main.c"
+    h_0opt_f87774a_release(&h12_f1);
+#line 22 "examples/template/main.hero"
+#line 956 "main.c"
+    hero_array_decref(h15_own15);
+#line 22 "examples/template/main.hero"
+#line 959 "main.c"
+    hero_str_decref(h16_own16);
+#line 22 "examples/template/main.hero"
+#line 962 "main.c"
+    hero_str_decref(h17_own17);
+#line 22 "examples/template/main.hero"
+#line 965 "main.c"
+    h_0opt_f87774a_release(&h18_own18);
+#line 22 "examples/template/main.hero"
+#line 968 "main.c"
+    h_0opt_f87774a_release(&h19_own19);
+#line 22 "examples/template/main.hero"
+#line 971 "main.c"
+    hero_str_decref(h20_own20);
+#line 22 "examples/template/main.hero"
+#line 974 "main.c"
+    hero_str_decref(h21_own21);
+#line 22 "examples/template/main.hero"
+#line 977 "main.c"
+    h_0opt_f87774a_release(&h22_own22);
+#line 22 "examples/template/main.hero"
+#line 980 "main.c"
+    hero_str_decref(h23_own23);
+#line 22 "examples/template/main.hero"
+#line 983 "main.c"
+    hero_str_decref(h24_own24);
+#line 22 "examples/template/main.hero"
+#line 986 "main.c"
+    hero_str_decref(h25_own25);
+#line 22 "examples/template/main.hero"
+#line 989 "main.c"
+    h_0opt_f87774a_release(&h26_own26);
+#line 22 "examples/template/main.hero"
+#line 992 "main.c"
+    h_0opt_f87774a_release(&h27_own27);
+#line 22 "examples/template/main.hero"
+#line 995 "main.c"
+    h_0opt_f87774a_release(&h28_own28);
+#line 22 "examples/template/main.hero"
+#line 998 "main.c"
+    h_0opt_f87774a_release(&h29_own29);
+    return t102;
 }
 
 #line 90 "examples/template/main.hero"
 h_0opt_f87774a h_main_render_or(HeroStr h0_template, HeroMapHeader * h1_values, HeroStr h2_missing) {
-#line 1311 "main.c"
+#line 1005 "main.c"
     HeroMapHeader * h3_filled = {0};
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -1355,11 +1049,11 @@ bb0:
     t1 = h1_values;
 #line 91 "examples/template/main.hero"
     t27 = h3_filled;
-#line 1359 "main.c"
+#line 1053 "main.c"
     hero_map_incref(t1);
 #line 91 "examples/template/main.hero"
     h3_filled = t1;
-#line 1363 "main.c"
+#line 1057 "main.c"
     hero_map_decref(t27);
 #line 93 "examples/template/main.hero"
     t2 = h0_template;
@@ -1369,15 +1063,15 @@ bb0:
     t28 = h8_own8;
 #line 93 "examples/template/main.hero"
     h8_own8 = t3;
-#line 1373 "main.c"
+#line 1067 "main.c"
     hero_array_decref(t28);
 #line 93 "examples/template/main.hero"
     t29 = h4_xs0;
-#line 1377 "main.c"
+#line 1071 "main.c"
     hero_array_incref(t3);
 #line 93 "examples/template/main.hero"
     h4_xs0 = t3;
-#line 1381 "main.c"
+#line 1075 "main.c"
     hero_array_decref(t29);
 #line 93 "examples/template/main.hero"
     t4 = INT64_C(0);
@@ -1407,11 +1101,11 @@ bb2:
     t11 = *(HeroStr const *)hero_array_at(t9, t10);
 #line 93 "examples/template/main.hero"
     t30 = h6_key;
-#line 1411 "main.c"
+#line 1105 "main.c"
     hero_str_incref(t11);
 #line 93 "examples/template/main.hero"
     h6_key = t11;
-#line 1415 "main.c"
+#line 1109 "main.c"
     hero_str_decref(t30);
 #line 94 "examples/template/main.hero"
     t12 = h3_filled;
@@ -1439,15 +1133,15 @@ bb2:
     t31 = h9_own9;
 #line 94 "examples/template/main.hero"
     h9_own9 = t14;
-#line 1443 "main.c"
+#line 1137 "main.c"
     h_0opt_f87774a_release(&t31);
 #line 94 "examples/template/main.hero"
     t32 = h7_f0;
-#line 1447 "main.c"
+#line 1141 "main.c"
     h_0opt_f87774a_retain(&t14);
 #line 94 "examples/template/main.hero"
     h7_f0 = t14;
-#line 1451 "main.c"
+#line 1145 "main.c"
     h_0opt_f87774a_release(&t32);
 #line 94 "examples/template/main.hero"
     t15 = h7_f0;
@@ -1483,31 +1177,31 @@ bb4:
     t33 = h10_own10;
 #line 97 "examples/template/main.hero"
     h10_own10 = t26;
-#line 1487 "main.c"
+#line 1181 "main.c"
     h_0opt_f87774a_release(&t33);
 #line 97 "examples/template/main.hero"
-#line 1490 "main.c"
+#line 1184 "main.c"
     h_0opt_f87774a_retain(&t26);
 #line 97 "examples/template/main.hero"
-#line 1493 "main.c"
+#line 1187 "main.c"
     hero_map_decref(h3_filled);
 #line 97 "examples/template/main.hero"
-#line 1496 "main.c"
+#line 1190 "main.c"
     hero_array_decref(h4_xs0);
 #line 97 "examples/template/main.hero"
-#line 1499 "main.c"
+#line 1193 "main.c"
     hero_str_decref(h6_key);
 #line 97 "examples/template/main.hero"
-#line 1502 "main.c"
+#line 1196 "main.c"
     h_0opt_f87774a_release(&h7_f0);
 #line 97 "examples/template/main.hero"
-#line 1505 "main.c"
+#line 1199 "main.c"
     hero_array_decref(h8_own8);
 #line 97 "examples/template/main.hero"
-#line 1508 "main.c"
+#line 1202 "main.c"
     h_0opt_f87774a_release(&h9_own9);
 #line 97 "examples/template/main.hero"
-#line 1511 "main.c"
+#line 1205 "main.c"
     h_0opt_f87774a_release(&h10_own10);
     return t26;
 bb5:
@@ -1517,7 +1211,7 @@ bb6:
     t19 = h6_key;
 #line 95 "examples/template/main.hero"
     t20 = h2_missing;
-#line 1521 "main.c"
+#line 1215 "main.c"
     hero_str_incref(t20);
 #line 95 "examples/template/main.hero"
     hero_map_set(&(h3_filled), &t19, &t20);
@@ -1527,12 +1221,12 @@ bb6:
 bb7:
 #line 95 "examples/template/main.hero"
     goto bb5;
-#line 1531 "main.c"
+#line 1225 "main.c"
 }
 
 #line 106 "examples/template/main.hero"
 HeroArrayHeader * h_main_needed(HeroStr h0_template) {
-#line 1536 "main.c"
+#line 1230 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroStr h2_key = {0};
     bool h3_inside;
@@ -1602,25 +1296,25 @@ bb0:
     t45 = h8_own8;
 #line 107 "examples/template/main.hero"
     h8_own8 = t1;
-#line 1606 "main.c"
+#line 1300 "main.c"
     hero_array_decref(t45);
 #line 107 "examples/template/main.hero"
     t46 = h1_out;
-#line 1610 "main.c"
+#line 1304 "main.c"
     hero_array_incref(t1);
 #line 107 "examples/template/main.hero"
     h1_out = t1;
-#line 1614 "main.c"
+#line 1308 "main.c"
     hero_array_decref(t46);
 #line 108 "examples/template/main.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 108 "examples/template/main.hero"
     t47 = h2_key;
-#line 1620 "main.c"
+#line 1314 "main.c"
     hero_str_incref(t2);
 #line 108 "examples/template/main.hero"
     h2_key = t2;
-#line 1624 "main.c"
+#line 1318 "main.c"
     hero_str_decref(t47);
 #line 109 "examples/template/main.hero"
     t3 = false;
@@ -1638,15 +1332,15 @@ bb0:
     t48 = h9_own9;
 #line 112 "examples/template/main.hero"
     h9_own9 = t6;
-#line 1642 "main.c"
+#line 1336 "main.c"
     hero_array_decref(t48);
 #line 112 "examples/template/main.hero"
     t49 = h5_xs0;
-#line 1646 "main.c"
+#line 1340 "main.c"
     hero_array_incref(t6);
 #line 112 "examples/template/main.hero"
     h5_xs0 = t6;
-#line 1650 "main.c"
+#line 1344 "main.c"
     hero_array_decref(t49);
 #line 112 "examples/template/main.hero"
     t7 = INT64_C(0);
@@ -1676,11 +1370,11 @@ bb2:
     t14 = *(HeroStr const *)hero_array_at(t12, t13);
 #line 112 "examples/template/main.hero"
     t50 = h7_ch;
-#line 1680 "main.c"
+#line 1374 "main.c"
     hero_str_incref(t14);
 #line 112 "examples/template/main.hero"
     h7_ch = t14;
-#line 1684 "main.c"
+#line 1378 "main.c"
     hero_str_decref(t50);
 #line 113 "examples/template/main.hero"
     t15 = h4_pending;
@@ -1702,28 +1396,28 @@ bb3:
 bb4:
 #line 134 "examples/template/main.hero"
     t44 = h1_out;
-#line 1706 "main.c"
+#line 1400 "main.c"
     hero_array_incref(t44);
 #line 134 "examples/template/main.hero"
-#line 1709 "main.c"
+#line 1403 "main.c"
     hero_array_decref(h1_out);
 #line 134 "examples/template/main.hero"
-#line 1712 "main.c"
+#line 1406 "main.c"
     hero_str_decref(h2_key);
 #line 134 "examples/template/main.hero"
-#line 1715 "main.c"
+#line 1409 "main.c"
     hero_array_decref(h5_xs0);
 #line 134 "examples/template/main.hero"
-#line 1718 "main.c"
+#line 1412 "main.c"
     hero_str_decref(h7_ch);
 #line 134 "examples/template/main.hero"
-#line 1721 "main.c"
+#line 1415 "main.c"
     hero_array_decref(h8_own8);
 #line 134 "examples/template/main.hero"
-#line 1724 "main.c"
+#line 1418 "main.c"
     hero_array_decref(h9_own9);
 #line 134 "examples/template/main.hero"
-#line 1727 "main.c"
+#line 1421 "main.c"
     hero_str_decref(h10_own10);
     return t44;
 bb5:
@@ -1759,11 +1453,11 @@ bb8:
     t21 = HERO_STR_LIT(hero_str_0);
 #line 119 "examples/template/main.hero"
     t51 = h2_key;
-#line 1763 "main.c"
+#line 1457 "main.c"
     hero_str_incref(t21);
 #line 119 "examples/template/main.hero"
     h2_key = t21;
-#line 1767 "main.c"
+#line 1461 "main.c"
     hero_str_decref(t51);
     goto bb5;
 bb9:
@@ -1825,15 +1519,15 @@ bb16:
     t52 = h10_own10;
 #line 128 "examples/template/main.hero"
     h10_own10 = t36;
-#line 1829 "main.c"
+#line 1523 "main.c"
     hero_str_decref(t52);
 #line 128 "examples/template/main.hero"
     t53 = h2_key;
-#line 1833 "main.c"
+#line 1527 "main.c"
     hero_str_incref(t36);
 #line 128 "examples/template/main.hero"
     h2_key = t36;
-#line 1837 "main.c"
+#line 1531 "main.c"
     hero_str_decref(t53);
     goto bb14;
 bb17:
@@ -1865,12 +1559,12 @@ bb21:
 bb22:
 #line 132 "examples/template/main.hero"
     goto bb20;
-#line 1869 "main.c"
+#line 1563 "main.c"
 }
 
 #line 136 "examples/template/main.hero"
 HeroMapHeader * h_main_sample_values(void) {
-#line 1874 "main.c"
+#line 1568 "main.c"
     HeroMapHeader * h0_values = {0};
     HeroMapHeader * h1_own1 = {0};
     HeroMapHeader * t1;
@@ -1889,21 +1583,21 @@ bb0:
     t7 = h1_own1;
 #line 137 "examples/template/main.hero"
     h1_own1 = t1;
-#line 1893 "main.c"
+#line 1587 "main.c"
     hero_map_decref(t7);
 #line 137 "examples/template/main.hero"
     t8 = h0_values;
-#line 1897 "main.c"
+#line 1591 "main.c"
     hero_map_incref(t1);
 #line 137 "examples/template/main.hero"
     h0_values = t1;
-#line 1901 "main.c"
+#line 1595 "main.c"
     hero_map_decref(t8);
 #line 138 "examples/template/main.hero"
     t2 = HERO_STR_LIT(hero_str_ed6f72f);
 #line 138 "examples/template/main.hero"
     t3 = HERO_STR_LIT(hero_str_1138d6);
-#line 1907 "main.c"
+#line 1601 "main.c"
     hero_str_incref(t3);
 #line 138 "examples/template/main.hero"
     hero_map_set(&(h0_values), &t2, &t3);
@@ -1911,26 +1605,26 @@ bb0:
     t4 = HERO_STR_LIT(hero_str_f63d796);
 #line 139 "examples/template/main.hero"
     t5 = HERO_STR_LIT(hero_str_35f4f8a5);
-#line 1915 "main.c"
+#line 1609 "main.c"
     hero_str_incref(t5);
 #line 139 "examples/template/main.hero"
     hero_map_set(&(h0_values), &t4, &t5);
 #line 140 "examples/template/main.hero"
     t6 = h0_values;
-#line 1921 "main.c"
+#line 1615 "main.c"
     hero_map_incref(t6);
 #line 140 "examples/template/main.hero"
-#line 1924 "main.c"
+#line 1618 "main.c"
     hero_map_decref(h0_values);
 #line 140 "examples/template/main.hero"
-#line 1927 "main.c"
+#line 1621 "main.c"
     hero_map_decref(h1_own1);
     return t6;
 }
 
 #line 142 "examples/template/main.hero"
 void h_main_main(void) {
-#line 1934 "main.c"
+#line 1628 "main.c"
     HeroMapHeader * h0_values = {0};
     h_0opt_f87774a h1_f0 = {0};
     h_0opt_f87774a h2_f1 = {0};
@@ -2087,15 +1781,15 @@ bb0:
     t101 = h11_own11;
 #line 143 "examples/template/main.hero"
     h11_own11 = t1;
-#line 2091 "main.c"
+#line 1785 "main.c"
     hero_map_decref(t101);
 #line 143 "examples/template/main.hero"
     t102 = h0_values;
-#line 2095 "main.c"
+#line 1789 "main.c"
     hero_map_incref(t1);
 #line 143 "examples/template/main.hero"
     h0_values = t1;
-#line 2099 "main.c"
+#line 1793 "main.c"
     hero_map_decref(t102);
 #line 145 "examples/template/main.hero"
     t2 = HERO_STR_LIT(hero_str_7fa7e458);
@@ -2107,15 +1801,15 @@ bb0:
     t103 = h12_own12;
 #line 145 "examples/template/main.hero"
     h12_own12 = t4;
-#line 2111 "main.c"
+#line 1805 "main.c"
     h_0opt_f87774a_release(&t103);
 #line 145 "examples/template/main.hero"
     t104 = h1_f0;
-#line 2115 "main.c"
+#line 1809 "main.c"
     h_0opt_f87774a_retain(&t4);
 #line 145 "examples/template/main.hero"
     h1_f0 = t4;
-#line 2119 "main.c"
+#line 1813 "main.c"
     h_0opt_f87774a_release(&t104);
 #line 145 "examples/template/main.hero"
     t5 = h1_f0;
@@ -2147,15 +1841,15 @@ bb1:
     t105 = h13_own13;
 #line 146 "examples/template/main.hero"
     h13_own13 = t15;
-#line 2151 "main.c"
+#line 1845 "main.c"
     h_0opt_f87774a_release(&t105);
 #line 146 "examples/template/main.hero"
     t106 = h2_f1;
-#line 2155 "main.c"
+#line 1849 "main.c"
     h_0opt_f87774a_retain(&t15);
 #line 146 "examples/template/main.hero"
     h2_f1 = t15;
-#line 2159 "main.c"
+#line 1853 "main.c"
     h_0opt_f87774a_release(&t106);
 #line 146 "examples/template/main.hero"
     t16 = h2_f1;
@@ -2173,7 +1867,7 @@ bb2:
     t9 = h1_f0;
 #line 145 "examples/template/main.hero"
     t10 = t9.as.err;
-#line 2177 "main.c"
+#line 1871 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb3:
@@ -2195,15 +1889,15 @@ bb3:
     t107 = h14_own14;
 #line 147 "examples/template/main.hero"
     h14_own14 = t26;
-#line 2199 "main.c"
+#line 1893 "main.c"
     h_0opt_f87774a_release(&t107);
 #line 147 "examples/template/main.hero"
     t108 = h3_f2;
-#line 2203 "main.c"
+#line 1897 "main.c"
     h_0opt_f87774a_retain(&t26);
 #line 147 "examples/template/main.hero"
     h3_f2 = t26;
-#line 2207 "main.c"
+#line 1901 "main.c"
     h_0opt_f87774a_release(&t108);
 #line 147 "examples/template/main.hero"
     t27 = h3_f2;
@@ -2221,7 +1915,7 @@ bb4:
     t20 = h2_f1;
 #line 146 "examples/template/main.hero"
     t21 = t20.as.err;
-#line 2225 "main.c"
+#line 1919 "main.c"
     hero_panic_must(t21);
     hero_unreachable();
 bb5:
@@ -2243,15 +1937,15 @@ bb5:
     t109 = h15_own15;
 #line 148 "examples/template/main.hero"
     h15_own15 = t37;
-#line 2247 "main.c"
+#line 1941 "main.c"
     h_0opt_f87774a_release(&t109);
 #line 148 "examples/template/main.hero"
     t110 = h4_f3;
-#line 2251 "main.c"
+#line 1945 "main.c"
     h_0opt_f87774a_retain(&t37);
 #line 148 "examples/template/main.hero"
     h4_f3 = t37;
-#line 2255 "main.c"
+#line 1949 "main.c"
     h_0opt_f87774a_release(&t110);
 #line 148 "examples/template/main.hero"
     t38 = h4_f3;
@@ -2269,7 +1963,7 @@ bb6:
     t31 = h3_f2;
 #line 147 "examples/template/main.hero"
     t32 = t31.as.err;
-#line 2273 "main.c"
+#line 1967 "main.c"
     hero_panic_must(t32);
     hero_unreachable();
 bb7:
@@ -2291,15 +1985,15 @@ bb7:
     t111 = h16_own16;
 #line 149 "examples/template/main.hero"
     h16_own16 = t48;
-#line 2295 "main.c"
+#line 1989 "main.c"
     h_0opt_f87774a_release(&t111);
 #line 149 "examples/template/main.hero"
     t112 = h5_f4;
-#line 2299 "main.c"
+#line 1993 "main.c"
     h_0opt_f87774a_retain(&t48);
 #line 149 "examples/template/main.hero"
     h5_f4 = t48;
-#line 2303 "main.c"
+#line 1997 "main.c"
     h_0opt_f87774a_release(&t112);
 #line 149 "examples/template/main.hero"
     t49 = h5_f4;
@@ -2317,7 +2011,7 @@ bb8:
     t42 = h4_f3;
 #line 148 "examples/template/main.hero"
     t43 = t42.as.err;
-#line 2321 "main.c"
+#line 2015 "main.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb9:
@@ -2337,7 +2031,7 @@ bb9:
     t113 = h17_own17;
 #line 150 "examples/template/main.hero"
     h17_own17 = t58;
-#line 2341 "main.c"
+#line 2035 "main.c"
     hero_array_decref(t113);
 #line 150 "examples/template/main.hero"
     t59 = HERO_STR_LIT(hero_str_2c);
@@ -2347,7 +2041,7 @@ bb9:
     t114 = h18_own18;
 #line 150 "examples/template/main.hero"
     h18_own18 = t60;
-#line 2351 "main.c"
+#line 2045 "main.c"
     hero_str_decref(t114);
 #line 150 "examples/template/main.hero"
     hero_print_str(t60);
@@ -2363,15 +2057,15 @@ bb9:
     t115 = h19_own19;
 #line 153 "examples/template/main.hero"
     h19_own19 = t63;
-#line 2367 "main.c"
+#line 2061 "main.c"
     h_0opt_f87774a_release(&t115);
 #line 153 "examples/template/main.hero"
     t116 = h6_f5;
-#line 2371 "main.c"
+#line 2065 "main.c"
     h_0opt_f87774a_retain(&t63);
 #line 153 "examples/template/main.hero"
     h6_f5 = t63;
-#line 2375 "main.c"
+#line 2069 "main.c"
     h_0opt_f87774a_release(&t116);
 #line 153 "examples/template/main.hero"
     t64 = h6_f5;
@@ -2395,15 +2089,15 @@ bb9:
     t117 = h20_own20;
 #line 154 "examples/template/main.hero"
     h20_own20 = t70;
-#line 2399 "main.c"
+#line 2093 "main.c"
     h_0opt_f87774a_release(&t117);
 #line 154 "examples/template/main.hero"
     t118 = h7_f6;
-#line 2403 "main.c"
+#line 2097 "main.c"
     h_0opt_f87774a_retain(&t70);
 #line 154 "examples/template/main.hero"
     h7_f6 = t70;
-#line 2407 "main.c"
+#line 2101 "main.c"
     h_0opt_f87774a_release(&t118);
 #line 154 "examples/template/main.hero"
     t71 = h7_f6;
@@ -2427,15 +2121,15 @@ bb9:
     t119 = h21_own21;
 #line 155 "examples/template/main.hero"
     h21_own21 = t77;
-#line 2431 "main.c"
+#line 2125 "main.c"
     h_0opt_f87774a_release(&t119);
 #line 155 "examples/template/main.hero"
     t120 = h8_f7;
-#line 2435 "main.c"
+#line 2129 "main.c"
     h_0opt_f87774a_retain(&t77);
 #line 155 "examples/template/main.hero"
     h8_f7 = t77;
-#line 2439 "main.c"
+#line 2133 "main.c"
     h_0opt_f87774a_release(&t120);
 #line 155 "examples/template/main.hero"
     t78 = h8_f7;
@@ -2459,15 +2153,15 @@ bb9:
     t121 = h22_own22;
 #line 156 "examples/template/main.hero"
     h22_own22 = t84;
-#line 2463 "main.c"
+#line 2157 "main.c"
     h_0opt_f87774a_release(&t121);
 #line 156 "examples/template/main.hero"
     t122 = h9_f8;
-#line 2467 "main.c"
+#line 2161 "main.c"
     h_0opt_f87774a_retain(&t84);
 #line 156 "examples/template/main.hero"
     h9_f8 = t84;
-#line 2471 "main.c"
+#line 2165 "main.c"
     h_0opt_f87774a_release(&t122);
 #line 156 "examples/template/main.hero"
     t85 = h9_f8;
@@ -2493,15 +2187,15 @@ bb9:
     t123 = h23_own23;
 #line 159 "examples/template/main.hero"
     h23_own23 = t92;
-#line 2497 "main.c"
+#line 2191 "main.c"
     h_0opt_f87774a_release(&t123);
 #line 159 "examples/template/main.hero"
     t124 = h10_f9;
-#line 2501 "main.c"
+#line 2195 "main.c"
     h_0opt_f87774a_retain(&t92);
 #line 159 "examples/template/main.hero"
     h10_f9 = t92;
-#line 2505 "main.c"
+#line 2199 "main.c"
     h_0opt_f87774a_release(&t124);
 #line 159 "examples/template/main.hero"
     t93 = h10_f9;
@@ -2519,7 +2213,7 @@ bb10:
     t53 = h5_f4;
 #line 149 "examples/template/main.hero"
     t54 = t53.as.err;
-#line 2523 "main.c"
+#line 2217 "main.c"
     hero_panic_must(t54);
     hero_unreachable();
 bb11:
@@ -2531,76 +2225,76 @@ bb11:
     hero_print_str(t100);
 #line 159 "examples/template/main.hero"
     hero_print_end();
-#line 2535 "main.c"
+#line 2229 "main.c"
     hero_map_decref(h0_values);
 #line 159 "examples/template/main.hero"
-#line 2538 "main.c"
+#line 2232 "main.c"
     h_0opt_f87774a_release(&h1_f0);
 #line 159 "examples/template/main.hero"
-#line 2541 "main.c"
+#line 2235 "main.c"
     h_0opt_f87774a_release(&h2_f1);
 #line 159 "examples/template/main.hero"
-#line 2544 "main.c"
+#line 2238 "main.c"
     h_0opt_f87774a_release(&h3_f2);
 #line 159 "examples/template/main.hero"
-#line 2547 "main.c"
+#line 2241 "main.c"
     h_0opt_f87774a_release(&h4_f3);
 #line 159 "examples/template/main.hero"
-#line 2550 "main.c"
+#line 2244 "main.c"
     h_0opt_f87774a_release(&h5_f4);
 #line 159 "examples/template/main.hero"
-#line 2553 "main.c"
+#line 2247 "main.c"
     h_0opt_f87774a_release(&h6_f5);
 #line 159 "examples/template/main.hero"
-#line 2556 "main.c"
+#line 2250 "main.c"
     h_0opt_f87774a_release(&h7_f6);
 #line 159 "examples/template/main.hero"
-#line 2559 "main.c"
+#line 2253 "main.c"
     h_0opt_f87774a_release(&h8_f7);
 #line 159 "examples/template/main.hero"
-#line 2562 "main.c"
+#line 2256 "main.c"
     h_0opt_f87774a_release(&h9_f8);
 #line 159 "examples/template/main.hero"
-#line 2565 "main.c"
+#line 2259 "main.c"
     h_0opt_f87774a_release(&h10_f9);
 #line 159 "examples/template/main.hero"
-#line 2568 "main.c"
+#line 2262 "main.c"
     hero_map_decref(h11_own11);
 #line 159 "examples/template/main.hero"
-#line 2571 "main.c"
+#line 2265 "main.c"
     h_0opt_f87774a_release(&h12_own12);
 #line 159 "examples/template/main.hero"
-#line 2574 "main.c"
+#line 2268 "main.c"
     h_0opt_f87774a_release(&h13_own13);
 #line 159 "examples/template/main.hero"
-#line 2577 "main.c"
+#line 2271 "main.c"
     h_0opt_f87774a_release(&h14_own14);
 #line 159 "examples/template/main.hero"
-#line 2580 "main.c"
+#line 2274 "main.c"
     h_0opt_f87774a_release(&h15_own15);
 #line 159 "examples/template/main.hero"
-#line 2583 "main.c"
+#line 2277 "main.c"
     h_0opt_f87774a_release(&h16_own16);
 #line 159 "examples/template/main.hero"
-#line 2586 "main.c"
+#line 2280 "main.c"
     hero_array_decref(h17_own17);
 #line 159 "examples/template/main.hero"
-#line 2589 "main.c"
+#line 2283 "main.c"
     hero_str_decref(h18_own18);
 #line 159 "examples/template/main.hero"
-#line 2592 "main.c"
+#line 2286 "main.c"
     h_0opt_f87774a_release(&h19_own19);
 #line 159 "examples/template/main.hero"
-#line 2595 "main.c"
+#line 2289 "main.c"
     h_0opt_f87774a_release(&h20_own20);
 #line 159 "examples/template/main.hero"
-#line 2598 "main.c"
+#line 2292 "main.c"
     h_0opt_f87774a_release(&h21_own21);
 #line 159 "examples/template/main.hero"
-#line 2601 "main.c"
+#line 2295 "main.c"
     h_0opt_f87774a_release(&h22_own22);
 #line 159 "examples/template/main.hero"
-#line 2604 "main.c"
+#line 2298 "main.c"
     h_0opt_f87774a_release(&h23_own23);
     return;
 bb12:
@@ -2608,7 +2302,7 @@ bb12:
     t97 = h10_f9;
 #line 159 "examples/template/main.hero"
     t98 = t97.as.err;
-#line 2612 "main.c"
+#line 2306 "main.c"
     hero_panic_must(t98);
     hero_unreachable();
 }

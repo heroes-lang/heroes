@@ -107,6 +107,7 @@ int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) {
     h_0opt_e201354 h2_f1 = {0};
     int64_t h3_r0;
     h_0opt_e201354 h4_f2 = {0};
+    int64_t h5_ret0;
     h_0opt_e201354 t1;
     h_0opt_e201354 t2;
     int64_t t3;
@@ -130,21 +131,22 @@ int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) {
     HeroFailure t21;
     h_0opt_e201354 t22;
     int64_t t23;
-    h_0opt_e201354 t24;
+    int64_t t24;
     h_0opt_e201354 t25;
     h_0opt_e201354 t26;
+    h_0opt_e201354 t27;
     goto bb0;
 bb0:
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t1 = h0_v;
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    t24 = h1_f0;
-#line 143 "sugarfallibleops.c"
+    t25 = h1_f0;
+#line 145 "sugarfallibleops.c"
     h_0opt_e201354_retain(&t1);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h1_f0 = t1;
-#line 147 "sugarfallibleops.c"
-    h_0opt_e201354_release(&t24);
+#line 149 "sugarfallibleops.c"
+    h_0opt_e201354_release(&t25);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t2 = h1_f0;
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -160,13 +162,13 @@ bb1:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t15 = h0_v;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t25 = h4_f2;
-#line 165 "sugarfallibleops.c"
+    t26 = h4_f2;
+#line 167 "sugarfallibleops.c"
     h_0opt_e201354_retain(&t15);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h4_f2 = t15;
-#line 169 "sugarfallibleops.c"
-    h_0opt_e201354_release(&t25);
+#line 171 "sugarfallibleops.c"
+    h_0opt_e201354_release(&t26);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t16 = h4_f2;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -182,13 +184,13 @@ bb2:
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t6 = h0_v;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t26 = h2_f1;
-#line 187 "sugarfallibleops.c"
+    t27 = h2_f1;
+#line 189 "sugarfallibleops.c"
     h_0opt_e201354_retain(&t6);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h2_f1 = t6;
-#line 191 "sugarfallibleops.c"
-    h_0opt_e201354_release(&t26);
+#line 193 "sugarfallibleops.c"
+    h_0opt_e201354_release(&t27);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t7 = h2_f1;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
@@ -225,37 +227,41 @@ bb5:
 bb6:
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t14 = h3_r0;
-#line 229 "sugarfallibleops.c"
-    h_0opt_e201354_release(&h1_f0);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-#line 232 "sugarfallibleops.c"
-    h_0opt_e201354_release(&h2_f1);
+    h5_ret0 = t14;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-#line 235 "sugarfallibleops.c"
-    h_0opt_e201354_release(&h4_f2);
-    return t14;
+    goto bb9;
+#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
 bb7:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t22 = h4_f2;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t23 = t22.as.ok;
-#line 243 "sugarfallibleops.c"
-    h_0opt_e201354_release(&h1_f0);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-#line 246 "sugarfallibleops.c"
-    h_0opt_e201354_release(&h2_f1);
+    h5_ret0 = t23;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-#line 249 "sugarfallibleops.c"
-    h_0opt_e201354_release(&h4_f2);
-    return t23;
+    goto bb9;
+#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
 bb8:
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t20 = h4_f2;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t21 = t20.as.err;
-#line 257 "sugarfallibleops.c"
+#line 251 "sugarfallibleops.c"
     hero_panic_must(t21);
     hero_unreachable();
+bb9:
+#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
+    t24 = h5_ret0;
+#line 257 "sugarfallibleops.c"
+    h_0opt_e201354_release(&h1_f0);
+#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
+#line 260 "sugarfallibleops.c"
+    h_0opt_e201354_release(&h2_f1);
+#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
+#line 263 "sugarfallibleops.c"
+    h_0opt_e201354_release(&h4_f2);
+    return t24;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

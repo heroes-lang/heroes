@@ -899,10 +899,11 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 900 "ffiownedcellisfreed.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
-    HeroStr h3_own3 = {0};
-    h_0opt_f87774a h4_own4 = {0};
+    h_0opt_f87774a h3_ret0 = {0};
+    HeroStr h4_own4 = {0};
     h_0opt_f87774a h5_own5 = {0};
     h_0opt_f87774a h6_own6 = {0};
+    h_0opt_f87774a h7_own7 = {0};
     const char * t1;
     const char * t2;
     bool t3;
@@ -920,11 +921,12 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
     HeroStr t15;
     HeroStr t16;
     h_0opt_f87774a t17;
-    HeroStr t18;
+    h_0opt_f87774a t18;
     HeroStr t19;
-    h_0opt_f87774a t20;
+    HeroStr t20;
     h_0opt_f87774a t21;
     h_0opt_f87774a t22;
+    h_0opt_f87774a t23;
     goto bb0;
 bb0:
 #line 153 "<heroes library>"
@@ -946,19 +948,19 @@ bb1:
 #line 156 "<heroes library>"
     t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status);
 #line 156 "<heroes library>"
-    t18 = h3_own3;
+    t19 = h4_own4;
 #line 156 "<heroes library>"
-    h3_own3 = t9;
-#line 953 "ffiownedcellisfreed.c"
-    hero_str_decref(t18);
+    h4_own4 = t9;
+#line 955 "ffiownedcellisfreed.c"
+    hero_str_decref(t19);
 #line 156 "<heroes library>"
-    t19 = h2_text;
-#line 957 "ffiownedcellisfreed.c"
+    t20 = h2_text;
+#line 959 "ffiownedcellisfreed.c"
     hero_str_incref(t9);
 #line 156 "<heroes library>"
     h2_text = t9;
-#line 961 "ffiownedcellisfreed.c"
-    hero_str_decref(t19);
+#line 963 "ffiownedcellisfreed.c"
+    hero_str_decref(t20);
 #line 157 "<heroes library>"
     t10 = h1_status;
 #line 157 "<heroes library>"
@@ -973,111 +975,94 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 154 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 977 "ffiownedcellisfreed.c"
+#line 979 "ffiownedcellisfreed.c"
     hero_str_incref(t4);
 #line 154 "<heroes library>"
-#line 980 "ffiownedcellisfreed.c"
+#line 982 "ffiownedcellisfreed.c"
     hero_str_incref(t5);
 #line 154 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
 #line 154 "<heroes library>"
-    t20 = h4_own4;
+    t21 = h5_own5;
 #line 154 "<heroes library>"
-    h4_own4 = t6;
-#line 988 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&t20);
+    h5_own5 = t6;
+#line 990 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_release(&t21);
 #line 154 "<heroes library>"
-#line 991 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_retain(&t6);
+    h3_ret0 = t6;
 #line 154 "<heroes library>"
-#line 994 "ffiownedcellisfreed.c"
-    hero_str_decref(h2_text);
+    goto bb7;
 #line 154 "<heroes library>"
-#line 997 "ffiownedcellisfreed.c"
-    hero_str_decref(h3_own3);
-#line 154 "<heroes library>"
-#line 1000 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 154 "<heroes library>"
-#line 1003 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h5_own5);
-#line 154 "<heroes library>"
-#line 1006 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h6_own6);
-    return t6;
 bb3:
+#line 154 "<heroes library>"
     goto bb1;
+#line 154 "<heroes library>"
 bb4:
 #line 159 "<heroes library>"
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 159 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 1016 "ffiownedcellisfreed.c"
+#line 1006 "ffiownedcellisfreed.c"
     hero_str_incref(t15);
 #line 159 "<heroes library>"
-#line 1019 "ffiownedcellisfreed.c"
+#line 1009 "ffiownedcellisfreed.c"
     hero_str_incref(t16);
 #line 159 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
 #line 159 "<heroes library>"
-    t21 = h5_own5;
+    t22 = h6_own6;
 #line 159 "<heroes library>"
-    h5_own5 = t17;
-#line 1027 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&t21);
+    h6_own6 = t17;
+#line 1017 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_release(&t22);
 #line 159 "<heroes library>"
-#line 1030 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_retain(&t17);
+    h3_ret0 = t17;
 #line 159 "<heroes library>"
-#line 1033 "ffiownedcellisfreed.c"
-    hero_str_decref(h2_text);
+    goto bb7;
 #line 159 "<heroes library>"
-#line 1036 "ffiownedcellisfreed.c"
-    hero_str_decref(h3_own3);
-#line 159 "<heroes library>"
-#line 1039 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 159 "<heroes library>"
-#line 1042 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h5_own5);
-#line 159 "<heroes library>"
-#line 1045 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h6_own6);
-    return t17;
 bb5:
 #line 158 "<heroes library>"
     t13 = h2_text;
-#line 1051 "ffiownedcellisfreed.c"
+#line 1027 "ffiownedcellisfreed.c"
     hero_str_incref(t13);
 #line 158 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
 #line 158 "<heroes library>"
-    t22 = h6_own6;
+    t23 = h7_own7;
 #line 158 "<heroes library>"
-    h6_own6 = t14;
-#line 1059 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&t22);
+    h7_own7 = t14;
+#line 1035 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_release(&t23);
 #line 158 "<heroes library>"
-#line 1062 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_retain(&t14);
+    h3_ret0 = t14;
 #line 158 "<heroes library>"
-#line 1065 "ffiownedcellisfreed.c"
-    hero_str_decref(h2_text);
+    goto bb7;
 #line 158 "<heroes library>"
-#line 1068 "ffiownedcellisfreed.c"
-    hero_str_decref(h3_own3);
-#line 158 "<heroes library>"
-#line 1071 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h4_own4);
-#line 158 "<heroes library>"
-#line 1074 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h5_own5);
-#line 158 "<heroes library>"
-#line 1077 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h6_own6);
-    return t14;
 bb6:
+#line 158 "<heroes library>"
     goto bb4;
+#line 158 "<heroes library>"
+bb7:
+#line 152 "<heroes library>"
+    t18 = h3_ret0;
+#line 1049 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_retain(&t18);
+#line 152 "<heroes library>"
+#line 1052 "ffiownedcellisfreed.c"
+    hero_str_decref(h2_text);
+#line 152 "<heroes library>"
+#line 1055 "ffiownedcellisfreed.c"
+    hero_str_decref(h4_own4);
+#line 152 "<heroes library>"
+#line 1058 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_release(&h5_own5);
+#line 152 "<heroes library>"
+#line 1061 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_release(&h6_own6);
+#line 152 "<heroes library>"
+#line 1064 "ffiownedcellisfreed.c"
+    h_0opt_f87774a_release(&h7_own7);
+    return t18;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

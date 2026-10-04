@@ -160,8 +160,9 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 h_0opt_e201354 h_fixedbugssynthesisednamesareunspellable_half(int64_t h0_n) {
 #line 163 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354 h1_own1 = {0};
+    h_0opt_e201354 h1_ret0 = {0};
     h_0opt_e201354 h2_own2 = {0};
+    h_0opt_e201354 h3_own3 = {0};
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -176,6 +177,7 @@ h_0opt_e201354 h_fixedbugssynthesisednamesareunspellable_half(int64_t h0_n) {
     h_0opt_e201354 t12;
     h_0opt_e201354 t13;
     h_0opt_e201354 t14;
+    h_0opt_e201354 t15;
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
@@ -200,29 +202,24 @@ bb1:
     t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t11 = HERO_STR_LIT(hero_str_60844662);
-#line 204 "fixedbugssynthesisednamesareunspellable.c"
+#line 206 "fixedbugssynthesisednamesareunspellable.c"
     hero_str_incref(t10);
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 207 "fixedbugssynthesisednamesareunspellable.c"
+#line 209 "fixedbugssynthesisednamesareunspellable.c"
     hero_str_incref(t11);
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    t13 = h1_own1;
+    t14 = h2_own2;
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    h1_own1 = t12;
-#line 215 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&t13);
+    h2_own2 = t12;
+#line 217 "fixedbugssynthesisednamesareunspellable.c"
+    h_0opt_e201354_release(&t14);
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 218 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_retain(&t12);
+    h1_ret0 = t12;
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 221 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&h1_own1);
+    goto bb4;
 #line 31 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 224 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&h2_own2);
-    return t12;
 bb2:
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t6 = h0_n;
@@ -237,28 +234,37 @@ bb2:
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8};
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    t14 = h2_own2;
+    t15 = h3_own3;
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    h2_own2 = t9;
-#line 244 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&t14);
+    h3_own3 = t9;
+#line 241 "fixedbugssynthesisednamesareunspellable.c"
+    h_0opt_e201354_release(&t15);
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 247 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_retain(&t9);
+    h1_ret0 = t9;
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 250 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&h1_own1);
+    goto bb4;
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 253 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&h2_own2);
-    return t9;
 bb3:
+#line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     goto bb1;
+#line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+bb4:
+#line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+    t13 = h1_ret0;
+#line 255 "fixedbugssynthesisednamesareunspellable.c"
+    h_0opt_e201354_retain(&t13);
+#line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+#line 258 "fixedbugssynthesisednamesareunspellable.c"
+    h_0opt_e201354_release(&h2_own2);
+#line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+#line 261 "fixedbugssynthesisednamesareunspellable.c"
+    h_0opt_e201354_release(&h3_own3);
+    return t13;
 }
 
 #line 33 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 void h_fixedbugssynthesisednamesareunspellable_main(void) {
-#line 262 "fixedbugssynthesisednamesareunspellable.c"
+#line 268 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354 h0_f0 = {0};
     int64_t h1_r0;
     h_0opt_e201354 h2_own2 = {0};
@@ -320,15 +326,15 @@ bb0:
     t19 = h2_own2;
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     h2_own2 = t10;
-#line 324 "fixedbugssynthesisednamesareunspellable.c"
+#line 330 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(&t19);
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t20 = h0_f0;
-#line 328 "fixedbugssynthesisednamesareunspellable.c"
+#line 334 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_retain(&t10);
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     h0_f0 = t10;
-#line 332 "fixedbugssynthesisednamesareunspellable.c"
+#line 338 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(&t20);
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t11 = h0_f0;
@@ -366,10 +372,10 @@ bb3:
     hero_print_int(t18);
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     hero_print_end();
-#line 370 "fixedbugssynthesisednamesareunspellable.c"
+#line 376 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(&h0_f0);
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-#line 373 "fixedbugssynthesisednamesareunspellable.c"
+#line 379 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(&h2_own2);
     return;
 }

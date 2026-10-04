@@ -18,6 +18,13 @@
 # pass builds it, so a lowering or a pass that one day puts an instruction
 # there is refused here instead of releasing a value early in silence.
 #
+# **And the merge is total or loud** (panel 190's R3): a function still
+# leaving by two or more blocks is one the pass left with the product, and
+# that is a compiler bug named here, never a function silently left so. One
+# shape is exempt, and only in a program with holes: a function with a
+# result that falls off its end, which a hole lets past the checker (§4.16,
+# `checker.hero`'s held-back missing_return) and of which no binary is made.
+#
 # Linear in the function: the exits are found in one walk, and each
 # instruction is asked once.
 
@@ -35,6 +42,8 @@ use resolve
 use checker
 
 function check(p: containers.Program, f: containers.Function, c: state.Checked, label: str, @problems: [str])
+    ways_out(f, c, label: label, problems: @problems)
+
     if !has_return_slot(f)
         return
     exits = exit_blocks(f)
@@ -54,6 +63,30 @@ function check(p: containers.Program, f: containers.Function, c: state.Checked, 
             position @ position + 1
 
         index @ index + 1
+
+# Two or more returning blocks, refused, but for the hole's shape above.
+function ways_out(f: containers.Function, c: state.Checked, label: str, @problems: [str])
+    returning: [str] @ []
+    valueless: bool @ false
+    index: i64 @ 0
+
+    for blk in f.blocks
+        match blk.term
+            .return_term ret =>
+                returning @ returning.push("bb" + index.to_str())
+                valueless @ valueless || ret.value.is_err()
+            .jump | .branch | .switch_term | .unreachable | .open => valueless @ valueless
+
+        index @ index + 1
+
+    if returning.len() < 2
+        return
+
+    if c.holes.len() > 0 && valueless && f.result != table.unit_ty(c.types)
+        return
+    problems @ problems.push(
+        label + "leaves by " + returning.len().to_str() + " returning blocks, " + returning[0] + " and " + returning[1] + " first: a function with two or more ways out leaves by one exit, and `ir/exits.hero` did not merge these"
+    )
 
 function has_return_slot(f: containers.Function) -> bool
     for slot in f.slots
@@ -232,6 +265,31 @@ function merged(c: state.Checked, first: [ir.Inst], second: ir.Term, closing: [i
         span: span
     )
 
+# Two blocks and nothing in them, each leaving as its terminator says.
+function two_ways(result: i64, first: ir.Term, second: ir.Term) -> containers.Function
+    none: [ir.Inst] = []
+    blocks: [containers.Block] = [
+        containers.Block(preds: [], insts: none, term: first, note: "a")
+        containers.Block(preds: [], insts: none, term: second, note: "b")
+    ]
+    return containers.Function(
+        name: "f",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: result,
+        slots: [],
+        blocks: blocks,
+        values: [result, result],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+
 function whole(root: i64) -> ir.Place
     return ir.Place(root: root, path: ir.Run(start: 0, length: 0))
 
@@ -271,7 +329,7 @@ test "the return slot is named by the return sites' stores and the exit's load a
 
     # A return site that returns where it should jump, and one whose jump
     # reaches a block that does not return the slot.
-    assert asked(merged(c, first: site, second: .return_term(value: ok(1)), closing: closing), phase: .owned, c) == [said + "1: stores into the return slot `$ret0` and does not jump to the exit"]
+    assert asked(merged(c, first: site, second: .return_term(value: ok(1)), closing: closing), phase: .owned, c) == ["f: leaves by 2 returning blocks, bb1 and bb2 first: a function with two or more ways out leaves by one exit, and `ir/exits.hero` did not merge these", said + "1: stores into the return slot `$ret0` and does not jump to the exit"]
     assert asked(merged(c, first: site, second: .jump(to: 0), closing: closing), phase: .owned, c) == [said + "1: stores into the return slot `$ret0` and jumps to a block that does not return it"]
 
     # The exit releasing before its load, and, once counts are honest, not
@@ -292,3 +350,29 @@ test "the return slot is named by the return sites' stores and the exit's load a
         span: span
     )
     assert asked(merged(c, first: [load_s, part], second: to_exit, closing: closing), phase: .owned, c) == [said + "0: stores into a part of the return slot `$ret0`, which is only ever written whole"]
+
+test "a function leaving by two or more blocks is refused, but for the hole's shape, a result falling off its end"
+    c = checked("function f()\n    return\n")
+    holed = checked("function g() -> i64\n    return ???\n")
+    assert holed.holes.len() == 1
+    valued: ir.Term = .return_term(value: ok(0))
+    fell: ir.Term = .return_term(value: fail(code: "none", msg: "fell off the end"))
+    said = [
+        "f: leaves by 2 returning blocks, bb0 and bb1 first: a function with two or more ways out leaves by one exit, and `ir/exits.hero` did not merge these"
+    ]
+    number = table.int_ty_id(c.types)
+    assert asked(two_ways(number, first: valued, second: valued), phase: .lowered, c) == said
+    assert asked(two_ways(number, first: valued, second: fell), phase: .owned, c) == said
+
+    # With a hole in the program the checker held `missing_return` back, so
+    # lowering wrote the edge that falls off the end, valueless, and the
+    # merge left the function; no binary is made of it. Its siblings are not
+    # exempt: two valued ways out, or a `()` function's two.
+    held = table.int_ty_id(holed.types)
+    assert asked(two_ways(held, first: valued, second: fell), phase: .lowered, holed) == []
+    assert asked(two_ways(held, first: valued, second: valued), phase: .lowered, holed) == said
+    assert asked(two_ways(table.unit_ty(holed.types), first: fell, second: fell), phase: .lowered, holed) == said
+
+    # One way out, or none: nothing to merge.
+    assert asked(two_ways(number, first: valued, second: .unreachable), phase: .owned, c) == []
+    assert asked(two_ways(number, first: .unreachable, second: .jump(to: 0)), phase: .owned, c) == []

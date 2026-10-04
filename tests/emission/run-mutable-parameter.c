@@ -148,23 +148,31 @@ bb2:
     if (t12) goto bb5; else goto bb6;
 #line 15 "tests/golden/run/mutable-parameter.hero"
 bb3:
-#line 152 "mutableparameter.c"
-    *ph0_n = h0_n;
-    *ph1_seen = h1_seen;
-    return;
+#line 15 "tests/golden/run/mutable-parameter.hero"
+    goto bb7;
+#line 15 "tests/golden/run/mutable-parameter.hero"
 bb4:
+#line 15 "tests/golden/run/mutable-parameter.hero"
     goto bb1;
+#line 15 "tests/golden/run/mutable-parameter.hero"
 bb5:
+#line 15 "tests/golden/run/mutable-parameter.hero"
+    goto bb7;
+#line 15 "tests/golden/run/mutable-parameter.hero"
+bb6:
+#line 15 "tests/golden/run/mutable-parameter.hero"
+    goto bb4;
+#line 15 "tests/golden/run/mutable-parameter.hero"
+bb7:
+#line 168 "mutableparameter.c"
     *ph0_n = h0_n;
     *ph1_seen = h1_seen;
     return;
-bb6:
-    goto bb4;
 }
 
 #line 18 "tests/golden/run/mutable-parameter.hero"
 void h_mutableparameter_main(void) {
-#line 168 "mutableparameter.c"
+#line 176 "mutableparameter.c"
     int64_t h0_n;
     int64_t h1_seen;
     int64_t t1;
@@ -197,7 +205,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/mutable-parameter.hero"
     return;
-#line 201 "mutableparameter.c"
+#line 209 "mutableparameter.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

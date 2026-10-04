@@ -4,7 +4,7 @@ strings
     2  "many"
 
 function first_even_after(xs: [i64], floor: i64) -> i64
-    slots  i: i64 · v: i64
+    slots  i: i64 · v: i64 · $ret0: i64
     bb0  entry
         $t1: i64 = const 0
         store i <- $t1
@@ -32,7 +32,8 @@ function first_even_after(xs: [i64], floor: i64) -> i64
         $t21: i64 = const 0
         $t22: i64 = const 1
         $t23: i64 = sub! $t21, $t22
-        return $t23
+        store $ret0 <- $t23
+        jump bb10
     bb4  if: join    preds bb6
         $t15: i64 = load v
         $t16: i64 = const 2
@@ -48,9 +49,13 @@ function first_even_after(xs: [i64], floor: i64) -> i64
         jump bb3
     bb8  if: then    preds bb4
         $t20: i64 = load v
-        return $t20
+        store $ret0 <- $t20
+        jump bb10
     bb9  if: else    preds bb4
         jump bb7
+    bb10  exit    preds bb3, bb8
+        $t24: i64 = load $ret0
+        return $t24
 
 function named(n: i64) -> str
     slots  $s0: i64 · $r0: str
