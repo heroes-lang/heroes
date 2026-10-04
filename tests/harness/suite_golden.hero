@@ -52,7 +52,7 @@ record Shape
     least: i64
 
     # **Whether this shape's floor is watched for DECAY as well as for a walk
-    # that found nothing.** The five real shapes set it; the cases below build
+    # that found nothing.** The six real shapes set it; the cases below build
     # Shapes over two-file trees with a floor of 1, and calling those outgrown
     # would turn every case red. The flag is the seam between a floor that is a
     # measurement of the tree and one that is a fixture.
