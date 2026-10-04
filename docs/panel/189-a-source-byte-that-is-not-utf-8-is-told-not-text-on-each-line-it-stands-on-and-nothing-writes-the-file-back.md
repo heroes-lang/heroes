@@ -315,11 +315,15 @@ the three faults of process in this file's first paragraph.
 
 ## Author's verdict
 
-**Pending**, queued as the DECIDE item `panel 189`, which puts the
-ratification, R3's and R4's conservative alternatives, and the critic's
-two-arm run (about 1.4 to 2.0 USD within the 2.262 the cap leaves) as the
-author's to fund or not. A yes settles R1 to R13 as written, the robust sides
-of R2, R3, R4 and R8 included; it does not settle what only the landing can
-measure (the spec-warden's P1 and P2 on the landing compiler, the
-ffi-pragmatist's Windows prediction), which the lane that lands 227 scores,
-and the two-arm run is a yes of its own, with its cost.
+**RATIFIED 2026-10-04**, on the author's answer to the recommendation put to
+them that morning and again at 12:31, in their words *"1a 2a 3a 4a 5a 6b"*,
+of which *2a* is this sitting's. **Recorded as a reading**, CLAUDE.md § 4's
+default; not `by delegation`.
+
+**What the yes settles**: R1 to R13 as the resolution above states them, R2
+as corrected at 04:19, and the robust sides of R2, R3, R4 and R8 included.
+**The critic's two-arm run is not funded** (*3a*). The landing is batch 9's
+lane b9-notext, built on the provisional resolution and gated with its
+round. **What it does not settle**: the spec-warden's P1 and P2 on the
+landing compiler and the ffi-pragmatist's Windows prediction, which batch 9's
+gate and platform legs score.
