@@ -25,6 +25,7 @@
 
 use cli/count_tokens
 use cli/process
+use cli/read_back
 use measure/bpe
 
 # The one address this program ever reaches. See the module doc.
@@ -89,10 +90,13 @@ function asked(body: str, tag: str) -> str?
             msg: "cannot start `curl`, which is how this one flag reaches the network — every other command here is offline and stays that way (design.md Part 11 metric 1)"
         )
 
+    # Both streams are read back as clang's are (`cli/read_back.hero`, defect
+    # 337): `read_file` refused one for a byte that is not UTF-8, so curl's
+    # complaint was nothing and an answer it wrote was *wrote nothing*.
     if ran.code != 0
-        told = read_file(said).default("")
+        told = read_back.words(said).default("")
         return fail(code: "curl_failed", msg: "`curl` exited " + ran.code.to_str() + ": " + told + version_note(told))
-    answer = read_file(back)
+    answer = read_back.words(back)
 
     if answer.is_err()
         return fail(code: "no_answer", msg: "`curl` exited 0 and wrote nothing to " + back)
@@ -123,7 +127,7 @@ function today() -> str?
             code: "no_date",
             msg: "cannot run `date +%Y-%m-%d` here, and a count without its date is not a measurement (panel 123 R3). Where `date` is not a program — Windows outside a POSIX shell — refresh on a machine where it is, rather than writing a date this tool did not read"
         )
-    said = read_file(back)
+    said = read_back.words(back)
 
     if said.is_err()
         return fail(code: "no_date", msg: "`date` wrote nothing to " + back)

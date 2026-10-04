@@ -72,6 +72,7 @@ use cli/header_types
 use cli/pointee_ask
 use cli/pointee_wants
 use cli/strings
+use cli/read_back
 use parse
 use resolve
 use checker
@@ -177,7 +178,12 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     line @ strings.with_all(list: line, more: words)
     line @ line.push(dump_c)
     ran = process.run(program: "clang", words: line, out: dump_json, err: err_path)
-    json = read_file(dump_json)
+
+    # Read back as every word clang writes is (`cli/read_back.hero`, defect
+    # 337): a dump refused whole for one byte that is not UTF-8 skipped this
+    # check, which stands between a wrong `@` width and the stack. Apple clang
+    # 21 writes the byte of a `#line` name as U+FFFD here, measured 2026-10-05.
+    json = read_back.words(dump_json)
     publish.discard(dump_json)
     publish.discard(err_path)
     rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
