@@ -1,0 +1,20 @@
+# fixedbugs, defect 325, lane b10-cli, 2026-10-04.
+#
+# `print(0700.to_str())` checked clean and printed `700`, where `print(0700)`
+# is refused `leading_zero`: the test that spares `07.5`, a fraction, was any
+# `.` after the digits, so a call on the integer passed, read as the decimal
+# 700 an author from C reads as 448, the reading panel 041 closed. A `.` now
+# spares the digits only where a digit follows it, the float's own test, so a
+# call, a field and a call after a minus are each told the zero. The fractions
+# on the last line stay legal: a leading zero before a decimal point means
+# nothing octal anywhere, C included.
+
+function main()
+    print(0700.to_str())          #~ leading_zero
+    print(0_7.to_str())           #~ leading_zero
+    print(00.to_str())            #~ leading_zero
+    print(0700.to_str().len())    #~ leading_zero
+    print(0700.abs())             #~ leading_zero
+    print(-0700.to_str())         #~ leading_zero
+    print(0700.y)                 #~ leading_zero
+    print(0.5, 00.5, 07.5, 0700.5, 0700.5.to_str(), 0.to_str())

@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:13:11: error[leading_zero]: `0700` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:14:11: error[leading_zero]: `0_7` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:15:11: error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:16:11: error[leading_zero]: `0700` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:17:11: error[leading_zero]: `0700` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:18:12: error[leading_zero]: `0700` starts with a zero, and this language reads no meaning into that
+tests/golden/check/fixedbugs-325-a-method-on-a-leading-zero-integer.hero:19:11: error[leading_zero]: `0700` starts with a zero, and this language reads no meaning into that
