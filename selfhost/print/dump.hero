@@ -31,10 +31,22 @@
 use token
 use ast
 use source
+use shown_char
 use print/types
 use print/signature as sig
 use print/bodies
 use parse
+
+# **The dump as `heroes parse --dump-ast` hands it to a terminal** (defect
+# 290): `dump_ast`, each control character but a line end and a tab written
+# by its code, `<U+001B>`, as a diagnostic writes one (`shown_char.visible`,
+# defect 244). A string literal, a doc comment or a test's title may hold an
+# ESC raw, and the dump wrote it to the terminal that showed it. **The guard
+# compares `dump_ast` itself, never this**: the shown form writes a raw ESC
+# and the eight characters `<U+001B>` alike, so a formatter that turned one
+# into the other would pass a comparison of shown dumps.
+function shown_ast(tree: ast.Ast, s: source.Source, uses: [ast.Use], decls: [ast.Decl]) -> str
+    return shown_char.visible(dump_ast(tree, s, uses, decls))
 
 # The library is part of every compilation and part of no dump: a
 # --dump-<stage> answers "what does the compiler know about THE FILE I
@@ -224,3 +236,19 @@ test "the dump names every field the formatter can print"
     got = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
     expected = "file t.hero\n  use geom\n  record Point\n    doc # A point in the plane.\n    field x: i64\n    field y: i64\n  extern \"raylib.h\" package \"raylib\" record Font tag FontT partial\n    field size: i64\n  extern \"raylib.h\" package \"raylib\" constant FLAG: i64\n  extern \"raylib.h\" package \"raylib\" function draw(f: Font, n: i64) -> ()\n  extern \"raylib.h\" package \"raylib\" function copy(s: cstr lent) -> cstr owned free\n  extern \"raylib.h\" package \"raylib\" function run(@e: cstr owned drop) -> i64\n  extern \"raylib.h\" package \"raylib\" function grab(h: Font consumes) -> Font acquires release\n  variant Shape\n    case dot\n    case box\n      field w: i64\n  function dist<T>(a: T, @b: i64) -> i64\n    mutate b @ (b + 1)\n    return b\n  test \"a title\"\n    assert (1 == 1)\n"
     assert got == expected
+
+# Defect 290: an ESC in each place the dump prints the file's own text, a doc
+# comment, a string literal and a test's title, reaches the terminal by its
+# code, and the guard's dump keeps the byte.
+test "the shown dump writes a control character by its code, and the guard's dump keeps it (defect 290)"
+    escs: [u8] = [27]
+    esc = escs.validated_bytes().must()
+    text = "# doc " + esc + "[2J\nfunction main()\n    print(\"" + esc + "[31mred\")\n\ntest \"title " + esc + "[2J\"\n    assert 1 == 1\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    shown = shown_ast(parsed.tree, s, parsed.uses, parsed.decls)
+    assert shown == "file t.hero\n  function main() -> ()\n    doc # doc <U+001B>[2J\n    expr print(\"<U+001B>[31mred\")\n  test \"title <U+001B>[2J\"\n    assert (1 == 1)\n"
+    assert !shown_char.holds_control(shown)
+    raw = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
+    assert shown_char.visible(raw) == shown
+    assert shown_char.holds_control(raw)
