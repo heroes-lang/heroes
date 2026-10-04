@@ -33,6 +33,7 @@ use ast
 use diag
 use source
 use resolved
+use name_rows
 use resolve/vocab
 use resolve/binding as resolve_binding
 use inventory
@@ -139,18 +140,18 @@ record Resolver
     # Every field name declared anywhere in the program, keyed module ->
     # name. One narrow purpose: keep the unknown-function error off
     # `h.cb(n)` where `cb` is a field holding a function value (§4.13).
-    fields: {str: {str: bool}}
+    fields: name_rows.NameSets
     # Names the compiler has offered as the repair for an unknown name,
     # keyed module -> name. Exempt from the unused sweep: applying the fix
     # would read them, and two diagnostics for one typo is a defect.
-    suggested: {str: {str: bool}}
+    suggested: name_rows.NameSets
     owner: i64
     # The module whose declaration is being resolved. Every unqualified
     # name is looked up in it and in nothing else (panel 031).
     module: str
     # `use` lines that were READ, keyed as module_uses is. What is left
     # over is what the unused rule reports.
-    module_reads: {str: {str: bool}}
+    module_reads: name_rows.NameSets
     # What plain literals hold in braces, for the unused rule's note (R2).
     braced: [braced_names.Braced]
 
@@ -182,18 +183,15 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
 
     out.type_uses @ type_uses
     generics: [GenericParam] = []
-    fields: {str: {str: bool}} = {}
-    suggested: {str: {str: bool}} = {}
-    module_reads: {str: {str: bool}} = {}
     return Resolver(
         out: out,
         scopes: new_scopes(),
         generics: generics,
-        fields: fields,
-        suggested: suggested,
+        fields: name_rows.new_name_sets(),
+        suggested: name_rows.new_name_sets(),
         owner: 0,
         module: "",
-        module_reads: module_reads,
+        module_reads: name_rows.new_name_sets(),
         braced: []
     )
 
@@ -201,21 +199,16 @@ function push_diagnostic(@r: Resolver, d: diag.Diagnostic)
     r.out.diagnostics @ r.out.diagnostics.push(d)
 
 # Membership in a module -> name table, shared by fields/suggested/reads.
-function keyed_has(table: {str: {str: bool}}, module: str, name: str) -> bool
-    inner = table[module]
+function keyed_has(table: name_rows.NameSets, module: str, name: str) -> bool
+    row = table.at[module]
+    return !row.is_err() && !table.rows[row.must()][name].is_err()
 
-    if inner.is_err()
-        return false
-    return !inner.must()[name].is_err()
-
-function keyed_add(@table: {str: {str: bool}}, module: str, name: str)
-    inner: {str: bool} @ {}
-    found = table[module]
-
-    if !found.is_err()
-        inner @ found.must()
-    inner[name] @ true
-    table[module] @ inner
+# A name stored into its module's row in place, no read of the row sharing
+# it first: read out of a map of maps, each name copied its module's whole
+# set, every field name of a record its module's every field (defect 267).
+function keyed_add(@table: name_rows.NameSets, module: str, name: str)
+    row = name_rows.set_row(@table, key: module)
+    table.rows[row][name] @ true
 
 # A top-level name an UNQUALIFIED mention can reach: this module's own
 # declarations, then the library's. The library is the one module every
@@ -249,7 +242,7 @@ function used_modules(r: Resolver) -> [str]
 # bare names let another module delete a certain fix.)
 # ORDER: none — the walk answers a bool, so no order reaches anything.
 function field_in_reach(r: Resolver, text: str) -> bool
-    for module in keys(r.fields)
+    for module in keys(r.fields.at)
         if keyed_has(r.fields, module: module, name: text)
             if module == r.module || module == source.LIBRARY_MODULE || resolved.is_used_module(r.out, from: r.module, module: module)
                 return true
@@ -547,3 +540,17 @@ test "what the library declares and what the file declares stay two programs"
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "shadowed_binding"
     assert r.out.diagnostics[0].message == "`helper` is the name of the declaration at line 1, which is in scope everywhere — pick another name"
+
+# Defect 267: a name goes into its module's row and no other, a second add
+# changes nothing, and a module with no row answers no.
+test "a keyed table keeps each name under its own module"
+    t: name_rows.NameSets @ name_rows.new_name_sets()
+    keyed_add(@t, module: "a", name: "x")
+    keyed_add(@t, module: "b", name: "y")
+    keyed_add(@t, module: "a", name: "x")
+    assert keyed_has(t, module: "a", name: "x")
+    assert !keyed_has(t, module: "a", name: "y")
+    assert keyed_has(t, module: "b", name: "y")
+    assert !keyed_has(t, module: "c", name: "x")
+    assert t.rows.len() == 2
+    assert t.rows[0].len() == 1
