@@ -303,7 +303,20 @@ A-star and G* is disagreement 1 and R8.
 
 ## Author's verdict
 
-**Pending**, queued as the DECIDE item `panel 190`, which puts the
-ratification, G as the conservative alternative, and 231's class. A yes
-settles R1 to R12 as written. It does not settle what only the landing can
-measure: R10's pair on the box, the timing, the platform legs.
+**RATIFIED 2026-10-04**, on the author's answer to the recommendation put to
+them that afternoon, in their words *"1a 2a 3a 4a 5a"*, of which *1a* is this
+sitting's. **Recorded as a reading**, CLAUDE.md § 4's default; not `by
+delegation`.
+
+**What the yes settles**:
+- R1 to R12 as the resolution above states them, route A-star over the
+  conservative G, and 231's class;
+- **R3 as lane b10-ir landed it** (`6e616898`): total or loud, save the one
+  shape the verifier exempts by name. That shape is a program holding a hole
+  `???`, whose function with a result keeps one valueless returning block,
+  pinned by `tests/golden/ir/fixedbugs-231-a-hole-leaves-its-function-unmerged`.
+
+The landing is batch 10's lane b10-ir, `075b425d` to `052f639a`.
+
+**What it does not settle**: what only the landing's gate and legs measure,
+R10's pair on the box, the timing, and the platform legs.
