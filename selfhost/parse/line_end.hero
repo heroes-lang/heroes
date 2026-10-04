@@ -177,11 +177,18 @@ function expect_closer(@c: cursor.Cursor, text: str, holds: Holds, kind: token.T
 
 # Whether a diagnostic already stands on the token under the cursor.
 function said_here(c: cursor.Cursor) -> bool
-    here = cursor.current_span(c).start
+    return said_at(c, at: c.pos, said: 0)
 
-    for d in c.diagnostics
-        if d.span.start == here
+# Whether a report said since `said` stands on the token at `at`: the one walk
+# `said_here`, `parse/brace_habit` and `parse/swallowed` ask (each kept its
+# own until defect 267 paid for its lines with them).
+function said_at(c: cursor.Cursor, at: i64, said: i64) -> bool
+    i: i64 @ said
+
+    while i < c.diagnostics.len()
+        if c.diagnostics[i].span.start == c.tokens[at].span.start
             return true
+        i @ i + 1
 
     return false
 
