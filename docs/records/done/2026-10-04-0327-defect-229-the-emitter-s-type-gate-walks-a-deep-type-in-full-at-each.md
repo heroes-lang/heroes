@@ -1,0 +1,13 @@
+- [x] **229 — the emitter's type gate walks a deep type in full at each use** | lane irverify's profile: `emit/gate.check_type` → `check_element`, about 60% of `index-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/gate.hero` · **class: improvement**
+
+    **Origin:** lane irverify, 2026-10-03, the same profiles, reported to the coordinator; not yet run by the coordinator.
+
+    **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): a cost past panel 184's R6 floor, which the shape meets.
+
+    **2026-10-03, lane b8-emit, the emitter answers each type's questions once per program**: repaired at `a387bee9`, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The gate was one of four emitter walks of the cause: the arena loops of `typeorder`, `descriptor_set` and `ctype.with_options` asked `mentions_generic` of every type id in each of 394 units (8,905,311 calls in the compiler's own emission, now 0), and `synth.collect` and `extern_union.reach` walked again for every use. Counted on an instrumented copy of each compiler: `table.get` on index-chain-2000 66,249,770 to 2,178,748, map-literal-2000 126,311,868 to 167,817; the C byte-identical.
+
+## The repair
+
+Repaired at `a387bee9`. The emitter answers each type's questions once per program: the gate's notes once per type, and the arena loops of `typeorder`, `descriptor_set` and `ctype.with_options` reading flags computed once; type-table reads fell from 66,249,770 to 2,178,748 on `index-chain-2000` and from 126,311,868 to 167,817 on `map-literal-2000`, and the compiler's own emission's per-type walk from 8,900,565 to 0. Timed with 228 and 230 at the gate, as 228's section gives.
+
+**Closed 2026-10-04** with batch 8 (lanes b8-ffi, b8-source, b8-recovery, b8-emit and b8-defects, merged into one round tree), its closing gate run on `921dc61e` with the seed regenerated: 40,628,892 bytes, SHA-256 beginning `2d55c5ff8309b812`, its fixpoint by `cmp`; the compiler's own tests 1,158, all passed; the net's own tests 210, all passed; the full net, 26 suites, 5,177 passed and 0 failed. The census at the batch's first gate, the trunk's compiler at `7d9f2e8f` against the round's over the tree's tracked files: `check --brief` over 1,954, 30 moved, and `build --emit-c` over the 1,228 holding an `extern`, 44 moved, every one the batch's own (its new refusals, its words, its `#line` before a fixed array field's assertion). Panel 187's R2, the trunk's compiler against the round's over one frozen plan: 13,594 single mutants, 12 fewer messages and none more; 15,842 pairs, one told second now carried in the first message's fixes (defect 271).
