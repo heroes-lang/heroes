@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-09-17
+commit: 1029ee3ced121be9d81bb6d47729f66ffcfcc505
+github: none
+---
+
 - [x] **057 — `warnings` blamed one program for another's clang warnings, once, and the reproducer had not been found** | `warnings/curl under build` reported three warnings naming `tests/golden/ir/regression-extern-parameter-types`, a program curl does not touch | `selfhost/cli/units.hero` · `selfhost/cli/toolchain.hero` · `tests/harness/suite_warnings.hero`
 
     **Origin:** 2026-09-17, the full net run before the CL-078 commit, filed

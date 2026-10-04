@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-10-03
+commit: 1d2bde6d8ad2f05df8653801c34754b6ca9a8558
+github: none
+---
+
 - [x] **237 — the reader of the driver's package message cuts a name at its first backtick, so `package "a`b"` reaches the author raw, the compiler's `heroes-ffi-package` marker and all, with no code and no place** | `extern "ab.h" package "a`b"` over `function seven() -> i32`: `build` exit 1, its stderr opening *heroes-ffi-package `a`b` is not installed on this machine*, no `error[ffi_package]` and no `at`: `package_problem` read the name up to its first backtick, `a`, which no group names, and `cli/produce.hero` printed the message raw (the trunk's compiler at `dcaca1a3` and the lane's at `e2f98e17`, `<scratchpad>/batch8/ffi/repro/s1/s221-pkg-backtick/` and `repro/r237/`, 2026-10-03); beside it, a `.pc` answering a word that holds the marker's text is quoted with *the package* in its place, the reader replacing every marker on the line | `selfhost/emit/ffi_build.hero` (`package_problem`, `replace_all`) · `selfhost/emit/ffi_lookup.hero` (`package_span`) · the marker's writers in `selfhost/cli/libraries.hero` and `selfhost/cli/shell_split.hero` · **class: blocking**
 
     **Origin:** lane b8-ffi beside 226, 2026-10-03, reproduced on the trunk's compiler; the cause panel 188's compiler-engineer saw in its stage A, where a line end in a package's message leaked the marker (`docs/panel/188-reports/compiler-engineer.md` § 12.4).

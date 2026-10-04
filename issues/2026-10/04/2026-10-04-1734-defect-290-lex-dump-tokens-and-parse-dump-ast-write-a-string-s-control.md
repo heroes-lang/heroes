@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-04
+commit: 28cef56dba0b4e354a723301b7efbe9016241649
+github: none
+---
+
 - [x] **290 — `lex --dump-tokens` and `parse --dump-ast` write a string's control characters raw, so a file's escape sequences reach the terminal** | a string literal holding ESC and `[2Jboom`: the two dumps write the bytes to stdout as they are, a terminal's clear-screen among them; their `--json` forms escape it (lane b9-notext's compiler, 2026-10-04) | `selfhost/cli/lex.hero`, `selfhost/print/dump.hero` · defect 244, the same bytes through a diagnostic's excerpt, repaired in batch 9 · **class: blocking**
 
     **Origin:** lane b9-notext, 2026-10-04, reproduced on its compiler (`<scratchpad>/batch9/notext/report.md`, *Found beside* 1).

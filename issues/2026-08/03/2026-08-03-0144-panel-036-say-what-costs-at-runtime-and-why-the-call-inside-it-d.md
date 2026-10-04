@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: none
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **panel 036** | Say what `_Generic((sqlite3_open((const char*)0,(void*)0)), int:1, default:0)` costs at runtime, and why the call inside it does not happen. The answer is one clause of C11 6.5.1.1p3 — find it before reading the panel
 
     **Where to look:** docs/panel/036 · C11 6.5.1.1p3

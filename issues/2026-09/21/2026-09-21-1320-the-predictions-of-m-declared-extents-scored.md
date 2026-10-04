@@ -1,3 +1,12 @@
+---
+kind: task
+area: none
+milestone: M-declared-extents
+filed: 2026-09-21
+commit: 316d69c4ff32440de5f98fb2721aca0ceeee8156
+github: none
+---
+
 - [x] **M-declared-extents** | every prediction the milestone's ten sittings registered, scored or lapsed with its reason | **closed 2026-09-21**, at the milestone's close | Panels 166 to 173, `/step` § Close: *score every prediction whose milestone this is, and lapse the ones you cannot* | 166-173
 
     **Origin:** the close checklist, and panel 046 R2's rule: a prediction is

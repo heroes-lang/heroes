@@ -317,7 +317,7 @@ function card_text(kind: str, area: str, milestone: str, filed: str, commit: str
     return FENCE + "\nkind: " + kind + "\narea: " + area + "\nmilestone: " + milestone + "\nfiled: " + filed + "\ncommit: " + commit + "\ngithub: " + github + "\n" + FENCE + "\n\n"
 
 function template() -> str
-    return "eight lines and a blank one: `---`, `kind: <" + KINDS.join("|") + ">`, `area: <an area or none>`, `milestone: <M-name or none>`, `filed: YYYY-MM-DD`, `commit: <self|none|the commit>`, `github: <none or the issue's address>`, `---` (.claude/rules/records.md § The issues)"
+    return "eight lines and a blank one: `---`, `kind: <" + KINDS.join("|") + ">`, `area: <an area or none>`, `milestone: <a milestone or none>`, `filed: YYYY-MM-DD`, `commit: <self|none|the commit>`, `github: <none or the issue's address>`, `---` (.claude/rules/records.md § The issues)"
 
 # `M-` and words of lowercase letters and digits joined by one `-`, the shape
 # `.claude/rules/records.md` § Milestone identifiers gives every name.

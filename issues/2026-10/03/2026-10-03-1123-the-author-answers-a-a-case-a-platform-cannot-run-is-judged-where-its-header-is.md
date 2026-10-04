@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: d9f5ddb8be6a819680f28490d2aa7ef6237a9772
+github: none
+---
+
 # The author answers A: a case a platform cannot run is judged where its header is, with a twin on the program's own header everywhere
 
 2026-10-03, written at 11:23 by the clock (`date`). The coordinator put one

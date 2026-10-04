@@ -1,3 +1,12 @@
+---
+kind: feature
+area: check
+milestone: M-labelled-types
+filed: 2026-09-11
+commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
+github: none
+---
+
 - [x] **M-labelled-types** | build and measure the route panel 128 vetoed on cost: a function type carrying parameter names, mandatory where two share a type, part of the type's identity | `docs/panel/128-the-type-that-names-nothing.md` · `selfhost/check/table.hero:111-129` · `selfhost/parse/type.hero:191-233`
 
     **Origin:** panel 128's compiler seat, 2026-09-11, which vetoed the route

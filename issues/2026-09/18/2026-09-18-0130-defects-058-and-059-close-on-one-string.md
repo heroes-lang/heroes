@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-09-17
+commit: 3379df9dbb67a4ac15f4f51afdc5a9d44098c983
+github: none
+---
+
 - [x] **058 — a plain `char` field or parameter has no spelling that binds on every platform** | `i8` bound it on two legs and `u8` on the third, so one `extern` could not be written for all of them, and `tests/golden/run/ffi-a-char-array-member.hero` was accepted on x86-64 and refused on arm64 Linux | `selfhost/cli/flags.hero` · panel 161
 
     **Origin:** M-arm-platform, 2026-09-17, the fourth leg's first hour.

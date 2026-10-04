@@ -1,3 +1,12 @@
+---
+kind: feature
+area: check
+milestone: M-named-callbacks
+filed: 2026-09-11
+commit: 28915417c2d73197253dfeb3a51fb4a71ae5f54f
+github: none
+---
+
 - [x] **M-named-callbacks** | close the role inversion through a generic callback: names on any function type, an expected type carrying none accepting a value whose type does, and the generic path comparing the names it is given | `docs/panel/129-the-names-inside-the-type.md` · `design.md:1432-1435` · `selfhost/check/generics.hero` · `selfhost/library_source.hero:84`
 
     **Origin:** the author, 2026-09-11, answering panel 129's second question with

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: print
+milestone: none
+filed: 2026-09-25
+commit: 29ed560108e1511efcf304e7432d30e911279818
+github: none
+---
+
 # Defect 099 closed: a comment after a block's last item stays in that block
 
 2026-09-27, M-agreed-retention step 17, in lane g (`832478b3` to `574711c3`),

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-08-19
+commit: b660cc224056521d0e2367067858d5e99f73c4b1
+github: none
+---
+
 - [x] **002 — The guard the port kept and the language took away** | Date: 2026-08-19, opening M-separate-compilation. **Found by running the baseline net before touching anything**, which is the only reason it was found at all: it had been in the tree for one commit and CI would have reported it as a pass. | **Status: fixed 2026-08-19** (panel 087, commit `f343fdd`) — see § The repair at the end of this file. The sentence that stood here said *"the repair is a language change (`read_file`'s contract), so it is a panel path"*; the panel path was right and the prediction was wrong, and that is the most useful thing this file records. The finding and the fix have their own commits, as this line asked. | moved here 2026-09-03 from `docs/defects/002-the-guard-the-language-took-away.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — a legal program is killed. And the killed program is the project's own test net.
 
 

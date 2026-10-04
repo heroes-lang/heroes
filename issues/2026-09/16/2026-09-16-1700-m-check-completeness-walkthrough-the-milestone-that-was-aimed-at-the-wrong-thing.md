@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-check-completeness
+filed: 2026-09-16
+commit: none
+github: none
+---
+
 - [ ] **M-check-completeness walkthrough** | This milestone is named *what `heroes check` accepts, `heroes build` compiles — through a generic too*, and it spent five panel seats on generics. **Before reading anything: open `docs/work/milestones/M-check-completeness.md` and, for each of its four named faces, write down what `check` and `build` each return.** Then check them against the measurements. | `docs/work/milestones/M-check-completeness.md:10-19` · `docs/panel/155-the-hole-was-never-made-by-the-generic.md`
 
     **Where to look, in this order:** the milestone file's opening, which states

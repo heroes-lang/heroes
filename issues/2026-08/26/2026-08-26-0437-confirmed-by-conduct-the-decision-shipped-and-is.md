@@ -1,3 +1,12 @@
+---
+kind: decision
+area: compiler
+milestone: M-selfhost-port
+filed: 2026-08-26
+commit: 1945659f34e230570fe3796cf1da08f20917d148
+github: none
+---
+
 - [x] M-selfhost-port, the CLI department | **CONFIRMED BY CONDUCT — the decision shipped and is load-bearing.** The prose below ended *"Veto or confirm"*; nobody vetoed and `system()` is how the compiler reaches clang today (`selfhost/cli_toolchain.hero:14`, and since M-separate-compilation step 5 every call routes through `cli_shell.shell` because an `extern` may not cross a module boundary). The decision verbatim:
 
   The language has read_file/write_file/args/exit and no subprocess form. The

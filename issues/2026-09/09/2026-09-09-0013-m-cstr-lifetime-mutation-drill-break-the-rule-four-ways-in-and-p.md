@@ -1,3 +1,12 @@
+---
+kind: learn
+area: check
+milestone: M-cstr-lifetime
+filed: 2026-09-09
+commit: none
+github: none
+---
+
 - [ ] **M-cstr-lifetime, mutation drill** | Break the rule four ways in `selfhost/check/lending.hero` and predict which suite goes red for each, before running any | `selfhost/check/lending.hero` · `.claude/rules/verification.md` § What gates what | the map exists so that "which suites" stops being a guess, and this is the drill that proves you can read it
 
     **Origin:** M-cstr-lifetime close, 2026-09-09.

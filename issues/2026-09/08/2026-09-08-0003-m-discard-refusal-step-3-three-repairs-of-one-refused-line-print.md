@@ -1,3 +1,12 @@
+---
+kind: learn
+area: compiler
+milestone: M-discard-refusal
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-discard-refusal step 3** | Three repairs of one refused line print three different answers. Predict them before you look, then say which of the three a `certain` fix could ever have been | `docs/panel/118` R3 · `selfhost/value_errors.hero` `discarded_failure` | this is the whole argument for shipping no automatic repair, and it is two commands long
 
     **Origin:** M-discard-refusal step 3, 2026-09-08. The program is four lines:

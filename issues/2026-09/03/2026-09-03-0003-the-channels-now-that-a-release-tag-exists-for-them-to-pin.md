@@ -1,3 +1,12 @@
+---
+kind: task
+area: site
+milestone: M-install-channels
+filed: 2026-09-03
+commit: none
+github: none
+---
+
 - [ ] **M-install-channels** | the channels, now that a release tag exists for them to pin | `site/src/html/index.html:135-137` · `seed/README.md` · `docs/ref/environment/`
 
     **Origin:** measured 2026-09-03, re-measured 2026-09-07; scheduled

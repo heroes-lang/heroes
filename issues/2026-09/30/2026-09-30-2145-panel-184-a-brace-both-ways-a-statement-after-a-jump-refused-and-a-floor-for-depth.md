@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-30
+commit: 93375d63594c5e734addefafdd2c6668cabbfa07
+github: none
+---
+
 # Panel 184: a brace written both ways, a statement after a jump refused, and a floor for depth
 
 2026-09-30, evening: the three language questions the author's decision of the

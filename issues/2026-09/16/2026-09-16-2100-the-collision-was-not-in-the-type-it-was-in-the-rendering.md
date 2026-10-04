@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 524cb9efb9910197824bf68f664e1c2ecc611daf
+github: none
+---
+
 # The collision was not in the type, it was in the rendering
 
 2026-09-16. Panel 158, on a doubly-fallible value: `i64??` is tracked by the

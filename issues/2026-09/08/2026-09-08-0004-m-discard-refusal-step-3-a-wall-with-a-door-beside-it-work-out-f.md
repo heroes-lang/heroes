@@ -1,3 +1,12 @@
+---
+kind: learn
+area: spec
+milestone: M-discard-refusal
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-discard-refusal step 3** | A wall with a door beside it: work out, from the spec alone, how to defeat the rule on a KNOWN fallible in five characters | `spec/heroes-spec.md` § Bindings · `docs/panel/118` § Amendments | the sitting adopted a refusal that closed nothing, and the fact that killed it is one program long
 
     **Origin:** M-discard-refusal step 3, 2026-09-08 — the amendment that

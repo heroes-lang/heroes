@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-09-16
+commit: aa26c3033c8b8125ffa0afdd0cb37e13a586d399
+github: none
+---
+
 - [x] **panel 155** | The call-site obligation pass is refused and `==` on a bare type parameter is refused in the BODY instead, by the language's own written answer; `float_map_key` through a generic waits under Principle 0 | **RATIFIED 2026-09-16, as adopted, BY DELEGATION** | `docs/panel/155-the-hole-was-never-made-by-the-generic.md`
 
     **The yes is the assistant's, under an authority the author handed over, on a

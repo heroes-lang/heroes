@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-interpolation-verdict
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-interpolation-verdict step 2** | Four candidate rules for what may stand inside `{...}`. Rank them by what they cost the SPEC, before reading the number | `docs/measurements/022-the-narrow-rule-costs-more-than-the-wide-one.md` · `design.md` §1.2 | the ranking most readers write down is upside down, and seeing why is seeing what §1.2 actually prices
 
     **Origin:** M-interpolation-verdict step 2, 2026-09-08.

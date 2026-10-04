@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-16
+commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
+github: none
+---
+
 - [x] **051 — a comment asserts an invariant the compiler falsifies, and a design document cites it as live** | `selfhost/check/table.hero:66-67` said a fallible's argument is never itself a fallible; `--dump-ir` names `i64???` at 27 sites | closed 2026-09-16, M-check-completeness
 
     **Origin:** panel 158, found independently by its compiler-engineer and its

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: M-agreed-retention
+filed: 2026-09-28
+commit: b244372e63b87c33209ab67ff6ccfbd8b208fc87
+github: none
+---
+
 # M-agreed-retention closes over the defects found after its last eight
 
 2026-09-28 | author instruction, 16:40: close the defects open now, and put any

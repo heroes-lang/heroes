@@ -1,1 +1,10 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-12
+commit: ec5558bef7a0e7934ec69fce6dab1b6d45dcb362
+github: none
+---
+
 - [x] Covered | panel 024 | **CLOSED as recorded — it stands as a note about the measurement's novelty, not a decision anybody can take.** **Part 11 would be measuring something nobody has measured** — the historian found no paper, benchmark or report varying a language specification's length in context against correctness of programs written in it. Decide whether that is an opportunity to state as one, and whether Aycock et al. (ICLR 2025: examples carried the signal, grammatical explanations did not) makes worked examples a Part 11 arm rather than a spec-budget question | docs/panel/024 § Watch list · arXiv 2409.19151 | if it holds for a programming language, the spec budget is measuring the wrong half of the document

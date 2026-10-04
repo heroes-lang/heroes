@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: 79688a9cb6b0bee5dcd98895e1132d83cc7d5680
+github: none
+---
+
 # The lend has no stated extent, and every route presupposed one
 
 2026-09-20. M-declared-extents step 11, panel 169, the full panel: five seats and

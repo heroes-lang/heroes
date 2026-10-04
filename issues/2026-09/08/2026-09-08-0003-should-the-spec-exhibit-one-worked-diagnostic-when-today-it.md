@@ -1,3 +1,12 @@
+---
+kind: task
+area: spec
+milestone: M-thesis-harness
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-thesis-harness** | should the spec exhibit one worked diagnostic, when today it exhibits zero | `spec/heroes-spec.md` · `design.md` Part 11 · `docs/measurements/007-two-predictions-collected.md:24-25`
 
     **Origin:** the llm-ergonomist, panel 118, 2026-09-08, the other half of the

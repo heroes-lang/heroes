@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-10-03
+commit: 9818ef8868a3414cb23ed3bc2c371eeb134ba82b
+github: none
+---
+
 # Panel 188 ratified: a group head's string is its value, and what its tool cannot carry as one name is refused on its line
 
 2026-10-03, on the author's answer to the coordinator's recommendation of that

@@ -1,3 +1,12 @@
+---
+kind: learn
+area: spec
+milestone: M-interpolation-verdict
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-interpolation-verdict step 1** | Write `x = "a" + b + c` in a file and predict what `heroes parse --dump-ast` prints for that line, out of four candidate shapes, before running it | `heroes parse <file> --dump-ast` · `spec/heroes-spec.md` § Operators | the answer is why the dump can be used as a measuring instrument, and the wrong answers are why raw text cannot
 
     **Origin:** M-interpolation-verdict step 1, 2026-09-08, the step that used

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: f72905b76350d2c25d6715f279539743b406520d
+github: none
+---
+
 # Panel 184's R4 landed: a statement after a jump is refused, and three statements end a path
 
 2026-10-03 at 00:50 by the clock, lane flow4, defect 174. Panel 184's R4

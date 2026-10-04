@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-04
+commit: f6a3122e818f9f622f7f264bdff5a47a8472a746
+github: none
+---
+
 # The author answers 1a 2a 3a 4a 5a 6b: the push now, panel 189 ratified, its paid run unfunded, two sittings after 190, the batch's own questions by the recommended answer
 
 2026-10-04, written at 12:36 by the clock (`date`). Batch 9's gate was half

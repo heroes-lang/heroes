@@ -1,3 +1,12 @@
+---
+kind: feature
+area: emit
+milestone: M-lsp-server
+filed: 2026-08-26
+commit: none
+github: none
+---
+
 - [ ] **M-lsp-server** | the per-module build is slower, and the frontend is where the prize was | `docs/panel/093` · `selfhost/emit/unit.hero` · `selfhost/cli/units.hero`
 
     **Origin:** M-separate-compilation step 6, measured 2026-08-26. Its home

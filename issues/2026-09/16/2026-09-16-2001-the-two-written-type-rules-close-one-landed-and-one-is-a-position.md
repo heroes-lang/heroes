@@ -1,3 +1,12 @@
+---
+kind: feature
+area: records
+milestone: M-check-completeness
+filed: 2026-09-16
+commit: ec44b6421e09e03ae917f9f0d4020a532860497d
+github: none
+---
+
 - [x] **M-check-completeness** | the two written-type rules, in the one pass that closes both | **CLOSED 2026-09-16** — one landed and the other is a position taken, not work left | `docs/panel/155-the-hole-was-never-made-by-the-generic.md` R2 and R3
 
     **This item is ticked without the pass it asks for**, and that is the

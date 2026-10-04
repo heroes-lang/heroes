@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-24
+commit: 5767900515f50b59ccfd27ab3ca7e919b55081cd
+github: none
+---
+
 
 # Defect 090 closed: a read near zero says what it saw and names both things that put a null there
 

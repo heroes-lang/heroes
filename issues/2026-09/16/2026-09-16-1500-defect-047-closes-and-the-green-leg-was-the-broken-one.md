@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-09-16
+commit: fedfa8449d0ac2e1f36bc62b817a92640226003b
+github: none
+---
+
 - [x] **047 — defect 045's blame line is measured on one platform and fails on the other two** | `tests/golden/surface-fixtures/nullread/` was green on Darwin, named the wrong caller on Linux, and produced no message at all on Windows | **CLOSED 2026-09-16**, repaired on all three and measured on all three | `docs/panel/156-the-blame-line-was-never-a-platform-fact.md` · `runtime/parts/stack.c` · `runtime/parts/os.c` · `tests/harness/suite_surface.hero`
 
     **Origin:** the author, 2026-09-16, who asked why CI was broken. Panel 156 was

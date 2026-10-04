@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-30
+commit: fd523aad7f4f63cdcb639cc0e93181bed639cb6d
+github: none
+---
+
 # Five answers: panel 183 ratified, a rule kept local, a push, no unrequested paid runs, the old folders removed
 
 2026-09-30, afternoon, on the author's answer to five recommendations the

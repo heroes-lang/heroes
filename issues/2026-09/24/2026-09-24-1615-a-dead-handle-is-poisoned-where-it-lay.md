@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-24
+commit: ed3432db14582652d265e132392e0af23fbbb1ee
+github: none
+---
+
 # A dead handle is poisoned where it lay and remembered where it was
 
 2026-09-24 | a call that ends a handle's life overwrites the place it read the

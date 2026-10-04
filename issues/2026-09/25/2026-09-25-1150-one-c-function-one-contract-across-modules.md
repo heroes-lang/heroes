@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: M-agreed-retention
+filed: 2026-09-20
+commit: 0a8fd34640b2582bd0768d2ba85e3e982a61bdce
+github: none
+---
+
 # One C function, one contract: two modules declaring one C name must agree
 
 2026-09-25, M-agreed-retention step 12, in lane `572367a8`, merged `3f76a72d`: the

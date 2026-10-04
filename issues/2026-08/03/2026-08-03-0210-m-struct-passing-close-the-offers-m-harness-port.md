@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-harness-port | The `layout` check holds 17 files to the length they measure today rather than to §11's 300. Why is a ceiling-per-file the honest answer here, and what would a bare 300 have done on its first run?
 
     **Where to look:** tests/harness/suite_layout.hero

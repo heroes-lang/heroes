@@ -1,3 +1,12 @@
+---
+kind: defect
+area: harness
+milestone: none
+filed: 2026-10-03
+commit: a3fb46d59ee617bd46b0b0ad259b41daeeec123d
+github: none
+---
+
 - [x] **211 — no golden form runs the control arm (`--permissive`), so a control-arm row cannot be pinned** | `tests/harness/suite_golden.hero` has no such word (the compiler-engineer's search); 131-22's open half and V1's five control-arm hides (defect 193) have no pin | `tests/harness/suite_golden.hero` · panel 187's R3 · **class: improvement**
 
     **Origin:** panel 187's R3 and R10, 2026-10-03.

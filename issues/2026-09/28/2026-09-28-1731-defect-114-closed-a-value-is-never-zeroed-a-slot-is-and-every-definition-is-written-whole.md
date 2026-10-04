@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-27
+commit: 464320c810fc9f1f8a567c2b33498351696a3942
+github: none
+---
+
 # Defect 114 closed: a value is never zeroed, a slot is, and every definition is written whole
 
 2026-09-28, M-agreed-retention step 29, in lane 182 (`81532acc`, the trunk

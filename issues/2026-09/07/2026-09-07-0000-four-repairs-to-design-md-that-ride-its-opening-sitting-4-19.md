@@ -1,3 +1,12 @@
+---
+kind: task
+area: emit
+milestone: M-core-packages
+filed: 2026-09-07
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | four repairs to design.md that ride its opening sitting, §4.19's `#include` sentence among them | `design.md` §1.11, §3.5, §4.19, §4.20, Part 7 item 4 · `selfhost/emit/externs.hero:69-70` · `docs/panel/056`, `091`
 
     **Merged 2026-09-10** from two items, by author instruction: both are repairs

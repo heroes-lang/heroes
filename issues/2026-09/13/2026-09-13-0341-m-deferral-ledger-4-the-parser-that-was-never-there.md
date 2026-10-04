@@ -1,3 +1,12 @@
+---
+kind: learn
+area: design
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 4** | design.md justified a language feature by saying *"the parser's `term` and `expression` functions are identical except for two names"*. Find those two functions. Say which parser they are in, what the compiler's own expression parser does instead, and — the part worth sitting with — what the timestamps say about when each was written.
 
     **Where to look:** `examples/calculator/parse.hero:84-107`;

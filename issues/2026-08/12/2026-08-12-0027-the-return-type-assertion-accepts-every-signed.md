@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-12
+commit: c93a3ff2a402fd2fc4936221ca31c4ffec268f4d
+github: none
+---
+
 2026-08-12 | **The return-type assertion accepts every signed integer plus every unsigned one narrower than 64 bits, and the controlling expression is `+(call)`.** Found by binding libcurl (author instruction, ladder rung 4): `CURLcode` is an `enum`, `_Generic` selects on an enum's own type rather than on `int`, and the first version of the macro therefore refused **every enum-returning C function in existence** — most of libcurl, OpenSSL and raylib. Invisible against SQLite, which returns plain `int`. Unary `+` applies the integer promotions; `CURLcode` promotes to `unsigned int`, which fits `int64_t` without losing a value, while `size_t` stays unsigned 64-bit and keeps firing | a mechanism verified against one library is verified against one library, and the second rung of the ladder found in one compile what no reading of the C standard had | §4.19, §4.3 | 036 |

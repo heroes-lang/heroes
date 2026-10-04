@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: none
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-checker-core** | Bidirectional checking, the two modes. `x = []` is an error and `xs: [int] = []` is not — which mode is each, and why can exactly four forms not synthesise?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/types/mod.rs (the table), expect.rs

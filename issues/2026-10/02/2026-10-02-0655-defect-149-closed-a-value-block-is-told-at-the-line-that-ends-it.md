@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-10-01
+commit: 9f87fe17b93dc88be3a230da029aeb25731c9b2c
+github: none
+---
+
 # Defect 149 closed: a value block is told at the line that ends it, and a constant at the statement it leaves by
 
 - [x] **149 — a constant's body that ends on a statement is told at the block's first line, not at the line that gives no value** | `constant M: i64` over `x: i64 @ 1`, `x @ x + 1`, `assert x == 2`: `no_value`, *this branch ends on a statement*, at 2:5, where the line that ends the body without a value is line 4 | `branch_without_value` (`selfhost/check/walk.hero`, `check/join.hero`), pinned by `tests/golden/check/fixedbugs-139-a-constant-whose-body-ends-on-a-statement` · **closed 2026-10-02**

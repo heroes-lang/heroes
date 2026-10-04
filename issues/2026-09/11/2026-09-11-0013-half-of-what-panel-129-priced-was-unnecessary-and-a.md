@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: 28915417c2d73197253dfeb3a51fb4a71ae5f54f
+github: none
+---
+
 2026-09-11 · **Half of what panel 129 priced was unnecessary, and a measurement
 said so before a line was written.** That sitting costed the route at four parts
 and objected to two: a declared function naming its parameters always, and a

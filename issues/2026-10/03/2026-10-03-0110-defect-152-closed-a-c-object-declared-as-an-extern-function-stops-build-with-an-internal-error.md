@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-10-02
+commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
+github: none
+---
+
 # Defect 152 closed: a C object declared as an `extern` `function` stops `build` with an internal error
 
 - [x] **152 — a C object declared as an `extern` `function` stops `build` with an internal error** | `extern "errno.h"` with `function errno() -> i32`: `build` exit 2, *internal error: compiling the generated C failed: ... called object type 'int' is not a function or function pointer* at the result probe; the same for `stdin` and `optarg`, with or without parameters, on macOS and Linux (the seat's), where the same names declared `constant` get a clean exit 1 | `selfhost/emit/extern_probe.hero` (the result probe) · the `extern` member's kind check · **class: blocking** · **closed 2026-10-03**

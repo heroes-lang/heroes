@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-23
+commit: 3692af263d72a0f02492eea6bc93488ce4927201
+github: none
+---
+
 
 # Defect 087 closed: the contextual words are a table the parser reads and the command prints
 

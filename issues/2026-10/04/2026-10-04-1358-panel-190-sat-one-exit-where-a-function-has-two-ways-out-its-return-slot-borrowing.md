@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-04
+commit: 7f4c0cc531e546f6880bc95cc4f569146d437afd
+github: none
+---
+
 # Panel 190 sat: one exit where a function has two or more ways out, its return slot borrowing
 
 2026-10-04, written at 13:58 by the clock (`date`). Panel 190 sat in the

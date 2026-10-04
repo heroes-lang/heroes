@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-23
+commit: 4324daabcb3e263b4d3063f2f9aedbb2e1536e34
+github: none
+---
+
 - [x] **076 — a runtime panic blames a fabricated `str` for a heap a C function corrupted** | the magic check on a string block named ONE cause, and on a C double free that cause was false while the sentence read as certain | **closed 2026-09-23**, M-agreed-retention, repaired in a lane while panel 175 sat | `runtime/parts/str.c` · `tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero` · `tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero`
 
     **Origin:** 2026-09-23, M-agreed-retention step 1, measuring the milestone's

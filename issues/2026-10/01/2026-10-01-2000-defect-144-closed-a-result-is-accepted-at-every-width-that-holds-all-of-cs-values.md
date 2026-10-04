@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-30
+commit: 6708ba0521af542def2be41ff0798db7b2e3d518
+github: none
+---
+
 # Defect 144 closed: a result is accepted at every width that holds all of C's values
 
 - [x] **144 — a result wider than C's is refused** | `extern "arpa/inet.h"` with `function htonl(x: u32) -> u64`: `build` exit 1, `ffi_return_type`, *`htonl` does not return `u64`*, where spec § 13 says *a result may be wider than C's* | `selfhost/emit/extern_assert.hero:50-79` (*wider* read for `i64` and `f64` only, the seat's reading) · **closed 2026-10-01**

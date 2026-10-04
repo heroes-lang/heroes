@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
+github: none
+---
+
 2026-09-11 · **Three of panel 129's five seats sent the work back, and the record
 keeps what each found.** The tree did not compile itself when the sitting opened —
 a new function shadowed a local of its name and a failed build had been read as a

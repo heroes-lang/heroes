@@ -1,3 +1,12 @@
+---
+kind: defect
+area: harness
+milestone: none
+filed: 2026-10-03
+commit: 64112e4fe0e71a27c9e153c3b52f990b152aa27f
+github: none
+---
+
 - [x] **246 — the `unsupported` form counts a case whose `ffi_missing_header` or `ffi_package` message changed as skipped for a missing library, so the whole form reads green over it** | `fixedbugs-232-a-missing-header-named-with-a-noncharacter.expected` with *clang looked and did not find it* changed to *clang looked and found nothing*, then `heroes run tests/harness/main.hero -- ./heroes unsupported fixedbugs-232-a-missing-header-named-with-a-noncharacter`: *1 of 1 cases were skipped for a missing library*, red only by the third's floor; in the whole form one such case of 137 is under that floor and reads green (batch 8's round compiler in a throwaway worktree of `1eb854c3`, 2026-10-04) | `tests/harness/suite_golden.hero:210` (the skip: the said text differs from the expected and holds one of the three missing-library spellings of `shell.machine_lacks_the_library`, `tests/harness/shell.hero:582`) · the comment beside it, whose aim is that *a case whose expectation IS a missing-library diagnostic is testing exactly that* · **class: blocking**
 
     **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 6, read `improvement`); measured by the coordinator at batch 8's gate, 2026-10-04.

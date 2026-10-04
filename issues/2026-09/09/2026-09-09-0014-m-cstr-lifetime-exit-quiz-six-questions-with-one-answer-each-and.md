@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-cstr-lifetime
+filed: 2026-09-09
+commit: none
+github: none
+---
+
 - [ ] **M-cstr-lifetime, exit quiz** | Six questions with one answer each, and five of the six were got wrong by somebody during this milestone | `docs/records/journal/040-cstr-lifetime.md` · `docs/panel/122-the-lend-was-two-defects.md` | every question here is a place a measurement replaced a belief, and four of them replaced the coordinator's
 
     **Origin:** M-cstr-lifetime close, 2026-09-09.

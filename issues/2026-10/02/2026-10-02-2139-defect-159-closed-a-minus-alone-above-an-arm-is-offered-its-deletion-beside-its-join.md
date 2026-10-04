@@ -1,3 +1,12 @@
+---
+kind: defect
+area: design
+milestone: none
+filed: 2026-10-02
+commit: 2caca5620fae121ba23fd6eefe9ef04cf4c305ce
+github: none
+---
+
 # Defect 159 closed: a `-` alone above an arm's pattern is offered its deletion beside its join, two guesses
 
 - [x] **159 — a `-` alone on the line above an arm's pattern is joined to it with certainty, though deleting it is as likely a reading** | `k = match n` over a line holding only `-` and then `1 => "one"`, `_ => "many"`, with `n = 1`: `continuation_outside_brackets` with the certain fix *write the statement on one line*, and `check --apply` writes `-1 => "one"`, which checks clean and prints `many`; deleting the `-` gives `1 => "one"` and prints `one` | the lexer's join of a line ending in an operator (`continuation_outside_brackets`'s certain fix) · design.md §4.8 (*two readings make two guesses*) · defect 135's class, closed 2026-10-02 · **class: blocking** · **closed 2026-10-02**

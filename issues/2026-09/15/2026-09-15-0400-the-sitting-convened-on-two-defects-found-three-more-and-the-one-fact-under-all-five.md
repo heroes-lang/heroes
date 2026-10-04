@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: 83ae78fefe019e091ab9d55c5adebd1141ba8a46
+github: none
+---
+
 # The sitting convened on two defects found three more, and the one fact under all five
 
 2026-09-15. Panel 150, convened without asking under CLAUDE.md § 4, on

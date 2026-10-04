@@ -1,3 +1,12 @@
+---
+kind: defect
+area: print
+milestone: none
+filed: 2026-09-25
+commit: 29ed560108e1511efcf304e7432d30e911279818
+github: none
+---
+
 # Defect 100 closed: a comment inside a group that is not a member's doc stays a remark when `fmt` runs
 
 2026-09-27, M-agreed-retention step 17, in lane g (`832478b3` to `574711c3`),

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-01
+commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
+github: none
+---
+
 # Defect 173 closed: an `f` literal writes `}}` as two braces and accepts a lone `}`, where panel 184's R1, ratified, makes `}}` one brace and a lone `}` an error
 
 - [x] **173 — an `f` literal writes `}}` as two braces and accepts a lone `}`, where panel 184's R1, ratified, makes `}}` one brace and a lone `}` an error** | `print(f"{{a}}")` prints `{a}}` and `print(f"a}b")` prints `a}b`, both at exit 0; under R1 the first prints `{a}` and the second is refused | `selfhost/lex_interp.hero` · panel 184's R1 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md:149-150`, ratified at `:248`, *R1 and R2 land as ratified* at `:284`), R8 putting its sentence in spec § 2 (`:223-224`) · spec `:49-52` (*`{{` writes one brace*, no `}}`, no lone `}`) · **class: blocking** · **closed 2026-10-03**

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-08-12
+commit: bb8728ac9394056246acb01dbf0f224df1b5570e
+github: none
+---
+
 - [x] **Defect 012 — `function f(_: ())` reached clang as `void h0_`, exit 2, and the FIELD position of the same hole had been closed for twenty-three days** | found 2026-09-04 by panel 110's ffi-pragmatist while it was measuring the `()` row, repaired the same night | the sibling was closed 2026-08-12 by `unit_fields`; this position was never done | selfhost/emit/gate.hero · tests/golden/unsupported/fixedbugs-a-unit-parameter-reached-clang.hero · tests/harness/suite_layout.hero | **CLAUDE.md §7's own line**: a clang failure is exit 2 and says the *compiler* is wrong
 
   **What it was.** Eight lines, no `???`: `function takes_nothing(_: ()) -> i64`. `heroes check` said **0**, and the emitter wrote `int64_t h_f(void h0_);` — `error: argument may not have 'void' type`, `internal error`, **exit 2**, the compiler blaming itself for the author's program.

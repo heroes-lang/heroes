@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-25
+commit: 517b8e25692a4cf0075c04fd306e5017fd428cd4
+github: none
+---
+
 # A landing is reviewed adversarially before its commit
 
 2026-09-25 | the landing of panels 176 and 177 (M-agreed-retention step 11) was

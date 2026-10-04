@@ -1,3 +1,12 @@
+---
+kind: learn
+area: emit
+milestone: M-declared-extents
+filed: 2026-09-19
+commit: none
+github: none
+---
+
 - [ ] **M-declared-extents mutation drill** | The ratified resolution checked the extent *"only where it is a compile-time constant"*, and the step that landed it added a run-time compare the resolution does not mention. **Before reading: with the mark in place and no compare, `sum_n(p: s.name.ptr(), n: k)` — `k` a parameter — read 4096 bytes of the stack at exit 0. What did the sitting's own compiler-engineer make its approval conditional on, and what does that make the compare?** | `selfhost/emit/lend_extent.hero` § THE HALF NO ASSERTION CAN REACH
 
     **Where to look after answering:** *"a variable extent is unknown at check

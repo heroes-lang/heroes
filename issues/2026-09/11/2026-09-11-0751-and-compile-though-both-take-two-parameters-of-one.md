@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-11
+commit: ede386cc38ec3aeda45694e9319d1b1acc6b6d02
+github: none
+---
+
 - [x] **025 — the label rule stops at the compiler's own built-ins** | `fail("a", "b")` and `xs.slice(1, 3)` compile, though both take two parameters of one type, while `range(1, 4)` and every function written in Heroes are refused | `spec § 9 Functions and calls` · `selfhost/check/builtins.hero` · `selfhost/library_source.hero`
 
     **Origin:** panel 126's ergonomist seat, 2026-09-11, which called the shape

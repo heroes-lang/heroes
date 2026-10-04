@@ -1,3 +1,12 @@
+---
+kind: feature
+area: runtime
+milestone: M-panic-location
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-panic-location** | the assert path is a FIFTH surface this milestone's census did not name, and it carries no file and no line either | `runtime/heroes_runtime.h:300-301` · `selfhost/emit/ffi.hero:58` · `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md` § Found beside the sitting
 
     **Origin:** panel 136, 2026-09-13, measured by the compiler seat while

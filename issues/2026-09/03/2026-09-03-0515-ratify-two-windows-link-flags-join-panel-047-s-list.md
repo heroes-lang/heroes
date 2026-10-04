@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: M-argv-execution
+filed: 2026-09-03
+commit: 367fc4892d2c04c2b8b3b4ef5e318894002e01b0
+github: none
+---
+
 - [x] **Ratify: two Windows link flags join panel 047's list** (M-argv-execution steps 13 and 17, provisional). `-Wl,/STACK:67108864` — 1 MB of main-thread stack against POSIX's 8 kills the compiler on its own modules, measured with two seeds one flag apart; 64 MB is reserve, not committed memory, and shrinking it owes its own measurement. `-Wl,/INCREMENTAL:NO` — the incremental linker talks on stdout about a `.tmp` this compiler renames away, into streams the harness compares byte for byte. Both behind `link_flags()`, platform read off `exe_suffix()`, link lines only. Recommendation: ratify both.
 
   **RATIFIED 2026-09-03** (author instruction, *"ratifica tutto"*). Verified before asking: `selfhost/cli/flags.hero:94` returns both behind `link_flags()`, its tests at `:120-133` assert them on Windows and their absence elsewhere. DESIGN-LOG line 2026-09-03.

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
+github: none
+---
+
 # The document was not the only thing that was behind
 
 2026-09-16. Panel 159, on three rules a reader of `spec/heroes-spec.md` had to

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-12
+commit: 3111799d8fe746b4adfd260b54eb8d0dbb341bba
+github: none
+---
+
 - [x] The record | panel 016/017 | **RATIFIED 2026-08-12** (blanket author instruction — see the panel file's Ratification section for what that does and does not settle). Both RATIFIED as they landed (author instruction, `/goal`). Worth reading anyway for the two reversals: 017's A was decided by *executing* three options, and its historian's objection was answered by building the rule once instead of per construct — the judge's own withdrawal condition | docs/panel/016-command-surface.md, docs/panel/017-type-system-edges.md | the panel changed the design twice more, and both times the change came from a judge's evidence rather than from the proposal
 
 - 2026Covered | - 2026-08-04 — Panel 014 convened and resolved from the debrief (author: `arm → panel`): an arm's body is one statement or a block. Two shipped defects found by the judge that *built* the option — `heroes fmt` deleting an arm's `if` branches, `heroes parse` never terminating — and both fixed. R vetoed, the false `?`/M-ir-lowering rationale struck, the appendix's inline `assert` arms restored. Layout cascade improved on the author's instruction: 5 diagnostics → 2. Panel 013 and M-syntax-tree's five adversarial cases ratified.

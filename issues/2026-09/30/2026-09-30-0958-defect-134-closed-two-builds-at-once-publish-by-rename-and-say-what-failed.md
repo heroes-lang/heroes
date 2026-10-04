@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-30
+commit: 6d781be1b34e97d18deb2b80b2d666d9f9d3fbb4
+github: none
+---
+
 # Defect 134 closed: two builds at once in one tree write private names, publish by rename, and say what failed
 
 - [x] **134 — two builds at once in one tree fail each other with a false internal error** | on a cold `build/`, six `heroes run p.hero` started together fail five in six, 25 of 30 over five rounds, with `internal error: the runtime did not compile` or `internal error: cannot publish build/tu-<key>/p.o` then `error: clang refused the generated C`, where clang refused nothing; two DIFFERENT programs built together in a fresh tree fail one of the two in 5 rounds of 5 | `selfhost/cli/units.hero` (`tu_object`, `link_objects`) · `selfhost/cli/toolchain.hero` (`runtime_object`, `link`) · `selfhost/cli/produce.hero` (the words) · **closed 2026-09-30**

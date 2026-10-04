@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-package-layout
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-package-layout step 2** | Three vocabularies now describe one module: the PATH the machine opens (`geom/point.hero`), the MODULE that identifies it in a compilation (`geom/point`), the COMPONENT that reaches C (`geompoint`) and the BINDING a call writes (`point`). Given a file `syntax/decl.hero` used from the root, say which of the four each of these produces: `module_names.stem_of`, `module_names.component_of`, `module_names.binding_of`, and the `module` field of its `FileEntry`
 
     **Where to look:** selfhost/module/names.hero (the module doc names all four) · selfhost/source.hero:132

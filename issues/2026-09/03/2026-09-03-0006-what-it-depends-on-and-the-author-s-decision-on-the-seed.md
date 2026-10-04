@@ -1,3 +1,12 @@
+---
+kind: task
+area: design
+milestone: M-thesis-harness
+filed: 2026-09-03
+commit: none
+github: none
+---
+
 - [ ] **M-thesis-harness** | what it depends on, and the author's decision on the seed tasks | `design.md` Part 11 · `docs/measurements/007` · `docs/panel/011`
 
     **Origin:** author instruction 2026-09-03, scheduled `DESIGN-LOG.md:539`.

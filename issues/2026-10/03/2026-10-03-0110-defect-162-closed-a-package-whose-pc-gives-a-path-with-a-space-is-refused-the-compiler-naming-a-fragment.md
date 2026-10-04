@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-02
+commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
+github: none
+---
+
 # Defect 162 closed: a package whose `.pc` gives a path with a space is refused, the compiler naming a fragment of the path as the flag
 
 - [x] **162 — a package whose `.pc` gives a path with a space is refused, the compiler naming a fragment of the path as the flag** | a `.pc` with `Cflags: -I"<dir>/inc with space"`: `pkg-config --cflags` prints the path with its spaces escaped by backslashes, and `build` exit 1, `ffi_package`, *the package `spaced` answered with* the fragment `with` and its backslash, *which this compiler does not pass on* | `selfhost/cli/libraries.hero` (the word splitter before `filter_words`) · **class: blocking** · **closed 2026-10-03**

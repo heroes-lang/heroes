@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: none
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **panel 139** | Eight lines: make a record holding a pointer, copy it, free through the copy, write through the original's own field. Say what the compiler says, what the program prints, what the sanitizer says, and then find the two functions in the shipped SQLite example that are exactly this shape. Then answer the harder half: the function that frees takes its argument WITHOUT the mutable marker — what does the specification promise about that, and who is the promise made to?
 
     **Where to look:** `docs/work/DEFECTS.md` item 031 and its reproducer;

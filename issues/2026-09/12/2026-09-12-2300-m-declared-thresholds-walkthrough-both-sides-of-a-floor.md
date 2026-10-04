@@ -1,3 +1,12 @@
+---
+kind: learn
+area: harness
+milestone: M-declared-thresholds
+filed: 2026-09-12
+commit: none
+github: none
+---
+
 - [ ] **M-declared-thresholds walkthrough** | Read `tests/harness/floors.hero` and say what the check does that the eleven suites were not doing before, in one sentence — then say why it needed no new list of floors anywhere.
 
     **Where to look:** `tests/harness/floors.hero`, and any suite it now calls

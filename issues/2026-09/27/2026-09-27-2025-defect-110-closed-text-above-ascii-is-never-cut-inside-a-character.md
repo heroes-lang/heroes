@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-27
+commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
+github: none
+---
+
 # Defect 110 closed: text above ASCII is cut beside an ASCII byte or not at all, in the interpolated string and in eight other places
 
 2026-09-27, M-agreed-retention step 22, in lane A (`7bcd7cc2`), merged `f08b192d`.

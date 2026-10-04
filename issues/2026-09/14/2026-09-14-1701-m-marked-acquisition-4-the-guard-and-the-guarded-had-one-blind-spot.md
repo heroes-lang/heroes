@@ -1,3 +1,12 @@
+---
+kind: learn
+area: print
+milestone: M-marked-acquisition
+filed: 2026-09-14
+commit: none
+github: none
+---
+
 - [ ] **M-marked-acquisition 4** | Open `selfhost/print/dump.hero` and find `owned_suffix`. Read the comment directly above it — the one about `heroes fmt` comparing its own output against this dump. Then look at what the function next to it printed for a parameter, as it stood on 2026-09-13. **Before reading further: say what that comment predicts, and then say whether the file it is written in was obeying it.**
 
     **Where to look:** `selfhost/print/dump.hero`, the `owned_suffix` comment and

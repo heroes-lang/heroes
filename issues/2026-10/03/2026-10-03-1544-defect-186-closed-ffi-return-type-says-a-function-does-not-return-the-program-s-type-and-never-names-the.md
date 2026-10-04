@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-10-02
+commit: edfeb7d2c8889b679fd7557ef3e97589e3d19ca9
+github: none
+---
+
 # Defect 186 closed: `ffi_return_type` says a function does not return the program's type and never names the type the header gives
 
 - [x] **186 — `ffi_return_type` says a function does not return the program's type and never names the type the header gives** | defect 172's applied program: *`cJSON_AddItemToObject` does not return `i32` — that is what `cj.h` says, and clang read it*, its note *correct the result type, or name the header that declares this*; neither `int64_t` nor `i64` appears | `selfhost/emit/ffi_declared.hero:60` · **class: adjacent** · **closed 2026-10-03**

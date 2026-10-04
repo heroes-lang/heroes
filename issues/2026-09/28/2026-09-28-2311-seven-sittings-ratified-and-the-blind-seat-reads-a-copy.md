@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-28
+commit: cea6e9d0dabe7f36776d30ee877cda6742017b64
+github: none
+---
+
 # Seven sittings ratified, and the blind seat reads a copy
 
 2026-09-28, evening, `/decide` on the author's answer, with no milestone open.

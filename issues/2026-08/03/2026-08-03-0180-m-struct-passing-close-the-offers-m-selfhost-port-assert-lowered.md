@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, assert lowered (ir_lower.hero) | **A str side of an assert rides a $assert slot; an i64 side does not.** Why is the block edge the dangerous place for a counted value, and which pass makes it so?
 
     **Where to look:** ir_lower.hero::lower_assert's comment, the two assert tests

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: design
+milestone: none
+filed: 2026-09-17
+commit: 6f534a1e6daa9eed3d909cfd410e227a2e3e3b26
+github: none
+---
+
 - [x] **055 — `design.md` strikes `has(m, k)` on a spelling panel 160 removes** | the reason given for having no presence test is `!m[k].is_err()`, which is refused on a `{K: V?}` under the adopted resolution | closed 2026-09-17, M-check-completeness step 14
 
     **Origin:** 2026-09-17, panel 160's compiler-engineer, handed on as an

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-27
+commit: 0fc981077adfcea438b7d49bc90ec73491f08f0e
+github: none
+---
+
 # Defect 112 closed: the emitter and the lowering read each function once, and emission is linear in the size of a function
 
 2026-09-28, M-agreed-retention step 26, in lane D (`c3dc424b`), merged

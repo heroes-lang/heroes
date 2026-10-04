@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-10-02
+commit: cc45412894bd2a4d8c9d465d981a67cea027d506
+github: none
+---
+
 # Panel 185 ratified: a macro named as a macro, an arm of one statement, a block that leaves, a sign with two readings
 
 2026-10-02, at night, `/decide`-shaped on the author's answer to the

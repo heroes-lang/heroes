@@ -1,3 +1,12 @@
+---
+kind: task
+area: harness
+milestone: M-generated-programs
+filed: 2026-09-07
+commit: none
+github: none
+---
+
 - [ ] **M-generated-programs** | `--sanitize` runs at `-O2`, where clang deletes the leaks LeakSanitizer exists to find | `tests/harness/suite_corpus.hero` § configurations · `CLAUDE.md` §8
 
     **Origin:** measured 2026-09-07 at M-declared-freer step 5, in the Linux

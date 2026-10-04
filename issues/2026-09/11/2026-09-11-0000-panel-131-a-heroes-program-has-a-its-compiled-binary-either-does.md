@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: none
+filed: 2026-09-11
+commit: none
+github: none
+---
+
 - [ ] **panel 131** | A Heroes program has a `record Room`. Its compiled binary either does or does not contain a piece of data describing that type. Which is it, and what decides?
 
     **Where to look:** the emitted C for a small program, `HERO_TU_QUIET static

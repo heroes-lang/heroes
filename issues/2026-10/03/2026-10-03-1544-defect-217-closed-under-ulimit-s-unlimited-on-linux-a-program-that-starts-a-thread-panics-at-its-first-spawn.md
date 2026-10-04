@@ -1,3 +1,12 @@
+---
+kind: defect
+area: examples
+milestone: none
+filed: 2026-10-03
+commit: ffaf9f4dc40f97c82379b5e16a0f84506c5e359c
+github: none
+---
+
 # Defect 217 closed: under `ulimit -s unlimited` on Linux, a program that starts a thread panics at its first spawn
 
 - [x] **217 — under `ulimit -s unlimited` on Linux, a program that starts a thread panics at its first spawn** | `examples/threads` as it stood at `02e507bc`, run in the Linux arm64 container with the stack limit unlimited: a panic at the first spawn, glibc reporting the main thread's stack as 93,823,035,207,680 bytes, from which `runtime/parts/spawn.c` asked a floor | `runtime/parts/spawn.c` · lane depth's commit `ffaf9f4d` · **class: blocking** · **closed 2026-10-03**

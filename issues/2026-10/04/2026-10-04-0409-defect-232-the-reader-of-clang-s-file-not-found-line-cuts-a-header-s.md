@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-10-03
+commit: 850ca7089e4e734a8cfb0544c48c50535989fba5
+github: none
+---
+
 - [x] **232 — the reader of clang's *file not found* line cuts a header's name at a quote and cannot read a code point clang prints as `<U+XXXX>`, so a missing header named with either stops `build` at exit 2** | `extern "a'b.h"` over `function seven() -> i32`, no header beside it: `check` 0, `build` 2, *internal error: compiling the generated C failed*, clang's *'a'b.h' file not found* not matched back to the group, where `extern "ab.h"` missing is `ffi_missing_header` at exit 1 (the trunk's compiler at `826ddc2f`, 2026-10-03, `<scratchpad>/repro188/squote-missing/`); a private-use U+E000, an unassigned U+0378 or a noncharacter U+FFFE in a missing header's name the same, clang printing it `<U+E000>`, on both platforms (the compiler-engineer, stage E) | `selfhost/emit/ffi_build.hero` (`missing_header`, which takes the name up to the first quote and matches it whole) · **class: blocking**
 
     **Origin:** panel 188's completeness critic, 2026-10-03, in its third pass over stage D (F1 ran `a'b.h` only with its header present), and the compiler-engineer building stage E for the escaped code points; the quote reproduced by the coordinator the same day.

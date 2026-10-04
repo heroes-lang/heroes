@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: M-check-completeness
+filed: 2026-09-11
+commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
+github: none
+---
+
 - [x] **M-check-completeness** | three rules a blind reader guessed at, and one of the guesses compiles: `sort`'s direction, `xs[i] @ v`, and whether `main` may be fallible | closed 2026-09-16 by panel 159, whose three sentences landed with two compiler repairs the sitting itself produced
 
     **CLOSED 2026-09-16.** All three are in the document:

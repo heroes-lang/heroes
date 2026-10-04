@@ -1,3 +1,12 @@
+---
+kind: decision
+area: compiler
+milestone: none
+filed: 2026-08-15
+commit: 1945659f34e230570fe3796cf1da08f20917d148
+github: none
+---
+
 - [x] panel 057, the brief that convened it | **The brief for the path pair, kept because the sitting it convened REFUSED the proposal** (panel 057, three vetoes, 2026-08-15). `/decide` could not close it for a jurisdictional reason rather than a hesitation, and the reasoning below is why: two new built-in names plus spec tokens is surface, so CLAUDE.md §4 makes it a `/panel` path, and the soundness lane does not fit because the change costs spec tokens. Verified 2026-08-26: neither `path_join` nor `path_parent` exists in `selfhost/` or the spec. The brief verbatim:
 
   **This is the one item of the eight `/decide` took on 2026-08-15 that `/decide`

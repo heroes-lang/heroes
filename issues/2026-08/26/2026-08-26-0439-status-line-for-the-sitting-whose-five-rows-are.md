@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-24
+commit: 1945659f34e230570fe3796cf1da08f20917d148
+github: none
+---
+
 - [x] panel 089, 2026-08-24 | **Status line for the sitting whose five rows are recorded above.** Verbatim:
 
   **The sitting is held and the repair has landed** (`docs/panel/089`,

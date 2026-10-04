@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-17
+commit: da39a03f1dfbd43c9df46dbbc2f1a859b4a8728b
+github: none
+---
+
 - [x] **060 — a header record with a `const` member makes the compiler blame itself** | `internal error: compiling the generated C failed` at exit 2 for an `extern` the author wrote, where `.claude/rules/c-boundary.md` asks for exit 1 on the `.hero` line | `selfhost/emit/ffi_field.hero` · `selfhost/emit/ffi.hero` · `tests/golden/unsupported/ffi-const-member.hero`
 
     **Origin:** panel 161's ffi-pragmatist found it beside the `char` question,

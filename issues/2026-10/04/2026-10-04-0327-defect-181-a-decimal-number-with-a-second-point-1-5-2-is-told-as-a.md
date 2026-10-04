@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-02
+commit: 098c76f8fdc25ba60489ef5aeb349287ec804023
+github: none
+---
+
 - [x] **181 — a decimal number with a second point, `1.5.2`, is told as a field access** | `x = 1.5.2`: `expected_field_name` at 3:13, *expected a field or function name after `.`, found a number (`2`)* | `selfhost/grammar_expr.hero:343` · `selfhost/number.hero` · defect 154's closed record (*Left, queued*) · **class: adjacent**
 
     **Origin:** lane arm's first pass for defect 154, 2026-10-02 (`scratchpad/lane-arm/pass1/n154/e08.hero`, 2026-10-02), named *Left, queued* in `docs/records/done/2026-10-02-1415-defect-154-closed-a-based-literal-with-a-fraction-is-told-as-the-number-it-is.md` and on no open list; reproduced by the coordinator's file-queue agent on `62d65e48` (2026-10-02, `scratchpad/file-queue/float-second-point/`) and re-read on `6bec7c8c` by the coordinator's re-verification agent (2026-10-02, `scratchpad/file-queue/reverify-6bec7c8c.txt`). Lane arm: no existing code covers it, so a new one is a sitting's.

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: parse
+milestone: none
+filed: 2026-10-02
+commit: 435201935c2adf4afdd5610b10335b213e8c1239
+github: none
+---
+
 # Defect 153 closed: declaration_in_arm is said only of a name it refuses, and a discard stands on an arm's line
 
 - [x] **153 — `declaration_in_arm` says `_` would be bound, which spec § 5 says it never is** | `.blue => _ = 0` on an arm's line: *an arm's body may not declare a name — `_` would be bound where nothing can read it*; spec § 5: `_` *binds nothing*, and § 8 names `_ = 0` as the arm that does nothing | `selfhost/parse/arm_body.hero:25-38` (`declared_name` does not ask the name) · **closed 2026-10-02**

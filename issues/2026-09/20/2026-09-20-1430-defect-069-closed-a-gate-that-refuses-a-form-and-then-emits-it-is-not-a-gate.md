@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-20
+commit: ecd948c0a3c53ecee036a02b177d363bbba733ec
+github: none
+---
+
 - [x] **069 — a C function name passed as a callback builds and then aborts, blaming the compiler** | **closed 2026-09-20**, M-declared-extents step 12, on panel 169's resolution item 6 | **The repair is emission and not refusal, and it is the arm moving to a file of its own.** `emit/inst.hero`'s `.func_ref` arm wrote `hero_unreachable(); /* the gate refuses this form */` for an `extern_fn` callee and the emitter then emitted the CALL four lines later anyway, passing a temporary nothing had assigned — so `check` was 0, `build` was 0, and the program aborted at run time saying *"this is a compiler bug, please report it"*: a true sentence pointing at the wrong line, for a form the checker admits and `spec § 13` promises (*"a callback is a **parameter**, never a result"*, with `atexit(f: (function() -> ()))` as its own example). **A gate that refuses a form and then emits it is not a gate.** Spec beats compiler, CLAUDE.md § 12, so no sitting was convened for the repair itself | `selfhost/emit/func_ref.hero` · `tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero` · `docs/panel/169-two-defects-two-classes-and-the-one-that-was-never-searched-where-it-happens.md` | 169
 
     **Origin:** panel 169's ffi-pragmatist, 2026-09-20, reproduced by that

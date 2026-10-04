@@ -1,3 +1,12 @@
+---
+kind: learn
+area: examples
+milestone: M-corpus-depth
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-corpus-depth step 3** | `heroes fmt` DELETED the parentheses from `1 << (DEPTH - depth + MIN_DEPTH)` in `examples/binarytrees/main.hero`, and the program still prints the published numbers. Say which of the two is true — *`+` binds tighter than `<<` in Heroes* or *the formatter normalises redundant parentheses wherever it finds them* — then say what the same line means in C, where the answer is the other way round
 
     **Where to look:** spec § Operators (the precedence list, strongest first) · examples/palette/ (the corpus's other program whose lines stand as `heroes fmt` produced them, for `&` against a comparison)

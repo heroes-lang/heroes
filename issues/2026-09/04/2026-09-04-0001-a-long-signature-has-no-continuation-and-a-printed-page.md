@@ -1,3 +1,12 @@
+---
+kind: feature
+area: print
+milestone: M-guide-book
+filed: 2026-09-04
+commit: none
+github: none
+---
+
 - [ ] **M-guide-book** | a long signature has no continuation, and a printed page cannot hold one | `selfhost/print/fmt.hero:77`, `:524-550` · `selfhost/parse/members.hero:60-104` · `docs/panel/110`
 
     **Origin:** `docs/panel/110`'s historian, 2026-09-04, as the one

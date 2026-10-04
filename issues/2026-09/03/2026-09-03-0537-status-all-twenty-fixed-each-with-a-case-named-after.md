@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: M-module-namespace
+filed: 2026-08-12
+commit: b660cc224056521d0e2367067858d5e99f73c4b1
+github: none
+---
+
 - [x] **001 — The post-M8a sweep: twenty defects, and the three shapes they came in** | Date: 2026-08-12, after panels 033 and 034. **Nothing here was found by reading.** | **Status: all twenty fixed**, each with a case named after it. No golden moved and no expectation changed except one sentence that M8a had made false (`declared_twice` said *"one file is one program"*; spec line 6 says one file is one **module**). 427 crate tests (was 414 at M8a close), 37 surface, 13 golden harnesses, clippy clean, spec unmoved at 2434, `heroes mutate` unchanged at 1173 mutants and 93% / 78%. | moved here 2026-09-03 from `docs/defects/001-the-post-m8a-sweep.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** a legal program is refused or miscompiled · **★★** a diagnostic is wrong or teaches a wrong program · **★** cosmetic or contract-level.
 
 

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: golden
+milestone: none
+filed: 2026-10-02
+commit: 7c05e64d218b798153172684967b46b7ae8d6459
+github: none
+---
+
 # Defect 191 closed: a record named after a typedef of a struct the header keeps opaque, with fields, stops `build` at exit 2 under clang 18, whose refusal of a member read through it does not name the typedef
 
 - [x] **191 — a record named after a typedef of a struct the header keeps opaque, with fields, stops `build` at exit 2 under clang 18, whose refusal of a member read through it does not name the typedef** | `tests/golden/unsupported/fixedbugs-145-a-typedef-of-an-opaque-struct-bound-with-fields`, `ffi_unknown_tag` expected: on the public CI's Linux x86-64 leg (Ubuntu clang 18.1.3), `internal error: compiling the generated C failed`, clang's *incomplete definition of type 'struct opaque_s'* three times at the field assertions, exit 2; Apple clang 21 on this Mac words it *'opaque_t' (aka 'struct opaque_s')* and the case passes | `selfhost/emit/ffi_incomplete.hero` (`incomplete_typedef`, which finds the record by the typedef's name in clang's words) · `f2a08f13` (panel 186's layout route, which removed the unit's positional completeness probe) · **class: blocking** · **closed 2026-10-03**

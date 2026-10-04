@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-03
+commit: c898bd944030d65afdd49feacf02bd1c467975ba
+github: none
+---
+
 - [x] **236 — a used module that is present but unreadable is told that the file is not there** | `main.hero` over `use geom` and `print(geom.two())`, beside a `geom.hero` declaring `two` whose mode is 000: `check` exit 1, `unknown_module`, *there is no module `geom`, `use geom` reads `geom.hero`, from the directory of `main.hero`, the file you compile, and that file is not there*, while the file is there; the main file unreadable is *cannot read* at exit 2 (the trunk's compiler, from the seed at `dcaca1a3`, 2026-10-03, `<scratchpad>/batch8/source/shapes227/m17/`) | `selfhost/modules.hero:125` (every read failure taken as absence) · **class: blocking**
 
     **Origin:** lane b8-source beside defect 227, 2026-10-03, reported to the coordinator, who filed it the same day; the lane reproduced it on the trunk's compiler and restored the file's mode.

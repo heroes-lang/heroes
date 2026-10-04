@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-10-01
+commit: 9f87fe17b93dc88be3a230da029aeb25731c9b2c
+github: none
+---
+
 # Defect 148 closed: a claim that rests on a jump already refused is the jump's shadow, and is not told
 
 - [x] **148 — `break` or `continue` as a constant's body costs two messages at one place** | `constant M: i64` over `break`: `jump_outside_loop` and `no_value` (*constant `M` produces no value — its body jumps*), both at 2:5, for one mistake; the same with `continue` | `selfhost/check/decls.hero` (the constant's message, defect 139's last repair) · the checker's outcome, which does not carry the jump's kind · **closed 2026-10-02**

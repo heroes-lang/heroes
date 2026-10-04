@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: 8e2bbe6d7faf0288617fc4e03080b85f95dc682a
+github: none
+---
+
 # Panel 184's R7 landed: `fmt` holds on the thread, the depth of types is repaired apart, and nothing pins a boundary
 
 2026-10-03 at 12:28 by the clock, lane depth, beside R5 (its own entry,

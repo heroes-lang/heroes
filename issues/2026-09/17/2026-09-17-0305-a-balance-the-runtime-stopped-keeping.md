@@ -1,3 +1,12 @@
+---
+kind: defect
+area: spec
+milestone: none
+filed: 2026-09-17
+commit: 3ee24685db5195ac2d215d9d264ea742f2b110ec
+github: none
+---
+
 - [x] **054 — the specification states a balance the runtime stopped keeping** | § 13 says a handle consumed twice hides one never consumed; the counter became a set on 2026-09-15 and the program aborts naming the stray FIRST | `spec/heroes-spec.md:378-379` · `runtime/parts/alloc.c` · `tests/golden/run/abort-handle-given-back-twice.expected`
 
     **Origin:** 2026-09-17, panel 160's ffi-pragmatist, measured on real SQLite

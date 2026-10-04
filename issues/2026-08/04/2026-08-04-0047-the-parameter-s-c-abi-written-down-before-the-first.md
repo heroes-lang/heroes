@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-04
+commit: ac8c34cc7d48cd0faf5eacd59c10fc67ce327606
+github: none
+---
+
 2026-08-04 | The `@` parameter's C ABI, written down before the first emitter line: an `@` parameter is a **pointer parameter**, the prologue copies in, each `CopyOut` emits `*p_l = l;`, and two `@` parameters copy out in parameter order. `f(@x, @x)` cannot arise — panel 010's rule is what makes the convention total | `Op::CopyOut` writes the *caller's* place and the callee cannot reach it in C; M5b, M5c and M6 all inherit this shape | §4.8 | 010, 020 |

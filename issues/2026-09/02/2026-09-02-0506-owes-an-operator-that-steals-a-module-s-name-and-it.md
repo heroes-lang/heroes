@@ -1,3 +1,12 @@
+---
+kind: task
+area: mutate
+milestone: M-corpus-coverage
+filed: 2026-09-02
+commit: 9c04d1508c35a7c71afb92d88b66ddb1efbb2f1d
+github: none
+---
+
 - [x] **M-corpus-coverage** | panel 102's landing, and the payment §1.6 would have preferred | **`heroes mutate` owes an operator that steals a MODULE's name, and it must be added against the 35-program corpus rather than the 15-program one.** Panel 102 landed a refusal — a local may not take a name a `use` bound — and paid its 22 spec tokens with a prediction about corpus cost, which is the weaker of the two payments §1.6 admits. The stronger one was available and deliberately deferred: `mutate_ops.hero` already ships **13 operators**, one of them `shadow` (*"an inner-scope habit"*), which at `mutate_edits.hero:186` duplicates a `bind` statement's line. A fourteenth — rewrite a `bind`'s NAME to a name this file's `use` lines bound — imitates a habit no existing operator reaches and that panel 102's llm-ergonomist produced unprompted while writing ordinary code (`i @ token.stop`, where the local's field and the module's `constant stop: i64` are both `i64` and one reading is an infinite loop). Under the reservation the catch rate on that class is **100% by construction** and was **0%** before, which is a measured Part 11 effect rather than a promise. **Why it waits, and it is not caution**: adding an operator changes the DENOMINATOR of the mutation score, which is the thesis's own measurement (panel 011, metric 3) — so the run before and the run after are not comparable, and doing it now spends that discontinuity on a 15-program corpus when M-corpus-coverage is about to make it 35. Do it once, against the wider corpus, and record both numbers so the score stays readable across the seam. **What is owed with it**: the `ast.Use.binding` span is what the operator reads (panel 100 R8 put it in the node so nothing derives it), the operator id joins `mutate_ops.operators()` and `known()`, and `mutate_score.hero`'s locate test gains a case — plus the before/after catch rate written into the milestone's journal rather than into a comment | selfhost/mutate/ops.hero:39 (the `shadow` row) · selfhost/mutate/edits.hero:186 · docs/panel/102 · docs/measurements/010-spec-budget-ledger.md (row 3685, the weaker payment this replaces) · docs/panel/011 | the instrument that scores the thesis does not yet contain the mistake this milestone's whole refusal exists to catch
 
 

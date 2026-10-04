@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-10-02
+commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
+github: none
+---
+
 # Defect 175 closed: a value block whose last statement is an `if` or a `match` whose every branch leaves is refused `no_value`, where panel 185's R4, ratified, makes the block leave and its arm a jumping arm
 
 - [x] **175 — a value block whose last statement is an `if` or a `match` whose every branch leaves is refused `no_value`, where panel 185's R4, ratified, makes the block leave and its arm a jumping arm** | lane flow's `a55-value-arm-block-inner-returns.hero`: `check` exit 1, `no_value` at 4:13, *this `match` produces no value — every branch jumps, so there is nothing to bind*; under R4 it checks clean (its source's own expected output, `1`, `2`, `20`, unrun) | spec § 8 `:229-230` (*A jump (`return`, `break`, `continue`) is a valid arm body*) · panel 185's R4 (`docs/panel/185-a-macro-is-named-as-a-macro-an-arm-takes-a-statement-a-leaving-block-leaves-and-a-spaced-sign-has-two-readings.md:169-170`, ratified at `:241-245`; its sentence goes in § 8, `:171-175`) · **class: blocking** · **closed 2026-10-03**

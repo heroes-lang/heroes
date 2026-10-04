@@ -1,3 +1,12 @@
+---
+kind: defect
+area: records
+milestone: none
+filed: 2026-10-02
+commit: da3e29af815645a3bcb98fd9e16681b6b5ed7b8d
+github: none
+---
+
 # Defect 172 closed: in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`
 
 - [x] **172 — in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`** | `docs/panel/176-briefs/xfer_cj.hero`'s `-> i64`, over `cj.h`'s `int64_t cJSON_AddItemToObject(...)`, written `-> int`: `check` exit 1, `reserved_word`, *in an `extern` group a type is the header's own width and sign, and C's `int` is `i32`*, fix (certain) *replace `int` with `i32`*; `check --apply` writes `-> i32`, `check` exit 0, `build` exit 1, `ffi_return_type` | the `reserved_word` fix for `int` in an `extern` group (defect 135's L6, `c61a1d04`) · `.claude/rules/diagnostics-and-goldens.md` § Errors are a deliverable (*a fix that leaves the defect standing is a `guess`*) · **class: blocking** · **closed 2026-10-03**

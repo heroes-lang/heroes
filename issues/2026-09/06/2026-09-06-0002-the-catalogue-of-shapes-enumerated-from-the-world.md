@@ -1,3 +1,12 @@
+---
+kind: task
+area: golden
+milestone: M-generated-programs
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-generated-programs** | the catalogue of shapes, enumerated from the world | `tests/golden/fixedbugs/` · `docs/work/DONE.md`, the defect entries
 
     **Origin:** scheduled with the chain row, 2026-09-06, out of the author's

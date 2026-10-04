@@ -1,3 +1,12 @@
+---
+kind: task
+area: design
+milestone: M-guide-book
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-guide-book** | the held-out tasks must never be committed, now that the repository is public | `harness/tasks/README.md` · `design.md` Part 11
 
     **Origin:** M-open-repository, 2026-09-08, and nobody had written it down.

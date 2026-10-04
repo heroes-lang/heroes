@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 8** | Bind `fopen` and `perror`, open the path `"C:\temp\report.txt"`, and look at the bytes the program writes with `od -c`. Count how many escapes were eaten. Then say what happens when those bytes reach a terminal instead of `od`, and why that makes this wart different in kind from a string that is merely wrong.
 
     **Where to look:** the reproduction in

@@ -1,3 +1,12 @@
+---
+kind: feature
+area: spec
+milestone: M-core-packages
+filed: 2026-09-10
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** step 6 | a service that stops cleanly is not writable, and the server step is where that stops being theoretical | `spec/heroes-spec.md:47` · `selfhost/check/ffi.hero:262-268` · `runtime/parts/thread.c:10-68`
 
     **Origin:** author decision 2026-09-10, § What production-ready means row 6,

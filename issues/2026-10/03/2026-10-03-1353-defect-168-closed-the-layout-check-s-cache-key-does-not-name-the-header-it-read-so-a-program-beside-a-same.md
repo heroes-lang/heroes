@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-02
+commit: cf949d33ce7ab7870b9bdc9fd0e5a15ade3fef3b
+github: none
+---
+
 # Defect 168 closed: the layout check's cache key does not name the header it read, so a program beside a same-named header replays another directory's verdict: a binding its own header refutes builds and prints a wrong value
 
 - [x] **168 — the layout check's cache key does not name the header it read, so a program beside a same-named header replays another directory's verdict: a binding its own header refutes builds and prints a wrong value** | `a/x.h` holds `typedef struct { int32_t x; } E;` and `b/x.h` `typedef struct { int32_t x; int32_t y; } E;`, both bound `record E` naming `x` alone, built from one working directory: alone, `b/p.hero` is refused, `ffi_incomplete_record`; after `a/p.hero` in the same cache it builds at exit 0, and with `gety(e: E) -> i32` reading C's `e.y` its run prints `true`, `2`, `3`, `p == q` true for two values whose `y` C reads as 2 and 3; in the other order the correct `a/p.hero` stops at exit 2, *internal error: checking the header's layout of the group records failed ... no member named 'y' in 'E'* | `selfhost/cli/layout.hero:97-99` (the key: the screen unit's text, `#include <x.h>` and one function per record, no source path) · `selfhost/emit/layout_screen.hero:35`, `:51-59` · the pointee check's key names the declaring file (`selfhost/cli/pointee.hero:111-113`) and does not replay · **class: blocking** · **closed 2026-10-03**

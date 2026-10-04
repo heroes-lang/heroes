@@ -1,3 +1,12 @@
+---
+kind: decision
+area: site
+milestone: none
+filed: 2026-09-10
+commit: b96dafcd15ffe87261a8976704658e0efc40ab9c
+github: none
+---
+
 - [x] **author decision 2026-09-10, one subtitle** | the language describes itself with one line everywhere, *A small compiled language*, chosen among the five wordings that were in use, and applied to the home page in both editions, the page title, the card alt, the model-facing text, the README banner and its alt, the two home share cards and the GitHub description | `DESIGN-LOG.md` 2026-09-11, `site/README.md` § What is where (the hero row), `site/.claude/skills/site-panel/SKILL.md`
 
     **Origin:** the session of 2026-09-10 that asked which of five subtitles to

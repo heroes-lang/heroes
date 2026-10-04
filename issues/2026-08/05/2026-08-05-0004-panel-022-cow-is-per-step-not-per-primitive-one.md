@@ -1,1 +1,10 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-08-05
+commit: a3045b79169eb63dc0d34bb2a2eb5c3e8e1b72a7
+github: none
+---
+
 2026-08-05 | **Panel 022 — COW is per-step, not per-primitive.** One unshare for every array or map step of a mutated place, each writing back at its level, and the mutation primitives take `HeroArrayHeader **` rather than returning the new pointer. Measured: with a single unshare at the primitive, `h = g` then `g.rows[0].cells[0] @ 7` changes `h` too — ASan clean, leak counter zero, exit 0, a green harness on a program that violates spec line 58 ("No aliasing exists anywhere"). It is *necessarily* wrong, not accidentally: unsharing level 1 copies its elements, whose `copy` increfs level 2, so level 2 is shared exactly when level 1 was copied. The order is part of the rule — the stored value is increfed **before** the outermost unshare | nothing in this project could have caught it: the leak counter reads 0, the sanitisers are silent, and no golden read a second name after a nested mutation | §4.10, Part 5 | 022 |

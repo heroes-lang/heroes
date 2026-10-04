@@ -1,3 +1,12 @@
+---
+kind: defect
+area: seed
+milestone: none
+filed: 2026-10-02
+commit: dc23c4a869fba8be97dbe94a7438e13c892ed46b
+github: none
+---
+
 # Defect 192 closed: the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers
 
 - [x] **192 — the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers** | `clang -I runtime seed/heroes.c runtime/runtime.c -Wl,/STACK:67108864 -o heroes` (`seed/README.md`'s Windows line) on the Windows box: *'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead*, at `seed/heroes.c:50` and, through `#line`, `selfhost/cli/process.hero:64` and `:209`, then *3 warnings generated*; `heroes build` passes `-D_CRT_SECURE_NO_WARNINGS` to every unit it compiles (`selfhost/cli/flags.hero:96`) and `runtime/runtime.c:75` defines it for its own unit, so only a unit compiled outside `heroes build` gets the warnings | `runtime/heroes_runtime.h`, the first include of every emitted unit (`seed/heroes.c:2`) · `seed/README.md` · **class: blocking** · **closed 2026-10-03**

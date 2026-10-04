@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-02
+commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
+github: none
+---
+
 # Defect 163 closed: the pointee check judges a plain `char` without `-fsigned-char`, so on Linux arm64 it refuses the binding the program's own compile agrees with
 
 - [x] **163 — the pointee check judges a plain `char` without `-fsigned-char`, so on Linux arm64 it refuses the binding the program's own compile agrees with** | `extern "c.h"` over `void fill(char *p)`, bound `function fill(@p: i8)`: on this Mac `build` exit 0, prints `-1`; in the Linux arm64 container on the trunk at `02b29536`, `build` exit 1, `ffi_parameter_type`, *`p` of `fill` is declared `i8`, and the header's `char *` points at a different width or sign*, while `@p: u8` is refused on this Mac and built on arm64; the program itself is compiled with `-fsigned-char` on both (`selfhost/cli/flags.hero:108`, panel 161) | `selfhost/cli/pointee.hero` (its two clang runs, without the compiler's own flags) · panel 161 (*a plain `char` meaning the same thing on four legs*) · **class: blocking** · **closed 2026-10-03**

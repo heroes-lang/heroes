@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-04
+commit: 3edef8cb797268f1ac7daeff3ee9d7c073259d9f
+github: none
+---
+
 # Panel 191 sat: on Windows a name reaches the runtime through a UTF-8 code page its own object carries
 
 2026-10-04, written at 17:03 by the clock (`date`). Panel 191 sat in the

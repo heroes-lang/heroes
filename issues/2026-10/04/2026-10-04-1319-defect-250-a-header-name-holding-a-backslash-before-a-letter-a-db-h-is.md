@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-03
+commit: d21696f95674e90931ad52a6dcad1c78da0e75b9
+github: none
+---
+
 - [x] **250 — a header name holding a backslash before a letter, `a\db.h`, is told twice, and the first message's certain fix writes the name the second refuses** | `extern "a\db.h"` over `function seven() -> i32`: `check` exit 1, `unknown_escape` at 1:10 with *fix (certain): escape the backslash: `\\d`*, and `escape_in_header_name` at 1:8; the certain fix writes `"a\\db.h"`, whose value holds `\`, which `escape_in_header_name` refuses (batch 8's round compiler at `1eb854c3`, 2026-10-04, `<scratchpad>/filings-b8/probe/esc.hero`) | the lexer's `unknown_escape` (`selfhost/lexer.hero`) · `selfhost/head_names.hero` (`escape_in_header_name`) · `.claude/rules/diagnostics-and-goldens.md` on a certain fix · **class: adjacent**
 
     **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 3); reproduced by the coordinator, 2026-10-04.

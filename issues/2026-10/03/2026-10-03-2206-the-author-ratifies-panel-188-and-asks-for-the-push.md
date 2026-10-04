@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: 9818ef8868a3414cb23ed3bc2c371eeb134ba82b
+github: none
+---
+
 # The author ratifies panel 188 and asks for the push
 
 2026-10-03, written at 22:06 by the clock (`date`). The coordinator had put

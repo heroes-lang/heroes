@@ -1,3 +1,12 @@
+---
+kind: learn
+area: runtime
+milestone: M-closures-verdict
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-closures-verdict step 1** | `hero_desc_func` in `runtime/parts/desc.c` declares a size, a copy function and a drop function. Read those three fields and answer: how many bytes does a function value occupy, what does its copy function do, and what does its drop function do. Then say what each of the three would have to become if a function value could carry two captured `i64`s
 
     **Where to look:** runtime/parts/desc.c § hero_desc_func · runtime/heroes_runtime.h § HeroFn

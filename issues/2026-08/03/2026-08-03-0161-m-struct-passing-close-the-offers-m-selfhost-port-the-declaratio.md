@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, the declaration knot | **Four Rust files became one Heroes module and the language left no choice.** Name the two edges that close the ring (which function calls back into which), and name one module that stayed OUTSIDE the knot and why it could
 
     **Where to look:** selfhost/parse/decl.hero's module map · CLAUDE.md §11 (the threshold yields)

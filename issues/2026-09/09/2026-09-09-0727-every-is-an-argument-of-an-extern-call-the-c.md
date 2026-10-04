@@ -1,3 +1,12 @@
+---
+kind: defect
+area: examples
+milestone: none
+filed: 2026-09-09
+commit: c345a294bbb39e20c0b93ac7b20fef04864ce88c
+github: none
+---
+
 - [x] **024 — a lend the C side RETAINS past the call is a use-after-free that every position rule blesses** | every `.cstr()` is an argument of an extern call, the C function keeps the pointer, and the answer is silently wrong at exit 0 | `examples/ledger/db/sqlite.hero:305-309` · `design.md` §4.19's reserved keyword · `docs/panel/122-the-lend-was-two-defects.md`
 
     **Origin:** panel 122, 2026-09-09, built independently by the

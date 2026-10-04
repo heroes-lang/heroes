@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-23
+commit: 042805532b26ac884bdcb5a3a481269378fcba16
+github: none
+---
+
 # A consuming call is three things, and the runtime speaks only after it has listened
 
 2026-09-23 | the named releaser becomes binding only together with a consumer

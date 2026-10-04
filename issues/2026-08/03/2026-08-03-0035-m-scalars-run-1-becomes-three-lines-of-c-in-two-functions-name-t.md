@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-scalars-run
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-scalars-run.1** | `bump(@v)` becomes three lines of C in two functions. Name them, and say which one runs on the error side of a `?`
 
     **Where to look:** emit/decls.rs (prologue) · emit/inst.rs (CopyOut) · design.md §3.1's `@` bullet

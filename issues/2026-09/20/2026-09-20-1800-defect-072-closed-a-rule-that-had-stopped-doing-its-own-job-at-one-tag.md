@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-20
+commit: 375ce4271ca148365de7f45455afae2e8bbeb8e6
+github: none
+---
+
 - [x] **072 — two allocator families collapse onto one handle type, and each frees the other's blocks in silence** | **closed 2026-09-20**, M-declared-extents step 18, on panel 170's narrowing | **The repair is one condition and it names `void` and no other word.** `one_tag_one_type` is stood down at `tag void`, so two C allocator families that both hand back `void *` may be two Heroes types. The crossed free is then `error[type_mismatch]` at **check**, twice, one per crossed call; the matched program — the one the author meant and could not write — runs at exit 0 | `selfhost/check/decls.hero:313` · `tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero` · `tests/golden/check/fixedbugs-a-crossed-free-between-two-void-families.hero` | 170
 
     **Origin:** panel 169's ffi-pragmatist, 2026-09-20, while measuring what caps

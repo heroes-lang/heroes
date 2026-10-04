@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-08-15
+commit: dbe77e2a3d849819354efb588aee05a5b664f0bf
+github: none
+---
+
 - [x] Owed a panel — the path pair | **CLOSED 2026-08-15 by `docs/panel/057` — refused, three vetoes, and the
   proposal that lost was the one written in this file.** `path_join` fails §1.0 on
   its own concession; `path_parent`'s §1.0 claim was `directory_text` and **it does

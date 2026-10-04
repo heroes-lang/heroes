@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-27
+commit: f39836a6df00ceceb5ecd36314b60a2da5fb9401
+github: none
+---
+
 # Defect 105 closed: every artifact a verb prints is linear in its size, and `fmt` is faster than before its guard
 
 2026-09-27, M-agreed-retention step 20, in lane `95dc08fe`, merged `09acdabc`. Found by the

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-18
+commit: 7895047e7917ebfcb9ec4571a7f7c1948e2dbb93
+github: none
+---
+
 # The sitting convened on a wall and measured that the wall was not there
 
 2026-09-18. Panel 163, at M-readable-bytes, convened on the half of the milestone

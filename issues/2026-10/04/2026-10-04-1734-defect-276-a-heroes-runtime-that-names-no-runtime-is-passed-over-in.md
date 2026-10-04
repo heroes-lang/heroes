@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-10-04
+commit: 700047fe6faa238fc0c6b060aa527149785fe0d4
+github: none
+---
+
 - [x] **276 — a `HEROES_RUNTIME` that names no runtime is passed over in silence for a `./runtime` beside the program, so the build uses a runtime the author did not name** | `HEROES_RUNTIME=/nonexistent/rt`, then `build p.hero` in a folder holding a `runtime/` of its own (a copy with one line appended): exit 0, *wrote p*, the program built against the copy and no word that the hint named nothing; the same with a hint that is not UTF-8, which defect 243 reads as unset (batch 8's round compiler, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/rt243/`) | `selfhost/cli/toolchain.hero:77` (`locate_toolchain`: the hint, then `runtime`, the first whose two files read) · design.md §3.1's search order (line 709, panel 020), which orders the places and does not say whether a hint the author set and that names nothing ends the search · **class: adjacent**
 
     **Origin:** panel 189's compiler-engineer, 2026-10-04, its Q6 (*with a `./runtime` folder next to the program, that build silently succeeds against the wrong runtime*, `docs/panel/189-reports/compiler-engineer.md`), for a hint not UTF-8; run by the coordinator for a hint that is UTF-8 and names nothing, the same.

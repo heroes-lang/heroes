@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: 19ee8adb72b4c22f1e36e6f2117c7c6a72b2737c
+github: none
+---
+
 # Two sittings ratified, and both were decided against their own seats
 
 2026-09-15. Panels 153 and 154, ratified by the author as adopted, hours after

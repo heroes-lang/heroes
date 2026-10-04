@@ -1,3 +1,12 @@
+---
+kind: task
+area: records
+milestone: M-agreed-retention
+filed: 2026-09-28
+commit: c7b03a12c432bdea708de4f2d9526719d6cbb2ce
+github: none
+---
+
 # The predictions of M-agreed-retention, scored
 
 For the M-agreed-retention close: panels 174 to 177 and the four ledger rows

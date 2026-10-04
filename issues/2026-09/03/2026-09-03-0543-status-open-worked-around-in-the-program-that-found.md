@@ -1,3 +1,12 @@
+---
+kind: defect
+area: examples
+milestone: none
+filed: 2026-09-03
+commit: 739465699ca1213a240adab1d5217a8a1b6286c9
+github: none
+---
+
 - [x] **006 — A type parameter the checker accepted and the emitter could not name** | Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program, not by reading the compiler** — which is the reason that milestone exists. | **Status: OPEN.** Worked around in the program that found it (`examples/interpreter/run/value.hero`, four lines instead of one generic) and filed as work with a home in `docs/work/SCHEDULED.md`. Nothing is fixed here. | moved here 2026-09-03 from `docs/defects/006-a-type-parameter-with-nowhere-to-come-from.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★** — `heroes check` says exit 0 and `heroes build` aborts at **exit 134** with `assert failed: false`, naming no file, no line and no expression. It is the shape panel 082 R3 is about (*check accepts ⇒ build succeeds* is false) with a second failure on top of it: when the compiler does give up, it says nothing a reader can act on.
 
 

@@ -1,3 +1,12 @@
+---
+kind: learn
+area: runtime
+milestone: M-check-completeness
+filed: 2026-09-16
+commit: none
+github: none
+---
+
 - [ ] **M-check-completeness golden ratification** | A test asserted `called from node_value` and was green on one platform for a day. **Before reading the repair: here is `hero_stack_blame`'s first five lines — say what `node_value` IS in that function, and what the test was therefore asserting.** | `runtime/parts/stack.c`, `hero_stack_blame` · `docs/panel/156-the-blame-line-was-never-a-platform-fact.md`
 
     ```c

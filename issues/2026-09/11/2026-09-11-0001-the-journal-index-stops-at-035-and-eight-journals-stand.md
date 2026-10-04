@@ -1,3 +1,12 @@
+---
+kind: task
+area: records
+milestone: M-journey-book
+filed: 2026-09-11
+commit: none
+github: none
+---
+
 - [ ] **M-journey-book** | the journal index stops at 035 and eight journals stand outside it | `docs/records/journal/README.md` · `docs/records/journal/036-declared-freer.md` to `043-interpolated-strings.md`
 
     **Origin:** found 2026-09-11 at M-anchored-spec's close, when this session

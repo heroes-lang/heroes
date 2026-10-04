@@ -1,3 +1,12 @@
+---
+kind: defect
+area: seed
+milestone: none
+filed: 2026-09-04
+commit: f8a7d288334c5526242d85ce1678b9a590d71512
+github: none
+---
+
 - [x] **008 — On Windows the documented way in builds a compiler that cannot compile a medium program** | Date: 2026-09-04, found on the Windows box while measuring M-corpus-depth's two FFI programs on the three platforms | REPAIRED 2026-09-04, by panel 106's repair rather than by a change of its own | CLAUDE.md § Commands and `seed/README.md` both give the way in as one clang line; `.github/workflows/ci.yml:334-335` gives a different one on Windows | **Severity: the documented instruction is wrong on one of the three platforms, and the instrument that would have caught it is the thing working around it.**
 
   **The reproducer, on `apponfly-vps` at `ed88c02a`, clang 22.1.8, Windows Server 2025.** Build the compiler exactly as the contract says:

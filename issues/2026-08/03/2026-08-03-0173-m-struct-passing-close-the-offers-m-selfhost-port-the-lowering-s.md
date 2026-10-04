@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-struct-passing
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, the lowering skeleton | **A negative literal is folded at lowering, not negated at runtime.** What goes wrong with `-128` against an i8 if the minus stays an instruction? (The answer is a clang warning class and one unreachable value.)
 
     **Where to look:** ir_lower.hero::fold_negative

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-30
+commit: 6708ba0521af542def2be41ff0798db7b2e3d518
+github: none
+---
+
 # Defect 145 closed: a record clang cannot lay out is told what the header in hand says its type is
 
 - [x] **145 — `ffi_unknown_tag`'s note offers two repairs for a typedef of an anonymous struct, and neither is right: the handle repair builds and aborts at run** | a binding written `record Regex tag regex_t partial` for `typedef struct { ... } regex_t;` is refused with the note's two repairs, a misspelled tag or a handle; the handle checks, builds and aborts at run, *panic: a null pointer was read through, at offset 0x8*; the spelling that works, a record named `regex_t` with no `tag`, is not offered (`div_t`, `ldiv_t`, `lldiv_t` have the same shape) | `selfhost/emit/ctype.hero:149` · the note of `ffi_unknown_tag` · **closed 2026-10-01**

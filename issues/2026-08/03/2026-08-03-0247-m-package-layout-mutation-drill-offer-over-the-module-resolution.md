@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-package-layout
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-package-layout** | mutation drill offer: `heroes mutate` over the module-resolution path, now that a `use` line carries two spans (the path and the binding) rather than one
 
     **Where to look:** selfhost/parse/use_line.hero · selfhost/resolve/top.hero

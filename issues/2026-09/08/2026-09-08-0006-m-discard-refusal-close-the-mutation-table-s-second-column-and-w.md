@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-discard-refusal
+filed: 2026-09-08
+commit: none
+github: none
+---
+
 - [ ] **M-discard-refusal close** | The mutation table's second column, and what it measures that the first does not | `docs/records/journal/038-discard-refusal.md` · `heroes mutate --operator drop-question --survivors` | 236 killed is the headline and 193 is the number that says what the thesis buys
 
     **Origin:** M-discard-refusal close, 2026-09-08. Run it. The `check` column

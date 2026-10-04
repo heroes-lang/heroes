@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: 5784b1e0cf976644b468ec33715c95ac2a21eeaf
+github: none
+---
+
 # Panel 187 sat: a recovery is done when every row is repaired, filed or pinned, and the instrument compares two compilers
 
 2026-10-03, written at 00:18 by the clock (`date`). The sitting

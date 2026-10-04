@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-10-04
+commit: 57ce29ad52cd2763ea46c23b718b94b3754a14e0
+github: none
+---
+
 # The defect list becomes one file per defect: `docs/work/defects/`, with `DEFECTS.md` its front page
 
 2026-10-04, written at 02:06 by the clock (`date`), in lane b8-defects from

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: c3cd421361be5364621b85d88909de40d024f7f9
+github: none
+---
+
 # The author amends the batch: sixteen to thirty-two defects, gated once
 
 2026-10-03, written at 21:51 by the clock (`date`) and completed at 21:56. The

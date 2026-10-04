@@ -1,3 +1,12 @@
+---
+kind: task
+area: process
+milestone: M-agreed-retention
+filed: 2026-09-20
+commit: 64c9265411b6de2175b6235646f023035da991ae
+github: none
+---
+
 # A seat's copy is its own
 
 2026-09-23, M-agreed-retention step 2. The milestone's fourth item, closed by

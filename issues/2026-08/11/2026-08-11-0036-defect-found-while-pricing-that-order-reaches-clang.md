@@ -1,1 +1,10 @@
+---
+kind: decision
+area: design
+milestone: none
+filed: 2026-08-11
+commit: 66d0305595b21ceb45493aeb4370c6dbd76f4b3c
+github: none
+---
+
 2026-08-11 | **Defect found while pricing that order: `-g` reaches clang only under `--sanitize`.** design.md §2 and §3.1 both claim lldb breaks on and steps through `.hero` lines via the emitted `#line` directives; `toolchain.rs:203` is the file's one `-g`, so an ordinary build carries no DWARF and the claim has never been executed. Repaired at M8b, with a golden that runs lldb in batch mode and asserts the breakpoint is hit | the `#line` emission is thoroughly tested and the sentence *about the debugger* is tested by nothing — the same class as a verifier check that never fires, and it surfaced from the question "is QBE worth more than a debugger?" | §2, §3.1, CLAUDE.md §9 | — |

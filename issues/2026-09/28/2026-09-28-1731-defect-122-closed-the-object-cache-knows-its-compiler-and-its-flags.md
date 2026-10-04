@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-28
+commit: 464320c810fc9f1f8a567c2b33498351696a3942
+github: none
+---
+
 # Defect 122 closed: a build's object cache knows which C compiler and which flags built an object
 
 2026-09-28, M-agreed-retention step 29, in lane 182 (`81532acc`, the trunk

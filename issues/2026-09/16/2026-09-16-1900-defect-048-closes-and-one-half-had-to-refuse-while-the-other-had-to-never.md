@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-09-16
+commit: b95874374df1f5c29aae0ab36b7b6ee28b8435de
+github: none
+---
+
 - [x] **048 — `heroes build --emit-c` emits C that does not compile, for any `tag` binding** | and, found at the sitting, it also skips the pointee check, so a binding writing eight bytes into a four-byte slot emitted at exit 0 and compiled clean | **CLOSED 2026-09-16**, both halves, each needing the opposite shape | `docs/panel/157-the-artifact-of-a-build-that-never-happened.md` · `selfhost/cli/compile.hero` · `selfhost/cli/produce.hero` · `tests/harness/suite_emission.hero`
 
     **Origin:** panel 156's ffi-pragmatist, at its own boundary and unasked —

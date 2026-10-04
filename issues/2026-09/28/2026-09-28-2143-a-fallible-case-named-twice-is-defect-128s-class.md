@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-28
+commit: f0b84729cb64487978e24ba353e3ed97fdebeff5
+github: none
+---
+
 # A fallible case named twice is defect 128's class, not a defect found after the waiver
 
 2026-09-28 | lane 123's finding that two `.ok` arms on a fallible draw no

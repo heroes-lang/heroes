@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-09-27
+commit: aee8b01ed0a4f427fcaf31b0aadf55ba4962fa4d
+github: none
+---
+
 # Defect 116 closed: outside brackets a line ends its statement, and one that cannot is refused at the break
 
 2026-09-28, M-agreed-retention step 28, in lane 181 (`5772c830`, the trunk

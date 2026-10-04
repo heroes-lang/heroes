@@ -1,3 +1,12 @@
+---
+kind: feature
+area: examples
+milestone: M-core-packages
+filed: 2026-09-03
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** step 1 | `strings` is the first package because the corpus already wrote it | `examples/` · `tests/harness/strings.hero` · `docs/panel/057`, `097`
 
     **Origin:** measured 2026-09-03.

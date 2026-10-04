@@ -1,3 +1,12 @@
+---
+kind: feature
+area: compiler
+milestone: M-core-packages
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **M-core-packages** | a C symbol spelled with a Heroes keyword cannot be bound at all | `selfhost/keywords.hero` · `docs/panel/094` R2, R3 · `design.md` §4.19
 
     **Origin:** panel 013's ffi-pragmatist, pre-existing and option-independent;

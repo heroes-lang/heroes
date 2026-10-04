@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
+github: none
+---
+
 2026-09-11 · **The author answered panel 129's second question with neither of the
 answers the sitting recommended.** The `fold` role inversion — a generic
 callback's two parameters read the other way round, printing `cba` for `abc` at

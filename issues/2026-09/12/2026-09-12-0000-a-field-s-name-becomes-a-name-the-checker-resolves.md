@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-12
+commit: 0989e9ba4c421e240c9caa6d4139df5ce3395845
+github: none
+---
+
 2026-09-12 · **A field's name becomes a name the checker resolves, and the
 measurement that justifies it was run rather than predicted** (panel 132's
 adopted shape E, ratified 2026-09-11; M-reflection-verdict step 3). `Point::x`

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-02
+commit: 435201935c2adf4afdd5610b10335b213e8c1239
+github: none
+---
+
 # Defect 154 closed: a based literal with a fraction is told as the number it is
 
 - [x] **154 — a hexadecimal number with a fraction is told as a field access** | `x = 0x1.5`: `error[expected_field_name]: expected a field or function name after `.`, found a number (`5`)`, a member-access message for a literal | `selfhost/number.hero` · `selfhost/grammar_expr.hero` (the `.` after a literal) · **closed 2026-10-02**

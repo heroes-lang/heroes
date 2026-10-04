@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: none
+filed: 2026-10-03
+commit: 334cb3a1b00bc06ebac751f4d193dcfa7ddf9eb0
+github: none
+---
+
 # Panel 188's Windows names: R2 and R6 extended in batch 8, the `link` refusal kept
 
 2026-10-03, on the author's answer *"1a 2a 3a 4a"* to the four recommendations put to them

@@ -1,3 +1,12 @@
+---
+kind: task
+area: harness
+milestone: M-generated-programs
+filed: 2026-09-06
+commit: none
+github: none
+---
+
 - [ ] **M-generated-programs** | the generator computes the answer while it builds the program | `tests/harness/suite_corpus.hero` § configurations · `examples/montecarlo/main.hero`
 
     **Origin:** scheduled with the chain row, 2026-09-06, the author taking all

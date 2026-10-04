@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: 62a7ed6a16b80c377f8cafd47ecc3f0b1e6a8653
+github: none
+---
+
 # Four sittings ratified, and the default is not flipped
 
 2026-09-20. M-declared-extents step 20, on the author's answer.

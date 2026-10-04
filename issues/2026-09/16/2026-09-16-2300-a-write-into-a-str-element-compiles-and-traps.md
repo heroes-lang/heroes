@@ -1,3 +1,12 @@
+---
+kind: defect
+area: none
+milestone: none
+filed: 2026-09-16
+commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
+github: none
+---
+
 - [x] **052 — a write into a `str` element compiles and traps** | `s[0] @ 65` passed `check` at exit 0 and the program aborted 134 saying *this is a compiler bug*, against a document that already calls `str` immutable | closed 2026-09-16, M-check-completeness, the same day it was opened
 
     **Origin:** 2026-09-16, **panel 159's compiler-engineer**, which found it on

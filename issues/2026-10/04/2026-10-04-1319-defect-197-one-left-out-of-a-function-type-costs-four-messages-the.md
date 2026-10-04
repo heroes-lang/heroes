@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-02
+commit: 7dbbd8112e1d9fd586db5ea830b3460820747ea3
+github: none
+---
+
 - [x] **197 — one `)` left out of a function type costs four messages: the lexer names two openers, and the type reader asks for the `)` and the `->` it was owed** | `function f(g: (function(i64 -> i64)` over its body: `unclosed_bracket` at each `(`, *never closed* at the file's end and *still open at line N* where a declaration below ends the reach, then `expected_function_type_params_close` at the `->` and `expected_function_type_arrow` at the line's end | `selfhost/closers.hero` (`never_closed` at `:151`, `still_open` at `:169`) · `selfhost/parse/type.hero:307` and `:229` · pinned by `tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero` · **class: adjacent**
 
     **Origin:** panel 187's compiler engineer, its § 1's cause A4 (`docs/panel/187-reports/compiler-engineer.md`, 2026-10-02), on the audit's row 131-41a; filed by lane rec187 under the sitting's R1 with its pin, which reads byte for byte the same on the head's compiler and on `29425af6` (2026-10-03). The row's own file ends below the head, so it reads *never closed* (`scratchpad/audit-130-133/cases/131-41a/`, 2026-09-30, re-run by the lane on `29425af6`); the pin has a declaration below, so *still open*.

@@ -1,1 +1,10 @@
+---
+kind: decision
+area: records
+milestone: M-optional-map
+filed: 2026-08-10
+commit: d6efbfa26892c77529607439b472c1e7a7aeb1e7
+github: none
+---
+
 - [x] Covered | **CLOSED — verified 2026-08-12 while splitting the queue.** M-optional-map close | **The decision the author owes M-generics-library's audit**: `{K: V}` stays (fund `set` + `for k in m` at +29) or goes (−57). M-optional-map built the read-only half on instruction, with the risk recorded — the audit should read a decision made with the cost known rather than a sunk cost arguing for itself | docs/panel/022 R4 · docs/ROADMAP.md M-optional-map · DESIGN-LOG 2026-08-10 | 57 tokens for a container that cannot hold a symbol table is the option panel 022 called indefensible

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
+github: none
+---
+
 # The author accepts the seven recommendations: panel 187 ratified, the site's brace paragraph approved, the push authorized
 
 2026-10-03, written at 09:57 by the clock (`date`). The coordinator put seven

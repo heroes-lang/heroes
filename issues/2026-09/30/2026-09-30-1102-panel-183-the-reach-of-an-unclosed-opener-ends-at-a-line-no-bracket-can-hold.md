@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-30
+commit: 47d8c9d1b99d3164360d098f444d78b39fd17314
+github: none
+---
+
 # Panel 183: the reach of an unclosed opener ends at a line no bracket can hold
 
 2026-09-30, the recovery cluster of defects 130 to 133, the sitting owed after

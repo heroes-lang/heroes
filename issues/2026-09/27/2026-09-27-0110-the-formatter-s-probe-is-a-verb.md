@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-27
+commit: f37b01b34d29babf82908f69baf8527592a51b20
+github: none
+---
+
 # The formatter's probe is a verb, and its oracle is ruled before it lands
 
 2026-09-27 | the generators that found the formatter's silent comment moves and

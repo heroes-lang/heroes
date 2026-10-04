@@ -1,3 +1,12 @@
+---
+kind: defect
+area: parse
+milestone: none
+filed: 2026-09-28
+commit: 687c54f34fea0c8393828dd444279ec43b61fc59
+github: none
+---
+
 # Defect 123 closed: a spaced minus opening a match arm is refused, as the spec says
 
 2026-09-28, M-agreed-retention step 30, in lane 123 (`d5e088d9`, `492a7ee4`,

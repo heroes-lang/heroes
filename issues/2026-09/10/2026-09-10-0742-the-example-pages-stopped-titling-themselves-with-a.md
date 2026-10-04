@@ -1,3 +1,12 @@
+---
+kind: task
+area: none
+milestone: none
+filed: 2026-09-10
+commit: 44177d3c4394c8f33a5f2ebfc8bae810693e35fa
+github: none
+---
+
 - [x] **The example pages stopped titling themselves with a repository path.**
     `examples/json/ · Heroes examples` becomes `json · Heroes examples`, on 136
     pages, so the word that tells two pages apart starts at character one

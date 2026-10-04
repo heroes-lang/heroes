@@ -1,3 +1,12 @@
+---
+kind: decision
+area: records
+milestone: M-check-completeness
+filed: 2026-09-04
+commit: 524cb9efb9910197824bf68f664e1c2ecc611daf
+github: none
+---
+
 - [x] **M-check-completeness** | a doubly-fallible value the checker tracks and the syntax cannot write | **CLOSED 2026-09-16** — into a sitting, two defects and a route nobody had named | `docs/panel/158-the-sitting-produced-a-resolution-and-left-it-off-its-own-ballot.md`
 
     **Origin:** `docs/panel/110`, 2026-09-04, which refused a `T??` spec sentence

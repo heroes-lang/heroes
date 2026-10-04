@@ -1,3 +1,12 @@
+---
+kind: decision
+area: spec
+milestone: none
+filed: 2026-09-09
+commit: b18d657b6d4d3e970a2d2c65fac83d719a141e93
+github: none
+---
+
 - [x] **panel 125** | ratify the lease's soundness: the cell is the authority and it is nulled on release, a lease's name stands only as an argument of a call and takes no other write, `end_lease` takes only a lease cell, the runtime reads no memory it was not handed in any accepted program, the registry is refused on Part 7.13, and the spelling is `lease`/`end_lease` | `docs/panel/125-the-guard-that-read-freed-memory.md` § Author's verdict | **RATIFIED AS ADOPTED 2026-09-09** (`/decide`, `1a`): the conservative registry was on the table and declined. The fourth point, raised by the site panel the same evening, went with it (`2a`): `spec/heroes-spec.md:246` said a forgotten lease *is named at exit* where the runtime prints a COUNT when `main` returns and nothing on `exit()`; the spec says *counted when `main` returns* now, at **+4** real tokens (5369 to 5373 on `claude-opus-5`, digest `5a9b288604a587fa`), because naming the lease would take the registry the same verdict refuses
 
     **Origin:** the soundness lane of 2026-09-09, two seats, convened by the

@@ -1,1 +1,10 @@
+---
+kind: task
+area: runtime
+milestone: none
+filed: 2026-08-12
+commit: 5a6810124bce48717da7d2a8c8587b9009351491
+github: none
+---
+
 - [x] Covered | **DONE 2026-08-12** — `runtime/parts/alloc.c` is the single point and §4.20 says what was wrong with the old sentence. Was: panel 030 rider | §4.20's single allocation point is stated as an invariant that is "already true" and is **measured false**: `malloc` at `runtime/parts/{str.c:53, array.c:46, map.c:80, sort.c:100}`, no `hero_alloc` wrapper. Part 7.13 depends on it and says a second allocation site discovered later is a redesign. ~15 lines + 8 call sites | runtime/parts/ · design.md §4.20, Part 7.13 | an invariant nobody checks is a wish; this one has a due date at M-package-manager

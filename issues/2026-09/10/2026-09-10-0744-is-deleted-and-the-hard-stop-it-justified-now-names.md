@@ -1,3 +1,12 @@
+---
+kind: task
+area: site
+milestone: none
+filed: 2026-09-10
+commit: d821d7e4f9d00d054d8416d6adb25ee6db42ea66
+github: none
+---
+
 - [x] **`site/public/CNAME` is deleted, and the hard stop it justified now names
     what actually publishes.** The file was a GitHub Pages artifact on a site
     that ships to Cloudflare Pages by Direct Upload, so it read nothing and did

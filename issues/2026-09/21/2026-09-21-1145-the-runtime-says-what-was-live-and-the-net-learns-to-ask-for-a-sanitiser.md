@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-21
+commit: b5ee40c4bb52ca99f49f729c75a603a5eeac9433
+github: none
+---
+
 # The runtime says what was live, and the net learns to ask for a sanitiser
 
 2026-09-21. M-declared-extents step 28, the landing of panels 172 and 173, and

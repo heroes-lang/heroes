@@ -1,3 +1,12 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-04
+commit: 8f5ceb39252e55758109a4892addeb731c318d32
+github: none
+---
+
 - [ ] **292 — `ffi_package` says a package is not installed when it is installed and only a package it requires is missing** | `u3.pc` installed, its `Requires:` naming a package no machine has: `build` is told *the package `u3` is not installed on this machine*, while `pkg-config`'s own words, now shown in the notes, say a package it requires is not found (lane b9-notext's compiler, 2026-10-04, `<scratchpad>/batch9/notext/sweep/241/pcbad/u3.pc`) | `selfhost/cli/libraries.hero` (the headline written for every failed answer) · **class: blocking**
 
     **Origin:** lane b9-notext, 2026-10-04, reproduced on its compiler (`<scratchpad>/batch9/notext/report.md`, *Found beside* 3).

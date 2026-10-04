@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-15
+commit: 04661466bc74f7c38528236fc5beeef24c17a33a
+github: none
+---
+
 # The ratification found a refusal nobody had named, and the last defect needed no sitting
 
 2026-09-15, 02:00. Two decisions and one repair, in one session, after panel

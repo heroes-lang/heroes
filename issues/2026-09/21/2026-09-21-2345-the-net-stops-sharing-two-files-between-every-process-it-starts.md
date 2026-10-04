@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-21
+commit: eb53a58f7b627c94c9ad3b5d4be7a7ce8e744da2
+github: none
+---
+
 # The net stops sharing two files between every process it starts
 
 2026-09-21 | every spawn gets its own redirect files, clang stops inheriting

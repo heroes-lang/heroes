@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: ffaf4cec4ca7f3ff4a182b579e9947010e5aaf4f
+github: none
+---
+
 # Panel 184's R2 landed: `unused_binding` names the plain literal that holds the name in braces
 
 2026-10-03 at 00:25 by the clock (`date`), lane fbrace records the landing of

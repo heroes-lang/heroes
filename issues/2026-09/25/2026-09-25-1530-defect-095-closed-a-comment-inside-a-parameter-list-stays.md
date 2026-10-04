@@ -1,3 +1,12 @@
+---
+kind: defect
+area: print
+milestone: none
+filed: 2026-09-24
+commit: f1e2132f06d03c40b808bf2fe98cc50799ad1f4f
+github: none
+---
+
 # Defect 095 closed: a comment inside a parameter list stays where the author put it
 
 2026-09-25, M-agreed-retention step 13, in lane `42b76e38`, merged `fd5c7a14`.

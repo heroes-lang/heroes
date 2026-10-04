@@ -1,3 +1,12 @@
+---
+kind: defect
+area: design
+milestone: none
+filed: 2026-09-05
+commit: 7eda4b2c5fb6685658698c36e13e2a994b099b80
+github: none
+---
+
 - [x] **013 — a callback declared `ptr` and handed `nullptr` compiles and segfaults** | 2026-09-05, panel 112's spec-warden; the price of the proposed repair measured by the coordinator the same hour | **repaired 2026-09-05 on POSIX; the Windows twin is scheduled** | panel 111's llm-ergonomist registered it as a prediction at the sitting that opened the permission, and it came true six hours later | **§1.12**: *a Heroes program must not segfault*, which design.md calls a goal of the language rather than a quality of its implementation
 
     **THE REPRODUCER**, three lines, exit **139**:

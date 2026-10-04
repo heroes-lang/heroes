@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: none
+filed: 2026-08-03
+commit: none
+github: none
+---
+
 - [ ] **panel 131** | `HeroDesc` has five function pointers. A sixth was added, the compiler was rebuilt with the project's own flags, and it compiled at exit 0 with zero warnings. Why is that the dangerous outcome rather than the good one?
 
     **Where to look:** `runtime/heroes_runtime.h`, `seed/heroes.c`'s

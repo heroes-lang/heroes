@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-11
+commit: b96dafcd15ffe87261a8976704658e0efc40ab9c
+github: none
+---
+
 2026-09-11 · **One subtitle, everywhere the language describes itself: *A small
 compiled language*, and *Un piccolo linguaggio compilato* in the Italian
 edition** (**author decision**, taken 2026-09-10 out of the session that asked

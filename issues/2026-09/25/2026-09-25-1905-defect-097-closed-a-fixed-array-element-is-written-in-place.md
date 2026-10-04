@@ -1,3 +1,12 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-09-25
+commit: ce018b1cdd4f42db599c485b7aa8f104d3ae189b
+github: none
+---
+
 # Defect 097 closed: one element of a fixed array inside a group record is written in place, through the read's own bound check
 
 2026-09-25, M-agreed-retention step 15, in lane `d64da8ff`, merged `dadba73b`.

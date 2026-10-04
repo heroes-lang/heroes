@@ -1,3 +1,12 @@
+---
+kind: learn
+area: records
+milestone: M-arm-platform
+filed: 2026-09-18
+commit: none
+github: none
+---
+
 - [ ] **M-arm-platform mutation drill** | Seven routes were argued for binding C's plain `char`. Six describe the divergence; one removes it. **Before reading: you have `i8` and `u8` and no third 8-bit type. Invent three ways to make one source file compile on a machine where `char` is signed and one where it is not, then rank yours by what a reader of the program can still tell about the header.** | `docs/panel/161-the-third-char-had-no-spelling-and-the-cheapest-answer-was-a-flag.md` § The routes, then § The resolution
 
     The seven, in the order they were named: a ninth integer type whose sign is

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-25
+commit: 517b8e25692a4cf0075c04fd306e5017fd428cd4
+github: none
+---
+
 # The command line's ceiling follows the module count
 
 2026-09-25 | `HERO_RUN_MAX_ARGS` moves 256 -> 4096: the compiler's own link

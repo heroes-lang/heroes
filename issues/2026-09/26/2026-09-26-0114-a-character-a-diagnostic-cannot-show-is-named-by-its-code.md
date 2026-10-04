@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-26
+commit: bdf430f154abcb177e62939151fec71adfc0ff60
+github: none
+---
+
 # A character a diagnostic cannot show is named by its code
 
 2026-09-26 | the lexer's refusal of a character names it so the reader can find

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: f72905b76350d2c25d6715f279539743b406520d
+github: none
+---
+
 # Panel 185's R5 landed: one predicate for where a path ends, and the seal where a value is read
 
 2026-10-03 at 00:51 by the clock, lane flow4, in the same commit as panel

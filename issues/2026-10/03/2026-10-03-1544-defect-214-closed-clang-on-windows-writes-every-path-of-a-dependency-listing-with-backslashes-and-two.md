@@ -1,3 +1,12 @@
+---
+kind: defect
+area: compiler
+milestone: none
+filed: 2026-10-03
+commit: 826ddc2f06a582675137e6cdf427e97eddb4df68
+github: none
+---
+
 # Defect 214 closed: clang on Windows writes every path of a dependency listing with backslashes, and two readers compare it with forward slashes: defect 168's own test fails there, and no `skip` prefix matches
 
 - [x] **214 — clang on Windows writes every path of a dependency listing with backslashes, and two readers compare it with forward slashes: defect 168's own test fails there, and no `skip` prefix matches** | `heroes test selfhost/main.hero` on the Windows box at `02e507bc`: *1083 tests, 1 failed*, `what a probe's headers resolve to is asked of clang, and a header that appears earlier in the search is another answer (defect 168)` at `process.holds(text: beside, needle: root + "/src/x.h")`; the box's clang, given `-I build/selftest-compiling-reads/src`, writes `build\selftest-compiling-reads\src\x.h`; and a translation unit's record there lists its own `build\tu-0b52ebf10bd34d86\library.c`, the file `rows_of`'s `skip: dir + "/"` exists to leave out | `selfhost/cli/compiling.hero` (the test), `selfhost/cli/deps.hero` (`under`, `rows_of`) and its five callers · **class: blocking** · **closed 2026-10-03**

@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-20
+commit: 49be170ace22c4e4114013e0b035987bed91c324
+github: none
+---
+
 # Nobody checks the callee
 
 2026-09-20. Panel 167, at M-declared-extents, on defect 066 — the lend's

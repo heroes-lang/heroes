@@ -1,3 +1,12 @@
+---
+kind: learn
+area: process
+milestone: M-declared-extents
+filed: 2026-09-19
+commit: none
+github: none
+---
+
 - [ ] **M-declared-extents mutation drill** | The full net read **1862 passed, 23 failed** on a tree whose own ROADMAP said 1891 and 0, and the tree was right. **Before reading: two of the failures said `STALE: the recorded count is for 6bdb9b497a141864 and this file is 3c065c560426eb07`, and one said `no function named validated_bytes`. What single cause produces both?** | `.claude/rules/verification.md` § The compiler that judges is a build artifact
 
     **Where to look after answering:** `./heroes` was built at 02:08 and HEAD

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-09-16
+commit: 46561e4b079358519885d54fe959cae73cb05356
+github: none
+---
+
 - [x] **046 — both static walks abandon past a nesting bound, so `check` accepts what its own rule refuses** | a record chain 16 deep ending in an `f64` map key, or in a `partial` group record compared with `==`, was `check` 0 where 15 deep was `check` 1 — and no generic was involved | **CLOSED 2026-09-16** | `selfhost/check/map_keys.hero` · `selfhost/check/partial.hero` · `tests/golden/check/fixedbugs-a-nesting-bound-was-a-silence.hero`
 
     **Origin:** panel 155's ffi-pragmatist, attacking the shapes beside the one

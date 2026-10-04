@@ -1,3 +1,12 @@
+---
+kind: learn
+area: none
+milestone: M-deferral-ledger
+filed: 2026-09-13
+commit: none
+github: none
+---
+
 - [ ] **M-deferral-ledger 9** | Write the same accumulation three ways — `parts @ parts.push("x")` on a plain name, `w.parts @ w.parts.push("x")` through a record field, and `put(@w.parts, "x")` through an `@` parameter — and time all three. Then build each with `--emit-c` and count `hero_array_push_owned`. Say, before reading the answer, which of the three you expected to be the slow one.
 
     **Where to look:** the three programs are in the sitting,

@@ -1,3 +1,12 @@
+---
+kind: defect
+area: runtime
+milestone: none
+filed: 2026-09-03
+commit: b660cc224056521d0e2367067858d5e99f73c4b1
+github: none
+---
+
 - [x] **007 — `heroes check` exits 139 without a word on a legal program** | Date: 2026-09-03, M-corpus-depth step 5. **Found by writing a program**, and then by asking the obvious next question: the interpreter being written has a recursive-descent parser, and so does the compiler. | **Status: fixed 2026-09-03**, the same evening — `runtime/parts/stack.c`, one witness given a second shape; see § The repair at the end. The hypothesis below was right in its conclusion and wrong in its mechanism, and the difference is the interesting part. The program that found it still nests 60 deep instead of 500, with every ceiling measured in its comment (`examples/interpreter/main.hero`): the ceiling is unchanged, and what changed is that crossing it has a name. | moved here 2026-09-03 from `docs/defects/007-the-compiler-dies-in-silence-on-a-valid-program.md` by author instruction — the directory is gone, its text is below, unedited except that its `## ` headings became bold leads | Severity: **★★★★** — design.md §1.12 says a Heroes program must not segfault, and the compiler is a Heroes program. `heroes check` on a **valid** file exits **139** (SIGSEGV) having printed **nothing at all**: no diagnostic, no panic, no `internal error`. The runtime's stack guard (panel 104) exists to turn exactly this into a named panic, and in the neighbouring stage it does.
 
 

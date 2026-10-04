@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-10-03
+commit: f070c4c86556e23b0b0c148341c6fb7c17a57a11
+github: none
+---
+
 # Panel 188 sat: a group head's string is its value, and what its tool cannot carry as one name is refused on its line
 
 2026-10-03, written at 21:40 by the clock (`date`). The sitting

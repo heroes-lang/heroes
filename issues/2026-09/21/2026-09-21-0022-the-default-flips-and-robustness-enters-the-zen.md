@@ -1,3 +1,12 @@
+---
+kind: decision
+area: none
+milestone: none
+filed: 2026-09-21
+commit: abf9a17e8f9aded03150ff2850c9b3dcd68c8672
+github: none
+---
+
 # The default flips, and robustness enters the Zen
 
 2026-09-21. M-declared-extents step 24, commit B of panel 171's landing, and

@@ -1,3 +1,12 @@
+---
+kind: feature
+area: examples
+milestone: M-qbe-backend
+filed: 2026-09-03
+commit: none
+github: none
+---
+
 - [ ] **M-qbe-backend** | every local is hoisted, so a recursive frame is sized by the whole body | `CLAUDE.md` §7 · `examples/interpreter/syn/expr.hero` · `selfhost/emit/`
 
     **Origin:** measured 2026-09-03 at M-corpus-depth step 5, while measuring
