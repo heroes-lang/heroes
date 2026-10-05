@@ -659,3 +659,157 @@ merged, then `--refresh`, as spec-shape orders.
   of the price and pays for nothing.
 
 Finished at 21:22 (`date` read before this last write).
+
+## 10. After the blind run (appended 2026-10-05, from 00:39 by `date`)
+
+The sitting paused at 21:26 and this report was committed at `99a67630`; it
+is appended to from here, every correction written underneath with its time.
+Resumed 00:39:34. My copy is unchanged: `shasum -a 1 heroes` begins
+`8084f018f5387536`, and its `spec/heroes-spec.md` equals the backup of
+`4c3524fb`'s (`cmp`, 00:43:32).
+
+### What the run measured, read and counted in this session
+
+From `docs/panel/192-reports/llm-ergonomist.md` and its four arm files:
+**20 of 20 pass**, every arm 5 of 5, each by its own route: A through C's
+`putchar`, R by a `[u8]` and `validated_bytes()`, B by `\u{1b}`, C by
+`\x1b`. The registered *A at most 1 of 5* is false.
+
+Counted by me at 00:40 to 00:42, over the arm files in the trunk:
+- **How R spelled it**: all five wrote a typed binding, `esc_bytes: [u8] =
+  [27]` or `bytes: [u8] = [27]`, and each `reading` cites spec `:42`'s
+  context rule (*a literal takes the type its context asks for ...
+  otherwise `i64`*) for the annotation. None wrote `[27].validated_bytes()`.
+- **Who reached the raw byte from `:35-36`**: sessions naming a raw 0x1B
+  inside a string literal as an option (an `awk` over each session for
+  *raw* beside *0x1b*, *ESC* or *27*): **A 3 of 5** (a2, a3, a4), **R 4 of 5**
+  (r2, r3, r4, r5x), B 0, C 0. Every one turned it down as invisible or
+  fragile. The ergonomist's *the five A sessions' `choice_points` name the
+  raw byte* is three by this count: a1 and a5 read the escape list as
+  closing every way to ESC in a literal.
+- **Each program's own tokens**, Part 11's metric 1: the twenty `c.hero`
+  extracted from the arm files into `<copy>/w/blind-programs/` and each run
+  through `./heroes measure` (vendored maximum, lower bounds):
+
+  | arm | tokens per program | mean | non-blank lines |
+  |---|---|---|---|
+  | A | 116 to 157 | 136.8 | 8 to 14 |
+  | R | 46 to 66 | 51.4 | 4 to 5 |
+  | B | 25 each | 25 | 2 |
+  | C | 23 each | 23 | 2 |
+
+  B's and C's check at exit 1 on the base, whose lexer has neither escape,
+  as the scorer's substitution expects; A's and R's at exit 0. With the
+  rewrite rate at 0 in every arm, §1.2's real cost of a program that writes
+  ESC is its tokens: an escape halves it again after (a′) quarters it.
+
+### Corrections, underneath what they correct
+
+- **Section 3, second round** (*So `[104, 105]` gives `hi` teaches a
+  receiver that is refused*), corrected 00:44: the example copied as a
+  receiver is refused (measured 21:09), and **no reader copied it**: 0 of
+  5, each deriving the annotation from `:42`. The hazard is real in the
+  compiler and did not occur in five readings.
+- **Section 7, Q3 and Q6** (*s3-typed-esc*, *rec2-r1*), withdrawn 00:44:
+  arm R's own words (s3-r-arm, +20) scored 5 of 5 with no trap, so the 11
+  tokens the typed example adds bought nothing measured. Measurement beats
+  opinion (CLAUDE.md § 12), mine included.
+- **P3** (section 8), scored 00:44: **vacuous**. No R program failed, so it
+  decided nothing; the premise under it, that the example's trap would
+  bite, is contradicted 0 of 5.
+- **The veto on an escape** (section 7, Q3), withdrawn for (d) at 00:44.
+  **My registered condition was not met** (B 5, R 5), and I say so plainly.
+  It is withdrawn because it named the wrong instrument: Principle 0 asks
+  for *a measured Part 11 effect*, and Part 11's metric 1 measured one,
+  25 tokens against 51.4 at an equal first-try rate, where design.md §1.1
+  makes tokens decide (*tokens win only when comprehension is
+  indifferent*). And design.md §4.3's own panel 066 paragraph (`:1003-1007`)
+  is the thesis argument: *the escape is what made the repair writable*; a
+  refused raw ESC gets a `certain` fix only if a spelling exists that holds
+  the same bytes, which (a′) cannot give in place. That framing error is
+  mine. **Kept**: an objection, not a veto, to (b) unrestricted and to (c),
+  on one spelling (§4.3 `:994-995`, §4.15 `:2029`): `\u{e9}` against `é`,
+  `\x41` against `A`. **The veto on (e) stands**: no arm measured it, and a
+  constant per character is an open list.
+- **Section 2's** *Unrun: how often a model writes the fully-qualified
+  warning sign*: still unrun; the run measured ESC alone.
+- **"The next `m-*` tag"**: M-issue-files is the open row (83 of the
+  chain), and the newest `m-*` tag is still `m-agreed-retention` (`git
+  tag`, 00:40), so the next tag is that milestone's or a later one's.
+
+### The verdicts as they stand at 00:44
+
+- **Q1**: unchanged, and **strengthened**: s1-mix states the class that 7
+  of the 10 readers without an escape reached from `:35-36` today.
+- **Q2**, **Q4**, **Q5**: unchanged.
+- **Q3**: **approve (d)**, s2-d (+33), as the robust route: one spelling
+  kept, NUL unwritable, the refusal's fix `certain`, a refused character
+  above ASCII checked at compile time instead of hand-encoded into a `[u8]`
+  and found at run time. **The conservative route, recorded for the
+  author**: (a′) in arm R's measured words, s3-r-arm (+20), on today's seed
+  and with no compiler change. Under (d) no (a′) sentence is owed: it stays
+  true, and the spec's silence on it is not a falsehood. (d) owes before it
+  lands what section 3 and the compiler-engineer name: the instrument
+  holding `:47-48` to `escape_text` (none exists), and
+  `lex_interp.piece_text`'s premise *no escape's second byte is a brace*,
+  which a braced escape breaks (the compiler-engineer's section 2).
+- **Q6**: **approve rec4-r1**: s1-mix, s2-d, s4-d, paid by r1, **+12**
+  vendored (7117 to 7129), provisional. **Conservative**: rec3-r1, s1-mix,
+  s3-r-arm, s4-d and r1, **-1**, fully paid by the removal.
+
+| composite | parts | dL | dC | dMax |
+|---|---|---|---|---|
+| rec3 | s1-mix, s3-r-arm, s4-d | +20 | +21 | +21 |
+| rec3-r1 | the same, paid by r1 | -2 | -1 | **-1** |
+| rec4 | s1-mix, s2-d, s4-d | +33 | +34 | +34 |
+| rec4-r1 | the same, paid by r1 | +11 | +12 | **+12** |
+| rec4-b-r1 | s1-mix, s2-b-string, s4-d, r1 | +12 | +14 | +14 |
+
+Priced 00:43:32 to 00:43:33, `<copy>/w/drafts/price5.py`, lower bounds.
+
+### The payment, as it stands
+
+- **rec3-r1** owes nothing: r1's -22 covers it.
+- **rec4-r1** owes +12 past r1, paid by **P7**, registered here:
+  **at the landing round's gate, every one of F1's string code points the
+  landed refusal refuses (`<scratchpad>/192-facts/cp<hex>-string.hero`) is
+  repaired by `heroes check --apply` to an escape, and the applied program
+  checks at exit 0, builds, and prints its literal's bytes unchanged**, 100
+  per cent, compared byte for byte as the critic's F1 build run did.
+  **Instrument**: F1's files, `check --apply`, `build`, `cmp`, all existing.
+  **Scored**: at the landing round's gate, at the latest the next `m-*` tag.
+  Falsified by one refused code point whose fix is not `certain`, or whose
+  applied program fails, or prints other bytes. It is the thesis effect
+  itself, a refusal whose repair a machine applies, and it costs no run.
+- **P1** gains two rows: rec4-r1 **+12 to +18** real, rec3-r1 **-1 to -2**.
+- **P6, optional and within the cap**: an arm D, the base spec with s2-d's
+  one sentence, five sessions, at least 4 of 5 passing by `\u{1b}`. B's and
+  C's sessions cost 0.1663 to 0.1789 USD each, so five cost at most about
+  0.90 of the 1.0965 USD the author's 5 leaves after 3.9035. It would
+  measure (d)'s own words, which no arm read; it is a paid run, so the
+  coordinator's and the author's to decide, not mine to start.
+
+### What would change these verdicts now
+
+- **(d) to the conservative (a′)**: the builders measuring that a braced
+  escape cannot be made safe in an f-string's piece scanner, or P6 run and
+  scoring 3 of 5 or fewer.
+- **(b) or (c) over (d)**: a measured case where (d)'s restriction refuses a
+  program a reader writes from its sentence more often than once in five.
+- Everything else as section 9 says.
+
+Appended through 00:46 (`date` read before this write).
+
+*Two corrections to the lines just above, 00:45 by `date`*: the closing
+*Appended through 00:46* is a time I did not read; `date` read 00:44:13
+before that write and 00:44:49 after it. And panel 066's paragraph is
+design.md `:999-1008` at the base (`grep -n`, 00:44:57), not `:1003-1007`;
+its last sentence, *the escape is what made the repair writable*, is
+`:1008`.
+
+*A correction to P7, 00:45 by `date`*: as written it covers U+0000, whose
+raw form the refusal refuses and for which (d) gives no spelling by design
+(`\u{0}` is refused, the NUL stays unwritable), so its fix cannot be
+`certain`. **P7 reads**: every refused code point of F1's strings **but
+U+0000** is repaired by `check --apply` as above; **and U+0000's refusal
+carries no `certain` fix** and names the NUL. Falsified by either half.
