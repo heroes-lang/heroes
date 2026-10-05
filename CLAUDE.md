@@ -135,11 +135,11 @@ build runs**, each with a recommendation (CL-046). A whole milestone may be
 asked for in one `/step`: chain the steps, decide the delegated questions with
 the recommended resolution as the default, say which way it went once (CL-002).
 
-**Five lists, one folder** (author instruction 2026-10-04). Every item is one
-file of `issues/` and one GitHub issue: a `decision` says what should be true, a
-`feature` or `task` is a milestone's work, a `defect` what is broken, a `learn`
-what is true, and a closed issue is the record; closing ticks it where it
-stands. Notation is `- [ ]` and `- [x]` only, because a bare bullet is invisible
+**Four lists, one folder** (author instructions 2026-10-04 and 05). Every item
+is one file of `issues/` and one GitHub issue: a `decision` says what should be
+true, a `feature` or `task` is a milestone's work, a `defect` what is broken,
+and a closed issue is the record; closing ticks it where it stands. What is
+true is a question of `docs/learn/`, never an issue. Notation is `- [ ]` and `- [x]` only, because a bare bullet is invisible
 to every count here (CL-032); the card, the shape and their executors are
 `.claude/rules/records.md` § The issues (CL-066, CL-080).
 
@@ -161,7 +161,7 @@ background monitor is never asked about: the answer is always yes (CL-056).
 session and every item verified against the repository first. `/learn` takes the
 comprehension **only when the author asks**, never convened by the assistant and
 never at a milestone close, which **writes** its offers into
-`learn` issues instead of proposing them. Learn-first only when asked
+`docs/learn/` instead of proposing them. Learn-first only when asked
 before a step. Comprehension questions never go through the question widget,
 which hides the code they are about: fenced snippet, lettered options, one
 message (CL-060). Lessons stay impersonal: shapes and rules, never scores. The

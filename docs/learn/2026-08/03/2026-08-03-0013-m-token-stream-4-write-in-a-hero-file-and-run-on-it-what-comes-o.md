@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-token-stream
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-token-stream.4** | Write `let x = 5` in a .hero file and run `heroes lex` on it: what comes out, and what travels attached to the diagnostic?
 
     **Where to look:** spec/reserved-words.md · lexer tests (certain_fix_travels_with_the_diagnostic)

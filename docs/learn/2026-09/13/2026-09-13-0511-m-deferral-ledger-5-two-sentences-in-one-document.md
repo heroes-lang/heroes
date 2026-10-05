@@ -1,12 +1,3 @@
----
-kind: learn
-area: design
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 5** | design.md § 4.10 says the FFI's `ptr` and `cstr` sit OUTSIDE the value-semantics guarantee, named as an exception rather than left to be discovered. design.md Part 9 says everything that breaks the guarantees goes in a `raw` module, pointers first. Find both sentences, say which one the language actually implements, and then say what the other one was still doing in the document eleven months later.
 
     **Where to look:** design.md § 4.10's *"Two exceptions, named rather than

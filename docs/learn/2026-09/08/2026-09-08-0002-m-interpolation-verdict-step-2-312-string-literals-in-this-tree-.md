@@ -1,12 +1,3 @@
----
-kind: learn
-area: examples
-milestone: M-interpolation-verdict
-filed: 2026-09-08
-commit: none
-github: none
----
-
 - [ ] **M-interpolation-verdict step 2** | 312 string literals in this tree hold a brace and 24 of them look exactly like a hole. Work out, from the spec, whether those 24 would break loudly or quietly | `examples/template/main.hero:145-235` · `spec/heroes-spec.md` § Bindings, § Files and layout | the difference between a loud and a quiet migration is the whole of §1.12, and here it is decided by three rules a reader can check
 
     **Origin:** M-interpolation-verdict step 2, 2026-09-08.

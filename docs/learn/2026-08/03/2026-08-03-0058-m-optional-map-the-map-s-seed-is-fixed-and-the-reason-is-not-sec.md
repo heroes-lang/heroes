@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-optional-map
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-optional-map** | The map's seed is **fixed**, and the reason is not security or speed. Task: say what would break, and at which milestone, if the seed were taken from the clock — and why the answer is about `diff` rather than about the map
 
     **Where to look:** runtime/runtime.c (HERO_MAP_SEED) · docs/panel/006 · ROADMAP M-selfhost-fixpoint

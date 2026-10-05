@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 4** | Defect 029 is one line changed in the sqlite example: a database handle passed where a statement handle is expected. On this Mac it segfaults, exit 139. On Linux the same program builds clean and finishes at exit 0, printing `rows: -1`. Say why one machine crashes and the other answers, and which of the two outcomes is the dangerous one for the language's own promise.
 
     **Where to look:** defect 029 and the second platform

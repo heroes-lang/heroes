@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 7** | A brief told five judges that the compiler contains 1457 variant constructions. Three of them tried to reproduce it and got 678, 1350 and 626. Find the regex that produced 1457, say what it actually counts, and then get the real number the way the critic did — from the compiler rather than from the text.
 
     **Where to look:** the correction in

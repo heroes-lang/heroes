@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-bootstrap-archive (`mutate`, the language's own help) | The thirteen operators each match on every `ExprKind` case by name, because `_` is forbidden on a variant. Say what that costs in lines, and what it buys the day a fourteenth expression form is added
 
     **Where to look:** selfhost/mutate/edits.hero · spec:120

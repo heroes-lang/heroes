@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-reflection-verdict
-filed: 2026-09-12
-commit: none
-github: none
----
-
 - [ ] **M-reflection-verdict exit quiz** | This milestone closed one silent failure and deliberately left its twin open. Name both, and say why only one of them can be closed by a mark you type.
 
     **Where to look:** `docs/records/journal/051-reflection-verdict.md`

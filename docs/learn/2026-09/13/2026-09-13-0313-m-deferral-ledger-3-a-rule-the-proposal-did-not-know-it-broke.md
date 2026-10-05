@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 3** | A proposal made `for x in v` call a module's `function next(@it: T) -> E?`. It reads harmlessly. Say which written rule of this language it contradicts, find the diagnostic the compiler already raises for the neighbouring shape, and say what the rule is protecting — then say why that objection outranked a different seat's veto on the same proposal.
 
     **Where to look:** design.md §4.8's sentence about UFCS and `@`;

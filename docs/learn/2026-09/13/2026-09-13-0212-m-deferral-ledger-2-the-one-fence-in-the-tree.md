@@ -1,12 +1,3 @@
----
-kind: learn
-area: parse
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 2** | The whole repository contains exactly one markdown fence inside a comment, at `selfhost/parse/group.hero:33-36`. Open it and say why it could never be a doctest, using two different rules: one from the specification's grammar, and one from the module it sits in. Then say what that single instance tells you about what fences in THIS project are for, and check the claim against the fences in the specification itself.
 
     **Where to look:** `selfhost/parse/group.hero:33-36` and the declaration it

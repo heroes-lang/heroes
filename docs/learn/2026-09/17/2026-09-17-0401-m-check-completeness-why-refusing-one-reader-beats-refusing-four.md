@@ -1,12 +1,3 @@
----
-kind: learn
-area: spec
-milestone: M-check-completeness
-filed: 2026-09-17
-commit: none
-github: none
----
-
 - [ ] **M-check-completeness walkthrough** | A value can be fallible twice, and four operations read one level of it. Panel 160 refused exactly ONE of them. **Before reading the resolution: here are the four, with what each hands back — say which one is the problem, and why the other three are not.** | `spec/heroes-spec.md` § 6's table · `docs/panel/160-the-reader-that-forgets-the-level.md`
 
     On a `m: {str: i64?}`, the expression `m["a"]` is an `i64??` — fallible

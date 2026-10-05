@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **panel 020** | The exit-code question is the panel's most interesting disagreement: the historian defended **2** from GCC's `sorry()` and the ergonomist measured **1** by watching its own first action under both. Read GCC's `toplev.c` line the historian quoted (`if (sorrycount) exit (FATAL_EXIT_CODE)`) and say which judge the source actually supports
 
     **Where to look:** docs/panel/020 § Where the judges disagreed

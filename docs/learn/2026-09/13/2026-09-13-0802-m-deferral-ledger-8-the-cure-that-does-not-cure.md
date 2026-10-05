@@ -1,12 +1,3 @@
----
-kind: learn
-area: design
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 8** | design.md says the remedy for the Windows-path wart is raw string literals. Take that claim apart: write the buggy line, then say precisely which reader a raw literal would have helped and which one it would not. Then find the three cheaper routes the sitting listed, and say why none of them was adopted.
 
     **Where to look:** the remedy paragraph landed under design.md Part 8 wart 15;

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-syntax-tree
-filed: 2026-08-19
-commit: none
-github: none
----
-
 - [ ] **M-syntax-tree.2** | `if` is an expression (§4.7). In the dump of `state = if t.done …`, what appears on the `bind` line, and where do the branches go?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/printer/bodies.rs (write_valued), tests/bodies.rs (2026-08-19)

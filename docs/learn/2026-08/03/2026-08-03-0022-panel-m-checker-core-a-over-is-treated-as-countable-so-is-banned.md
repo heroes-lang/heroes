@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **panel? M-checker-core** | A `match` over `bool` is treated as countable, so `_` is banned over it — but `true`/`false` are literals, not `.cases`, so an exhaustive `bool` match cannot be written at all today. Found while writing `patterns.rs`
 
     **Where to look:** archive/bootstrap-rs/heroes/src/types/patterns.rs (`wildcard`, `exhaustive`)

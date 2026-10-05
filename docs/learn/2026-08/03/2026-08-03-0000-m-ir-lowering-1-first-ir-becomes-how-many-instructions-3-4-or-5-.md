@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-ir-lowering
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-ir-lowering.1** | First IR. `x = 2 + 3 * 4` becomes how many instructions — 3, 4, or 5? And which of them proves the precedence table, given the tree is gone by then?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/ir/tests/scalars.rs (an_expression_becomes_a_line_per_operation)

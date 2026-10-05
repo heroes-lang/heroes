@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port (the differential) | The port and the bootstrap disagreed on six inputs about ONE thing: how wide the caret is under `sort(ps)   # a note`. One of them underlined the comment too. Which one was right, and what in the bootstrap's own source says so before any measurement?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/syntax/cursor.rs::previous_significant_span's doc, and expr.rs's two call sites

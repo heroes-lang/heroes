@@ -1,12 +1,3 @@
----
-kind: learn
-area: records
-milestone: M-cleanup-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-cleanup-verdict golden ratification** | Read `docs/measurements/030` down to *What this measurement does NOT say*, and **stop there**. Write down which of its numbers you would check first if you had one hour and had to hand it to five judges as fact. Then read the correction underneath and see whether you picked any of the four.
 
     **Where to look:** `docs/measurements/030-three-release-obligations-and-only-one-of-them-is-silent.md`, both halves; then

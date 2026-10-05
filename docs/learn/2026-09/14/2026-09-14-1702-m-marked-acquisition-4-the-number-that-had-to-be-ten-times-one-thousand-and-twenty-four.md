@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-marked-acquisition
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-marked-acquisition 4** | The spec ceiling moved to "10k" on 2026-09-14 by your own decision. It landed as **10240** and not **10000**. **Before looking: say which files would have to agree for either number to work, and which one would break.** Then find the line that settles it.
 
     **Where to look:** `site/src/lib/claims.ts`, the function `ceilingK`;

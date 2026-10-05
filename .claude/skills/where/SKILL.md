@@ -88,9 +88,9 @@ wrong today, on the author's own line, not the module it lives in. It goes first
 when there is one, because a broken compiler outranks a pending decision, and
 saying so with force is CLAUDE.md § 11's *alive rather than flat*.
 
-**Two kinds of issue this step must not read.** A closed issue is the record: it
-is all done, so summarising it reports finished work as owed. A `learn` issue
-is comprehension and is **never** offered here — it exists when the author asks
+**Two things this step must not read.** A closed issue is the record: it is all
+done, so summarising it reports finished work as owed. A question of
+`docs/learn/` is comprehension and is **never** offered here — it exists when the author asks
 for it (`/learn`'s own rule), and listing it turns an offer into a debt.
 
 ### 5. Today's pill — one micro-lesson

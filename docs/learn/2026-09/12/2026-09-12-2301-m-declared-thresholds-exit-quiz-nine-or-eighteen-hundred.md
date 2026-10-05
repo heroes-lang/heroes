@@ -1,12 +1,3 @@
----
-kind: learn
-area: process
-milestone: M-declared-thresholds
-filed: 2026-09-12
-commit: none
-github: none
----
-
 - [ ] **M-declared-thresholds exit quiz** | `heroes measure CLAUDE.md` printed "Headroom: 9" about a document that was 1806 tokens over its ceiling. Both numbers were computed correctly. Say what each one was measuring, and name the earlier occasion on which this project made the identical mistake.
 
     **Where to look:** `selfhost/cli/measure.hero`'s `CONTRACT_CEILING` comment,

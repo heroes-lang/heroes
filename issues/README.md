@@ -2,7 +2,8 @@
 
 One file is one GitHub issue: a **defect**, a **decision** (a question with the
 default it leaves running, a sitting's ratification, or a decision taken), a
-**feature** or a **task** of a milestone, and a **learn** question. The rules
+**feature** or a **task** of a milestone. A question of comprehension is not an
+issue: it is a file of `docs/learn/` (the author's *1a 2a*, 2026-10-05). The rules
 are `.claude/rules/records.md` § The issues, their one home; `records/cards`
 and the checks beside it are their executors.
 
@@ -24,5 +25,5 @@ box and is closed the day it is filed. A closed issue is a record below its card
 defect's slug opens `defect-NNN-`, the number one above the highest any issue
 states, read and never remembered.
 
-Every file that lived in `docs/records/done/`, `docs/records/log/` or
-`docs/learn/` until 2026-10-04 keeps its name here, in its name's day's folder.
+Every file that lived in `docs/records/done/` or `docs/records/log/` until
+2026-10-04 keeps its name here, in its name's day's folder.

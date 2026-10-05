@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-name-resolution
-filed: 2026-08-19
-commit: none
-github: none
----
-
 - [ ] **M-name-resolution** | `total: int @ 0` then `total @ 1` and nothing else: one diagnostic. Now add `print(total)` at the end: zero. Which counter changed, and why is the *initialiser* not counted as a write?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/resolve/scope.rs (`report_unused`), tests/unused.rs (2026-08-19)

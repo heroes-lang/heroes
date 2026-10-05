@@ -1,12 +1,3 @@
----
-kind: learn
-area: design
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 2** | design.md Part 6 refuses code inside a markdown document and says the documentation generator *"goes one way only"*. A doctest puts code inside a comment inside code. Say which direction that is, why the answer is not obvious, and what Go and D do differently that gets the same benefit — documentation that cannot lie — while pointing the arrow the way this project already chose.
 
     **Where to look:** design.md Part 6's literate-source row; §4.18's doctest

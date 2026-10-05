@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, whole functions print | **An unreachable join is OMITTED, label and all — why is unlabelled not enough?**
 
     **Where to look:** emit_body.hero's doc, the bb1 test

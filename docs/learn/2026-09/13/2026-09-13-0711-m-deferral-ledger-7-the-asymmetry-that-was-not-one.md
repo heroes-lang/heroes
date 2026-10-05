@@ -1,12 +1,3 @@
----
-kind: learn
-area: design
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 7** | design.md called it an asymmetry: you build a variant case one way and match it another. Write a `match` arm that destructures a record — `Point(x: a, y: b) =>` — and read what the compiler says. Then say why that one diagnostic makes the word *asymmetry* wrong, and what a symmetric variant pattern would have owed the language the day after it landed.
 
     **Where to look:** the compiled refusal in

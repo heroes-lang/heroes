@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-bootstrap-archive (`measure`, the tokeniser) | Heroes cannot build a `str` out of arbitrary bytes, so the port could not decode the BPE table the way the Rust does. What does it do instead, and why is the answer sound rather than a trick?
 
     **Where to look:** selfhost/measure/bpe.hero's module doc, `spelled`

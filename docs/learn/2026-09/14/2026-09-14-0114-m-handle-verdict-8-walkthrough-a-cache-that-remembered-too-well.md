@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-handle-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-handle-verdict 8** | Four builds, and you have to do them in order. Write a two-module program in a scratch directory whose `extern` names a header you also write, and put a plain `static` function in that header that nothing calls — clang will say `unused function`. Build it, and see the warning. Now change that one word to `static inline` and build again: silent. Build a **third** time. Then a **fourth**. Before you run the third, predict what it prints. Then do the whole thing again with a compiler from before this milestone's step 8.
 
     **Where to look:** the comment above `kept_text` in `selfhost/cli/units.hero`;

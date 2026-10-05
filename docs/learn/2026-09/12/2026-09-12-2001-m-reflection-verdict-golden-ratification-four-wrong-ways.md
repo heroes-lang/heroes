@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-reflection-verdict
-filed: 2026-09-12
-commit: none
-github: none
----
-
 - [ ] **M-reflection-verdict golden ratification** | Five goldens landed with this milestone and they are marked `# UNVERIFIED — pending debrief`. Read the four ways of getting `::` wrong and say whether each message is the one you would have wanted.
 
     **Where to look:**

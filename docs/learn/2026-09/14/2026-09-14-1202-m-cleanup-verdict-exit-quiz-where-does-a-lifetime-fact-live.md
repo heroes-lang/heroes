@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-cleanup-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-cleanup-verdict exit quiz** | This language has placed a C lifetime fact four times. For each, say **where the mark sits** — on a type, a result, a declaration, a parameter position, or an expression position — without looking. Then check. Then say what panel 147 refused and why the answer was already implied by your four.
 
     ```

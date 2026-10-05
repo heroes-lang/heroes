@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-cleanup-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-cleanup-verdict 1** | Read the arm that caused defect 032, as it stood: `if fields.len() == 0` emitting `return true;` under the comment *record E is error[empty_record] in the checker, so this is belt to those braces*. **Every word of that comment was true the day it was written.** Say which word stopped being true, name the commit that did it, and then say why no reviewer reading the file that day would have seen anything wrong.
 
     **Where to look:**

@@ -1,12 +1,3 @@
----
-kind: learn
-area: golden
-milestone: M-declared-extents
-filed: 2026-09-19
-commit: none
-github: none
----
-
 - [ ] **M-declared-extents golden ratification** | `tests/golden/run/ffi-a-lent-field-reads-through-const.hero` prints five numbers. Before running it: a `=` binding `t` is lent twice to a C function that only reads, with a `@` cell `u` filled by C in between. **Which of the five lines could change if the lend from `t` were still `void *`, and which instrument would notice?** | `tests/golden/run/ffi-a-lent-field-reads-through-const.hero`, `tests/golden/fixedbugs/ffi-a-lent-field-c-would-write.hero`
 
     **Where to look after answering:** none of them — the program is legal

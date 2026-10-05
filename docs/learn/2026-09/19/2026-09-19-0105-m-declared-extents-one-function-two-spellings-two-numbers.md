@@ -1,12 +1,3 @@
----
-kind: learn
-area: records
-milestone: M-declared-extents
-filed: 2026-09-19
-commit: none
-github: none
----
-
 - [ ] **M-declared-extents golden ratification** | `tmpnam` is in the C standard and lives on both platforms. **Before reading: it wants a buffer. Would you expect macOS and Linux to agree on how big that buffer must be?** | `docs/measurements/035-not-one-byte-array-is-spelled-the-same-way-on-both.md` § The finding
 
     **Where to look after answering:** they do not agree, and not by a little.

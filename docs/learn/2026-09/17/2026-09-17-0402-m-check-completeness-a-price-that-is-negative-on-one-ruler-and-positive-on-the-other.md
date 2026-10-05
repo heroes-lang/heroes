@@ -1,12 +1,3 @@
----
-kind: learn
-area: records
-milestone: M-check-completeness
-filed: 2026-09-17
-commit: none
-github: none
----
-
 - [ ] **M-check-completeness exit quiz** | The specification is measured by two tokenisers. One sentence was replaced by another, and the two rulers disagreed about which direction the document moved. **Before reading: predict the sign on each, then say what that does to any rule of thumb for converting between them.** | `docs/measurements/010-spec-budget-ledger.md` rows 79 and 80
 
     The sentence that left:

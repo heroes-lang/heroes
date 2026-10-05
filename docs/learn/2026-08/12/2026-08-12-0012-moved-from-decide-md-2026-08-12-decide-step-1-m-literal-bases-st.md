@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-08-12
-commit: none
-github: none
----
-
 - [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-literal-bases step 1 | Case is settled in two different places on purpose. `0X10` is a compile error; `0xFF` is not, and `fmt` rewrites it to `0xff`. Question: name the fact about C headers that makes refusing uppercase *digits* wrong, and the fact about the three prefixes that makes refusing uppercase *prefixes* right. Then: how many languages enforce hex digit case in their lexer, and what kind of tool is the only precedent?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/lexer/number.rs (the `0X` arm) · archive/bootstrap-rs/heroes/src/lexer/digits.rs (`canonical_int`) · docs/panel/041 § historian

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-handle-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-handle-verdict 8** | Four questions, in order, and none of them needs the compiler. **(a)** Zig renamed `c_void` to `anyopaque`, Terra spells it `&opaque`, Odin spells it `rawptr`, Swift's word for *pointee unknown* is `Raw`. Heroes was offered `opaque`, it was the **cheapest candidate measured** (+0 tokens on the binding tokeniser, where `unsafe_ptr` and `raw_ptr` both cost +10), and it was refused. Give the two reasons. **(b)** The sitting kept the name `ptr`. Write down the one thing that would prove that decision wrong. **(c)** `@tail` was changed from `ptr` to `cstr`. The program's output did not change by a byte. Say what did. **(d)** Panel 140 measured `ptr` escaping an `extern` group **11 times in 2 files** and used that number to refuse a `raw` module. That number is now **0**. Does the refusal get stronger or weaker, and why?
 
     **Where to look:**

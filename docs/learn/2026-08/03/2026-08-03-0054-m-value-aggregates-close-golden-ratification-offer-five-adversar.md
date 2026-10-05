@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-value-aggregates
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-value-aggregates close** | **Golden ratification offer**: five adversarial cases marked UNVERIFIED — `no-size-best-friend`, `records-own-strings`, `adversarial-aggregate-overwrite`, `adversarial-recursive-tree`, `adversarial-cow-per-step`
 
     **Where to look:** tests/golden/check/, tests/golden/run/

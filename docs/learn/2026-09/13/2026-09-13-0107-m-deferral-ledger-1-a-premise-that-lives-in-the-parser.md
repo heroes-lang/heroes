@@ -1,12 +1,3 @@
----
-kind: learn
-area: check
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 1** | `selfhost/check/table.hero:66-67` says `T??` *"is rejected by the parser, so this node's argument is never itself a fallible"*. Say which of `.claude/rules/module-shape.md`'s two kinds of premise that is — a fact about the value or a premise about the world — and name the one two-line program, legal under the sentence panel 135 drafted for spec § 4, that would make it false without changing a single line of the parser.
 
     **Where to look:** `selfhost/parse/type.hero:31-66` (`parse_type`, the
