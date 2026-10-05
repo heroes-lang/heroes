@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: bf7fbe4b560ed412eee775f5481813d91476276b
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-windows, 2026-10-05, beside defect 346's repair (its final report, *Found beside*).
 
     **Class: blocking**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a false message, a link and a reason named where there is neither; never deferred.
+
+    **2026-10-05:** Repaired at `bf7fbe4b`: the parser refuses an empty value for every flag that takes one, naming it, gated by its two cases red first and the compiler's own tests (1,219) and the net's own (282), all passed on this Mac and on Linux arm64; the landing's own reading of an empty path, `cli/files.hero` and `cli/publish.hero`, is lane misc's and reported to the coordinator; the net is owed at the batch's close.
