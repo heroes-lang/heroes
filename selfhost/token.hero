@@ -186,6 +186,27 @@ function continues_a_line(kind: TokenKind) -> bool
         .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator => false
         .indent | .dedent | .eof | .error                                                  => false
 
+# A token no statement begins with, which at the head of a line can only go
+# on with the line above: a binary operator (spec § 7), the `?` that
+# propagates and the `::` that names a field. ENUMERATED, never a catch-all:
+# a new kind is a compile error here until somebody decides it, which is
+# `layout.is_line_ender`'s own discipline. `-` answers true, and the caller
+# asks panel 180's question of it. Moved here from `open_line` with defect
+# 351, a table of kinds that reads no lexer, which `next_line` asks too.
+function can_only_go_on(kind: TokenKind) -> bool
+    return match kind
+        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                    => true
+        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent => true
+        .question | .colon_colon                                                         => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit               => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if      => false
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue               => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use          => false
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot | .hole     => false
+        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace        => false
+        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof     => false
+        .error                                                                           => false
+
 # A token spec § 8's `Pattern` is written with, or the `|` that joins two.
 # ENUMERATED, so that a new kind is answered for here. Moved here from
 # `parse/margin_arms` with defect 193, a table of kinds that reads no parse.
@@ -278,6 +299,18 @@ function kind_name(kind: TokenKind) -> str
         .dedent      => "dedent"
         .eof         => "eof"
         .error       => "error"
+
+test "a token that can only go on is a binary operator, the propagating `?` or `::`"
+    assert can_only_go_on(.plus)
+    assert can_only_go_on(.and_and)
+    assert can_only_go_on(.question)
+    assert can_only_go_on(.colon_colon)
+    assert !can_only_go_on(.lparen)
+    assert !can_only_go_on(.lbracket)
+    assert !can_only_go_on(.dot)
+    assert !can_only_go_on(.hole)
+    assert !can_only_go_on(.arrow)
+    assert !can_only_go_on(.bang)
 
 test "the four literal kinds keep their Rust names through kind_name"
     assert kind_name(.int_lit) == "int"
