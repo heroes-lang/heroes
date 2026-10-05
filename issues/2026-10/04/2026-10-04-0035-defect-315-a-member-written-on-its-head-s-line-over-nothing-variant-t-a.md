@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-04
-commit: 2ee246cadc5b3095d8ae7b8db9fd6f85dbdb8b16
+commit: 038a90fcd3b78be585a6c4b265eeca558b054e80
 github: none
 ---
 
@@ -16,3 +16,5 @@ github: none
     Repaired at `2ee246ca`, 2026-10-05 (lane b11-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
     **2026-10-05, the shapes with this cause the repair leaves at two messages** (lane b11-parse's report): a generic head with a field after its type parameters, `record Pair<T>: x: T`, and `record R = x: i64` are still told the member on the head's line and the empty record both. They are this item's cause, so they stay its rows and are owed before it closes. `variant T a` keeps two on purpose: `record R extends Base` reads the same, and there the record is empty.
+
+    Repaired at `038a90fc`, 2026-10-05 (lane b11-parse), its two rows: the members read past a head's type parameters and after a `=`; gated by its cases and the compiler's own tests; the net is owed at the batch's close.
