@@ -1,0 +1,4 @@
+- [ ] **M-c-callbacks.1** | **Three things stood between a correct `atexit` binding and a working program, and only one of them was in the checker. Name the other two.** The symptoms, in order, were `error[ffi_type]` at the declaration, then `unknown type name 'h_0fn_294870dd'` at exit 2, then nothing at all. Read `selfhost/emit/unit.hero` from the comment beginning *"A PROBE names types too"* down to the `extern_probes` call, and say what each of the two repairs is protecting: a list that had never included externs, an emission ORDER, both, or neither
+
+    **Where to look:** selfhost/emit/unit.hero · selfhost/emit/decls.hero · tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero
+    **Why it matters:** two defects that had been latent since the probe was written, invisible because until this milestone every type crossing the boundary spelled itself without a table

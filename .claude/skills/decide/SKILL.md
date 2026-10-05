@@ -22,7 +22,8 @@ answer.** No retrieval, no walkthrough, no drill, no glossary. If the author ask
 
 1. **Read the open decisions**: `grep -rl "^kind: decision" issues/ | xargs grep -l "^- \[ \] "`.
    This step only checks that nothing arrived as the wrong kind. An item that
-   asks *what is true* is a `learn` issue however interesting; one that names
+   asks *what is true* is a question of `docs/learn/` however interesting, moved
+   there with its card taken off; one that names
    the milestone which will do it is that milestone's `feature` or `task`; one
    that describes a compiler **defect**, a crash or a wrong answer at exit 0, is
    a `defect` and not a decision at all. Correct its card's `kind` rather than

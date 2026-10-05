@@ -12,9 +12,9 @@ is the honest shape.
 
 **What it delivers.** A Homebrew formula in a tap (`heroes-lang/homebrew-tap`),
 for macOS and Linux; a winget or scoop manifest for Windows, whichever the box
-(`docs/ref/environment/windows/WINDOWS-MACHINE.md`) measures first; a Nix flake; a
+(`docs/platforms/windows/WINDOWS-MACHINE.md`) measures first; a Nix flake; a
 Docker image built from the `Dockerfile` beside
-`docs/ref/environment/linux/LINUX-MACHINE.md`. Each is installed and `heroes doctor`
+`docs/platforms/linux/LINUX-MACHINE.md`. Each is installed and `heroes doctor`
 run on its platform before its commit. **And a version scheme**: `heroes
 --version` printed `heroes 0.0.1` on 2026-09-03 and every tag is a milestone's
 name (CLAUDE.md §14), so nothing a formula can pin exists yet; what a version

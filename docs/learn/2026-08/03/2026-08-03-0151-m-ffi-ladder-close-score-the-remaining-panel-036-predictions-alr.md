@@ -1,0 +1,4 @@
+- [ ] **M-ffi-ladder close** | **Score the remaining panel 036 predictions.** Already scored: the compiler-engineer's `decl.rs` split (correct, 479 lines), the spec-warden's exact token count (correct on its own draft), the spec-warden's `-> ()?` failure (correct, and no spelling worked at all), the ffi-pragmatist's `cstr`→`str` need (correct, `to_str` gained a row). Still open at M-program-corpus and the Part 11 harness: the four llm-ergonomist first-try rates, and the historian's `exit`/flow-analysis prediction — which did **not** fire, because `hero_exit` is `_Noreturn` and the Heroes wrapper never returns either
+
+    **Where to look:** docs/panel/036 § Predictions to score
+    **Why it matters:** five judges, five different failure surfaces, and the two that mattered were both found by compiling

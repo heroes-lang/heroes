@@ -1,0 +1,4 @@
+- [ ] **M-separate-compilation step 7 (a key that cannot see its input)** | An `extern constant` emits as `return CONF_LIMIT;` — the NAME, not the value. So editing the header changes what the program prints and changes nothing in the generated C. A cache key built from the generated C is blind to that edit **by construction**, and the measured symptom was a program printing `1` at exit 0 with the header saying `2`. **The question**: three repairs were weighed and one landed. Given that hashing the header names an `extern` writes down misses the file one level below, and preprocessing first costs a second clang pass over 157 units, what is left?
+
+    **Where to look:** selfhost/cli/deps.hero · tests/harness/suite_cache.hero · DESIGN-LOG 2026-08-26
+    **Why it matters:** the answer is a habit worth having: when you cannot compute a fact, ask the tool that already knows it

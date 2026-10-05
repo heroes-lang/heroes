@@ -16,6 +16,10 @@ made faithful. **This line said *the one* declared exception until 2026-09-04**:
 §11 was corrected that day — the exceptions are a class, a translation that is
 itself a deliverable, and the site's Italian edition had been the second one for
 seventeen days — and the two sentences that repeated the old count were not.
+A third rule since 2026-08-12: **both teach with M-program-corpus's programs**,
+code known to compile, run and pass its own tests in three configurations,
+rather than snippets that were true once (it stood in the ROADMAP's decisions
+until 2026-10-05, beside a copy of the two above).
 
 ## The journey book — "how this language came to be"
 

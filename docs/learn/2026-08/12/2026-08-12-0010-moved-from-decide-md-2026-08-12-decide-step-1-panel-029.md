@@ -1,0 +1,4 @@
+- [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | panel 029 | The ownership pass emitted `store total <- $t1` with no incref into a generic body, and `incref $t2` on the `[A]` beside it. Question: why did the array get counted and `B` not — and what would have happened at `B = str` if monomorphisation had run second? **Answered where it is load-bearing rather than in prose**: `Phase::Mono`'s doc comment says the order is forced, because `is_refcounted` answers `false` for `Ty::Generic` — right for `T = int`, a leak for `T = str` — so an ownership pass running first "does not decline to decide, it decides wrongly", and `released_on_return` cannot catch it because it asks the same predicate
+
+    **Where to look:** archive/bootstrap-rs/heroes/src/ir/mod.rs:205-213 (`Phase::Mono`) · types/counted.rs · docs/panel/029 R1
+    **Why it matters:** "it cannot decide yet" and "it decided wrongly" call for the same fix and are not the same finding

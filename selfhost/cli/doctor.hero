@@ -170,7 +170,7 @@ function linker_home(build_dir: str) -> Check
 # them every link fails, `lld-link: error: could not open 'libcmt.lib'`: so the
 # question is a C program compiled, linked and run, the check the box's own
 # record calls the one that matters
-# (`docs/ref/environment/windows/WINDOWS-MACHINE.md`).
+# (`docs/platforms/windows/WINDOWS-MACHINE.md`).
 function msvc_row(linked: str?) -> Check
     match linked
         .ok said => return Check(name: "MSVC", ok: true, detail: said)

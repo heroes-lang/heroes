@@ -1,0 +1,1 @@
+- [x] The record | M2.3 | `x = 2 + (3 * 4)` formats to `x = 2 + 3 * 4`, but `x = a - (b - c)` keeps its parentheses → distilled into docs/glossary/002-binding-power-and-position.md (power says how tight, position says which side) | crates/heroes/src/printer/fmt_expr.rs (wrapped) | associativity is the half of the precedence table nobody writes down

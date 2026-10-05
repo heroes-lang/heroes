@@ -1,4 +1,4 @@
-## The names
+# The names
 
 Milestones were numbered until 2026-08-12 and are named now. The algorithm that
 assigns the next one is **CLAUDE.md §14** — its only home; this section is only

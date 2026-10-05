@@ -1,0 +1,4 @@
+- [ ] **panel 036 / M-ffi-ladder** | **The spec-warden's prediction, met to the letter, in the milestone it was made in.** It said ≥30% of programs writing a file would fail first-try on `-> ()?` alone, because `ok(())` is a parse error, `ok()` is `wrong_arity` and falling off the end is `missing_return`. Measured before writing a line of the library: all three refuse, so **no function in the language could construct a `()?`**. Task: say why the arity of `ok` is now derived from the payload rather than fixed at 1, and what the alternative spellings would each have cost
+
+    **Where to look:** archive/bootstrap-rs/heroes/src/types/construct.rs · docs/panel/036 § Predictions
+    **Why it matters:** a hole in the type system that only appeared when a signature needed it, predicted by a judge who never wrote one
