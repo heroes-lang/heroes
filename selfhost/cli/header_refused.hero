@@ -44,6 +44,8 @@ use emit/clang_name
 use emit/ffi_lookup
 use emit/externs as emit_externs
 use cli/strings
+use cli/read_back
+use emit/ffi_build
 use parse
 use resolve
 use checker
@@ -378,6 +380,34 @@ test "a refusal that is not a bound header's own stays the compiler's (defect 36
     parsed = parse.parse(bound.text)
     in_runtime = "In file included from build/tu-1/r.c:4:\n/abs/runtime/hero_os.h:4:1: error: expected expression\n"
     assert refused(stderr: in_runtime, s: bound, decls: parsed.decls, runtime: "/abs/runtime", build: "build").len() == 0
+
+# DEFECT 284's measurement, held: a group's header found under a directory
+# whose name holds the byte 0xE9, which only Linux makes, reached through
+# `CPATH` since a `.hero` file and argv are UTF-8. Debian clang 22.1.8 in the
+# Linux arm64 image printed the path with the byte as it is, and its words are
+# committed as it wrote them (`surface-fixtures/notext284/`). Read back as the
+# build reads them, the byte written by its value, the missing include and the
+# header clang refuses are each told on the program's own group, the path as
+# clang gave it in the message's notes; measured on the trunk's compiler in the
+# image the same day, the missing include at exit 1, a header's `#warning`
+# forwarded with the path so written at exit 0, and an extern the header
+# refutes told at exit 1.
+test "clang's words naming a header under a directory that is not UTF-8 are read back and told on the group (defect 284)"
+    text = "extern \"m.h\"\n    function six() -> i64\n\nextern \"b.h\"\n    function twice(x: i64) -> i64\n\nfunction main()\n    print(twice(x: six()))\n"
+    s = source.new_source(name: "u.hero", text: text)
+    parsed = parse.parse(text)
+    fixtures = "tests/golden/surface-fixtures/notext284/"
+    missing = read_back.words(fixtures + "missing-under-latin1-directory.txt").must()
+    line = ffi_lookup.lines(text: missing)[1]
+    assert line == "/t/caf<0xE9>/m.h:2:10: fatal error: 'gone.h' file not found"
+    lacked = ffi_build.missing_header(s, parsed.decls, line: line, stderr: missing).must()
+    assert lacked.code == "ffi_missing_header"
+    assert lacked.message == "`gone.h` is not on this machine's include path, and `m.h`, the header this group names, includes it at line 2"
+    refused_words = read_back.words(fixtures + "refused-under-latin1-directory.txt").must()
+    said = refused(stderr: refused_words, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    assert source.span_text(s, said[0].span) == "\"b.h\""
+    assert said[0].message == "`b.h`, the header this group names, does not compile: clang refuses it at line 3: expected expression"
+    assert said[0].notes[0] == "`b.h` line 3 reads `int broken = ;`"
 
 function has(notes: [str], needle: str) -> bool
     for note in notes
