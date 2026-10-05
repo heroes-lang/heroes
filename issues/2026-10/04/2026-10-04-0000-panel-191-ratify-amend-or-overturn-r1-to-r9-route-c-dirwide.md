@@ -3,11 +3,11 @@ kind: decision
 area: records
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: self
 github: none
 ---
 
-- [ ] **panel 191** | ratify, amend or overturn R1 to R9 (route `c-dirwide` for defect 238: the UTF-8 code-page manifest compiled into the runtime's own object, a refusal to start where `GetACP()` is not 65001, the directory door made wide; the lone-surrogate directory repaired at the landing; the cases red on `7f4c0cc5` first; (a) alone, (a′), (e), (f) and (g) refused; Q-c and Q-i handed to panel 192), and set the floor: the oldest Windows a Heroes program starts on | `docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md` § The resolution
+- [x] **panel 191** | ratify, amend or overturn R1 to R9 (route `c-dirwide` for defect 238: the UTF-8 code-page manifest compiled into the runtime's own object, a refusal to start where `GetACP()` is not 65001, the directory door made wide; the lone-surrogate directory repaired at the landing; the cases red on `7f4c0cc5` first; (a) alone, (a′), (e), (f) and (g) refused; Q-c and Q-i handed to panel 192), and set the floor: the oldest Windows a Heroes program starts on | `docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md` § The resolution
 
     **Origin:** panel 191's synthesis, 2026-10-04 from 16:47, on the seats' archive of `7f4c0cc5`, convened by the author's *6b*. Until it is answered defect 238 stays open, and, `blocking`, it lands in the next batch on the provisional resolution (CLAUDE.md § 4, *the panel never blocks*).
 
@@ -20,3 +20,5 @@ github: none
     **What the floor costs**: below it every Heroes program, the compiler included, refuses to start with one sentence and exit 2. Unrun below it: nothing here is older than build 26100, the box and the CI alike, so the documentation's *run on earlier builds* is read, not measured.
 
     **The conservative alternative, yours to choose instead**: route (b) whole, every door wide and no manifest, about 250 lines, unbuilt by either seat. It sets no floor, and leaves every bound library reading the program's UTF-8 as 1252 (W21: -1), so §1.11's boundary stays broken for every binding that takes a path.
+
+    **Ratified 2026-10-05**, on the author's answer between 16:12 and 16:14 by the clock read before and after it, meant as: *I ratify both panels*, this one and panel 192. **What the yes settles**: R1 to R9 as the synthesis states them, route `c-dirwide` over the conservative (b) whole; and the floor at Windows 10 version 1903, the recommendation's, below which every Heroes program, the compiler included, refuses to start with one sentence and exit 2. **What it does not settle**: what only the landing measures, R2's repair, R3's cases red then green, the CI's clang on the resource object, and below the floor. The landing is batch 11's lane b11-windows, defect 238, closed after the push's legs (`.claude/rules/verification.md` § The batch, a defect at the C boundary). **Recorded as a reading**, CLAUDE.md § 4's default; not `by delegation`.
