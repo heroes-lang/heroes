@@ -1,0 +1,41 @@
+# Fixed defect 311, 2026-10-05 (lane b11-parse). Symptom: `fn` among a
+# record's fields was told once since defect 200's repair (`7831aec7`), by
+# the lexer's `reserved_word`, which said a `function` is declared at the top
+# level and no longer that it takes the record as a parameter, the route the
+# parser's own message had given. Cause: the parser stays silent where the
+# lexer spoke, and the lexer's words (`foreign_at.misplaced`) knew a body or
+# another declaration, not a record's fields. Repair: where the word opens a
+# member line one level under a `record` or a `variant` head, its one message
+# names the holder and the route (`foreign_at.holder_of`), for `fn`, `def`
+# and `func` alike. At the top level and in a body the words are as before.
+
+record Point
+    x: i64
+    fn norm() -> i64  #~ reserved_word
+        return 1
+
+variant Shape
+    dot
+    fn area() -> i64  #~ reserved_word
+        return 1
+
+record Account
+    id: i64
+    def deposit(self):  #~ reserved_word
+        print(1)
+
+record Clock
+    ticks: i64
+    func now() -> i64  #~ reserved_word
+        return 1
+
+fn top_level() -> i64  #~ reserved_word
+    return 1
+
+function in_a_body()
+    fn inner() -> i64  #~ reserved_word
+        return 1
+    print(1)
+
+function main()
+    print(1)

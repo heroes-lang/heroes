@@ -62,3 +62,9 @@ variant I
 
 function main()
     print(1)
+
+# Moved 2026-10-05 with defect 311's repair (lane b11-parse): the `fn` line's
+# one message, the lexer's `reserved_word`, names the holder and the route
+# as the parser's own message does for a `function`: a `variant` holds only
+# its cases, and a `function` in it goes to the top level, taking the variant
+# as a parameter (`foreign_at.holder_of`).

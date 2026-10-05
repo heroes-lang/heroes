@@ -4,6 +4,8 @@
 # §11's ~300 lines. `resolved.Resolved` holds one `NameRows` (module -> name
 # -> declaration) and one `UseRows` (file -> binding -> module); every read
 # and write of them goes through the functions here and in `resolved.hero`.
+# The resolver's working state holds three `NameSets` (module -> name),
+# read and written through `resolve/state.keyed_has` and `keyed_add`.
 
 # **The outer key finds a ROW, and the rows are an array** (defect 111). Held
 # as `{str: {str: i64}}`, a new name reached the inner map only by reading it
@@ -27,6 +29,14 @@ record UseRows
     at: {str: i64}
     rows: [{str: str}]
 
+# And for a set of names under each key, module -> name: the resolver's
+# fields, the names it suggested and the modules each file reads, held as a
+# map of maps until defect 267, which found every field name copying its
+# module's whole set (`resolve/state.keyed_add`).
+record NameSets
+    at: {str: i64}
+    rows: [{str: bool}]
+
 function new_name_rows() -> NameRows
     at: {str: i64} = {}
     rows: [{str: i64}] = []
@@ -36,6 +46,11 @@ function new_use_rows() -> UseRows
     at: {str: i64} = {}
     rows: [{str: str}] = []
     return UseRows(at: at, rows: rows)
+
+function new_name_sets() -> NameSets
+    at: {str: i64} = {}
+    rows: [{str: bool}] = []
+    return NameSets(at: at, rows: rows)
 
 # The row a key's names go in, made empty where the key has none. The new row
 # is pushed onto a lent array, so it grows in place (design.md Part 8 wart 8's
@@ -60,10 +75,23 @@ function use_row(@t: UseRows, key: str) -> i64
     grow_uses(@t.rows, fresh)
     return t.rows.len() - 1
 
+function set_row(@t: NameSets, key: str) -> i64
+    found = t.at[key]
+
+    if !found.is_err()
+        return found.must()
+    t.at[key] @ t.rows.len()
+    fresh: {str: bool} = {}
+    grow_sets(@t.rows, fresh)
+    return t.rows.len() - 1
+
 function grow_names(@rows: [{str: i64}], row: {str: i64})
     rows @ rows.push(row)
 
 function grow_uses(@rows: [{str: str}], row: {str: str})
+    rows @ rows.push(row)
+
+function grow_sets(@rows: [{str: bool}], row: {str: bool})
     rows @ rows.push(row)
 
 # One key's names, or absent where nothing was declared under it.

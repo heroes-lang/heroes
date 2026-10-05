@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-267-a-declarations-members-are-pushed-in-place.hero:20:11: error[expected_end_of_line]: expected the end of the line after the field `x`, found `,` — one field per line, `name: type`, and no `,` ends a member's line
+tests/golden/check/fixedbugs-267-a-declarations-members-are-pushed-in-place.hero:28:5: error[expected_case]: expected a case name, found `{` — a variant case is a name on its own line, with its fields indented below it

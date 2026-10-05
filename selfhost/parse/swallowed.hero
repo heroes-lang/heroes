@@ -29,8 +29,10 @@
 use cursor
 use next_line
 use text_lines
+use word_place
 use parse/pairing
 use parse/unclosed
+use parse/line_end
 
 # Where the body below a head begun at token `from` ends, read through a view
 # from the cursor, where the head's bracket took it in (`lines_to`), or, for
@@ -86,16 +88,8 @@ function body_below(c: cursor.Cursor, text: str, open: i64) -> bool
         next @ next + 1
 
     below = text_lines.margin_width(text, at: c.tokens[next].span.start)
-    at: i64 @ c.tokens[open].span.start
-
-    while at > 0 && text[at - 1] != '\n'
-        at @ at - 1
-
-    margin: i64 @ at
-
-    while margin < text.len() && text[margin] == ' '
-        margin @ margin + 1
-
+    at = word_place.line_start(text, at: c.tokens[open].span.start)
+    margin = text_lines.past_spaces(text, at: at)
     word = next_line.word_at(text, at: margin)
     owes = word == "if" || word == "while" || word == "for" || word == "else" || word == "function" || word == "test"
     return owes && below > margin - at && unclosed.never_closed(c, text, open: open)
@@ -126,7 +120,7 @@ function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
             close = pairing.paired_closer(c, text, open: i)
             start = first_below(c, text, open: i)
 
-            if close > i && start < close && told_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0
+            if close > i && start < close && line_end.said_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0
                 return Spilled(start: start, close: close + 1)
         i @ i + 1
 
@@ -159,17 +153,6 @@ function below_the_line(c: cursor.Cursor, text: str, from: i64, at: i64) -> bool
 
     while i < c.tokens[at].span.start
         if text[i] == '\n'
-            return true
-        i @ i + 1
-
-    return false
-
-# Whether a report said since `said` stands on the token at `at`.
-function told_at(c: cursor.Cursor, at: i64, said: i64) -> bool
-    i: i64 @ said
-
-    while i < c.diagnostics.len()
-        if c.diagnostics[i].span.start == c.tokens[at].span.start
             return true
         i @ i + 1
 

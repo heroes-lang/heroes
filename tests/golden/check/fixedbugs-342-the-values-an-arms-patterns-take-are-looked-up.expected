@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-342-the-values-an-arms-patterns-take-are-looked-up.hero:16:13: error[duplicate_arm]: `0x61` is already covered by an earlier arm, written `97`, the same value: no value reaches this one
+tests/golden/check/fixedbugs-342-the-values-an-arms-patterns-take-are-looked-up.hero:18:9: error[duplicate_arm]: `0` is already covered by an earlier arm, written `-0`, the same value: no value reaches this one
+tests/golden/check/fixedbugs-342-the-values-an-arms-patterns-take-are-looked-up.hero:24:15: error[duplicate_arm]: `"b"` is already covered by an earlier arm: no value reaches this one
+tests/golden/check/fixedbugs-342-the-values-an-arms-patterns-take-are-looked-up.hero:26:9: error[duplicate_arm]: `"e"` is already covered by an earlier arm, whose `_` matches every value: no value reaches this one

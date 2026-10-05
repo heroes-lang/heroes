@@ -28,15 +28,17 @@ use check/contextual
 use data_errors
 
 # What the patterns of one `match` have taken so far: whether a `_` has, and
-# each literal's value with the spelling it was first written in.
+# each literal's value, keyed to the spelling it was first written in: one
+# lookup a pattern, where a walk over every value taken before it, and two
+# arrays grown through `seen`'s fields, cost an arm of N patterns N squared
+# (defect 342).
 record Seen
     wildcard: bool
-    values: [str]
-    spellings: [str]
+    taken: {str: str}
 
 function none() -> Seen
-    empty: [str] = []
-    return Seen(wildcard: false, values: empty, spellings: empty)
+    empty: {str: str} = {}
+    return Seen(wildcard: false, taken: empty)
 
 # Report `p` when an earlier pattern of its `match` takes every value it
 # takes, then count it as taken.
@@ -62,19 +64,15 @@ function after(@c: state.Checker, a: ast.Ast, s: source.Source, @seen: Seen, sub
 
             if value.is_err()
                 return
-            at: i64 @ 0
+            earlier = seen.taken[value.must()]
 
-            while at < seen.values.len()
-                if seen.values[at] == value.must()
-                    state.push_diagnostic(
-                        @c,
-                        data_errors.covered_value(shown: shown, earlier: seen.spellings[at], span: p.span)
-                    )
-                    return
-                at @ at + 1
-
-            seen.values @ seen.values.push(value.must())
-            seen.spellings @ seen.spellings.push(shown)
+            if !earlier.is_err()
+                state.push_diagnostic(
+                    @c,
+                    data_errors.covered_value(shown: shown, earlier: earlier.must(), span: p.span)
+                )
+                return
+            seen.taken[value.must()] @ shown
         .variant_case | .error => return
 
 function takes_literals(ty: table.Ty) -> bool

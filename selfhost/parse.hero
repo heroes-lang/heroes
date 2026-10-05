@@ -480,14 +480,19 @@ test "an arm broken after its sign is refused once, and no fix wraps a pattern"
         "function main()\n    k = match n\n        0 => 5\n        -\n        1 => 10\n        _ => 20\n"
         "function main()\n    k = match n\n        0 =>\n            print(0)\n            5\n        -\n        1 => 10\n        _ => 20\n"
         "function main()\r\n    k = match n\r\n        0 => 5\r\n        -\r\n        1 => 10\r\n        _ => 20\r\n"
+        "function main()\n    k = match n\n        0 => 5\n            -\n        1 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n        0 => 5\n                -\n        1 => 10\n        _ => 20\n"
+        "function main()\n    k = match n\n            -\n        1 => 10\n        _ => 20\n"
     ]
 
+    # The join writes the sign on the arm's line, at its margin, and deeper
+    # than the arms it is read there, told once (defect 268).
     for text in split
         assert every_fix_parses(text: text, code: code)
         broken = parse(text)
         assert broken.diagnostics.len() == 1
         assert broken.diagnostics[0].fixes.len() == 2
-        assert broken.diagnostics[0].fixes[0].replacement == ""
+        assert broken.diagnostics[0].fixes[0].replacement == "        -"
         assert broken.diagnostics[0].fixes[0].certainty == .guess
         assert broken.diagnostics[0].fixes[1].certainty == .guess
 

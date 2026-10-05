@@ -130,7 +130,7 @@ function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) 
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write the result type after `->`", replacement: fix, span: written, certainty: certainty)
     )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
     _ = cursor.bump(@c)
     return true
 

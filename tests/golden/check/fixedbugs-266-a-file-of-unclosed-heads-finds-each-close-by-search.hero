@@ -1,0 +1,38 @@
+# Fixed defect 266, 2026-10-04 (lane b11-parse). Symptom: `check` took work
+# that grew with the square of the brackets a file left open: `for n > f(0`
+# over its body, repeated, retired 4.24 billion instructions at 2,000 heads
+# and 38.87 billion at 8,000, 9.17 times as many for 4 times the heads; a
+# call left open, a nested one, a `while` head's and a signature's grew the
+# same way, 8.84 to 9.73 times. Cause, found with `sample`:
+# `parse/pairing.close_after`, asked at each bracket the parser pairs, walked
+# the offsets where the lexer named the brackets still open from the first,
+# one more for each head above. Repair: those offsets ascend, the lexer
+# naming each where it stands as it reads on (`parse/pairing`'s test of it),
+# so the first past a bracket is found by a binary search; 8,000 heads now
+# retire 9.53 billion, 3.94 times the 2,000's. Nothing said moves: this case
+# pins each shape's messages, as before.
+
+function f(x: i64) -> i64
+    return x
+
+function a_for_head(n: i64)
+    for n > f(0  #~ unclosed_bracket for_missing_in
+        print(n)
+
+function a_while_head(n: i64)
+    while n > f(0  #~ unclosed_bracket
+        print(n)
+
+function a_call(n: i64)
+    x = f(0  #~ unclosed_bracket
+    print(x)
+
+function a_nested_call(n: i64)
+    x = f(f(0  #~ unclosed_bracket unclosed_bracket
+    print(x)
+
+function a_signature(n: i64  #~ unclosed_bracket
+    print(n)
+
+function main()
+    a_for_head(1)
