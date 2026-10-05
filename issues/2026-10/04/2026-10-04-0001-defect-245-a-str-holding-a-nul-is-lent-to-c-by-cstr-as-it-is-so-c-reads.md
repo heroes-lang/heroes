@@ -3,7 +3,7 @@ kind: defect
 area: runtime
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 6b33db23dadcbbf1d7e587adb4a2cf446f224d6d
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** the coordinator, 2026-10-04, at the shape beside batch 8's NUL refusal in a group head (`unwritable_name`'s *a NUL byte*), which refuses the NUL there and nowhere else.
 
     **Class: systemic**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a wrong value at the C boundary, `blocking`'s, whose remedy needs a ruling no rule reaches: §4.3's freeze rests on no `str` holding a NUL, two doors measured make one, and what `.cstr()` does then (a refusal where a literal holds one, a check at run time, a fallible lending) is a sitting's.
+
+    Repaired at `6b33db23`, 2026-10-05, gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the platform legs before it closes (panel 192's R13).
