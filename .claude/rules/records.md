@@ -225,17 +225,19 @@ with its count, is that day's decision issue,
 
 ## The lists
 
-**Since 2026-10-04 the five lists are views of `issues/`** (§ The issues): the
+**Since 2026-10-04 four lists are views of `issues/`** (§ The issues): the
 open defects are the open `defect` issues, the decision list the open `decision`
 issues, a milestone's work the open `feature` and `task` issues naming it, and
-the record the closed issues. **The learning list is not one of them since
-2026-10-05**: its questions are files of `docs/learn/<year-month>/<day>/`, one
-each, with no card, a question answered staying ticked where it is, and
-`docs/learn/README.md` is its front page. Each item
-keeps the one shape the lists took on 2026-09-07 (CL-066), under its card:
+the record the closed issues. Each item keeps the one shape the lists took on
+2026-09-07 (CL-066), under its card:
 `- [ ] **<first field>** | <what, in one line> | <where to look>`, its line
 first, and an optional body indented four spaces opening with `**Origin:**` and
 its date. `records/lists` is its executor.
+
+**The learning list is the fifth, and not a view of `issues/` since
+2026-10-05**: its questions are files of `docs/learn/<year-month>/<day>/`, one
+each, in the same shape with no card above it, a question answered staying
+ticked where it is, and `docs/learn/README.md` is its front page.
 
 **The first field is what an instrument reads**, so it differs by kind: a
 defect's `**NNN — <title>**`, the number its file's name carries after
