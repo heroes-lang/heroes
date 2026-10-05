@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-04
-commit: 70c9f3a95685f518d5ee6da60c63b4568c050c9c
+commit: 55b1a29fe87eb703cad25fab80297f2cdfb0daff
 github: none
 ---
 
@@ -24,3 +24,5 @@ github: none
     **2026-10-05, batch 11's round**: `doctor`'s row reads clang through `read_back.words` since `73ff6c96`, where lane b11-windows had copied it (`3bc9f518`) until the two lanes met.
 
     **2026-10-05, batch 11's Windows leg** on `2dd5611c`, clang 23.1.1: both of this item's cases fail, `unsupported/fixedbugs-337-a-construction-the-layout-check-refuses-past-a-byte-that-is-not-utf-8` and the compiler's test *clang's words holding a byte that is not UTF-8 are kept whole*, because clang there refuses the fixture's own `#line 1 "caf\351.h"`, *invalid escape sequence '\351' in an unevaluated string literal*, so the byte the cases need never reaches clang's words. A row of this item: on Windows the cases need another way to put such a byte into what clang says. The `internal error` that refusal became is defect 360.
+
+    Repaired at `55b1a29f`, 2026-10-05 (lane cli12), its Windows row, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The byte stands raw in the fixture's `#line`, and the compiler test includes the committed header. Measured the same day: clang takes the raw byte with a `-Winvalid-source-encoding` warning and prints the location with it, on Apple clang 21 here, Debian clang 18.1.8, 20.1.8 and 22.1.8 in Linux arm64 containers, and clang 23.1.1 on the Windows box, clang alone; both cases and the compiler's own tests pass on this Mac and in the Linux arm64 image (2 passed, 0 failed; 1240 all passed). **Unrun**: the two cases through `heroes` on the box, offline since about 19:40; they are the push's Windows leg's.
