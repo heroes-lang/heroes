@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 462b4a2d8ceb154e3c45283ad0dfe4ffa49286c0
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** the coordinator, 2026-10-04, beside defect 245.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a program that differs from what it shows, panel 066's trap for every byte but one; its repair widens a refusal, which CLAUDE.md § 4 sends to a sitting, the one defect 245 owes.
+
+    Repaired at `aa150c8c` (the escape by code, panel 192's R5, the spelling the refusal's fix writes) and at `462b4a2d` (the refusal, R2 to R4), 2026-10-05, gated by their cases and the compiler's own tests; the net is owed at the batch's close, and the seed's two generations with it.
