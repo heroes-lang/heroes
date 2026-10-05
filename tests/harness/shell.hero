@@ -1435,6 +1435,20 @@ test "fixedbugs: an argument of the compiler's own that is not UTF-8 is named by
     assert program.must().err == "error: argument 4, `<0xE9>`, is for the program and is not UTF-8, and `heroes run` passes a program's arguments as Heroes `str`s, which are UTF-8 (spec § 3 Types)\nnote: build the program with `heroes build`, run it with this argument, and read it with `args_checked()`\n"
     assert !remove_tree(scratch).is_err()
 
+# DEFECT 349, held as a test (2026-10-05): `-o ""` is refused by the argument
+# parser, naming the flag, at exit 2, and no empty path reaches the writer,
+# which told it as *the link cannot be followed: the operating system's own
+# reason is 0*. An empty word passes as an argument on every platform.
+test "fixedbugs: an empty `-o` is refused naming the flag, never told as a link (defect 349)"
+    scratch = own_scratch()
+    compiler = some_compiler().must()
+    program = scratch + "/real.hero"
+    assert !write_file(path: program, text: "function main()\n    print(1)\n").is_err()
+    built = run(scratch: scratch, program: compiler, words: [compiler, "build", program, "-o", ""]).must()
+    assert built.code == 2
+    assert built.err == "error: `-o` needs a path, and was given an empty one: `heroes build <file.hero> -o <path>`\n"
+    assert !remove_tree(scratch).is_err()
+
 # A script at `path` that writes `says` and exits 0, made executable.
 function stub_named(path: str, says: str, scratch: str) -> ()?
     write_file(path: path, text: "#!/bin/sh\nprintf '%s' \"" + says + "\"\n")?
