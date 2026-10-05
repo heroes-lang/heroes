@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | M-selfhost-port, DEFECT drill (emitter) | **Hypothesise before reading the fix.** Raw symptom: two brand-new resolver tests die with `panic: entered unreachable code`, exit 134; the 10-line witness is `locals[0].reads @ locals[0].reads + 1` on a `[Local]` inside a record. Question A: the READ on the right side works — why does only the WRITE abort? Question B: the first repair (a plain C assignment) passed every functional test and still shipped a bug — which resource test catches it, and what does `hero_array_set` do that a bare `=` does not? Answers in the golden named below, but hypothesise first
+
+    **Where to look:** tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero · docs/debrief/QUEUE.md (the 2026-08-17 DEFECT entry)
+    **Why it matters:** the defect class is CLAUDE.md §11's expired premise, IN THE EMITTER'S OWN PROSE — and the witness was the port meeting a shape no golden had ever written

@@ -4,7 +4,7 @@ paths:
   - "seed/**"
   - "examples/**"
   - ".github/**"
-  - "docs/ref/environment/**"
+  - "docs/platforms/**"
 ---
 
 # The three platforms
@@ -68,8 +68,8 @@ sanitiser, 40 leaked bytes, a sharing violation on the Windows runner. So the
 one exception keeps that shape: **a defect found on a platform, or a repair
 under `runtime/`, `seed/` or an `examples/` program with an `extern`, runs its
 own cases on that platform when it is repaired**, not at the push. macOS is this machine. Windows is a real box,
-`docs/ref/environment/windows/WINDOWS-MACHINE.md`. Linux is a container of the CI
-leg's own architecture, `docs/ref/environment/linux/LINUX-MACHINE.md`, built from
+`docs/platforms/windows/WINDOWS-MACHINE.md`. Linux is a container of the CI
+leg's own architecture, `docs/platforms/linux/LINUX-MACHINE.md`, built from
 the `Dockerfile` beside it.
 
 These two files are **the hunt, not the judge**. A comment, a `#ifdef` or a

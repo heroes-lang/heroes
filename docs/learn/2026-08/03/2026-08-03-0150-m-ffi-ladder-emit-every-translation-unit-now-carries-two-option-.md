@@ -1,0 +1,4 @@
+- [ ] **M-ffi-ladder / emit** | **Every translation unit now carries two option structs and eight per-type functions it may never use**, because `read_file -> str?` and `write_file -> ()?` are the first library functions with a `T?` in their signature and `Names::with_options` walks the interned arena. Deriving the set from the emitted functions was tried and **reverted**: a walk over slots, results and instruction types misses a `T?` reached through a declared record's field, and a missing name is a hard error found by the mutant corpus rather than by any case somebody wrote. The honest filter needs the declaration graph as well as the IR
+
+    **Where to look:** archive/bootstrap-rs/heroes/src/emit/ctype.rs (`with_options`) · emit/mod.rs
+    **Why it matters:** the cost of putting `T?`-returning functions in the library, paid by every program in the language
