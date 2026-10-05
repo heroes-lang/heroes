@@ -57,6 +57,11 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     if !output.is_err()
         binary @ output.must()
 
+        # An author's name with no suffix takes the platform's (defect 359),
+        # but where it names a device, `-o NUL`, which is written into.
+        if !files.is_special(binary)
+            binary @ with_suffix(path: binary, suffix: process.exe_suffix())
+
         # Refused before a byte is linked where nothing may be written: a
         # file that could not be opened for writing, a directory, and a
         # directory that is not there, which is the author's to make, since
@@ -159,6 +164,30 @@ function linked_into(line: [str], t: toolchain.Toolchain, at: str, binary: str) 
     if linked.is_err()
         return fail(code: units.failure_code(linked), msg: units.failure_note(linked))
     return ok(binary)
+
+# **The author's `-o` takes the platform's suffix where its last part has
+# none** (defect 359, 2026-10-05): on Windows `build -o name` wrote `name`,
+# which Git Bash starts and `cmd.exe` and PowerShell do not, by that path or
+# any. GCC's driver does this for its MinGW and Cygwin targets (`gcc.cc`'s
+# `convert_filename`, the `.exe` of `config/i386/cygming.h`, read
+# 2026-10-05), and clang 23.1.1 there writes `name` as given (measured on
+# the box), so the rule is gcc's: a last part holding a `.` is the author's
+# suffix and is kept, `app.bin` and `name.` alike. The last part ends at `/`
+# or `\`, Windows' two separators, which is the only place a suffix is
+# asked for: elsewhere it is "" and the path is the author's whole.
+function with_suffix(path: str, suffix: str) -> str
+    if suffix.len() == 0
+        return path
+    at: i64 @ path.len()
+
+    while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
+        if path[at - 1] == '.'
+            return path
+        at @ at - 1
+
+    if at == path.len()
+        return path
+    return path + suffix
 
 # Where a binary built from `line` lives under `build/`: one directory per
 # link line, every word counted by its length so no two lines share one,
@@ -319,8 +348,28 @@ test "a binary's home is named by every word of its link line, and an author's -
     )
     assert units.failure_text(missing) == "cannot write " + t.build + "/no-such-directory/app: its directory is not there; " + t.build + "/no-such-directory/app was not created"
 
+    # An `-o` with no suffix lands under the platform's (defect 359): `.exe`
+    # on Windows, the path as given elsewhere, and the answer names it.
+    bare = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(t.build + "/bare"), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must(
+    )
+    assert bare == t.build + "/bare" + process.exe_suffix()
+    assert process.path_exists(bare)
+
     for path in process.files_under(t.build).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
+
+# gcc's rule, asked with Windows' suffix on every platform (defect 359).
+test "an -o whose last part has no suffix takes the platform's, and one that has one keeps it (defect 359)"
+    assert with_suffix(path: "p231/astar800", suffix: ".exe") == "p231/astar800.exe"
+    assert with_suffix(path: "name", suffix: ".exe") == "name.exe"
+    assert with_suffix(path: "dir.d/name", suffix: ".exe") == "dir.d/name.exe"
+    assert with_suffix(path: "C:\\w\\dir.d\\name", suffix: ".exe") == "C:\\w\\dir.d\\name.exe"
+    assert with_suffix(path: "app.bin", suffix: ".exe") == "app.bin"
+    assert with_suffix(path: "app.exe", suffix: ".exe") == "app.exe"
+    assert with_suffix(path: "name.", suffix: ".exe") == "name."
+    assert with_suffix(path: ".hidden", suffix: ".exe") == ".hidden"
+    assert with_suffix(path: "dir/", suffix: ".exe") == "dir/"
+    assert with_suffix(path: "p231/astar800", suffix: "") == "p231/astar800"
 
 # **A link over a package's compile words prints nothing** (defect 206). On
 # Linux a `-F` at a link is *argument unused during compilation*, so a
