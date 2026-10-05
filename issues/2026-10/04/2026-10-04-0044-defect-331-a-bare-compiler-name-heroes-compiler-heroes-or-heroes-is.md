@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 73ff6c965e560960369ff7963bf2be5fa56ab732
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a question about which program is judged, answered by the machine's PATH where the author named a file; no wrong verdict measured.
 
     **2026-10-04:** Repaired in part at `69d9f47b`: a `HEROES_COMPILER` named bare is started as the file checked, gated by its case and the net's own tests on this Mac (261, all passed). The `-- <compiler>` entrance is `tests/harness/main.hero:125`, a file of lane misc's set, and owes `compiler @ shell.started_as(given[0])`, reported to the coordinator; the net is owed at the batch's close.
+
+    **2026-10-05, batch 11's round**: the `-- <compiler>` entrance, Repaired at `73ff6c96`, starts the compiler `shell.started_as` names, the file the harness checked, as `HEROES_COMPILER` already was at `69d9f47b`; the item is repaired at both entrances, gated by `check tests/harness/main.hero` and the round's gate.
