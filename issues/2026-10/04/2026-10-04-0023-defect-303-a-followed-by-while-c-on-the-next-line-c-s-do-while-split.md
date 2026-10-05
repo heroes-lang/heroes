@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: ce781e5452e3bccb9aefec21770627d993d413a8
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake.
 
     **Cause found 2026-10-04, lane b11-parse**: a `}` alone on its line is no token, the lexer having laid out the braces of a `{` that ends its line (`brace_layout.hero`, ruling 1; `heroes lex --dump-tokens`: `dedent` then `while`), so `loop_habit.past_a_statement`, which tells the habit where `c.tokens[close + 1]` is the `while`, and `loop_habit.do_tail`, which reads the tail only with its `}` on the `while`'s line, see neither. Both are in `selfhost/parse/loop_habit.hero`, batch 12's file. Not repaired.
+
+    Repaired at `ce781e54`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
