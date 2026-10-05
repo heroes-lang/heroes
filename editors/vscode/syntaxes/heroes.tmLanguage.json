@@ -59,6 +59,11 @@
           "name": "constant.character.escape.hero"
         },
         {
+          "comment": "panel 192's R5: a character a line cannot show (a control character, a bidirectional control, U+2028 or U+2029) is written by its code, `\\u{1b}`, in lowercase hexadecimal with no leading zero, its one spelling; which codes it may name is the compiler's to say (`selfhost/code_escape.hero`), so this paints the one spelling as an escape and every other spelling falls to the rule below, as the compiler refuses it",
+          "match": "\\\\u\\{[1-9a-f][0-9a-f]{0,5}\\}",
+          "name": "constant.character.escape.hero"
+        },
+        {
           "comment": "the backslash is reserved — anything else is a compile error",
           "match": "\\\\.",
           "name": "invalid.illegal.unknown-escape.hero"
@@ -72,6 +77,7 @@
       "name": "string.quoted.double.interpolated.hero",
       "patterns": [
         { "match": "\\\\[ntr\\\\\"]", "name": "constant.character.escape.interpolated.hero" },
+        { "match": "\\\\u\\{[1-9a-f][0-9a-f]{0,5}\\}", "name": "constant.character.escape.interpolated.hero" },
         { "match": "\\\\.", "name": "invalid.illegal.unknown-escape.hero" },
         { "match": "\\{\\{|\\}\\}", "name": "constant.character.escape.brace.hero" },
         { "match": "\\}", "name": "invalid.illegal.lone-brace.hero" },

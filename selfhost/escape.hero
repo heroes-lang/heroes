@@ -13,7 +13,11 @@
 #   \"       —        34 — a " needs no escape inside a char literal
 #   —        \'       39 — a ' needs no escape inside a string
 #
-# The set is frozen: \0, \xNN, \u{…} and octal escapes reconvene the panel.
+# The set is frozen: \0, \xNN and octal escapes reconvene the panel. The
+# seventh, `\u{1b}` (panel 192's R5, which opened the freeze for it alone),
+# writes in a string only a character a line cannot show (`raw_chars`), in
+# lowercase hexadecimal with no leading zero, never a NUL, and is judged
+# where it stands (`code_escape`); this decodes it.
 #
 # Port notes:
 # - Rust's table returns the byte (`Option<u8>`); this port returns the decoded
@@ -90,6 +94,107 @@ function escape_text(after_backslash: str, ctx: Quoted) -> str?
         return ok("'")
     return fail(code: ERR_NOT_AN_ESCAPE, msg: after_backslash)
 
+# The letter escape that writes the character `value` names in a string, the
+# table above read the other way, or "" where none does: the one spelling an
+# escape by code is refused for (`code_escape`, `escape_report`).
+function letter_of(value: i64) -> str
+    if value == 10
+        return "\\n"
+
+    if value == 9
+        return "\\t"
+
+    if value == 13
+        return "\\r"
+
+    if value == 34
+        return "\\\""
+
+    if value == 92
+        return "\\\\"
+    return ""
+
+## The escape by code
+
+# Where the `}` of the `\u{…}` whose backslash is `cs[at]` stands, or -1: one
+# to six hexadecimal digits between its braces. `code_escape` refuses every
+# spelling but the one `raw_chars.escaped` writes, which has at most six, so
+# six bound the sum and no longer spelling reaches here in a program that
+# checked.
+function brace_close(cs: [str], at: i64) -> i64
+    if at + 3 >= cs.len() || cs[at + 1] != "u" || cs[at + 2] != "{"
+        return -1
+    i: i64 @ at + 3
+
+    while i < cs.len() && i - at - 3 <= 6 && digit(cs[i]) >= 0
+        i @ i + 1
+
+    if i == at + 3 || i - at - 3 > 6 || i >= cs.len() || cs[i] != "}"
+        return -1
+    return i
+
+# The code the hexadecimal digits `cs[from]` to `cs[to]` name.
+function code_of(cs: [str], from: i64, to: i64) -> i64
+    value: i64 @ 0
+
+    for at in range(from: from, to: to)
+        value @ value * 16 + digit(cs[at])
+
+    return value
+
+# One hexadecimal digit's value, in either case, or -1.
+function digit(c: str) -> i64
+    if c.len() != 1
+        return -1
+    b = c[0]
+
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+# The character `code` names, as UTF-8; "" for a NUL, a surrogate or a code
+# past Unicode's last, none of which is a character a `str` holds.
+function encoded(code: i64) -> str
+    if code <= 0 || code > 1114111 || code >= 55296 && code <= 57343
+        return ""
+    out: [u8] @ []
+
+    if code < 128
+        out @ out.push(to_u8(code).must())
+    else if code < 2048
+        out @ out.push(to_u8(192 + (code >> 6)).must())
+        out @ out.push(to_u8(128 + (code & 63)).must())
+    else if code < 65536
+        out @ out.push(to_u8(224 + (code >> 12)).must())
+        out @ out.push(to_u8(128 + (code >> 6 & 63)).must())
+        out @ out.push(to_u8(128 + (code & 63)).must())
+    else
+        out @ out.push(to_u8(240 + (code >> 18)).must())
+        out @ out.push(to_u8(128 + (code >> 12 & 63)).must())
+        out @ out.push(to_u8(128 + (code >> 6 & 63)).must())
+        out @ out.push(to_u8(128 + (code & 63)).must())
+    return out.validated_bytes().must()
+
+# Past the escape whose backslash is at `at`: past the `}` of a `\u{…}` that
+# closes on its line, else past the one character after the backslash, so a
+# reader of a literal's braces never takes an escape's for its own.
+function end_of(text: str, at: i64) -> i64
+    if at + 2 < text.len() && text[at + 1] == 'u' && text[at + 2] == '{'
+        i: i64 @ at + 3
+
+        while i < text.len() && text[i] != '}' && text[i] != '"' && text[i] != '\n' && text[i] != '\\'
+            i @ i + 1
+
+        if i < text.len() && text[i] == '}'
+            return i + 1
+    return at + 2
+
 ## The decoder
 
 # Decode a str or char token's text into the string it denotes. `text` is the
@@ -122,6 +227,12 @@ function unescape(text: str) -> str
         if i + 1 >= cs.len()
             parts @ parts.push("\\")
             i @ i + 1
+            continue
+        close = brace_close(cs, at: i)
+
+        if close > 0 && ctx == .in_str && encoded(code_of(cs, from: i + 3, to: close)).len() > 0
+            parts @ parts.push(encoded(code_of(cs, from: i + 3, to: close)))
+            i @ close + 1
             continue
         decoded = escape_text(cs[i + 1], ctx)
 
@@ -161,3 +272,22 @@ test "the table serves the validator's question too"
     assert bare_text(.in_str) == "'"
     assert legal(.in_char) == "\\n \\t \\r \\\\ \\'"
     assert escape_text("r", .in_str).must() == "\r"
+
+test "the escape by code decodes in a string, and is the backslash elsewhere"
+    assert unescape("\"a\\u{1b}b\"") == "a" + encoded(27) + "b"
+    assert unescape("\"\\u{202E}\"") == encoded(8238)
+    assert unescape("\"\\u{}\"") == "\\u{}"
+    assert unescape("\"\\u{1234567}\"") == "\\u{1234567}"
+    assert unescape("'\\u{1b}'") == "\\u{1b}"
+    assert end_of("\\u{1b}x", at: 0) == 6
+    assert end_of("\\u{1b", at: 0) == 2
+    assert end_of("\\n{", at: 0) == 2
+
+test "a code is the character it names, as UTF-8, and nothing past Unicode"
+    assert encoded(65) == "A"
+    assert encoded(233) == "é"
+    assert encoded(8364) == "€"
+    assert encoded(128512) == "😀"
+    assert encoded(0) == ""
+    assert encoded(55296) == ""
+    assert encoded(1114112) == ""

@@ -1,0 +1,30 @@
+# Defect 251, panel 192's R5, 2026-10-05: `\u{…}` writes only a character a
+# line cannot show (a control character, a bidirectional control, U+2028 or
+# U+2029), so every character keeps one spelling (design.md §4.3).
+#
+# - One a letter escape writes takes that escape, `certain`: `\u{9}` is
+#   `\t`, and `\u{7b}` in an `f` literal's text is `{{`.
+# - One a string holds as itself takes the character, a `guess` (R5's
+#   `\u{e9}`): a writer who spelled it by code may have meant one no screen
+#   shows, or a mark that joins its neighbour.
+# - The NUL takes no escape (R1: a `str` may hold one, built from bytes), and
+#   a surrogate, a code past U+10FFFF or empty braces name no character.
+
+function letters()
+    print("\u{9}\u{a}\u{d}\u{22}\u{5c}")  #~ escape_not_needed escape_not_needed escape_not_needed escape_not_needed escape_not_needed
+
+function braces()
+    x = 1
+    print(f"\u{7b}{x}\u{7d}")  #~ escape_not_needed escape_not_needed
+
+function held_as_themselves()
+    print("\u{41}\u{e9}")  #~ escape_not_needed escape_not_needed
+
+function seen_by_no_screen()
+    print("a\u{200b}b")  #~ escape_not_needed
+
+function a_nul()
+    print("a\u{0}b")  #~ nul_in_string
+
+function no_character()
+    print("\u{d800}\u{110000}\u{}")  #~ unknown_escape unknown_escape unknown_escape
