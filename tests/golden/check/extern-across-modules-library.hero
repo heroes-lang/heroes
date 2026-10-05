@@ -5,11 +5,16 @@
 # with zero users in the whole repository — the reversible moment to
 # close it. Three spellings, one code: the bare call, the extern taken
 # as a value, and UFCS through the dot.
+#
+# Corrected 2026-10-05, defect 245 (panel 192's R1): the library no longer
+# binds `hero_file_read`; `read_file` reaches C through `hero_file_read_str`,
+# which takes the `str` itself, so the dot's receiver is the `str` and the
+# extern it names is that one.
 
 function main()
     n = hero_args_count()          #~ extern_across_modules
     print(n)
     _ = hero_exit                  #~ extern_across_modules
     status: i64 @ 0
-    _ = "p".cstr().hero_file_read(@status)    #~ extern_across_modules
+    _ = "p".hero_file_read_str(@status)    #~ extern_across_modules
     print(status)
