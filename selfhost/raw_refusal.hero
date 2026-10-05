@@ -6,7 +6,11 @@
 # otherwise, or not at all: a raw ESC compiled at exit 0, survived `fmt` byte
 # for byte and drove the terminal of whoever printed the file, and retyping
 # the line a screen shows dropped it and still compiled, panel 066's trap for
-# the carriage return, which was refused alone.
+# the carriage return, which was refused alone. A right-to-left override in a
+# string reverses the code after it as a screen draws the line, so
+# `|| is_admin(x)` reads as text inside the string, Trojan Source's shape, and
+# a right-to-left mark on each side of `>` draws `a > b` as `a < b` (panel
+# 192, GNU FriBidi, run).
 #
 # Each holder says it with its own repair, `certain`, written for every
 # character of a run, which is told once, at its first:
@@ -37,16 +41,17 @@ variant Holder
 
 ## Which bytes are asked
 
-# Whether `code` is refused written as itself (`shown_char.unshowable`):
-# today a control character, C0 but the tab and the line feed, DEL and C1.
+# Whether `code` is refused written as itself: a character a line cannot
+# show (`shown_char.unshowable`), a control character but the tab and the
+# line feed, one of the twelve bidirectional controls, U+2028 or U+2029.
 function refused(code: i64) -> bool
-    return shown_char.unshowable(code) && raw_chars.control(code)
+    return shown_char.unshowable(code)
 
 # Whether a byte can begin a refused character, asked of every byte a string
 # or a comment holds before anything is decoded: a control byte, or the lead
-# byte of C1 (0xC2).
+# byte of C1 (0xC2), of U+061C (0xD8), or of U+2000 to U+2FFF (0xE2).
 function might_begin(b: u8) -> bool
-    return b < 32 || b == 127 || b == 194
+    return b < 32 || b == 127 || b == 194 || b == 216 || b == 226
 
 ## The scanners' calls
 
@@ -68,7 +73,7 @@ function clear(text: str, from: i64) -> i64
         if b < 32 || b == 127
             return i
 
-        if b == 194 && refused(shown_char.code_point(bytes.char_at(text, i)))
+        if b >= 194 && (b == 194 || b == 216 || b == 226) && refused(shown_char.code_point(bytes.char_at(text, i)))
             return i
         i @ i + 1
 
@@ -294,7 +299,7 @@ function in_character(@l: state.LexState, text: str, start: i64, end: i64)
 
 ## Tests
 
-test "a control character is refused, a tab and a line feed are not, and the bytes asked are the ones that can begin one"
+test "a character a line cannot show is refused, what text spells with is not, and the bytes asked are the ones that can begin one"
     for code in [0, 1, 27, 31, 127, 128, 133, 159]
         assert refused(code)
 
@@ -303,8 +308,18 @@ test "a control character is refused, a tab and a line feed are not, and the byt
 
     assert might_begin(194)
     assert might_begin(27)
+    assert might_begin(226)
     assert !might_begin(65)
-    assert !might_begin(226)
+    assert !might_begin(195)
+
+    # The twelve bidirectional controls, and the line and paragraph separators.
+    for code in [1564, 8206, 8207, 8234, 8235, 8236, 8237, 8238, 8294, 8295, 8296, 8297, 8232, 8233]
+        assert refused(code)
+
+    # And what text spells with: the joiners, a variation selector, a tag, a
+    # zero-width space, a no-break space, a soft hyphen, a word joiner and a BOM.
+    for code in [8204, 8205, 65039, 917601, 8203, 160, 173, 8288, 65279]
+        assert !refused(code)
 
 test "a run is counted in characters, and rewritten as its holder writes it"
     esc: [u8] = [27, 7, 127]
