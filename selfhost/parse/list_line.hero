@@ -113,7 +113,7 @@ function set_apart(@c: cursor.Cursor, text: str, closer: token.TokenKind, above:
         fixes @ fixes.push(subtract)
     d: diag.Diagnostic @ diag.new_diagnostic(code: "spaced_minus_element", message: message, span: sign)
     d.fixes @ fixes
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
 
     # A map's line with no `:` cannot be read as an entry, so what is left of
     # the map is passed over rather than refused a second time.
@@ -189,7 +189,7 @@ function trailing_comma(@c: cursor.Cursor, comma: token.Span)
     d.fixes @ d.fixes.push(
         diag.Fix(title: "delete the trailing comma", replacement: "", span: comma, certainty: .certain)
     )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
 
 ## Between two elements
 
