@@ -1,0 +1,269 @@
+# The repository's documents hold no character their reader cannot see
+# (defect 356, panel 192's R12).
+#
+# WHY. A model writing a file through a tool wrote a backslash escape,
+# `\u200b`, and the tool decoded it: the committed bytes held a raw ZERO
+# WIDTH SPACE, three times in one sitting, each found only by a scan somebody
+# thought to run (panel 192's historian and critic). Since that sitting the
+# compiler refuses such characters in a program's strings and comments
+# (`selfhost/raw_refusal.hero`); nothing read the documents, the issues, the
+# specification or the contract, where a reader is a person or a model too.
+#
+# WHAT IS REFUSED, each a fact about the code point:
+# - a control character but the tab and the line feed: C0, DEL and C1, which
+#   a terminal acts on and no screen shows;
+# - the twelve bidirectional controls, U+2028 and U+2029, which reorder or
+#   break the line a reader sees, Trojan Source's shape;
+# - the zero-width space and its kin, nothing on a screen and nothing in any
+#   word: U+200B, the word joiner U+2060, the invisible operators U+2061 to
+#   U+2064, the byte order mark U+FEFF, the soft hyphen U+00AD, U+180E, and
+#   the Hangul fillers U+115F, U+1160, U+3164 and U+FFA0.
+#
+# WHAT IS NOT: the joiners U+200C and U+200D, the variation selectors and the
+# tag characters, which real text spells with (an emoji sequence, Persian, a
+# flag: the sitting's reports quote each), and the spaces, which a screen
+# shows as space.
+#
+# WHERE: every file `git` names as the project's (`shell.project_files`, the
+# tracked and the untracked not ignored, so a file is read before it is
+# committed) that decodes as UTF-8, but the trees whose bytes are a case's on
+# purpose: `tests/golden/`, where a program the compiler must refuse holds
+# the raw character, and `tests/emission/` and `seed/`, C the compiler wrote.
+# A file that is not UTF-8 is a picture or a font, not a document.
+#
+# A record is never rewritten (`.claude/rules/records.md`), so a character
+# already in one stays, its correction underneath: `known` lists each by its
+# place, and a place that no longer holds its character is red too, so the
+# list cannot outlive what it excuses.
+
+use report
+use floors
+use shell
+use strings
+
+# The trees whose files hold such characters on purpose.
+constant EXEMPT: [str]
+    [
+        "tests/golden/"
+        "tests/emission/"
+        "seed/"
+    ]
+
+# How many documents the walk read, the count on the day it was written, so
+# a walk that stops reaching the tree is red (`floors`). **5,072 on
+# 2026-10-05**, lane b12-str192's tree, measured by this suite.
+constant LEAST_DOCUMENTS: i64
+    5072
+
+# One character found, by its file, its line and its code.
+record Found
+    path: str
+    line: i64
+    code: i64
+
+# The characters already in a record, each where it stands: the place is
+# stable, since a record is only appended to.
+function known() -> [Found]
+    return [
+        # Panel 188's critic quoted a message as a terminal received it, a
+        # zero-width space before `stdio.h` and an override in a header's
+        # name, each written raw.
+        Found(path: "docs/panel/188-reports/completeness-critic.md", line: 577, code: 8203)
+        Found(path: "docs/panel/188-reports/completeness-critic.md", line: 580, code: 8238)
+        # Panel 192's historian wrote `\u200b` twice and the tool decoded it;
+        # the report says so at its own line 492.
+        Found(path: "docs/panel/192-reports/historian.md", line: 311, code: 8203)
+        Found(path: "docs/panel/192-reports/historian.md", line: 331, code: 8203)
+    ]
+
+## The characters
+
+# Whether a document refuses `code` written as itself.
+function refused(code: i64) -> bool
+    if code < 32
+        return code != 9 && code != 10
+
+    if code < 127
+        return false
+
+    if code < 160
+        return true
+
+    if code < 8192
+        return code == 173 || code == 1564 || code == 4447 || code == 4448 || code == 6158
+
+    # U+200B, LRM and RLM, U+2028 to RLO, the word joiner and the invisible
+    # operators, and LRI to PDI.
+    if code <= 8297
+        return code == 8203 || code == 8206 || code == 8207 || code >= 8232 && code <= 8238 || code >= 8288 && code <= 8292 || code >= 8294
+    return code == 12644 || code == 65279 || code == 65440
+
+# The characters of `text` a document refuses, each at its line, `path`
+# left for the caller. ASCII is asked byte by byte and anything above it
+# decoded, a `str` being well-formed UTF-8 (spec § 3).
+function found_in(text: str) -> [Found]
+    out: [Found] @ []
+    line: i64 @ 1
+    at: i64 @ 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == 10
+            line @ line + 1
+            at @ at + 1
+            continue
+
+        if b < 128
+            if refused(to_i64(b).must())
+                out @ out.push(Found(path: "", line: line, code: to_i64(b).must()))
+            at @ at + 1
+            continue
+        width = width_of(b)
+        code = decoded(text, at: at, width: width)
+
+        if refused(code)
+            out @ out.push(Found(path: "", line: line, code: code))
+        at @ at + width
+
+    return out
+
+# How many bytes the character led by `b` takes.
+function width_of(b: u8) -> i64
+    if b >= 240
+        return 4
+
+    if b >= 224
+        return 3
+    return 2
+
+# The code point of the `width` bytes at `at`.
+function decoded(text: str, at: i64, width: i64) -> i64
+    lead = to_i64(text[at]).must()
+    code: i64 @ lead & 31
+
+    if width == 3
+        code @ lead & 15
+    else if width == 4
+        code @ lead & 7
+
+    for k in range(from: 1, to: width)
+        if at + k < text.len()
+            code @ code * 64 + (to_i64(text[at + k]).must() & 63)
+
+    return code
+
+# `U+` and the code in four hexadecimal digits at least, as Unicode writes it.
+function named(code: i64) -> str
+    digits = "0123456789ABCDEF"
+    out: str @ ""
+    left: i64 @ code
+
+    while left > 0
+        out @ digits.slice(from: left % 16, to: left % 16 + 1) + out
+        left @ left / 16
+
+    while out.len() < 4
+        out @ "0" + out
+
+    return "U+" + out
+
+function exempt(path: str) -> bool
+    for tree in EXEMPT
+        if strings.starts_with(text: path, prefix: tree)
+            return true
+
+    return false
+
+function listed(one: Found, among: [Found]) -> bool
+    for other in among
+        if other.path == one.path && other.line == one.line && other.code == one.code
+            return true
+
+    return false
+
+## The walk
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @ report.empty()
+    files = shell.project_files(scratch)?
+    documents: i64 @ 0
+    found: [Found] @ []
+
+    for path in files
+        if exempt(path)
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            continue
+        documents @ documents + 1
+
+        for one in found_in(text.must())
+            found @ found.push(Found(path: path, line: one.line, code: one.code))
+
+    excused = known()
+    unexcused: [str] @ []
+
+    for one in found
+        if !listed(one, among: excused)
+            unexcused @ unexcused.push("    " + one.path + ":" + one.line.to_str() + ": " + named(one.code))
+
+    stale: [str] @ []
+
+    for one in excused
+        if !listed(one, among: found)
+            stale @ stale.push("    " + one.path + ":" + one.line.to_str() + ": " + named(one.code))
+
+    if unexcused.len() > 0
+        report.keep_failure(
+            @r,
+            label: "unseen",
+            detail: "  a document holds a character its reader cannot see, written as itself: a control character, a bidirectional control, U+2028 or U+2029, or a zero-width space or its kin (defect 356):\n" + unexcused.join("\n") + "\n  Write it as the text means: its name, `U+200B`, or the escape a quoted program spells it with, `\\u{200b}`. A tool that decodes a written escape is how they arrive."
+        )
+    else
+        report.keep_pass(@r)
+
+    if stale.len() > 0
+        report.keep_failure(
+            @r,
+            label: "unseen/known",
+            detail: "  `known` excuses a character a record holds, and these places no longer hold theirs: a record is only appended to, so the list is what moved. Remove the rows:\n" + stale.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+    floors.check(@r, label: "unseen", found: documents, floor: LEAST_DOCUMENTS, what: "documents read")
+    return ok(r)
+
+## Tests
+
+# Built from bytes, since a document's raw character is what is under test.
+function of(bytes: [u8]) -> str
+    return bytes.validated_bytes().must()
+
+test "a document refuses a control character, a bidirectional one and the zero-width kin, and keeps what text spells with"
+    for code in [0, 1, 13, 27, 127, 133, 159, 173, 1564, 6158, 8203, 8206, 8207, 8232, 8233, 8234, 8238, 8288, 8292, 8294, 8297, 65279, 4447, 12644, 65440]
+        assert refused(code)
+
+    for code in [9, 10, 32, 65, 160, 233, 8204, 8205, 8364, 8193, 12288, 65039, 917601, 128512]
+        assert !refused(code)
+
+test "a character is found at its line and named by its code"
+    text = "one\ntwo " + of([226, 128, 139]) + "\nthree " + of([226, 128, 174]) + " and " + of([27]) + "\n" + of([240, 159, 145, 168, 226, 128, 141, 240, 159, 146, 187]) + "\n"
+    got = found_in(text)
+    assert got.len() == 3
+    assert got[0].line == 2
+    assert got[0].code == 8203
+    assert got[1].line == 3
+    assert got[1].code == 8238
+    assert got[2].code == 27
+    assert named(8203) == "U+200B"
+    assert named(27) == "U+001B"
+    assert named(917601) == "U+E0061"
+
+test "a case's tree is exempt and a document is not"
+    assert exempt("tests/golden/check/fixedbugs-283-x.hero")
+    assert exempt("seed/heroes.c")
+    assert !exempt("docs/panel/192-reports/historian.md")
+    assert !exempt("tests/harness/suite_unseen.hero")
