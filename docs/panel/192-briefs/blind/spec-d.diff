@@ -1,0 +1,21 @@
+35,36c35,36
+< - Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
+<   carriage return or line end: a string is one line.
+---
+> - Syntax is ASCII-only, but comments and strings may hold UTF-8; a string
+>   holds no raw control character and is one line.
+47,48c47,51
+< - Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
+<   of `\"` in a character literal. Any other escape is a compile error.
+---
+> - Seven escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, and
+>   `\u{...}`, a code point in lowercase hex with no leading zero, never 0 or a
+>   surrogate, for one it holds no other way (`\u{1b}` is ESC); `\'` instead of
+>   `\"` in a character literal, which takes no `\u{...}`. Any other escape is a
+>   compile error.
+429,431c432
+< asks the system where its headers and libraries are and what else it needs. A
+< package answering with anything this compiler does not pass on is refused,
+< naming what it said.
+---
+> asks the system where its headers and libraries are and what else it needs.
