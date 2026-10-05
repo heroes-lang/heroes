@@ -44,7 +44,7 @@ use cursor
 use parse/brace_habit
 use parse/opening
 use parse/line_end
-use parse/pairing
+use pairing
 use text_lines
 use operators
 

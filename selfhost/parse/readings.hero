@@ -21,6 +21,7 @@ use swap_words
 use parse/decl
 use parse/which_arm
 use parse/joined_lines as seams
+use pairing
 use text_outline
 use word_place
 
@@ -146,6 +147,7 @@ function read_apart(apart: lexer.LexOutput, text: str, root_end: i64) -> [diag.D
         closes: apart.closes,
         swaps: apart.swaps
     )
+    pairing.pair_all(@c, text)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []

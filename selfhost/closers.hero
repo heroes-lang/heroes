@@ -12,7 +12,7 @@
 # that opener's: each opener above it is named never closed there, its
 # closer the one left out, and the closer's offset is kept with the others
 # the lexer named openers at (`LexState.closes`), where the parser's pairing
-# reads the same (`parse/pairing.paired_closer`). A closer whose kind no
+# reads the same (`pairing.paired_closer`). A closer whose kind no
 # opener open shares closes the innermost, as before, `print(2]`'s `]` its
 # `(`; and so does one that reads better as the innermost's closer written
 # in the wrong kind, `[0.5, 0.7)` over the call's `)` (`closes_its_own`, the

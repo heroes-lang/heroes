@@ -88,6 +88,8 @@ record Cursor
     # hand, has none to tell, and its words are read from the text as the
     # lexer reads them (`parse/swap_reading.swap_at`).
     lexed: bool
+    # Each opener's closer by token index, once `pairing.pair_all` ran.
+    pairs: [i64]
 
 # A cursor over tokens no lexer made, a test's, all of them the author's.
 function new_cursor(tokens: [token.Token]) -> Cursor
@@ -100,20 +102,18 @@ function new_cursor(tokens: [token.Token]) -> Cursor
 # The same over a stream the lexer made, told where it closed the brackets a
 # mistake left open and what each word it refused reads as.
 function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps: [swap_words.Swap]) -> Cursor
-    said: [diag.Diagnostic] = []
-    comments: [token.Span] = []
-    held: [diag.Held] = []
     c: Cursor @ Cursor(
         tokens: tokens,
         pos: 0,
-        diagnostics: said,
+        diagnostics: [],
         marks: report_marks.none(),
-        comments: comments,
+        comments: [],
         root_end: root_end,
-        held: held,
+        held: [],
         closes: closes,
         swaps: swaps,
-        lexed: true
+        lexed: true,
+        pairs: []
     )
     pass_comments(@c)
     return c

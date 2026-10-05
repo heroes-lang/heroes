@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:26:9: error[unclosed_bracket]: `[` opened here is still open at line 29, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:31:9: error[unclosed_bracket]: `{` opened here is still open at line 34, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:36:10: error[unclosed_bracket]: `(` opened here is still open at line 39, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:36:11: error[unclosed_bracket]: `[` opened here is still open at line 39, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:41:11: error[unclosed_bracket]: `[` opened here is still open at line 44, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:45:11: error[unclosed_bracket]: `[` opened here is never closed
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:51:7: error[expected_separator]: expected `,` or a new line between one element and the next, found `=` — a binding is no element: the `[` still open 2 lines above, at column 9, closes on a line above, so write its `]` there
+tests/golden/check/fixedbugs-344-every-opener-is-paired-in-one-walk.hero:51:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

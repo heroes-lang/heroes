@@ -47,7 +47,7 @@ use state
 use line_above
 use brace_layout
 use parse/laid_braces
-use parse/pairing
+use pairing
 use parse/line_end
 
 ## The habit
@@ -119,7 +119,7 @@ function alone(text: str, span: token.Span) -> bool
 
 # The index of the token that closes the `{` at `open`, or, where nothing
 # does, of where the lexer named it never closed: the line a declaration
-# opens at column 0 (`parse/pairing.close_after`), past which the braces read
+# opens at column 0 (`pairing.close_after`), past which the braces read
 # the next declarations as their own members, or the end of the file. For a
 # `{` the lexer laid out, the index past the block below it, its `}` being
 # no token.

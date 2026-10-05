@@ -124,7 +124,7 @@ function is_closer(kind: TokenKind) -> bool
 
 # The opener a closer closes, a `(` for any other kind; and the closer an
 # opener owes, a `)` for any other. Here since defect 196, from
-# `parse/pairing` and `parse/unclosed`, which kept one each.
+# `pairing` and `parse/unclosed`, which kept one each.
 function opener_of(closer: TokenKind) -> TokenKind
     if closer == .rbracket
         return .lbracket
