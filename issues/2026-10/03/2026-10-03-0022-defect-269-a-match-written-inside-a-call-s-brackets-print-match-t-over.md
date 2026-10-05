@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-03
-commit: none
+commit: bddb18ea90ab22a9d8b6308179f674d1ea7ed37f
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** batch 8's recovery lane, 2026-10-03, as a question (its report's *Found beside*: panel 180's shape 74, *sanctioned or not*); run on both compilers by the coordinator, 2026-10-04.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, and a first that names the arms' margin to an author who indented them, where the mistake is the bracket.
+
+    Repaired at `bddb18ea`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
