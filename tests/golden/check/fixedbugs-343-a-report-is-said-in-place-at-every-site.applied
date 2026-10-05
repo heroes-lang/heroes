@@ -1,0 +1,22 @@
+# Fixed defect 343, 2026-10-05 (lane b11-parse). Symptom: three sites said
+# their report through `c.diagnostics @ c.diagnostics.push(d)`, a field place
+# the in-place store never reaches, so a file of N such reports copied the
+# list N times: 1,000 bare function types 1.50 billion instructions retired
+# and 4,000 8.29 billion, labels that are not names 1.83 and 9.62. Cause and
+# repair: `line_end.refused`, `type.bare_function` and `type.named_parameter`
+# append in place, as every other parser site does (defect 146's rule); 4,000
+# of either now retire 5.02 and 6.35 billion. Nothing said moves.
+
+function broken_before_an_operator(n: i64) -> i64
+    x = (n +
+        1)  #~ line_end_before_continuation
+    return x
+
+function bare(g: (function(i64) -> i64)) -> i64  #~ expected_type
+    return g(1)
+
+function label_not_a_name(g: (function([i64]: i64) -> i64)) -> i64  #~ parameter_name_not_a_name
+    return 1
+
+function main()
+    print(1)

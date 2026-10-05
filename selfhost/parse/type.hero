@@ -261,7 +261,7 @@ function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         d.fixes @ d.fixes.push(
             diag.Fix(title: "write the parentheses", replacement: "(" + written + ")", span: span, certainty: .certain)
         )
-        c.diagnostics @ c.diagnostics.push(d)
+        cursor.push_diagnostic(@c.diagnostics, d)
     return ast.push_type(
         @a.types,
         ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: span)
@@ -334,7 +334,7 @@ function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
     match a.types[name].kind
         .named => return span
         .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error =>
-            c.diagnostics @ c.diagnostics.push(data_errors.parameter_name_not_a_name(span))
+            cursor.push_diagnostic(@c.diagnostics, data_errors.parameter_name_not_a_name(span))
             return span
 
     return span

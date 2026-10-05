@@ -256,7 +256,7 @@ function refused(@c: cursor.Cursor, text: str, before: i64, other: line_end_read
         d.fixes @ d.fixes.push(
             diag.Fix(title: "a new argument: write the `,`", replacement: ",", span: token.Span(start: ender.span.end, end: ender.span.end), certainty: .guess)
         )
-    c.diagnostics @ c.diagnostics.push(d)
+    cursor.push_diagnostic(@c.diagnostics, d)
 
 # Whether the line below could stand on its own after a closer left out above
 # it: it begins with what also begins a value, a `-` touching its operand
