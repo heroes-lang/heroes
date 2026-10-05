@@ -282,16 +282,15 @@ function punct(@l: state.LexState, text: str)
         state.error_token_at(@l, start)
         return
 
+    # One of C's `for (i = 0; i < n; i++)`, or of the header written bare, is
+    # that header's, which the parser tells once (defects 194 and 301).
+    if ch == ";" && closers.header_semicolon(@l, text, at: start)
+        return
+
     # C's `;` that ends its line outside brackets is a habit told once a run,
     # its deletion certain (`separator_runs`, defect 178).
     if ch == ";" && l.open_brackets.len() == 0 && separator_runs.ends_its_line(text, at: l.pos)
         separator_runs.semicolon(@l.diagnostics, text, at: span)
-        state.error_token_at(@l, start)
-        return
-
-    # One inside C's `for (i = 0; i < n; i++)` is that header's, which the
-    # parser tells once at its `(` (`closers.in_a_for_header`, defect 194).
-    if ch == ";" && closers.in_a_for_header(l)
         state.error_token_at(@l, start)
         return
 
