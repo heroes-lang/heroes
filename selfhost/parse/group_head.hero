@@ -63,7 +63,7 @@ function judge_name(@c: cursor.Cursor, text: str, span: token.Span, what: str)
     said = head_names.judged(spelled: cursor.slice_of(text, span), span: span, what: what)
 
     if !said.is_err()
-        cursor.push_diagnostic(@c.diagnostics, said.must())
+        cursor.say(@c, said.must())
 
 # `link "sqlite3"` or `package "raylib"` — optional, one or the other, and
 # both matched by text rather than lexed as keywords, for the reason above.

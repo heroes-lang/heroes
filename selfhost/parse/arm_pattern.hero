@@ -112,7 +112,7 @@ function literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
         d.fixes @ d.fixes.push(
             diag.Fix(title: "delete the `-`", replacement: "", span: token.Span(start: sign.start, end: at.start), certainty: .certain)
         )
-        cursor.push_diagnostic(@c.diagnostics, d)
+        cursor.say(@c, d)
         return fail(code: "no_literal", msg: "a sign before a pattern no sign takes")
 
     if !is_literal(k)

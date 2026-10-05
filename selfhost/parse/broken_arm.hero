@@ -64,7 +64,7 @@ function arrow(@c: cursor.Cursor, text: str, own_block: bool) -> bool
                 diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false)
             )
         else
-            cursor.push_diagnostic(@c.diagnostics, d)
+            cursor.say(@c, d)
 
     while at >= 0 && c.pos <= at
         _ = cursor.bump(@c)

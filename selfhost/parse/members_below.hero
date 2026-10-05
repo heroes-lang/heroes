@@ -72,8 +72,8 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
             _ = cursor.bump(@c)
 
         if !goes_on || junk.start != cursor.current_span(c).start
-            cursor.push_diagnostic(
-                @c.diagnostics,
+            cursor.say(
+                @c,
                 diag.new_diagnostic(code: empty.code, message: "the " + members + " of `" + quoted + "` go on the lines below it, one level deeper, and never in braces (found `{`)", span: cursor.current_span(c))
             )
         close = brace_habit.closer(c, open: brace)
@@ -81,7 +81,7 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
         # Braces that hold nothing hold no member either, which is a mistake
         # the braces' report does not name.
         if holds_nothing(c, from: brace, to: close)
-            cursor.push_diagnostic(@c.diagnostics, empty)
+            cursor.say(@c, empty)
         return .braced(close: close)
 
     # The junk is told over members and over none, a closer one too many
@@ -101,7 +101,7 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
         brace_habit.drop_told(@c, text, from: c.pos)
 
     if !cursor.at(c, .indent) && !member
-        cursor.push_diagnostic(@c.diagnostics, empty)
+        cursor.say(@c, empty)
 
     if cursor.at(c, .indent)
         return .indented
@@ -150,7 +150,7 @@ function here_or_told(@c: cursor.Cursor, text: str, from: i64, empty: diag.Diagn
         .braced _ => false
 
     if nothing && !head_lines.crossed_a_line(c, text, from: from)
-        cursor.push_diagnostic(@c.diagnostics, empty)
+        cursor.say(@c, empty)
     return below
 
 # Where members stand right under the cursor: at an indent, or in braces

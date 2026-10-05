@@ -1,0 +1,32 @@
+# Fixed defect 265, 2026-10-05 (lane b11-parse). Symptom: a file of refused
+# `while` and `if` heads took work that grew with the square of its heads,
+# 2.92 billion instructions retired at 2,000 and 25.46 billion at 8,000; so
+# did N line ends before an operator in brackets. Cause, found with `sample`:
+# `parse/line_end.said_here`, asked at each missing expression and closer
+# whether a report already stands on its token, walked every report said.
+# Repair: the cursor marks where each report stands as it is said
+# (`report_marks`, `cursor.say`), and the question is a lookup, a mark asked
+# of the report it points at and a report appended past the marks walked;
+# 8,000 heads now retire 6.81 billion. Nothing said moves: the heads, and a
+# map type's refused key and a list cut at its `)`, each told once where
+# `said_here` finds the report standing.
+
+function heads(n: i64)
+    m: i64 @ n
+    while m >  #~ expected_expression
+        m @ m - 1
+    if m >  #~ expected_expression
+        m @ m - 1
+    while m >  #~ expected_expression
+        m @ m - 1
+
+function a_key_refused(m: {2: i64})  #~ expected_type
+    print(1)
+
+function a_list_cut(n: i64)
+    x = f(1 )  #~ trailing_comma
+    y = {1: 2, )  #~ expected_expression
+    print(x)
+
+function main()
+    print(1)
