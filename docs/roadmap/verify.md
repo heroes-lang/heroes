@@ -1,6 +1,6 @@
-## Verify it yourself
+# Verify it yourself
 
-### From a cold checkout, right now
+## From a cold checkout, right now
 
 ```sh
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (~3.5 s)
@@ -15,7 +15,7 @@ repository root was nine hours stale and did not know a built-in that had landed
 the evening before; a panel seat nearly filed that as a language defect. The
 first line above is 3.5 seconds and removes the whole class.
 
-### End to end, per milestone
+## End to end, per milestone
 
 In the chain's order. Every one of these is a command somebody can run today.
 

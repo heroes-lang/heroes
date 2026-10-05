@@ -1,0 +1,1 @@
+- [x] The record | M1.1 | An 8-space indent follows a 0-space line: one Indent token, two Indent tokens, or an error? | lexer/tests/adversarial.rs | rigid indentation is the layout bet — errors, never interpretation

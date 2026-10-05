@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Teach the author one part of the compiler they want to understand, from the open learn issues of issues/. Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
+description: Teach the author one part of the compiler they want to understand, from the open questions of docs/learn/. Long preamble, code on screen, then one very clear question. NEVER convened by the assistant, never blocking, no decisions — it exists only when the author asks for it.
 ---
 
 # /learn [n] — understanding, only when asked for
@@ -13,8 +13,8 @@ does this teach you"* with *"the compiler is waiting on your answer"* is two
 different clocks in one room, and the second always wins.
 
 **Never convened by the assistant.** Not at a milestone close, not when the queue
-grows, not as a suggestion at the end of a step. The `learn` issues are written
-by `/step` and read here, and the author decides when. Conversation in Italian, using
+grows, not as a suggestion at the end of a step. The questions of `docs/learn/`
+are written by `/step` and read here, and the author decides when. Conversation in Italian, using
 `/where`'s canonical analogies; artifacts written here in English.
 
 ## The rule this skill is really about
@@ -63,7 +63,7 @@ in the message itself.
 - **Wrong**: give the answer, then the walkthrough — before → after on a real
   example from this repository, and the commit that made it so.
 - **A genuinely new explanation** — one the author needed and the record does not
-  hold — is distilled into `docs/ref/glossary/NNN-<concept>.md` (numbered in birth
+  hold — is distilled into `docs/learn/glossary/NNN-<concept>.md` (numbered in birth
   order, English, canonical analogies, origin cited, never deleted) and the
   glossary index is updated.
 - Tick each question covered where it stands, its card's `commit` set to
@@ -76,13 +76,15 @@ written is what the *code* teaches.
 
 ## Where the items are
 
-The `learn` issues of `issues/` (`grep -rl "^kind: learn" issues/`), and
-nowhere else. The queue was split by kind on 2026-08-12 because one file held
-192 open items of three kinds, and a list you have to filter before you can read
-it is a list nobody opens; since 2026-10-04 the split is the card's `kind`
+The open questions of `docs/learn/` (`grep -rl "^- \[ \] " docs/learn/`), and
+nowhere else; `docs/learn/README.md` is their front page. The queue was split by
+kind on 2026-08-12 because one file held 192 open items of three kinds, and a
+list you have to filter before you can read it is a list nobody opens. **A
+question is not an issue** (the author's *1a 2a* of 2026-10-05): it carries no
+card and never goes to GitHub, and the work's kinds are the cards' of `issues/`
 (`.claude/rules/records.md` § The issues):
 
-- **`learn`** — what is true. This skill's, and only this skill's.
+- **a question of `docs/learn/`** — what is true. This skill's, and only this skill's.
 - **`decision`** — what *should* be true. `/decide`'s, because the compiler
   goes on behaving some way while it waits, which is a different urgency from
   wanting to understand.

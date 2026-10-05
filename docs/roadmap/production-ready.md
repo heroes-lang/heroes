@@ -1,4 +1,4 @@
-## What production-ready means, and who owns each part
+# What production-ready means, and who owns each part
 
 **The yardstick the chain is judged by, written 2026-09-10 because it did not
 exist.** design.md defines v1 as *"the language is finished for v1 when it can

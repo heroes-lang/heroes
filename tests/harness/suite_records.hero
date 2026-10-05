@@ -819,6 +819,17 @@ function run_all(scratch: str) -> report.Report?
         if !issue.open
             closed[issue.path] @ true
 
+    # **A question answered is a record too**, since the questions left
+    # `ISSUES` on 2026-10-05: the 25 closed ones were entries of the old record
+    # and keep the words they were written with, the retired milestone spelling
+    # and paths of a tree since archived among them.
+    for path in walked
+        if is_question(path)
+            question = read_file(path)?
+
+            if !strings.starts_with(text: question, prefix: "- [ ] ")
+                closed[path] @ true
+
     living: [str] @ []
 
     for path in walked
@@ -1845,7 +1856,7 @@ function exemptions(@r: report.Report, present: [str])
         if entry != "" && !selects_tree(entry: strings.without_suffix(text: entry, suffix: "/"), present: present)
             dead @ dead.push("    HOMES: " + entry)
 
-    for entry in [ISSUES, ISSUES_PAGE, MILESTONES]
+    for entry in [ISSUES, ISSUES_PAGE, LEARNING, LEARNING_PAGE, MILESTONES]
         if !selects_tree(entry: entry, present: present)
             dead @ dead.push("    a named list: " + entry)
 
@@ -2061,14 +2072,23 @@ function appended(@r: report.Report, scratch: str)
     # edited, ticked included. So each file the working tree changes in
     # `ISSUES` is asked as HEAD holds it: closed there, no line below its card
     # may go.
-    tree_diff = shell.run(scratch: scratch, program: "git", words: ["git", "diff", "HEAD", "--", ISSUES])
+    #
+    # **Only an item's file is asked, and a question's is one** (2026-10-05):
+    # the first reading asked every file the diff named under `ISSUES`, so the
+    # front page, which holds no item, read as an issue closed at HEAD and its
+    # first edit as a record rewritten. A closed question of `LEARNING` is a
+    # record from its first line, having no card.
+    tree_diff = shell.run(scratch: scratch, program: "git", words: ["git", "diff", "HEAD", "--", ISSUES, LEARNING])
 
     if tree_diff.is_err()
-        offences @ offences.push("    cannot ask git what the working tree changed in " + ISSUES)
+        offences @ offences.push("    cannot ask git what the working tree changed in " + ISSUES + " and " + LEARNING)
     else
         floors_at: {str: i64} @ {}
 
         for removal in removed_by_file(tree_diff.must().out)
+            if !is_entry_name(strings.base_name(removal.path))
+                continue
+
             if floors_at[removal.path].is_err()
                 floors_at[removal.path] @ closed_floor_at_head(scratch: scratch, path: removal.path)
             closed_floor = floors_at[removal.path].must()
@@ -2843,22 +2863,25 @@ test "a C file is claimed by an `extern` at column zero in a program beside it, 
 # the right side must be present, or the row points at nothing.
 constant MOVED: [str]
     [
-        "docs/work/learn -> issues"
-        "docs/learn/LEARN.md -> issues"
-        "design.md -> docs/design/design.md"
+        "docs/work/learn -> docs/learn"
+        "docs/learn/LEARN.md -> docs/learn"
+        "design.md -> docs/design.md"
         "DESIGN-LOG.md -> issues"
         "docs/ROADMAP.md § The names -> docs/roadmap/names.md"
         "docs/ROADMAP.md § Verify it yourself -> docs/roadmap/verify.md"
         "docs/ROADMAP.md § What production-ready means -> docs/roadmap/production-ready.md"
         "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones"
-        "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/decisions.md"
+        "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/shape.md"
         "docs/ROADMAP.md § Who scheduled what -> docs/roadmap/scheduling.md"
-        "docs/ref/environment/linux/Dockerfile -> docs/ref/environment/linux/Dockerfile.amd64"
+        "docs/ref/environment/linux/Dockerfile -> docs/platforms/linux/Dockerfile.amd64"
+        "docs/design/design.md -> docs/design.md"
+        "docs/ref/assets -> docs/assets"
+        "docs/ref/environment -> docs/platforms"
+        "docs/ref/glossary -> docs/learn/glossary"
+        "docs/roadmap/decisions.md -> docs/roadmap/shape.md"
         "docs/work/DECIDE.md -> issues/README.md"
         "docs/work/DEFECTS.md -> issues/README.md"
-        "docs/learn/README.md -> issues/README.md"
         "docs/work/defects -> issues"
-        "docs/learn -> issues"
         "docs/design/DESIGN-LOG.md -> issues"
         "docs/work/DONE.md -> issues"
         "docs/records/book/beats.md -> docs/records/book/beats"
@@ -2871,7 +2894,7 @@ constant MOVED: [str]
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    23
+    26
 
 constant RETIRED_ROOTS: [str]
     [
@@ -2879,11 +2902,12 @@ constant RETIRED_ROOTS: [str]
         "docs/debrief"
         "docs/defects"
         "docs/reasoning"
-        "docs/learn"
         "docs/records/done"
         "docs/records/log"
         "docs/work/defects"
         "docs/work"
+        "docs/ref"
+        "docs/design"
     ]
 
 # Where this repository's prose puts a module when it writes the SHORT name.
@@ -3092,13 +3116,13 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
         return true
 
     # **A path that MOVED still names something**, and this is what lets a
-    # citation keep the short spelling a reader knows. Measured 2026-09-12
-    # before `design.md` moved into `docs/design/`: **1684** living citations
-    # name it and **1045** of those are `design.md §N`, a reference to a section
-    # rather than a path, spread over roughly two hundred module docs. Rewriting
-    # every one to `docs/design/design.md §N` would add twelve characters to each
-    # for nothing a reader gains, so the table answers instead and the citation
-    # stays as it was written.
+    # citation keep the short spelling a reader knows. Measured before
+    # `design.md` moved into `docs/design/` on 2026-09-12: **1684** living
+    # citations name it and **1045** of those are `design.md §N`, a reference
+    # to a section rather than a path, spread over roughly two hundred module
+    # docs. Rewriting every one to `docs/design/design.md §N` would add twelve
+    # characters to each for nothing a reader gains, so the table answers
+    # instead and the citation stays as it was written.
     if moved_to(part).len() > 0
         return true
 
@@ -3113,6 +3137,17 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
 
     if moved_issue != ""
         return true
+
+    # **And a question of comprehension cited in the flat shape** the learning
+    # list had until 2026-10-04, `docs/learn/<name>`: it stands in its name's
+    # day's folder of `LEARNING` since 2026-10-05, keeping its name.
+    if strings.starts_with(text: part, prefix: LEARNING + "/")
+        flat = strings.without_prefix(text: part, prefix: LEARNING + "/")
+
+        if !strings.contains(text: flat, needle: "/") && is_entry_name(flat)
+            # Sixteen ASCII bytes open an entry's name.
+            if !known[LEARNING + "/" + flat.slice(from: 0, to: 7) + "/" + flat.slice(from: 8, to: 10) + "/" + flat].is_err()
+                return true
 
     for home in HOMES
         if !known[home + part].is_err()
@@ -3144,7 +3179,7 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
 function issue_redirect(part: str, known: {str: bool}) -> str
     name = strings.base_name(part)
 
-    for root in ["docs/records/done/", "docs/records/log/", "docs/learn/", "docs/done/", "docs/log/"]
+    for root in ["docs/records/done/", "docs/records/log/", "docs/done/", "docs/log/"]
         if strings.starts_with(text: part, prefix: root) && strings.without_prefix(text: part, prefix: root) == name
             landed: str @ issue_home(name)
 
@@ -3688,14 +3723,21 @@ function has_extension(token: str) -> bool
 
 # A token names something if a file IS it, or if a file begins with it — which
 # covers a directory (`tests/golden/check/`) and a record cited by its number
-# without its slug (`docs/panel/042`).
+# without its slug (`docs/panel/042`). **A token written with its slash is a
+# directory, and a directory begins its files only up to that slash**: on
+# 2026-10-05 `docs/design/` died while `docs/design.md` begins with
+# `docs/design`, and reading the slash away had resolved the one through the
+# other. Without its slash the prefix stays the string's, measured that day:
+# holding it to the dash a slug opens with turned 16 living lines red, and
+# every one was a real name, a module by its path (`selfhost/emit/ffi`), a case
+# without its extension, a family of cases (`tests/golden/run/dead-`) or of
+# modules, or a sitting's number written with its dash.
 function exists_or_prefixes(token: str, known: {str: bool}) -> bool
     if !known[token].is_err()
         return true
-    trimmed = strings.without_suffix(text: token, suffix: "/")
 
     for path in keys(known)
-        if strings.starts_with(text: path, prefix: trimmed)
+        if strings.starts_with(text: path, prefix: token)
             return true
 
     return false
@@ -3977,8 +4019,30 @@ constant OPEN_LINE_PREFIX: str
 # drift the way a written one can, and nothing has to be edited to keep it true.
 # What a derived count still needs is a floor, because an empty walk passes.
 #
-# **Since 2026-10-04 the questions are issues of the kind `learn`**, in
-# `ISSUES` with every other item, and the floor counts the open ones.
+# **The questions were issues of the kind `learn` from 2026-10-04 to 05**, and
+# came back here by the author's *1a 2a* of 2026-10-05, meant as: *if they are
+# not issues, they must not be filed inside issues/*. Each keeps its name, in
+# the folder of its name's day, and carries no card: a card is what makes a
+# file one GitHub issue, and a question is never one. The floor counts the
+# open ones (`learn_offences`).
+constant LEARNING: str
+    "docs/learn"
+
+# The learning list's front page: what a question is, how one is written and
+# how one is answered, and no item.
+constant LEARNING_PAGE: str
+    "docs/learn/README.md"
+
+# A question's file: under `LEARNING`, in a folder of a year and a month. The
+# list's front page and the glossary beside the questions (`docs/learn/glossary/`,
+# since 2026-10-05) are not questions.
+function is_question(path: str) -> bool
+    if !strings.starts_with(text: path, prefix: LEARNING + "/")
+        return false
+    rest = strings.without_prefix(text: path, prefix: LEARNING + "/")
+
+    return rest.len() > 0 && is_digit(rest[0])
+
 constant LEARNING_FLOOR: i64
     300
 
@@ -4003,11 +4067,12 @@ constant ISSUES: str
 constant ISSUES_PAGE: str
     "issues/README.md"
 
-# The floor under the issue files read, the count measured the day they moved
-# and not a round figure (CL-069): an empty walk passes, and this one reads
-# every item the project has.
+# The floor under the issue files read, the count measured and not a round
+# figure (CL-069): an empty walk passes, and this one reads every item the
+# project has. 1,673 on 2026-10-05, after the 461 questions of comprehension
+# left for `LEARNING`.
 constant CARDS_FLOOR: i64
-    2000
+    1673
 
 # Every issue file in the walk, the front page aside, in the walk's order,
 # which is the names' and so the order of birth.
@@ -4851,8 +4916,6 @@ function lists(@r: report.Report, present: [str], issues: [cards.Issue])
             for complaint in front_page_offences(text: page.must(), files: ISSUES, ceiling: 0)
                 offenders @ offenders.push("    " + path + ": " + complaint)
 
-    asked: i64 @ 0
-
     for issue in issues
         if !issue.open
             continue
@@ -4868,15 +4931,36 @@ function lists(@r: report.Report, present: [str], issues: [cards.Issue])
                 offenders @ offenders.push("    " + issue.path + ": " + complaint)
                 unclassed @ true
 
-        if issue.card.kind == "learn"
-            asked @ asked + 1
-
     if unclassed
         offenders @ offenders.push("    " + CLASS_RULE)
+    learning_page = read_file(LEARNING_PAGE)
+
+    if learning_page.is_err()
+        offenders @ offenders.push("    " + LEARNING_PAGE + ": cannot be read")
+    else
+        for complaint in front_page_offences(text: learning_page.must(), files: LEARNING, ceiling: PREAMBLE_CEILING)
+            offenders @ offenders.push("    " + LEARNING_PAGE + ": " + complaint)
+
+    asked: i64 @ 0
+
+    for path in present
+        if !is_question(path)
+            continue
+        question = read_file(path)
+
+        if question.is_err()
+            offenders @ offenders.push("    " + path + ": cannot be read")
+            continue
+
+        for complaint in learn_offences(path: path, text: question.must())
+            offenders @ offenders.push("    " + path + ": " + complaint)
+
+        if strings.starts_with(text: question.must(), prefix: "- [ ] ")
+            asked @ asked + 1
 
     if asked < LEARNING_FLOOR
         offenders @ offenders.push(
-            "    " + ISSUES + ": " + asked.to_str() + " open questions and the floor is " + LEARNING_FLOOR.to_str() + " — a walk that reads almost nothing passes for the wrong reason, which is what the count line used to catch"
+            "    " + LEARNING + ": " + asked.to_str() + " open questions and the floor is " + LEARNING_FLOOR.to_str() + " — a walk that reads almost nothing passes for the wrong reason, which is what the count line used to catch"
         )
 
     if offenders.len() > 0
@@ -4916,6 +5000,58 @@ function front_page_offences(text: str, files: str, ceiling: i64) -> [str]
         out @ out.push(
             number.to_str() + " lines, ceiling " + ceiling.to_str() + " — the rules stay, a story moves to docs/records/"
         )
+    return out
+
+# ONE QUESTION OF COMPREHENSION against its shape, since 2026-10-05: in the
+# folder of its name's day, `docs/learn/<year-month>/<day>/`, one item on its
+# first line, ticked or not (a question answered STAYS, `/learn`'s rule), every
+# other line blank or indented under it, and **no card**, because a card is
+# what makes a file one GitHub issue and a question never becomes one.
+function learn_offences(path: str, text: str) -> [str]
+    out: [str] @ []
+    name = strings.base_name(path)
+
+    if !is_entry_name(name)
+        out @ out.push("its name is not `YYYY-MM-DD-HHMM-<slug>.md`, and a question is named for the day it was asked")
+    else
+        # An entry's name opens with sixteen ASCII bytes, so every cut stands
+        # between characters.
+        home = LEARNING + "/" + name.slice(from: 0, to: 7) + "/" + name.slice(from: 8, to: 10) + "/" + name
+
+        if path != home
+            out @ out.push(
+                "it stands in another day's folder, and a question lives in the folder its name's day gives: " + home
+            )
+
+    if strings.starts_with(text: text, prefix: cards.FENCE + "\n")
+        out @ out.push("line 1 opens a card, and a question is not an issue: it carries no card")
+        return out
+
+    # A question answered is a record, and keeps the shape it was written in:
+    # the 25 that came from the old record were written before the lists took
+    # one shape. Only an open question is held to the shape.
+    if strings.starts_with(text: text, prefix: "- [x] ")
+        return out
+    rows = strings.lines(text)
+
+    if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "- [ ] ") && !strings.starts_with(text: rows[0], prefix: "- [x] ")
+        out @ out.push("line 1 is not the question's line, and a question opens with it, `- [ ]` or `- [x]`")
+        return out
+    i: i64 @ 1
+
+    while i < rows.len()
+        row = rows[i]
+
+        if strings.starts_with(text: row, prefix: "- [")
+            out @ out.push(
+                "line " + (i + 1).to_str() + ": a second item, and a file here holds one question: " + head_of(row)
+            )
+        else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
+            out @ out.push(
+                "line " + (i + 1).to_str() + ": prose at column zero, and a question's body is indented under it: " + head_of(row)
+            )
+        i @ i + 1
+
     return out
 
 # One open issue's text below its card against the shape an item has had since
@@ -5977,6 +6113,13 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     # A directory, with and without its slash.
     assert exists_or_prefixes(token: "selfhost/", known: known)
 
+    # A file beside a directory, its name beginning with the directory's, is not
+    # inside it; without the slash the prefix is the string's, which is how a
+    # module is cited by its path.
+    known["docs/design.md"] @ true
+    assert !exists_or_prefixes(token: "docs/design/", known: known)
+    assert exists_or_prefixes(token: "selfhost/main", known: known)
+
     # What the rule must NOT read as a path claim: a glob, a bare word, an
     # absolute path and a URL. **A brace form IS one now**, where the old rule
     # refused it: `expanded` reads it exactly, so it is two claims and not zero.
@@ -6933,3 +7076,46 @@ test "a file under a directory that moved is found under the directory it moved 
     assert !moved_under(part: "docs/work/milestones/M-never-written.md", known: known)
     assert !moved_under(part: "docs/work/milestones", known: known)
     assert !moved_under(part: "elsewhere/M-issue-files.md", known: known)
+
+test "a question of comprehension lives in its day's folder, holds one item, and carries no card"
+    good = "- [ ] **M-ir-lowering.1** | how many instructions | x\n\n    **Origin:** step 1, 2026-08-03.\n"
+    path = "docs/learn/2026-08/03/2026-08-03-0000-first-ir.md"
+    assert learn_offences(path: path, text: good).len() == 0
+    assert learn_offences(path: path, text: "- [x] **M-ir-lowering.1** | answered, and it stays | x\n").len() == 0
+    assert learn_offences(path: path, text: "- [x] The record | M1.1 | written before one shape\n  CLOSED at column two, kept as written\n").len() == 0
+    assert strings.contains(
+        text: learn_offences(path: "docs/learn/2026-08/04/2026-08-03-0000-first-ir.md", text: good)[0],
+        needle: "another day's folder"
+    )
+    assert strings.contains(
+        text: learn_offences(path: "docs/learn/first-ir.md", text: good)[0],
+        needle: "its name is not"
+    )
+    with_card = cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-08-03", commit: "none", github: "none") + good
+    assert strings.contains(text: learn_offences(path: path, text: with_card)[0], needle: "a question is not an issue")
+    assert strings.contains(
+        text: learn_offences(path: path, text: good + "- [ ] another\n")[0],
+        needle: "a second item"
+    )
+    assert strings.contains(
+        text: learn_offences(path: path, text: good + "\nloose prose\n")[0],
+        needle: "prose at column zero"
+    )
+    assert strings.contains(
+        text: learn_offences(path: path, text: "# a title\n" + good)[0],
+        needle: "not the question's line"
+    )
+
+test "a question cited in the learning list's old flat shape is found in its day's folder"
+    known: {str: bool} @ {}
+    known["docs/learn/2026-08/03/2026-08-03-0000-first-ir.md"] @ true
+    assert one_names(part: "docs/learn/2026-08/03/2026-08-03-0000-first-ir.md", document: "x.md", known: known)
+    assert one_names(part: "docs/learn/2026-08-03-0000-first-ir.md", document: "x.md", known: known)
+    assert !one_names(part: "docs/learn/2026-08-03-0001-never-asked.md", document: "x.md", known: known)
+
+test "a question is a file of a year-and-month folder of the learning list, and the glossary beside it is not"
+    assert is_question("docs/learn/2026-08/03/2026-08-03-0000-first-ir.md")
+    assert !is_question("docs/learn/README.md")
+    assert !is_question("docs/learn/glossary/000-basic-block.md")
+    assert !is_question("docs/learn/glossary/README.md")
+    assert !is_question("issues/2026-08/03/2026-08-03-0000-first-ir.md")

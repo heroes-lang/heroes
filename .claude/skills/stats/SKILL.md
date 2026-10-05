@@ -72,6 +72,12 @@ Then the counts, each a one-line `awk`, `sort` or `uniq -c` over those two files
 Where a question is narrower, filter `issues.tsv` by the column it names and
 nothing else: a milestone (column 4), an area (column 3), a day (column 5).
 
+**The questions of comprehension are not issues** (the author's *1a 2a* of
+2026-10-05, said on this skill's first table), so they are in none of these
+counts. Asked about them, count them apart and say so:
+`find docs/learn -name '20*.md' | wc -l` and
+`grep -rl '^- \[ \] ' docs/learn | wc -l` for the open ones.
+
 ## 2. Tell
 
 In Italian, plain, alive (CLAUDE.md § 11), and **the date and time of the

@@ -1,0 +1,1 @@
+- [x] The record | M0 | Decide: retro-tag `m0`? → tagged 2026-08-04 at 02c4ca1 (M0 closed before the tagging habit) | git log 02c4ca1 | tags are the chronology the book and /where rely on

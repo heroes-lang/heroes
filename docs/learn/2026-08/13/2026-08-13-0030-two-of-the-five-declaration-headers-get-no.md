@@ -1,0 +1,1 @@
+- [x] The record | M2.1 | Two of the five declaration headers get NO terminator from the lexer. Which two, and why does the body parser skip terminators instead of requiring one? | crates/heroes/src/syntax/decl.rs (module doc), lexer/layout.rs is_line_ender | panel 007's rule, seen from the other side of the fence
