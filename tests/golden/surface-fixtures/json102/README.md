@@ -1,8 +1,10 @@
 # Defect 102: JSON that is JSON, and a character the reader can find
 
-- `tab.hero` is a correct program with a real tab inside a string literal:
+- `tab.hero` is a correct program with a real tab inside a token's text:
   `lex --dump-tokens --json` writes it as `\t`, where it wrote the byte raw
-  and no JSON reader accepted the output.
+  and no JSON reader accepted the output. The tab stood in a string literal
+  until panel 192 refused a raw tab there (`raw_tab`, 2026-10-05, its one
+  spelling being `\t`); it stands in a comment since, where a tab is legal.
 - `control.hero` holds a stray 0x01 byte: both JSON writers write it as
   `\u0001`, and the diagnostic names it *the control character U+0001*, where
   it printed the byte itself between two backquotes.

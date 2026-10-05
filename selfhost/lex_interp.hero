@@ -34,6 +34,7 @@ use layout
 use literals
 use escape
 use raw_chars
+use raw_refusal
 
 # `f"` at the cursor: the head piece.
 function head(@l: state.LexState, text: str)
@@ -103,7 +104,12 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
         else
             if b == layout.CR
                 raw_chars.raw_carriage_return(@l, l.pos, .in_str)
-            l.pos @ l.pos + 1
+
+            # `raw_refusal.might_begin`, written out: no call for a byte.
+            if b < 32 || b == 127 || b == 194
+                l.pos @ raw_refusal.past(@l, text, at: l.pos, holder: .string)
+            else
+                l.pos @ l.pos + 1
 
     span = token.Span(start: start, end: l.pos)
     state.error_token(

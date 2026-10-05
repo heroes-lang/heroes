@@ -100,7 +100,7 @@ function told_once(diagnostics: [diag.Diagnostic], text: str) -> Told
     return Told(diagnostics: out, at: at)
 
 # The diagnostics of one text but those `dropped` marks, a message another
-# reader tells instead (`head_names.told_by_heads`, defect 250), with where
+# reader tells instead (`heads_told.told_by_heads`, defect 250), with where
 # each one given went, as `told_once` says it.
 function without(diagnostics: [diag.Diagnostic], dropped: [bool]) -> Told
     out: [diag.Diagnostic] @ []
