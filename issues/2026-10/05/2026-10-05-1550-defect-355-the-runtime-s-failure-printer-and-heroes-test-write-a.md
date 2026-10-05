@@ -3,7 +3,7 @@ kind: defect
 area: runtime
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: ae56c2f518c85d910cbb20a9fa500cd194ed1419
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 192's critic, its first pass (F11), and the ffi-pragmatist; filed by the synthesis's R12.
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): the reader's terminal driven by a message's bytes and a message cut short; not one of `blocking`'s list.
+
+    Repaired at `ae56c2f5`, 2026-10-05, gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the platform legs before it closes, a `runtime/` change.
