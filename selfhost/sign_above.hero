@@ -60,7 +60,11 @@ function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bo
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
     told: diag.Diagnostic @ d
     told.fixes @ fixes(text, operator: operator, below: l.pos, commented: commented)
-    joined = two_readings(text, operator: operator, below: l.pos) || !leave_out(@l, text, at: at)
+    readings = two_readings(text, operator: operator, below: l.pos)
+
+    if readings
+        signed_below(@l, text, at: at)
+    joined = readings || !leave_out(@l, text, at: at)
     state.push_diagnostic(@l.diagnostics, told)
 
     if joined
@@ -82,9 +86,15 @@ function fixes(text: str, operator: token.Token, below: i64, commented: bool) ->
     if two_readings(text, operator: operator, below: below)
         certainty @ .guess
 
-        # The join writes the sign against its literal, as `fmt` spells it.
+        # The join writes the sign against its literal, as `fmt` spells it,
+        # on the arm's line and at its margin, the operator's line gone: at
+        # another margin the arm joined there was a block of its own (268).
         if !commented
-            out @ out.push(join_fix.made(glue: "", from: operator.span.end, to: below, certainty: .guess))
+            arm = word_place.line_start(text, at: below)
+            sign = text.slice(from: arm, to: below) + text.slice(from: operator.span.start, to: operator.span.end)
+            out @ out.push(
+                join_fix.made(glue: sign, from: word_place.line_start(text, at: operator.span.start), to: below, certainty: .guess)
+            )
     written = text.slice(from: operator.span.start, to: operator.span.end)
     out @ out.push(
         diag.Fix(title: "delete the `" + written + "`", replacement: "", span: deleted(text, operator: operator.span), certainty: certainty)
@@ -145,21 +155,11 @@ function deleted(text: str, operator: token.Span) -> token.Span
 # compiles reaches. Every index recorded so far stands before the margin: each
 # break's `after`, and `open_line`, cleared before the refusal.
 function leave_out(@l: state.LexState, text: str, at: i64) -> bool
-    begins = l.tokens[at].span.start
-    line = word_place.line_start(text, at: begins)
-    plain = l.braced.len() == 0 && l.run[0].kind == .none && spaces_alone(text, from: line, to: begins)
+    plain = plain_margin(l, text, at: at)
     from: i64 @ at
 
-    while plain && from > 0 && laid_out(l.tokens[from - 1], line: line, ends: begins)
-        if l.tokens[from - 1].kind == .indent
-            l.level @ l.level - 1
-        else
-            l.level @ l.level + 1
-        from @ from - 1
-
-    while plain && l.diagnostics.len() > 0 && said_of_margin(l.diagnostics[l.diagnostics.len() - 1], line: line, ends: begins)
-        l.diagnostics @ l.diagnostics.slice(from: 0, to: l.diagnostics.len() - 1)
-
+    if plain
+        from @ taken_back(@l, text, at: at)
     after: [token.Token] = l.tokens.slice(from: at + 1, to: l.tokens.len())
     l.tokens @ l.tokens.slice(from: 0, to: from)
 
@@ -167,6 +167,82 @@ function leave_out(@l: state.LexState, text: str, at: i64) -> bool
         state.push_token(@l.tokens, t)
 
     return plain
+
+# Where both readings stand, the join is the stream, its sign read on the
+# arm's line (defect 268): the margin the operator's line laid out, and the
+# reports it said, are taken back and the arm's margin laid out in their
+# place, before the operator, so the parser reads `-1 => …` where the arm
+# stands. Deeper than the arms, the arm was joined at the operator's margin,
+# a block deeper than anything that opens one, told `unexpected_block` beside
+# the refusal, and two levels deeper `indentation_jump` too. Only over a plain
+# margin and an arm at a plain one, the arm's level one at most past the
+# level above, as `layout.line_start` would lay it out; elsewhere as before.
+function signed_below(@l: state.LexState, text: str, at: i64)
+    arm = word_place.line_start(text, at: l.pos)
+    spaces = l.pos - arm
+    line = word_place.line_start(text, at: l.tokens[at].span.start)
+
+    if !plain_margin(l, text, at: at) || !spaces_alone(text, from: arm, to: l.pos) || spaces % 4 != 0 || spaces == l.tokens[at].span.start - line
+        return
+    above = level_above(l, text, at: at)
+
+    if spaces / 4 > above + 1
+        return
+    operator: [token.Token] = l.tokens.slice(from: at, to: l.tokens.len())
+    l.tokens @ l.tokens.slice(from: 0, to: taken_back(@l, text, at: at))
+    margin = token.Span(start: arm, end: l.pos)
+
+    while l.level < spaces / 4
+        state.push_token(@l.tokens, token.Token(kind: .indent, span: margin))
+        l.level @ l.level + 1
+
+    while l.level > spaces / 4
+        state.push_token(@l.tokens, token.Token(kind: .dedent, span: margin))
+        l.level @ l.level - 1
+
+    for t in operator
+        state.push_token(@l.tokens, t)
+
+# Whether the margin of the line holding the token at `at` is plain: spaces
+# alone, under no braces and no indentation habit, which keep their own count.
+function plain_margin(l: state.LexState, text: str, at: i64) -> bool
+    begins = l.tokens[at].span.start
+    return l.braced.len() == 0 && l.run[0].kind == .none && spaces_alone(text, from: word_place.line_start(text, at: begins), to: begins)
+
+# The level before the margin tokens the line holding the token at `at` laid
+# out: the level of the line above it.
+function level_above(l: state.LexState, text: str, at: i64) -> i64
+    begins = l.tokens[at].span.start
+    line = word_place.line_start(text, at: begins)
+    from: i64 @ at
+    level: i64 @ l.level
+
+    while from > 0 && laid_out(l.tokens[from - 1], line: line, ends: begins)
+        if l.tokens[from - 1].kind == .indent
+            level @ level - 1
+        else
+            level @ level + 1
+        from @ from - 1
+
+    return level
+
+# The margin the line holding the token at `at` laid out taken back: its
+# reports unsaid, the level the line above's, and the index its tokens began
+# at returned, the tokens themselves the caller's to cut.
+function taken_back(@l: state.LexState, text: str, at: i64) -> i64
+    begins = l.tokens[at].span.start
+    line = word_place.line_start(text, at: begins)
+    from: i64 @ at
+
+    while from > 0 && laid_out(l.tokens[from - 1], line: line, ends: begins)
+        from @ from - 1
+
+    l.level @ level_above(l, text, at: at)
+
+    while l.diagnostics.len() > 0 && said_of_margin(l.diagnostics[l.diagnostics.len() - 1], line: line, ends: begins)
+        l.diagnostics @ l.diagnostics.slice(from: 0, to: l.diagnostics.len() - 1)
+
+    return from
 
 # Whether `t` is a margin token the line beginning at `line` laid out, its
 # span that line's margin, to `ends`.
@@ -258,4 +334,11 @@ test "over an integer the join and the deletion are both guesses; over anything 
     crlf = "    -\r\n    1 => 10\r\n"
     ended = fixes(crlf, operator: minus, below: 11, commented: false)
     assert crlf.slice(from: 0, to: ended[1].span.start) + crlf.slice(from: ended[1].span.end, to: crlf.len()) == "    1 => 10\r\n"
-    assert crlf.slice(from: 0, to: ended[0].span.start) + crlf.slice(from: ended[0].span.end, to: crlf.len()) == "    -1 => 10\r\n"
+
+    # Deeper than the arm, the join writes the sign at the arm's margin, its
+    # line gone (defect 268).
+    deeper = "    0 => 5\n        -\n    1 => 10\n"
+    sign = token.Token(kind: .minus, span: token.Span(start: 19, end: 20))
+    moved = fixes(deeper, operator: sign, below: 25, commented: false)[0]
+    assert deeper.slice(from: 0, to: moved.span.start) + moved.replacement + deeper.slice(from: moved.span.end, to: deeper.len()) == "    0 => 5\n    -1 => 10\n"
+    assert crlf.slice(from: 0, to: ended[0].span.start) + ended[0].replacement + crlf.slice(from: ended[0].span.end, to: crlf.len()) == "    -1 => 10\r\n"
