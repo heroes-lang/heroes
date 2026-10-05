@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: f50b9102628108472a4ed31567c48403bc73fa2f
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-parse, 2026-10-05, beside defects 267 and 343 (its final report, *Found beside*).
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a cost that grows as the square of the reports, no message or value wrong; unmeasured per site.
+
+    Repaired at `f50b9102`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
