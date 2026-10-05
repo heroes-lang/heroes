@@ -6,7 +6,9 @@
 # asked for at the `1`, where `missing_body` already stands, so the line costs
 # one diagnostic where it cost two at one token.
 function main()
-    y = f(if c
-            1  #~ missing_body
+    y = f(if c  #~ missing_body
+            1
         else
             2)
+# Moved 2026-10-05 with defect 269's repair (lane b12-parse12): the `if` is
+# told at its word, which cannot stand inside brackets, naming the `(`.

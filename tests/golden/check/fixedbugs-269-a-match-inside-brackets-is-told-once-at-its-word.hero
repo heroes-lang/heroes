@@ -1,0 +1,78 @@
+# Fixed defect 269, 2026-10-05 (lane b12-parse12; found by batch 8's
+# recovery lane, run on two compilers by the coordinator). Symptom: a `match`
+# written inside a call's brackets, `print(match t` over `.a => 1)`, was told
+# twice: `missing_match_arms` at the `.`, *its arms indented one level below
+# it*, to an author who indented them, and `expected_args_close` at the `=>`,
+# the arm read as an argument. Cause: a head's arms or body go on the lines
+# below it, one level deeper, and inside a bracket the lexer lays out no
+# line, so no `match` and no `if` stands in one in a program that compiles;
+# the arms were looked for where a bracket cannot hold them, and the bracket
+# read on. Repair: a `match` or an `if` whose line holds an opener before it
+# still open there is told once, at its word, naming that opener, and the
+# rest of the bracket is passed to its closer, which the bracket's reader
+# takes (`parse/bracket_head`). The shapes: case arms, integer arms, none,
+# in a list, an `if`, nested, padded, one line, a second argument, a group,
+# and a bracket opened on the line above.
+
+variant T
+    a
+    b
+
+function case_arms(t: T)
+    print(match t  #~ missing_match_arms
+        .a => 1
+        .b => 2)
+
+function integer_arms(n: i64)
+    print(match n  #~ missing_match_arms
+        1 => 1
+        _ => 2)
+
+function no_arms(n: i64)
+    print(match n)  #~ missing_match_arms
+
+function in_a_list(n: i64)
+    x = [match n  #~ missing_match_arms
+        1 => 1
+        _ => 2]
+    print(x)
+
+function an_if(n: i64)
+    print(if n > 0  #~ missing_body
+        1
+    else
+        2)
+
+function nested(n: i64)
+    if n > 0
+        print(match n  #~ missing_match_arms
+            1 => 1
+            _ => 2)
+
+function padded(n: i64)
+    print(  match n  #~ missing_match_arms
+        1 => 1
+        _ => 2  )
+
+function one_line(n: i64)
+    print(match n  1 => 1)  #~ missing_match_arms
+
+function a_second_argument(n: i64)
+    print(1, match n  #~ missing_match_arms
+        1 => 1
+        _ => 2)
+
+function a_group(n: i64)
+    x = (match n  #~ missing_match_arms
+        1 => 1
+        _ => 2)
+    print(x)
+
+function a_bracket_above(n: i64)
+    print(
+        match n  #~ missing_match_arms
+        1 => 1
+        _ => 2)
+
+function main()
+    print(1)
