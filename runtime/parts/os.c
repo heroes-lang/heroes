@@ -516,6 +516,9 @@ void hero_args_set(int argc, char **argv) {
      * as the two above: this is the thread the program owns, and by the time a
      * worker spawns a worker the calling thread is the wrong reference. */
     hero_spawn_measure_home();
+    /* On Windows the arguments as Windows holds them, wide, carried as WTF-8,
+     * in place of the narrow conversion (parts/codepage.c, panel 192's R6). */
+    hero_args_read_wide(&argc, &argv);
     hero_argc = argc;
     hero_argv = argv;
 }
