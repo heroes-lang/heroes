@@ -171,10 +171,36 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
             message: "`" + word + "` is not a word in this language — `else if` continues the `if` above it with a condition of its own: `else if x == 2`",
             repair: .guidance
         )
+    holder = holder_of(text: text, span, outline: outline)
+    message: str @ misplaced(word: word, writes: writes, place: place)
+
+    # Among a record's fields or a variant's cases, the one message says what
+    # the parser's said before the lexer's was the one (`parse/heads`): what
+    # the holder holds, and the route, the holder as a parameter (defect 311).
+    if writes == "function" && place == .statement && holder != ""
+        members: str @ "its fields"
+
+        if holder == "variant"
+            members @ "its cases"
+        message @ "`" + word + "` is not a word in this language — a `" + holder + "` holds only " + members + ", and a `function` in it is declared at the top level of the file, taking the " + holder + " as a parameter"
     return keywords.ForeignWord(
-        message: misplaced(word: word, writes: writes, place: place) + in_braces(text: text, span, writes: writes, place: place),
+        message: message + in_braces(text: text, span, writes: writes, place: place),
         repair: repair_there(writes, place: place)
     )
+
+# The head over the member line the word at `span` opens, one level under
+# it, where that head is a `record` or a `variant`; else "" (defect 311).
+function holder_of(text: str, span: token.Span, outline: text_outline.Outline) -> str
+    begins = word_place.line_start(text, at: span.start)
+    top = text_outline.top_above(outline, line: begins)
+
+    if span.start - begins != 4 || top < 0
+        return ""
+    head = text.slice(from: top, to: word_place.word_end(text, from: top))
+
+    if head == "record" || head == "variant"
+        return head
+    return ""
 
 # `int` where a type goes in an `extern` group: what is right there is the
 # header's type, which the text does not hold, so the repair is a guess in

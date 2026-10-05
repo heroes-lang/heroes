@@ -70,3 +70,9 @@ function main()
 # a record's fields is told once, by the lexer, whose `reserved_word` says a
 # `function` is declared at the top level; the parser's `expected_field` at
 # the same token said it a second time (`parse/heads.next_member`).
+
+# Moved 2026-10-05 with defect 311's repair (lane b11-parse): the `fn f()`
+# line's one message, the lexer's `reserved_word`, says now what the parser's
+# said before defect 200 left it to the lexer: a `record` holds only its
+# fields, and a `function` in it goes to the top level, taking the record as
+# a parameter (`foreign_at.holder_of`).
