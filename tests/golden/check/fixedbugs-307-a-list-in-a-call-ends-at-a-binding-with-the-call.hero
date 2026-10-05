@@ -1,0 +1,82 @@
+# Fixed defect 307, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 204). Symptom: defect 204's shape inside a call's arguments,
+# `k = g([1, 2` over `print(k)` over `y = 3 4 ))`, was told the list's `]`
+# owed at the binding's `=` and the call's `)` owed at its `y`, and the
+# binding line's own mistake, the `4`, only once the list was closed: the
+# call's reader took the line as the next argument. Cause: the list ended
+# above the binding and named its `[` alone, and the call around it, its `(`
+# closing on the same line above, read on. Repair: the list that ends at a
+# binding names the openers it stands in on its line with its own, which
+# close where it does, `])` (`parse/list_line.closing_above`); and a call, a
+# list or a map whose item ended so on its own line ends there too, its
+# report the inner one's (`grammar_expr.call_args`,
+# `list_line.ended_at_a_binding`), the binding line read as the statement it
+# is, its own mistakes told. The shapes: a line between, none, a
+# declaration, a mutation, a call in a list, two calls deep, a statement's
+# call, and a call opened on the line above or holding a line end, whose
+# `(` the list names too, since no line end of the stream stands between.
+
+function g(a: [i64]) -> i64
+    return 1
+
+function a_line_between()
+    k = g([1, 2
+    print(k)
+    y = 3 4 ))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function right_below()
+    k = g([1, 2
+    y = 3 4 ))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_declaration()
+    k = g([1, 2
+    print(k)
+    z: i64 @ 3 4 ))  #~ expected_separator expected_end_of_line
+    print(z)
+
+function a_mutation()
+    z: i64 @ 0
+    k = g([1, 2
+    print(k)
+    z @ 3 4 ))  #~ expected_separator expected_end_of_line
+    print(z)
+
+function a_call_in_a_list()
+    k = [g([1, 2
+    print(k)
+    y = 3 4 ))]  #~ expected_separator expected_end_of_line
+    print(y)
+
+function two_calls_deep()
+    k = g([g([1, 2
+    print(k)
+    y = 3 4 ))))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_statements_call()
+    print(g([1, 2
+    print(1)
+    y = 3 4 )))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_call_opened_above()
+    k = g(
+        [1, 2
+    print(k)
+    y = 3 4 ))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_call_with_a_line_between()
+    k = h(1,
+        2, [1, 2
+    print(k)
+    y = 3 4 ))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function h(a: i64, b: i64, c: [i64]) -> i64
+    return a
+
+function main()
+    print(1)

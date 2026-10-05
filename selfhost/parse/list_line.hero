@@ -26,6 +26,7 @@ use text_lines
 use parse/line_end
 use parse/unclosed
 use pairing
+use parse/bracket_head
 
 # Whether the line end the parser just crossed may separate a literal's element
 # from what follows (§4.9). Asked only where a line end separates with no `,`,
@@ -239,23 +240,63 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
 # where its `]` goes; the cursor at that line's first token, which the
 # statement reader reads with its own mistakes, its stray closer among them.
 function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64, binding: bool) -> bool
-    next = cursor.peek(c, 1)
-    inner = !binding && cursor.at_fresh_line(c) && cursor.at(c, .ident) && (next == .eq || next == .colon || next == .at)
+    if !binding && !binding_begins(c)
+        return false
+
+    # A list inside it on its line ended there first, and named this `[`
+    # with its own, as it named the call's `(` around both (defect 307).
+    if !binding && bracket_head.holds(c, open: open, at: first)
+        return true
     pair = pairing.paired_closer(c, text, open: open)
 
-    if !(binding || inner) || pair < 0 || c.tokens[pair].kind == .rbracket
+    if pair < 0 || c.tokens[pair].kind == .rbracket
         return false
-    opener = c.tokens[open].span
     cursor.error(
         @c,
         code: "expected_separator",
-        message: "expected `,` or a new line between one element and the next, found " + cursor.found(c, text) + " — a binding is no element: the `[` still open " + text_lines.place_above(text, at: opener.start, from: cursor.current_span(c).start) + ", closes on a line above, so write its `]` there",
+        message: "expected `,` or a new line between one element and the next, found " + cursor.found(c, text) + " — a binding is no element: the `[` still open " + text_lines.place_above(text, at: c.tokens[open].span.start, from: cursor.current_span(c).start) + ", " + closing_above(c, text: text, open: open, own: "]"),
         span: cursor.current_span(c)
     )
 
     if binding
         c.pos @ first
     return true
+
+# Whether the cursor stands on a line's first word, a name, and a binding,
+# a declaration or a mutation begins there: where a bracket inside the item
+# just read ended at one (`ended_at_a_binding`).
+function binding_begins(c: cursor.Cursor) -> bool
+    next = cursor.peek(c, 1)
+    return cursor.at_fresh_line(c) && cursor.at(c, .ident) && (next == .eq || next == .colon || next == .at)
+
+# Where the opener at `open`, whose closer `own` is owed, closes, with the
+# openers it stands in on its line, which close where it does: a call's `(`
+# around a list, `f([1, 2` over a binding, is owed its `)` on the same line
+# above (defect 307), where only the list's `]` was named and the call's `)`
+# was told owed at the binding, a second message.
+function closing_above(c: cursor.Cursor, text: str, open: i64, own: str) -> str
+    around = bracket_head.enclosing_openers(c, at: open)
+
+    if around.len() == 0
+        return "closes on a line above, so write its `" + own + "` there"
+    names: [str] @ []
+    closers: [str] @ [own]
+
+    for at in around
+        written = cursor.slice_of(text, c.tokens[at].span)
+        names @ names.push("`" + written + "`")
+        closers @ closers.push(closer_of(written))
+
+    return "and the " + names.join(" and the ") + " it stands in, close on a line above, so write `" + closers.join("") + "` there"
+
+# The closer of the opener written `opener`.
+function closer_of(opener: str) -> str
+    if opener == "("
+        return ")"
+
+    if opener == "["
+        return "]"
+    return "}"
 
 # The `:` owed after a map entry's key at the cursor, `line_end.expect_after`'s;
 # where a closer of another kind stands there for the map's `}`, `{1: 2` over
