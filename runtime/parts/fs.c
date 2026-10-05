@@ -58,6 +58,25 @@ static DWORD hero_fs_attributes(const char *path) {
 }
 #endif
 
+#if defined(_WIN32)
+/* Is `path` a symbolic link or a junction (a reparse point that NAMES another
+ * file) rather than a file some filter keeps a reparse point on, as a cloud
+ * placeholder is? `FindFirstFileW` reports the tag in `dwReserved0`. */
+static int hero_fs_is_surrogate(const char *path) {
+    /* Wide, as the directory walk is (parts/codepage.c): a name whose UTF-8
+     * passes 260 bytes failed the narrow call and read as no link at all. */
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return 0;
+    WIN32_FIND_DATAW found;
+    HANDLE h = FindFirstFileW(wide, &found);
+    hero_release(wide);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    FindClose(h);
+    return (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+           IsReparseTagNameSurrogate(found.dwReserved0);
+}
+#endif
+
 /* Is there a directory at this path? The question `test -d` asked, and the one
  * `mkdir`'s errno cannot answer. */
 int64_t hero_fs_is_directory(const char *path) {
