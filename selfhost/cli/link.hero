@@ -346,7 +346,11 @@ test "a binary's home is named by every word of its link line, and an author's -
         package_flags: none,
         link_names: none
     )
-    assert units.failure_text(missing) == "cannot write " + t.build + "/no-such-directory/app: its directory is not there; " + t.build + "/no-such-directory/app was not created"
+
+    # The name the binary would have had, the platform's suffix with it
+    # (defect 359; measured on the Windows box, where this said `app`).
+    lost = t.build + "/no-such-directory/app" + process.exe_suffix()
+    assert units.failure_text(missing) == "cannot write " + lost + ": its directory is not there; " + lost + " was not created"
 
     # An `-o` with no suffix lands under the platform's (defect 359): `.exe`
     # on Windows, the path as given elsewhere, and the answer names it.
