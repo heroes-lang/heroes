@@ -261,7 +261,7 @@ function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         d.fixes @ d.fixes.push(
             diag.Fix(title: "write the parentheses", replacement: "(" + written + ")", span: span, certainty: .certain)
         )
-        cursor.push_diagnostic(@c.diagnostics, d)
+        cursor.say(@c, d)
     return ast.push_type(
         @a.types,
         ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: span)
@@ -317,7 +317,7 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
         cursor.error(@c, code: "expected_function_type_params_close", message: BARE_ARROW, span: cursor.current_span(c))
     else if cursor.at(c, .arrow)
         if !line_end.said_here(c)
-            cursor.push_diagnostic(@c.diagnostics, data_errors.arrow_inside_parameters(cursor.current_span(c)))
+            cursor.say(@c, data_errors.arrow_inside_parameters(cursor.current_span(c)))
     else if !line_end.expect_closer(@c, text: text, holds: .type_list, kind: .rparen, code: "expected_function_type_params_close", what: "`)`, or `,` and another parameter type")
         unclosed.recover_past_pair(@c, text, open: at)
     return params
@@ -334,7 +334,7 @@ function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
     match a.types[name].kind
         .named => return span
         .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error =>
-            cursor.push_diagnostic(@c.diagnostics, data_errors.parameter_name_not_a_name(span))
+            cursor.say(@c, data_errors.parameter_name_not_a_name(span))
             return span
 
     return span

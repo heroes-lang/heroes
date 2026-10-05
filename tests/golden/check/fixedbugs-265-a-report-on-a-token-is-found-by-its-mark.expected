@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-265-a-report-on-a-token-is-found-by-its-mark.hero:16:38: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-265-a-report-on-a-token-is-found-by-its-mark.hero:18:35: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-265-a-report-on-a-token-is-found-by-its-mark.hero:20:38: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-265-a-report-on-a-token-is-found-by-its-mark.hero:23:28: error[expected_type]: expected a type, found a number (`2`) — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+tests/golden/check/fixedbugs-265-a-report-on-a-token-is-found-by-its-mark.hero:27:12: error[trailing_comma]: a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`
+tests/golden/check/fixedbugs-265-a-report-on-a-token-is-found-by-its-mark.hero:28:16: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

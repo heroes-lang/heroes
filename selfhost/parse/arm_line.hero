@@ -72,7 +72,7 @@ function spaced_sign(@c: cursor.Cursor, text: str)
         d.fixes @ d.fixes.push(
             diag.Fix(title: "a bullet: delete the `-`", replacement: "", span: apart, certainty: .guess)
         )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
 
 # What the `-` can be before this literal, the tail of the message.
 function reading(kind: token.TokenKind) -> str

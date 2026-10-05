@@ -1,0 +1,107 @@
+# Where the parser's reports stand, kept as each is said, so that asking
+# whether one stands on a token costs a lookup and not a walk over every
+# report said before it (design.md §4.17; defect 265, 2026-10-05).
+#
+# `parse/line_end.said_here` asks it before a report is said twice at one
+# token, at every missing expression and closer: a file of N refused `while`
+# heads walked all the reports before each, the square of N. The marks hold,
+# for each offset a report begins at, the index of the last one noted there,
+# for the first `upto` reports of the cursor's list. A report appended
+# without them, through `cursor.push_diagnostic` by a module that holds only
+# the list, stands past `upto`, in the tail the question walks and the next
+# report said takes in.
+#
+# **A mark is asked of the report it points at.** The list can be cut and
+# grown again behind the marks (`cursor.trial`, a reading tried and taken
+# back), so a mark whose report is gone or begins elsewhere is not trusted:
+# the question walks instead. What the marks never do is leave out a report
+# of the first `upto`: every one is noted on its way in, and a cut below
+# `upto` takes `upto` back with it (`cut`; `noted`, where the list is
+# shorter than `upto` and nothing said so, notes it again from its start).
+#
+# A leaf: it reads the reports and nothing that reads the parser.
+
+use token
+use diag
+
+record Marks
+    # offset -> the index of the last report of the first `upto` beginning there
+    at: {i64: i64}
+    upto: i64
+
+function none() -> Marks
+    at: {i64: i64} = {}
+    return Marks(at: at, upto: 0)
+
+# The reports of `said` past `upto` noted; all of them again where `said` is
+# shorter than `upto`, cut behind the marks' back.
+function noted(@m: Marks, said: [diag.Diagnostic])
+    if said.len() < m.upto
+        m.upto @ 0
+
+    while m.upto < said.len()
+        m.at[said[m.upto].span.start] @ m.upto
+        m.upto @ m.upto + 1
+
+# `said` about to be cut to its first `to`.
+function cut(@m: Marks, to: i64)
+    if to < m.upto
+        m.upto @ to
+
+# Whether a report of `said`, from its index `since` on, begins at `at`. The
+# mark answers for the first `upto`: none means none there, and a mark that
+# points at a report beginning at `at` is the last there; anything else, a
+# list cut behind the marks or a mark whose report is gone, is walked.
+function stands(m: Marks, said: [diag.Diagnostic], at: i64, since: i64) -> bool
+    from: i64 @ since
+
+    if said.len() >= m.upto && since <= m.upto
+        mark = m.at[at]
+
+        if mark.is_err()
+            from @ m.upto
+        else if mark.must() < said.len() && said[mark.must()].span.start == at
+            if mark.must() >= since
+                return true
+            from @ m.upto
+
+    while from < said.len()
+        if said[from].span.start == at
+            return true
+        from @ from + 1
+
+    return false
+
+## Tests
+
+function report_at(start: i64) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "c", message: "m", span: token.Span(start: start, end: start + 1))
+
+test "a report is found by its mark, a tail by a walk, and a cut list never misleads"
+    said: [diag.Diagnostic] @ [report_at(4), report_at(9), report_at(4)]
+    m: Marks @ none()
+    noted(@m, said: said)
+    assert stands(m, said: said, at: 9, since: 0)
+    assert stands(m, said: said, at: 4, since: 2)
+    assert !stands(m, said: said, at: 9, since: 2)
+    assert !stands(m, said: said, at: 5, since: 0)
+
+    # Appended past the marks: the tail is walked.
+    said @ said.push(report_at(5))
+    assert stands(m, said: said, at: 5, since: 0)
+
+    # Cut behind the marks and grown again: the stale mark is not trusted.
+    said @ said.slice(from: 0, to: 1)
+    assert !stands(m, said: said, at: 9, since: 0)
+    said @ said.push(report_at(7))
+    assert !stands(m, said: said, at: 9, since: 0)
+    assert stands(m, said: said, at: 7, since: 0)
+    noted(@m, said: said)
+    assert stands(m, said: said, at: 7, since: 0)
+    assert stands(m, said: said, at: 4, since: 0)
+    assert !stands(m, said: said, at: 9, since: 0)
+
+    # Cut through `cut`: the marks of what went are walked past.
+    cut(@m, to: 1)
+    said @ said.slice(from: 0, to: 1)
+    assert !stands(m, said: said, at: 7, since: 0)

@@ -33,6 +33,7 @@ use ast
 use cursor
 use parse/arm_pattern
 use open_line
+use report_marks
 
 # An arm's patterns, none where an operator stood alone where they go; and
 # whether a refusal of them was told (`told`), the arm then read for its own
@@ -111,6 +112,7 @@ function pattern_after(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern
     read = arm_pattern.read(@c, @a, text)
 
     if read.is_err()
+        report_marks.cut(@c.marks, to: said)
         c.diagnostics @ c.diagnostics.slice(from: 0, to: said)
     return read
 
