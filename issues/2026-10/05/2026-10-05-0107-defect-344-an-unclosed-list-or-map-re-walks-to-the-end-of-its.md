@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: b93bf7f8212cafd9d80c892ac3a2d10c47139aeb
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-parse, 2026-10-05, beside defect 266's repair (its final report, *Found beside*).
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a broken program whose report costs the square of its openers; the messages are right.
+
+    Repaired at `b93bf7f8`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
