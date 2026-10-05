@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-03
-commit: 1e8b2315fcf4c57040bf24e5e4200de660bf521a
+commit: 1303e5296c947dc104923c7b2819353f8c501397
 github: none
 ---
 
@@ -18,3 +18,5 @@ github: none
     Repaired at `1e8b2315`, 2026-10-05 (lane b11-parse, its files widened to `cursor.hero` that day), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The three appends in batch 12's files (`loop_habit`, `list_line`) stay plain and are walked as the marks' tail.
 
     **2026-10-05, the sites the marks do not reach** (lane b11-parse's report): three plain appends in batch 12's files, one in `parse/loop_habit.hero` and two in `parse/list_line.hero`, are walked as a tail rather than marked, so their reports keep the walk's cost. This item's cause, so its rows, owed before it closes, by the lane that holds those files in batch 12.
+
+    Repaired at `1303e529`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
