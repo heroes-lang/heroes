@@ -305,12 +305,12 @@ the work and a public branch.
 
 **Superseded on 2026-09-29 in its first half**: a repair or a step is gated by
 the golden form that holds its cases and by the compiler's own tests, and
-the full net runs once per BATCH, sixteen to thirty-two defects since
-2026-10-03, which is what a push carries
+the full net runs once per BATCH, sixteen to sixty-four defects since
+2026-10-05 (sixteen to thirty-two from 2026-10-03), which is what a push carries
 (§ The batch, above; CL-079). The map keeps its other job: it says which form a
 change's cases live in, and which suites the batch's census and platforms owe.
 
-## The batch: repairs gated by their cases, one gate for sixteen to thirty-two
+## The batch: repairs gated by their cases, one gate for sixteen to sixty-four
 
 **Amended 2026-10-03 by author instruction**, meant as: *here you have to
 make batches holding at least about fifteen defects together, because
@@ -332,6 +332,15 @@ gated once. **It is filled from the open list**:
 cluster's files, then the oldest `adjacent`, then `improvement`; so no
 `blocking` item waits for others to be found, and when fewer than sixteen are
 open the batch takes them all.
+
+**Amended 2026-10-05 by author instruction**, meant as: *seeing how well this
+process is going with many defects in a batch, I would take it to a maximum
+of sixty-four defects, just because 64 is a nice number in computing.* Given
+on batch 12, opened that evening at thirty-two and grown while it ran, and on
+the same evening's aim, meant as: *close this whole queue tonight, only the
+improvements staying out*. So **a batch holds sixteen to sixty-four defects**,
+filled in the order above; the price grows by one step, a red gate's bisect
+of six steps at most.
 
 **A batch's own questions take the recommended answer** (the author's *5a*
 of 2026-10-04, meant as: *yes, a standing default for your recommended
@@ -358,7 +367,7 @@ not earned (it passed defect 140's variants case at every gate of 2026-10-01
 while the CI's x86-64 leg timed out on it, clang 22.1.8 against 18.1.3). So:
 
 - **one gate per ROUND**, not per lane: the round's lanes, together a batch of
-  sixteen to thirty-two defects (above), are merged into one tree under
+  sixteen to sixty-four defects (above), are merged into one tree under
   `.claude/worktrees/`, one merge
   commit each, and that tree is gated once by steps 1 to 4 below; red, the
   lane is found first by the red suite at each merge commit, then the commit
@@ -511,9 +520,9 @@ commit and a worse one filed by its class (panel 187's R2); never a ratchet
 on totals, and a corpus program's own messages are subtracted before a
 mutant is read as worse (the fourth round's reading, 2026-10-03).
 
-**Per batch**, which closes at the first of: its sixteen to thirty-two items
+**Per batch**, which closes at the first of: its sixteen to sixty-four items
 repaired (every open one, when fewer than sixteen are open), before any push,
-or when the author asks; never more than thirty-two. A batch
+or when the author asks; never more than sixty-four. A batch
 never spans a tag. The gate is what a push already owed, on the tree that will
 BE the trunk (merge the trunk into the lane once, gate the merged tree, then
 fast-forward the trunk: same tree, no second gate):
@@ -535,8 +544,8 @@ fast-forward the trunk: same tree, no second gate):
 **Red**: the batch's commits are linear in its lane, one per defect. `git bisect`
 between the batch's base and head, at each step the compiler rebuilt from
 `selfhost/` with the base's compiler (`heroes build selfhost/main.hero`, about
-30 s warm) and the one red suite; sixteen to thirty-two repairs are four or
-five steps. The culprit
+30 s warm) and the one red suite; sixteen to sixty-four repairs are four to
+six steps. The culprit
 alone is redone, with the other repairs' cases in view; where the culprit is
 the interaction of two repairs, the later one is redone and the record says so.
 **Green**: each repaired defect's issue is ticked where it stands and given its
@@ -573,6 +582,11 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   and the harness's own `layout` filtered to the file when that count passes
   300 or the file is in `DECIDED`; a `tests/golden/` case's `#~` annotations
   are held to its `.expected`. The hook notices and never rewrites (CL-025).
+  **The last check was named here from 2026-09-29 and performed by no hook
+  until 2026-10-05** (defect 286): since then the hook asks the `annotations`
+  suite itself, narrowed to the case, on a write of its `.hero` or its
+  `.expected`, and a golden case whose `#~` marks claim diagnostics is no
+  longer told it does not parse (defect 272).
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets
