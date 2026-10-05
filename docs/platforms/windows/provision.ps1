@@ -1,7 +1,7 @@
 # provision.ps1 --- the Heroes Windows hunting box, from a bare Windows image.
 #
 # THE ONLY THING THAT RUNS ON THE MACHINE BY HAND. Everything after this script
-# is done from the Mac over SSH, and `docs/ref/environment/windows/WINDOWS-MACHINE.md`
+# is done from the Mac over SSH, and `docs/platforms/windows/WINDOWS-MACHINE.md`
 # section "Rebuilding the box" is the map of both halves.
 #
 # Why this file exists: the first box was provisioned by hand on 2026-08-31 and
@@ -295,7 +295,7 @@ Step 'What ~/.bashrc must add, and why each line is load-bearing'
 # invisible to `ssh win 'clang --version'`.
 $bashrc = Join-Path $env:USERPROFILE '.bashrc'
 $block = @'
-# --- Heroes: written by docs/ref/environment/windows/provision.ps1 ---
+# --- Heroes: written by docs/platforms/windows/provision.ps1 ---
 # Non-interactive `ssh win '<command>'` reads THIS file, not .bash_profile.
 export PATH="/c/Program Files/LLVM/bin:$PATH"
 # The ASan runtime DLL (clang_rt.asan_dynamic-x86_64.dll) lives under clang's

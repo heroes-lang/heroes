@@ -7,7 +7,7 @@ exists. What that cost is the reason § Rebuilding the box now exists: the first
 box was provisioned by hand and **nothing wrote down how**, while the Linux
 machine next door has been a `Dockerfile` anybody can re-run since the day it
 was needed. The Windows equivalent is
-`docs/ref/environment/windows/provision.ps1`.
+`docs/platforms/windows/provision.ps1`.
 
 **It has been run, on the second box, the same day** — every step but one, and
 that one is the entry below on where the MSVC toolset lands. What the run found
@@ -152,7 +152,7 @@ rather than described.
    Once the repository is pushed, this step can fetch the script itself and the
    block above is left with nothing to do but the door:
    ```powershell
-   mkdir C:\w -Force; irm https://raw.githubusercontent.com/heroes-lang/heroes/main/docs/ref/environment/windows/provision.ps1 -OutFile C:\w\provision.ps1
+   mkdir C:\w -Force; irm https://raw.githubusercontent.com/heroes-lang/heroes/main/docs/platforms/windows/provision.ps1 -OutFile C:\w\provision.ps1
    ```
 
 7. **Read back the two lines the script ends with**, the tailnet name and the

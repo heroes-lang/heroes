@@ -33,7 +33,7 @@ the time it takes to compile the seed, so a platform fact is **measured before
 the commit** instead of read red after it.
 
 **What it is and what it is not.** It is the **hunting instrument**, exactly as
-`docs/ref/environment/windows/WINDOWS-MACHINE.md` is for Windows: it finds where something
+`docs/platforms/windows/WINDOWS-MACHINE.md` is for Windows: it finds where something
 dies, it prices a hypothesis, it lets a fix be tried before it is committed. It
 is **not the judge**. The Linux leg of `.github/workflows/ci.yml` stays the
 acceptance criterion, and a green run here is evidence, never the criterion.
@@ -65,8 +65,8 @@ Measured 2026-09-03 on the author's Mac (`venus`, arm64, macOS 26.6.2):
 The two `Dockerfile`s beside this file are the whole of both machines:
 
 ```
-docker build -f docs/ref/environment/linux/Dockerfile.amd64 -t heroes-linux       docs/ref/environment/linux
-docker build -f docs/ref/environment/linux/Dockerfile.arm64 -t heroes-linux-arm64 docs/ref/environment/linux
+docker build -f docs/platforms/linux/Dockerfile.amd64 -t heroes-linux       docs/platforms/linux
+docker build -f docs/platforms/linux/Dockerfile.arm64 -t heroes-linux-arm64 docs/platforms/linux
 ```
 
 **`-f` is not optional and that is the design.** Neither file is named

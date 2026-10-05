@@ -16,7 +16,7 @@
        instruction 2026-09-03): the promise that used to sit under the name is
        markdown in README.md as well, and it is the site's own hero line. The
        site changed that line and this drawing kept the old one for a day, which
-       is the same silence with words instead of digits. docs/ref/assets/README.md
+       is the same silence with words instead of digits. docs/assets/README.md
        is the home of both rules.
 
        Path data is written `M 14 0`, with the space, because a bare capital M
