@@ -80,3 +80,8 @@ function one_line(n: i64) -> str
 function main()
     print(deeper_and_deeper(1) + at_one_depth(2) + three(3) + the_second_shallower(4) + plus_signs(5) + one_line(6))
     statement_arms(1)
+
+# Moved 2026-10-05 with defect 352's repair (lane b12-parse12):
+# `the_second_shallower`'s first `-`, written two levels in and laid out one,
+# is told the second at a shallower margin, as written
+# (`open_line.written_margin`).

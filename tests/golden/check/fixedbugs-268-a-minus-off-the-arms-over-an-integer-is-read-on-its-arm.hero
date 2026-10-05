@@ -62,3 +62,8 @@ function at_the_arms_margin(n: i64) -> str
 function main()
     print(deeper(1) + two_levels_deeper(2) + over_the_first_arm(3) + under_a_block_arm(4) + at_the_arms_margin(5))
     statement_arms(1)
+
+# Moved 2026-10-05 with defect 352's repair (lane b12-parse12):
+# `over_the_first_arm`'s `-`, written two levels in and laid out one, is told
+# the arm below at a shallower margin, the margin as written, where it said
+# the level the layout capped the jump at (`open_line.written_margin`).
