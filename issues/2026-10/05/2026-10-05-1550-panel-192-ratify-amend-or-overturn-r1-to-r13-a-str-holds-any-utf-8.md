@@ -3,11 +3,11 @@ kind: decision
 area: records
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: self
 github: none
 ---
 
-- [ ] **panel 192** | ratify, amend or overturn R1 to R13 (a `str` holds any UTF-8 and the C boundary refuses a NUL by one bit a `str` carries; a string refuses raw controls, the twelve bidirectional controls and U+2028/U+2029, a comment the same but the tab, as robustness for the reader; `\u{hex}` only for what a string refuses raw, in one spelling; `args()` on Windows by WTF-8), and fund or not a fifth blind arm | `docs/panel/192-a-str-holds-any-utf-8-the-c-boundary-refuses-a-nul-and-a-string-refuses-what-its-reader-cannot-see.md` § The resolution
+- [x] **panel 192** | ratify, amend or overturn R1 to R13 (a `str` holds any UTF-8 and the C boundary refuses a NUL by one bit a `str` carries; a string refuses raw controls, the twelve bidirectional controls and U+2028/U+2029, a comment the same but the tab, as robustness for the reader; `\u{hex}` only for what a string refuses raw, in one spelling; `args()` on Windows by WTF-8), and fund or not a fifth blind arm | `docs/panel/192-a-str-holds-any-utf-8-the-c-boundary-refuses-a-nul-and-a-string-refuses-what-its-reader-cannot-see.md` § The resolution
 
     **Origin:** panel 192's synthesis, 2026-10-05 from 15:48, on the seats' archive of `4c3524fb`, convened by the author's *3a* of 2026-10-04. Until it is answered defects 245 and 283 stay `systemic`, and they land in the next batch on the provisional resolution (CLAUDE.md § 4, *the panel never blocks*).
 
@@ -22,3 +22,5 @@ github: none
     **And a paid run, yours to fund or not**: a fifth blind arm of five sessions on a task that needs a character R5 refuses as an escape (`é` by its code, a visible zero-width space), about 0.90 USD of the 1.0965 left in the 5 USD cap. **Recommendation: fund it**, run before the landing: the ESC task could not separate (b) from (d), and this one tests R5's restriction itself.
 
     **Owed whatever the answer**: R6's run on the Windows box, which was unreachable from 21:06 on 2026-10-04 to 15:50 on 2026-10-05.
+
+    **Ratified 2026-10-05**, on the author's answer between 16:12 and 16:14 by the clock read before and after it, meant as: *I ratify both panels, and yes to the cost of the optional paid run: do it*. **What the yes settles**: R1 to R13 as the synthesis states them, the robust route at each disagreement over each conservative alternative named above; and the fifth blind arm funded, five sessions within the 1.0965 USD left in the sitting's 5 USD cap, run before the landing. The author added, meant as: *right now I am not really paying for those sessions*; the costs this record and the sitting give are the CLI's own report, `total_cost_usd`, and say nothing of a bill, and the cap stands as the bound the sitting named. **What it does not settle**: R6's run on the Windows box, owed whatever the answer, and what only the landing measures. The landing is defects 245 and 283 and the items R12 filed, in the batch after batch 11. **Recorded as a reading**, CLAUDE.md § 4's default; not `by delegation`.

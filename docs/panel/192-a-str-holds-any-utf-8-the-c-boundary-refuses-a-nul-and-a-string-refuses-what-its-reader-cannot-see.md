@@ -383,7 +383,23 @@ answers it so:
 
 ## Author's verdict
 
-**Pending**, queued as the decision issue `panel 192`. A yes settles R1 to
-R13 as written, the robust route at each disagreement. Each conservative
-alternative is named where it stands: R1's (d), R3's narrower list, R4's
-thesis class, R5's (a′).
+**RATIFIED 2026-10-05**, on the author's answer between 16:12 and 16:14 by
+the clock read before and after it, meant as: *I ratify both panels, and yes
+to the cost of the optional paid run: do it*. **Recorded as a reading**,
+CLAUDE.md § 4's default; not `by delegation`.
+
+**What the yes settles**:
+- R1 to R13 as the resolution above states them, the robust route at each
+  disagreement, over R1's (d), R3's narrower list, R4's thesis class and R5's
+  (a′);
+- the fifth blind arm funded, five sessions within the 1.0965 USD left in the
+  5 USD cap, run before the landing.
+
+The author added, meant as: *right now I am not really paying for those
+sessions*. The costs this sitting gives are the CLI's own report,
+`total_cost_usd`, and say nothing of a bill; the cap stands as the bound the
+sitting named.
+
+**What it does not settle**: R6's run on the Windows box, owed whatever the
+answer, and what only the landing measures. The landing is defects 245 and
+283 and the items R12 filed, in the batch after batch 11.

@@ -309,8 +309,19 @@ answers it so:
 
 ## Author's verdict
 
-**Pending**, queued as the DECIDE item `panel 191`, which puts the
-ratification, the floor (R4), and route (b) whole as the conservative
-alternative. A yes settles R1 to R9 as written. It does not settle what only
-the landing can measure: R2's repair, R3's cases red then green, the CI's
-clang on the resource object, below the floor.
+**RATIFIED 2026-10-05**, on the author's answer between 16:12 and 16:14 by
+the clock read before and after it, meant as: *I ratify both panels*, this
+sitting and panel 192. **Recorded as a reading**, CLAUDE.md § 4's default;
+not `by delegation`.
+
+**What the yes settles**:
+- R1 to R9 as the resolution above states them, route `c-dirwide` over the
+  conservative (b) whole;
+- the floor (R4) at Windows 10 version 1903, the recommendation's.
+
+The landing is batch 11's lane b11-windows, defect 238 (`d5133e26`,
+`dc7eed87`).
+
+**What it does not settle**: what only the landing can measure, R2's repair,
+R3's cases red then green on the box, the CI's clang on the resource object,
+and below the floor.
