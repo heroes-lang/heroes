@@ -16,9 +16,7 @@ use cli/toolchain
 use cli/process
 use cli/publish
 use cli/clang_floor
-use cli/strings
-use module/reading
-use not_text
+use cli/read_back
 
 record Check
     name: str
@@ -46,7 +44,7 @@ function capture(program: str, words: [str], build_dir: str) -> str?
     out_path = publish.private_name(build_dir + "/doctor-out.txt")
     process.mkdir_all(build_dir)?
     ran = process.run(program: program, words: words, out: out_path, err: process.discard())
-    said = said_back(out_path)
+    said = read_back.words(out_path)
     publish.discard(out_path)
 
     if !ran.started
@@ -58,20 +56,6 @@ function capture(program: str, words: [str], build_dir: str) -> str?
     if said.is_err()
         return fail(code: "none", msg: "nothing was said")
     return ok(first_line(said.must()))
-
-# What a child wrote at `path`, read back as words a row can quote (defect
-# 337): its text where every byte is UTF-8, and where one is not, each such
-# byte written by its value, `<0xE9>`; a line ended `\r\n` read as one ended
-# `\n`. A failure only where nothing could be read back. **This read was
-# `read_file` until 2026-10-05**, which refuses such a file whole: a clang
-# whose `--version` named a folder in Latin-1 on its third line was told
-# `not found — install a C toolchain`, at exit 2, the floor row gone
-# (measured on this Mac with a stand-in `clang` first on the `PATH`). It is
-# `cli/read_back.hero`'s `words`, lane b11-misc's reading of clang's own
-# words at `aeef17c1`, written here until the two lanes meet.
-function said_back(path: str) -> str?
-    read = reading.source_text(path)?
-    return ok(strings.without_returns(not_text.bytes_written(read.text, faults: read.faults)))
 
 function first_line(text: str) -> str
     run: [str] @ []
@@ -232,11 +216,11 @@ function linked_and_ran(dir: str, source: str) -> str?
     return ok("clang compiled, linked and ran a C program")
 
 # The first line clang wrote, or its exit code where it wrote none. Read as
-# `said_back` reads, so a linker's words in its own code page are quoted with
+# `read_back.words` reads, so a linker's words in its own code page are quoted with
 # each byte that is not UTF-8 written by its value, never dropped (defect 337),
 # and a line clang on Windows ends `\r\n` carries no `\r` inside the quotes.
 function first_said(path: str, code: i64) -> str
-    said = said_back(path)
+    said = read_back.words(path)
 
     if said.is_err()
         return "it exited " + code.to_str() + " and wrote nothing that could be read back"

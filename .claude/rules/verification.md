@@ -176,6 +176,15 @@ before had already put four of its own, and which `emission` excludes by
 design. A premise written down is a premise that fails loudly; this one did its
 job.
 
+**Corrected 2026-10-05, defect 298**: the premise that comment stated,
+*`--emit-c` never calls clang*, is false since 2026-09-16 (defects 048 and
+049). `--emit-c` runs the pointee check and the build's rounds, which compile
+every unit with clang and do not link, so a binding clang refuses exits 1 with
+no C: 30 of the 38 `fixedbugs/` cases, measured 2026-10-05 by lane b11-misc,
+and the suite passes such a program with nothing to bless (defect 341 is its
+floor). The suite's comments say so since defect 298's repair; the paragraph
+above stands as the history of 2026-09-09.
+
 ## The formatter's probe, by hand, before a push that touches `selfhost/print/`
 
 Added 2026-09-28 with `heroes probe`, panel 179 item 7. The net holds two of
