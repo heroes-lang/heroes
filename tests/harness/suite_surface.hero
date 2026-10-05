@@ -379,6 +379,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "under build it is a program with no main, as any file without one is", argv: "build tests/golden/surface-fixtures/empty109/empty.hero", code: 1).err_has("error[no_entry_point]").err_has("empty109/empty.hero:1:1").err_lacks("panic").err_lacks("internal error")
         row(name: "and under run", argv: "run tests/golden/surface-fixtures/empty109/empty.hero", code: 1).err_has("error[no_entry_point]").err_has("empty109/empty.hero:1:1").err_lacks("panic").err_lacks("internal error")
         row(name: "under test it has no tests", argv: "test tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_is("no tests in tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
+        row(name: "a failing title is printed as its source spells it, so a character a line cannot show reaches the output by its code, never as itself (defect 355)", argv: "test tests/golden/surface-fixtures/title355/title.hero", code: 1).out_has("FAIL \"a title holding \\u{1b}[2J and \\u{202e} here\"").out_lacks("\u{1b}").out_lacks("\u{202e}")
         row(name: "measure counts it", argv: "measure tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_starts("tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
         row(name: "a module of zero bytes that a program imports is joined like any other, and the program owes only what its content does", argv: "check tests/golden/surface-fixtures/empty109/main.hero", code: 1).err_has("error[unused_binding]").err_has("`use empty` is never used").err_lacks("panic").err_lacks("internal error")
         row(name: "mutate over a directory holding a file of zero bytes scores it, where it panicked", argv: "mutate tests/golden/surface-fixtures/empty109/alone", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/empty109/alone\n").err_empty()
@@ -896,7 +897,10 @@ test "the tables are what this module is, so they are counted"
     # braces name what is bound refused with its two guesses, each doubling
     # the braces of text, no `unused_binding` beside it, and `--permissive`
     # dropping it as the thesis rule it is.
-    assert verb_probes().len() == 169
+    # 169 -> 170 on 2026-10-05, defect 355 (panel 192's R7): `heroes test`
+    # prints a failing title as its source spells it, so a character a line
+    # cannot show reaches its output by its code and never as itself.
+    assert verb_probes().len() == 170
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
