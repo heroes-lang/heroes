@@ -41,11 +41,47 @@
 /* Each call below that can fail clears `hero_fs_why_code` on the way in and
  * sets it where it fails; `parts/os.c` defines it and says why it exists. */
 
+#if defined(_WIN32)
+/* A path's attributes, asked WIDE (parts/codepage.c), and so are the removal
+ * below and the two questions it asks: `hero_dir_remove_tree` hands them the
+ * names its listing carried back, and a name holding a surrogate standing
+ * alone is not UTF-8 there, so a narrow door read it as another and answered
+ * *not there* for a file that was (panel 191's R2). Every UTF-8 name is the
+ * narrow door's own answer under the code page this runtime carries.
+ * INVALID_FILE_ATTRIBUTES where nothing is there or the bytes name nothing. */
+static DWORD hero_fs_attributes(const char *path) {
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return INVALID_FILE_ATTRIBUTES;
+    DWORD attrs = GetFileAttributesW(wide);
+    hero_release(wide);
+    return attrs;
+}
+#endif
+
+#if defined(_WIN32)
+/* Is `path` a symbolic link or a junction (a reparse point that NAMES another
+ * file) rather than a file some filter keeps a reparse point on, as a cloud
+ * placeholder is? `FindFirstFileW` reports the tag in `dwReserved0`. */
+static int hero_fs_is_surrogate(const char *path) {
+    /* Wide, as the directory walk is (parts/codepage.c): a name whose UTF-8
+     * passes 260 bytes failed the narrow call and read as no link at all. */
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) return 0;
+    WIN32_FIND_DATAW found;
+    HANDLE h = FindFirstFileW(wide, &found);
+    hero_release(wide);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    FindClose(h);
+    return (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+           IsReparseTagNameSurrogate(found.dwReserved0);
+}
+#endif
+
 /* Is there a directory at this path? The question `test -d` asked, and the one
  * `mkdir`'s errno cannot answer. */
 int64_t hero_fs_is_directory(const char *path) {
 #if defined(_WIN32)
-    DWORD attrs = GetFileAttributesA(path);
+    DWORD attrs = hero_fs_attributes(path);
     if (attrs == INVALID_FILE_ATTRIBUTES) return 0;
     return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0 ? 1 : 0;
 #else
@@ -58,7 +94,7 @@ int64_t hero_fs_is_directory(const char *path) {
 /* Is there anything at all at this path? `test -e`. */
 int64_t hero_fs_exists(const char *path) {
 #if defined(_WIN32)
-    return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES ? 1 : 0;
+    return hero_fs_attributes(path) != INVALID_FILE_ATTRIBUTES ? 1 : 0;
 #else
     struct stat info;
     return stat(path, &info) == 0 ? 1 : 0;
@@ -91,11 +127,11 @@ int64_t hero_fs_mkdir_all(const char *path) {
     hero_fs_why_code = 0;
     size_t length = strlen(path);
     if (length == 0) {
-        hero_fs_why_code = (int64_t)ENOENT;
+        hero_fs_why_code = -(int64_t)ENOENT;
         return HERO_OS_FAILED;
     }
     if (length >= HERO_FS_PATH_MAX) {
-        hero_fs_why_code = (int64_t)ENAMETOOLONG;
+        hero_fs_why_code = -(int64_t)ENAMETOOLONG;
         return HERO_OS_FAILED;
     }
 
@@ -157,15 +193,25 @@ int64_t hero_fs_newer_than(const char *path, const char *reference) {
  * past both causes; a file still held after that is genuinely held, and the
  * caller hears it. POSIX never retries: a busy file there deletes anyway
  * (the name goes, the inode lingers), so the loop would be dead code. */
-int64_t hero_fs_remove(const char *path) {
-    hero_fs_why_code = 0;
-    if (remove(path) == 0) return HERO_OS_OK;
+#if defined(_WIN32)
+/* Is there a directory at this wide path, and anything at all: `hero_fs_remove`'s
+ * two questions, asked of the name it was handed once widened. */
+static int hero_fs_wide_is_directory(const wchar_t *wide) {
+    DWORD attrs = GetFileAttributesW(wide);
+    return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+static int hero_fs_wide_exists(const wchar_t *wide) {
+    return GetFileAttributesW(wide) != INVALID_FILE_ATTRIBUTES;
+}
+
+static int64_t hero_fs_remove_wide(const wchar_t *wide) {
+    if (_wremove(wide) == 0) return HERO_OS_OK;
     hero_fs_why_code = (int64_t)errno;
-    if (!hero_fs_exists(path)) {
+    if (!hero_fs_wide_exists(wide)) {
         hero_fs_why_code = 0;
         return HERO_OS_OK;
     }
-#if defined(_WIN32)
     /* **MSVC's `remove()` does not remove a DIRECTORY** — C11 leaves it
      * unspecified and POSIX's does, so the difference hid until a suite
      * deleted a tree it had built earlier in the same run: on a fresh
@@ -173,8 +219,8 @@ int64_t hero_fs_remove(const char *path) {
      * and the first delete-then-recreate (`cache/`, `units/`) was the first
      * time a directory unlink actually executed. Measured 2026-08-31: five
      * checks red as `cannot lay the program out`, all of them this line. */
-    if (hero_fs_is_directory(path)) {
-        if (RemoveDirectoryA(path)) {
+    if (hero_fs_wide_is_directory(wide)) {
+        if (RemoveDirectoryW(wide)) {
             hero_fs_why_code = 0;
             return HERO_OS_OK;
         }
@@ -182,20 +228,44 @@ int64_t hero_fs_remove(const char *path) {
     }
     for (int wait_ms = 5; wait_ms <= 320; wait_ms *= 2) {
         Sleep((DWORD)wait_ms);
-        int64_t directory = hero_fs_is_directory(path);
-        if (directory ? RemoveDirectoryA(path) != 0 : remove(path) == 0) {
+        int directory = hero_fs_wide_is_directory(wide);
+        if (directory ? RemoveDirectoryW(wide) != 0 : _wremove(wide) == 0) {
             hero_fs_why_code = 0;
             return HERO_OS_OK;
         }
         /* The last refusal is the one reported. */
         hero_fs_why_code = directory ? (int64_t)GetLastError() : (int64_t)errno;
-        if (!hero_fs_exists(path)) {
+        if (!hero_fs_wide_exists(wide)) {
             hero_fs_why_code = 0;
             return HERO_OS_OK;
         }
     }
-#endif
     return HERO_OS_FAILED;
+}
+#endif
+
+int64_t hero_fs_remove(const char *path) {
+    hero_fs_why_code = 0;
+#if defined(_WIN32)
+    /* Wide, as `hero_fs_attributes` above says why. Bytes that name nothing
+     * are a refusal, never the *not there* that is success here. */
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) {
+        hero_fs_why_code = -(int64_t)ERROR_NO_UNICODE_TRANSLATION;
+        return HERO_OS_FAILED;
+    }
+    int64_t removed = hero_fs_remove_wide(wide);
+    hero_release(wide);
+    return removed;
+#else
+    if (remove(path) == 0) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)errno;
+    if (!hero_fs_exists(path)) {
+        hero_fs_why_code = 0;
+        return HERO_OS_OK;
+    }
+    return HERO_OS_FAILED;
+#endif
 }
 
 /* `mv -f`: the target is replaced, and on POSIX no reader ever sees it absent.
@@ -239,10 +309,12 @@ int64_t hero_fs_rename(const char *from, const char *to) {
  * not, HERO_OS_NOT_FOUND where this machine gives no answer. Each platform's
  * own call, the one place that knows which machine it is on:
  *
- *   - Windows: `GetModuleFileNameA(NULL, ...)`, the path the module was
- *     loaded by, in the ANSI code page as every narrow call here answers
- *     (defect 238's question, which this does not settle); a path at the
- *     buffer's bound is cut, and is no answer.
+ *   - Windows: `GetModuleFileNameW(NULL, ...)`, the path the module was
+ *     loaded by, carried back as `hero_win_bytes` writes it (parts/codepage.c):
+ *     the narrow door answered a surrogate standing alone as U+FFFD under the
+ *     UTF-8 code page, a valid path naming another folder, where these bytes
+ *     are not UTF-8 and are named (defect 238); a path at the buffer's bound
+ *     is cut, and is no answer.
  *   - macOS: `_NSGetExecutablePath`, then `realpath`, so a compiler reached
  *     through a link answers where it lives, as Linux's answer does.
  *   - Linux and every other POSIX: `/proc/self/exe`, the resolved path; where
@@ -255,12 +327,22 @@ int64_t hero_fs_rename(const char *from, const char *to) {
  * the two platforms that run it. */
 HeroStr hero_exe_path_shown(int64_t *status, int64_t *marks) {
     *marks = 0;
+#if defined(_WIN32)
+    wchar_t wide[HERO_FS_PATH_MAX];
+    DWORD got = GetModuleFileNameW(NULL, wide, (DWORD)HERO_FS_PATH_MAX);
+    if (got == 0 || got >= (DWORD)HERO_FS_PATH_MAX) {
+        *status = HERO_OS_NOT_FOUND;
+        return hero_str_from_bytes("", 0);
+    }
+    int64_t length = 0;
+    char *bytes = hero_win_bytes(wide, &length);
+    HeroStr shown = hero_bytes_shown(bytes, length, status, marks);
+    hero_release(bytes);
+    return shown;
+#else
     char found[HERO_FS_PATH_MAX];
     int64_t length = -1;
-#if defined(_WIN32)
-    DWORD got = GetModuleFileNameA(NULL, found, (DWORD)sizeof found);
-    if (got > 0 && got < (DWORD)sizeof found) length = (int64_t)got;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
     char raw[HERO_FS_PATH_MAX];
     uint32_t size = (uint32_t)sizeof raw;
     if (_NSGetExecutablePath(raw, &size) == 0 && realpath(raw, found) != NULL) length = (int64_t)strlen(found);
@@ -273,4 +355,5 @@ HeroStr hero_exe_path_shown(int64_t *status, int64_t *marks) {
         return hero_str_from_bytes("", 0);
     }
     return hero_bytes_shown(found, length, status, marks);
+#endif
 }

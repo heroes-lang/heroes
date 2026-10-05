@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b10-harness, 2026-10-04, measured on its worktree at `bd1f168c` (its final reply's *Found beside*), beside 316.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a question about which program is judged, answered by the machine's PATH where the author named a file; no wrong verdict measured.
+
+    **2026-10-04:** Repaired in part at `69d9f47b`: a `HEROES_COMPILER` named bare is started as the file checked, gated by its case and the net's own tests on this Mac (261, all passed). The `-- <compiler>` entrance is `tests/harness/main.hero:125`, a file of lane misc's set, and owes `compiler @ shell.started_as(given[0])`, reported to the coordinator; the net is owed at the batch's close.

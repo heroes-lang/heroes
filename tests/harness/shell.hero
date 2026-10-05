@@ -918,10 +918,10 @@ function some_compiler() -> str?
 
     if hint.len() > 0
         if exists(hint)
-            return ok(hint)
+            return ok(started_as(hint))
 
         if exists(hint + exe_suffix())
-            return ok(hint + exe_suffix())
+            return ok(started_as(hint + exe_suffix()))
         return fail(
             code: "absent",
             msg: "HEROES_COMPILER is set to `" + hint + "`, and no file is there, so it names no compiler: set it to one, unset it, or name the compiler, -- <compiler>"
@@ -940,6 +940,29 @@ function some_compiler() -> str?
             return ok(path + exe_suffix())
 
     return fail(code: "none", msg: no_compiler_anywhere())
+
+# The name a compiler is checked by and started by: one string for both
+# (defect 331). `exists` asks for a name with no separator in the working
+# directory, as it asks for every path here, and the start of a program so
+# named searches the PATH (`execvp`), so with `HEROES_COMPILER=heroes` or
+# `-- heroes` the file checked was `./heroes` and the program judged was the
+# PATH's `heroes`, measured 2026-10-04 with a stub on the PATH. `./` makes the
+# name a path, which no start searches. A `\` and a drive's `:` part a path
+# only where Windows writes paths, and are bytes of a name elsewhere
+# (`selfhost/cli/runtime_places.hero`'s rule); the runtime says which machine
+# this is.
+function started_as(name: str) -> str
+    windows = exe_suffix() == ".exe"
+    at: i64 @ 0
+
+    while at < name.len()
+        if name[at] == '/' || windows && (name[at] == '\\' || name[at] == ':')
+            return name
+        at @ at + 1
+
+    if name.len() == 0
+        return name
+    return "./" + name
 
 # What to print when there is none — the four places, named.
 function no_compiler_anywhere() -> str
@@ -1183,9 +1206,13 @@ test "a name that is not UTF-8 is written by its bytes, and a U+FFFD it holds st
 # is named by its bytes and never panics, and a walk for one suffix passes
 # over a name that does not end in it. Only C can make such a name, so a
 # program of a few lines does: Linux keeps `caf<0xE9>.hero` as written, and
-# Windows' narrow `fopen` makes `café.hero`, which `FindFirstFileA` answers
-# as 0xE9 in its ANSI code page, so both run the real path. This Mac's APFS
-# refuses the name (errno 92), and there the test asserts the walks whole.
+# this Mac's APFS refuses the name (errno 92), where the test asserts the
+# walks whole. **On Windows the only such name holds a surrogate standing
+# alone**, made by `CreateFileW` (panel 191's R3): this branch made `café.hero`
+# through the narrow `fopen` until 2026-10-04 and read it back through the
+# narrow listing, both in code page 1252, so it passed while testing defect
+# 238 as the platform. The walk names the surrogate's three bytes and enters a
+# directory so named (panel 191's R2), and the tree goes whole by its names.
 test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (defect 239)"
     scratch = own_scratch()
     dir = scratch + "/walk-names"
@@ -1194,17 +1221,22 @@ test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (
     assert !remove_tree(dir).is_err()
     assert !mkdir_all(only).is_err()
     assert !write_file(path: only + "/plain.hero", text: "").is_err()
+    windows = exe_suffix() == ".exe"
     maker = dir + "/maker" + exe_suffix()
-    assert !write_file(path: dir + "/maker.c", text: maker_source(only)).is_err()
+    assert !write_file(path: dir + "/maker.c", text: maker_source(only: only, windows: windows)).is_err()
     built = run(scratch: scratch, program: "clang", words: ["clang", dir + "/maker.c", "-o", maker])
     assert !built.is_err()
     assert built.must().code == 0
     made = run(scratch: scratch, program: maker, words: [maker])
     assert !made.is_err()
-    assert made.must().code == 0 || made.must().code == 3
+    assert made.must().code == 0 || made.must().code == 3 && !windows
+    byte: str @ "<0xE9>"
+
+    if windows
+        byte @ "<0xED><0xA0><0x80>"
 
     if made.must().code == 0
-        file = "the name of `" + only + "/caf<0xE9>.hero` is not UTF-8"
+        file = "the name of `" + only + "/caf" + byte + ".hero` is not UTF-8"
         assert strings.contains(text: refused_walk(list_entries(scratch: scratch, dir: only)), needle: file)
         assert strings.contains(
             text: refused_walk(list_tree(scratch: scratch, dir: only, skip: nothing)),
@@ -1212,11 +1244,11 @@ test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (
         )
         assert strings.contains(
             text: refused_walk(list_directories(scratch: scratch, dir: only)),
-            needle: "the name of `" + only + "/d<0xE9>` is not UTF-8"
+            needle: "the name of `" + only + "/d" + byte + "` is not UTF-8"
         )
         assert strings.contains(
             text: refused_walk(found_under(dir: only, suffix: ".hero", reference: "")),
-            needle: "<0xE9>"
+            needle: byte
         )
 
         # A walk for another suffix passes over both, as `cache` walks
@@ -1233,11 +1265,15 @@ test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (
     assert !exists(dir)
     assert !remove_tree(scratch).is_err()
 
-# A program that makes, under `only`, a file and a directory whose names hold
-# the byte 0xE9, and a file inside that directory: exit 3 where the file
-# cannot be made, 4 the directory, 5 the file inside it.
-function maker_source(only: str) -> str
-    return "#include <stdio.h>\n#if defined(_WIN32)\n#include <direct.h>\n#define MAKE_DIR(p) _mkdir(p)\n#else\n#include <sys/stat.h>\n#define MAKE_DIR(p) mkdir(p, 0755)\n#endif\nstatic int touch(const char *path) {\n    FILE *f = fopen(path, \"wb\");\n    if (f == NULL) return 0;\n    return fclose(f) == 0;\n}\nint main(void) {\n    if (!touch(\"" + only + "/caf\\xe9.hero\")) return 3;\n    if (MAKE_DIR(\"" + only + "/d\\xe9\") != 0) return 4;\n    if (!touch(\"" + only + "/d\\xe9/x.hero\")) return 5;\n    return 0;\n}\n"
+# A program that makes, under `only`, a file and a directory whose names are
+# not UTF-8, and a file inside that directory: exit 3 where the file cannot be
+# made, 4 the directory, 5 the file inside it. On POSIX the names hold the
+# byte 0xE9; on Windows a surrogate standing alone, by the wide calls, the
+# one name NTFS keeps that is not UTF-8.
+function maker_source(only: str, windows: bool) -> str
+    if windows
+        return "#include <windows.h>\nstatic int touch(const wchar_t *path) {\n    HANDLE h = CreateFileW(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);\n    if (h == INVALID_HANDLE_VALUE) return 0;\n    return CloseHandle(h) != 0;\n}\nint main(void) {\n    if (!touch(L\"" + only + "/caf\\xD800.hero\")) return 3;\n    if (!CreateDirectoryW(L\"" + only + "/d\\xD800\", NULL)) return 4;\n    if (!touch(L\"" + only + "/d\\xD800/x.hero\")) return 5;\n    return 0;\n}\n"
+    return "#include <stdio.h>\n#include <sys/stat.h>\nstatic int touch(const char *path) {\n    FILE *f = fopen(path, \"wb\");\n    if (f == NULL) return 0;\n    return fclose(f) == 0;\n}\nint main(void) {\n    if (!touch(\"" + only + "/caf\\xe9.hero\")) return 3;\n    if (mkdir(\"" + only + "/d\\xe9\", 0755) != 0) return 4;\n    if (!touch(\"" + only + "/d\\xe9/x.hero\")) return 5;\n    return 0;\n}\n"
 
 # Why a walk refused, "" where it answered.
 function refused_walk(got: [str]?) -> str
@@ -1323,19 +1359,127 @@ test "fixedbugs: a HEROES_COMPILER that names nothing is refused, never passed o
     assert strings.contains(text: empty.must().out, needle: "compiler ok ")
     assert !remove_tree(scratch).is_err()
 
+# DEFECT 331, held as a test (2026-10-04): a compiler named bare is the file
+# the harness checked, the working directory's, and never one the PATH holds.
+# A stub stands in each place, and a probe asking `some_compiler` and starting
+# its answer as every suite starts the compiler runs where the first stands.
+# Until that day it printed `checked heroes` and started the PATH's. Windows
+# searches the working directory before the PATH, and runs no script, so
+# there the rule is asserted of the names alone.
+test "fixedbugs: a compiler named bare is started as the file that was checked, never from the PATH (defect 331)"
+    assert started_as("heroes") == "./heroes"
+    assert started_as("./heroes") == "./heroes"
+    assert started_as("bin/heroes") == "bin/heroes"
+    assert started_as("/opt/heroes") == "/opt/heroes"
+    assert started_as("") == ""
+
+    if exe_suffix() == ".exe"
+        assert started_as("C:\\w\\heroes.exe") == "C:\\w\\heroes.exe"
+        assert started_as("bin\\heroes.exe") == "bin\\heroes.exe"
+        assert started_as("C:heroes.exe") == "C:heroes.exe"
+    else
+        assert started_as("a\\heroes") == "./a\\heroes"
+
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    here = scratch + "/bare-here"
+    elsewhere = scratch + "/bare-path"
+    assert !mkdir_all(here).is_err()
+    assert !mkdir_all(elsewhere).is_err()
+    assert !stub_named(path: here + "/heroes", says: "the working directory's", scratch: scratch).is_err()
+    assert !stub_named(path: elsewhere + "/heroes", says: "the PATH's", scratch: scratch).is_err()
+    probe = harness_probe(scratch: scratch, name: "bare-probe", main: START_PROBE).must()
+    ran = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "p=\"$PWD/$0\"; bin=\"$PWD/$2\"; cd \"$1\" && PATH=\"$bin:$PATH\" HEROES_COMPILER=heroes exec \"$p\"", probe, here, elsewhere]
+    )
+    assert !ran.is_err()
+    assert ran.must().out == "checked ./heroes\nstarted the working directory's\n"
+    assert !remove_tree(scratch).is_err()
+
+# DEFECT 281, held as a test (2026-10-04): an argument of the compiler's own
+# that is not UTF-8 is named by its bytes and told by what it is to the
+# command, where every one drew a program author's advice; only an argument
+# after `run`'s `--` is the program's and draws it. Only a shell puts such
+# bytes in a command line here, so this asks for POSIX as the script cases do.
+test "fixedbugs: an argument of the compiler's own that is not UTF-8 is named by its bytes (defect 281)"
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    compiler = some_compiler().must()
+    file = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exec \"$0\" check \"$(printf 'caf\\351.hero')\"", compiler]
+    )
+    assert !file.is_err()
+    assert file.must().code == 2
+    assert file.must().err == "error: the name of `caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it\n"
+    out = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exec \"$0\" build x.hero -o \"$(printf 'caf\\351')\"", compiler]
+    )
+    assert !out.is_err()
+    assert out.must().code == 2
+    assert out.must().err == "error: the value of `-o`, `caf<0xE9>`, is not UTF-8, and this compiler holds each word it is given as a Heroes `str`, which is UTF-8 (spec § 3 Types): give it in UTF-8\n"
+    program = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exec \"$0\" run x.hero -- \"$(printf '\\351')\"", compiler]
+    )
+    assert !program.is_err()
+    assert program.must().code == 2
+    assert program.must().err == "error: argument 4, `<0xE9>`, is for the program and is not UTF-8, and `heroes run` passes a program's arguments as Heroes `str`s, which are UTF-8 (spec § 3 Types)\nnote: build the program with `heroes build`, run it with this argument, and read it with `args_checked()`\n"
+    assert !remove_tree(scratch).is_err()
+
+# DEFECT 349, held as a test (2026-10-05): `-o ""` is refused by the argument
+# parser, naming the flag, at exit 2, and no empty path reaches the writer,
+# which told it as *the link cannot be followed: the operating system's own
+# reason is 0*. An empty word passes as an argument on every platform.
+test "fixedbugs: an empty `-o` is refused naming the flag, never told as a link (defect 349)"
+    scratch = own_scratch()
+    compiler = some_compiler().must()
+    program = scratch + "/real.hero"
+    assert !write_file(path: program, text: "function main()\n    print(1)\n").is_err()
+    built = run(scratch: scratch, program: compiler, words: [compiler, "build", program, "-o", ""]).must()
+    assert built.code == 2
+    assert built.err == "error: `-o` needs a path, and was given an empty one: `heroes build <file.hero> -o <path>`\n"
+    assert !remove_tree(scratch).is_err()
+
+# A script at `path` that writes `says` and exits 0, made executable.
+function stub_named(path: str, says: str, scratch: str) -> ()?
+    write_file(path: path, text: "#!/bin/sh\nprintf '%s' \"" + says + "\"\n")?
+    made = run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + path + " executable")
+    return ok()
+
+# The program the test above builds over the harness's own modules: what
+# `some_compiler` answers, and what the program so named says when started.
+constant START_PROBE: str
+    "use shell\n\nfunction main()\n    match shell.some_compiler()\n        .ok path =>\n            print(\"checked \" + path)\n\n            match shell.run(scratch: \"build/start-probe\", program: path, words: [path])\n                .ok r  => print(\"started \" + r.out)\n                .err e => print(\"not started: \" + e.msg)\n        .err e => print(\"refused \" + e.code + \": \" + e.msg)\n"
+
 # `ENV_PROBE` built over the harness's own modules, byte for byte, under
 # `scratch`, so the readers of `HEROES_COMPILER` and `HEROES_RUNTIME` are
 # asked from a child's environment as the net reads them.
 function env_probe(scratch: str) -> str?
-    dir = scratch + "/env-values"
+    return harness_probe(scratch: scratch, name: "env-values", main: ENV_PROBE)
+
+# `main` built over the harness's own modules under `scratch/name`.
+function harness_probe(scratch: str, name: str, main: str) -> str?
+    dir = scratch + "/" + name
     remove_tree(dir)?
     mkdir_all(dir)?
 
-    for name in ["absence", "mark_readers", "shell", "strings"]
-        text = read_file("tests/harness/" + name + ".hero")?
-        write_file(path: dir + "/" + name + ".hero", text: text)?
+    for module in ["absence", "mark_readers", "shell", "strings"]
+        text = read_file("tests/harness/" + module + ".hero")?
+        write_file(path: dir + "/" + module + ".hero", text: text)?
 
-    write_file(path: dir + "/main.hero", text: ENV_PROBE)?
+    write_file(path: dir + "/main.hero", text: main)?
     compiler = some_compiler()?
     probe = dir + "/probe" + exe_suffix()
     built = run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/main.hero", "-o", probe])?
@@ -1438,4 +1582,428 @@ test "fixedbugs: a capture and a test's files are named by the process that make
     absent = attempted(scratch: scratch, program: "heroes-no-such-program", words: ["heroes-no-such-program"])
     assert !absent.must().started
     assert captures_left(scratch) == 0
+    assert !remove_tree(scratch).is_err()
+
+# THE WIDE WORLD, for defect 238's cases (panel 191's R3, 2026-10-04). On
+# Windows a name reaches a program through a code page, and a case is red at
+# the narrow runtime only where its names are made, its program launched or its
+# answer read through the wide API: a name a Heroes program makes and a Heroes
+# program launches read right at that runtime, `CreateProcessA` turning UTF-8
+# into the code page's text and the child's C runtime turning it back (both
+# seats, measured on the box), so such a case is refused as a witness. This
+# helper is the wide world, built by each case that asks: every name, value
+# and command line it is given is ASCII with `\uXXXX` units, so no launcher's
+# code page touches one, and it answers in ASCII the same way.
+#
+# **The cases live in the net's own tests, and that is where a compiler is
+# named**: each launches the compiler under test, or a program it built, and
+# only the net holds that compiler (`some_compiler`); the compiler's own tests
+# run no compiler. The two that need none are defect 239's, in both trees.
+# Windows alone: elsewhere a name is its bytes, and none of these is a question.
+constant WIDE_TOOL: str
+    "/* The wide world, for defect 238's cases (panel 191's R3). Every name, value\n * and command line is made, passed and read through the wide API, so no code\n * page of a launcher touches it. Every argument is ASCII: `\\uXXXX` is a UTF-16\n * unit, `\\n` a line end, `\\\\` a backslash; every answer is ASCII the same way,\n * a byte of a file's contents above ASCII as `\\xHH`.\n *   mk <path> <text>          a file by a wide name, holding <text> as UTF-8\n *   mkdir <path>\n *   cp <from> <to>\n *   ls <dir>                  its names by FindFirstFileW, one a line\n *   cat <path>                its bytes, or `absent`\n *   abs <path>                its absolute path\n *   symlink <name> <target>   a symbolic link to a file\n *   attrs <path>              `a link`, `a directory`, `a plain file`, `absent`\n *   run <cwd|-> <NAME=VALUE|NAME=|-> <out> <err> <program> <args...>\n *                             started by CreateProcessW, the program and the\n *                             folder made absolute first, `NAME=` removing the\n *                             variable; answers `exit N`\n *   runraw <out> <err> <program> <line>   the command line handed over as is\n * Exit 0, or 1 with the reason on stdout. */\n#include <fcntl.h>\n#include <io.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <wchar.h>\n#include <windows.h>\n\nstatic wchar_t *wide(const char *s) {\n    size_t n = strlen(s);\n    wchar_t *w = calloc(n + 1, sizeof *w);\n    size_t at = 0;\n    for (size_t i = 0; i < n;) {\n        if (s[i] == '\\\\' && i + 6 <= n && s[i + 1] == 'u') {\n            char hex[5] = {s[i + 2], s[i + 3], s[i + 4], s[i + 5], 0};\n            w[at++] = (wchar_t)strtoul(hex, NULL, 16);\n            i += 6;\n        } else if (s[i] == '\\\\' && s[i + 1] == 'n') {\n            w[at++] = L'\\n';\n            i += 2;\n        } else if (s[i] == '\\\\' && s[i + 1] == '\\\\') {\n            w[at++] = L'\\\\';\n            i += 2;\n        } else {\n            w[at++] = (wchar_t)(unsigned char)s[i];\n            i += 1;\n        }\n    }\n    w[at] = 0;\n    return w;\n}\n\nstatic void say_wide(const wchar_t *w) {\n    for (; *w != 0; w++) {\n        if (*w >= 0x20 && *w < 0x7F && *w != L'\\\\') putchar((int)*w);\n        else if (*w == L'\\\\') fputs(\"\\\\\\\\\", stdout);\n        else printf(\"\\\\u%04x\", (unsigned)*w);\n    }\n}\n\nstatic wchar_t *absolute(const wchar_t *path) {\n    DWORD room = GetFullPathNameW(path, 0, NULL, NULL);\n    if (room == 0) return NULL;\n    wchar_t *out = calloc(room, sizeof *out);\n    if (GetFullPathNameW(path, room, out, NULL) == 0) return NULL;\n    return out;\n}\n\n/* One word of a command line as the C runtime reads it back: quoted where it\n * holds a space, a tab or a quote or is empty, a quote inside escaped, and the\n * backslashes before a quote doubled. */\nstatic void quoted(wchar_t *line, size_t *at, const wchar_t *word) {\n    int needs = word[0] == 0 || wcspbrk(word, L\" \\t\\\"\") != NULL;\n    if (!needs) {\n        for (const wchar_t *p = word; *p != 0; p++) line[(*at)++] = *p;\n        return;\n    }\n    line[(*at)++] = L'\"';\n    for (const wchar_t *p = word;;) {\n        size_t slashes = 0;\n        while (*p == L'\\\\') { slashes += 1; p++; }\n        if (*p == 0) {\n            for (size_t k = 0; k < slashes * 2; k++) line[(*at)++] = L'\\\\';\n            break;\n        }\n        if (*p == L'\"') {\n            for (size_t k = 0; k < slashes * 2 + 1; k++) line[(*at)++] = L'\\\\';\n        } else {\n            for (size_t k = 0; k < slashes; k++) line[(*at)++] = L'\\\\';\n        }\n        line[(*at)++] = *p;\n        p++;\n    }\n    line[(*at)++] = L'\"';\n}\n\nstatic int started(wchar_t *program, wchar_t *line, wchar_t *cwd, const char *out_path, const char *err_path) {\n    SECURITY_ATTRIBUTES sa = {sizeof sa, NULL, TRUE};\n    HANDLE out = CreateFileW(wide(out_path), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, 0, NULL);\n    HANDLE err = CreateFileW(wide(err_path), GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_ALWAYS, 0, NULL);\n    HANDLE nul = CreateFileW(L\"NUL\", GENERIC_READ, FILE_SHARE_READ, &sa, OPEN_EXISTING, 0, NULL);\n    if (out == INVALID_HANDLE_VALUE || err == INVALID_HANDLE_VALUE || nul == INVALID_HANDLE_VALUE) {\n        printf(\"streams failed %lu\\n\", GetLastError());\n        return 1;\n    }\n    STARTUPINFOW si;\n    memset(&si, 0, sizeof si);\n    si.cb = sizeof si;\n    si.dwFlags = STARTF_USESTDHANDLES;\n    si.hStdInput = nul;\n    si.hStdOutput = out;\n    si.hStdError = err;\n    PROCESS_INFORMATION pi;\n    if (!CreateProcessW(program, line, NULL, NULL, TRUE, 0, NULL, cwd, &si, &pi)) {\n        printf(\"run failed %lu\\n\", GetLastError());\n        return 1;\n    }\n    WaitForSingleObject(pi.hProcess, INFINITE);\n    DWORD code = 0;\n    GetExitCodeProcess(pi.hProcess, &code);\n    CloseHandle(pi.hThread);\n    CloseHandle(pi.hProcess);\n    CloseHandle(out);\n    CloseHandle(err);\n    CloseHandle(nul);\n    printf(\"exit %lu\\n\", code);\n    return 0;\n}\n\nint main(int argc, char **argv) {\n    _setmode(_fileno(stdout), _O_BINARY);\n    if (argc < 2) return 64;\n    const char *verb = argv[1];\n    if (!strcmp(verb, \"mk\") && argc == 4) {\n        wchar_t *text = wide(argv[3]);\n        int bytes = WideCharToMultiByte(CP_UTF8, 0, text, -1, NULL, 0, NULL, NULL);\n        char *utf8 = calloc((size_t)bytes + 1, 1);\n        WideCharToMultiByte(CP_UTF8, 0, text, -1, utf8, bytes, NULL, NULL);\n        HANDLE h = CreateFileW(wide(argv[2]), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);\n        if (h == INVALID_HANDLE_VALUE) { printf(\"mk failed %lu\\n\", GetLastError()); return 1; }\n        DWORD put = 0;\n        DWORD want = (DWORD)strlen(utf8);\n        BOOL wrote = WriteFile(h, utf8, want, &put, NULL);\n        CloseHandle(h);\n        if (!wrote || put != want) { printf(\"mk failed to write\\n\"); return 1; }\n        return 0;\n    }\n    if (!strcmp(verb, \"mkdir\") && argc == 3) {\n        if (!CreateDirectoryW(wide(argv[2]), NULL) && GetLastError() != ERROR_ALREADY_EXISTS) {\n            printf(\"mkdir failed %lu\\n\", GetLastError());\n            return 1;\n        }\n        return 0;\n    }\n    if (!strcmp(verb, \"cp\") && argc == 4) {\n        if (!CopyFileW(wide(argv[2]), wide(argv[3]), FALSE)) { printf(\"cp failed %lu\\n\", GetLastError()); return 1; }\n        return 0;\n    }\n    if (!strcmp(verb, \"ls\") && argc == 3) {\n        wchar_t *dir = wide(argv[2]);\n        size_t n = wcslen(dir);\n        wchar_t *pattern = calloc(n + 3, sizeof *pattern);\n        wcscpy(pattern, dir);\n        wcscat(pattern, L\"\\\\*\");\n        WIN32_FIND_DATAW d;\n        HANDLE h = FindFirstFileW(pattern, &d);\n        if (h == INVALID_HANDLE_VALUE) { printf(\"ls failed %lu\\n\", GetLastError()); return 1; }\n        do {\n            if (!wcscmp(d.cFileName, L\".\") || !wcscmp(d.cFileName, L\"..\")) continue;\n            say_wide(d.cFileName);\n            putchar('\\n');\n        } while (FindNextFileW(h, &d));\n        FindClose(h);\n        return 0;\n    }\n    if (!strcmp(verb, \"cat\") && argc == 3) {\n        HANDLE h = CreateFileW(wide(argv[2]), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n        if (h == INVALID_HANDLE_VALUE) { printf(\"absent\"); return 0; }\n        unsigned char buf[4096];\n        DWORD got = 0;\n        while (ReadFile(h, buf, sizeof buf, &got, NULL) && got > 0) {\n            for (DWORD i = 0; i < got; i++) {\n                unsigned char b = buf[i];\n                if (b == '\\n') fputs(\"\\\\n\", stdout);\n                else if (b == '\\\\') fputs(\"\\\\\\\\\", stdout);\n                else if (b >= 0x20 && b < 0x7F) putchar(b);\n                else printf(\"\\\\x%02x\", b);\n            }\n        }\n        CloseHandle(h);\n        return 0;\n    }\n    if (!strcmp(verb, \"abs\") && argc == 3) {\n        wchar_t *full = absolute(wide(argv[2]));\n        if (full == NULL) { printf(\"abs failed %lu\\n\", GetLastError()); return 1; }\n        say_wide(full);\n        return 0;\n    }\n    if (!strcmp(verb, \"symlink\") && argc == 4) {\n        if (!CreateSymbolicLinkW(wide(argv[2]), wide(argv[3]), SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)) {\n            printf(\"symlink failed %lu\\n\", GetLastError());\n            return 1;\n        }\n        return 0;\n    }\n    if (!strcmp(verb, \"attrs\") && argc == 3) {\n        DWORD a = GetFileAttributesW(wide(argv[2]));\n        if (a == INVALID_FILE_ATTRIBUTES) printf(\"absent\");\n        else if (a & FILE_ATTRIBUTE_REPARSE_POINT) printf(\"a link\");\n        else if (a & FILE_ATTRIBUTE_DIRECTORY) printf(\"a directory\");\n        else printf(\"a plain file\");\n        return 0;\n    }\n    if (!strcmp(verb, \"run\") && argc >= 7) {\n        wchar_t *cwd = strcmp(argv[2], \"-\") ? absolute(wide(argv[2])) : NULL;\n        if (strcmp(argv[3], \"-\")) {\n            wchar_t *pair = wide(argv[3]);\n            wchar_t *eq = wcschr(pair, L'=');\n            if (eq == NULL) return 66;\n            *eq = 0;\n            SetEnvironmentVariableW(pair, eq[1] != 0 ? eq + 1 : NULL);\n        }\n        wchar_t *program = absolute(wide(argv[6]));\n        if (program == NULL) { printf(\"abs failed %lu\\n\", GetLastError()); return 1; }\n        size_t room = 16 + 2 * wcslen(program) + 3;\n        for (int i = 7; i < argc; i++) room += 2 * strlen(argv[i]) + 3;\n        wchar_t *line = calloc(room, sizeof *line);\n        size_t at = 0;\n        quoted(line, &at, program);\n        for (int i = 7; i < argc; i++) {\n            line[at++] = L' ';\n            quoted(line, &at, wide(argv[i]));\n        }\n        line[at] = 0;\n        return started(program, line, cwd, argv[4], argv[5]);\n    }\n    if (!strcmp(verb, \"runraw\") && argc == 6) {\n        wchar_t *program = absolute(wide(argv[4]));\n        if (program == NULL) { printf(\"abs failed %lu\\n\", GetLastError()); return 1; }\n        return started(program, wide(argv[5]), NULL, argv[2], argv[3]);\n    }\n    return 64;\n}\n"
+
+# The helper built under a test's own scratch, and the folder its names go in.
+record Wide
+    tool: str
+    root: str
+    scratch: str
+
+function wide_world(scratch: str) -> Wide?
+    root = scratch + "/wide"
+    mkdir_all(root)?
+    write_file(path: scratch + "/wide-tool.c", text: WIDE_TOOL)?
+    tool = scratch + "/wide-tool" + exe_suffix()
+    built = run(scratch: scratch, program: "clang", words: ["clang", scratch + "/wide-tool.c", "-o", tool])?
+
+    if built.code != 0
+        return fail(code: "unbuilt", msg: "the wide-world helper did not build: " + ending(ok(built)))
+    return ok(Wide(tool: tool, root: root, scratch: scratch))
+
+# What the helper answers to `words`, or why it refused.
+function wide(w: Wide, words: [str]) -> str?
+    ran = run(scratch: w.scratch, program: w.tool, words: both(first: [w.tool], second: words))?
+
+    if ran.code != 0
+        return fail(
+            code: "wide",
+            msg: "the wide-world helper refused `" + words.join(" ") + "`: " + strings.trimmed(ran.out)
+        )
+    return ok(ran.out)
+
+# A program the helper started from the wide world, its exit code and its two
+# streams as text.
+record Launched
+    code: i64
+    out: str
+    err: str
+
+# `words` started by the helper in `cwd` with `setting` set (`NAME=VALUE`, or
+# `NAME=` to take it away), `-` for either left as it is.
+function launched(w: Wide, cwd: str, setting: str, words: [str]) -> Launched?
+    serial = pid().to_str() + "-" + hero_run_serial().to_str()
+    out = w.scratch + "/launched-out-" + serial
+    err = w.scratch + "/launched-err-" + serial
+    return said_launched(
+        w: w,
+        said: wide(w, words: both(first: ["run", cwd, setting, out, err], second: words))?,
+        out: out,
+        err: err
+    )
+
+# `line` handed to the program whole, as a command line the program's C
+# runtime splits itself.
+function launched_raw(w: Wide, program: str, line: str) -> Launched?
+    serial = pid().to_str() + "-" + hero_run_serial().to_str()
+    out = w.scratch + "/launched-out-" + serial
+    err = w.scratch + "/launched-err-" + serial
+    return said_launched(w: w, said: wide(w, words: ["runraw", out, err, program, line])?, out: out, err: err)
+
+function said_launched(w: Wide, said: str, out: str, err: str) -> Launched?
+    _ = w
+
+    if !strings.starts_with(text: said, prefix: "exit ")
+        return fail(code: "wide", msg: "the wide-world helper said `" + said + "`")
+    code = strings.to_number(strings.trimmed(strings.without_prefix(text: said, prefix: "exit ")))?
+    return ok(Launched(code: code, out: read_file(out)?, err: read_file(err)?))
+
+# A program built from `source` by the compiler under test, its source and its
+# binary named in ASCII in the case's folder.
+function built_program(w: Wide, compiler: str, name: str, source: str) -> str?
+    path = w.root + "/" + name + ".hero"
+    write_file(path: path, text: source)?
+    binary = w.root + "/" + name + exe_suffix()
+    made = run(scratch: w.scratch, program: compiler, words: [compiler, "build", path, "-o", binary])?
+
+    if made.code != 0
+        return fail(code: "unbuilt", msg: name + " did not build: " + ending(ok(made)))
+    return ok(binary)
+
+# The runtime's files copied under `to`, a folder the helper names wide.
+function copied_runtime(w: Wide, to: str) -> ()?
+    _ = wide(w, words: ["mkdir", to])?
+
+    for sub in list_directories(scratch: w.scratch, dir: "runtime")?
+        _ = wide(w, words: ["mkdir", to + strings.without_prefix(text: sub, prefix: "runtime")])?
+
+    nothing: [str] = []
+
+    for file in list_tree(scratch: w.scratch, dir: "runtime", skip: nothing)?
+        _ = wide(w, words: ["cp", file, to + strings.without_prefix(text: file, prefix: "runtime")])?
+
+    return ok()
+
+# A correct program, and one whose second line names nothing, as the helper
+# takes a text.
+constant WIDE_CLEAN: str
+    "function main()\\n    print(1)\\n"
+
+constant WIDE_WRONG: str
+    "function main()\\n    print(nowhere)\\n"
+
+# A program printing each of its arguments, or `not text` for one that is not.
+constant ARGS_PROBE: str
+    "function main()\n    for a in args_checked()\n        match a\n            .ok s  => print(s)\n            .err _ => print(\"not text\")\n"
+
+test "fixedbugs: on Windows a name above ASCII from the wide world is the file checked (defect 238, W1, W7)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    assert !wide(w, words: ["mk", w.root + "/caf\\u00e9.hero", WIDE_CLEAN]).is_err()
+    one = launched(w, cwd: w.root, setting: "-", words: [compiler, "check", "caf\\u00e9.hero"]).must()
+    assert one.code == 0
+    assert one.err == ""
+    assert !wide(w, words: ["mkdir", w.root + "/d\\u00e9"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/d\\u00e9/p.hero", WIDE_CLEAN]).is_err()
+    seven = launched(w, cwd: w.root, setting: "-", words: [compiler, "check", "d\\u00e9/p.hero"]).must()
+    assert seven.code == 0
+    assert seven.err == ""
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows `check` and `fmt --in-place` of a name above ASCII reach that file and never its best fit (defect 238, W2, W3)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    assert !wide(w, words: ["mkdir", w.root + "/judged"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/judged/\\u015d.hero", WIDE_WRONG]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/judged/s.hero", WIDE_CLEAN]).is_err()
+    judged = launched(w, cwd: w.root + "/judged", setting: "-", words: [compiler, "check", "\\u015d.hero"]).must()
+    assert judged.code == 1
+    assert strings.contains(
+        text: judged.err,
+        needle: "error[unknown_name]: nothing named `nowhere` is in scope\n  at ŝ.hero:2:11"
+    )
+    unformatted = "function main()\\n    print( 1 )\\n"
+    assert !wide(w, words: ["mkdir", w.root + "/placed"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/placed/\\u015d.hero", unformatted]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/placed/s.hero", unformatted]).is_err()
+    placed = launched(w, cwd: w.root + "/placed", setting: "-", words: [compiler, "fmt", "\\u015d.hero", "--in-place"]).must(
+    )
+    assert placed.code == 0
+    assert wide(w, words: ["cat", w.root + "/placed/\\u015d.hero"]).must() == "function main()\\n    print(1)\\n"
+    assert wide(w, words: ["cat", w.root + "/placed/s.hero"]).must() == unformatted
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows a built program's arguments, reads and writes keep a name above ASCII (defect 238, W4, W5, W6, W20)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    program = built_program(w, compiler: compiler, name: "args", source: ARGS_PROBE).must()
+    argued = launched(w, cwd: "-", setting: "-", words: [program, "a", "\\u015d", "caf\\u00e9"]).must()
+    assert argued.code == 0
+    assert argued.out == "a\nŝ\ncafé\n"
+
+    # This process reads and writes by the runtime under test, the names
+    # made and listed wide.
+    assert !wide(w, words: ["mk", w.root + "/caf\\u00e9.txt", "hello"]).is_err()
+    assert read_file(w.root + "/café.txt").must() == "hello"
+    assert !wide(w, words: ["mkdir", w.root + "/out"]).is_err()
+    assert !write_file(path: w.root + "/out/café-out.txt", text: "written").is_err()
+    assert wide(w, words: ["ls", w.root + "/out"]).must() == "caf\\u00e9-out.txt\n"
+    assert wide(w, words: ["cat", w.root + "/out/caf\\u00e9-out.txt"]).must() == "written"
+
+    # A program reading the file its argument names, a decoy at the best fit.
+    reader = built_program(w, compiler: compiler, name: "reader", source: "function main()\n    for a in args()\n        match read_file(a)\n            .ok text => print(text)\n            .err e   => print(\"cannot read: \" + e.msg)\n").must(
+    )
+    assert !wide(w, words: ["mk", w.root + "/\\u015d.txt", "the real one"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/s.txt", "decoy"]).is_err()
+    read = launched(w, cwd: w.root, setting: "-", words: [reader, "\\u015d.txt"]).must()
+    assert read.code == 0
+    assert read.out == "the real one\n"
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows `probe` and `mutate` walk folders holding names above ASCII, and a name of 300 bytes (defect 238, W8, W13)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    assert !wide(w, words: ["mkdir", w.root + "/walk1"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/walk1/caf\\u00e9.hero", WIDE_CLEAN]).is_err()
+    probed = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "walk1"]).must()
+    assert probed.code == 0
+    assert strings.starts_with(text: probed.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
+    mutated = launched(w, cwd: w.root, setting: "-", words: [compiler, "mutate", "walk1"]).must()
+    assert mutated.code == 0
+    assert strings.starts_with(text: mutated.out, prefix: "corpus: 1 programs under walk1\n")
+    assert !wide(w, words: ["mkdir", w.root + "/walk2"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/walk2/\\u015d.hero", WIDE_CLEAN]).is_err()
+    hatted = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "walk2"]).must()
+    assert hatted.code == 0
+    assert strings.starts_with(text: hatted.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
+
+    # A hundred CJK characters are 100 units on disk and 300 bytes of UTF-8,
+    # past the 260 a narrow listing holds: it ended the listing there under
+    # the UTF-8 code page, error 234, and the walk said 3 of 6 (panel 191).
+    long = "m" + "\\u6f22".repeat(100)
+
+    assert !wide(w, words: ["mkdir", w.root + "/six"]).is_err()
+
+    for name in ["a", "b", "c", long, "y", "z"]
+        assert !wide(w, words: ["mk", w.root + "/six/" + name + ".hero", WIDE_CLEAN]).is_err()
+
+    six = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "six"]).must()
+    assert six.code == 0
+    assert strings.starts_with(text: six.out, prefix: "probe: 6 seeds, and 0 files the parser refuses\n")
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows a name holding a surrogate standing alone is named by its bytes, in a file and through a directory, and an empty such directory is walked (defect 238, W14, panel 191's R2)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    surrogate = "<0xED><0xA0><0x80>"
+    assert !wide(w, words: ["mkdir", w.root + "/file"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/file/ok.hero", WIDE_CLEAN]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/file/caf\\ud800.hero", WIDE_CLEAN]).is_err()
+    file = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "file"]).must()
+    assert file.code == 2
+    assert file.err == "error: the name of `file/caf" + surrogate + ".hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it\n"
+
+    # A directory so named holding a program is entered, and the program
+    # named by its path's bytes, where the walk said *cannot read the
+    # directory* of a readable folder, at the base and under the route.
+    assert !wide(w, words: ["mkdir", w.root + "/filled"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/filled/ok.hero", WIDE_CLEAN]).is_err()
+    assert !wide(w, words: ["mkdir", w.root + "/filled/x\\ud800"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/filled/x\\ud800/a.hero", WIDE_CLEAN]).is_err()
+    filled = launched(w, cwd: w.root, setting: "-", words: [compiler, "mutate", "filled"]).must()
+    assert filled.code == 2
+    assert filled.err == "error: the name of `filled/x" + surrogate + "/a.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it\n"
+
+    # An empty one holds no file a walk could name.
+    assert !wide(w, words: ["mkdir", w.root + "/empty"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/empty/ok.hero", WIDE_CLEAN]).is_err()
+    assert !wide(w, words: ["mkdir", w.root + "/empty/x\\ud800"]).is_err()
+    empty = launched(w, cwd: w.root, setting: "-", words: [compiler, "probe", "empty"]).must()
+    assert empty.code == 0
+    assert strings.starts_with(text: empty.out, prefix: "probe: 1 seeds, and 0 files the parser refuses\n")
+
+    # And this process's own walk removes every one of them by its name.
+    assert !remove_tree(scratch).is_err()
+    assert !exists(scratch)
+
+test "fixedbugs: on Windows HEROES_RUNTIME above ASCII, and a compiler installed under such a folder, find their runtime (defect 238, W9, W12)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    copied_runtime(w, to: w.root + "/rt\\u00e9").must()
+    named = launched(w, cwd: "-", setting: "HEROES_RUNTIME=" + w.root + "/rt\\u00e9", words: [compiler, "doctor"]).must(
+    )
+    assert strings.contains(text: named.out, needle: "\nok   runtime      " + w.root + "/rté\n")
+    inst = w.root + "/inst-\\u00e9"
+    assert !wide(w, words: ["mkdir", inst]).is_err()
+    assert !wide(w, words: ["cp", compiler, inst + "/heroes.exe"]).is_err()
+    copied_runtime(w, to: inst + "/runtime").must()
+    beside = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "doctor"]).must()
+    assert strings.contains(text: beside.out, needle: "\nok   runtime      ")
+    assert !wide(w, words: ["mk", w.root + "/hello.hero", "function main()\\n    print(\"hello\")\\n"]).is_err()
+    built = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "build", "hello.hero", "-o", "hello.exe"]).must(
+    )
+    assert built.code == 0
+    hello = launched(w, cwd: w.root, setting: "-", words: [w.root + "/hello.exe"]).must()
+    assert hello.out == "hello\n"
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows a program named above ASCII builds and runs, by relative names and by absolute ones (defect 238, W10, W11)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    assert !wide(w, words: ["mk", w.root + "/caf\\u00e9.hero", WIDE_CLEAN]).is_err()
+    built = launched(w, cwd: w.root, setting: "-", words: [compiler, "build", "caf\\u00e9.hero", "-o", "caf\\u00e9.exe"]).must(
+    )
+    assert built.code == 0
+    ran = launched(w, cwd: w.root, setting: "-", words: [w.root + "/caf\\u00e9.exe"]).must()
+    assert ran.out == "1\n"
+    proj = w.root + "/proj-\\u00e9"
+    assert !wide(w, words: ["mkdir", proj]).is_err()
+    assert !wide(w, words: ["mk", proj + "/main.hero", "use helper\\n\\nfunction main()\\n    print(helper.answer())\\n"]).is_err()
+    assert !wide(w, words: ["mk", proj + "/helper.hero", "function answer() -> i64\\n    return 42\\n"]).is_err()
+    root = wide(w, words: ["abs", proj]).must()
+    absolute = launched(w, cwd: proj, setting: "-", words: [compiler, "build", root + "/main.hero", "-o", root + "/abs.exe"]).must(
+    )
+    assert absolute.code == 0
+    answered = launched(w, cwd: proj, setting: "-", words: [root + "/abs.exe"]).must()
+    assert answered.out == "42\n"
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows a command line's fullwidth quotes stay characters, and a fullwidth solidus never reaches another folder (defect 238, W15, W19)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    program = built_program(w, compiler: compiler, name: "args", source: ARGS_PROBE).must()
+    split = launched_raw(w, program: program, line: "args.exe \\uff02a b\\uff02 c").must()
+    assert split.code == 0
+    assert split.out == "＂a\nb＂\nc\n"
+    assert !wide(w, words: ["mkdir", w.root + "/fw"]).is_err()
+    assert !wide(w, words: ["mkdir", w.root + "/fw/sub"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/fw/x.hero", WIDE_WRONG]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/fw/sub/..\\uff0fx.hero", WIDE_CLEAN]).is_err()
+    solidus = launched(w, cwd: w.root + "/fw/sub", setting: "-", words: [compiler, "check", "..\\uff0fx.hero"]).must()
+    assert solidus.code == 0
+    assert solidus.err == ""
+    assert !remove_tree(scratch).is_err()
+
+test "fixedbugs: on Windows every program `heroes build` links reads the UTF-8 code page, and a bound library's own fopen reads a name above ASCII (defect 238, W16, W21)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    acp = built_program(w, compiler: compiler, name: "acp", source: "extern \"windows.h\"\n    function GetACP() -> u32\n\nfunction main()\n    print(GetACP())\n").must(
+    )
+    page = run(scratch: scratch, program: acp, words: [acp]).must()
+    assert page.out == "65001\n"
+    assert !write_file(path: w.root + "/lib238.h", text: "#include <stdint.h>\nint64_t lib238_size(const char *path);\n").is_err()
+    assert !write_file(path: w.root + "/lib238.c", text: "#include <stdio.h>\n#include <stdint.h>\n__declspec(dllexport) int64_t lib238_size(const char *path) {\n    FILE *f = fopen(path, \"rb\");\n    if (f == NULL) return -1;\n    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return -1; }\n    long n = ftell(f);\n    fclose(f);\n    return (int64_t)n;\n}\n").is_err()
+    library = run(scratch: scratch, program: "clang", words: ["clang", "-shared", "-fms-runtime-lib=dll", w.root + "/lib238.c", "-o", w.root + "/lib238.dll"]).must(
+    )
+    assert library.code == 0
+    bound = w.root + "/bound.hero"
+    assert !write_file(path: bound, text: "extern \"lib238.h\" link \"lib238\"\n    function lib238_size(path: cstr lent) -> i64\n\nfunction main()\n    print(lib238_size(path: \"café.txt\".cstr()))\n").is_err()
+    linked = run(scratch: scratch, program: compiler, words: [compiler, "build", bound, "--include", w.root, "--library", w.root, "-o", w.root + "/bound.exe"]).must(
+    )
+    assert linked.code == 0
+    assert !wide(w, words: ["mk", w.root + "/caf\\u00e9.txt", "hello\\n"]).is_err()
+    sized = launched(w, cwd: w.root, setting: "-", words: [w.root + "/bound.exe"]).must()
+    assert sized.out == "6\n"
+    assert !remove_tree(scratch).is_err()
+
+# W17: the runtime's own refusal, reached by answering GetACP as a Windows that
+# ignores the UTF-8 code page would; the runtime included whole, GetACP alone
+# replaced after the header that declares it. Its sentence is ASCII on stderr
+# and nothing is on stdout, after the stream is made binary: 255 bytes and a
+# line feed (panel 191's critic, settling 256 against 257).
+test "fixedbugs: on Windows a program refuses to start where the UTF-8 code page is not honoured, in one ASCII sentence (defect 238, W17)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    unit = scratch + "/floor.c"
+    binary = scratch + "/floor" + exe_suffix()
+    assert !write_file(path: unit, text: "#include <windows.h>\n#define GetACP() 1252u\n#include \"runtime.c\"\nint main(int argc, char **argv) {\n    hero_args_set(argc, argv);\n    return 0;\n}\n").is_err()
+    built = run(scratch: scratch, program: "clang", words: ["clang", "-D_CRT_SECURE_NO_WARNINGS", "-I", "runtime", unit, "-o", binary]).must(
+    )
+    assert built.code == 0
+    refused = run(scratch: scratch, program: binary, words: [binary]).must()
+    assert refused.code == 2
+    assert refused.out == ""
+    assert refused.err == "error: this program reads every file name, argument and environment value as UTF-8, and this Windows reads them in code page 1252: it does not honour the UTF-8 code page the program carries, so a name above ASCII would be read as another. Nothing was run.\n"
+    assert refused.err.len() == 256
+    assert !remove_tree(scratch).is_err()
+
+# Three doors that RETURN a name, beside the listing's: a link's target, the
+# compiler's own path and an environment value. The narrow ones answered a
+# surrogate standing alone as U+FFFD under the UTF-8 code page, valid text
+# naming another file; wide, the bytes are named, or refused as Linux refuses
+# a target whose bytes are not UTF-8.
+test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a surrogate standing alone are named by their bytes, never written beside (defect 238)"
+    if exe_suffix() != ".exe"
+        return
+    scratch = own_scratch()
+    w = wide_world(scratch).must()
+    compiler = some_compiler().must()
+    surrogate = "<0xED><0xA0><0x80>"
+    assert !wide(w, words: ["mkdir", w.root + "/linked"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/linked/x\\ud800.hero", "function main()\\n    print( 1 )\\n"]).is_err()
+    made = wide(w, words: ["symlink", w.root + "/linked/L.hero", "x\\ud800.hero"])
+
+    # A link needs a privilege an account may lack (1314), and then this
+    # half has nothing to ask; no other refusal is one.
+    match made
+        .err e => assert strings.contains(text: e.msg, needle: "symlink failed 1314")
+        .ok _ =>
+            followed = launched(w, cwd: w.root + "/linked", setting: "-", words: [compiler, "fmt", "L.hero", "--in-place"]).must(
+            )
+            assert followed.code == 2
+            assert strings.contains(text: followed.err, needle: "the link cannot be followed")
+            assert wide(w, words: ["ls", w.root + "/linked"]).must() == "L.hero\nx\\ud800.hero\n"
+            assert wide(w, words: ["attrs", w.root + "/linked/L.hero"]).must() == "a link"
+
+    inst = w.root + "/inst-\\ud800"
+    assert !wide(w, words: ["mkdir", inst]).is_err()
+    assert !wide(w, words: ["cp", compiler, inst + "/heroes.exe"]).is_err()
+    assert !wide(w, words: ["mk", w.root + "/hello.hero", WIDE_CLEAN]).is_err()
+    placed = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "build", "hello.hero"]).must(
+    )
+    assert placed.code == 2
+    assert strings.contains(text: placed.err, needle: "inst-" + surrogate)
+    valued = launched(w, cwd: "-", setting: "HEROES_RUNTIME=" + w.root + "/rt\\ud800", words: [compiler, "doctor"]).must(
+    )
+    assert strings.contains(
+        text: valued.out,
+        needle: "runtime      `HEROES_RUNTIME` is set, and its value, `" + w.root + "/rt" + surrogate + "`, is not UTF-8"
+    )
     assert !remove_tree(scratch).is_err()

@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 89d31024bf82f2cedcdb57a8a10fb87033d87df5
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 189's critic, first pass and second (*the compiler's own argv not UTF-8 on Linux and this Mac*, `docs/panel/189-reports/completeness-critic.md` § Q6), met by the compiler-engineer and the ffi-pragmatist; filed by the sitting's R12 and run by the coordinator.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): exit 2 is the tool unable to take the name, which is true; its note routes the compiler's user to a program author's repair. Not 227's cause: no file's contents are read.
+
+    **2026-10-04:** Repaired at `89d31024`, gated by its cases, the compiler's own tests (1,215, all passed) and the net's own (262, all passed) on this Mac; the net is owed at the batch's close, and its runtime half the platform legs.

@@ -150,15 +150,15 @@ function mkdir_all(path: str) -> ()?
         return fail(code: "mkdir_failed", msg: "could not create the directory " + path + because())
     return ok()
 
-# What the operating system said about the last filesystem call on this
-# thread that failed, as the clause every refusal here ends with.
+# The clause a refusal here ends with, from this thread's last failed
+# filesystem call (`hero_os.h`, `hero_fs_why`): the system's own number, or
+# below zero the runtime's, told as the system's until defect 346.
 function because() -> str
-    return ": the operating system's own reason is " + fs_why().to_str()
+    why = hero_fs_why()
 
-# That number itself: `errno`, or `GetLastError()` on Windows, 0 after a
-# call that succeeded (`hero_os.h`, `hero_fs_why`).
-function fs_why() -> i64
-    return hero_fs_why()
+    if why < 0
+        return ": the runtime refused it before the system was asked, for the reason the system numbers " + (0 - why).to_str()
+    return ": the operating system's own reason is " + why.to_str()
 
 function path_exists(path: str) -> bool
     return hero_fs_exists(path: path.cstr()) == 1
@@ -387,19 +387,70 @@ test "the filesystem answers the shell utility's question, not C's"
     assert !landed.is_err()
     assert landed.must() == "NEW"
 
+# Defect 345: a tree is removed by its own names, a link among them removed as
+# the link and never followed, as `rm -rf` removes one: until 2026-10-05 the
+# walk entered a link to a directory and deleted the files it named, outside
+# the tree asked for, and answered success. Only C makes a link here, so a
+# program of a few lines does: a link to a directory and one to a file inside
+# the tree, and a link standing alone that is itself the path removed. Windows
+# makes a link only with a privilege an account may lack (1314, exit 7), and
+# then has nothing to ask.
+test "a link in a tree is removed as the link, and what it names is kept (defect 345)"
+    dir = "build/selftest-remove-links"
+    windows = exe_suffix() == ".exe"
+    assert !remove_tree(dir).is_err()
+    assert !mkdir_all(dir + "/outside").is_err()
+    assert !mkdir_all(dir + "/tree/inner").is_err()
+    assert !write_file(path: dir + "/outside/keep.txt", text: "keep").is_err()
+    assert !write_file(path: dir + "/tree/inner/own.txt", text: "own").is_err()
+    maker = dir + "/maker" + exe_suffix()
+    source: str @ "#include <unistd.h>\nint main(void) {\n    if (symlink(\"../outside\", \"" + dir + "/tree/to-dir\") != 0) return 3;\n    if (symlink(\"../outside/keep.txt\", \"" + dir + "/tree/to-file\") != 0) return 4;\n    if (symlink(\"outside\", \"" + dir + "/alone\") != 0) return 5;\n    return 0;\n}\n"
+
+    if windows
+        source @ "#include <windows.h>\nstatic int linked(const wchar_t *name, const wchar_t *target, DWORD flags) {\n    if (CreateSymbolicLinkW(name, target, flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)) return 1;\n    return 0;\n}\nint main(void) {\n    if (!linked(L\"" + dir + "/tree/to-dir\", L\"..\\\\outside\", SYMBOLIC_LINK_FLAG_DIRECTORY)) return GetLastError() == ERROR_PRIVILEGE_NOT_HELD ? 7 : 3;\n    if (!linked(L\"" + dir + "/tree/to-file\", L\"..\\\\outside\\\\keep.txt\", 0)) return 4;\n    if (!linked(L\"" + dir + "/alone\", L\"outside\", SYMBOLIC_LINK_FLAG_DIRECTORY)) return 5;\n    return 0;\n}\n"
+    assert !write_file(path: dir + "/maker.c", text: source).is_err()
+    built = run(program: "clang", words: ["clang", dir + "/maker.c", "-o", maker], out: discard(), err: discard())
+    assert built.started && built.code == 0
+    made = run(program: maker, words: [maker], out: discard(), err: discard())
+    assert made.started
+    assert made.code == 0 || windows && made.code == 7
+
+    if made.code == 0
+        assert read_file(dir + "/tree/to-dir/keep.txt").must() == "keep"
+        assert !remove_tree(dir + "/tree").is_err()
+        assert !path_exists(dir + "/tree")
+        assert read_file(dir + "/outside/keep.txt").must() == "keep"
+        assert !remove_tree(dir + "/alone").is_err()
+        assert !path_exists(dir + "/alone")
+        assert read_file(dir + "/outside/keep.txt").must() == "keep"
+    assert !remove_tree(dir).is_err()
+    assert !path_exists(dir)
+
 # Defect 239: a name that is not UTF-8 never panics the walk, and is named
-# by its bytes. Only C can make one, so a program of three lines does, with
-# the byte 0xE9 in `caf<E9>.hero`: Linux keeps the name, Windows' narrow
-# `fopen` makes `café.hero` and its `FindFirstFileA` answers 0xE9 again in
-# the ANSI code page, and APFS refuses a name that is not UTF-8, where this
-# test then asserts only that the walk is whole.
+# by its bytes. Only C can make one, so a program of a few lines does. On
+# POSIX it writes the byte 0xE9 in `caf<E9>.hero`: Linux keeps the name, and
+# APFS refuses one that is not UTF-8, where this test then asserts only that
+# the walk is whole.
+#
+# **On Windows the only such name is one holding a surrogate standing alone**,
+# made by `CreateFileW` (panel 191's R3). This branch made `café.hero` through
+# the narrow `fopen` until 2026-10-04 and read it back through the narrow
+# listing, both in code page 1252, so it passed while testing defect 238 as
+# the platform: `café.hero` is a valid name. The walk names the surrogate's
+# three bytes, enters a directory so named and names each file inside it, and
+# passes over an empty one (panel 191's R2); and the tree is removed whole by
+# its names on every platform.
 test "a file whose name is not UTF-8 is named by its bytes, and the walk never panics (defect 239)"
     dir = "build/selftest-walk-names"
+    windows = exe_suffix() == ".exe"
     assert !remove_tree(dir).is_err()
     assert !mkdir_all(dir + "/only").is_err()
     assert !write_file(path: dir + "/only/plain.hero", text: "function main()\n    print(1)\n").is_err()
     maker = dir + "/maker" + exe_suffix()
-    source = "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"" + dir + "/only/caf\\xe9.hero\", \"wb\");\n    if (f == NULL) return 3;\n    fputs(\"x\", f);\n    return fclose(f) == 0 ? 0 : 4;\n}\n"
+    source: str @ "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"" + dir + "/only/caf\\xe9.hero\", \"wb\");\n    if (f == NULL) return 3;\n    fputs(\"x\", f);\n    return fclose(f) == 0 ? 0 : 4;\n}\n"
+
+    if windows
+        source @ "#include <windows.h>\nstatic int touch(const wchar_t *path) {\n    HANDLE h = CreateFileW(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);\n    if (h == INVALID_HANDLE_VALUE) return 0;\n    DWORD put = 0;\n    BOOL wrote = WriteFile(h, \"x\", 1, &put, NULL);\n    return CloseHandle(h) && wrote && put == 1;\n}\nint main(void) {\n    if (!touch(L\"" + dir + "/only/caf\\xD800.hero\")) return 3;\n    if (!CreateDirectoryW(L\"" + dir + "/only/d\\xD800\", NULL)) return 4;\n    if (!touch(L\"" + dir + "/only/d\\xD800/x.hero\")) return 5;\n    if (!CreateDirectoryW(L\"" + dir + "/only/e\\xD800\", NULL)) return 6;\n    return 0;\n}\n"
     assert !write_file(path: dir + "/maker.c", text: source).is_err()
     built = run(
         program: "clang",
@@ -413,7 +464,17 @@ test "a file whose name is not UTF-8 is named by its bytes, and the walk never p
     walked = walk(dir + "/only").must()
     assert walked.files == [dir + "/only/plain.hero"]
 
-    if made.code == 0
+    if windows
+        # NTFS takes such a name (panel 191, measured on the box), so every one
+        # was made, and none is read as another name.
+        assert made.code == 0
+        surrogate = "<0xED><0xA0><0x80>"
+        assert walked.unnamed.sort() == [dir + "/only/caf" + surrogate + ".hero", dir + "/only/d" + surrogate + "/x.hero"]
+
+        match files_under(dir + "/only")
+            .ok _  => assert false
+            .err e => assert e.msg == "the name of `" + walked.unnamed[0] + "` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
+    else if made.code == 0
         assert walked.unnamed == [dir + "/only/caf<0xE9>.hero"]
 
         match files_under(dir + "/only")
@@ -421,6 +482,33 @@ test "a file whose name is not UTF-8 is named by its bytes, and the walk never p
             .err e => assert e.msg == "the name of `" + dir + "/only/caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
     else
         assert walked.unnamed.len() == 0
+    assert !remove_tree(dir).is_err()
+    assert !path_exists(dir)
+
+# Defect 346: a refusal the runtime makes itself, before any system call, is
+# told as the runtime's, never as *the operating system's own reason*: an
+# empty path and one past `HERO_FS_PATH_MAX` are refused before `mkdir` is
+# asked. A path under a file is the system's refusal, and is told as its.
+test "a refusal the runtime makes itself is told as its own, never as the operating system's (defect 346)"
+    long = "build/" + "a".repeat(5000)
+
+    for refused in ["", long]
+        match mkdir_all(refused)
+            .ok _ => assert false
+            .err e =>
+                assert holds(
+                    text: e.msg,
+                    needle: ": the runtime refused it before the system was asked, for the reason the system numbers "
+                )
+                assert !holds(text: e.msg, needle: "the operating system's own reason")
+
+    assert !write_file(path: "build/selftest-346-file", text: "x").is_err()
+
+    match mkdir_all("build/selftest-346-file/under")
+        .ok _  => assert false
+        .err e => assert holds(text: e.msg, needle: ": the operating system's own reason is ")
+
+    assert !remove_file("build/selftest-346-file").is_err()
 
 test "an unset variable is empty, and a set one is its value"
     assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS").must() == ""
