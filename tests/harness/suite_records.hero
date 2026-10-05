@@ -824,7 +824,7 @@ function run_all(scratch: str) -> report.Report?
     # and keep the words they were written with, the retired milestone spelling
     # and paths of a tree since archived among them.
     for path in walked
-        if strings.starts_with(text: path, prefix: LEARNING + "/") && path != LEARNING_PAGE
+        if is_question(path)
             question = read_file(path)?
 
             if !strings.starts_with(text: question, prefix: "- [ ] ")
@@ -2865,15 +2865,20 @@ constant MOVED: [str]
     [
         "docs/work/learn -> docs/learn"
         "docs/learn/LEARN.md -> docs/learn"
-        "design.md -> docs/design/design.md"
+        "design.md -> docs/design.md"
         "DESIGN-LOG.md -> issues"
         "docs/ROADMAP.md § The names -> docs/roadmap/names.md"
         "docs/ROADMAP.md § Verify it yourself -> docs/roadmap/verify.md"
         "docs/ROADMAP.md § What production-ready means -> docs/roadmap/production-ready.md"
         "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones"
-        "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/decisions.md"
+        "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/shape.md"
         "docs/ROADMAP.md § Who scheduled what -> docs/roadmap/scheduling.md"
-        "docs/ref/environment/linux/Dockerfile -> docs/ref/environment/linux/Dockerfile.amd64"
+        "docs/ref/environment/linux/Dockerfile -> docs/platforms/linux/Dockerfile.amd64"
+        "docs/design/design.md -> docs/design.md"
+        "docs/ref/assets -> docs/assets"
+        "docs/ref/environment -> docs/platforms"
+        "docs/ref/glossary -> docs/learn/glossary"
+        "docs/roadmap/decisions.md -> docs/roadmap/shape.md"
         "docs/work/DECIDE.md -> issues/README.md"
         "docs/work/DEFECTS.md -> issues/README.md"
         "docs/work/defects -> issues"
@@ -2889,7 +2894,7 @@ constant MOVED: [str]
 # The floor. A table that has emptied out is a table nobody is maintaining, and
 # an empty loop passes.
 constant LEAST_MOVED: i64
-    21
+    26
 
 constant RETIRED_ROOTS: [str]
     [
@@ -2901,6 +2906,8 @@ constant RETIRED_ROOTS: [str]
         "docs/records/log"
         "docs/work/defects"
         "docs/work"
+        "docs/ref"
+        "docs/design"
     ]
 
 # Where this repository's prose puts a module when it writes the SHORT name.
@@ -3109,13 +3116,13 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
         return true
 
     # **A path that MOVED still names something**, and this is what lets a
-    # citation keep the short spelling a reader knows. Measured 2026-09-12
-    # before `design.md` moved into `docs/design/`: **1684** living citations
-    # name it and **1045** of those are `design.md §N`, a reference to a section
-    # rather than a path, spread over roughly two hundred module docs. Rewriting
-    # every one to `docs/design/design.md §N` would add twelve characters to each
-    # for nothing a reader gains, so the table answers instead and the citation
-    # stays as it was written.
+    # citation keep the short spelling a reader knows. Measured before
+    # `design.md` moved into `docs/design/` on 2026-09-12: **1684** living
+    # citations name it and **1045** of those are `design.md §N`, a reference
+    # to a section rather than a path, spread over roughly two hundred module
+    # docs. Rewriting every one to `docs/design/design.md §N` would add twelve
+    # characters to each for nothing a reader gains, so the table answers
+    # instead and the citation stays as it was written.
     if moved_to(part).len() > 0
         return true
 
@@ -3716,14 +3723,21 @@ function has_extension(token: str) -> bool
 
 # A token names something if a file IS it, or if a file begins with it — which
 # covers a directory (`tests/golden/check/`) and a record cited by its number
-# without its slug (`docs/panel/042`).
+# without its slug (`docs/panel/042`). **A token written with its slash is a
+# directory, and a directory begins its files only up to that slash**: on
+# 2026-10-05 `docs/design/` died while `docs/design.md` begins with
+# `docs/design`, and reading the slash away had resolved the one through the
+# other. Without its slash the prefix stays the string's, measured that day:
+# holding it to the dash a slug opens with turned 16 living lines red, and
+# every one was a real name, a module by its path (`selfhost/emit/ffi`), a case
+# without its extension, a family of cases (`tests/golden/run/dead-`) or of
+# modules, or a sitting's number written with its dash.
 function exists_or_prefixes(token: str, known: {str: bool}) -> bool
     if !known[token].is_err()
         return true
-    trimmed = strings.without_suffix(text: token, suffix: "/")
 
     for path in keys(known)
-        if strings.starts_with(text: path, prefix: trimmed)
+        if strings.starts_with(text: path, prefix: token)
             return true
 
     return false
@@ -4018,6 +4032,16 @@ constant LEARNING: str
 # how one is answered, and no item.
 constant LEARNING_PAGE: str
     "docs/learn/README.md"
+
+# A question's file: under `LEARNING`, in a folder of a year and a month. The
+# list's front page and the glossary beside the questions (`docs/learn/glossary/`,
+# since 2026-10-05) are not questions.
+function is_question(path: str) -> bool
+    if !strings.starts_with(text: path, prefix: LEARNING + "/")
+        return false
+    rest = strings.without_prefix(text: path, prefix: LEARNING + "/")
+
+    return rest.len() > 0 && is_digit(rest[0])
 
 constant LEARNING_FLOOR: i64
     300
@@ -4920,7 +4944,7 @@ function lists(@r: report.Report, present: [str], issues: [cards.Issue])
     asked: i64 @ 0
 
     for path in present
-        if !strings.starts_with(text: path, prefix: LEARNING + "/") || path == LEARNING_PAGE
+        if !is_question(path)
             continue
         question = read_file(path)
 
@@ -6089,6 +6113,13 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     # A directory, with and without its slash.
     assert exists_or_prefixes(token: "selfhost/", known: known)
 
+    # A file beside a directory, its name beginning with the directory's, is not
+    # inside it; without the slash the prefix is the string's, which is how a
+    # module is cited by its path.
+    known["docs/design.md"] @ true
+    assert !exists_or_prefixes(token: "docs/design/", known: known)
+    assert exists_or_prefixes(token: "selfhost/main", known: known)
+
     # What the rule must NOT read as a path claim: a glob, a bare word, an
     # absolute path and a URL. **A brace form IS one now**, where the old rule
     # refused it: `expanded` reads it exactly, so it is two claims and not zero.
@@ -7081,3 +7112,10 @@ test "a question cited in the learning list's old flat shape is found in its day
     assert one_names(part: "docs/learn/2026-08/03/2026-08-03-0000-first-ir.md", document: "x.md", known: known)
     assert one_names(part: "docs/learn/2026-08-03-0000-first-ir.md", document: "x.md", known: known)
     assert !one_names(part: "docs/learn/2026-08-03-0001-never-asked.md", document: "x.md", known: known)
+
+test "a question is a file of a year-and-month folder of the learning list, and the glossary beside it is not"
+    assert is_question("docs/learn/2026-08/03/2026-08-03-0000-first-ir.md")
+    assert !is_question("docs/learn/README.md")
+    assert !is_question("docs/learn/glossary/000-basic-block.md")
+    assert !is_question("docs/learn/glossary/README.md")
+    assert !is_question("issues/2026-08/03/2026-08-03-0000-first-ir.md")

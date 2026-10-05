@@ -35,7 +35,7 @@ github: none
     is that the test is owed.
 
     **Where to look also:** the Windows box,
-    `docs/ref/environment/windows/WINDOWS-MACHINE.md`.
+    `docs/platforms/windows/WINDOWS-MACHINE.md`.
     **Why it matters:** a replacement that loses its predecessor's test is a
     regression nobody can see, and the comment that says otherwise is what stops
     anybody looking.

@@ -385,13 +385,12 @@ holds 83 rows with no gap.
 
 ---
 
----
-
-**What used to stand under this file lives in `docs/roadmap/`** since 2026-09-12,
-by author instruction: this file is the chain and the status, and nothing else.
-`verify.md` is how to check the project from a cold checkout, `production-ready.md`
-what that phrase means here and who owns each part, `milestones.md` the reasoning
-a milestone's own row cannot hold, `decisions.md` what this file has decided
-about itself, and `names.md` the map from every retired identifier to the one in
-use. Each keeps its own heading, so a citation repoints by file rather than by
-searching.
+**What used to stand under the ROADMAP lives in `docs/roadmap/`** since
+2026-09-12, by author instruction: the ROADMAP is the chain and the status, and
+nothing else. `verify.md` is how to check the project from a cold checkout,
+`production-ready.md` what that phrase means here and who owns each part,
+`milestones/` one page per milestone with the reasoning its row cannot hold,
+`shape.md` why the table looks the way it does and what it decided about
+itself, this file who scheduled what, and `names.md` the map from every retired
+identifier to the one in use. Each keeps its own title, so a citation repoints
+by file rather than by searching.

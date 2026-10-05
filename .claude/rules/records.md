@@ -57,6 +57,19 @@ record's shape changes, the citations into it that a living file holds are
 rewritten to the new shape in the same change, and no file is kept only so an
 old citation still resolves.
 
+## The top of `docs/`: two documents, then collections
+
+Author's answers of 2026-10-05, on the coordinator's reading of `docs/`. **A
+file at the top of `docs/` is one of the two living documents the contract
+names**, `docs/ROADMAP.md` and `docs/design.md`; **every folder is a collection
+of one kind**: `roadmap/` what a row of the chain cannot hold, with
+`milestones/` one page per milestone; `learn/` the questions by day and its
+`glossary/`; `platforms/` the Linux and Windows machines; `assets/` the front
+page's pictures; `measurements/`, `panel/` and `records/` the account. A folder
+holding one file, or files of unrelated kinds, is the shape this rule refuses:
+until 2026-10-05 `docs/design/` held `design.md` alone, `DESIGN-LOG.md` deleted,
+and until 2026-10-05 `docs/ref/` held the pictures, the machines and the glossary.
+
 ## And the record says whose idea it was
 
 Name the author where a question, a correction or a refusal of theirs is what
@@ -448,7 +461,7 @@ A conversation whose work is questions, with no file of code, spec or design
 modified, **writes no note of its own** (CL-053). What it settled is an issue it
 ticks, or a decision issue closed the day it is filed; what it left open is an
 open issue, a `decision` or its milestone's `feature` or `task`; a concept it
-explained is an entry in `docs/ref/glossary/`; a question worth re-asking is a
+explained is an entry in `docs/learn/glossary/`; a question worth re-asking is a
 file of `docs/learn/`; a change to the language is a panel. Every one but the
 glossary's and the question's is a file of `issues/` (§ The issues). The path
 between them is the git history.

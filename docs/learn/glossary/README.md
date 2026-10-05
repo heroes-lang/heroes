@@ -1,4 +1,4 @@
-# docs/ref/glossary — the friction glossary
+# docs/learn/glossary — the friction glossary
 
 One file per concept, historicized: entries accumulate for the life of the
 project and are **never deleted** (history lives in git). This directory

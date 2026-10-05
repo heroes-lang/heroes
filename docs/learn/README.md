@@ -20,3 +20,7 @@ an optional body indented four spaces opening with `**Origin:**` and its date.
 
 **A question answered stays where it is, ticked**: this list is also its own
 record. `records/lists` holds every file to this shape and counts the open ones.
+
+**`glossary/` beside the days is the other thing `/learn` writes**, one file per
+concept it explained and never a question; it joined the questions on
+2026-10-05, and its own README says how an entry is born.

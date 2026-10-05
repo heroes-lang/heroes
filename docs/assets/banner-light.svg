@@ -10,7 +10,7 @@
        in a drawing ages in silence. **And no sentence either** (author
        instruction 2026-09-03): the promise under the name is markdown in
        README.md too, the site's own hero line, because the site changed that
-       line and the drawing kept the old one. docs/ref/assets/README.md is the home
+       line and the drawing kept the old one. docs/assets/README.md is the home
        of both rules.
 
        Path data is written `M 14 0`, with the space, because a bare capital M
