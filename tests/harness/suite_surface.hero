@@ -469,6 +469,12 @@ function verb_probes() -> [probe.Probe]
         row(name: "and the scopes' dump counts the hole between braces as a read and the braces of text as none", argv: "check tests/golden/surface-fixtures/braces173/main.hero --dump-scopes", code: 0).out_has("bind x (reads 2, writes 0)").err_empty()
         row(name: "and the IR's strings are the text each brace pair writes, one brace each", argv: "build tests/golden/surface-fixtures/braces173/main.hero --dump-ir", code: 0).out_has("    3  \"{x} \"").out_has("    4  \"} }\"").err_empty()
         row(name: "and mutate reads the program and scores it", argv: "mutate tests/golden/surface-fixtures/braces173", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/braces173")
+        row(name: "`\\u{1b}` is printed as written, in a string, an `f` literal beside a hole and a doubled brace, a constant and a pattern (defect 251)", argv: "fmt tests/golden/surface-fixtures/escape251/main.hero", code: 0).out_is("# Defect 251's form for the tools that re-print a program (panel 192's R5,\n# 2026-10-05): `\\u{1b}` in a string and in the text of an `f` literal,\n# beside a hole and a doubled brace, in a constant's body and in a `match`\n# pattern, with a comment at each place one stands. `fmt` prints this file as\n# it is, each dump reads the literal as the lexer does, `heroes mutate` scores\n# it, and `heroes probe` holds every variant of it under both judges.\n\nconstant RESET: str\n    \"\\u{1b}[0m\"\n\n# The value between two escapes.\nfunction coloured(n: i64) -> str\n    # before the literal\n    return f\"\\u{1b}[3{n}m{{\\u{202e}}}\"  # after it\n\nfunction main()\n    x = 1\n    print(coloured(n: x))  # a call\n\n    match RESET\n        \"\\u{1b}[0m\" => print(\"reset\")\n        _           => print(\"other\")\n\n    print(\n        # inside the parentheses\n        \"\\u{7f}\" + RESET\n    )\n").err_empty()
+        row(name: "and the token dump shows the escape as it is written, its braces the escape's and never a hole's", argv: "lex tests/golden/surface-fixtures/escape251/main.hero --dump-tokens", code: 0).out_has("14:12 str_piece f\"\\u{1b}[3{").out_has("14:24 str_piece }m{{\\u{202e}}}\"").err_empty()
+        row(name: "and the syntax tree's dump prints the literal as the author wrote it", argv: "parse tests/golden/surface-fixtures/escape251/main.hero --dump-ast", code: 0).out_has("return f\"\\u{1b}[3{n}m{{\\u{202e}}}\"").err_empty()
+        row(name: "and the scopes' dump counts the hole beside the escape as a read and the escape's braces as none", argv: "check tests/golden/surface-fixtures/escape251/main.hero --dump-scopes", code: 0).out_has("param n (reads 1, writes 0)").err_empty()
+        row(name: "and the IR's strings are the characters the escapes write, each control by its code", argv: "build tests/golden/surface-fixtures/escape251/main.hero --dump-ir", code: 0).out_has("    0  \"<U+001B>[0m\"").out_has("    1  \"<U+001B>[3\"").out_has("    5  \"<U+007F>\"").err_empty()
+        row(name: "and mutate reads the program and scores it", argv: "mutate tests/golden/surface-fixtures/escape251", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/escape251")
         row(name: "unused_binding on a name a plain literal holds in braces quotes the literal and offers its `f`, a guess (panel 184 R2)", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("note: the literal `\"{n + gone} rows\"` holds `n` in braces, and without an `f` before its quote it prints them as they stand").err_has("fix (guess): write the `f`: `f\"{n + gone} rows\"`").err_lacks("fix (certain)")
         row(name: "and where the binding does not reach the literal, the note alone", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("holds `early` in braces where this binding is not in scope").err_lacks("`f\"{early} above\"`")
         row(name: "and a loop variable's or a payload's rename to `_` is a guess beside the `f`", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("fix (guess): write the `f`: `f\"{x + absent}\"`").err_has("fix (guess): rename `x` to `_`").err_has("fix (guess): rename `v` to `_`")
@@ -900,7 +906,12 @@ test "the tables are what this module is, so they are counted"
     # 169 -> 170 on 2026-10-05, defect 355 (panel 192's R7): `heroes test`
     # prints a failing title as its source spells it, so a character a line
     # cannot show reaches its output by its code and never as itself.
-    assert verb_probes().len() == 170
+    # 170 -> 176 the same day, defect 251 (panel 192's R5): the walk a new
+    # escape owes every tool, over `escape251/main.hero`, as defect 173's
+    # `}}` took it: `fmt` printing `\u{1b}` as written, the token,
+    # syntax-tree, scopes and IR dumps each held to a line, and `mutate`
+    # scoring the file.
+    assert verb_probes().len() == 176
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
