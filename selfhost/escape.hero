@@ -158,10 +158,13 @@ function digit(c: str) -> i64
         return to_i64(b - 'A').must() + 10
     return -1
 
-# The character `code` names, as UTF-8; "" for a NUL, a surrogate or a code
-# past Unicode's last, none of which is a character a `str` holds.
+# The character `code` names, as UTF-8; "" for a surrogate or a code past
+# Unicode's last, which name none. A NUL is its one byte: a `str` may hold one
+# (panel 192's R1), and though no escape is legal for it (`code_escape`), a
+# group head's judge reads `\u{0}` as the NUL it writes and refuses it as one
+# (defect 255), where it read a backslash.
 function encoded(code: i64) -> str
-    if code <= 0 || code > 1114111 || code >= 55296 && code <= 57343
+    if code < 0 || code > 1114111 || code >= 55296 && code <= 57343
         return ""
     out: [u8] @ []
 
@@ -288,6 +291,7 @@ test "a code is the character it names, as UTF-8, and nothing past Unicode"
     assert encoded(233) == "é"
     assert encoded(8364) == "€"
     assert encoded(128512) == "😀"
-    assert encoded(0) == ""
+    assert encoded(0).len() == 1
+    assert encoded(0)[0] == 0
     assert encoded(55296) == ""
     assert encoded(1114112) == ""
