@@ -163,6 +163,15 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                         code: "bad_usage",
                         msg: "`" + arg + "` needs a " + wanted.placeholder + ": `heroes " + command.name + " <file.hero> " + arg + " <" + wanted.placeholder + ">`"
                     )
+
+                # An empty value names nothing, and is refused as a missing one
+                # is (defect 349): `-o ""` reached the writer, which told it as
+                # a link that cannot be followed.
+                if given[at + 1].len() == 0
+                    return fail(
+                        code: "bad_usage",
+                        msg: "`" + arg + "` needs a " + wanted.placeholder + ", and was given an empty one: `heroes " + command.name + " <file.hero> " + arg + " <" + wanted.placeholder + ">`"
+                    )
                 value @ ok(given[at + 1])
                 at @ at + 1
 
@@ -379,6 +388,36 @@ test "an argument that is not UTF-8 is told by what it is to the command (defect
     assert unheld(ran, at: 1)[0] == "error: the name of `caf<0xE9>.hero` is not UTF-8, and this compiler opens a file by a name it can hold: rename it"
     misplaced: [str] = ["check", "x.hero", "--", "<0xE9>"]
     assert unheld(misplaced, at: 3) == ["error: `--` passes arguments to the program, and `check` does not run one — only `heroes run` does"]
+
+# Defect 349: an empty value names nothing, so a flag that takes one refuses
+# it, naming the flag, as it refuses a missing one: `-o ""` reached the
+# writer, which read the empty landing as a link that cannot be followed, for
+# *the operating system's own reason is 0*. Asked of every flag of the table
+# that takes a value, so a flag added to it is asked too.
+test "an empty value for a flag that takes one is refused, naming the flag (defect 349)"
+    out: [str] = ["build", "x.hero", "-o", ""]
+
+    match parse(out, dir_probe: yes_dir)
+        .ok _  => assert false
+        .err e => assert e.msg == "`-o` needs a path, and was given an empty one: `heroes build <file.hero> -o <path>`"
+
+    asked: i64 @ 0
+
+    for c in cli_table.commands()
+        for f in c.flags
+            if f.value
+                given: [str] = [c.name, "x.hero", f.spelling, ""]
+                asked @ asked + 1
+
+                match parse(given, dir_probe: yes_dir)
+                    .ok _  => assert false
+                    .err e => assert e.msg == "`" + f.spelling + "` needs a " + f.placeholder + ", and was given an empty one: `heroes " + c.name + " <file.hero> " + f.spelling + " <" + f.placeholder + ">`"
+
+    assert asked > 0
+
+    # After `run`'s `--` an empty word is the program's, and passes on.
+    passed: [str] = ["run", "x.hero", "--", ""]
+    assert parse(passed, dir_probe: yes_dir).must().program_args == [""]
 
 # The flags the table gives a command, as `unknown_flag` lists them.
 function flag_list(name: str) -> str
