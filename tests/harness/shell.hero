@@ -1931,6 +1931,12 @@ test "fixedbugs: on Windows every program `heroes build` links reads the UTF-8 c
     assert !write_file(path: w.root + "/lib238.c", text: "#include <stdio.h>\n#include <stdint.h>\n__declspec(dllexport) int64_t lib238_size(const char *path) {\n    FILE *f = fopen(path, \"rb\");\n    if (f == NULL) return -1;\n    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return -1; }\n    long n = ftell(f);\n    fclose(f);\n    return (int64_t)n;\n}\n").is_err()
     library = run(scratch: scratch, program: "clang", words: ["clang", "-shared", "-fms-runtime-lib=dll", w.root + "/lib238.c", "-o", w.root + "/lib238.dll"]).must(
     )
+
+    # A fixture that fails says why (defect 238's CI row, 2026-10-05): the
+    # CI's clang 20.1.8 exited 1120 here and the case kept no word of it, where
+    # the box's clang 23.1.1 exits 0. The assert prints what clang said.
+    if library.code != 0
+        assert library.out + library.err == ""
     assert library.code == 0
     bound = w.root + "/bound.hero"
     assert !write_file(path: bound, text: "extern \"lib238.h\" link \"lib238\"\n    function lib238_size(path: cstr lent) -> i64\n\nfunction main()\n    print(lib238_size(path: \"café.txt\".cstr()))\n").is_err()
