@@ -47,9 +47,10 @@ use cli/read_back
 # what an older one left: before defect 134 records, replays and C were
 # written in place, and a build killed half-way left files no later build
 # can trust (an empty pointee verdict failed every build after it). A new
-# word here is a new directory for every key; the old ones are never read.
+# word here is a new directory for every key; the old ones are never read:
+# `sealed` since every kept text carries its seal (`cli/kept.hero`, 357).
 constant LAYOUT: str
-    "published"
+    "sealed"
 
 record Toolchain
     runtime: str
