@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: e09550e75fe22af3f2f79190a3b1dc17a29f3943
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-parse, 2026-10-05, beside defect 267's repair (its final report, *Found beside*).
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a broken program whose report costs the square of its mistakes; the messages are right.
+
+    Repaired at `e09550e7`, 2026-10-05 (lane b11-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The line ends' rest was `said_here`'s walk, repaired with defect 265 at `1e8b2315`.
