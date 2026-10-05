@@ -71,7 +71,7 @@ function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.
         d.fixes @ d.fixes.push(
             diag.Fix(title: "use `while`", replacement: "while", span: keyword, certainty: certainty)
         )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
 
 # Whether the `(` under the cursor holds, in no bracket of its own, a `;` the
 # lexer left to this report: C's three-clause header `(i = 0; i < n; i++)`,
