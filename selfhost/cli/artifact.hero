@@ -27,12 +27,19 @@
 # **The tag's spelling is the ROUNDS' answer, handed in.** `cli/produce.hero`
 # runs the build's rounds first; when clang says *must use 'struct' tag* the
 # word is learned and the round runs again, and only a build that PASSED reaches
-# `write_c`, which re-renders with what was learned. So `--emit-c` refuses
-# exactly what `build` refuses — a missing header, a binding the header refutes
-# — and there is no longer any C for a program that has no build. That retires
-# the sentence this file carried for a day, *fourteen `fixedbugs/` bindings exist
-# precisely to have C where a build has none*: they have their refusal instead,
-# which is what panel 157 R1 said an artifact owes (defect 049).
+# `write_c`, which re-renders with what was learned. So `--emit-c` refuses what
+# `build` refuses before its link, a missing header or a binding the header
+# refutes. That retires the sentence this file carried for a day, *fourteen
+# `fixedbugs/` bindings exist precisely to have C where a build has none*: they
+# have their refusal instead, which is what panel 157 R1 said an artifact owes
+# (defect 049).
+#
+# **The rounds do not link for `--emit-c`** (`assemble.Site.link`), since a
+# module with no `main`, every `tests/golden/ir/` fixture, has C to hand out and
+# no binary, so a program refused only at the link still has its C: measured
+# 2026-10-05, `fixedbugs/ffi-missing-link` emits at exit 0 where `build` is
+# refused, `ffi_missing_link` at exit 1. Until defect 340 this said `--emit-c`
+# refuses exactly what `build` does, and that no program without a build has C.
 #
 # ## Why clang and not a rule
 #
