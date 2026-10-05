@@ -93,7 +93,7 @@ use parse/heads
 use parse/orphans
 use parse/argument_marker
 use parse/at_prefix
-use operators
+use expr_render
 use expr_kinds
 use dot_words
 
@@ -620,6 +620,7 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # and of a variant case, which are the same thing (§4.9).
 function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
     arguments: [ast.Arg] @ []
+    ended: bool @ false
     at = c.pos
     open_ended = unclosed.never_closed(c, text, open: at)
     _ = cursor.bump(@c)
@@ -655,6 +656,13 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
                 reading @ false
                 continue
 
+            # A list in it on its line ended at a binding below and named
+            # this `(` with its `[`: the call ends there too (defect 307).
+            if list_line.binding_begins(c) && bracket_head.holds(c, open: at, at: first) && unclosed.a_line_below(c, text, open: at, at: c.pos)
+                ended @ true
+                reading @ false
+                continue
+
             # `f(@g(x))`, `f(@Bag(items: []))`: the callee copies its result
             # back into the argument (§4.8), so `@` must name where that
             # copy goes — the three shapes the left of `@` accepts, and the
@@ -687,7 +695,8 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
                 cursor.skip_terminators(@c)
                 reading @ cursor.eat(@c, .comma)
 
-    unclosed.end_arguments(@c, text: text, open: at)
+    if !ended
+        unclosed.end_arguments(@c, text: text, open: at)
     return arguments
 
 ## The statement half of the knot
@@ -1216,46 +1225,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
 
 ## Tests — the precedence table, read back off real token streams
 
-# The tree, written back out fully parenthesised. A precedence table is only
-# testable through what it BUILDS, and this is the cheapest way to see it.
-# `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
-# call inside a hole shows in the dump as it shows anywhere.
-function interp_render(a: ast.Ast, pieces: [token.Span], holes: [i64], text: str) -> str
-    parts: [str] @ ["(interp"]
-    i: i64 @ 0
-
-    while i < pieces.len()
-        parts @ parts.push(" " + cursor.slice_of(text, pieces[i]))
-
-        if i < holes.len()
-            parts @ parts.push(" " + render(a, holes[i], text))
-        i @ i + 1
-
-    parts @ parts.push(")")
-    return parts.join("")
-
-function render(a: ast.Ast, at: i64, text: str) -> str
-    node = a.exprs[at]
-
-    return match node.kind
-        .binary b => "(" + render(a, b.left, text) + " " + operators.spelling(b.op) + " " + render(a, b.right, text) + ")"
-        .unary u      => "(" + operators.unary_spelling(u.op) + render(a, u.operand, text) + ")"
-        .field f      => "(" + render(a, f.base, text) + "." + cursor.slice_of(text, f.name) + ")"
-        .field_name f => "(" + render(a, f.base, text) + "::" + cursor.slice_of(text, f.name) + ")"
-        .index i      => "(" + render(a, i.base, text) + "[" + render(a, i.index, text) + "])"
-        .try_expr t   => "(" + render(a, t.value, text) + "?)"
-        .call c       => "(call " + render(a, c.callee, text) + "/" + c.args.len().to_str() + ")"
-        .method m => "(" + render(a, m.receiver, text) + "." + cursor.slice_of(text, m.name) + "()/" + m.args.len().to_str() + ")"
-        .variant_case v                                          => "." + cursor.slice_of(text, v.name)
-        .array ar                                                => "[" + ar.elements.len().to_str() + "]"
-        .map mp                                                  => "{" + mp.entries.len().to_str() + "}"
-        .interp ip                                               => interp_render(a, ip.pieces, ip.holes, text)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => cursor.slice_of(text, node.span)
-        .name                                                    => cursor.slice_of(text, node.span)
-        .null_ptr                                                => "nullptr"
-        .hole                                                    => "???"
-        .if_expr | .match_expr                                   => "<control>"
-        .error                                                   => "<error>"
+# The tree is written back out fully parenthesised by `expr_render`.
 
 test "multiplication binds tighter than addition, and both are left-associative"
     # 1 + 2 * 3
@@ -1270,7 +1240,7 @@ test "multiplication binds tighter than addition, and both are left-associative"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = parse_expr(@c, @a, "1 + 2 * 3")
-    assert render(a, at, "1 + 2 * 3") == "(1 + (2 * 3))"
+    assert expr_render.render(a, at, "1 + 2 * 3") == "(1 + (2 * 3))"
 
     # 1 - 2 - 3 groups left
     left: [token.Token] = [
@@ -1284,7 +1254,7 @@ test "multiplication binds tighter than addition, and both are left-associative"
     d: cursor.Cursor @ cursor.new_cursor(left)
     b: ast.Ast @ ast.new_ast()
     at2 = parse_expr(@d, @b, "1 - 2 - 3")
-    assert render(b, at2, "1 - 2 - 3") == "((1 - 2) - 3)"
+    assert expr_render.render(b, at2, "1 - 2 - 3") == "((1 - 2) - 3)"
 
 test "comparisons sit above &&, so a < b && c needs no parentheses"
     # a < b && c
@@ -1299,7 +1269,7 @@ test "comparisons sit above &&, so a < b && c needs no parentheses"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = parse_expr(@c, @a, "a < b && c")
-    assert render(a, at, "a < b && c") == "((a < b) && c)"
+    assert expr_render.render(a, at, "a < b && c") == "((a < b) && c)"
 
 test "C's own mistake is not inherited: & binds tighter than =="
     # x & 1 == 0  — in C this means x & (1 == 0); here it is (x & 1) == 0
@@ -1314,7 +1284,7 @@ test "C's own mistake is not inherited: & binds tighter than =="
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = parse_expr(@c, @a, "x & 1 == 0")
-    assert render(a, at, "x & 1 == 0") == "((x & 1) == 0)"
+    assert expr_render.render(a, at, "x & 1 == 0") == "((x & 1) == 0)"
 
 test "the suffixes chain left to right"
     # xs[0].f
@@ -1330,7 +1300,7 @@ test "the suffixes chain left to right"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = parse_expr(@c, @a, "xs[0].f")
-    assert render(a, at, "xs[0].f") == "((xs[0]).f)"
+    assert expr_render.render(a, at, "xs[0].f") == "((xs[0]).f)"
 
     # e? binds tightest of all
     q: [token.Token] = [
@@ -1343,7 +1313,7 @@ test "the suffixes chain left to right"
     d: cursor.Cursor @ cursor.new_cursor(q)
     b: ast.Ast @ ast.new_ast()
     at2 = parse_expr(@d, @b, "e? + 1")
-    assert render(b, at2, "e? + 1") == "((e?) + 1)"
+    assert expr_render.render(b, at2, "e? + 1") == "((e?) + 1)"
 
 test "a dot with parentheses is UFCS, without them a field"
     # x.f(y)
@@ -1359,7 +1329,7 @@ test "a dot with parentheses is UFCS, without them a field"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = parse_expr(@c, @a, "x.f(y)")
-    assert render(a, at, "x.f(y)") == "(x.f()/1)"
+    assert expr_render.render(a, at, "x.f(y)") == "(x.f()/1)"
 
 test "a trailing comma is refused with the deletion as its fix"
     # f(a,)
@@ -1413,7 +1383,7 @@ test "inside brackets a newline is a separator, not a statement end"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = parse_expr(@c, @a, "[1\n2]")
-    assert render(a, at, "[1\n2]") == "[2]"
+    assert expr_render.render(a, at, "[1\n2]") == "[2]"
     assert c.diagnostics.len() == 0
 
 test "a pattern's operand never consumes the join, which is what | is there"
@@ -1427,7 +1397,7 @@ test "a pattern's operand never consumes the join, which is what | is there"
     c: cursor.Cursor @ cursor.new_cursor(stream)
     a: ast.Ast @ ast.new_ast()
     at = arm_pattern.literal(@c, @a, "1 | 2").must()
-    assert render(a, at, "1 | 2") == "1"
+    assert expr_render.render(a, at, "1 | 2") == "1"
     assert cursor.current_kind(c) == .pipe
 
     # The full expression parser DOES consume it — which is the defect the
@@ -1435,7 +1405,7 @@ test "a pattern's operand never consumes the join, which is what | is there"
     d: cursor.Cursor @ cursor.new_cursor(stream)
     b: ast.Ast @ ast.new_ast()
     at2 = parse_expr(@d, @b, "1 | 2")
-    assert render(b, at2, "1 | 2") == "(1 | 2)"
+    assert expr_render.render(b, at2, "1 | 2") == "(1 | 2)"
 
 ## Tests — the statement half, and the ring closed
 

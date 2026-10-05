@@ -13,6 +13,7 @@
 # | entry | called by |
 # |---|---|
 # | `in_brackets` | `grammar_expr.match_expr`, `grammar_expr.if_expr` |
+# | `enclosing_openers`, `holds` | `parse/list_line`, `grammar_expr.call_args` |
 
 use token
 use cursor
@@ -47,9 +48,29 @@ function in_brackets(@c: cursor.Cursor, text: str, head: opening.Mark, missing: 
 
     return true
 
-# The opener the token `at` stands inside on its line, or -1: the line walked
-# back by depth to its start.
+# The opener the token `at` stands inside on its line, or -1.
 function enclosing(c: cursor.Cursor, at: i64) -> i64
+    around = enclosing_openers(c, at: at)
+
+    if around.len() == 0
+        return -1
+    return around[0]
+
+# Whether the opener at `open` is one the token `at` stands inside on its
+# line (`enclosing_openers`): a bracket around an item that ended at a
+# binding, which the item's report named with its own (defect 307).
+function holds(c: cursor.Cursor, open: i64, at: i64) -> bool
+    for around in enclosing_openers(c, at: at)
+        if around == open
+            return true
+
+    return false
+
+# The openers the token `at` stands inside on its line, the innermost first:
+# the line walked back by depth to its start. A list ended at a binding below
+# names them with its own, which close where it does (defect 307).
+function enclosing_openers(c: cursor.Cursor, at: i64) -> [i64]
+    out: [i64] @ []
     depth: i64 @ 0
     i: i64 @ at - 1
 
@@ -58,10 +79,10 @@ function enclosing(c: cursor.Cursor, at: i64) -> i64
 
         if token.is_closer(k)
             depth @ depth + 1
+        else if (k == .lparen || k == .lbracket || k == .lbrace) && depth == 0
+            out @ out.push(i)
         else if k == .lparen || k == .lbracket || k == .lbrace
-            if depth == 0
-                return i
             depth @ depth - 1
         i @ i - 1
 
-    return -1
+    return out
