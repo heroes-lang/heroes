@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-360-outer.h`, the header this group names, does not compile: clang refuses `fixedbugs-360-inner.h`, which it includes, at line 3: expected expression
+  at tests/golden/unsupported/fixedbugs-360-a-header-the-groups-header-includes.hero:8:8
+    |
+  8 | extern "fixedbugs-360-outer.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-360-inner.h` line 3 reads `int inner_broken = ;`
+  note: the includes clang followed: `fixedbugs-360-outer.h` line 4 includes `fixedbugs-360-inner.h`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

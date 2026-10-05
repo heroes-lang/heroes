@@ -1,0 +1,20 @@
+# fixedbugs, defect 360, lane cli12, 2026-10-05.
+#
+# SYMPTOM: a header clang refuses on its own, `int broken = ;`, was told
+# `internal error: compiling the generated C failed:` and clang's text, then
+# `error: clang refused the generated C`, at exit 2: the compiler blamed for a
+# file the author chose to bind.
+#
+# CAUSE: a clang failure is the author's only where a reader of `emit/ffi.hero`
+# finds one of this program's declarations in it, and none reads an error
+# located in a header, the declarations being right.
+#
+# FIX: `cli/header_refused.hero` reads clang's first error, and where it lies
+# in a header a group names, or in one that header includes, it is told on
+# that group's string, at exit 1, in clang's words without its paths.
+
+extern "fixedbugs-360-broken.h"  #~ ffi_header_refused
+    function twice(x: i64) -> i64
+
+function main()
+    print(twice(x: 21))
