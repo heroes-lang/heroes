@@ -118,11 +118,11 @@ function goes_on_at_head(text: str, at: i64) -> i64
     if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at))
         return -1
 
-    # Nor does an operator alone on its line, a comment at most after it,
-    # whose next line with words holds an arm's `=>`: its line end is refused
-    # alone (`sign_above`), a `-` there since defect 126 and any other since
-    # defect 165, which went on with an arm above and was refused twice.
-    if next_line.arrow_below(text, from: at + first.width)
+    # Nor do operators alone on their line, a comment at most after them,
+    # whose next line with words holds an arm's `=>`: its end is refused alone
+    # (`sign_above`), a `-` there since defect 126, any other since defect
+    # 165, which went on with an arm above, and `- -` since defect 369.
+    if next_line.arrow_below(text, from: next_line.past_operators(text, at: at))
         return -1
     return at
 
@@ -259,11 +259,12 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
 
-    # An operator alone above an arm: its deletion, and its join only where
-    # the join writes a pattern (`sign_above`), which says the refusal; left
-    # out with its margin, the arm's line is laid out on its own, as the
-    # deletion writes it, and is no break (`refused`, with no `\` asking).
-    if token.can_only_go_on(left.kind) && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.an_arm_below(text, at: l.pos)
+    # Operators alone on their line above an arm: their deletion, and their
+    # join only where the join writes a pattern (`sign_above`), which says
+    # the refusal; left out with their margin, the arm's line is laid out on
+    # its own, as the deletion writes it, and is no break (`refused`, with no
+    # `\` asking).
+    if sign_above.stray(l, text, at: at)
         return sign_above.offer(@l, d, text, at: at)
 
     # Joining the lines is the program the parser reads. It is `certain` where

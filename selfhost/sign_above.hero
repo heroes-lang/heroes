@@ -40,6 +40,12 @@
 # margin. A comment after the operator on its line stays where the operator
 # stood, and no join is offered across a comment, which it would carry into
 # the arm.
+#
+# **Operators alone are a run** (defect 369): `- -` on one line above an
+# arm went on as a block of its own, `unexpected_block` beside its refusal,
+# since only a line one operator held was asked. Operators alone on a line
+# above an arm are a stray, told once and left out with their margin
+# (`stray`), the whole line deleted, certain: no pattern begins with two.
 
 use token
 use state
@@ -47,24 +53,52 @@ use diag
 use bytes
 use join_fix
 use word_place
+use next_line
 
-# The refusal `d` of the line that holds the token at `at` alone, above the
-# arm whose first byte is `l.pos`, said with its fixes, and the stream the
-# parser is handed: whether it is the join, false where the operator's line
-# is left out with its margin and the arm's line is the caller's to lay out.
-# A break is recorded only over a join (`state.Break`): its `after` is the
-# first word of the line joined below it, and a line laid out on its own is
-# none (`joined_lines` and `line_above` read the breaks as joins).
+# Whether the line that ends with the token at `at`, which no `\` asked to
+# go on, holds operators alone above an arm, the next line with words at
+# `l.pos` or past more such lines: a stray (defects 351 and 369).
+function stray(l: state.LexState, text: str, at: i64) -> bool
+    return l.backslash < 0 && alone_from(l, at: at) >= 0 && next_line.an_arm_below(text, at: l.pos)
+
+# The first of the operators alone on the line that ends with the token at
+# `at`, or -1: walked back over the tokens no statement begins with, and the
+# comments of the lines above, to the line end before them (one operator
+# until defect 369, `- -` a run of two).
+function alone_from(l: state.LexState, at: i64) -> i64
+    i: i64 @ at
+
+    while i >= 0 && token.can_only_go_on(l.tokens[i].kind)
+        i @ i - 1
+
+    first = i + 1
+
+    while i >= 0 && l.tokens[i].kind == .comment
+        i @ i - 1
+
+    if first > at || i >= 0 && !token.is_line_end(l.tokens[i].kind)
+        return -1
+    return first
+
+# The refusal `d` of the stray line that ends with the token at `at`, above
+# the arm whose first byte is `l.pos`, said with its fixes, and the stream
+# the parser is handed: whether it is the join, false where the operators'
+# line is left out with its margin and the arm's line is the caller's to lay
+# out. A break is recorded only over a join (`state.Break`): its `after` is
+# the first word of the line joined below it, and a line laid out on its own
+# is none (`joined_lines` and `line_above` read the breaks as joins).
 function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bool
+    first = alone_from(l, at: at)
     operator = l.tokens[at]
+    run = token.Span(start: l.tokens[first].span.start, end: operator.span.end)
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
+    readings = first == at && two_readings(text, operator: operator, below: l.pos)
     told: diag.Diagnostic @ d
-    told.fixes @ fixes(text, operator: operator, below: l.pos, commented: commented)
-    readings = two_readings(text, operator: operator, below: l.pos)
+    told.fixes @ fixes(text, run: run, readings: readings, below: l.pos, commented: commented)
 
     if readings
         signed_below(@l, text, at: at)
-    joined = readings || !leave_out(@l, text, at: at)
+    joined = readings || !leave_out(@l, text, first: first, at: at)
     state.push_diagnostic(@l.diagnostics, told)
 
     if joined
@@ -77,27 +111,27 @@ function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bo
 function two_readings(text: str, operator: token.Token, below: i64) -> bool
     return operator.kind == .minus && signs_a_literal(text, at: below)
 
-# The join and the deletion where the arm has two readings, both guesses; the
-# deletion alone, certain, anywhere else.
-function fixes(text: str, operator: token.Token, below: i64, commented: bool) -> [diag.Fix]
+# The join and the deletion of the operators at `run` where the arm has two
+# `readings`, both guesses; the deletion alone, certain, anywhere else.
+function fixes(text: str, run: token.Span, readings: bool, below: i64, commented: bool) -> [diag.Fix]
     out: [diag.Fix] @ []
     certainty: diag.Certainty @ .certain
 
-    if two_readings(text, operator: operator, below: below)
+    if readings
         certainty @ .guess
 
         # The join writes the sign against its literal, as `fmt` spells it,
         # on the arm's line and at its margin, the operator's line gone: at
         # another margin the arm joined there was a block of its own (268).
         if !commented
-            arm = word_place.line_start(text, at: below)
-            sign = text.slice(from: arm, to: below) + text.slice(from: operator.span.start, to: operator.span.end)
+            line = word_place.line_start(text, at: below)
+            sign = text.slice(from: line, to: below) + text.slice(from: run.start, to: run.end)
             out @ out.push(
-                join_fix.made(glue: sign, from: word_place.line_start(text, at: operator.span.start), to: below, certainty: .guess)
+                join_fix.made(glue: sign, from: word_place.line_start(text, at: run.start), to: below, certainty: .guess)
             )
-    written = text.slice(from: operator.span.start, to: operator.span.end)
+    written = text.slice(from: run.start, to: run.end)
     out @ out.push(
-        diag.Fix(title: "delete the `" + written + "`", replacement: "", span: deleted(text, operator: operator.span), certainty: certainty)
+        diag.Fix(title: "delete the `" + written + "`", replacement: "", span: deleted(text, operator: run), certainty: certainty)
     )
     return out
 
@@ -144,8 +178,9 @@ function deleted(text: str, operator: token.Span) -> token.Span
         end @ end + 1
     return token.Span(start: start, end: end)
 
-# The token at `at` taken out of the stream, the comments after it kept, and
-# the margin its line laid out taken back where that margin is plain: spaces
+# The operators from `first` to `at` taken out of the stream, the comments
+# after them kept, and the margin their line laid out taken back where it is
+# plain: spaces
 # alone, under no braces and no indentation habit. Its indent or dedents are
 # the tokens just before the operator spanning the line's margin, and its
 # reports, `indentation_jump` and `indentation_not_multiple_of_4` over that
@@ -154,12 +189,12 @@ function deleted(text: str, operator: token.Span) -> token.Span
 # comments are moved, and only on this refusal's path, which no program that
 # compiles reaches. Every index recorded so far stands before the margin: each
 # break's `after`, and `open_line`, cleared before the refusal.
-function leave_out(@l: state.LexState, text: str, at: i64) -> bool
-    plain = plain_margin(l, text, at: at)
-    from: i64 @ at
+function leave_out(@l: state.LexState, text: str, first: i64, at: i64) -> bool
+    plain = plain_margin(l, text, at: first)
+    from: i64 @ first
 
     if plain
-        from @ taken_back(@l, text, at: at)
+        from @ taken_back(@l, text, at: first)
     after: [token.Token] = l.tokens.slice(from: at + 1, to: l.tokens.len())
     l.tokens @ l.tokens.slice(from: 0, to: from)
 
@@ -265,6 +300,11 @@ function spaces_alone(text: str, from: i64, to: i64) -> bool
 
 ## Tests
 
+# The fixes over an arm, as before defect 369, one operator its own run.
+function arm_fixes(text: str, operator: token.Token, below: i64, commented: bool) -> [diag.Fix]
+    readings = two_readings(text, operator: operator, below: below)
+    return fixes(text, run: operator.span, readings: readings, below: below, commented: commented)
+
 test "a literal a minus signs is an integer or a character, and nothing else"
     for text in ["1 => x", "'a' => x", "0x1f => x", "1_000 => x", "7"]
         assert signs_a_literal(text, at: 0)
@@ -287,7 +327,7 @@ test "an arm has two readings only below a minus, over a literal it signs"
 test "over an integer the join and the deletion are both guesses; over anything else the deletion is certain"
     minus = token.Token(kind: .minus, span: token.Span(start: 4, end: 5))
     text = "    -\n    1 => 10\n"
-    both = fixes(text, operator: minus, below: 10, commented: false)
+    both = arm_fixes(text, operator: minus, below: 10, commented: false)
     assert both.len() == 2
     assert both[0].title == join_fix.TITLE
     assert both[0].certainty == .guess
@@ -299,7 +339,7 @@ test "over an integer the join and the deletion are both guesses; over anything 
 
     # A string, so the deletion alone, and certain.
     quoted = "    -\n    \"a\" => 10\n"
-    alone = fixes(quoted, operator: minus, below: 10, commented: false)
+    alone = arm_fixes(quoted, operator: minus, below: 10, commented: false)
     assert alone.len() == 1
     assert alone[0].certainty == .certain
     refusal: diag.Diagnostic @ diag.new_diagnostic(
@@ -312,7 +352,7 @@ test "over an integer the join and the deletion are both guesses; over anything 
 
     # Another operator signs nothing, even an integer: the deletion alone.
     added = "    +\n    1 => 10\n"
-    plus = fixes(
+    plus = arm_fixes(
         added,
         operator: token.Token(kind: .plus, span: token.Span(start: 4, end: 5)),
         below: 10,
@@ -325,20 +365,31 @@ test "over an integer the join and the deletion are both guesses; over anything 
 
     # A comment after the `-`: no join across it, and the comment stays.
     noted = "    -  # a note\n    1 => 10\n"
-    kept = fixes(noted, operator: minus, below: 20, commented: true)
+    kept = arm_fixes(noted, operator: minus, below: 20, commented: true)
     assert kept.len() == 1
     assert kept[0].certainty == .guess
     assert noted.slice(from: 0, to: kept[0].span.start) + noted.slice(from: kept[0].span.end, to: noted.len()) == "    # a note\n    1 => 10\n"
 
     # CRLF: the line's two-byte end goes with it.
     crlf = "    -\r\n    1 => 10\r\n"
-    ended = fixes(crlf, operator: minus, below: 11, commented: false)
+    ended = arm_fixes(crlf, operator: minus, below: 11, commented: false)
     assert crlf.slice(from: 0, to: ended[1].span.start) + crlf.slice(from: ended[1].span.end, to: crlf.len()) == "    1 => 10\r\n"
 
     # Deeper than the arm, the join writes the sign at the arm's margin, its
     # line gone (defect 268).
     deeper = "    0 => 5\n        -\n    1 => 10\n"
     sign = token.Token(kind: .minus, span: token.Span(start: 19, end: 20))
-    moved = fixes(deeper, operator: sign, below: 25, commented: false)[0]
+    moved = arm_fixes(deeper, operator: sign, below: 25, commented: false)[0]
     assert deeper.slice(from: 0, to: moved.span.start) + moved.replacement + deeper.slice(from: moved.span.end, to: deeper.len()) == "    0 => 5\n    -1 => 10\n"
     assert crlf.slice(from: 0, to: ended[0].span.start) + ended[0].replacement + crlf.slice(from: ended[0].span.end, to: crlf.len()) == "    -1 => 10\r\n"
+
+# Defect 369: a run's deletion takes its whole line, certain over an arm,
+# where no pattern begins with two operators.
+test "operators alone are deleted as one run over an arm"
+    run = token.Span(start: 4, end: 7)
+    text = "    - -\n    1 => 10\n"
+    over_an_arm = fixes(text, run: run, readings: false, below: 12, commented: false)
+    assert over_an_arm.len() == 1
+    assert over_an_arm[0].title == "delete the `- -`"
+    assert over_an_arm[0].certainty == .certain
+    assert text.slice(from: 0, to: over_an_arm[0].span.start) + text.slice(from: over_an_arm[0].span.end, to: text.len()) == "    1 => 10\n"

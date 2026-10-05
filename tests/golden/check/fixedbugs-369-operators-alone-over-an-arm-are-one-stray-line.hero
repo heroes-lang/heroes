@@ -1,0 +1,74 @@
+# Fixed defect 369, 2026-10-05 (lane b12-parse12, found beside defect 351).
+# Symptom: `- -` on one line under an arm of a `match` over an integer was
+# told `continuation_outside_brackets` at its end and `unexpected_block` at
+# its margin, where defect 351 tells a line holding one operator once.
+# Cause: a line was asked whether it held an operator alone above an arm by
+# its last token alone, which `- -` begins no line with, so the line went on
+# as a block of its own. Repair: operators alone on a line are a run, walked
+# back from the line's end to the line end before them (`sign_above.stray`,
+# `next_line.past_operators`): above an arm, or above more such lines over
+# one, the line is refused once, its deletion certain, since no pattern
+# begins with two operators, and left out with its margin. The shapes: `- -`,
+# `+ +`, three, glued, mixed, two such lines, one at the arms' margin, and
+# one operator, as before.
+
+function minus_minus(n: i64) -> str
+    return match n
+        2 => "two"
+            - -  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function plus_plus(n: i64) -> str
+    return match n
+        2 => "two"
+            + +  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function three(n: i64) -> str
+    return match n
+        2 => "two"
+            - - -  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function glued(n: i64) -> str
+    return match n
+        2 => "two"
+            --  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function mixed(n: i64) -> str
+    return match n
+        2 => "two"
+            * /  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function two_lines(n: i64) -> str
+    return match n
+        2 => "two"
+            - -  #~ continuation_outside_brackets
+            - -  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function at_the_arms_margin(n: i64) -> str
+    return match n
+        2 => "two"
+        - -  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function one_operator(n: i64) -> str
+    return match n
+        2 => "two"
+            -  #~ continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+
+function main()
+    print(minus_minus(1) + plus_plus(1) + three(1) + glued(1))
+    print(mixed(1) + two_lines(1) + at_the_arms_margin(1) + one_operator(1))
