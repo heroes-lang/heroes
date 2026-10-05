@@ -22,7 +22,7 @@
 #
 # | entry | called by |
 # |---|---|
-# | `opener_of`, `close_to_its_kind` | `scan.finish` |
+# | `before`, `opener_of` | `scan.finish` |
 # | `never_closed` | `close_to_its_kind`, `layout.close_brackets` |
 # | `header_semicolon` | `scan.punct`, a `;` of C's `for` header, in its `(` or bare |
 
@@ -30,6 +30,16 @@ use token
 use diag
 use state
 use separator_runs
+
+# Before the token `kind` at `start` is emitted: a closer of another kind
+# than the innermost closes the opener of its own kind where one is open
+# below it (`close_to_its_kind`); a closer of the innermost's own kind, every
+# one of a program that compiles, asks nothing more.
+function before(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
+    n = l.open_brackets.len()
+
+    if n > 0 && (kind == .rparen || kind == .rbracket || kind == .rbrace) && text[l.open_brackets[n - 1].start] != opener_of(kind)
+        close_to_its_kind(@l, text, kind, start: start)
 
 # Before the closer `kind` at `start` closes the innermost opener: where that
 # opener is of another kind and one of its own is open below it, inside the

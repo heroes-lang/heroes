@@ -30,6 +30,7 @@ use open_line
 use backslash
 use brace_layout
 use closers
+use arrow_inside
 use bracket_reach
 use lost_quote
 use comment_habit
@@ -328,13 +329,11 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
             state.emit_close_body(@l, start)
         return
 
-    # A closer closes the opener of its own kind where one is open below
-    # another kind's, which is then named never closed (`closers.hero`); a
-    # closer of the innermost's own kind, every one of a program that
-    # compiles, asks nothing more.
-    if (kind == .rparen || kind == .rbracket || kind == .rbrace) && l.open_brackets.len() > 0
-        if text[l.open_brackets[l.open_brackets.len() - 1].start] != closers.opener_of(kind)
-            closers.close_to_its_kind(@l, text, kind, start: start)
+    # What the token owes the brackets open: a closer of another kind than
+    # the innermost closes its own (`closers.before`), and a function type's
+    # `->` the `(` whose `)` was left out before it (`arrow_inside`).
+    closers.before(@l, text, kind, start: start)
+    arrow_inside.close(@l, text, kind, start: start)
     state.emit(@l, kind, start)
 
 # A line that ends with a value owes its terminator until the next line with

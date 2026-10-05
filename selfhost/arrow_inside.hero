@@ -1,0 +1,248 @@
+# A function type's `)` left out before its `->` (design.md §4.17; defect
+# 300, the lexer's half of defect 197).
+#
+# `(function(i64 -> i64))`, written for `(function(i64) -> i64)`: the lexer
+# paired the `)` past the result with the parameters' `(`, as it pairs any
+# closer with the innermost opener, so the bracket that `)` was written for
+# was named still open lines below, and the parser told the `->` that the
+# `)` past the result goes before it (`parse/type.function_parts`, defect
+# 197): three edits, where writing the one `)` left out is the repair. Read
+# with that pairing, the brackets open at the `->` are left short where
+# their reach ends (`short`), and the `)` past the result was the next
+# bracket out's: the lexer writes the `)` the `->` lacks there, zero wide, so
+# the parser and every reader of the pairing see the parameters closed
+# before the `->`, and tells it once, its fix a guess. Brackets that close
+# either way, `(function(i64 -> i64)))`, had their `)` written past the
+# result, and defect 197's message says that it goes before the `->`.
+#
+# | entry | called by |
+# |---|---|
+# | `close` | `scan.finish`, before a `->` is emitted |
+
+use token
+use diag
+use state
+use keywords
+use bytes
+use indent_runs
+use next_line
+use closers
+use layout
+
+# Before the token `kind` at `start` is emitted: a `->` inside a function
+# type's parameters whose `)` was left out has that `)` written where it
+# stands, zero wide, and told there.
+function close(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
+    if kind != .arrow || l.holes.len() > 0 || !in_the_parameters(l, text) || !short(l, text, from: start + 2)
+        return
+    found: str @ "`)`, or `,` and another parameter type, found `->` — a function type closes its parameters before its `->`, `function(i64) -> i64`"
+
+    # Right after the `(`, no parameter stands (defect 309's wording).
+    if l.tokens[last_word(l)].span.start == l.open_brackets[l.open_brackets.len() - 1].start
+        found @ "a parameter type or `)`, found `->` — a function type closes its parameters before its `->`, `function() -> i64`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "expected_function_type_params_close",
+        message: "expected " + found + ": its `)` is left out there",
+        span: token.Span(start: start, end: start + 2)
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the `)` before the `->`", replacement: ")", span: token.Span(start: start, end: start), certainty: .guess)
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+    after = l.pos
+    l.pos @ start
+    state.emit(@l, .rparen, start)
+    l.pos @ after
+
+# Whether the innermost bracket open is a function type's parameters' `(`,
+# the one right after `function`, and the `->` about to be emitted is no
+# result arrow of a function type written in them without its parentheses,
+# `function(function(i64) -> i64 -> i64)`, whose own `)` it follows.
+function in_the_parameters(l: state.LexState, text: str) -> bool
+    n = l.open_brackets.len()
+
+    if n == 0 || text[l.open_brackets[n - 1].start] != '('
+        return false
+    open: i64 @ l.tokens.len() - 1
+
+    while open > 0 && l.tokens[open].span.start > l.open_brackets[n - 1].start
+        open @ open - 1
+
+    if open < 1 || l.tokens[open].kind != .lparen || l.tokens[open - 1].kind != .kw_function
+        return false
+    last = last_word(l)
+
+    if l.tokens[last].kind != .rparen
+        return true
+    inner = opener_of(l, closer: last, floor: open)
+    return inner <= open || l.tokens[inner - 1].kind != .kw_function
+
+# The index of the last token laid out that is no comment and no line end;
+# inside a bracket open, its opener at least.
+function last_word(l: state.LexState) -> i64
+    i: i64 @ l.tokens.len() - 1
+
+    while i > 0 && (l.tokens[i].kind == .comment || token.is_line_end(l.tokens[i].kind))
+        i @ i - 1
+
+    return i
+
+# The index of the opener the closer at the index `closer` closes, above the
+# index `floor`, or `floor` where none is.
+function opener_of(l: state.LexState, closer: i64, floor: i64) -> i64
+    depth: i64 @ 0
+    i: i64 @ closer
+
+    while i > floor
+        k = l.tokens[i].kind
+
+        if k == .rparen || k == .rbracket || k == .rbrace
+            depth @ depth + 1
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth - 1
+
+            if depth == 0
+                return i
+        i @ i - 1
+
+    return floor
+
+# Whether the brackets open at the `->`, read from `from` with the innermost
+# closed by the next `)`, as the lexer pairs it, are left short where their
+# reach ends: one of them still open at a line whose first word no bracket
+# holds (`next_line.ends_a_reach`, panel 183 R1), at a name after a line
+# that kept its end inside a `(` (R2), or at the text's end; or named never
+# closed by a closer of another kind that closes one below it. The text is
+# read as the lexer will read it, strings whole and comments left out.
+function short(l: state.LexState, text: str, from: i64) -> bool
+    stack: [u8] @ []
+
+    for span in l.open_brackets
+        stack @ stack.push(text[span.start])
+
+    open: i64 @ stack.len()
+    kept: bool @ false
+    i: i64 @ from
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '\n'
+            line = line_with_words(text, from: i + 1)
+
+            if line >= text.len() || reach_ends(l, text, line: line, inner: stack[stack.len() - 1], kept: kept)
+                return true
+            kept @ false
+            i @ line
+        else if b == '#'
+            while i < text.len() && text[i] != '\n'
+                i @ i + 1
+        else if b == '"' || b == '\''
+            kept @ true
+            i @ closers.past_literal(text, from: i)
+        else if bytes.is_alnum(b) || b == '_'
+            end: i64 @ i
+
+            while end < text.len() && (bytes.is_alnum(text[end]) || text[end] == '_')
+                end @ end + 1
+
+            kind = keywords.keyword(text.slice(from: i, to: end))
+            kept @ kind.is_err() || layout.is_line_ender(kind.must())
+            i @ end
+        else
+            if b == '(' || b == '[' || b == '{'
+                stack @ stack.push(b)
+            else if (b == ')' || b == ']' || b == '}') && stack.len() > 0
+                at = closed_by(stack, closer: b)
+
+                if at + 1 < open
+                    return true
+
+                if at < open
+                    open @ at
+
+                if open == 0
+                    return false
+                stack @ stack.slice(from: 0, to: at)
+            kept @ b == ')' || b == ']' || b == '}' || b == '?' || b == ' ' && kept || b == '\t' && kept || b == '\r' && kept
+            i @ i + 1
+
+    return true
+
+# The index in `stack` of the opener `closer` closes: the nearest of its own
+# kind, the ones above it then never closed (`closers.close_to_its_kind`), or
+# the innermost where none of its kind is open, a closer of the wrong kind.
+function closed_by(stack: [u8], closer: u8) -> i64
+    want: u8 @ '{'
+
+    if closer == ')'
+        want @ '('
+    else if closer == ']'
+        want @ '['
+    at: i64 @ stack.len() - 1
+
+    while at >= 0 && stack[at] != want
+        at @ at - 1
+
+    if at < 0
+        return stack.len() - 1
+    return at
+
+# The offset of the first line from the line start `from` that holds words,
+# past the blank ones and those a comment holds alone, or the text's end.
+function line_with_words(text: str, from: i64) -> i64
+    line: i64 @ from
+
+    while line < text.len()
+        m = indent_runs.margin_at(text, at: line)
+
+        if m.end < text.len() && text[m.end] != '\n' && text[m.end] != '\r' && text[m.end] != '#'
+            return line
+        line @ m.end
+
+        while line < text.len() && text[line] != '\n'
+            line @ line + 1
+
+        line @ line + 1
+
+    return text.len()
+
+# Whether the line at `line` ends the reach of the brackets open, `inner` the
+# innermost and `kept` whether the line with words above kept its end: its
+# margin read as `layout.line_start` reads it, and the two facts
+# `bracket_reach.ends_at` asks of it.
+function reach_ends(l: state.LexState, text: str, line: i64, inner: u8, kept: bool) -> bool
+    m = indent_runs.margin_at(text, at: line)
+    spaces: i64 @ m.spaces
+
+    if m.tabs > 0 || l.run[0].kind != .none
+        spaces @ indent_runs.through(l.run[0], m)
+    margin = l.level * 4
+
+    if next_line.ends_a_reach(text, at: m.end, spaces: spaces, margin: margin)
+        return true
+    return spaces <= margin && inner == '(' && kept && next_line.opens_with_a_name(text, at: m.end)
+
+## Tests
+
+test "the brackets open at a `->` are short where its `)` was left out, and close where it was written past the result"
+    text = "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
+    l: state.LexState @ state.new_state()
+    l.open_brackets @ [token.Span(start: 10, end: 11), token.Span(start: 14, end: 15), token.Span(start: 23, end: 24)]
+    assert short(l, text, from: 30)
+    assert !short(l, "function f(g: (function(i64 -> i64))) -> i64\n    return 1\n", from: 30)
+
+    # The `)` past the result on the line below, which begins with closers,
+    # was written there: the brackets close before a line ends their reach.
+    assert !short(l, "function f(g: (function(i64 -> i64\n))) -> i64\n    return 1\n", from: 30)
+
+    # A binding's, at a name after a line that kept its end (R2).
+    b: state.LexState @ state.new_state()
+    b.level @ 1
+    b.open_brackets @ [token.Span(start: 7, end: 8), token.Span(start: 16, end: 17)]
+    assert short(b, "    g: (function(i64 -> i64) @ d\n    print(1))\n", from: 23)
+
+test "a closer closes the nearest opener of its kind, or the innermost where none is open"
+    assert closed_by(['(', '[', '('], closer: ')') == 2
+    assert closed_by(['(', '[', '('], closer: ']') == 1
+    assert closed_by(['(', '['], closer: '}') == 1

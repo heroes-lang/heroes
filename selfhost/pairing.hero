@@ -281,6 +281,7 @@ test "every opener is paired by the one walk as by the walk from it"
         "print(2]\n[0.5, 0.7)\n)\n"
         "m = {1: (2, [3}\n"
         "for (i = 0; i < f(3; i++\n    print(i)\n"
+        "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
     ]
 
     for text in texts
@@ -320,3 +321,18 @@ test "the lexer names the brackets still open at offsets that ascend, which clos
     assert close_after(c, at: -1) == out.closes[0]
     assert close_after(c, at: out.closes[1]) == out.closes[2]
     assert close_after(c, at: out.closes[3]) == -1
+
+# Defect 300: a function type's `)` left out before its `->` is written
+# there by the lexer, zero wide and told once, so the parameters' `(` pairs
+# with it and the `)` past the result with the bracket the type stands in.
+test "a function type's `)` left out before its `->` pairs its parameters' `(`"
+    text = "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
+    out = lexer.lex_one(text)
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "expected_function_type_params_close"
+    assert out.diagnostics[0].span.start == 28
+    c = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
+    assert paired_closer(c, text, open: 7) == 9
+    assert c.tokens[9].span.start == 28 && c.tokens[9].span.end == 28
+    assert paired_closer(c, text, open: 5) == 12
+    assert paired_closer(c, text, open: 2) == 13

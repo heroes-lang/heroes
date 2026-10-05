@@ -12,10 +12,10 @@
 # once that one moves. A function type whose `->` stands past its `)` is read
 # as before (`in_place`).
 
-function two_left_open(g: (function(i64 -> i64)  #~ unclosed_bracket unclosed_bracket expected_function_type_params_close
+function two_left_open(g: (function(i64 -> i64)  #~ expected_function_type_params_close unclosed_bracket
     print(1)
 
-function one_left_open(g: (function(i64 -> i64))  #~ unclosed_bracket expected_function_type_params_close
+function one_left_open(g: (function(i64 -> i64))  #~ expected_function_type_params_close
     print(1)
 
 function none_left_open(g: (function(i64, i64 -> i64)))  #~ expected_function_type_params_close
@@ -37,13 +37,13 @@ function in_place(g: (function(i64) -> i64))
     print(1)
 
 record Holder
-    g: (function(i64 -> i64)  #~ unclosed_bracket expected_function_type_params_close
+    g: (function(i64 -> i64)  #~ expected_function_type_params_close
 
-function as_a_result() -> (function(i64 -> i64)  #~ unclosed_bracket expected_function_type_params_close
+function as_a_result() -> (function(i64 -> i64)  #~ expected_function_type_params_close
     print(1)
 
 function as_a_binding(d: (function(i64) -> i64))
-    g: (function(i64 -> i64) @ d  #~ unclosed_bracket expected_function_type_params_close
+    g: (function(i64 -> i64) @ d  #~ expected_function_type_params_close
     print(1)
 
 function main()
@@ -53,3 +53,13 @@ function main()
 # the `->` right after the parameters' `(`, is told as the others are, its
 # `)` written past the result going before the `->`, `function() -> i64`, in
 # place of `expected_type`, which named no move (`parse/type.function_params`).
+
+# Moved 2026-10-05 with defect 300's repair (lane b12-parse12): where the
+# brackets open at the `->` are left one short with the `)` past the result
+# read as the parameters', that `)` was the next bracket out's, and the lexer
+# writes the parameters' `)` at the `->`, zero wide, told there once with its
+# fix a guess, *its `)` is left out there* (`arrow_inside.hero`):
+# `one_left_open`, `Holder`, `as_a_result` and `as_a_binding` are one message
+# each, the one `)` to write, and `two_left_open` two, the `(` of the
+# declaration's own parameters still open. Where every bracket closes either
+# way, the `)` was written past the result, and is told so as before.

@@ -1,0 +1,85 @@
+# Fixed defect 300, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 197). Symptom: `function(i64 -> i64)` written for
+# `function(i64) -> i64`, its `)` left out before the `->`, was told three
+# true messages asking three edits, the `)` past the result to move before
+# the `->` and a `)` for each opener left still open, where writing the one
+# `)` left out is the repair. Cause: the lexer paired the `)` past the result
+# with the parameters' `(`, as it pairs any closer with the innermost opener,
+# so the bracket that `)` was written for was named still open lines below.
+# Repair: where the brackets open at the `->`, read with that pairing, are
+# left short where their reach ends, the `)` past the result was the next
+# bracket out's, and the lexer writes the parameters' `)` at the `->`, zero
+# wide, told there once with its fix a guess, *its `)` is left out there*
+# (`arrow_inside.hero`); brackets that close either way had their `)`
+# written past the result, told as defect 197 tells it. The shapes: one left
+# out, two, no parameter, a named one, two parameters, a `()` result, a
+# binding, a field, a result, the declaration's parameters below its line,
+# the type's own split over lines, a stray closer below, a comment or a
+# string holding a bracket, a function type in a bare one's parameters; and
+# the `)` written past the result, on its line or below, as before.
+
+function one_left_out(g: (function(i64 -> i64)) -> i64  #~ expected_function_type_params_close
+    return g(1)
+
+function two_left_out(g: (function(i64 -> i64)  #~ expected_function_type_params_close unclosed_bracket
+    print(1)
+
+function no_parameter(g: (function( -> i64)) -> i64  #~ expected_function_type_params_close
+    return g()
+
+function a_named_parameter(g: (function(a: i64 -> i64)) -> i64  #~ expected_function_type_params_close
+    return 1
+
+function two_parameters(g: (function(i64, i64 -> i64)) -> i64  #~ expected_function_type_params_close
+    return 1
+
+function a_unit_result(g: (function(i64 -> ())) -> i64  #~ expected_function_type_params_close
+    return 1
+
+function a_binding(d: (function(i64) -> i64))
+    g: (function(i64 -> i64) @ d  #~ expected_function_type_params_close
+    print(g(1))
+
+record Holder
+    g: (function(i64 -> i64)  #~ expected_function_type_params_close
+
+function as_a_result() -> (function(i64 -> i64)  #~ expected_function_type_params_close
+    print(1)
+
+function parameters_below(
+    g: (function(i64 -> i64),  #~ expected_function_type_params_close
+    h: i64
+) -> i64
+    return h
+
+function the_type_split(g: (function(
+    a: i64,
+    b: i64 -> i64  #~ expected_function_type_params_close
+)) -> i64
+    return 1
+
+function a_stray_closer_below(d: (function(i64) -> i64))
+    g: (function(i64 -> i64) @ d  #~ expected_function_type_params_close
+    print(1))  #~ expected_end_of_line
+
+#~v expected_function_type_params_close
+function a_comment_holding_an_opener(g: (function(i64 -> i64)) -> i64  # (
+    return 1
+
+function a_string_holding_a_closer(g: (function(i64 -> i64)) -> i64  #~ expected_function_type_params_close
+    print(")")
+    return 1
+
+function in_a_bare_function_type(g: (function(function(i64) -> i64 -> i64)) -> i64  #~ expected_type expected_function_type_params_close
+    return 1
+
+function written_past_the_result(g: (function(i64 -> i64))) -> i64  #~ expected_function_type_params_close
+    return 1
+
+#~v expected_function_type_params_close
+function written_past_the_result_below(g: (function(i64 -> i64
+))) -> i64
+    return 1
+
+function main()
+    print(1)
