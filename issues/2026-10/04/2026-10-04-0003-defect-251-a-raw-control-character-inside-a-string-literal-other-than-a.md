@@ -15,4 +15,4 @@ github: none
 
     Repaired at `aa150c8c` (the escape by code, panel 192's R5, the spelling the refusal's fix writes) and at `462b4a2d` (the refusal, R2 to R4), 2026-10-05, gated by their cases and the compiler's own tests; the net is owed at the batch's close, and the seed's two generations with it.
 
-    Repaired further at `3bcd21fa`, 2026-10-05: the escape's walk through every tool that re-prints a program (six surface rows over `escape251/main.hero`, and `heroes probe`'s default reading it).
+    Repaired at `3bcd21fa` too, 2026-10-05: the escape's walk through every tool that re-prints a program (six surface rows over `escape251/main.hero`, and `heroes probe`'s default reading it).
