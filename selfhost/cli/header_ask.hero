@@ -18,6 +18,7 @@ use cli/process
 use cli/publish
 use cli/compiling
 use cli/strings
+use cli/read_back
 use emit/ffi_asked
 use emit/ffi_lookup
 use cli/input
@@ -40,7 +41,11 @@ function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, un
         more: compiling.probe_words(under)
     )
     ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: err)
-    said = read_file(err)
+
+    # Read back as the round's words are (`cli/read_back.hero`, defect 337):
+    # the header's own locations come first in what clang says, and one byte
+    # in them that is not UTF-8 left every answer unread.
+    said = read_back.words(err)
     publish.discard(unit)
     publish.discard(err)
 

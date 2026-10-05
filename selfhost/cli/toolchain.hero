@@ -39,6 +39,7 @@ use cli/runtime_key
 use cli/strings
 use cli/clang_died
 use cli/runtime_places
+use cli/read_back
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
 # `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
@@ -163,19 +164,25 @@ function asked_of_clang(line: [str], what: str, err_path: str) -> str?
     # defect 074 is what it cost.
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
     noise: str @ ""
-    captured = read_file(err_path)
+
+    # **clang's words are read back where the bytes enter**, by
+    # `read_back.words`, so every reader after it has the two repairs it
+    # makes. A byte that is not UTF-8 is written by its value (defect 337):
+    # clang prints a location's file name as it was given, and `read_file`
+    # refused the whole stream for one such byte, so an author's extern
+    # disagreement was `internal error` over an empty line at exit 2. And a
+    # line ended `\r\n` is read as ended `\n`, because **clang on Windows ends
+    # its lines `\r\n`, and the `\r` is poison downstream**: the MSVC-built
+    # clang.exe writes text-mode line endings, so every line of its stderr
+    # carried a trailing `\r` into `emit_ffi`'s parsing: the last word of
+    # `heroes-ffi-return sqrt i64` became `i64\r`, the diagnostic quoted
+    # `` `i64\r` `` (measured 2026-08-31, `od` on the captured file: `i 6 4 \r`
+    # inside the message), and `heroes-ffi-const`'s marker stopped matching at
+    # all, which demoted the author's own error to exit 2.
+    captured = read_back.words(err_path)
 
     if !captured.is_err()
-        # **clang on Windows ends its lines `\r\n`, and the `\r` is poison
-        # downstream.** The MSVC-built clang.exe writes text-mode line
-        # endings, so every line of its stderr carried a trailing `\r` into
-        # `emit_ffi`'s parsing: the last word of `heroes-ffi-return sqrt i64`
-        # became `i64\r`, the diagnostic quoted `` `i64\r` `` (measured
-        # 2026-08-31, `od` on the captured file: `i 6 4 \r` inside the
-        # message), and `heroes-ffi-const`'s marker stopped matching at all,
-        # which demoted the author's own error to exit 2. One normalisation
-        # here, where the bytes enter, covers every reader after it.
-        noise @ strings.without_returns(captured.must())
+        noise @ captured.must()
 
     # **Never started is not the same as ran and failed**, and until
     # M-argv-execution this line could not tell them apart: `system()`
@@ -215,7 +222,15 @@ function asked_of_clang(line: [str], what: str, err_path: str) -> str?
             code: "crashed",
             msg: what + " stopped: clang died on the C instead of judging it (" + died + "), so nothing in it was refused"
         )
-    return fail(code: "clang", msg: what + " failed:\n" + noise)
+    return fail(code: "clang", msg: refusal(what: what, code: ran.code, noise: noise))
+
+# What clang's refusal says: its own words under what failed, or where it
+# wrote none, that it said nothing and how it exited (defect 326's shape),
+# where `linking failed:` stood over an empty line.
+function refusal(what: str, code: i64, noise: str) -> str
+    if strings.trimmed(noise).len() == 0
+        return what + " failed: clang exited " + code.to_str() + " and said nothing"
+    return what + " failed:\n" + noise
 
 # Compile the runtime once and cache it, keyed on its own contents,
 # the level and the compiler. A stale relink is silent, so the key is
@@ -320,6 +335,37 @@ test "a probe's question hands back what clang said, a header's warning in it (d
     said = asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/unit.c"], what: "a probe", err_path: dir + "/unit-stderr.txt").must(
     )
     assert has_text(text: said, needle: "a header warning")
+
+# Defect 337: clang prints a location's file name as it was given, and a
+# header's `#line` gives it `caf` and the byte 0xE9, written here as the escape
+# C reads, so the header itself is ASCII (measured on Apple clang 21: the
+# location comes out with the byte, and no warning about the header's text).
+# What clang said comes back whole, the byte written by its value, on success
+# and on a refusal alike, and the refusal's marker with it.
+test "clang's words holding a byte that is not UTF-8 are kept whole, a refusal's marker with them (defect 337)"
+    dir = "build/selftest-said-337"
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/located.h", text: "#line 1 \"caf\\351.h\"\n#warning \"a warning the header carries\"\n").is_err()
+    assert !write_file(path: dir + "/fine.c", text: "#include \"located.h\"\nint seven(void) { return 7; }\n").is_err()
+    said = asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/fine.c"], what: "a probe", err_path: dir + "/fine-stderr.txt").must(
+    )
+    assert has_text(text: said, needle: "caf<0xE9>.h:1:2: warning: \"a warning the header carries\"")
+    assert !write_file(path: dir + "/refused.c", text: "#include \"located.h\"\n_Static_assert(0, \"heroes-ffi-return wide_count i32\");\n").is_err()
+
+    match asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/refused.c"], what: "compiling the generated C", err_path: dir + "/refused-stderr.txt")
+        .ok => assert false
+        .err e =>
+            assert e.code == "clang"
+            assert has_text(text: e.msg, needle: "caf<0xE9>.h:1:2: warning:")
+            assert has_text(text: e.msg, needle: "heroes-ffi-return wide_count i32")
+
+# Defect 326's shape at clang: a refusal with no word in it, or only line ends,
+# says so and how clang exited, where `linking failed:` stood over an empty
+# line; one with words carries them under what failed, as it did.
+test "a clang that refused and said nothing is told so, never as an empty line (defect 326)"
+    assert refusal(what: "linking", code: 1, noise: "") == "linking failed: clang exited 1 and said nothing"
+    assert refusal(what: "linking", code: 1, noise: "\n\n") == "linking failed: clang exited 1 and said nothing"
+    assert refusal(what: "linking", code: 1, noise: "ld: symbol(s) not found\n") == "linking failed:\nld: symbol(s) not found\n"
 
 test "the toolchain finds the real runtime and compiles it through system()"
     found = locate_toolchain(hint: "", fingerprint: "port-test")

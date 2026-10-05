@@ -1,0 +1,23 @@
+error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that
+  at tests/golden/full/fixedbugs-338-one-zero-before-a-marker-only-where-it-writes-a-literal.hero:16:9
+     |
+  16 |     a = 00x    #~ leading_zero
+     |         ^^
+  note: `00` stands before `x`, the marker of a base, whose literal opens with one zero: `0x` and its digits
+  note: `0x` is no literal either, so no fix is offered: a hexadecimal literal is written `0x` followed by 0 through 9 and a through f, a `_` only between two of them
+
+error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that
+  at tests/golden/full/fixedbugs-338-one-zero-before-a-marker-only-where-it-writes-a-literal.hero:17:9
+     |
+  17 |     b = 00xg    #~ leading_zero
+     |         ^^
+  note: `00` stands before `x`, the marker of a base, whose literal opens with one zero: `0x` and its digits
+  note: `0xg` is no literal either, so no fix is offered: a hexadecimal literal is written `0x` followed by 0 through 9 and a through f, a `_` only between two of them
+
+error[leading_zero]: `00` starts with a zero, and this language reads no meaning into that
+  at tests/golden/full/fixedbugs-338-one-zero-before-a-marker-only-where-it-writes-a-literal.hero:18:9
+     |
+  18 |     c = 00x7    #~ leading_zero
+     |         ^^
+  note: `00` stands before `x`, the marker of a base, whose literal opens with one zero: `0x` and its digits
+  fix (guess): one zero before `x`: `0`

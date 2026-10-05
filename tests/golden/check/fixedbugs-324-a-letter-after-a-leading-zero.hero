@@ -5,7 +5,11 @@
 # `644u` a name after a number. No fix is offered there now, and a note says
 # why. The letter is still told a second time, `expected_end_of_line`, as it
 # was; the advice is `selfhost/number.hero`'s test of defect 324.
+#
+# 2026-10-05, defect 329, lane b11-misc: the letter is told once. What joins
+# the digits is the refused literal's, said in its note, so the second
+# message, `expected_end_of_line`, is gone from this line.
 
 function main()
-    a = 0644u    #~ leading_zero expected_end_of_line
+    a = 0644u    #~ leading_zero
     print(a)

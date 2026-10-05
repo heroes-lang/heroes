@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 2697b8f9578fc6ba5f47d9138b5220ddf65b1b6c
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b10-cli, 2026-10-04, reproduced on its compiler at `86b29733` (its final reply's *Found beside*), beside 248.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake (the same warning twice).
+
+    Repaired at `2697b8f9`, 2026-10-04 (lane b11-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The shapes beside with this cause were repaired with it: two modules (three copies), the struct-tag round's second pass and its warm replay (three copies each), `--emit-c` (two).

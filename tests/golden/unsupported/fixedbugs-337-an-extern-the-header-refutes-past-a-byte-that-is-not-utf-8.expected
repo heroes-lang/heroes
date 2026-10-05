@@ -1,0 +1,7 @@
+error[ffi_return_type]: `wide_count` returns `int64_t` in `fixedbugs-337-located.h`, not `i32` — clang read the header
+  at tests/golden/unsupported/fixedbugs-337-an-extern-the-header-refutes-past-a-byte-that-is-not-utf-8.hero:17:5
+     |
+  17 |     function wide_count() -> i32  #~ ffi_return_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `wide_count`
+  fix (guess): declare the result `i64`

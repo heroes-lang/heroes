@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 3f032bc7b4a35890406a2ac4a657f25a3ccee832
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b10-cli, 2026-10-04, beside 324, on its compiler at `56cb4513` (its reply after 324).
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake.
+
+    Repaired at `3f032bc7`, 2026-10-05 (lane b11-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The shapes beside with this cause were repaired with it: other letters, a character beyond ASCII and a fraction after the digits, and the literal inside a call's or a list's brackets, where the second message was `expected_args_close` or `expected_separator`.

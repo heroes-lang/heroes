@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-339-a-run-whose-separator-faulted-is-told-once.hero:14:10: error[misplaced_separator]: `_` groups digits, so it goes between two of them
+tests/golden/check/fixedbugs-339-a-run-whose-separator-faulted-is-told-once.hero:15:13: error[misplaced_separator]: `_` groups digits, so it goes between two of them
+tests/golden/check/fixedbugs-339-a-run-whose-separator-faulted-is-told-once.hero:16:11: error[misplaced_separator]: `_` groups digits, so it goes between two of them
+tests/golden/check/fixedbugs-339-a-run-whose-separator-faulted-is-told-once.hero:17:12: error[misplaced_separator]: `_` groups digits, so it goes between two of them

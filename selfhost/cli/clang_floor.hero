@@ -20,6 +20,7 @@ use bytes
 use cli/process
 use cli/publish
 use cli/strings
+use cli/read_back
 
 # THE CLANG FLOOR: 18 (author instruction 2026-09-03, panel 103 — *"if you
 # need to, you can require a recent minimum clang version, whichever you
@@ -106,19 +107,26 @@ function identity(build_dir: str, runtime: str, words: [str]) -> str?
     line: [str] @ strings.with_all(list: ["clang", "-###"], more: words)
     line @ strings.with_all(list: line, more: ["-c", runtime + "/runtime.c", "-o", "identity.o"])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: said_path)
-    said = read_file(said_path)
+
+    # **Read back with every word kept** (`cli/read_back.hero`, defect 337).
+    # The answer names the working directory (`-fdebug-compilation-dir`), and
+    # one byte there that is not UTF-8 made it no answer: the floor went
+    # unchecked and every clang keyed its objects alike, `unanswered`, defect
+    # 122's hazard. A byte is written by its value, so two answers keep apart
+    # unless one spells the six characters `<0xE9>` where the other holds the
+    # byte and they agree on every other byte. clang on Windows ends its lines
+    # `\r\n` (`toolchain.asked_of_clang` has the measurement); the answer is
+    # read as lines ended `\n` where it enters, so the same compiler keys the
+    # same objects whichever way its stream was opened.
+    said = read_back.words(said_path)
     publish.discard(said_path)
 
     if !ran.started
         return fail(code: "none", msg: "clang could not be started")
 
     if said.is_err()
-        return fail(code: "none", msg: "clang said nothing")
-
-    # clang on Windows ends its lines `\r\n` (`toolchain.run_clang` has the
-    # measurement); the answer is normalised where it enters, so the same
-    # compiler keys the same objects whichever way its stream was opened.
-    text = strings.without_returns(said.must())
+        return fail(code: "none", msg: "what clang said could not be read back")
+    text = said.must()
 
     if ran.code != 0
         return fail(code: "none", msg: text)

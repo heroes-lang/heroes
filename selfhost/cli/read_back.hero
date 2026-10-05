@@ -1,0 +1,50 @@
+# What a child process wrote to a file, read back as words a message can
+# quote (defect 337; design.md §4.17, §1.12). clang's error stream, the answer
+# it gives to `-###`, and what a refused round's questions said all come back
+# through a file under `build/`, and every reader of clang's words asks here.
+#
+# **One byte that is not UTF-8 dropped every word** until defect 337: the
+# readers asked `read_file`, which refuses such a file whole, and each took the
+# refusal for silence. clang prints a location's file name as the bytes it was
+# given, measured on Apple clang 21 on this Mac with a header's `#line 1
+# "caf<0xE9>.h"`: an author's extern disagreement became `internal error` at
+# exit 2 over an empty line, a construction the layout check refuses built at
+# exit 0, a tag the second round needed was never learned, and the header's
+# warning was shown nowhere. Each such byte is now written by its value,
+# `<0xE9>`, as `not_text.bytes_written` writes one (defect 241's reading of
+# pkg-config's complaint, `cli/package_answer.hero`), so every marker and
+# every other word survives it.
+#
+# Its own module because `cli/clang_floor.hero` reads clang's answer too, and
+# `cli/toolchain.hero` imports that module: a reader there would be a cycle.
+
+use module/reading
+use not_text
+use cli/strings
+
+# What the child wrote at `path`: its own text where every byte is UTF-8, and
+# where one is not, the text with each such byte written by its value
+# (`not_text.faults_of` records every one of the first nine lines that hold
+# any and the first of each line after, which is what a message quotes); a
+# line ended `\r\n` read as one ended `\n`, as clang on Windows ends them
+# (`toolchain.asked_of_clang` carries the measurement). A failure only where
+# nothing could be read back: no file there, or one that would not read.
+function words(path: str) -> str?
+    read = reading.source_text(path)?
+    return ok(strings.without_returns(not_text.bytes_written(read.text, faults: read.faults)))
+
+## Tests
+
+# Defect 337 at the read: a child's words holding a byte that is not UTF-8,
+# committed as `pkg-config` gave them (defect 241's fixture), come back whole,
+# the byte written by its value. `cli/toolchain.hero` holds the same of the
+# words clang writes for a header whose `#line` names `caf<0xE9>.h`.
+test "words a child wrote with a byte that is not UTF-8 are read back whole, the byte written by its value (defect 337)"
+    said = words("tests/golden/surface-fixtures/notext241/complaint-latin1.txt").must()
+    assert said == "Package caf<0xE9>x was not found in the pkg-config search path.\nPackage 'caf<0xE9>x', required by 'u3', not found\n"
+
+    # Text is itself, a return before a line end is no part of a line, and a
+    # file that is not there is no answer anybody gave.
+    assert !write_file(path: "build/selftest-read-back.txt", text: "one\r\ntwo\n").is_err()
+    assert words("build/selftest-read-back.txt").must() == "one\ntwo\n"
+    assert words("build/selftest-read-back-none.txt").is_err()
