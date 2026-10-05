@@ -125,14 +125,17 @@ function number(@l: state.LexState, text: str)
     leading_zero = run.count > 1 && !run.faulted && text[start] == '0' && !fraction_follows
 
     if leading_zero
-        follows: str @ ""
-
-        if l.pos < text.len()
-            follows @ bytes.char_at(text, l.pos)
-        state.error_token(
-            @l,
-            leading_zeros.told(written: text.slice(from: start, to: l.pos), span: token.Span(start: start, end: l.pos), follows: follows)
+        # **What joins the digits is this literal's, told in its note** (defect
+        # 329): `0644u` and `00x7` were told again, as a name after a number.
+        end = leading_zeros.joined_end(text, at: l.pos)
+        d = leading_zeros.told(
+            written: text.slice(from: start, to: l.pos),
+            span: token.Span(start: start, end: l.pos),
+            rest: text.slice(from: l.pos, to: end)
         )
+        l.pos @ end
+        state.push_diagnostic(@l.diagnostics, d)
+        state.error_token_at(@l, start)
         return
 
     if fraction_follows
@@ -168,7 +171,10 @@ function number(@l: state.LexState, text: str)
         )
         return
 
+    # A faulted run takes what joins it too (defect 339): `1_u` was told the
+    # separator, then its `u` as a name after a number.
     if run.faulted
+        l.pos @ leading_zeros.joined_end(text, at: l.pos)
         state.error_token_at(@l, start)
         return
     state.emit(@l, kind, start)
@@ -457,6 +463,41 @@ test "every fix of a leading zero is a literal the scanner accepts, with the val
         number(@f, faulted)
         assert f.diagnostics.len() == 1
         assert f.diagnostics[0].code == "misplaced_separator"
+
+# Defect 339: a decimal run whose separator faulted takes what joins it, so
+# the letters after it are no token of their own; a method's `.` stays a call.
+test "a run whose separator faulted takes what joins it, and is one message (defect 339)"
+    for written in ["1_u", "0644_u", "00_x7", "1__u8", "1_é", "1_u.5"]
+        l: state.LexState @ state.new_state()
+        number(@l, written)
+        assert l.diagnostics.len() == 1
+        assert l.diagnostics[0].code == "misplaced_separator"
+        assert l.tokens.len() == 1
+        assert l.tokens[0].kind == .error
+        assert l.pos == written.len()
+
+    called: state.LexState @ state.new_state()
+    number(@called, "1_.to_str()")
+    assert called.pos == 2
+
+# Defect 338: one zero before a base's marker is offered exactly where this
+# scanner takes `0`, the marker and what follows them whole, with no mistake.
+# `leading_zeros.based_literal` decides it, and is held here to the scanner's
+# own answer over each shape, so the two readers of the rule cannot drift.
+test "one zero before a marker is offered exactly where the scanner takes what it writes (defect 338)"
+    for after in ["x7", "x", "xg", "x7g", "x7.5", "x_7", "x7_", "x7__7", "xF_F", "b2", "b1_0", "o9", "o17"]
+        scanned: state.LexState @ state.new_state()
+        number(@scanned, "0" + after)
+        clean = scanned.diagnostics.len() == 0 && scanned.tokens.len() == 1 && scanned.tokens[0].kind == .int_lit && scanned.pos == after.len() + 1
+        assert leading_zeros.based_literal("0" + after) == clean
+        zeros: state.LexState @ state.new_state()
+        number(@zeros, "00" + after)
+        assert zeros.diagnostics.len() == 1
+
+        if clean
+            assert zeros.diagnostics[0].fixes.len() == 1
+        else
+            assert zeros.diagnostics[0].fixes.len() == 0
 
 # Defect 325: what follows a leading-zero integer's digits spares it only where
 # it is a fraction. A call, a field, a dot alone and two dots do not, and each

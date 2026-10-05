@@ -66,6 +66,7 @@ use cli/pointee
 use cli/compiling
 use cli/libraries
 use cli/strings
+use cli/read_back
 use parse
 use resolve
 use checker
@@ -126,7 +127,11 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     line @ searched(a, line: line)
     line @ line.push(screen_c)
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
-    said = read_file(err_path)
+
+    # Read back with every word kept (`cli/read_back.hero`, defect 337): one
+    # byte that is not UTF-8 in a header's location left the screen unread,
+    # and a construction this check refuses built at exit 0.
+    said = read_back.words(err_path)
     publish.discard(err_path)
     rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
     publish.discard(depfile)
@@ -215,7 +220,9 @@ function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
     line @ searched(a, line: line)
     line @ line.push(unit)
     ran = process.run(program: "clang", words: line, out: out_path, err: process.discard())
-    json = read_file(out_path)
+
+    # Read back as the screen and the dump are (defect 337).
+    json = read_back.words(out_path)
     publish.discard(out_path)
     said: [str] @ []
 
@@ -238,7 +245,11 @@ function dump(a: Asking, dump_text: str) -> str?
     line @ searched(a, line: line)
     line @ line.push(dump_c)
     ran = process.run(program: "clang", words: line, out: out_path, err: err_path)
-    dumped_text = read_file(out_path)
+
+    # The dump names an anonymous member by where it stands, `(anonymous at
+    # <file>:5:32)`, the file as clang was given it: read back as the screen
+    # is (defect 337), the same byte written the same way at every mention.
+    dumped_text = read_back.words(out_path)
     publish.discard(out_path)
     publish.discard(err_path)
 

@@ -1,2 +1,1 @@
-tests/golden/check/fixedbugs-324-a-letter-after-a-leading-zero.hero:10:9: error[leading_zero]: `0644` starts with a zero, and this language reads no meaning into that
-tests/golden/check/fixedbugs-324-a-letter-after-a-leading-zero.hero:10:13: error[expected_end_of_line]: expected the end of the line, found a name (`u`) — one statement per line, no semicolons
+tests/golden/check/fixedbugs-324-a-letter-after-a-leading-zero.hero:14:9: error[leading_zero]: `0644` starts with a zero, and this language reads no meaning into that

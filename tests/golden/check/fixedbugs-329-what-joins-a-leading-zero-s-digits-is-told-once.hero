@@ -1,0 +1,26 @@
+# fixedbugs, defect 329, lane b11-misc, 2026-10-05.
+#
+# SYMPTOM: a letter after the digits a zero opens, `0644u` or `00x7`, was told
+# twice: `leading_zero` at the digits, whose note already names what follows
+# them, and then the letters as a name after a number, `expected_end_of_line`,
+# or inside brackets `expected_args_close` and `expected_separator`; a
+# character beyond ASCII was `unexpected_character`.
+#
+# CAUSE: the refused literal ended at its digits, so whatever joined them was
+# scanned again as a token of its own.
+#
+# FIX: what joins the digits, letters, digits, separators, characters beyond
+# ASCII and a fraction once something has joined, is the refused literal's
+# (`leading_zeros.joined_end`), told in its note and never again. The two
+# shapes of `fixedbugs-324-*` that pinned the second message moved with it.
+
+function main()
+    a = 0644u8    #~ leading_zero
+    b = 007e3    #~ leading_zero
+    c = 0_7u    #~ leading_zero
+    d = 00b1    #~ leading_zero
+    e = 00x7.5    #~ leading_zero
+    f = 0644é    #~ leading_zero
+    print(0644u)    #~ leading_zero
+    g = [00x7, 1]    #~ leading_zero
+    print(a, b, c, d, e, f, g)

@@ -1,0 +1,23 @@
+# fixedbugs, defect 337, lane b11-misc, 2026-10-04.
+#
+# SYMPTOM: the same header, and a construction of `SA` that leaves out `x`, a
+# field in no union: built at exit 0 with `x` zero, where the header without
+# the `#line` is refused, `missing_fields` at exit 1.
+#
+# CAUSE: the layout check's screen read clang's words with `read_file`, and a
+# screen it could not read vouched for every record.
+#
+# FIX: the screen's words are read through `cli/read_back.hero`, as every
+# other reader of clang's words is.
+
+extern "fixedbugs-337-located.h"
+    record SA
+        kind: i32
+        i: i32
+        f: f32
+        x: i32
+    function sa_f(s: SA) -> f32
+
+function main()
+    b = SA(kind: 2, f: 1.5)  #~ missing_fields
+    print(sa_f(b))

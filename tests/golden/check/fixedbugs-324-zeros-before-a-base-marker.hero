@@ -6,7 +6,11 @@
 # `0x7` once applied. The letters after the zeros are still told a second
 # time, `expected_end_of_line`, as they were; the advice is
 # `selfhost/number.hero`'s test of defect 324.
+#
+# 2026-10-05, defect 329, lane b11-misc: the letters are told once. What
+# joins the zeros is the refused literal's, said in its note, so the second
+# message, `expected_end_of_line`, is gone from this line.
 
 function main()
-    a = 00x7    #~ leading_zero expected_end_of_line
+    a = 00x7    #~ leading_zero
     print(a)

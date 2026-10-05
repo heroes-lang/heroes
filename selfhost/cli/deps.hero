@@ -78,6 +78,7 @@
 # from exactly the files it lists, and a record whose object is not there is
 # a recompile. One line per dependency after it, `<digest> <path>`.
 
+use bytes
 use cli/digest
 use cli/files
 use cli/process
@@ -201,21 +202,31 @@ function paths_of(text: str) -> [str]
 # That is safe by construction rather than by luck: the reader treats
 # anything it cannot parse as not fresh, so such an object is rebuilt
 # every time instead of being served stale.
+#
+# **So is a path that is not UTF-8** (defect 337), which `read_file` refused
+# with the whole listing, telling *clang wrote no dependency listing*. Each such
+# byte reads as U+FFFD, and the path holding one, a name this compiler cannot
+# open, is recorded `absent`, which `fresh_rows` never vouches for.
 function rows_of(depfile: str, skip: str, @memo: {str: str}) -> str?
-    listing = read_file(depfile)
+    listing = file_reading.source_text(depfile)
 
     if listing.is_err()
         return fail(code: "failed", msg: "clang wrote no dependency listing at " + depfile)
     rows: [str] @ []
+    unheld = listing.must().faults.len() > 0
 
     # On Windows a listing's separators are `\` whatever the words said, and
     # `skip` is written with `/` (`under`).
     either = process.exe_suffix() == ".exe"
 
-    for path in paths_of(listing.must())
+    for path in paths_of(listing.must().text)
         if under(path: path, prefix: skip, either: either)
             continue
-        rows @ rows.push(digest_of(path, @memo) + " " + path)
+
+        if unheld && !bytes.rfind(text: path, needle: "�").is_err()
+            rows @ rows.push("absent " + path)
+        else
+            rows @ rows.push(digest_of(path, @memo) + " " + path)
 
     return ok(rows.join("\n"))
 
@@ -508,6 +519,22 @@ test "a record this format did not write vouches for nothing, and does not abort
     for text in ["0123456789abcdeZ\n", "0123456789abcdef", "", "0123456789abcdef runtime/heroes_runtime.h\n", "àààààààààààààààààà\n"]
         assert !write_file(path: dir + "/deps.txt", text: text).is_err()
         assert vouched(dir + "/deps.txt", @memo).is_err()
+
+# Defect 337's row at the listing. clang names a file as it was given, so a
+# listing can hold a byte that is not UTF-8: a header's name on Linux, which
+# this Mac's file system refuses to make, so the listing is committed as those
+# bytes. It reads whole, the files beside the byte are recorded as ever, and
+# the path holding it is `absent`, which vouches for nothing.
+test "a listing naming a path that is not UTF-8 reads whole, and that path vouches for nothing (defect 337)"
+    memo: {str: str} @ {}
+    rows = rows_of(depfile: "tests/golden/surface-fixtures/notext337/listing-latin1.d", skip: "build/", @memo).must()
+    got = lines(rows)
+    assert got.len() == 3
+    assert got[0] == digest_of("runtime/heroes_runtime.h", @memo) + " runtime/heroes_runtime.h"
+    assert got[1] == "absent caf�.h"
+    assert got[2] == digest_of("runtime/runtime.c", @memo) + " runtime/runtime.c"
+    assert !fresh_rows(rows, @memo)
+    assert fresh_rows(got[0] + "\n" + got[2], @memo)
 
 test "text splits into lines, the last one without a newline"
     got = lines("a\nbb\nccc")

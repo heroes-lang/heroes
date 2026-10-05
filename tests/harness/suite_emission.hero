@@ -67,29 +67,29 @@ constant STORE: str
 # and their agreement is what the `check` and `unsupported` suites pin.
 #
 # `fixedbugs/` IS here, and the reason is worth knowing: those cases are
-# wrong FFI bindings, and the thing that refuses them is **clang**, at
-# build time. `--emit-c` never calls clang, so all fourteen emit — measured
-# — and their C is exactly where the two compilers disagreed on a fixed
-# array. They carry no `.expected`, which is why this suite reads the
-# directory itself instead of `cases.collect`: the pairing invariant
-# belongs to the suites whose artifact is a snapshot.
+# wrong FFI bindings, and their C is exactly where the two compilers once
+# disagreed on a fixed array. They carry no `.expected`, which is why this
+# suite reads the directory itself instead of `cases.collect`: the pairing
+# invariant belongs to the suites whose artifact is a snapshot.
 #
-# **THE SENTENCE ABOVE IS FALSE SINCE 2026-09-16 AND ITS SUBSTANCE SURVIVES**
-# (defect 048, panel 157). `--emit-c` DOES call clang now — the pointee check
-# runs on its path, because an artifact emitted before that check is the
-# artifact of a build that never happened, and four of these cases were
-# emitting C that compiled clean and wrote over the adjacent stack slot
-# (design.md §1.12). Those four — `ffi-pointee-opaque`, `-sign`, `-void`,
-# `-width` — are now REFUSED at exit 1 and their blessed files are retired;
-# the loop below treats that as a pass **on the condition that nothing is
-# blessed for them**, so the retirement is what records the decision.
+# **`--emit-c` asks clang before it writes a byte, so most of them have no C**
+# (defect 298). Its artifact is that of a build that passed: the pointee check
+# runs on its path since 2026-09-16 (defect 048, panel 157), because four of
+# these cases emitted C that compiled clean and wrote over the adjacent stack
+# slot (design.md §1.12), and since 2026-09-17 the build's rounds compile every
+# unit with clang before the C is written, and do not link (defect 049,
+# `selfhost/cli/produce.hero`). So a binding clang refuses is refused at exit
+# 1 with no C, 30 of the 38 measured on 2026-10-05, and the loop below passes
+# such a program **on the condition that nothing is blessed for it**: retiring
+# its file is what records the decision. The 8 that emit are bindings clang
+# compiles, `ffi-missing-link` among them, which only a link refuses. What
+# this suite compares is the C of every program whose units clang compiles.
 #
-# What survives is the substance: the rest of `fixedbugs/` still emits,
-# because the tag half of the round is ADVISORY — it asks clang, discards the
-# verdict, and re-emits — so a wrong binding clang would refuse at link time
-# still has C. The premise was *this suite sees C for programs a build
-# rejects*; what changed is that a §1.12 refusal is no longer one of the ways
-# a build may reject them and still hand out the bytes.
+# Until defect 298 (2026-10-05) this comment said `--emit-c` never calls
+# clang, so all fourteen emit, which was measured when written and false from
+# 2026-09-16; then that the round's tag half discards clang's verdict, false
+# from 2026-09-17. The suite's verdicts never rested on either: a refused
+# program with nothing blessed passes by defect 048's rule.
 constant GROUPS: [str]
     [
         "emit"
@@ -250,9 +250,9 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         # THE EXIT CODE FIRST, because a divergence there is the louder
         # finding — the differential's own lesson: three programs got C
         # from the port that does not compile, and comparing only the bytes
-        # would have reported "one file missing" and buried the reason. Every
-        # program in the list above emits, measured, `fixedbugs/` included:
-        # `--emit-c` never calls clang, so a wrong FFI binding still has C.
+        # would have reported "one file missing" and buried the reason. A
+        # program whose units clang compiles emits; one clang refuses exits 1
+        # with no C, as 30 of the 38 in `fixedbugs/` do (`GROUPS` says why).
         #
         # A program this machine cannot emit for a library it lacks is skipped,
         # by name, and floored below. It is the machine's only where the
