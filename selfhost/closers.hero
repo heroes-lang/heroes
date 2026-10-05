@@ -137,11 +137,13 @@ function past_literal(text: str, from: i64) -> i64
 # Whether the innermost bracket open is the `(` right after a `for`, C's
 # three-clause header `for (i = 0; i < n; i++)`, whose `;` are its own and
 # no strays of the program's: the parser tells the header once, at that `(`
-# (`parse/loop_habit.refuse`, defect 194), where each `;` cost a message.
+# (`parse/loop_habit.refuse`, defect 194), where each `;` cost a message. A
+# `;` in a hole opened inside that `(` is the hole's, `for (f"{a; b}")`
+# (defect 312).
 function in_a_for_header(l: state.LexState) -> bool
     n = l.open_brackets.len()
 
-    if n == 0
+    if n == 0 || l.holes.len() > 0 && l.holes[l.holes.len() - 1] >= n
         return false
     open = l.open_brackets[n - 1].start
     i: i64 @ l.tokens.len() - 1

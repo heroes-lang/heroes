@@ -229,8 +229,8 @@ function ident(@l: state.LexState, text: str)
     entry = foreign_at.foreign_word_at(text, span)
 
     # A foreign word a lost quote left outside every string is that quote's
-    # (`lost_quote.hero`): no report and no swap.
-    if !entry.is_err() && lost_quote.lost_in(text, at: start)
+    # (`lost_quote.hero`): no report and no swap. One in a hole is code.
+    if !entry.is_err() && l.holes.len() == 0 && lost_quote.lost_in(text, at: start)
         state.error_token_at(@l, start)
         return
 
@@ -276,8 +276,9 @@ function punct(@l: state.LexState, text: str)
 
     # A character a lost quote left outside every string, a `\` or a `§`
     # its string held, is that quote's, which the literal its line ends in
-    # reports (`lost_quote.hero`).
-    if lost_quote.lost_in(text, at: start)
+    # reports (`lost_quote.hero`). One in a hole is code, the literal's own
+    # closing quote after it on the line no lost one (defect 312).
+    if l.holes.len() == 0 && lost_quote.lost_in(text, at: start)
         state.error_token_at(@l, start)
         return
 

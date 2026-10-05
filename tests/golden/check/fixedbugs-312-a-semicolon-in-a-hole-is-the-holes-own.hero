@@ -1,0 +1,47 @@
+# Fixed defect 312, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 194). Symptom: `for (f"{a; b}")` was told C's three-clause
+# loop header, a header the line does not hold, and the `;` in the string's
+# hole was told nothing. Causes, two: the lexer left a `;` to the loop's
+# report wherever the innermost bracket open was a `for`'s `(`, a hole inside
+# it included (`closers.in_a_for_header`), and the loop's report counted
+# every `;` in its `(` (`parse/loop_habit.c_header`); and a character the
+# lexer refuses inside a hole was taken for one a lost quote left outside
+# every string, since the literal's own closing quote stands after it on the
+# line (`lost_quote.lost_in`), so it was told nothing anywhere: `x = f"{a;
+# b}"` checked clean and printed `1`, and `f"{a + int}"` checked clean and
+# stopped the build at the verifier, exit 2. Repair: a `;` or a foreign word
+# inside a hole is the hole's own, told where it stands, and the loop's
+# report counts no `;` of a hole. The shapes: the `for (` alone, with an
+# `in`, around a real header, in a hole inside a hole, a `;` written as the
+# string's text, and the hole outside any loop, a `;` and a foreign word.
+
+function in_a_for(a: i64, b: i64)
+    for (f"{a; b}")  #~ for_missing_in unexpected_character
+        print(1)
+
+function after_an_in(a: i64, b: i64)
+    for (x in f"{a; b}")  #~ for_missing_in unexpected_character
+        print(x)
+
+function inside_a_real_header(a: i64, b: i64)
+    for (i = 0; f"{a; b}"; i++)  #~ for_missing_in unexpected_character
+        print(i)
+
+function a_hole_in_a_hole(a: i64, b: i64)
+    for (f"{f"{a; b}"}")  #~ for_missing_in unexpected_character
+        print(1)
+
+function as_the_strings_text()
+    for ("a; b")  #~ for_missing_in
+        print(1)
+
+function outside_a_loop(a: i64, b: i64)
+    x = f"{a; b}"  #~ unexpected_character
+    print(x)
+
+function a_foreign_word(a: i64)
+    x = f"{a + int}"  #~ reserved_word
+    print(x)
+
+function main()
+    print(1)
