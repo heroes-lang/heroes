@@ -400,14 +400,10 @@ HeroStr hero_str_try_from_cstr(const char *p, int64_t *status) {
    nothing. `read_file` answers `not_text` on bad UTF-8 and so does this; a
    sitting that invented a different answer would have been spending tokens on a
    contradiction. */
-HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
-    if (p == NULL) {
-        *status = HERO_STR_NULL;
-        return hero_str_empty();
-    }
-    if (cap < 0) hero_panic("hero_str_try_from_bytes: negative capacity");
-    const void *zero = memchr(p, 0, (size_t)cap);
-    int64_t len = (zero == NULL) ? cap : (int64_t)((const char *)zero - p);
+/* The one walk both readers of a run of bytes share: `len` bytes judged as
+ * UTF-8, then copied, the block marked when they hold a NUL. */
+static HeroStr hero_str_try_from_run(const char *p, int64_t len, bool may_hold_nul,
+                                     int64_t *status) {
     if (!hero_utf8_valid(p, len)) {
         *status = HERO_STR_NOT_TEXT;
         return hero_str_empty();
@@ -416,14 +412,35 @@ HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
     if (len == 0) return hero_str_empty();
     HeroStr r = hero_str_alloc(len);
     memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);
+    if (may_hold_nul && memchr(p, 0, (size_t)len) != NULL) hero_str_mark_nul(r);
     return r;
 }
 
-/* **The same, over a `[u8]` this language owns** (panel 162). It exists rather
-   than the emitter composing `hero_array_at` with the function above, for one
-   measured reason: `hero_array_at` ABORTS out of range, so the composition needs
-   a length guard at every call site and an empty array is exactly the shape that
-   trips it. One function, one guard, written once.
+HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
+    if (p == NULL) {
+        *status = HERO_STR_NULL;
+        return hero_str_empty();
+    }
+    if (cap < 0) hero_panic("hero_str_try_from_bytes: negative capacity");
+    const void *zero = memchr(p, 0, (size_t)cap);
+    int64_t len = (zero == NULL) ? cap : (int64_t)((const char *)zero - p);
+    return hero_str_try_from_run(p, len, false, status);
+}
+
+/* **Over a `[u8]` this language owns, the WHOLE array** (panel 162; defect
+   354, 2026-10-05). It exists rather than the emitter composing
+   `hero_array_at` with a reader of bytes, for one measured reason:
+   `hero_array_at` ABORTS out of range, so the composition needs a length guard
+   at every call site and an empty array is exactly the shape that trips it.
+   One function, one guard, written once.
+
+   **It does not stop at a zero, where the field's reader above does.** A C
+   field is C's, and C need not terminate it, so what follows its first zero
+   is not text. A `[u8]` is the program's own data, every byte of it put there
+   on purpose, and under panel 192's R1 a `str` holds a NUL: until defect 354,
+   `[97, 0, 98]` answered a `str` of one byte at exit 0, and a byte that is not
+   text after the zero was never judged. So every byte is judged and copied,
+   and a zero among them marks the block, so the lend stops it.
 
    The element width is not checked here and that is the checker's job, not
    this one's: `check/lending.hero`'s `byte_run` asks the VALUE's element width
@@ -438,7 +455,7 @@ HeroStr hero_str_try_from_array(const HeroArrayHeader *a, int64_t *status) {
         *status = HERO_STR_OK;
         return hero_str_empty();
     }
-    return hero_str_try_from_bytes((const char *)hero_array_at(a, 0), n, status);
+    return hero_str_try_from_run((const char *)hero_array_at(a, 0), n, true, status);
 }
 
 /* **A `cstr` on its way INTO C, checked** (panel 053; CLAUDE.md §12's robustness
