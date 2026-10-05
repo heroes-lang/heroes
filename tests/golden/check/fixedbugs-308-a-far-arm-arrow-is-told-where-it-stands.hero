@@ -1,0 +1,80 @@
+# Fixed defect 308, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 195). Symptom: an arm whose `=>` stands further along its
+# line than the reader looked, `1 2 => 1`, was told `expected_arm_arrow` at
+# the `2` with no word of the `=>` the author wrote. Cause: the message named
+# what stood where the arrow is owed and nothing past it. Repair: where a
+# `=>` stands further along the line, outside brackets, the message says
+# where, and that what stands before it is no pattern, an arm's patterns
+# being joined by `|` (`parse/broken_arm.arrow_along`). The shapes: two
+# patterns, `->` before it, far, padded, a block value, a `,`, two arrows, a
+# guard, `or`, a case and two names, and no `=>` on the line, or none at
+# all, told as before.
+
+variant C
+    red
+        v: i64
+    blue
+
+function two_patterns(n: i64) -> i64
+    k = match n
+        1 2 => 1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function an_arrow_before(n: i64) -> i64
+    k = match n
+        1 -> 2 => 1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function far(n: i64) -> i64
+    k = match n
+        1 2 3 4 => 1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function padded(n: i64) -> i64
+    k = match n
+        1   2   =>   1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function a_block_value(n: i64) -> i64
+    k = match n
+        1 2 =>  #~ expected_arm_arrow
+            1
+        _ => 0
+    return k
+
+function a_comma(n: i64) -> i64
+    k = match n
+        1, 2 => 1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function a_guard(n: i64) -> i64
+    k = match n
+        1 if n > 0 => 1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function or_between(n: i64) -> i64
+    k = match n
+        1 or 2 => 1  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function a_case_and_two_names(c: C) -> i64
+    k = match c
+        .red x y => 1  #~ expected_arm_arrow
+        .blue => 0
+    return k
+
+function no_arrow_on_the_line(n: i64) -> i64
+    k = match n
+        1 2  #~ expected_arm_arrow
+        _ => 0
+    return k
+
+function main()
+    print(two_patterns(1))
