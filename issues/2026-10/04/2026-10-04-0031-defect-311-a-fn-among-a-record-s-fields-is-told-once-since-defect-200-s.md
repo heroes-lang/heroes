@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 627c64db4fcb72d848aa2891419b22ca812dd34c
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a true message that lost a route it carried; batch 9's own change, read at its gate.
 
     **Cause found 2026-10-04, lane b11-parse**: the one message is the lexer's `reserved_word`, whose words `foreign_at.misplaced` writes for a place it reads as a body or another declaration (`selfhost/foreign_at.hero`), and `parse/heads.next_member` stays silent where the lexer spoke (`7831aec7`). One message carrying *taking the record as a parameter* needs the lexer's words to name the route, or the parser's message to replace the lexer's where the two meet (`selfhost/parse.hero`, `parse/unclosed.withdrawn`), none of them this lane's files. Not repaired.
+
+    Repaired at `627c64db`, 2026-10-05 (lane b11-parse, its files widened to `foreign_at.hero` that day): the lexer's one message names the holder and the route; gated by its cases and the compiler's own tests; the net is owed at the batch's close.
