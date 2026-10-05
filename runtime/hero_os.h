@@ -207,7 +207,14 @@ int64_t hero_fs_rename(const char *from, const char *to);
  * and 0 after one that succeeded. `hero_run_why`'s counterpart for the files a
  * build writes (defect 134): a publish that failed said *cannot publish* and
  * nothing else, where the number separates a full disk, a read-only directory
- * and a file another process holds open. `parts/os.c` holds it. */
+ * and a file another process holds open. `parts/os.c` holds it.
+ *
+ * **Below zero it is the runtime's own reason**, the negation of the number
+ * the system gives for that reason: a path refused before any system call
+ * (empty, or past HERO_FS_PATH_MAX), a link's chain past forty or its target
+ * not UTF-8, a name the wide API cannot be handed. No system answers below
+ * zero, so the sign alone says whose reason it is; until defect 346 these
+ * were set as the system's own numbers, and told as the system's. */
 int64_t hero_fs_why(void);
 
 /* REPLACING A FILE WHOSE NAME THE AUTHOR GAVE, WHOLE OR NOT AT ALL (defect

@@ -127,11 +127,11 @@ int64_t hero_fs_mkdir_all(const char *path) {
     hero_fs_why_code = 0;
     size_t length = strlen(path);
     if (length == 0) {
-        hero_fs_why_code = (int64_t)ENOENT;
+        hero_fs_why_code = -(int64_t)ENOENT;
         return HERO_OS_FAILED;
     }
     if (length >= HERO_FS_PATH_MAX) {
-        hero_fs_why_code = (int64_t)ENAMETOOLONG;
+        hero_fs_why_code = -(int64_t)ENAMETOOLONG;
         return HERO_OS_FAILED;
     }
 
@@ -251,7 +251,7 @@ int64_t hero_fs_remove(const char *path) {
      * are a refusal, never the *not there* that is success here. */
     wchar_t *wide = hero_win_wide(path, NULL);
     if (wide == NULL) {
-        hero_fs_why_code = (int64_t)ERROR_NO_UNICODE_TRANSLATION;
+        hero_fs_why_code = -(int64_t)ERROR_NO_UNICODE_TRANSLATION;
         return HERO_OS_FAILED;
     }
     int64_t removed = hero_fs_remove_wide(wide);
