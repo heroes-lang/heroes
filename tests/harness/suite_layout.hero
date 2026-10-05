@@ -532,6 +532,11 @@ constant LEAST: i64
 # `state.push_bracket` joined them for the brackets open (defect 344,
 # 2026-10-05): 8,000 lines each leaving a bracket open copied the stack of
 # every one open below it, and the lexer cost the square of its openers.
+# And a list of reports grown through a field place, whatever holds it,
+# `r.out.diagnostics @ r.out.diagnostics.push(d)` (defects 146 and 350,
+# 2026-10-05): the parser's, the resolver's, the checker's and the
+# lowering's grow by one per report, and each push copied every one before
+# it (`reports_through_a_field`).
 constant SLOW_APPENDS: [str]
     [
         "l.tokens @ l.tokens.push("
@@ -649,7 +654,7 @@ function run_all(scratch: str, only: str) -> report.Report?
             report.keep_failure(
                 @r,
                 label: "layout/appends",
-                detail: "  the lexer's growing arrays are appended through `state.push_token(@l.tokens, t)` and `state.push_diagnostic(@l.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defect 103, design.md Part 8 wart 8):\n" + slow.join("\n")
+                detail: "  the lexer's growing arrays and every list of reports are appended through a helper the array is lent to, `state.push_token(@l.tokens, t)`, `state.push_diagnostic(@l.diagnostics, d)`, `cursor.say(@c, d)` or an `append_diagnostic(@r.out.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defects 103 and 350, design.md Part 8 wart 8):\n" + slow.join("\n")
             )
         else
             report.keep_pass(@r)
@@ -765,11 +770,27 @@ function slow_appends(path: str, text: str) -> [str]
         if strings.starts_with(text: code, prefix: "#")
             continue
 
+        hit: bool @ reports_through_a_field(code)
+
         for needle in SLOW_APPENDS
             if strings.contains(text: code, needle: needle)
-                out @ out.push("    " + path + ":" + at.to_str() + ": " + code)
+                hit @ true
+
+        if hit
+            out @ out.push("    " + path + ":" + at.to_str() + ": " + code)
 
     return out
+
+# Whether a line of code grows a list of reports through a field place,
+# `x.diagnostics @ x.diagnostics.push(`, whatever holds the list.
+function reports_through_a_field(code: str) -> bool
+    at = strings.index_of(text: code, needle: " @ ")
+
+    if at.is_err()
+        return false
+    place = code.slice(from: 0, to: at.must())
+    rest = code.slice(from: at.must() + 3, to: code.len())
+    return strings.contains(text: place, needle: ".") && strings.ends_with(text: place, suffix: "diagnostics") && strings.starts_with(text: rest, prefix: place + ".push(")
 
 # The lines a reader must hold in their head: everything outside a `test`
 # block, AND NOT A BLANK LINE.
@@ -989,6 +1010,11 @@ test "an append to the lexer's state through the field is found, and one in a co
         text: "    l.open_brackets @ l.open_brackets.push(span)\n    push_bracket(@l.open_brackets, span)\n"
     )
     assert opened.len() == 1
+    reports = slow_appends(
+        path: "z.hero",
+        text: "    r.out.diagnostics @ r.out.diagnostics.push(d)\n    append_diagnostic(@r.out.diagnostics, d)\n"
+    )
+    assert reports.len() == 1
 
 # Defect 105's check, both ways: a growth no allowance names fails, one it
 # names passes, and an allowance no growth matches fails as stale.
