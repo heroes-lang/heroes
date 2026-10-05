@@ -97,14 +97,27 @@ constant NAME_KEPT: i64
 # length after the Windows box's crash of 2026-10-04, read back by every later
 # build as what clang said. `files.stage` writes, flushes and only then answers,
 # as `runtime/parts/replace.c` does for the author's own files, and a failed
-# stage leaves no file behind.
+# stage leaves no file behind. **It never opens a name that is taken**, where
+# `write_file` emptied it: a private name a killed build left behind is this
+# process's own name only by a pid used again, so it is passed over for the
+# next, a few times and no more.
 function write_whole(path: str, text: str, keyed: bool) -> ()?
-    staged = private_name(path)
-    made = files.stage(staged: staged, text: text, like: "")
+    staged: str @ private_name(path)
+    made: ()? @ files.stage(staged: staged, text: text, like: "")
+    tries: i64 @ 1
+
+    while made.is_err() && process.path_exists(staged) && tries < STAGE_TRIES
+        staged @ private_name(path)
+        made @ files.stage(staged: staged, text: text, like: "")
+        tries @ tries + 1
 
     if made.is_err()
         return fail(code: "not_written", msg: "cannot write " + path + message_of(made))
     return publish(staged: staged, path: path, keyed: keyed)
+
+# How many private names one write asks for before it says it cannot write.
+constant STAGE_TRIES: i64
+    4
 
 # Move a finished private file into place as `path`. The failure that is
 # accepted is asked of the destination rather than of the reason: a keyed
@@ -305,6 +318,28 @@ test "a publish replaces what was there with the whole of what was written, and 
     assert !write_whole(path: dir + "/target", text: "NEW", keyed: false).is_err()
     assert read_file(dir + "/target").must() == "NEW"
     assert process.files_under(dir).must() == [dir + "/target"]
+
+# Defect 357's repair stages through `files.stage`, which never opens a name
+# that is taken: the name a killed build left, met again under a pid used
+# again, is passed over and left as it was, and the write lands whole.
+test "a private name a killed build left behind is passed over and never written into (defect 357)"
+    dir = "build/selftest-publish-stale"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    target = dir + "/kept.txt"
+    asked = private_name(target)
+    serial: i64 @ 0
+    at: i64 @ (target + "." + process.pid().to_str() + "-").len()
+
+    while at < asked.len() - 4
+        serial @ serial * 10 + (asked[at] - '0').to_i64().must()
+        at @ at + 1
+
+    left = target + "." + process.pid().to_str() + "-" + (serial + 1).to_str() + ".tmp"
+    assert !write_file(path: left, text: "LEFT BY A KILLED BUILD").is_err()
+    assert !write_whole(path: target, text: "NEW", keyed: true).is_err()
+    assert read_file(target).must() == "NEW"
+    assert read_file(left).must() == "LEFT BY A KILLED BUILD"
 
 # A rename that fails on every platform with a file already at the
 # destination: a staged name nothing was written to. The destination is the
