@@ -14,5 +14,5 @@ tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.h
 tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.hero:22:14: error[expected_expression]: expected an expression, found `,` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
 tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.hero:23:12: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.hero:24:14: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
-tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.hero:24:16: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.hero:24:16: error[expected_end_of_line]: expected the end of the line, found `) )` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-130-a-closer-one-too-many-past-a-failed-statement.hero:25:14: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

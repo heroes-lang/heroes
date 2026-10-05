@@ -41,6 +41,7 @@
 # A leaf: nothing here reads the parser.
 
 use token
+use text_lines
 use cursor
 use word_place
 use state
@@ -216,17 +217,54 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
             while at >= 0 && token.closer_of(open[at]) != k
                 at @ at - 1
 
+            run = stray_run(c, text, at: i)
+
             if at >= 0
                 open @ open.slice(from: 0, to: at)
             else if open.len() == 0 && i >= c.pos && !line_end.said_at(c, at: i, said: 0)
                 cursor.error(
                     @c,
                     code: "expected_end_of_line",
-                    message: "expected the end of the line, found `" + cursor.slice_of(text, c.tokens[i].span) + "` — one statement per line, no semicolons",
-                    span: c.tokens[i].span
+                    message: "expected the end of the line, found `" + cursor.slice_of(text, run) + "` — one statement per line, no semicolons",
+                    span: run
                 )
                 return
+            else if open.len() == 0 && i >= c.pos && told_to(c, at: i) >= run.end
+                while c.tokens[i + 1].span.end <= run.end
+                    i @ i + 1
         i @ i + 1
+
+# The closers from token `at` on, one after another on its line: a run of
+# strays told at once, since past the first, which closes nothing the line
+# opened, none does (defect 306); any other token alone.
+function stray_run(c: cursor.Cursor, text: str, at: i64) -> token.Span
+    last: i64 @ at
+
+    while token.is_closer(c.tokens[at].kind) && token.is_closer(c.tokens[last + 1].kind) && text_lines.newlines_between(text, from: c.tokens[last].span.end, to: c.tokens[last + 1].span.start) == 0
+        last @ last + 1
+
+    return token.Span(start: c.tokens[at].span.start, end: c.tokens[last].span.end)
+
+# What a line's reader names at the token under the cursor, `found` where it
+# stands alone, or the run of strays it begins (`stray_run`).
+function found_run(c: cursor.Cursor, text: str, found: str) -> str
+    run = stray_run(c, text, at: c.pos)
+
+    if run.end == cursor.current_span(c).end
+        return found
+    return "`" + cursor.slice_of(text, run) + "`"
+
+# Where the last report said that begins at the token `at` ends, or -1: a
+# walk back from the last, which finds one said on the line in hand at once.
+function told_to(c: cursor.Cursor, at: i64) -> i64
+    i: i64 @ c.diagnostics.len() - 1
+
+    while i >= 0 && c.diagnostics[i].span.start != c.tokens[at].span.start
+        i @ i - 1
+
+    if i < 0
+        return -1
+    return c.diagnostics[i].span.end
 
 # Move past the braces the `{` under the cursor opens, and past their `}` and
 # its line end, which goes with it as a dedent's does; or, where the lexer

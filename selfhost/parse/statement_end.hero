@@ -105,8 +105,8 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         cursor.error(
             @c,
             code: "expected_end_of_line",
-            message: "expected the end of the line, found " + refused_literal.found(c, text) + " — " + loop_habit.past_a_statement(c, text, from: from),
-            span: cursor.current_span(c)
+            message: "expected the end of the line, found " + brace_habit.found_run(c, text: text, found: refused_literal.found(c, text)) + " — " + loop_habit.past_a_statement(c, text, from: from),
+            span: brace_habit.stray_run(c, text, at: c.pos)
         )
     brace_habit.skip_line(@c, text)
 

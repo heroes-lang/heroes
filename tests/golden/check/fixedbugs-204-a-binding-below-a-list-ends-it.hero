@@ -68,3 +68,7 @@ function main()
     x = [1, 2
     print(x)
     y = 3
+
+# Moved 2026-10-05 with defect 306's repair (lane b12-parse12): `two_lists`'
+# two closers are one run of strays past the binding, told at once, `))`,
+# where the first was told and the second only once it went.
