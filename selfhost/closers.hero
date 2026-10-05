@@ -231,14 +231,17 @@ function never_closed(text: str, span: token.Span) -> diag.Diagnostic
 # The report of the opener at `span`, still open at the line `line`, whose
 # first word `word` ended its reach (`bracket_reach.end_the_reach`): a word no
 # bracket can hold there (panel 183 R1), or, where `name`, a name after a
-# line that kept its end inside a `(` (R2). Not *never closed*: nothing
-# closed what the opener stands in, and a closer further down may be the one
-# the author wrote for it, a statement inside the bracket (R3, the author's
-# route (b), 2026-10-01).
-function still_open(text: str, span: token.Span, line: i64, word: str, name: bool) -> diag.Diagnostic
+# line that kept its end inside a `(` (R2); or, where `header`, where C's
+# `for` header the `(` opened is over (defect 302). Not *never
+# closed*: nothing closed what the opener stands in, and a closer further
+# down may be the one the author wrote for it, a statement inside the
+# bracket (R3, the author's route (b), 2026-10-01).
+function still_open(text: str, span: token.Span, line: i64, word: str, name: bool, header: bool) -> diag.Diagnostic
     why: str @ "`" + word + "` begins a line no bracket can hold"
 
-    if name
+    if header
+        why @ "C's `for` header it opened is over"
+    else if name
         why @ "the name `" + word + "` begins a line after one that ended without a `,`"
     return diag.new_diagnostic(
         code: "unclosed_bracket",

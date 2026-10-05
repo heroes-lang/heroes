@@ -98,6 +98,10 @@ function opens_here(c: cursor.Cursor, text: str) -> bool
 # that one counts for a type or an arm's value and this one leaves to the
 # body a `{` may open there; kept as a copy here until defect 196.
 function opens_a_value(c: cursor.Cursor, at: i64) -> bool
+    # One the lexer laid out opens a body, past what it read before it: the
+    # `{` that ends C's `for` header, `i++ {` (defect 302).
+    if laid_braces.laid_out_by_lexer(c, open: at)
+        return false
     i: i64 @ at - 1
 
     while i > 0 && c.tokens[i].kind == .comment

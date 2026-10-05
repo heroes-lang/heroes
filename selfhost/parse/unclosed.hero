@@ -305,18 +305,26 @@ function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
 # one token (defect 131's class, 2026-09-30). At a `(` or a `[` the parser's
 # message may be another mistake, `function (a: i64` missing its name, and
 # both stand.
+#
+# And a `(` the parser told C's `for` header at, whose `)` left out is that
+# header's, which the report says to rewrite whole (defect 302).
 function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
 
     for d in lexed
-        if !(d.code == "unclosed_bracket" && cursor.slice_of(text, d.span) == "{" && spoken_at(said, at: d.span.start))
+        opener = cursor.slice_of(text, d.span)
+        brace = opener == "{" && spoken_at(said, at: d.span.start, code: "")
+        header = opener == "(" && spoken_at(said, at: d.span.start, code: "for_missing_in")
+
+        if !(d.code == "unclosed_bracket" && (brace || header))
             out @ out.push(d)
 
     return out
 
-function spoken_at(said: [diag.Diagnostic], at: i64) -> bool
+# Whether a report of `said`, of `code` where it names one, begins at `at`.
+function spoken_at(said: [diag.Diagnostic], at: i64, code: str) -> bool
     for d in said
-        if d.span.start == at
+        if d.span.start == at && (code == "" || d.code == code)
             return true
 
     return false
