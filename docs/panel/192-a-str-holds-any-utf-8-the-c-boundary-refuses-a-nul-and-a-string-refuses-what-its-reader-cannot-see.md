@@ -403,3 +403,37 @@ sitting named.
 **What it does not settle**: R6's run on the Windows box, owed whatever the
 answer, and what only the landing measures. The landing is defects 245 and
 283 and the items R12 filed, in the batch after batch 11.
+
+## The fifth blind arm, run 2026-10-05
+
+Funded by the author's ratification of that day and run by the coordinator
+from 16:48:01 to 16:51:35 by the clock: five sessions, 0.9317 USD by the
+CLI's report, 0.1648 left of the 5 USD cap. Its specification is the base's
+with route (d)'s words as R8 gives them, s1-mix, s2-d with the critic's three
+repairs, and r1 (`192-briefs/blind/spec-d.diff`); R1's sentences at `:64` and
+`:382` and the two failure codes are not in it, since the task reaches none of
+them. Its task needs U+00E9 and U+200B, both of which a string holds raw under
+R2, so R5 refuses `\u{e9}` and `\u{200b}`. Its brief, scorer and run are
+`192-briefs/blind/brief-d.md`, `score-d.py` and `run-d.sh`; the five reports
+are `192-reports/llm-ergonomist-d.md`.
+
+- **4 of 5 pass** under R5 as the landing will apply it, each printing
+  `63 61 66 c3 a9 e2 80 8b 21 0a` at exit 0. All five write `é` raw. Four
+  write U+200B raw, each saying in its `choice_points` that it chose to; d2
+  writes `\u{200b}`, which R5 refuses with a `guess` fix to the raw character.
+- **Against what the scorer registered before the first session**: *`é` raw
+  in at least 4 of 5*, read 5 of 5, true; *`\u{200b}` in at least 2 of 5*,
+  read 1 of 5, false; *at most 3 of 5 pass*, read 4, false. R5's restriction
+  cost one writer in five on this task, and the mistake that one made is a
+  compile error under R5.
+- **What all five named**: whether s1-mix's *raw control character* covers
+  U+200B, a format character (Cf) and not a control (Cc). Four read it as Cc;
+  d2 read it the wider way. R5 rests on which characters a string refuses
+  raw, and s1-mix leaves that class to the reader, so R8's wording, priced at
+  the landing, is where it is answered: the class by name, as R2 has it, or a
+  sentence saying a format character is held raw. Under R2 as ratified, d2's
+  reading is the wrong one; under s1-mix's words alone the text allows it.
+- **Context**: each session answers that only `brief.md` and `spec.md` were
+  read, beside the harness's own system prompt and the account's email,
+  attached by the CLI, as arms A, R, B and C answered on 2026-10-04; no
+  project rule, contract or memory.
