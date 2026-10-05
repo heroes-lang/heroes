@@ -122,7 +122,7 @@ function main()
     compiler: str @ ""
 
     if given.len() > 0
-        compiler @ given[0]
+        compiler @ shell.started_as(given[0])
     else
         found = shell.some_compiler()
 
