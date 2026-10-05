@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: 122633b0c12c484b93ef56905b38db095e3b9e31
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-misc, 2026-10-05, beside defect 298's repair (its final report, *Found beside*).
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a comment that is false of the compiler, no message or program moving.
+
+    Repaired at `122633b0`, 2026-10-05 (lane b11-misc), gated by the compiler's own tests and `layout`; the net is owed at the batch's close.
