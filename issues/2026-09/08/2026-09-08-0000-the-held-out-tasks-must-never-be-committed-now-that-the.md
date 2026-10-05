@@ -7,7 +7,7 @@ commit: none
 github: none
 ---
 
-- [ ] **M-guide-book** | the held-out tasks must never be committed, now that the repository is public | `harness/tasks/README.md` · `design.md` Part 11
+- [ ] **M-guide-book** | the held-out tasks must never be committed, now that the repository is public | `docs/metrics/tasks.md` · `design.md` Part 11
 
     **Origin:** M-open-repository, 2026-09-08, and nobody had written it down.
 
@@ -19,7 +19,7 @@ github: none
     and the five assistant drafts were pruned on 2026-08-03.
 
     Owed at the moment the first task is written: a home outside this
-    repository, and a line in `harness/tasks/README.md` naming it. What can be
+    repository, and a line in `docs/metrics/tasks.md` naming it. What can be
     committed is the grading and the provenance, which say nothing about the
     task's content.
 

@@ -65,7 +65,10 @@ names**, `docs/ROADMAP.md` and `docs/design.md`; **every folder is a collection
 of one kind**: `roadmap/` what a row of the chain cannot hold, with
 `milestones/` one page per milestone; `learn/` the questions by day and its
 `glossary/`; `platforms/` the Linux and Windows machines; `assets/` the front
-page's pictures; `measurements/`, `panel/` and `records/` the account. A folder
+page's pictures; `metrics/` design.md Part 11's instruments, the operator table,
+the frozen prompt and the task suite's rules, which were the top-level
+`harness/` until 2026-10-05; `measurements/`, `panel/` and `records/` the
+account. A folder
 holding one file, or files of unrelated kinds, is the shape this rule refuses:
 until 2026-10-05 `docs/design/` held `design.md` alone, `DESIGN-LOG.md` deleted,
 and until 2026-10-05 `docs/ref/` held the pictures, the machines and the glossary.

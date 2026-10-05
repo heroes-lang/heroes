@@ -23,7 +23,7 @@
 # Scoping is by span containment in the function's body rather than by a tree
 # walk, so this file names no expression case it does not touch.
 #
-# BLIND BY DESIGN, and the row in `harness/mutations/operators.md` says so: a
+# BLIND BY DESIGN, and the row in `docs/metrics/operators.md` says so: a
 # handle reached through a field path (`db.handle`), an untyped `=` binding
 # (`handle = curl_easy_init()`), and a UFCS receiver. The ledger's own binding
 # wraps its handles in records and so hides 17 of its 18 sites from this

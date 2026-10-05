@@ -3,6 +3,12 @@
 Methodology (arms, sample sizes, grading, metrics): **design.md Part 11** —
 the single source; this file only points and states what is pending.
 
+Until 2026-10-05 this was the top-level `harness/`, one folder per file, and
+its name collided with `tests/harness/`, which is the net. It is `docs/metrics/`
+since, one collection of one kind (`.claude/rules/records.md` § The top of
+`docs/`); a record citing the old paths is followed by the `MOVED` table of
+`tests/harness/suite_records.hero`.
+
 **Metric 1 is done and offline**: `heroes measure` counts the spec with two
 vendored BPE tables (`vendor/tokenizers/`), no API key, and the maximum over the
 two is what binds. **The ceiling this line named was 3000 until 2026-09-08**,
@@ -28,11 +34,12 @@ by construction, so it carries no information.
 
 ## Layout
 
-- `prompts/first-try.md` — the frozen prompt template (metric 2):
+- `first-try.md` — the frozen prompt template (metric 2):
   single-turn, spec-only context, hashed.
-- `mutations/operators.md` — metric 3's operators as data; applied
+- `operators.md` — metric 3's operators as data; applied
   mechanically to the golden corpus, per-operator kill rate; no API needed.
-- `tasks/` — the frozen task suite (see its README for authorship rules).
+- `tasks.md` — the frozen task suite's rules: who writes a task, and where
+  the tasks live, which is not this repository.
 
 Provenance, on every run: spec sha, compiler sha, model id, prompt sha,
 suite sha, recorded into `docs/measurements/<NNN>.md` (directory born with the

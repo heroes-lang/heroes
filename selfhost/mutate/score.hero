@@ -7,7 +7,7 @@
 # the design worked. One it **accepts** is SURVIVED, and that is a silent wrong
 # program, which the thesis says should not exist.
 #
-# THREE RULES FROM `harness/mutations/operators.md`, and they are what makes the
+# THREE RULES FROM `docs/metrics/operators.md`, and they are what makes the
 # number mean anything:
 #
 # 1. the operators are data, not code — `mutate_ops` is that list;

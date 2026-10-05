@@ -1,8 +1,12 @@
 # Task suite — metric 2
 
 Target: 20 frozen tasks, author-confirmed. Format: one file per task,
-`NN-slug.md`, containing only the task prose a model would receive (no
-solutions here — graders live in the goldens once the compiler exists).
+`NN-slug.md`, **held outside this repository**, which is public since
+2026-09-08: committing a held-out task is the act that burns it
+(`issues/2026-09/08/2026-09-08-0000-the-held-out-tasks-must-never-be-committed-now-that-the.md`,
+which also owes the line naming that home). A task file holds only the task
+prose a model would receive (no solutions there — graders live in the goldens
+once the compiler exists).
 
 Guidelines (panel 000): tasks must be solvable from the spec alone, span the
 surface (records, variants+match, `T?`+`?`, `@` parameters, loops, maps,
