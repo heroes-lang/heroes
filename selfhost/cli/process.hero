@@ -150,15 +150,15 @@ function mkdir_all(path: str) -> ()?
         return fail(code: "mkdir_failed", msg: "could not create the directory " + path + because())
     return ok()
 
-# What the operating system said about the last filesystem call on this
-# thread that failed, as the clause every refusal here ends with.
+# The clause a refusal here ends with, from this thread's last failed
+# filesystem call (`hero_os.h`, `hero_fs_why`): the system's own number, or
+# below zero the runtime's, told as the system's until defect 346.
 function because() -> str
-    return ": the operating system's own reason is " + fs_why().to_str()
+    why = hero_fs_why()
 
-# That number itself: `errno`, or `GetLastError()` on Windows, 0 after a
-# call that succeeded (`hero_os.h`, `hero_fs_why`).
-function fs_why() -> i64
-    return hero_fs_why()
+    if why < 0
+        return ": the runtime refused it before the system was asked, for the reason the system numbers " + (0 - why).to_str()
+    return ": the operating system's own reason is " + why.to_str()
 
 function path_exists(path: str) -> bool
     return hero_fs_exists(path: path.cstr()) == 1
@@ -484,6 +484,34 @@ test "a file whose name is not UTF-8 is named by its bytes, and the walk never p
         assert walked.unnamed.len() == 0
     assert !remove_tree(dir).is_err()
     assert !path_exists(dir)
+
+# Defect 346: a refusal the runtime makes itself, before any system call, is
+# told as the runtime's, never as *the operating system's own reason*: an
+# empty path and one past `HERO_FS_PATH_MAX` are refused before `mkdir` is
+# asked. A path under a file is the system's refusal, and is told as its.
+test "a refusal the runtime makes itself is told as its own, never as the operating system's (defect 346)"
+    long: str @ "build/"
+
+    for _ in range(from: 0, to: 5000)
+        long @ long + "a"
+
+    for refused in ["", long]
+        match mkdir_all(refused)
+            .ok _ => assert false
+            .err e =>
+                assert holds(
+                    text: e.msg,
+                    needle: ": the runtime refused it before the system was asked, for the reason the system numbers "
+                )
+                assert !holds(text: e.msg, needle: "the operating system's own reason")
+
+    assert !write_file(path: "build/selftest-346-file", text: "x").is_err()
+
+    match mkdir_all("build/selftest-346-file/under")
+        .ok _  => assert false
+        .err e => assert holds(text: e.msg, needle: ": the operating system's own reason is ")
+
+    assert !remove_file("build/selftest-346-file").is_err()
 
 test "an unset variable is empty, and a set one is its value"
     assert env(name: "HEROES_NO_SUCH_VARIABLE_EXISTS").must() == ""

@@ -85,13 +85,14 @@
 /* Each call below clears `hero_fs_why_code` on the way in and sets it where it
  * fails; `parts/os.c` defines it. */
 
-/* A path the runtime found, handed to Heroes as a `str`, or "" with EILSEQ
+/* A path the runtime found, handed to Heroes as a `str`, or "" with EILSEQ,
+ * negated as the runtime's own reason (`hero_os.h`, `hero_fs_why`; defect 346),
  * where its bytes are not UTF-8, which `hero_str_from_bytes` would otherwise
  * abort on: a link's target is whatever bytes somebody wrote into it. */
 static HeroStr hero_fs_found_path(const char *path) {
     int64_t length = (int64_t)strlen(path);
     if (!hero_utf8_valid(path, length)) {
-        hero_fs_why_code = (int64_t)EILSEQ;
+        hero_fs_why_code = -(int64_t)EILSEQ;
         return hero_str_from_bytes("", 0);
     }
     return hero_str_from_bytes(path, length);
@@ -131,7 +132,7 @@ HeroStr hero_fs_landing(const char *path) {
     wchar_t final[HERO_FS_PATH_MAX];
     DWORD got = GetFinalPathNameByHandleW(h, final, (DWORD)HERO_FS_PATH_MAX, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
     if (got == 0 || got >= (DWORD)HERO_FS_PATH_MAX) {
-        hero_fs_why_code = got == 0 ? (int64_t)GetLastError() : (int64_t)ERROR_FILENAME_EXCED_RANGE;
+        hero_fs_why_code = got == 0 ? (int64_t)GetLastError() : -(int64_t)ERROR_FILENAME_EXCED_RANGE;
         CloseHandle(h);
         return hero_str_from_bytes("", 0);
     }
@@ -149,7 +150,7 @@ HeroStr hero_fs_landing(const char *path) {
     char current[HERO_FS_PATH_MAX];
     size_t length = strlen(path);
     if (length >= sizeof current) {
-        hero_fs_why_code = (int64_t)ENAMETOOLONG;
+        hero_fs_why_code = -(int64_t)ENAMETOOLONG;
         return hero_str_from_bytes("", 0);
     }
     memcpy(current, path, length + 1);
@@ -166,7 +167,7 @@ HeroStr hero_fs_landing(const char *path) {
             return hero_str_from_bytes("", 0);
         }
         if ((size_t)got >= sizeof target - 1) {
-            hero_fs_why_code = (int64_t)ENAMETOOLONG;
+            hero_fs_why_code = -(int64_t)ENAMETOOLONG;
             return hero_str_from_bytes("", 0);
         }
         target[got] = '\0';
@@ -177,12 +178,12 @@ HeroStr hero_fs_landing(const char *path) {
         char *slash = strrchr(current, '/');
         size_t keep = slash == NULL ? 0 : (size_t)(slash - current) + 1;
         if (keep + (size_t)got >= sizeof current) {
-            hero_fs_why_code = (int64_t)ENAMETOOLONG;
+            hero_fs_why_code = -(int64_t)ENAMETOOLONG;
             return hero_str_from_bytes("", 0);
         }
         memcpy(current + keep, target, (size_t)got + 1);
     }
-    hero_fs_why_code = (int64_t)ELOOP;
+    hero_fs_why_code = -(int64_t)ELOOP;
     return hero_str_from_bytes("", 0);
 #endif
 }
