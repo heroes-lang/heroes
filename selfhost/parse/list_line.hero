@@ -27,6 +27,7 @@ use parse/line_end
 use parse/unclosed
 use pairing
 use parse/bracket_head
+use parse/brace_habit
 
 # Whether the line end the parser just crossed may separate a literal's element
 # from what follows (§4.9). Asked only where a line end separates with no `,`,
@@ -282,28 +283,11 @@ function binding_begins(c: cursor.Cursor) -> bool
 # above (defect 307), where only the list's `]` was named and the call's `)`
 # was told owed at the binding, a second message.
 function closing_above(c: cursor.Cursor, text: str, open: i64, own: str) -> str
-    around = bracket_head.enclosing_openers(c, at: open)
+    with = bracket_head.openers_around(c, text: text, open: open, own: own)
 
-    if around.len() == 0
+    if with.names == ""
         return "closes on a line above, so write its `" + own + "` there"
-    names: [str] @ []
-    closers: [str] @ [own]
-
-    for at in around
-        written = cursor.slice_of(text, c.tokens[at].span)
-        names @ names.push("`" + written + "`")
-        closers @ closers.push(closer_of(written))
-
-    return "and the " + names.join(" and the ") + " it stands in, close on a line above, so write `" + closers.join("") + "` there"
-
-# The closer of the opener written `opener`.
-function closer_of(opener: str) -> str
-    if opener == "("
-        return ")"
-
-    if opener == "["
-        return "]"
-    return "}"
+    return "and " + with.names + " it stands in, close on a line above, so write `" + with.closers + "` there"
 
 # The `:` owed after a map entry's key at the cursor, `line_end.expect_after`'s;
 # where a closer of another kind stands there for the map's `}`, `{1: 2` over
@@ -346,4 +330,10 @@ function another_kind(c: cursor.Cursor, text: str, what: str, closer: token.Toke
 
     if text_lines.newlines_between(text: text, from: opener.start, to: found.start) == 0
         return said + swap
+    with = bracket_head.openers_around(c, text: text, open: open, own: own.slice(from: 1, to: 2))
+
+    # Inside a call, the call's `(` closes above with it, and every closer
+    # past this one on the line is a stray (defect 310).
+    if with.names != ""
+        return said + "if this line is its last " + what + ", " + swap + "; if it closes on a line above, with " + with.names + " it stands in, write `" + with.closers + "` there and delete this `" + cursor.slice_of(text, brace_habit.stray_run(c, text, at: c.pos)) + "`"
     return said + "if this line is its last " + what + ", " + swap + "; if it closes on a line above, write its " + own + " there and delete this `" + cursor.slice_of(text, found) + "`"
