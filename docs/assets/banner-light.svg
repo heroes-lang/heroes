@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="Heroes, a small compiled language.">
+  <!-- The daylight twin of banner-dark.svg: cream paper instead of the near-black
+       stage, and the site's light palette (site/public/style.css, the
+       prefers-color-scheme block). The two files differ ONLY in the palette
+       block below and in the wash opacities, which the site also lowers in
+       daylight. A change to the layout is made twice or not at all.
+
+       **No measured number appears in this picture** (author instruction
+       2026-08-31): the figures live in README.md as markdown, because a number
+       in a drawing ages in silence. **And no sentence either** (author
+       instruction 2026-09-03): the promise under the name is markdown in
+       README.md too, the site's own hero line, because the site changed that
+       line and the drawing kept the old one. docs/assets/README.md is the home
+       of both rules.
+
+       Path data is written `M 14 0`, with the space, because a bare capital M
+       followed by a digit is the milestone shape the net refuses in a living
+       file (tests/harness/suite_records.hero, records/numbered). -->
+  <style>
+    .plate  { fill: #f7f2e9; stroke: #dbd2be; stroke-width: 1.5; }
+    .fg     { fill: #17150f; }
+    .blue   { fill: #1f4fd8; }
+    .red    { fill: #c2262b; }
+    .gold   { fill: #8a5a00; }
+    .rule-blue { stroke: #1f4fd8; }
+    .cond   { font-family: 'Avenir Next Condensed','HelveticaNeue-CondensedBold','Helvetica Neue','Roboto Condensed','Arial Narrow',sans-serif; font-weight: 700; }
+    .mono   { font-family: ui-monospace,'SF Mono',Menlo,monospace; }
+    .kicker { font-size: 15px; letter-spacing: 3.4px; }
+    .title  { font-size: 112px; letter-spacing: 1px; }
+    .quote  { font-size: 92px; }
+  </style>
+
+  <defs>
+    <clipPath id="plateClip"><rect x="1" y="1" width="1198" height="318" rx="16"/></clipPath>
+    <radialGradient id="washRed"><stop offset="0" stop-color="#c2262b" stop-opacity="0.18"/><stop offset="1" stop-color="#c2262b" stop-opacity="0"/></radialGradient>
+    <radialGradient id="washBlue"><stop offset="0" stop-color="#1f4fd8" stop-opacity="0.14"/><stop offset="1" stop-color="#1f4fd8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam" x1="0" y1="0.04" x2="1" y2="0.13">
+      <stop offset="0.34" stop-color="#c2262b" stop-opacity="0"/>
+      <stop offset="0.47" stop-color="#c2262b" stop-opacity="0.06"/>
+      <stop offset="0.53" stop-color="#1f4fd8" stop-opacity="0.06"/>
+      <stop offset="0.66" stop-color="#1f4fd8" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter>
+    <filter id="glow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 0.15 0 0 0  0 0 0.17 0 0  0 0 0 0.55 0"/>
+    </filter>
+  </defs>
+
+  <rect class="plate" x="0.75" y="0.75" width="1198.5" height="318.5" rx="16"/>
+
+  <g clip-path="url(#plateClip)">
+    <!-- one light, raked along the bolt's own angle -->
+    <ellipse cx="300" cy="120" rx="560" ry="330" fill="url(#washRed)"/>
+    <ellipse cx="910" cy="304" rx="500" ry="300" fill="url(#washBlue)"/>
+    <rect x="0" y="0" width="1200" height="320" fill="url(#beam)"/>
+    <rect x="0" y="0" width="1200" height="320" filter="url(#grain)" opacity="0.05"/>
+  </g>
+
+  <!-- the 1973 bolt: blue plate a hair off the red one, worn at eight degrees -->
+  <g transform="translate(568 33) rotate(8) scale(1.5)">
+    <path class="red" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z" filter="url(#glow)" opacity="0.85"/>
+    <path class="blue" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z" transform="translate(3.5 3)"/>
+    <path class="red" d="M 30 2 L8 36 h14 L16 62 L44 24 h-16 z"/>
+  </g>
+
+  <line x1="356" y1="171" x2="422" y2="171" stroke-width="1" opacity="0.85" class="rule-blue"/>
+  <line x1="778" y1="171" x2="844" y2="171" stroke-width="1" opacity="0.85" class="rule-blue"/>
+  <text class="mono kicker blue" x="600" y="176" text-anchor="middle">A SMALL COMPILED LANGUAGE</text>
+
+  <text class="cond title fg" x="600" y="278" text-anchor="middle"><tspan class="gold quote">&#8220;</tspan>HEROES<tspan class="gold quote">&#8221;</tspan></text>
+
+</svg>

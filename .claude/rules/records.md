@@ -57,6 +57,19 @@ record's shape changes, the citations into it that a living file holds are
 rewritten to the new shape in the same change, and no file is kept only so an
 old citation still resolves.
 
+## The top of `docs/`: two documents, then collections
+
+Author's answers of 2026-10-05, on the coordinator's reading of `docs/`. **A
+file at the top of `docs/` is one of the two living documents the contract
+names**, `docs/ROADMAP.md` and `docs/design.md`; **every folder is a collection
+of one kind**: `roadmap/` what a row of the chain cannot hold, with
+`milestones/` one page per milestone; `learn/` the questions by day and its
+`glossary/`; `platforms/` the Linux and Windows machines; `assets/` the front
+page's pictures; `measurements/`, `panel/` and `records/` the account. A folder
+holding one file, or files of unrelated kinds, is the shape this rule refuses:
+until 2026-10-05 `docs/design/` held `design.md` alone, `DESIGN-LOG.md` deleted,
+and until 2026-10-05 `docs/ref/` held the pictures, the machines and the glossary.
+
 ## And the record says whose idea it was
 
 Name the author where a question, a correction or a refusal of theirs is what
@@ -113,8 +126,10 @@ leaves running, a sitting's ratification, or a decision taken, which is an issue
 closed the day it is filed, as every entry of the old log is; a `feature`, a
 milestone's item that changes what a Heroes program or the `heroes` command does
 for somebody writing programs; a `task`, a milestone's item that serves the
-project, its instruments, records, platforms and site; and a `learn` question,
-`/learn`'s. **Not an issue**: a milestone, which is its page in
+project, its instruments, records, platforms and site. **Not an issue**: a
+question of comprehension, `/learn`'s, which is a file of `docs/learn/` with no
+card and is never transcribed (§ The lists; the author's *1a 2a* of
+2026-10-05); a milestone, which is its page in
 `docs/roadmap/milestones/` and its row in the ROADMAP's chain and becomes a GitHub
 milestone named `M-<name>`; a sitting, a journal, a beat, the case law, a
 measurement. Those are the account an issue links to.
@@ -135,7 +150,8 @@ order they are transcribed in. The slug is the title's words, lowercased, every
 run of other characters one `-`, cut at a word boundary to at most 60
 characters; a defect's opens `defect-NNN-`, its number, and a sitting's
 ratification `panel-NNN-`. The files of `docs/records/done/`, `docs/records/log/`
-and `docs/learn/` kept their names when they moved here on 2026-10-04, a closed
+and `docs/learn/` kept their names when they moved here on 2026-10-04 (the
+questions went back to `docs/learn/` on 2026-10-05, keeping them again), a closed
 entry's stamp being the day it closed, so a citation of one resolves by the rule,
 the same name in its stamp's folder (`issue_redirect`); the one name two trees
 shared, the log's `2026-09-23-1215-a-seats-copy-is-its-own.md`, became
@@ -153,7 +169,7 @@ defect's *The repair* section), and fills `commit`.
 
 | field | value |
 |---|---|
-| `kind` | `defect`, `decision`, `feature`, `task` or `learn` |
+| `kind` | `defect`, `decision`, `feature` or `task` |
 | `area` | a directory of `selfhost/`, `compiler` for a module at its top, a top-level area of the tree, or `none`; `AREAS` in `cards.hero`, held to the tree each run |
 | `milestone` | `M-<name>` with a row in the chain, or `none`; an open `feature` or `task` names an open one |
 | `filed` | the day it was filed: an open issue's is its name's day, a closed one's is not later, and where the body's `**Origin:**` names a day, it is that day |
@@ -188,16 +204,17 @@ verb renders it (a sitting's question, CLAUDE.md § 4):
   happens* and its third under *Where to look*, then its `**Origin:**`, its
   `**Class:**` and *The repair* under headings of those names; a decision's
   question, default, recommendation and verdict; a feature's or a task's *What
-  it delivers*; a question's *The question*; any other paragraph under *Notes*;
+  it delivers*; any other paragraph under *Notes*;
   then `Record:` and the file's permalink;
 - a closed issue takes one comment, `Fixed by <commit>` for a defect and
   `Settled by <commit>` for the rest: GitHub links a bare hash to its commit, so
   no pull request is needed;
 - `github:` in the file is the truth of the mapping, and an issue that disagrees
   with its file is the one corrected;
-- **a `learn` issue is not transcribed** (the author's *5a*, 2026-10-05): none
-  is ever ticked, so on a public tracker each would stand open for ever, and
-  it stays a file with its card;
+- **a question of comprehension is not transcribed**, and since the author's
+  *1a 2a* of 2026-10-05 it is not an issue at all (the *5a* of the same day had
+  kept it out of GitHub: none is ever ticked, so on a public tracker each would
+  stand open for ever);
 - **a sitting is not a GitHub Discussion** (the author's *6b*, 2026-10-05): it
   stays a file of `docs/panel/`, linked from the decision issue that ratifies
   it.
@@ -208,14 +225,19 @@ with its count, is that day's decision issue,
 
 ## The lists
 
-**Since 2026-10-04 the five lists are views of `issues/`** (§ The issues): the
+**Since 2026-10-04 four lists are views of `issues/`** (§ The issues): the
 open defects are the open `defect` issues, the decision list the open `decision`
-issues, a milestone's work the open `feature` and `task` issues naming it, the
-learning list the `learn` issues, and the record the closed issues. Each item
-keeps the one shape the lists took on 2026-09-07 (CL-066), under its card:
+issues, a milestone's work the open `feature` and `task` issues naming it, and
+the record the closed issues. Each item keeps the one shape the lists took on
+2026-09-07 (CL-066), under its card:
 `- [ ] **<first field>** | <what, in one line> | <where to look>`, its line
 first, and an optional body indented four spaces opening with `**Origin:**` and
 its date. `records/lists` is its executor.
+
+**The learning list is the fifth, and not a view of `issues/` since
+2026-10-05**: its questions are files of `docs/learn/<year-month>/<day>/`, one
+each, in the same shape with no card above it, a question answered staying
+ticked where it is, and `docs/learn/README.md` is its front page.
 
 **The first field is what an instrument reads**, so it differs by kind: a
 defect's `**NNN — <title>**`, the number its file's name carries after
@@ -441,6 +463,7 @@ A conversation whose work is questions, with no file of code, spec or design
 modified, **writes no note of its own** (CL-053). What it settled is an issue it
 ticks, or a decision issue closed the day it is filed; what it left open is an
 open issue, a `decision` or its milestone's `feature` or `task`; a concept it
-explained is an entry in `docs/ref/glossary/`; a question worth re-asking is a
-`learn` issue; a change to the language is a panel. Every one of them is a file
-of `issues/` (§ The issues). The path between them is the git history.
+explained is an entry in `docs/learn/glossary/`; a question worth re-asking is a
+file of `docs/learn/`; a change to the language is a panel. Every one but the
+glossary's and the question's is a file of `issues/` (§ The issues). The path
+between them is the git history.

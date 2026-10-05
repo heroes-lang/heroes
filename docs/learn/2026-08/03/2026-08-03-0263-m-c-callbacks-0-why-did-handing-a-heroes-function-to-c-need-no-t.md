@@ -1,0 +1,4 @@
+- [ ] **M-c-callbacks.0** | **Why did handing a Heroes function to C need no trampoline, when three months of planning assumed it would?** Open `selfhost/emit/ctype.hero` at the `.function_ty` arm of `c_type`, and beside it look at what the compiler actually emits for `function worker(arg: ptr) -> ptr` — one line of `--emit-c` output. Then say which of these is the reason: that the emitter learned to write a function pointer in this milestone, that a Heroes function value carries no captured environment so it is one address and C's function pointer is one address, or that `ptr` and a function pointer are the same size on this machine
+
+    **Where to look:** selfhost/emit/ctype.hero · docs/measurements/017 · docs/panel/111
+    **Why it matters:** the deferral rested on cfront's fate and on the belief that a C11 backend could not express a thread's entry point, and the belief was never tested until it was cheap

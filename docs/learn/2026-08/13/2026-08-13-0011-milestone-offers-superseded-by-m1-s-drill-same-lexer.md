@@ -1,0 +1,1 @@
+- [x] The record | M0 | Milestone offers: superseded by M1's drill (same lexer, live symptom); exit-quiz declined for now | docs/journal/000-setup.md | optional, on request — see /debrief

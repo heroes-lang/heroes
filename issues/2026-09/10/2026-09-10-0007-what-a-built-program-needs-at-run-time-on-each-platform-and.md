@@ -7,7 +7,7 @@ commit: none
 github: none
 ---
 
-- [ ] **M-deployable-binary** | what a built program needs at run time on each platform, and which `-O` it ships with | `selfhost/cli/table.hero` · `selfhost/cli/verbs.hero:105` · `design.md:708-710` · `docs/ref/environment/`
+- [ ] **M-deployable-binary** | what a built program needs at run time on each platform, and which `-O` it ships with | `selfhost/cli/table.hero` · `selfhost/cli/verbs.hero:105` · `design.md:708-710` · `docs/platforms/`
 
     **Origin:** author decision 2026-09-10, § What production-ready means row 4,
     which had no owner at all.
@@ -18,7 +18,7 @@ github: none
     written as unrun**: the same question on Linux and on Windows.
 
     **Three measurements and one decision.** `otool`/`ldd` on a built binary on
-    each platform, written into `docs/ref/environment/`. Whether a binary built against
+    each platform, written into `docs/platforms/`. Whether a binary built against
     the CI image's glibc runs on an older server, and what it says when it does
     not. Whether a Linux binary can be static, which is the difference between a
     `scratch` image and a distro image — knowing `design.md:708-710` already

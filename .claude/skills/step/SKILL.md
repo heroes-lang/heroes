@@ -39,8 +39,8 @@ first and its kind the one that matches what it asks: a `feature` or `task`
 naming the milestone that owes it, a `decision` if it names a default the
 compiler is running on, **a `defect` if it is BROKEN** (a crash, a wrong answer
 at exit 0, a silence where a message is owed; its slug opens `defect-NNN-`, the
-number one above the highest any issue states), a `learn` question if it only
-asks what is true — and **never as a bare bullet or a `## ` section**, which is
+number one above the highest any issue states); and a question that only asks
+what is true is not an issue but a file of `docs/learn/` (§ 4) — and **never as a bare bullet or a `## ` section**, which is
 a notation no count in this project can see. The ROADMAP's count line moves with
 a defect or a decision filed or closed (`records/counts`). Before the lists
 became files a ticked item had to be moved by hand, and by 2026-08-26
@@ -125,10 +125,10 @@ before reading the fix.
 ## 4. Queue comprehension — per new concept, not per step
 When a step introduces a new concept (first tokens, first tree, first types,
 first blocks, first C…), file 2–4 closed-form questions (a count, a choice
-among structures, an output value) as `learn` issues, one file each in today's
-folder of `issues/`, under the shape § 1 gives:
-`- [ ] **<origin>** | <question / task> | <where to look>`, its card saying
-`kind: learn` and the milestone it came from.
+among structures, an output value) as questions of `docs/learn/`, one file each
+in today's folder, `docs/learn/<year-month>/<day>/<stamp>-<slug>.md`, with no
+card: `- [ ] **<origin>** | <question / task> | <where to look>`, the origin
+naming the milestone it came from (`docs/learn/README.md`).
 Plumbing steps — CLI, harness, refactors, bulk cases — add nothing.
 
 ## 5. Close
@@ -165,7 +165,7 @@ Milestone close — the checklist (this is its only copy):
   renewed with a new milestone name** (panel 046 R2). This bullet exists because
   the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
   survived that milestone's close untouched;
-- **WRITE** the milestone's `/learn` offers as `learn` issues
+- **WRITE** the milestone's `/learn` offers as questions of `docs/learn/`
   (walkthrough, golden ratification, mutation drill, exit-quiz), and **do not
   put them to the author**. `/learn` is never convened by the assistant, not at
   a milestone close and not as a suggestion at the end of a step; this bullet

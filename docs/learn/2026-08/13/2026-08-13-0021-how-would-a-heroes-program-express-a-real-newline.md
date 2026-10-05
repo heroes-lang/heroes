@@ -1,0 +1,1 @@
+- [x] The record | M1.3 | How would a Heroes program express a real newline character? (When asked: it couldn't) | resolved by panel 008 → the M1.5 items below | the self-hosted lexer needs '\t' without magic numbers

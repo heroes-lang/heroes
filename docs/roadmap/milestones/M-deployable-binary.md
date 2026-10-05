@@ -7,7 +7,7 @@ compiler*, and nothing in this file answered *what does the machine running my
 binary need*.
 
 **What it delivers**, three measurements and one decision. `otool`/`ldd` on a
-built binary on **each** platform, written into `docs/ref/environment/`. Whether a
+built binary on **each** platform, written into `docs/platforms/`. Whether a
 binary built against the CI image's glibc runs on an older server, and what it
 says when it does not. Whether a Linux binary can be **static**, which is the
 difference between a `scratch` image and a distro image — `design.md:708-710`

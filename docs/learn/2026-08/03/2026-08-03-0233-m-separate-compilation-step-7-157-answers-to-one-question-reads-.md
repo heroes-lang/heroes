@@ -1,0 +1,4 @@
+- [ ] **M-separate-compilation step 7 (157 answers to one question)** | `runtime_text` reads the runtime's 14 parts, concatenates them and hashes 162 KB. It was called once per translation unit — 157 times per build of the compiler, each with a shell `cat` — for an answer that cannot change during a build. It is now a field of `Toolchain`, computed once. Given this compiler's measured hashing speed of ~1.2 MB/s, work out how much of a per-module build that was, and say why the same shape did NOT show up on the fused path
+
+    **Where to look:** selfhost/cli/toolchain.hero (the `runtime_key` field) · selfhost/cli/verbs.hero (the memo threaded through the loop)
+    **Why it matters:** a loop-invariant computation is the oldest optimisation there is, and it hid inside a function whose name made it look free
