@@ -106,7 +106,7 @@ function string(@l: state.LexState, text: str)
                 raw_chars.raw_carriage_return(@l, l.pos, .in_str)
 
             # `raw_refusal.might_begin`, written out: no call for a byte.
-            if b < 32 || b == 127 || b == 194
+            if b < 32 || b >= 127 && (b == 127 || b == 194 || b == 216 || b == 226)
                 l.pos @ raw_refusal.past(@l, text, at: l.pos, holder: .string)
             else
                 l.pos @ l.pos + 1
