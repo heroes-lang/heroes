@@ -44,6 +44,7 @@ use cursor
 use parse/brace_habit
 use parse/opening
 use parse/line_end
+use parse/laid_braces
 use pairing
 use text_lines
 use operators
@@ -179,30 +180,69 @@ function gives_a_bool(kind: token.TokenKind) -> bool
 # which no word here writes: told at that `{` for what it is, its one report,
 # the tail then read by `do_tail`. It was told as a brace past a name, and
 # its loop only once the braces went, `unexpected_block` and `missing_body`
-# beside it (defect 201).
+# beside it (defect 201). And the same where the `while` begins the line
+# below a `}` alone on its line, which is no token: past the block the
+# lexer laid out below the `{` stands the `while` (defect 303).
 function past_a_statement(c: cursor.Cursor, text: str, from: i64) -> str
     if c.pos == from + 1 && cursor.slice_of(text, c.tokens[from].span) == "do" && brace_habit.opens_here(c, text)
         close = brace_habit.closer(c, open: c.pos)
 
-        if c.tokens[close].kind == .rbrace && c.tokens[close + 1].kind == .kw_while
+        if c.tokens[close].kind == .rbrace && c.tokens[close + 1].kind == .kw_while || c.tokens[close].kind == .kw_while
             return "C's `do { … } while (c)`, which runs its body before asking `c`, is no loop here: write the body under `while true`, ending it with `if !(c)` over `break`"
     return "one statement per line, no semicolons"
 
 # Whether the `while` at token `head`, whose condition the cursor stands
-# after, is the tail of braces whose `}` stands before it on its line and
-# whose `{` a report names, with no body after it.
+# after, is the tail of braces whose `{` a report names, with no body after
+# it, past its line's end: braces whose `}` stands before it on its line, or,
+# alone on the line above, closes the block the lexer laid out below the `{`
+# (defect 303). A body below makes it a loop, read as one.
 function do_tail(c: cursor.Cursor, text: str, head: i64) -> bool
     close: i64 @ head - 1
+    opener: i64 @ -1
+    below: i64 @ c.pos
 
     while close > 0 && c.tokens[close].kind == .comment
         close @ close - 1
 
-    if close < 0 || c.tokens[close].kind != .rbrace || text_lines.newlines_between(text, from: c.tokens[close].span.end, to: c.tokens[head].span.start) > 0
-        return false
+    while c.tokens[below].kind == .terminator || c.tokens[below].kind == .comment
+        below @ below + 1
 
-    if cursor.at(c, .indent) || opening.tabbed_line(c, text) || brace_habit.ending(c, text) >= 0
+    if close >= 0 && c.tokens[close].kind == .rbrace && text_lines.newlines_between(text, from: c.tokens[close].span.end, to: c.tokens[head].span.start) == 0
+        opener @ opener_of(c, close: close)
+    else
+        opener @ laid_opener(c, head: head)
+
+    if opener < 0 || c.tokens[below].kind == .indent || opening.tabbed_line(c, text) || brace_habit.ending(c, text) >= 0
         return false
-    return line_end.said_here(on(c, at: opener_of(c, close: close)))
+    return line_end.said_here(on(c, at: opener))
+
+# The `{` the lexer laid out whose block ends right before the token `head`,
+# its `}` alone on the line above and no token (`laid_braces.laid_block`), or
+# -1: past the indent the block's last dedent closes, by depth, where it has
+# a block, the `{`.
+function laid_opener(c: cursor.Cursor, head: i64) -> i64
+    i: i64 @ head - 1
+    depth: i64 @ 0
+
+    while i > 0 && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    if i >= 0 && c.tokens[i].kind == .dedent
+        while i >= 0 && !(c.tokens[i].kind == .indent && depth == 1)
+            if c.tokens[i].kind == .dedent
+                depth @ depth + 1
+            else if c.tokens[i].kind == .indent
+                depth @ depth - 1
+            i @ i - 1
+
+        i @ i - 1
+
+    while i > 0 && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
+        i @ i - 1
+
+    if i < 0 || !laid_braces.laid_out_by_lexer(c, open: i) || laid_braces.laid_block(c, open: i).past != head
+        return -1
+    return i
 
 # The index of the `{` the `}` at `close` closes, by depth, or `close` itself
 # where none does.

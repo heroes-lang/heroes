@@ -1,0 +1,76 @@
+# Fixed defect 303, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 201, its cause by lane b11-parse). Symptom: C's do-while with
+# its `}` alone on a line and `while (c)` on the line below cost two
+# messages, the `do {`'s `{` as a brace past a name and the `while`'s missing
+# body, where defect 201 tells `} while (c)` on one line as one habit. Cause:
+# a `}` alone on its line is no token, the lexer having laid out the braces
+# of a `{` that ends its line (`brace_layout.hero`, ruling 1), so
+# `parse/loop_habit.past_a_statement`, which looked for the `while` right
+# after a `}`, and `do_tail`, which read the tail only with its `}` on the
+# `while`'s line, saw neither. Repair: past the block the lexer laid out
+# below the `{` stands the `while`, the habit's tail, its `{` found by the
+# block's depth (`loop_habit.laid_opener`); and a tail with a body below it,
+# past its line's end, is a loop read with its body, on one line or two,
+# where its body was a block nothing opened. The shapes: with and without
+# parentheses, empty braces, nested, the tail's own mistake, a line after,
+# a blank line between, and a body below, split and on one line.
+
+function split(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    }
+    while (n > 0)
+
+function without_parentheses(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    }
+    while n > 0
+
+function empty_braces(n: i64)
+    do {  #~ expected_end_of_line
+    }
+    while (n > 0)
+
+function nested(n: i64)
+    if n > 0
+        do {  #~ expected_end_of_line
+            print(n)
+        }
+        while (n > 0)
+
+function the_tails_own_mistake(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    }
+    while (n > )  #~ expected_expression
+
+function a_line_after(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    }
+    while (n > 0)
+    print(2)
+
+function a_blank_line_between(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    }
+
+    while (n > 0)
+
+function a_body_below(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    }
+    while (n > 0)
+        print(3)
+
+function a_body_below_one_line(n: i64)
+    do {  #~ expected_end_of_line
+        print(n)
+    } while (n > 0)
+        print(3)
+
+function main()
+    print(1)
