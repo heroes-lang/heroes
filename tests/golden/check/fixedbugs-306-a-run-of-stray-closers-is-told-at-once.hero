@@ -1,0 +1,64 @@
+# Fixed defect 306, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defects 198 and 199). Symptom: two closers no opener asked for, on
+# one line, were told one at a time, the second only once the first was
+# deleted: `x = 1 ))` was told the first `)` alone; past a head, `if true
+# ))`, the second was a message of its own. Cause: each reader told the one
+# token it stood on, and the rest of the line went as debris, or to the next
+# reader. Repair: past the first stray closer, which closes nothing its line
+# opened, the closers after it on the line close nothing either, and the
+# report takes them with it, a run of strays told at once
+# (`parse/brace_habit.stray_run`), past a statement, a failed one or a head;
+# a reader past a run told whole tells none of it again. The shapes: two,
+# spaced, of two kinds, three, one, after a call, after a head and a
+# signature, nested, braces, after `return`, and a word between two strays,
+# where the rest of the line goes as before.
+
+function two()
+    x = 1 ))  #~ expected_end_of_line
+    print(x)
+
+function spaced()
+    x = 1 ) )  #~ expected_end_of_line
+    print(x)
+
+function of_two_kinds()
+    x = 1 )]  #~ expected_end_of_line
+    print(x)
+
+function three()
+    x = 1 )))  #~ expected_end_of_line
+    print(x)
+
+function one()
+    x = 1 )  #~ expected_end_of_line
+    print(x)
+
+function after_a_call()
+    print(1)))  #~ expected_end_of_line
+    print(2)
+
+function after_a_head()
+    if true ))  #~ expected_end_of_line
+        print(1)
+
+function after_a_signature() ))  #~ expected_end_of_line
+    print(1)
+
+function nested()
+    if true
+        x = 1 ))  #~ expected_end_of_line
+        print(x)
+
+function braces()
+    x = 1 }}  #~ expected_end_of_line
+    print(x)
+
+function after_return(a: i64) -> i64
+    return a ))  #~ expected_end_of_line
+
+function a_word_between()
+    x = 1 ) y )  #~ expected_end_of_line
+    print(x)
+
+function main()
+    print(1)

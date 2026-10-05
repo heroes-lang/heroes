@@ -63,3 +63,7 @@ function two_strays()
 
 function main()
     print(1)
+
+# Moved 2026-10-05 with defect 306's repair (lane b12-parse12): `two_strays`,
+# of which the first was told, is told whole, its run of strays `) )` at once
+# (`parse/brace_habit.stray_run`).
