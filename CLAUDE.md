@@ -297,8 +297,8 @@ CL-060.
   on this Mac alone** (author instructions 2026-10-02): the lanes merged, the
   seed and its fixpoint, the compiler's own tests, the net's own tests, the
   full net, the census; red is bisected by lane, then commit. A batch is
-  sixteen to thirty-two defects, one lane per cluster of shared files (author
-  instruction 2026-10-03; CL-063, CL-079). Which form a change's cases live in is
+  sixteen to sixty-four defects, one lane per cluster of shared files (author
+  instructions 2026-10-03 and 2026-10-05; CL-063, CL-079). Which form a change's cases live in is
   `.claude/rules/verification.md` (CL-072).
 - **A suite is the last judge, never the first finder.** What a hook can see on
   the touched file at the moment of writing, a parse error, a name or type

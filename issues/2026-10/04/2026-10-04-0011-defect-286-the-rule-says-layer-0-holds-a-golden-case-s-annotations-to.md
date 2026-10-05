@@ -3,7 +3,7 @@ kind: defect
 area: golden
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 8d7b11dd25a3b73a7fe027503233fe4222c518b2
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b9-harness, 2026-10-04 (its reply's *found beside*, a reading of `fmt_check.py` whole); the coordinator's grep over every hook.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a rule that names a check nothing performs; the suite still judges, later than the rule says.
+
+    Repaired at `8d7b11dd`, 2026-10-05 (the coordinator's lane b12-hook), the hook asks the `annotations` suite, narrowed to a golden case, on a write of its `.hero` or `.expected`; gated by the hook's own payloads run by hand, no instrument testing the hooks; the net is owed at the batch's close.
