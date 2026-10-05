@@ -337,23 +337,28 @@ test "a probe's question hands back what clang said, a header's warning in it (d
     )
     assert has_text(text: said, needle: "a header warning")
 
-# Defect 337: clang prints a location's file name as it was given, and a
-# header's `#line` gives it `caf` and the byte 0xE9, written here as the escape
-# C reads, so the header itself is ASCII (measured on Apple clang 21: the
-# location comes out with the byte, and no warning about the header's text).
-# What clang said comes back whole, the byte written by its value, on success
-# and on a refusal alike, and the refusal's marker with it.
+# Defect 337: clang prints a location's file name as it was given, and the
+# fixture header's `#line` gives it `caf` and the byte 0xE9. **The byte stands
+# raw in the committed header**, `unsupported/fixedbugs-337-located.h`, since
+# 2026-10-05: this test wrote the escape `\351` until then, which clang 23.1.1
+# refuses (*invalid escape sequence in an unevaluated string literal*) and so
+# never reached clang's words on the Windows box, where the test failed; a
+# `str` cannot hold the byte, so no test writes it. Measured the same day on
+# Apple clang 21, Debian clang 18.1.8, 20.1.8 and 22.1.8 and clang 23.1.1: the
+# raw byte is taken with a warning, and the location comes out with it. What
+# clang said comes back whole, the byte written by its value, on success and
+# on a refusal alike, and the refusal's marker with it.
 test "clang's words holding a byte that is not UTF-8 are kept whole, a refusal's marker with them (defect 337)"
     dir = "build/selftest-said-337"
     assert !process.mkdir_all(dir).is_err()
-    assert !write_file(path: dir + "/located.h", text: "#line 1 \"caf\\351.h\"\n#warning \"a warning the header carries\"\n").is_err()
-    assert !write_file(path: dir + "/fine.c", text: "#include \"located.h\"\nint seven(void) { return 7; }\n").is_err()
-    said = asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/fine.c"], what: "a probe", err_path: dir + "/fine-stderr.txt").must(
+    fixtures = "tests/golden/unsupported"
+    assert !write_file(path: dir + "/fine.c", text: "#include \"fixedbugs-337-located.h\"\nint seven(void) { return 7; }\n").is_err()
+    said = asked_of_clang(line: ["clang", "-fsyntax-only", "-I", fixtures, dir + "/fine.c"], what: "a probe", err_path: dir + "/fine-stderr.txt").must(
     )
     assert has_text(text: said, needle: "caf<0xE9>.h:1:2: warning: \"a warning the header carries\"")
-    assert !write_file(path: dir + "/refused.c", text: "#include \"located.h\"\n_Static_assert(0, \"heroes-ffi-return wide_count i32\");\n").is_err()
+    assert !write_file(path: dir + "/refused.c", text: "#include \"fixedbugs-337-located.h\"\n_Static_assert(0, \"heroes-ffi-return wide_count i32\");\n").is_err()
 
-    match asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/refused.c"], what: "compiling the generated C", err_path: dir + "/refused-stderr.txt")
+    match asked_of_clang(line: ["clang", "-fsyntax-only", "-I", fixtures, dir + "/refused.c"], what: "compiling the generated C", err_path: dir + "/refused-stderr.txt")
         .ok => assert false
         .err e =>
             assert e.code == "clang"
