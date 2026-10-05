@@ -336,7 +336,13 @@ test "a failure that is not clang's refusal is not worded as one (defect 134)"
         # One sentence for the author's file whichever verb writes it (defect
         # 136, `publish.landing_for`), where the C said the operating
         # system's number for a missing directory and the link said this.
-        assert said == "cannot write build/selftest-no-such-directory/out: its directory is not there; build/selftest-no-such-directory/out was not created"
+        # The binary's path takes the platform's suffix where the C's does
+        # not (defect 359): `out.exe` on Windows, the file that would be.
+        landed: str @ "build/selftest-no-such-directory/out"
+
+        if !emit_c
+            landed @ landed + process.exe_suffix()
+        assert said == "cannot write " + landed + ": its directory is not there; " + landed + " was not created"
 
 function produced_failure(made: Produced?) -> str
     match made
