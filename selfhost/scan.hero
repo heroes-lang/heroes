@@ -30,6 +30,7 @@ use open_line
 use backslash
 use brace_layout
 use closers
+use bracket_reach
 use lost_quote
 use comment_habit
 use word_place
@@ -307,8 +308,9 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
     l.pos @ start + width
 
     # A `{` that ends its head's line is read as the line's end, a `}` that
-    # closes it as nothing where its line ends (`brace_layout.hero`, ruling 1).
-    if kind == .lbrace && brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: start)
+    # closes it as nothing where its line ends (`brace_layout.hero`, ruling 1);
+    # and one that ends C's `for` header, whose `)` was left out (defect 302).
+    if kind == .lbrace && (bracket_reach.ended_by_a_brace(@l, text, at: start) || brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: start))
         brace_layout.opened(@l)
         state.emit_open_body(@l, start)
         return

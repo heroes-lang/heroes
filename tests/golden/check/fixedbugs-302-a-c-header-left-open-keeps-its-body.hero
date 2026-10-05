@@ -1,0 +1,62 @@
+# Fixed defect 302, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 194). Symptom: C's loop header with its `)` left out, `for (i
+# = 0; i < 3; i++` over a body, cost three messages: the `(` still open
+# lines below, the header, and `missing_body` at the line where the bracket's
+# reach ended or at the block's end, the body read inside the bracket. Cause:
+# inside a bracket the lexer ends no line, and the header's `++` asked the
+# body to go on with it. Repair: inside the `(` of C's header, which holds a
+# `;` left to the parser, a line that holds no `;` and closes nothing it did
+# not open is no clause of the header, and ends the bracket's reach there; a
+# `{` that ends the header's line does too, and is read as a body's brace
+# (`bracket_reach.below_a_header`, `ended_by_a_brace`). The lexer names the
+# `(` still open, and the parser, which tells the header there, withdraws it
+# (`parse/unclosed.withdrawn`): the header is rewritten whole, its `)` with
+# it. The shapes: a statement after the body, the body last, the forever
+# header, nested, a `{` that ends the line, padded, the body's own mistake,
+# no body, and the header split over three lines, its `)` written, as before.
+
+function a_statement_after()
+    for (i = 0; i < 3; i++  #~ for_missing_in
+        print(i)
+    print(2)
+
+function the_body_last()
+    for (i = 0; i < 3; i++  #~ for_missing_in
+        print(i)
+
+function forever()
+    for (;;  #~ for_missing_in
+        print(1)
+
+function nested()
+    if true
+        for (i = 0; i < 3; i++  #~ for_missing_in
+            print(i)
+    print(2)
+
+function with_a_brace()
+    for (i = 0; i < 3; i++ {  #~ for_missing_in missing_body
+        print(i)
+    }
+
+function padded()
+    for ( i = 0 ; i < 3 ; i++  #~ for_missing_in
+        print(i)
+
+function the_bodys_own_mistake()
+    for (i = 0; i < 3; i++  #~ for_missing_in
+        print(i +)  #~ expected_expression
+
+function no_body()
+    #~v for_missing_in
+    for (i = 0; i < 3; i++
+    print(2)  #~ missing_body
+
+function split_over_three_lines()
+    for (i = 0;  #~ for_missing_in
+         i < 3;
+         i++)
+        print(i)
+
+function main()
+    print(1)
