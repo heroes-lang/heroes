@@ -5,7 +5,7 @@
 #include <abort-a-fixed-array-element-written-past-its-length.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -47,8 +47,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -83,19 +85,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 21 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_abortafixedarrayelementwrittenpastitslength_nums_after(struct nums a0) { (void)(nums_after)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "abortafixedarrayelementwrittenpastitslength.c"
+#line 101 "abortafixedarrayelementwrittenpastitslength.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_Nums_eq(const struct nums *a, const struct nums *b);
@@ -114,7 +116,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 void h_abortafixedarrayelementwrittenpastitslength_main(void) {
-#line 118 "abortafixedarrayelementwrittenpastitslength.c"
+#line 120 "abortafixedarrayelementwrittenpastitslength.c"
     struct nums h0_n;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -181,15 +183,15 @@ bb0:
     t36 = h4_own4;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h4_own4 = t10;
-#line 185 "abortafixedarrayelementwrittenpastitslength.c"
+#line 187 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t36);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t37 = h1_xs0;
-#line 189 "abortafixedarrayelementwrittenpastitslength.c"
+#line 191 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t10);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h1_xs0 = t10;
-#line 193 "abortafixedarrayelementwrittenpastitslength.c"
+#line 195 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t37);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t11 = INT64_C(0);
@@ -279,17 +281,17 @@ bb4:
     hero_print_int(t35);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 283 "abortafixedarrayelementwrittenpastitslength.c"
+#line 285 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h1_xs0);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-#line 286 "abortafixedarrayelementwrittenpastitslength.c"
+#line 288 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h4_own4);
     return;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 293 "abortafixedarrayelementwrittenpastitslength.c"
+#line 295 "abortafixedarrayelementwrittenpastitslength.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -313,15 +315,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 317 "abortafixedarrayelementwrittenpastitslength.c"
+#line 319 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 321 "abortafixedarrayelementwrittenpastitslength.c"
+#line 323 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 325 "abortafixedarrayelementwrittenpastitslength.c"
+#line 327 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -359,13 +361,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 363 "abortafixedarrayelementwrittenpastitslength.c"
+#line 365 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 366 "abortafixedarrayelementwrittenpastitslength.c"
+#line 368 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 369 "abortafixedarrayelementwrittenpastitslength.c"
+#line 371 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h4_own4);
     return t12;
 }

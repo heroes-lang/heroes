@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -43,7 +45,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_2c, ",");
 
-#line 47 "libraryrange.c"
+#line 49 "libraryrange.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -64,19 +66,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "libraryrange.c"
+#line 82 "libraryrange.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +96,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 18 "tests/golden/run/library-range.hero"
 void h_libraryrange_main(void) {
-#line 98 "libraryrange.c"
+#line 100 "libraryrange.c"
     HeroArrayHeader * h0_xs = {0};
     int64_t h1_total;
     HeroArrayHeader * h2_xs0 = {0};
@@ -195,15 +197,15 @@ bb0:
     t60 = h5_own5;
 #line 19 "tests/golden/run/library-range.hero"
     h5_own5 = t3;
-#line 199 "libraryrange.c"
+#line 201 "libraryrange.c"
     hero_array_decref(t60);
 #line 19 "tests/golden/run/library-range.hero"
     t61 = h0_xs;
-#line 203 "libraryrange.c"
+#line 205 "libraryrange.c"
     hero_array_incref(t3);
 #line 19 "tests/golden/run/library-range.hero"
     h0_xs = t3;
-#line 207 "libraryrange.c"
+#line 209 "libraryrange.c"
     hero_array_decref(t61);
 #line 20 "tests/golden/run/library-range.hero"
     t4 = h0_xs;
@@ -243,15 +245,15 @@ bb0:
     t62 = h6_own6;
 #line 24 "tests/golden/run/library-range.hero"
     h6_own6 = t15;
-#line 247 "libraryrange.c"
+#line 249 "libraryrange.c"
     hero_array_decref(t62);
 #line 24 "tests/golden/run/library-range.hero"
     t63 = h2_xs0;
-#line 251 "libraryrange.c"
+#line 253 "libraryrange.c"
     hero_array_incref(t15);
 #line 24 "tests/golden/run/library-range.hero"
     h2_xs0 = t15;
-#line 255 "libraryrange.c"
+#line 257 "libraryrange.c"
     hero_array_decref(t63);
 #line 24 "tests/golden/run/library-range.hero"
     t16 = INT64_C(0);
@@ -321,7 +323,7 @@ bb4:
     t64 = h7_own7;
 #line 30 "tests/golden/run/library-range.hero"
     h7_own7 = t33;
-#line 325 "libraryrange.c"
+#line 327 "libraryrange.c"
     hero_array_decref(t64);
 #line 30 "tests/golden/run/library-range.hero"
     t34 = hero_array_len(t33);
@@ -335,7 +337,7 @@ bb4:
     t65 = h8_own8;
 #line 30 "tests/golden/run/library-range.hero"
     h8_own8 = t37;
-#line 339 "libraryrange.c"
+#line 341 "libraryrange.c"
     hero_array_decref(t65);
 #line 30 "tests/golden/run/library-range.hero"
     t38 = hero_array_len(t37);
@@ -359,7 +361,7 @@ bb4:
     t66 = h9_own9;
 #line 33 "tests/golden/run/library-range.hero"
     h9_own9 = t43;
-#line 363 "libraryrange.c"
+#line 365 "libraryrange.c"
     hero_array_decref(t66);
 #line 33 "tests/golden/run/library-range.hero"
     t44 = h_libraryrange_map_str(t43);
@@ -367,7 +369,7 @@ bb4:
     t67 = h10_own10;
 #line 33 "tests/golden/run/library-range.hero"
     h10_own10 = t44;
-#line 371 "libraryrange.c"
+#line 373 "libraryrange.c"
     hero_array_decref(t67);
 #line 33 "tests/golden/run/library-range.hero"
     t45 = HERO_STR_LIT(hero_str_2c);
@@ -377,7 +379,7 @@ bb4:
     t68 = h11_own11;
 #line 33 "tests/golden/run/library-range.hero"
     h11_own11 = t46;
-#line 381 "libraryrange.c"
+#line 383 "libraryrange.c"
     hero_str_decref(t68);
 #line 33 "tests/golden/run/library-range.hero"
     hero_print_str(t46);
@@ -393,7 +395,7 @@ bb4:
     t69 = h12_own12;
 #line 36 "tests/golden/run/library-range.hero"
     h12_own12 = t49;
-#line 397 "libraryrange.c"
+#line 399 "libraryrange.c"
     hero_array_decref(t69);
 #line 36 "tests/golden/run/library-range.hero"
     t50 = hero_array_sort(t49);
@@ -401,7 +403,7 @@ bb4:
     t70 = h13_own13;
 #line 36 "tests/golden/run/library-range.hero"
     h13_own13 = t50;
-#line 405 "libraryrange.c"
+#line 407 "libraryrange.c"
     hero_array_decref(t70);
 #line 36 "tests/golden/run/library-range.hero"
     t51 = INT64_C(2);
@@ -417,7 +419,7 @@ bb4:
     t71 = h14_own14;
 #line 36 "tests/golden/run/library-range.hero"
     h14_own14 = t55;
-#line 421 "libraryrange.c"
+#line 423 "libraryrange.c"
     hero_array_decref(t71);
 #line 36 "tests/golden/run/library-range.hero"
     t56 = INT64_C(1);
@@ -429,7 +431,7 @@ bb4:
     t72 = h15_own15;
 #line 36 "tests/golden/run/library-range.hero"
     h15_own15 = t58;
-#line 433 "libraryrange.c"
+#line 435 "libraryrange.c"
     hero_array_decref(t72);
 #line 36 "tests/golden/run/library-range.hero"
     t59 = hero_array_len(t58);
@@ -439,50 +441,50 @@ bb4:
     hero_print_int(t59);
 #line 36 "tests/golden/run/library-range.hero"
     hero_print_end();
-#line 443 "libraryrange.c"
+#line 445 "libraryrange.c"
     hero_array_decref(h0_xs);
 #line 36 "tests/golden/run/library-range.hero"
-#line 446 "libraryrange.c"
+#line 448 "libraryrange.c"
     hero_array_decref(h2_xs0);
 #line 36 "tests/golden/run/library-range.hero"
-#line 449 "libraryrange.c"
+#line 451 "libraryrange.c"
     hero_array_decref(h5_own5);
 #line 36 "tests/golden/run/library-range.hero"
-#line 452 "libraryrange.c"
+#line 454 "libraryrange.c"
     hero_array_decref(h6_own6);
 #line 36 "tests/golden/run/library-range.hero"
-#line 455 "libraryrange.c"
+#line 457 "libraryrange.c"
     hero_array_decref(h7_own7);
 #line 36 "tests/golden/run/library-range.hero"
-#line 458 "libraryrange.c"
+#line 460 "libraryrange.c"
     hero_array_decref(h8_own8);
 #line 36 "tests/golden/run/library-range.hero"
-#line 461 "libraryrange.c"
+#line 463 "libraryrange.c"
     hero_array_decref(h9_own9);
 #line 36 "tests/golden/run/library-range.hero"
-#line 464 "libraryrange.c"
+#line 466 "libraryrange.c"
     hero_array_decref(h10_own10);
 #line 36 "tests/golden/run/library-range.hero"
-#line 467 "libraryrange.c"
+#line 469 "libraryrange.c"
     hero_str_decref(h11_own11);
 #line 36 "tests/golden/run/library-range.hero"
-#line 470 "libraryrange.c"
+#line 472 "libraryrange.c"
     hero_array_decref(h12_own12);
 #line 36 "tests/golden/run/library-range.hero"
-#line 473 "libraryrange.c"
+#line 475 "libraryrange.c"
     hero_array_decref(h13_own13);
 #line 36 "tests/golden/run/library-range.hero"
-#line 476 "libraryrange.c"
+#line 478 "libraryrange.c"
     hero_array_decref(h14_own14);
 #line 36 "tests/golden/run/library-range.hero"
-#line 479 "libraryrange.c"
+#line 481 "libraryrange.c"
     hero_array_decref(h15_own15);
     return;
 }
 
 #line 38 "tests/golden/run/library-range.hero"
 HeroArrayHeader * h_libraryrange_map_str(HeroArrayHeader * h0_xs) {
-#line 486 "libraryrange.c"
+#line 488 "libraryrange.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -517,25 +519,25 @@ bb0:
     t19 = h5_own5;
 #line 39 "tests/golden/run/library-range.hero"
     h5_own5 = t1;
-#line 521 "libraryrange.c"
+#line 523 "libraryrange.c"
     hero_array_decref(t19);
 #line 39 "tests/golden/run/library-range.hero"
     t20 = h1_out;
-#line 525 "libraryrange.c"
+#line 527 "libraryrange.c"
     hero_array_incref(t1);
 #line 39 "tests/golden/run/library-range.hero"
     h1_out = t1;
-#line 529 "libraryrange.c"
+#line 531 "libraryrange.c"
     hero_array_decref(t20);
 #line 41 "tests/golden/run/library-range.hero"
     t2 = h0_xs;
 #line 41 "tests/golden/run/library-range.hero"
     t21 = h2_xs0;
-#line 535 "libraryrange.c"
+#line 537 "libraryrange.c"
     hero_array_incref(t2);
 #line 41 "tests/golden/run/library-range.hero"
     h2_xs0 = t2;
-#line 539 "libraryrange.c"
+#line 541 "libraryrange.c"
     hero_array_decref(t21);
 #line 41 "tests/golden/run/library-range.hero"
     t3 = INT64_C(0);
@@ -573,7 +575,7 @@ bb2:
     t22 = h6_own6;
 #line 42 "tests/golden/run/library-range.hero"
     h6_own6 = t13;
-#line 577 "libraryrange.c"
+#line 579 "libraryrange.c"
     hero_str_decref(t22);
 #line 42 "tests/golden/run/library-range.hero"
     hero_array_push_owned(&h1_out, &t13);
@@ -595,26 +597,26 @@ bb3:
 bb4:
 #line 44 "tests/golden/run/library-range.hero"
     t18 = h1_out;
-#line 599 "libraryrange.c"
+#line 601 "libraryrange.c"
     hero_array_incref(t18);
 #line 44 "tests/golden/run/library-range.hero"
-#line 602 "libraryrange.c"
+#line 604 "libraryrange.c"
     hero_array_decref(h1_out);
 #line 44 "tests/golden/run/library-range.hero"
-#line 605 "libraryrange.c"
+#line 607 "libraryrange.c"
     hero_array_decref(h2_xs0);
 #line 44 "tests/golden/run/library-range.hero"
-#line 608 "libraryrange.c"
+#line 610 "libraryrange.c"
     hero_array_decref(h5_own5);
 #line 44 "tests/golden/run/library-range.hero"
-#line 611 "libraryrange.c"
+#line 613 "libraryrange.c"
     hero_str_decref(h6_own6);
     return t18;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 618 "libraryrange.c"
+#line 620 "libraryrange.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -638,15 +640,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 642 "libraryrange.c"
+#line 644 "libraryrange.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 646 "libraryrange.c"
+#line 648 "libraryrange.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 650 "libraryrange.c"
+#line 652 "libraryrange.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -684,13 +686,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 688 "libraryrange.c"
+#line 690 "libraryrange.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 691 "libraryrange.c"
+#line 693 "libraryrange.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 694 "libraryrange.c"
+#line 696 "libraryrange.c"
     hero_array_decref(h4_own4);
     return t12;
 }

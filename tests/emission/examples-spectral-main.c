@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -32,8 +32,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -46,7 +48,7 @@ HERO_STR_STATIC(hero_str_2e, ".");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_30, "0");
 
-#line 50 "main.c"
+#line 52 "main.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -77,19 +79,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 40 "examples/spectral/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_sqrt(double a0) { (void)(sqrt)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "main.c"
+#line 95 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -120,7 +122,7 @@ HeroStr h_main_padded(int64_t h0_rest);
 
 #line 45 "examples/spectral/main.hero"
 int64_t h_main_N(void) {
-#line 124 "main.c"
+#line 126 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -128,12 +130,12 @@ bb0:
     t1 = INT64_C(100);
 #line 46 "examples/spectral/main.hero"
     return t1;
-#line 132 "main.c"
+#line 134 "main.c"
 }
 
 #line 49 "examples/spectral/main.hero"
 int64_t h_main_ROUNDS(void) {
-#line 137 "main.c"
+#line 139 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -141,12 +143,12 @@ bb0:
     t1 = INT64_C(10);
 #line 50 "examples/spectral/main.hero"
     return t1;
-#line 145 "main.c"
+#line 147 "main.c"
 }
 
 #line 56 "examples/spectral/main.hero"
 double h_main_eval_a(int64_t h0_i, int64_t h1_j) {
-#line 150 "main.c"
+#line 152 "main.c"
     int64_t h2_span;
     int64_t t1;
     int64_t t2;
@@ -209,12 +211,12 @@ bb0:
     t17 = t4 / t16;
 #line 58 "examples/spectral/main.hero"
     return t17;
-#line 213 "main.c"
+#line 215 "main.c"
 }
 
 #line 61 "examples/spectral/main.hero"
 HeroArrayHeader * h_main_a_times(HeroArrayHeader * h0_u) {
-#line 218 "main.c"
+#line 220 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_i;
     double h3_total;
@@ -259,15 +261,15 @@ bb0:
     t32 = h5_own5;
 #line 62 "examples/spectral/main.hero"
     h5_own5 = t1;
-#line 263 "main.c"
+#line 265 "main.c"
     hero_array_decref(t32);
 #line 62 "examples/spectral/main.hero"
     t33 = h1_out;
-#line 267 "main.c"
+#line 269 "main.c"
     hero_array_incref(t1);
 #line 62 "examples/spectral/main.hero"
     h1_out = t1;
-#line 271 "main.c"
+#line 273 "main.c"
     hero_array_decref(t33);
 #line 63 "examples/spectral/main.hero"
     t2 = INT64_C(0);
@@ -303,13 +305,13 @@ bb2:
 bb3:
 #line 76 "examples/spectral/main.hero"
     t31 = h1_out;
-#line 307 "main.c"
+#line 309 "main.c"
     hero_array_incref(t31);
 #line 76 "examples/spectral/main.hero"
-#line 310 "main.c"
+#line 312 "main.c"
     hero_array_decref(h1_out);
 #line 76 "examples/spectral/main.hero"
-#line 313 "main.c"
+#line 315 "main.c"
     hero_array_decref(h5_own5);
     return t31;
 bb4:
@@ -371,12 +373,12 @@ bb6:
     h2_i = t30;
 #line 74 "examples/spectral/main.hero"
     goto bb1;
-#line 375 "main.c"
+#line 377 "main.c"
 }
 
 #line 80 "examples/spectral/main.hero"
 HeroArrayHeader * h_main_at_times(HeroArrayHeader * h0_u) {
-#line 380 "main.c"
+#line 382 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_i;
     double h3_total;
@@ -421,15 +423,15 @@ bb0:
     t32 = h5_own5;
 #line 81 "examples/spectral/main.hero"
     h5_own5 = t1;
-#line 425 "main.c"
+#line 427 "main.c"
     hero_array_decref(t32);
 #line 81 "examples/spectral/main.hero"
     t33 = h1_out;
-#line 429 "main.c"
+#line 431 "main.c"
     hero_array_incref(t1);
 #line 81 "examples/spectral/main.hero"
     h1_out = t1;
-#line 433 "main.c"
+#line 435 "main.c"
     hero_array_decref(t33);
 #line 82 "examples/spectral/main.hero"
     t2 = INT64_C(0);
@@ -465,13 +467,13 @@ bb2:
 bb3:
 #line 95 "examples/spectral/main.hero"
     t31 = h1_out;
-#line 469 "main.c"
+#line 471 "main.c"
     hero_array_incref(t31);
 #line 95 "examples/spectral/main.hero"
-#line 472 "main.c"
+#line 474 "main.c"
     hero_array_decref(h1_out);
 #line 95 "examples/spectral/main.hero"
-#line 475 "main.c"
+#line 477 "main.c"
     hero_array_decref(h5_own5);
     return t31;
 bb4:
@@ -533,12 +535,12 @@ bb6:
     h2_i = t30;
 #line 93 "examples/spectral/main.hero"
     goto bb1;
-#line 537 "main.c"
+#line 539 "main.c"
 }
 
 #line 98 "examples/spectral/main.hero"
 HeroArrayHeader * h_main_ata_times(HeroArrayHeader * h0_u) {
-#line 542 "main.c"
+#line 544 "main.c"
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
     HeroArrayHeader * t1;
@@ -556,7 +558,7 @@ bb0:
     t4 = h1_own1;
 #line 99 "examples/spectral/main.hero"
     h1_own1 = t2;
-#line 560 "main.c"
+#line 562 "main.c"
     hero_array_decref(t4);
 #line 99 "examples/spectral/main.hero"
     t3 = h_main_at_times(t2);
@@ -564,23 +566,23 @@ bb0:
     t5 = h2_own2;
 #line 99 "examples/spectral/main.hero"
     h2_own2 = t3;
-#line 568 "main.c"
+#line 570 "main.c"
     hero_array_decref(t5);
 #line 99 "examples/spectral/main.hero"
-#line 571 "main.c"
+#line 573 "main.c"
     hero_array_incref(t3);
 #line 99 "examples/spectral/main.hero"
-#line 574 "main.c"
+#line 576 "main.c"
     hero_array_decref(h1_own1);
 #line 99 "examples/spectral/main.hero"
-#line 577 "main.c"
+#line 579 "main.c"
     hero_array_decref(h2_own2);
     return t3;
 }
 
 #line 102 "examples/spectral/main.hero"
 HeroArrayHeader * h_main_ones(int64_t h0_n) {
-#line 584 "main.c"
+#line 586 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_at;
     HeroArrayHeader * h3_own3 = {0};
@@ -604,15 +606,15 @@ bb0:
     t13 = h3_own3;
 #line 103 "examples/spectral/main.hero"
     h3_own3 = t1;
-#line 608 "main.c"
+#line 610 "main.c"
     hero_array_decref(t13);
 #line 103 "examples/spectral/main.hero"
     t14 = h1_out;
-#line 612 "main.c"
+#line 614 "main.c"
     hero_array_incref(t1);
 #line 103 "examples/spectral/main.hero"
     h1_out = t1;
-#line 616 "main.c"
+#line 618 "main.c"
     hero_array_decref(t14);
 #line 104 "examples/spectral/main.hero"
     t2 = INT64_C(0);
@@ -650,20 +652,20 @@ bb2:
 bb3:
 #line 110 "examples/spectral/main.hero"
     t12 = h1_out;
-#line 654 "main.c"
+#line 656 "main.c"
     hero_array_incref(t12);
 #line 110 "examples/spectral/main.hero"
-#line 657 "main.c"
+#line 659 "main.c"
     hero_array_decref(h1_out);
 #line 110 "examples/spectral/main.hero"
-#line 660 "main.c"
+#line 662 "main.c"
     hero_array_decref(h3_own3);
     return t12;
 }
 
 #line 116 "examples/spectral/main.hero"
 double h_main_spectral_norm(int64_t h0_n) {
-#line 667 "main.c"
+#line 669 "main.c"
     HeroArrayHeader * h1_u = {0};
     HeroArrayHeader * h2_v = {0};
     int64_t h3_round;
@@ -738,15 +740,15 @@ bb0:
     t47 = h7_own7;
 #line 117 "examples/spectral/main.hero"
     h7_own7 = t2;
-#line 742 "main.c"
+#line 744 "main.c"
     hero_array_decref(t47);
 #line 117 "examples/spectral/main.hero"
     t48 = h1_u;
-#line 746 "main.c"
+#line 748 "main.c"
     hero_array_incref(t2);
 #line 117 "examples/spectral/main.hero"
     h1_u = t2;
-#line 750 "main.c"
+#line 752 "main.c"
     hero_array_decref(t48);
 #line 118 "examples/spectral/main.hero"
     t3 = h0_n;
@@ -756,15 +758,15 @@ bb0:
     t49 = h8_own8;
 #line 118 "examples/spectral/main.hero"
     h8_own8 = t4;
-#line 760 "main.c"
+#line 762 "main.c"
     hero_array_decref(t49);
 #line 118 "examples/spectral/main.hero"
     t50 = h2_v;
-#line 764 "main.c"
+#line 766 "main.c"
     hero_array_incref(t4);
 #line 118 "examples/spectral/main.hero"
     h2_v = t4;
-#line 768 "main.c"
+#line 770 "main.c"
     hero_array_decref(t50);
 #line 119 "examples/spectral/main.hero"
     t5 = INT64_C(0);
@@ -792,15 +794,15 @@ bb2:
     t51 = h9_own9;
 #line 122 "examples/spectral/main.hero"
     h9_own9 = t10;
-#line 796 "main.c"
+#line 798 "main.c"
     hero_array_decref(t51);
 #line 122 "examples/spectral/main.hero"
     t52 = h2_v;
-#line 800 "main.c"
+#line 802 "main.c"
     hero_array_incref(t10);
 #line 122 "examples/spectral/main.hero"
     h2_v = t10;
-#line 804 "main.c"
+#line 806 "main.c"
     hero_array_decref(t52);
 #line 123 "examples/spectral/main.hero"
     t11 = h2_v;
@@ -810,15 +812,15 @@ bb2:
     t53 = h10_own10;
 #line 123 "examples/spectral/main.hero"
     h10_own10 = t12;
-#line 814 "main.c"
+#line 816 "main.c"
     hero_array_decref(t53);
 #line 123 "examples/spectral/main.hero"
     t54 = h1_u;
-#line 818 "main.c"
+#line 820 "main.c"
     hero_array_incref(t12);
 #line 123 "examples/spectral/main.hero"
     h1_u = t12;
-#line 822 "main.c"
+#line 824 "main.c"
     hero_array_decref(t54);
 #line 124 "examples/spectral/main.hero"
     t13 = h3_round;
@@ -918,29 +920,29 @@ bb6:
     t45 = t43 / t44;
 #line 135 "examples/spectral/main.hero"
     t46 = sqrt(t45);
-#line 922 "main.c"
+#line 924 "main.c"
     hero_array_decref(h1_u);
 #line 135 "examples/spectral/main.hero"
-#line 925 "main.c"
+#line 927 "main.c"
     hero_array_decref(h2_v);
 #line 135 "examples/spectral/main.hero"
-#line 928 "main.c"
+#line 930 "main.c"
     hero_array_decref(h7_own7);
 #line 135 "examples/spectral/main.hero"
-#line 931 "main.c"
+#line 933 "main.c"
     hero_array_decref(h8_own8);
 #line 135 "examples/spectral/main.hero"
-#line 934 "main.c"
+#line 936 "main.c"
     hero_array_decref(h9_own9);
 #line 135 "examples/spectral/main.hero"
-#line 937 "main.c"
+#line 939 "main.c"
     hero_array_decref(h10_own10);
     return t46;
 }
 
 #line 137 "examples/spectral/main.hero"
 void h_main_main(void) {
-#line 944 "main.c"
+#line 946 "main.c"
     HeroStr h0_own0 = {0};
     int64_t t1;
     double t2;
@@ -958,20 +960,20 @@ bb0:
     t4 = h0_own0;
 #line 138 "examples/spectral/main.hero"
     h0_own0 = t3;
-#line 962 "main.c"
+#line 964 "main.c"
     hero_str_decref(t4);
 #line 138 "examples/spectral/main.hero"
     hero_print_str(t3);
 #line 138 "examples/spectral/main.hero"
     hero_print_end();
-#line 968 "main.c"
+#line 970 "main.c"
     hero_str_decref(h0_own0);
     return;
 }
 
 #line 144 "examples/spectral/main.hero"
 double h_main_BILLION(void) {
-#line 975 "main.c"
+#line 977 "main.c"
     double t1;
     goto bb0;
 bb0:
@@ -979,12 +981,12 @@ bb0:
     t1 = 0x1.dcd65p+29;
 #line 145 "examples/spectral/main.hero"
     return t1;
-#line 983 "main.c"
+#line 985 "main.c"
 }
 
 #line 147 "examples/spectral/main.hero"
 HeroStr h_main_nine_places(double h0_v) {
-#line 988 "main.c"
+#line 990 "main.c"
     bool h1_negative;
     double h2_size;
     h_0opt_e201354 h3_f0 = {0};
@@ -1093,15 +1095,15 @@ bb1:
     t41 = h9_own9;
 #line 153 "examples/spectral/main.hero"
     h9_own9 = t13;
-#line 1097 "main.c"
+#line 1099 "main.c"
     h_0opt_e201354_release(&t41);
 #line 153 "examples/spectral/main.hero"
     t42 = h3_f0;
-#line 1101 "main.c"
+#line 1103 "main.c"
     h_0opt_e201354_retain(&t13);
 #line 153 "examples/spectral/main.hero"
     h3_f0 = t13;
-#line 1105 "main.c"
+#line 1107 "main.c"
     h_0opt_e201354_release(&t42);
 #line 153 "examples/spectral/main.hero"
     t14 = h3_f0;
@@ -1167,7 +1169,7 @@ bb4:
     t43 = h10_own10;
 #line 156 "examples/spectral/main.hero"
     h10_own10 = t29;
-#line 1171 "main.c"
+#line 1173 "main.c"
     hero_str_decref(t43);
 #line 156 "examples/spectral/main.hero"
     t30 = HERO_STR_LIT(hero_str_2e);
@@ -1177,7 +1179,7 @@ bb4:
     t44 = h11_own11;
 #line 156 "examples/spectral/main.hero"
     h11_own11 = t31;
-#line 1181 "main.c"
+#line 1183 "main.c"
     hero_str_decref(t44);
 #line 156 "examples/spectral/main.hero"
     t32 = h6_rest;
@@ -1187,7 +1189,7 @@ bb4:
     t45 = h12_own12;
 #line 156 "examples/spectral/main.hero"
     h12_own12 = t33;
-#line 1191 "main.c"
+#line 1193 "main.c"
     hero_str_decref(t45);
 #line 156 "examples/spectral/main.hero"
     t34 = hero_str_concat(t31, t33);
@@ -1195,15 +1197,15 @@ bb4:
     t46 = h13_own13;
 #line 156 "examples/spectral/main.hero"
     h13_own13 = t34;
-#line 1199 "main.c"
+#line 1201 "main.c"
     hero_str_decref(t46);
 #line 156 "examples/spectral/main.hero"
     t47 = h7_text;
-#line 1203 "main.c"
+#line 1205 "main.c"
     hero_str_incref(t34);
 #line 156 "examples/spectral/main.hero"
     h7_text = t34;
-#line 1207 "main.c"
+#line 1209 "main.c"
     hero_str_decref(t47);
 #line 158 "examples/spectral/main.hero"
     t35 = h1_negative;
@@ -1215,7 +1217,7 @@ bb5:
     t18 = h3_f0;
 #line 153 "examples/spectral/main.hero"
     t19 = t18.as.err;
-#line 1219 "main.c"
+#line 1221 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -1237,7 +1239,7 @@ bb7:
     t48 = h14_own14;
 #line 159 "examples/spectral/main.hero"
     h14_own14 = t38;
-#line 1241 "main.c"
+#line 1243 "main.c"
     hero_str_decref(t48);
 #line 159 "examples/spectral/main.hero"
     h8_ret0 = t38;
@@ -1251,38 +1253,38 @@ bb8:
 bb9:
 #line 147 "examples/spectral/main.hero"
     t40 = h8_ret0;
-#line 1255 "main.c"
+#line 1257 "main.c"
     hero_str_incref(t40);
 #line 147 "examples/spectral/main.hero"
-#line 1258 "main.c"
+#line 1260 "main.c"
     h_0opt_e201354_release(&h3_f0);
 #line 147 "examples/spectral/main.hero"
-#line 1261 "main.c"
+#line 1263 "main.c"
     hero_str_decref(h7_text);
 #line 147 "examples/spectral/main.hero"
-#line 1264 "main.c"
+#line 1266 "main.c"
     h_0opt_e201354_release(&h9_own9);
 #line 147 "examples/spectral/main.hero"
-#line 1267 "main.c"
+#line 1269 "main.c"
     hero_str_decref(h10_own10);
 #line 147 "examples/spectral/main.hero"
-#line 1270 "main.c"
+#line 1272 "main.c"
     hero_str_decref(h11_own11);
 #line 147 "examples/spectral/main.hero"
-#line 1273 "main.c"
+#line 1275 "main.c"
     hero_str_decref(h12_own12);
 #line 147 "examples/spectral/main.hero"
-#line 1276 "main.c"
+#line 1278 "main.c"
     hero_str_decref(h13_own13);
 #line 147 "examples/spectral/main.hero"
-#line 1279 "main.c"
+#line 1281 "main.c"
     hero_str_decref(h14_own14);
     return t40;
 }
 
 #line 163 "examples/spectral/main.hero"
 HeroStr h_main_padded(int64_t h0_rest) {
-#line 1286 "main.c"
+#line 1288 "main.c"
     HeroStr h1_digits = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -1310,15 +1312,15 @@ bb0:
     t11 = h2_own2;
 #line 164 "examples/spectral/main.hero"
     h2_own2 = t2;
-#line 1314 "main.c"
+#line 1316 "main.c"
     hero_str_decref(t11);
 #line 164 "examples/spectral/main.hero"
     t12 = h1_digits;
-#line 1318 "main.c"
+#line 1320 "main.c"
     hero_str_incref(t2);
 #line 164 "examples/spectral/main.hero"
     h1_digits = t2;
-#line 1322 "main.c"
+#line 1324 "main.c"
     hero_str_decref(t12);
     goto bb1;
 bb1:
@@ -1344,30 +1346,30 @@ bb2:
     t13 = h3_own3;
 #line 167 "examples/spectral/main.hero"
     h3_own3 = t9;
-#line 1348 "main.c"
+#line 1350 "main.c"
     hero_str_decref(t13);
 #line 167 "examples/spectral/main.hero"
     t14 = h1_digits;
-#line 1352 "main.c"
+#line 1354 "main.c"
     hero_str_incref(t9);
 #line 167 "examples/spectral/main.hero"
     h1_digits = t9;
-#line 1356 "main.c"
+#line 1358 "main.c"
     hero_str_decref(t14);
     goto bb1;
 bb3:
 #line 169 "examples/spectral/main.hero"
     t10 = h1_digits;
-#line 1362 "main.c"
+#line 1364 "main.c"
     hero_str_incref(t10);
 #line 169 "examples/spectral/main.hero"
-#line 1365 "main.c"
+#line 1367 "main.c"
     hero_str_decref(h1_digits);
 #line 169 "examples/spectral/main.hero"
-#line 1368 "main.c"
+#line 1370 "main.c"
     hero_str_decref(h2_own2);
 #line 169 "examples/spectral/main.hero"
-#line 1371 "main.c"
+#line 1373 "main.c"
     hero_str_decref(h3_own3);
     return t10;
 }

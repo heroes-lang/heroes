@@ -127,5 +127,8 @@ HeroStr hero_str_join(const HeroArrayHeader *parts, HeroStr sep) {
         memcpy(w, items[i].ptr, (size_t)items[i].len);
         w += items[i].len;
     }
+    bool holds_nul = parts->len > 1 && sep.len > 0 && hero_str_holds_nul(sep);
+    for (int64_t i = 0; i < parts->len && !holds_nul; i++) holds_nul = hero_str_holds_nul(items[i]);
+    if (holds_nul) hero_str_mark_nul(r);
     return r;
 }
