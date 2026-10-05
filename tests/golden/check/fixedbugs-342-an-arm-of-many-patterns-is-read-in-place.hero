@@ -1,0 +1,28 @@
+# Fixed defect 342, 2026-10-05 (lane b11-parse), the parser's half. Symptom:
+# an arm of N patterns joined by `|` took `parse` work that grew with N
+# squared, 1.39 billion instructions retired at 4,000 and 18.90 billion at
+# 16,000. Cause: `parse/operator_arm.lead` pushed each pattern with a
+# `.must()` inside the push, which kept the push from growing the array in
+# place, so each copied every pattern before it. Repair: each is matched out
+# before its push; 16,000 patterns now parse in 0.80 billion. Nothing said
+# moves: this case pins an arm of many patterns, a leading `|` read on past,
+# and a refused pattern among them. The checker's half, `check/reach.after`
+# asking each literal of every one before it, is not this repair's.
+
+function few(n: i64) -> str
+    return match n
+        1 | 2 | 3 | 4 | 5 | 6 => "few"
+        _ => "many"
+
+function leading(n: i64) -> str
+    return match n
+        | 1 | 2 => "one or two"  #~ expected_pattern
+        _ => "many"
+
+function refused_inside(n: i64) -> str
+    return match n
+        1 | x | 3 => "odd"  #~ expected_pattern
+        _ => "many"
+
+function main()
+    print(few(1))

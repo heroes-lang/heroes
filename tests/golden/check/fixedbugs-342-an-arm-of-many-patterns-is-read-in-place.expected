@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-342-an-arm-of-many-patterns-is-read-in-place.hero:19:9: error[expected_pattern]: expected a pattern, found `|` — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`
+tests/golden/check/fixedbugs-342-an-arm-of-many-patterns-is-read-in-place.hero:24:13: error[expected_pattern]: expected a pattern, found a name (`x`) — `.case`, `.case name`, `_` (on `i64`/`str` only), or an integer, a string or a character, with an optional `-`

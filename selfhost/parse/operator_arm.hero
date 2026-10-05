@@ -61,13 +61,13 @@ function lead(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Lead?
         if reading
             patterns @ [after.must()]
 
+    # Matched out before its push, which a `.must()` kept from growing in place.
     while reading && cursor.eat(@c, .pipe)
-        more = arm_pattern.read(@c, @a, text)
-        reading @ !more.is_err()
-        told @ told || !reading
-
-        if reading
-            patterns @ patterns.push(more.must())
+        match arm_pattern.read(@c, @a, text)
+            .ok more => patterns @ patterns.push(more)
+            .err =>
+                reading @ false
+                told @ true
 
     if told && !cursor.at(c, .fat_arrow) && !to_the_arrow(@c)
         return fail(code: "no_pattern", msg: "the arm has no pattern")
