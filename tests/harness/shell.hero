@@ -1787,10 +1787,7 @@ test "fixedbugs: on Windows `probe` and `mutate` walk folders holding names abov
     # A hundred CJK characters are 100 units on disk and 300 bytes of UTF-8,
     # past the 260 a narrow listing holds: it ended the listing there under
     # the UTF-8 code page, error 234, and the walk said 3 of 6 (panel 191).
-    long: str @ "m"
-
-    for _ in range(from: 0, to: 100)
-        long @ long + "\\u6f22"
+    long = "m" + "\\u6f22".repeat(100)
 
     assert !wide(w, words: ["mkdir", w.root + "/six"]).is_err()
 
