@@ -1,12 +1,3 @@
----
-kind: learn
-area: compiler
-milestone: M-handle-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-handle-verdict 4** | Open `selfhost/handles.hero` — it is one short file — and read `is_handle_parts`. It asks four questions and joins them with `&&`. Now take `record Db tag sqlite3` and follow it through the compiler: `selfhost/parse/tails.hero` decides it is legal, `selfhost/emit/ctype.hero` decides how it is spelled in C, `selfhost/check/contextual.hero` decides that `nullptr` is its null. Each of those three asks `handles.is_handle`, and none of them has its own copy of the question. Before reading anything else, answer: **why is that one file there at all, rather than the four lines being written where each pass needs them?** Then run `./heroes build examples/sqlite/main.hero --emit-c -o /tmp/x.c` and `grep -c 'sqlite3 \*' /tmp/x.c`.
 
     **Where to look:** `selfhost/handles.hero`'s module comment;

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **panel 139** | One absolute sentence in the specification was found false by accident. Take the grep the sitting used — every `never`, `always`, `anywhere`, `cannot`, `no ... at all` in the document — and pick three the sitting did NOT run. For each, write the shortest program that would falsify it if it is false, say whether you expect it to, and then run them.
 
     **Where to look:** the suspect list in

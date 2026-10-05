@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, whole functions print (emit_body.hero) | **Why does the prologue exist, in one C rule?** And name the ONE exception to "nothing is initialised here" and what it buys
 
     **Where to look:** emit_body.hero's doc, the prologue

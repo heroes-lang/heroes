@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-checker-core** | `tag = match t` with one arm `=> return 0`: legal, and `tag = match t` with *every* arm a `return`: an error. Which file decides that, and how many places in the compiler know what a diverging branch is?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/types/join.rs, stmts.rs (`Flow`)

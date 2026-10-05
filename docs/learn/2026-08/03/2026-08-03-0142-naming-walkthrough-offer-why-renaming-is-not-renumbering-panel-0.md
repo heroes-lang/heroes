@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **naming** | **Walkthrough offer: why renaming is not renumbering.** Panel 030 R7 refused renumbering on RFC/PEP/LLVM precedent, was ratified, and was then amended the same week to abolish numbers entirely. Reconstruct the distinction without rereading: what failure mode does R7's precedent actually protect against, why does a rename into a disjoint namespace not have it, and what would have to be true for the amendment to be wrong
 
     **Where to look:** docs/panel/030-the-build-order-revised.md § Amendment to R7 · CLAUDE.md §14

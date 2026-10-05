@@ -1,12 +1,3 @@
----
-kind: learn
-area: golden
-milestone: M-agreed-retention
-filed: 2026-09-28
-commit: none
-github: none
----
-
 - [ ] **M-agreed-retention golden ratification** | `base: i64 = 100`, `fee: i64 = 7`, then `total = base` on one line and `- fee` on the next at the same margin, then `print(total)`. Before defect 120's repair the second line was refused as `discarded_value`, whose fix, tagged `certain`, wrote `_ = - fee`; `check --apply` then `run` printed 100. **Before reading: the old fix compiled. Which rule of this repository says it was never `certain`, and what does the new golden's `.fixed` file hold instead?** | `tests/golden/check/fixedbugs-a-discard-that-drops-a-term-meant-to-be-subtracted.hero`, `.expected`, `.fixed` · `.claude/rules/diagnostics-and-goldens.md` § Errors are a deliverable
 
     **Where to look after answering:** *a `certain` fix repairs the defect

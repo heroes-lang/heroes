@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 3** | A generic function in Heroes can already compare two values of its type parameter with `==`, and can already use one as a map key — but it cannot write `a < b` and cannot hand one to `print`. Say what makes the first two work with no trait and no constraint, name the pass that decides it, and say why exactly those two operations are in and the other two are out.
 
     **Where to look:** design.md Part 5's type-descriptor pass and what it

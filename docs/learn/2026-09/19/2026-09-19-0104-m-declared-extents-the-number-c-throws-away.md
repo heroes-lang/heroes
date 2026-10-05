@@ -1,12 +1,3 @@
----
-kind: learn
-area: records
-milestone: M-declared-extents
-filed: 2026-09-19
-commit: none
-github: none
----
-
 - [ ] **M-declared-extents walkthrough** | A C header writes `void f(char b[8])`. **Before reading: how many of those eight does the C compiler remember, and what would you expect `clang -ast-dump` to print for that parameter?** | `docs/measurements/035-not-one-byte-array-is-spelled-the-same-way-on-both.md` § The instrument
 
     **Where to look after answering:** it remembers **none** of them. C

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-generics-library
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-generics-library close** | **Walkthrough offer** (optional, author's call): one `map(xs, show)` from source to C — `types/calls.rs` recording the instantiation, `ir/mono.rs` cloning and substituting, `counted.rs` rebuilt, the mangled hash, and the library function it lands in
 
     **Where to look:** docs/records/journal/010 · archive/bootstrap-rs/heroes/src/ir/mono.rs

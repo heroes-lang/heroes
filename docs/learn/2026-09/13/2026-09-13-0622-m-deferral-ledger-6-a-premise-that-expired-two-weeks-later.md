@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 6** | On 2026-08-12 a sitting deferred a feature partly because *"one whole-program translation unit gives visibility no linkage consequence"*. Find the milestone that made that sentence false, say how many days later it landed, and then find the reason the conclusion survives anyway. Finally: compile a two-module program and look at the emitted C for a helper nobody calls outside its own file.
 
     **Where to look:** `docs/ROADMAP.md`'s chain row for M-separate-compilation;

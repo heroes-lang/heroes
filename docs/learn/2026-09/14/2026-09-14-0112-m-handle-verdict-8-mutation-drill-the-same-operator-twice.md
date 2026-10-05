@@ -1,12 +1,3 @@
----
-kind: learn
-area: seed
-milestone: M-handle-verdict
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-handle-verdict 8** | Run `./heroes mutate examples --operator swap-ptr` today and write down the three numbers. Then build the compiler as it was before the form — `git show e0f7b84f~1:seed/heroes.c > /tmp/before.c && clang -I runtime /tmp/before.c runtime/runtime.c -o /tmp/before` — check out `examples/` as it was at that commit into a scratch directory, and run the same operator there. Write down those three numbers too. **Before comparing them, say what would have to be true for the two rates to be comparable at all.**
 
     **Where to look:**

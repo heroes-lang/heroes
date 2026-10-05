@@ -1,12 +1,3 @@
----
-kind: learn
-area: examples
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 1** | `examples/sqlite/main.hero` with `sqlite3_step(db)` in place of `sqlite3_step(statement)` builds with zero diagnostics and exits 139 (defect 029). Say which spec § 3 row makes the call legal, which spec § 9 rule catches the SAME kind of slip inside one call and why it does not reach this one, and what the `_Static_assert` probe in the emitted C is comparing when it lets a `sqlite3 *` through a `sqlite3_stmt *` parameter.
 
     **Where to look:** `spec/heroes-spec.md` § 3 (the `ptr` `cstr` row) and § 9 (the

@@ -1,12 +1,3 @@
----
-kind: learn
-area: ir
-milestone: M-closures-verdict
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-closures-verdict close — walkthrough** | The route a capturing closure would have taken through the compiler, opened one file at a time: where the parser would put it and why a module of its own is `error[module_cycle]`, what `.func_ref` becomes in the IR, and the three tables that would each need a new case. Read `selfhost/ir/emissions.hero`'s `.func_ref` arm and `selfhost/emit/ctype.hero`'s comment, then say which of the two would have to change first
 
     **Where to look:** selfhost/ir/emissions.hero · selfhost/emit/ctype.hero · selfhost/grammar_expr.hero's knot map

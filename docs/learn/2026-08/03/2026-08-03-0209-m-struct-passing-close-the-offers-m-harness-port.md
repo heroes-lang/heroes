@@ -1,12 +1,3 @@
----
-kind: learn
-area: harness
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-harness-port | `heroes run tests/harness/main.hero -- ./build/heroes-seed` runs the net through the self-hosted compiler. Name the four configurations that were run, and say which one is "life after the archive"
 
     **Where to look:** docs/records/journal/023-harness-port.md

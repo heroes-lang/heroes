@@ -1,12 +1,3 @@
----
-kind: learn
-area: examples
-milestone: M-handle-verdict
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-handle-verdict 3** | Run `./heroes mutate examples --operator swap-ptr` and read the row: 15 mutants, 8 killed, 53%. Then run it again with `--survivors` and read the seven programs it prints. Before looking anything up, say what the 53% measures. Then take one of the eight that died, `db: db` changed to `db: statement` in `examples/sqlite/main.hero`, run `heroes check` on it, and say whether the diagnostic you get has anything to do with C handles.
 
     **Where to look:** `docs/measurements/029-the-sixteenth-operator-and-a-kill-rate-that-means-the-opposite.md`;

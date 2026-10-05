@@ -1,12 +1,3 @@
----
-kind: learn
-area: runtime
-milestone: M-readable-bytes
-filed: 2026-09-18
-commit: none
-github: none
----
-
 - [ ] **M-readable-bytes walkthrough** | The conversion this milestone needed already existed in the runtime. **Before reading: `hero_str_try_from_cstr` turns a C string into a `str?`. A C `char[256]` field is a run of bytes. Name the one line that stops the first from serving the second.** | `runtime/parts/str.c`, the two functions side by side
 
     The line is `size_t n = strlen(p);`.

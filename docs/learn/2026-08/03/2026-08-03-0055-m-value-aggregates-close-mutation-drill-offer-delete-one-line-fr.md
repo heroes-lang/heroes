@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-value-aggregates
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-value-aggregates close** | **Mutation drill offer**: delete one line from `own.rs` rule 6, or one array arm from `perfn.rs`'s field walk, and predict which instrument fires — the leak counter, ASan, clang, or nothing
 
     **Where to look:** archive/bootstrap-rs/heroes/src/own.rs · archive/bootstrap-rs/heroes/src/emit/perfn.rs

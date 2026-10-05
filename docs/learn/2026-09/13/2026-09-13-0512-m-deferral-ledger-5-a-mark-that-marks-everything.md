@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 5** | The proposal was that a file becomes dangerous only by writing `use raw` at the top, so a reader knows from one line whether to be careful. Count how many files in this tree would carry that line, and say what the count does to the claim. Then find the two places where the compiler already marks a dangerous type, look at what they key on instead of an import, and name the one shape they catch that a file-level mark cannot.
 
     **Where to look:** the counts in

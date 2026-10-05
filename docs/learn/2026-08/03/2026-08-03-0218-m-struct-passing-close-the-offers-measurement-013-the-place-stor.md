@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | measurement 013 (the place store, and the borrow that was safe by accident) | For eleven milestones, reading an array into a temporary and then calling a function that mutates that same array through `@` was safe — but nobody had made it safe: the ownership pass parked every accumulator in a synthetic slot, so its refcount was 2 and the header under the borrow could not die. The place store made refcounts honest, and the very first named case (`place-store-c5`, case 5) turned the accident into a crash. Say why "the count is 2" and "someone holds a reference on purpose" are different facts, and which one a correctness argument may rest on
 
     **Where to look:** selfhost/ir/place_store.hero (load_survives_write and the module doc) · selfhost/ir/own.hero (the .load arm) · docs/measurements/013

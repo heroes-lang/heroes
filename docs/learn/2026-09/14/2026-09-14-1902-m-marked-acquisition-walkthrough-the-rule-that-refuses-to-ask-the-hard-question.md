@@ -1,12 +1,3 @@
----
-kind: learn
-area: check
-milestone: M-marked-acquisition
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-marked-acquisition walkthrough** | Read `selfhost/check/acquiring.hero` end to end — it is 126 lines. Then answer, from the code and not from the comments: **what question does this rule NOT ask, and what would it have cost to ask it?**
 
     **Where to look:** `selfhost/check/acquiring.hero`; then

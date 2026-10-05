@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-marked-acquisition
-filed: 2026-09-14
-commit: none
-github: none
----
-
 - [ ] **M-marked-acquisition exit quiz** | Panel 148 priced two spellings of the same mark: a bare `acquires`, and one that NAMES the function taking the handle back. **Before looking: say which you would expect to cost more spec tokens, and why.** Then read the two measured numbers and the two repairs that separate them.
 
     **Where to look:** `docs/measurements/010-spec-budget-ledger.md` rows 74 and

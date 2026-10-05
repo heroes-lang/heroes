@@ -1,12 +1,3 @@
----
-kind: learn
-area: records
-milestone: M-readable-bytes
-filed: 2026-09-18
-commit: none
-github: none
----
-
 - [ ] **M-readable-bytes mutation drill** | The milestone was opened on two walls and one was not there. **Before reading: a C function fills a struct the caller owns. You cannot write a 256-element literal. List every way you can think of to obtain that struct.** | `docs/panel/163-the-wall-was-not-there-and-the-brief-said-it-was.md`
 
     **Where to look after answering:** the answer three seats found by running

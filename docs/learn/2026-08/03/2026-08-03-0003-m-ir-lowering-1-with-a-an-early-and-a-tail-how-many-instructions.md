@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-ir-lowering
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-ir-lowering.1** | `function step(@r: Reader, ...) -> int?` with a `?`, an early `return` and a tail: how many `copyout` instructions does the dump show, and in which blocks?
 
     **Where to look:** tests/golden/ir/adversarial-try-copies-out.expected · ir/verify.rs (check_copy_out)

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-deferral-ledger
-filed: 2026-09-13
-commit: none
-github: none
----
-
 - [ ] **M-deferral-ledger 4** | Two ways to choose a variant's constructor at a call site: pass a function that builds it, or `match` on a tag and build it in each arm. Both compile to the same thing. Say which one catches a new variant case being added, which one does not, and why the difference is a property of the language rather than of the programmer's care.
 
     **Where to look:** the compiled pair in the sitting,

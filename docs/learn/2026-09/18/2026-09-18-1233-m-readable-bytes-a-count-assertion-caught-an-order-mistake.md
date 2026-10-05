@@ -1,12 +1,3 @@
----
-kind: learn
-area: compiler
-milestone: M-readable-bytes
-filed: 2026-09-18
-commit: none
-github: none
----
-
 - [ ] **M-readable-bytes exit quiz** | A new built-in was added to the inventory table and one assertion caught a mistake worse than the count. **Before reading: the table lists forty names. The first draft inserted the new one alphabetically, beside `to_f32`. Predict what broke.** | `selfhost/inventory.hero`, the module doc and the count test
 
     **Where to look after answering:** the module's own doc — *"`Ref`'s builtin

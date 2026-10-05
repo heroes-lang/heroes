@@ -56,15 +56,16 @@ constant CARD_LINES: i64
 # the default it leaves running, a sitting's ratification, or a decision taken,
 # which is an issue closed the day it is filed; a feature changes what a Heroes
 # program or the `heroes` command does for somebody writing programs; a task
-# serves the project, its instruments, records, platforms and site; a learn
-# item is a question of comprehension.
+# serves the project, its instruments, records, platforms and site. **A
+# question of comprehension is not an issue** (the author's *1a 2a* of
+# 2026-10-05): it is a file of `docs/learn/` with no card, and `learn` left
+# this list that day.
 constant KINDS: [str]
     [
         "defect"
         "decision"
         "feature"
         "task"
-        "learn"
     ]
 
 # WHERE IN THE TREE AN ISSUE IS ABOUT, enumerated from the tree on 2026-10-04:
@@ -689,7 +690,7 @@ test "every line of a card is held to its place"
     assert read_card(good + "x\n").complaints.len() == 0
 
 test "every value is held to its vocabulary"
-    assert offences_of(kind: "bug", area: "none", milestone: "none", filed: "2026-10-04", commit: "none", github: "none")[0] == "line 2: `kind` is `bug`, and a kind is one of `defect`, `decision`, `feature`, `task`, `learn`"
+    assert offences_of(kind: "bug", area: "none", milestone: "none", filed: "2026-10-04", commit: "none", github: "none")[0] == "line 2: `kind` is `bug`, and a kind is one of `defect`, `decision`, `feature`, `task`"
     assert offences_of(kind: "task", area: "parser", milestone: "none", filed: "2026-10-04", commit: "none", github: "none").len() == 1
     assert offences_of(kind: "task", area: "none", milestone: "m-x", filed: "2026-10-04", commit: "none", github: "none").len() == 1
     assert offences_of(kind: "task", area: "none", milestone: "M-Upper", filed: "2026-10-04", commit: "none", github: "none").len() == 1

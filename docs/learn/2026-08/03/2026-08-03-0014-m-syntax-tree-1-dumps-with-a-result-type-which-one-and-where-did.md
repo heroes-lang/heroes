@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-syntax-tree
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-syntax-tree.1** | `function advance(@l: Lex)` dumps with a result type. Which one, and where did it come from, given the source never wrote it?
 
     **Where to look:** syntax/decl.rs (the arrow branch), printer/dump.rs

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-selfhost-port, fallibles lowered (ir_lower.hero) | **Only two of the five T? forms need an edge.** Sort them: ok/fail, .is_err(), .must(), .default(v), e? — which lower to straight-line instructions and which open blocks? Then say why is_err is the cheap one
 
     **Where to look:** ir_lower.hero, the T? section

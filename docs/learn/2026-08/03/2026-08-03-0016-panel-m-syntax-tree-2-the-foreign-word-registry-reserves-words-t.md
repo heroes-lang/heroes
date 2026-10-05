@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-syntax-tree
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **panel? M-syntax-tree.2** | The foreign-word registry reserves words that are plausible *identifiers*: the appendix had a variant case `.var` and could not lex. Found the same class as panel 013, Heroes-side
 
     **Where to look:** archive/bootstrap-rs/heroes/src/lexer/keywords.rs (foreign_word), design.md appendix (`.var` → `.variable`)

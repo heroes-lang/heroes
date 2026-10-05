@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: none
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **panel 131** | `assert a == b` on two deeply nested values answers correctly at depth 100,000 today. A prototype that says WHERE they differ died at depth 3,700. Both walk the same data. What is the difference?
 
     **Where to look:** `HeroEqWork` at `runtime/parts/array.c:185-190`, and how

@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-name-resolution
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-name-resolution** | A file whose last function is `function simplify(e: Expr) -> Expr` / `???` reports no unused bindings anywhere — not even in the function at the top. Which field decides it, and where is it computed (hint: not in the walk)?
 
     **Where to look:** archive/bootstrap-rs/heroes/src/resolve/mod.rs (`has_hole`), §4.16

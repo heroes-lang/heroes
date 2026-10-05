@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-c-callbacks
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-c-callbacks** | mutation drill offer: `heroes mutate` over the callback path, now that a function type may stand in an `extern` parameter and nowhere else — the interesting mutants are the ones that move a function type from a parameter into a result, an `@` out-parameter or an `extern constant`, which are the three refusals one argument covers
 
     **Where to look:** selfhost/check/ffi.hero · selfhost/emit/callback_guard.hero

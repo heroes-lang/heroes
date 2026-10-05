@@ -1,12 +1,3 @@
----
-kind: learn
-area: cli
-milestone: M-agreed-retention
-filed: 2026-09-23
-commit: none
-github: none
----
-
 - [ ] **M-agreed-retention walkthrough** | A probe freed one `malloc` twice through two `static inline` C functions in a local header. `heroes build` ran it at exit 133; `heroes run` ran the SAME file at exit 0 and printed its last line, five times out of five. Marking the two functions `noinline` made both verbs die. **Before reading: the two verbs differ in one default. Which one, and why can a double free vanish without anybody fixing it?** | `selfhost/cli/compile.hero`'s `level_from` · C11 on undefined behaviour
 
     **Where to look after answering:** `heroes run` defaults to `-O2` and

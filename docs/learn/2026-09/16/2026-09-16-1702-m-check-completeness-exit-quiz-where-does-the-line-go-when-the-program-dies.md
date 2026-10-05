@@ -1,12 +1,3 @@
----
-kind: learn
-area: runtime
-milestone: M-check-completeness
-filed: 2026-09-16
-commit: none
-github: none
----
-
 - [ ] **M-check-completeness exit quiz** | A program prints `7`, then hands C a null pointer that C reads through. It dies. **Before looking: say whether the `7` reaches the terminal, and whether your answer is the same on macOS and on Linux.** Then say which of the two behaviours is a bug. | `runtime/parts/os.c`, `hero_streams_survive_abort` · `docs/panel/156-reports/historian.md` items 3 and 4
 
     **Where to look after answering:** the historian's report, items 3 and 3b —

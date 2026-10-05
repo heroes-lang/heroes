@@ -1,12 +1,3 @@
----
-kind: learn
-area: none
-milestone: M-struct-passing
-filed: 2026-08-03
-commit: none
-github: none
----
-
 - [ ] **M-struct-passing close — the offers** | M-selfhost-probe step 1 (panel 065) | At the fixpoint, A (Rust) builds B, B emits C.c, and `diff B.c C.c` must be empty. The port forgets one `sort` on a map walk that reaches the emitted C. Which comparison fails — B.c vs C.c, or a golden `.expected` — and why can a Heroes-vs-Heroes generation *never* show it?
 
     **Where to look:** docs/panel/065 § the paragraph the port author will rely on
