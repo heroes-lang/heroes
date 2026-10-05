@@ -53,6 +53,7 @@ use cli/libraries
 use cli/compiling
 use cli/strings
 use cli/clang_told
+use cli/kept
 
 # The distinct components of a compilation, in file-table order: the
 # root first, then each `use`d module, then the library. The order is
@@ -127,11 +128,11 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # type's declared limit — visible exactly once per edit.
         # Measured: suite_warnings went red on a warm cache before this
         # existed, on the program whose warnings are the expectation.
-        kept = read_file(warnings_of(dir: dir, sum: known.must()))
+        warned = kept.read(warnings_of(dir: dir, sum: known.must()))
         object = object_of(dir: dir, module: module, sum: known.must())
 
-        if process.path_exists(object) && !kept.is_err()
-            replayed = clang_told.fresh(kept.must(), @told)
+        if process.path_exists(object) && !warned.is_err()
+            replayed = clang_told.fresh(warned.must(), @told)
 
             if replayed.len() > 0
                 io.eprint_raw(text: replayed)
@@ -221,7 +222,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # configuration, the digest every file the compile read.
     object = object_of(dir: dir, module: module, sum: sum)
     publish.publish(staged: staged, path: object, keyed: true)?
-    publish.write_whole(path: warnings_of(dir: dir, sum: sum), text: said, keyed: true)?
+    kept.write(path: warnings_of(dir: dir, sum: sum), text: said)?
 
     # Keyed in the one sense a record can be: any record another build
     # published names artifacts of its own compile, and they are there.

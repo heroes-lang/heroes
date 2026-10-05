@@ -91,14 +91,19 @@ function private_name(path: str) -> str
 constant NAME_KEPT: i64
     200
 
-# `text`, written whole under a private name and then published as `path`.
+# `text`, written whole under a private name, flushed to the device, and then
+# published as `path`. **The flush is what a power cut asks for** (defect 357):
+# a name that reached the disk ahead of its bytes was a file of zeros at its
+# length after the Windows box's crash of 2026-10-04, read back by every later
+# build as what clang said. `files.stage` writes, flushes and only then answers,
+# as `runtime/parts/replace.c` does for the author's own files, and a failed
+# stage leaves no file behind.
 function write_whole(path: str, text: str, keyed: bool) -> ()?
     staged = private_name(path)
+    made = files.stage(staged: staged, text: text, like: "")
 
-    if write_file(path: staged, text: text).is_err()
-        why = process.because()
-        discard(staged)
-        return fail(code: "not_written", msg: "cannot write " + path + why)
+    if made.is_err()
+        return fail(code: "not_written", msg: "cannot write " + path + message_of(made))
     return publish(staged: staged, path: path, keyed: keyed)
 
 # Move a finished private file into place as `path`. The failure that is

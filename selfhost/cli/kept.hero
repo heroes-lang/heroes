@@ -1,0 +1,152 @@
+# A text a build keeps under `build/` for a later build to read back instead
+# of asking clang again: sealed by its writer, and read only whole (design.md
+# §1.12, §3.1; defect 357, 2026-10-05).
+#
+# **A kept file a power cut left at its length and every byte zero was read
+# back as what clang said.** Measured on the Windows box after its crash of
+# 2026-10-04 (Kernel-Power 41): eleven files of one `build/` written in the
+# two seconds before it, a pointee check's verdict among them, and every later
+# build of the program in that folder said `internal error:` over three NUL
+# bytes at exit 2, where a fresh folder said `ffi_tag_is_a_union` at exit 1.
+# Planted on this Mac the same day, each kind of kept text zeroed in turn:
+# the pointee check's verdict and the layout check's were `internal error`
+# over NULs, its record-layout dump a false word about this clang's dump at
+# exit 2, a unit's warnings replayed as NULs on the terminal, and **the
+# layout check's screen, zeroed, built at exit 0 a program that leaves out a
+# field**: a wrong program accepted.
+#
+# **Two halves, because either alone leaves a hole.** The publisher makes the
+# bytes durable before the name (`publish.write_whole` stages through
+# `files.stage`, which flushes the new file to the device before the rename,
+# as `runtime/parts/replace.c` does for the author's files). And the reader
+# here treats a file it cannot read whole as no file at all, so the build asks
+# clang again and publishes a whole one over it: a filesystem that cannot
+# flush, a disk that says it flushed and did not, and a `build/` left by a
+# compiler before this one all reach the reader, which no flush can reach.
+#
+# **The seal is the text's own length and digest, on a first line before
+# it**, `heroes-kept <digest> <length>`: zeros, a cut, a block lost in the
+# middle and a file of another shape each fail one of the three, and the text
+# itself is never searched for a marker, so no byte clang writes can forge it.
+# A record of `cli/deps.hero` carries its rows' digest already, and
+# `record_rows` holds it to them. The cost, measured 2026-10-05 building this
+# compiler at -O0 with the base's and this one's: cold, +0.05% instructions and
+# 5,073 more voluntary context switches over 1,264 texts flushed; warm, +1.5
+# billion instructions, +0.19%, a digest per record and per kept text read
+# (`cli/digest.hero` costs about 540 instructions a byte at -O0).
+
+use cli/digest
+use cli/publish
+use cli/strings
+
+constant SEAL: str
+    "heroes-kept "
+
+# `text` published at `path`, sealed, under the keyed rule `publish` keeps.
+function write(path: str, text: str) -> ()?
+    return publish.write_whole(path: path, text: sealed(text), keyed: true)
+
+# The text a writer kept at `path`, or none: no file, one that would not read,
+# or one that is not whole as its seal says.
+function read(path: str) -> str?
+    kept = read_file(path)?
+    return unsealed(kept)
+
+function sealed(text: str) -> str
+    return SEAL + digest.digest(text) + " " + text.len().to_str() + "\n" + text
+
+# The text under a seal it matches: the seal's sixteen digits and its length,
+# read by bytes before anything is sliced, the length the text's own and the
+# digest the text's own.
+function unsealed(kept: str) -> str?
+    head = SEAL.len()
+
+    if !strings.starts_with(text: kept, prefix: SEAL) || kept.len() < head + 18 || !is_digest(text: kept, from: head) || kept[head + 16] != ' '
+        return fail(code: "unsealed", msg: "not a text this compiler keeps")
+    at: i64 @ head + 17
+    length: i64 @ 0
+
+    while at < kept.len() && kept[at] >= '0' && kept[at] <= '9' && at < head + 17 + 18
+        length @ length * 10 + (kept[at] - '0').to_i64().must()
+        at @ at + 1
+
+    if at == head + 17 || at >= kept.len() || kept[at] != '\n' || kept.len() - at - 1 != length
+        return fail(code: "unsealed", msg: "not whole: its length is not the one sealed")
+    text = kept.slice(from: at + 1, to: kept.len())
+
+    if digest.digest(text) != kept.slice(from: head, to: head + 16)
+        return fail(code: "unsealed", msg: "not whole: its bytes are not the ones sealed")
+    return ok(text)
+
+# The rows of a record `cli/deps.hero` keeps, `<digest>\n<rows>`, or none:
+# sixteen digits and a line end, checked by bytes before anything is sliced,
+# and the rows the ones the digest was taken of. A record a power cut left
+# cut short, or with a block of zeros inside, vouched for fewer files than
+# its compile read, so a header edited since among the lost could serve a
+# stale object; one zeroed whole was refused already, by its digits.
+function record_rows(text: str) -> str?
+    if text.len() < 17 || text[16] != '\n' || !is_digest(text: text, from: 0)
+        return fail(code: "none", msg: "not a record this compiler writes")
+    rows = text.slice(from: 17, to: text.len())
+
+    if digest.digest(rows) != text.slice(from: 0, to: 16)
+        return fail(code: "none", msg: "not whole: its rows are not the ones its digest was taken of")
+    return ok(rows)
+
+# Whether the sixteen bytes from `from` are lowercase hex, the only bytes a
+# digest is spelt in.
+function is_digest(text: str, from: i64) -> bool
+    at: i64 @ from
+
+    while at < from + 16
+        b = text[at]
+
+        if !(b >= '0' && b <= '9') && !(b >= 'a' && b <= 'f')
+            return false
+        at @ at + 1
+
+    return true
+
+## Tests
+
+# Every way the box's power cut and its neighbours leave a kept file: zeros at
+# its length (one NUL is `surface-fixtures/notext357/nul.txt`, since no
+# literal holds one), cut short, longer, a block changed inside, a seal of
+# another text, a file of the shape before this one, and nothing at all.
+test "a kept text is read back only whole, and anything else is no text (defect 357)"
+    text = "checking what the extern out-parameters point at failed:\nt.c:3:1: error: static assertion failed\n"
+    kept = sealed(text)
+    assert unsealed(kept).must() == text
+    assert unsealed(sealed("")).must() == ""
+    nul = read_file("tests/golden/surface-fixtures/notext357/nul.txt").must()
+    assert nul.len() == 1
+    assert unsealed(nul.repeat(kept.len().to_u64().must())).is_err()
+    assert unsealed(kept.slice(from: 0, to: kept.len() - 1)).is_err()
+    assert unsealed(kept + "x").is_err()
+    assert unsealed(kept.slice(from: 0, to: kept.len() - 8) + nul.repeat(8)).is_err()
+    assert unsealed(sealed("abc").slice(from: 0, to: sealed("abc").len() - 3) + "abd").is_err()
+    assert unsealed("ok\n").is_err()
+    assert unsealed("").is_err()
+
+    # Through a file: what is written is what is read, and a file that is
+    # not there is no text.
+    path = "build/selftest-kept-357.txt"
+    assert !write(path: path, text: text).is_err()
+    assert read(path).must() == text
+    assert !write_file(path: path, text: nul.repeat(kept.len().to_u64().must())).is_err()
+    assert read(path).is_err()
+    assert read("build/selftest-kept-357-none.txt").is_err()
+
+# Defect 357 at the record: what `deps.pointer_text` writes reads back, and a
+# record cut short, longer, zeroed inside or zeroed whole does not.
+test "a record is read only whole, its rows the ones its digest was taken of (defect 357)"
+    rows = "0123456789abcdef runtime/runtime.c\nfedcba9876543210 /usr/include/stdio.h\n"
+    listed = digest.digest(rows) + "\n" + rows
+    assert record_rows(listed).must() == rows
+    nul = read_file("tests/golden/surface-fixtures/notext357/nul.txt").must()
+    assert record_rows(listed.slice(from: 0, to: listed.len() - 20)).is_err()
+    assert record_rows(listed + "0123456789abcdef x.h\n").is_err()
+    assert record_rows(listed.slice(from: 0, to: 30) + nul.repeat(20) + listed.slice(from: 50, to: listed.len())).is_err(
+    )
+    assert record_rows(nul.repeat(listed.len().to_u64().must())).is_err()
+    assert record_rows("").is_err()

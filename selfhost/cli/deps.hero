@@ -80,6 +80,7 @@
 
 use bytes
 use cli/digest
+use cli/kept
 use cli/files
 use cli/process
 use module/reading as file_reading
@@ -236,38 +237,19 @@ function pointer_text(rows: str) -> str
     return digest.digest(rows) + "\n" + rows
 
 # The digest the artifacts a record vouches for are named by, or absent
-# where there is no record, one this format did not write, or one whose
-# files no longer say what they said. The first line is read as written:
-# the record was published whole, by one writer who digested these rows.
+# where there is no record, one not whole as its first line says
+# (`kept.record_rows`, defect 357), or one whose files no longer say what
+# they said.
 function vouched(record_path: str, @memo: {str: str}) -> str?
-    kept = read_file(record_path)
+    read = read_file(record_path)
 
-    if kept.is_err()
+    if read.is_err()
         return fail(code: "none", msg: "no record at " + record_path)
-    text = kept.must()
+    rows = kept.record_rows(read.must())?
 
-    # Sixteen digits and a line end, checked by bytes before anything is
-    # sliced, for `fresh_rows`'s reason below.
-    if text.len() < 17 || text[16] != 10 || !is_digest(text: text, length: 16)
-        return fail(code: "none", msg: "not a record this compiler writes")
-
-    if !fresh_rows(text.slice(from: 17, to: text.len()), @memo)
+    if !fresh_rows(rows, @memo)
         return fail(code: "none", msg: "stale")
-    return ok(text.slice(from: 0, to: 16))
-
-# Whether the first `length` bytes are lowercase hex, the only bytes a
-# digest is spelt in.
-function is_digest(text: str, length: i64) -> bool
-    at: i64 @ 0
-
-    while at < length
-        b = text[at]
-
-        if !(b >= '0' && b <= '9') && !(b >= 'a' && b <= 'f')
-            return false
-        at @ at + 1
-
-    return true
+    return ok(read.must().slice(from: 0, to: 16))
 
 # Prefix test by BYTES, never by slicing: a path is arbitrary UTF-8 and
 # `slice` aborts where it would split a character (spec § 10 Strings, arrays, maps), so cutting
