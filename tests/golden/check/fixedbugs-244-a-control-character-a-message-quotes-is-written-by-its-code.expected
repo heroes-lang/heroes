@@ -1,1 +1,1 @@
-tests/golden/check/fixedbugs-244-a-control-character-a-message-quotes-is-written-by-its-code.hero:12:13: error[unknown_escape]: `\<U+001B>` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash
+tests/golden/check/fixedbugs-244-a-control-character-a-message-quotes-is-written-by-its-code.hero:17:13: error[unknown_escape]: `\<U+001B>` is not an escape sequence — the escapes are \n \t \r \\ \"; write `\\` for a literal backslash

@@ -1,0 +1,323 @@
+# A character a line cannot show (`raw_chars`), refused where it is written
+# as itself: in a string, the text of an `f"…"` literal, a character literal
+# and a comment (panel 192's R2 and R3; defects 251 and 283).
+#
+# A model reads the code points in order and a person's screen shows them
+# otherwise, or not at all: a raw ESC compiled at exit 0, survived `fmt` byte
+# for byte and drove the terminal of whoever printed the file, and retyping
+# the line a screen shows dropped it and still compiled, panel 066's trap for
+# the carriage return, which was refused alone.
+#
+# Each holder says it with its own repair, `certain`, written for every
+# character of a run, which is told once, at its first:
+#
+# - a string by its code, `\u{1b}` (`code_escape`), a tab by `\t`, its one
+#   spelling; a NUL by nothing, since no escape writes one: a `str` that must
+#   hold one is built from bytes as the program runs (panel 192's R1);
+# - a comment by its name, `<U+001B>`, the form a diagnostic shows it in
+#   (defect 244), the tab excepted, which a comment holds;
+# - a character literal by its number, `27` (design.md §4.3).
+#
+# **The class: robustness for the person reading** (panel 192's R4). These
+# refusals guard what a reader sees rather than what the thesis adds, so
+# `check --permissive` keeps them, as it keeps panel 066's
+# `raw_carriage_return` (`diag.is_thesis_rule` names the three classes).
+
+use token
+use diag
+use state
+use bytes
+use shown_char
+use raw_chars
+
+# What a refused character is written in, which decides its repair.
+variant Holder
+    string
+    comment
+
+## Which bytes are asked
+
+# Whether `code` is refused written as itself (`shown_char.unshowable`):
+# today a control character, C0 but the tab and the line feed, DEL and C1.
+function refused(code: i64) -> bool
+    return shown_char.unshowable(code) && raw_chars.control(code)
+
+# Whether a byte can begin a refused character, asked of every byte a string
+# or a comment holds before anything is decoded: a control byte, or the lead
+# byte of C1 (0xC2).
+function might_begin(b: u8) -> bool
+    return b < 32 || b == 127 || b == 194
+
+## The scanners' calls
+
+# Past the bytes from `from` that can begin no refused character, to the first
+# that can, a line feed among them, or the text's end. Asked without the
+# lexer's state, which an `@` parameter copies in and out at every call, so a
+# comment costs one call a run of printable text and not one a byte: a call a
+# byte cost 11% more instructions to lex the compiler (panel 192's
+# compiler-engineer, measured).
+function clear(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    # `might_begin`, written out over one read of the byte, a printable ASCII
+    # byte answered in three comparisons; a lead byte it names is decoded
+    # here, so an em dash costs no call that copies the lexer's state.
+    while i < text.len()
+        b = text[i]
+
+        if b < 32 || b == 127
+            return i
+
+        if b == 194 && refused(shown_char.code_point(bytes.char_at(text, i)))
+            return i
+        i @ i + 1
+
+    return i
+
+# Past the byte at `at` of a string's text or a comment's: past the run of
+# refused characters that starts there, told once; past the run of tabs a
+# string holds, told once; or past the one byte, which is everything else. A
+# carriage return is its caller's in a string (`raw_chars.raw_carriage_return`),
+# and in a comment the one before a line feed ends the line.
+function past(@l: state.LexState, text: str, at: i64, holder: Holder) -> i64
+    if at >= text.len() || text[at] == 10
+        return at
+    b = text[at]
+
+    if !might_begin(b)
+        return at + 1
+
+    if b == 9
+        if holder == .comment
+            return at + 1
+        return tabs(@l, text: text, at: at, word: "a string")
+
+    if b == 13 && (holder == .string || at + 1 < text.len() && text[at + 1] == 10)
+        return at + 1
+    end = run_end(text, at: at)
+
+    if end == at
+        return at + 1
+    told(@l, text, from: at, to: end, holder: holder)
+    return end
+
+# The comments the scan of one line made, from `from` on, each held to what a
+# comment may hold (panel 192's R3). Asked by `lexer.lexed` after the line and
+# not inside the comment's own scan, which a `#` or `//` comment ends its
+# line with, so what is said of it follows what was said of the code before
+# it. A `/* … */` comment is refused whole already (`scan.foreign_comment`),
+# its fix writing it with `#`, which this reads at the next check.
+function comments(@l: state.LexState, text: str, from: i64)
+    spans: [token.Span] @ []
+    i: i64 @ l.tokens.len() - 1
+
+    while i >= 0 && l.tokens[i].span.start >= from
+        if l.tokens[i].kind == .comment
+            spans @ spans.push(l.tokens[i].span)
+        i @ i - 1
+
+    i @ l.held.len() - 1
+
+    while i >= 0 && l.held[i].span.start >= from
+        if l.held[i].kind == .comment
+            spans @ spans.push(l.held[i].span)
+        i @ i - 1
+
+    for span in spans
+        if text[span.start] == '#' || span.end > span.start + 1 && text[span.start + 1] == '/'
+            at: i64 @ span.start
+
+            while at < span.end
+                at @ past(@l, text, at: clear(text, from: at), holder: .comment)
+
+# Past the run of refused characters from `at`, or `at` itself where the one
+# there is not refused. A NUL is a run of its own, having no spelling where
+# the others have one; a carriage return after the first ends a run, being a
+# string's own refusal and a comment's line end.
+function run_end(text: str, at: i64) -> i64
+    i: i64 @ at
+    nul = text[at] == 0
+
+    while i < text.len() && might_begin(text[i])
+        ch = bytes.char_at(text, i)
+        code = shown_char.code_point(ch)
+        another_kind = code == 0 && !nul || code != 0 && nul
+
+        if !refused(code) || another_kind || code == 13 && i > at
+            return i
+        i @ i + ch.len()
+
+    return i
+
+## What is said
+
+# The refusal of the run from `from` to `to`, named by its first character,
+# with the repair that writes every one of them as its holder can.
+function told(@l: state.LexState, text: str, from: i64, to: i64, holder: Holder)
+    ch = bytes.char_at(text, from)
+    code = shown_char.code_point(ch)
+    span = token.Span(start: from, end: to)
+    rest = after(count(text, from: from, to: to) - 1)
+
+    # Panel 192's R2: what is said of a NUL names no invariant R1 denies, since
+    # a `str` may hold one; the literal cannot, and the bytes can.
+    if holder == .string && code == 0
+        nul: diag.Diagnostic @ diag.new_diagnostic(
+            code: "nul_in_string",
+            message: "this string holds a NUL written as itself" + rest + ", which no screen shows, and no escape writes one: a `str` that must hold a NUL is built from bytes as the program runs, a `[u8]` read by `validated_bytes()`",
+            span: span
+        )
+        nul.fixes @ nul.fixes.push(diag.Fix(title: "delete it", replacement: "", span: span, certainty: .guess))
+        state.push_diagnostic(@l.diagnostics, nul)
+        return
+    word: str @ "string"
+    how: str @ "a string writes it by its code, as `" + raw_chars.escaped(code) + "`"
+
+    if holder == .comment
+        word @ "comment"
+        how @ "write its name instead, `" + shown_char.written(ch) + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "invisible_character",
+        message: "this " + word + " holds " + shown_char.named(ch) + " written as itself" + rest + ", " + why(code, holder: holder) + ": " + how,
+        span: span
+    )
+    replacement = rewritten(text, from: from, to: to, holder: holder)
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write each by its " + noun(holder) + ": `" + replacement + "`", replacement: replacement, span: span, certainty: .certain)
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+
+function noun(holder: Holder) -> str
+    return match holder
+        .string  => "code"
+        .comment => "name"
+
+# Why a screen cannot show it, as measured with GNU FriBidi (panel 192): an
+# override in a string reverses the code after the string, so `|| x` reads as
+# text inside it; in a `#` comment, which runs to its line's end, it reverses
+# the comment's own text and no code.
+function why(code: i64, holder: Holder) -> str
+    if raw_chars.control(code)
+        return "which no screen shows and a terminal acts on"
+
+    if code == 8232 || code == 8233
+        return "which a screen may draw as a line break"
+
+    if holder == .comment
+        return "which reorders the rest of the comment as a screen draws it"
+    return "which reorders the rest of its line as a screen draws it, so the line can read as another program"
+
+function after(more: i64) -> str
+    if more == 0
+        return ""
+
+    if more == 1
+        return ", and one more after it"
+    return ", and " + more.to_str() + " more after it"
+
+# How many characters the run from `from` to `to` holds.
+function count(text: str, from: i64, to: i64) -> i64
+    n: i64 @ 0
+    i: i64 @ from
+
+    while i < to
+        i @ i + bytes.char_at(text, i).len()
+        n @ n + 1
+
+    return n
+
+# The run from `from` to `to` as its holder writes it: each character by its
+# code in a string, by its name in a comment.
+function rewritten(text: str, from: i64, to: i64, holder: Holder) -> str
+    out: [str] @ []
+    i: i64 @ from
+
+    while i < to
+        ch = bytes.char_at(text, i)
+
+        if holder == .string
+            out @ out.push(raw_chars.escaped(shown_char.code_point(ch)))
+        else
+            out @ out.push(shown_char.written(ch))
+        i @ i + ch.len()
+
+    return out.join("")
+
+# A run of tabs from `at`, told once: a string writes a tab `\t`, its one
+# spelling (design.md §4.3), and one written as itself reads as spaces.
+function tabs(@l: state.LexState, text: str, at: i64, word: str) -> i64
+    end: i64 @ at
+
+    while end < text.len() && text[end] == 9
+        end @ end + 1
+
+    span = token.Span(start: at, end: end)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "raw_tab",
+        message: "a tab written as itself inside " + word + after(end - at - 1) + ": it reads as spaces, so the next reader retypes it as spaces, and a tab is written `\\t`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write it as `\\t`", replacement: repeat("\\t", to_u64(end - at).must()), span: span, certainty: .certain)
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+    return end
+
+## The character literal
+
+# A character literal from `start` to `end` holding one control character
+# written as itself: refused, its repair the number it is (design.md §4.3),
+# and a tab's `\t`. A carriage return was told where the scan met it
+# (`raw_chars.raw_carriage_return`).
+function in_character(@l: state.LexState, text: str, start: i64, end: i64)
+    if end != start + 3
+        return
+    b = text[start + 1]
+
+    if b == 9
+        _ = tabs(@l, text: text, at: start + 1, word: "a character literal")
+        return
+    code = to_i64(b).must()
+
+    if b == 13 || !refused(code)
+        return
+    span = token.Span(start: start, end: end)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "invisible_character",
+        message: "this character literal holds " + shown_char.named(bytes.char_at(text, start + 1)) + " written as itself, " + why(code, holder: .string) + ": a character literal is its character's code, so write the number, `" + code.to_str() + "`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the number: `" + code.to_str() + "`", replacement: code.to_str(), span: span, certainty: .certain)
+    )
+    state.push_diagnostic(@l.diagnostics, d)
+
+## Tests
+
+test "a control character is refused, a tab and a line feed are not, and the bytes asked are the ones that can begin one"
+    for code in [0, 1, 27, 31, 127, 128, 133, 159]
+        assert refused(code)
+
+    for code in [9, 10, 32, 65, 160, 233, 8205]
+        assert !refused(code)
+
+    assert might_begin(194)
+    assert might_begin(27)
+    assert !might_begin(65)
+    assert !might_begin(226)
+
+test "a run is counted in characters, and rewritten as its holder writes it"
+    esc: [u8] = [27, 7, 127]
+    text = "a" + esc.validated_bytes().must() + "b"
+    assert run_end(text, at: 1) == 4
+    assert count(text, from: 1, to: 4) == 3
+    assert rewritten(text, from: 1, to: 4, holder: .string) == "\\u{1b}\\u{7}\\u{7f}"
+    assert rewritten(text, from: 1, to: 4, holder: .comment) == "<U+001B><U+0007><U+007F>"
+    assert after(0) == ""
+    assert after(2) == ", and 2 more after it"
+
+test "a NUL is a run of its own"
+    nul: [u8] = [27, 0, 0, 27]
+    text = nul.validated_bytes().must()
+    assert run_end(text, at: 0) == 1
+    assert run_end(text, at: 1) == 3

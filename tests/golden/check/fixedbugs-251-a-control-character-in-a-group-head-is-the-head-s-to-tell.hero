@@ -1,0 +1,14 @@
+# Defect 251, panel 192's R2, 2026-10-05: a control character written as
+# itself in a group head's string is refused by the head, `unshowable_name`
+# (panel 188), and the lexer's refusal of the same character is left out
+# (`heads_told`): one mistake, one message, and the lexer's fix, `\u{1b}`,
+# wrote a name the head refuses next. In any of the head's three strings.
+
+extern "ab.h"  #~ unshowable_name
+    function f() -> i32
+
+extern "c.h" link "m"  #~ unshowable_name
+    function g() -> i32
+
+function main()
+    print(1)

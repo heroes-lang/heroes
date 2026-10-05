@@ -34,7 +34,8 @@ use indent_runs
 use not_text
 use file_start
 use refused_runs
-use head_names
+use heads_told
+use raw_refusal
 
 ## The output
 
@@ -238,7 +239,12 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
 
         if l.pos >= text.len()
             break
+        line = l.pos
         scan.line_body(@l, text)
+
+        # A comment the line made, held to what a comment may hold (panel
+        # 192's R3), after the line, which a `#` or `//` comment ends.
+        raw_refusal.comments(@l, text, from: line)
 
     # An indentation run the file's end ends is told as every run is.
     indent_runs.finish(@l, text)
@@ -267,12 +273,12 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     line_joins.weigh(@l, text)
 
     # An escape inside a header's name left to the head that judges the
-    # name (defect 250, `head_names.told_by_heads`); a refused character told
+    # name (defect 250, `heads_told.told_by_heads`); a refused character told
     # once a run, at most eight times a text (defect 282, `refused_runs`); a
     # refused break moves with the diagnostic it names.
     left = refused_runs.without(
         l.diagnostics,
-        dropped: head_names.told_by_heads(l.diagnostics, tokens: l.tokens, text: text)
+        dropped: heads_told.told_by_heads(l.diagnostics, tokens: l.tokens, text: text)
     )
     said = refused_runs.told_once(left.diagnostics, text: text)
     refused: [state.Break] @ []

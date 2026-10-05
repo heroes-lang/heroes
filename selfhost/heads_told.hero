@@ -1,0 +1,109 @@
+# Which of a text's lexer diagnostics a group head tells instead, so one
+# mistake in a head's string is one message (defect 250; panel 192). Moved
+# from `head_names` on 2026-10-05, when that file stood at its 300 lines and
+# this question grew a second half (panel 192's compiler-engineer).
+#
+# - An escape the language does not have, inside the string naming an
+#   `extern`'s header, where `head_names.judged` refuses the string whole, as
+#   `parse/group_head` asks it. The value keeps an escape's `\`, and a
+#   header's `\` is `escape_in_header_name`'s, so the lexer's `unknown_escape`
+#   there was a second message for one mistake, and its certain fix, `\\d`,
+#   wrote a name the head refuses next. A `link` or `package` name keeps the
+#   lexer's message, whose fix the head accepts.
+# - A character a line cannot show, written as itself in any of the three
+#   strings (`raw_refusal`): the head refuses it from the name whole, and the
+#   lexer's certain `\u{1b}` wrote a name the head refuses next, so the head's
+#   message is the one, and `check --permissive`, which drops it, reads the
+#   string as it did before panel 192.
+
+use token
+use diag
+use keywords
+use head_names
+
+function told_by_heads(diagnostics: [diag.Diagnostic], tokens: [token.Token], text: str) -> [bool]
+    headers: [token.Span] @ []
+    names: [token.Span] @ []
+    k: i64 @ 0
+
+    while k + 1 < tokens.len()
+        name = tokens[k + 1].span
+        what = head_word(tokens, at: k, text: text)
+
+        if what.len() > 0 && tokens[k + 1].kind == .str_lit && name.end <= text.len()
+            if !head_names.judged(spelled: text.slice(from: name.start, to: name.end), span: name, what: what).is_err()
+                names @ names.push(name)
+
+                if what == "header"
+                    headers @ headers.push(name)
+        k @ k + 1
+
+    out: [bool] @ []
+
+    for d in diagnostics
+        told = d.code == "unknown_escape" && inside(d.span, spans: headers) || raw(d.code) && inside(d.span, spans: names)
+        out @ out.push(told)
+
+    return out
+
+# The word naming the head string after the token at `at`: `header` after
+# `extern`, `link` or `package` after the header's own string, or "".
+function head_word(tokens: [token.Token], at: i64, text: str) -> str
+    if tokens[at].kind == .kw_extern
+        return "header"
+
+    if at < 2 || tokens[at].kind != .ident || tokens[at - 1].kind != .str_lit || tokens[at - 2].kind != .kw_extern
+        return ""
+    word = text.slice(from: tokens[at].span.start, to: tokens[at].span.end)
+
+    if word == keywords.WORD_LINK || word == keywords.WORD_PACKAGE
+        return word
+    return ""
+
+# The lexer's refusals of a character written as itself (`raw_refusal`).
+function raw(code: str) -> bool
+    return code == "invisible_character" || code == "raw_tab" || code == "nul_in_string"
+
+function inside(span: token.Span, spans: [token.Span]) -> bool
+    for one in spans
+        if span.start >= one.start && span.end <= one.end
+            return true
+
+    return false
+
+## Tests
+
+# Defect 250: an escape inside a header's name is the head's to tell, the
+# lexer's message left out; the same escape in a string no head judges as a
+# header keeps it. The tokens and the message are written as the lexer
+# gives them for `extern "a\db.h"` (`lexer.hero` holds the lexed case).
+test "an escape the language does not have inside a header's name is the head's to tell, and nowhere else"
+    text = "extern \"a\\db.h\""
+    extern_word = token.Token(kind: .kw_extern, span: token.Span(start: 0, end: 6))
+    name = token.Token(kind: .str_lit, span: token.Span(start: 7, end: 15))
+    escape_at = diag.new_diagnostic(
+        code: "unknown_escape",
+        message: "`\\d` is not an escape sequence",
+        span: token.Span(start: 9, end: 11)
+    )
+    other = diag.new_diagnostic(code: "unexpected_character", message: "m", span: token.Span(start: 9, end: 11))
+    assert told_by_heads([escape_at, other], tokens: [extern_word, name], text: text) == [true, false]
+
+    # The same string after another word, as `link`'s or a value's, is no
+    # header: the lexer's message stays.
+    word = token.Token(kind: .ident, span: token.Span(start: 0, end: 6))
+    assert told_by_heads([escape_at], tokens: [word, name], text: text) == [false]
+
+# Panel 192: a raw ESC in a library's name is the head's to tell, and the
+# same refusal in a string no head names keeps the lexer's message.
+test "a character a line cannot show, inside any of a head's three strings, is the head's to tell"
+    esc: [u8] = [27]
+    text = "extern \"a.h\" link \"m" + esc.validated_bytes().must() + "\""
+    extern_word = token.Token(kind: .kw_extern, span: token.Span(start: 0, end: 6))
+    header = token.Token(kind: .str_lit, span: token.Span(start: 7, end: 12))
+    link_word = token.Token(kind: .ident, span: token.Span(start: 13, end: 17))
+    library = token.Token(kind: .str_lit, span: token.Span(start: 18, end: 22))
+    raw_at = diag.new_diagnostic(code: "invisible_character", message: "m", span: token.Span(start: 20, end: 21))
+    assert told_by_heads([raw_at], tokens: [extern_word, header, link_word, library], text: text) == [true]
+    value_word = token.Token(kind: .ident, span: token.Span(start: 13, end: 17))
+    assert told_by_heads([raw_at], tokens: [value_word, library], text: text) == [false]

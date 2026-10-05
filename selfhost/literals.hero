@@ -18,6 +18,7 @@ use bytes
 use escape_report
 use code_escape
 use raw_chars
+use raw_refusal
 
 ## The escape validator
 
@@ -98,11 +99,17 @@ function string(@l: state.LexState, text: str)
         else
 
             # Not a line ending here: a string is single-line, so this byte is
-            # content — invisible content, which is why it is refused (066).
-            # A CR that begins a CRLF line end never gets here (`ends_line`).
+            # content — invisible content, which is why it is refused (066),
+            # as is every character a line cannot show (`raw_refusal`, panel
+            # 192). A CR that begins a CRLF line end never gets here.
             if b == layout.CR
                 raw_chars.raw_carriage_return(@l, l.pos, .in_str)
-            l.pos @ l.pos + 1
+
+            # `raw_refusal.might_begin`, written out: no call for a byte.
+            if b < 32 || b == 127 || b == 194
+                l.pos @ raw_refusal.past(@l, text, at: l.pos, holder: .string)
+            else
+                l.pos @ l.pos + 1
 
     span = token.Span(start: start, end: l.pos)
     state.error_token(
@@ -174,6 +181,7 @@ function char_lit(@l: state.LexState, text: str)
     l.pos @ l.pos + 1
 
     if units == 1 && (starts_with_backslash(content) || all_ascii(content))
+        raw_refusal.in_character(@l, text, start: start, end: l.pos)
         state.emit(@l, .char_lit, start)
     else
         span = token.Span(start: start, end: l.pos)
