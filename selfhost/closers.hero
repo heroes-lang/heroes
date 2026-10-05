@@ -24,11 +24,12 @@
 # |---|---|
 # | `opener_of`, `close_to_its_kind` | `scan.finish` |
 # | `never_closed` | `close_to_its_kind`, `layout.close_brackets` |
-# | `in_a_for_header` | `scan.punct`, a `;` in C's `for (...)` |
+# | `header_semicolon` | `scan.punct`, a `;` of C's `for` header, in its `(` or bare |
 
 use token
 use diag
 use state
+use separator_runs
 
 # Before the closer `kind` at `start` closes the innermost opener: where that
 # opener is of another kind and one of its own is open below it, inside the
@@ -152,6 +153,61 @@ function in_a_for_header(l: state.LexState) -> bool
         i @ i - 1
 
     return i > 0 && l.tokens[i].kind == .lparen && l.tokens[i].span.start == open && l.tokens[i - 1].kind == .kw_for
+
+# A `;` of C's `for` header at `at`, left to the parser's one report of it:
+# one in the header's `(` a token of its own (defect 194), and one of a
+# header written bare, `for i = 0; i < 3; i++`, with the rest of its line,
+# every clause past it, which no line of the language holds (defect 301): its
+# `++` then asks no line below to go on, and the body below is read as one.
+# True where the `;` was taken so.
+function header_semicolon(@l: state.LexState, text: str, at: i64) -> bool
+    if in_a_for_header(l)
+        state.error_token_at(@l, at)
+        return true
+
+    if l.open_brackets.len() > 0 || l.holes.len() > 0 || !begun_by_for(l, text, at: at)
+        return false
+    l.pos @ header_end(text, from: l.pos)
+    state.error_token_at(@l, at)
+    return true
+
+# Whether the line of offset `at` begins with `for` and holds no `in` before
+# it, the iteration's own word, which C's header never writes.
+function begun_by_for(l: state.LexState, text: str, at: i64) -> bool
+    start: i64 @ at
+    first: i64 @ -1
+    i: i64 @ l.tokens.len() - 1
+
+    while start > 0 && text[start - 1] != '\n'
+        start @ start - 1
+
+    while i >= 0 && l.tokens[i].span.start >= start
+        if l.tokens[i].kind == .kw_in
+            return false
+
+        if l.tokens[i].kind != .comment && !token.is_line_end(l.tokens[i].kind)
+            first @ i
+        i @ i - 1
+
+    return first >= 0 && l.tokens[first].kind == .kw_for
+
+# Past the rest of a line's code from `from`, its strings whole, before a
+# comment, the line's end, or a `{` that ends the line, a body's, which the
+# brace layout reads; the spaces before any of them left out.
+function header_end(text: str, from: i64) -> i64
+    i: i64 @ from
+    last: i64 @ from
+
+    while i < text.len() && text[i] != '\n' && text[i] != '\r' && text[i] != '#' && !(text[i] == '{' && separator_runs.ends_its_line(text, at: i + 1))
+        if text[i] == '"' || text[i] == '\''
+            i @ past_literal(text, from: i)
+            last @ i
+        else
+            if text[i] != ' ' && text[i] != '\t'
+                last @ i + 1
+            i @ i + 1
+
+    return last
 
 # The byte of the opener the closer `kind` closes.
 function opener_of(kind: token.TokenKind) -> u8

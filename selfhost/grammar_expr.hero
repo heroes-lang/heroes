@@ -924,7 +924,7 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
             return .error
         return .for_in(name: name, iterable: iterable, block: body.must())
 
-    if !cursor.at_reported_error(c)
+    if !cursor.at_reported_error(c) || loop_habit.c_header(c, text)
         read: cursor.Cursor @ cursor.trial(c)
         scratch: ast.Ast @ ast.new_ast()
         _ = parse_expr(@read, @scratch, text)

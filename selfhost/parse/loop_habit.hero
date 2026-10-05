@@ -60,11 +60,17 @@ function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.
     header = c_header(c, text)
     rule: str @ "a loop over a condition is `while`"
 
+    found: str @ cursor.found(c, text)
+
     if header
         rule @ "C's three-clause header is no loop here: count with `for i in range(from: a, to: b)`, and loop on a condition with `while`"
+
+    # The bare header's `;`, which the lexer took with the rest of its line.
+    if cursor.at(c, .error) && cursor.slice_of(text, cursor.current_span(c))[0] == ';'
+        found @ "`;`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "for_missing_in",
-        message: "`for` iterates — `for x in xs`; found " + cursor.found(c, text) + " — " + rule,
+        message: "`for` iterates — `for x in xs`; found " + found + " — " + rule,
         span: cursor.current_span(c)
     )
 
@@ -74,19 +80,25 @@ function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.
         )
     cursor.say(@c, d)
 
-# Whether the `(` under the cursor holds, in no bracket or hole of its own, a
-# `;` the lexer left to this report: C's three-clause header `(i = 0; i < n;
-# i++)`, its every `;` once a message (`closers.in_a_for_header`, defect
-# 194), which no `while` writes. Inside a `(` the lexer ends no line, so one
+# Whether what stands at the cursor, to its line's end, is C's three-clause
+# header, which no `while` writes: a `(` holding, in no bracket or hole of
+# its own, a `;` the lexer left to this report, `(i = 0; i < n; i++)`, its
+# every `;` once a message (defect 194); or the header written bare, whose
+# first `;` the lexer took with the rest of its line (defect 301;
+# `closers.header_semicolon`). Inside a `(` the lexer ends no line, so one
 # never closed holds what stands before the first line end past it. A piece
 # that ends no literal opens a hole, and one after a hole closes it: a `;` in
 # a hole is the hole's, told by the lexer (defect 312).
 function c_header(c: cursor.Cursor, text: str) -> bool
     depth: i64 @ 0
     holes: i64 @ 0
+    inside: i64 @ 0
     i: i64 @ c.pos
 
-    while cursor.at(c, .lparen) && !token.ends_a_line(c.tokens[i].kind)
+    if cursor.at(c, .lparen)
+        inside @ 1
+
+    while !token.ends_a_line(c.tokens[i].kind)
         k = c.tokens[i].kind
         piece = cursor.slice_of(text, c.tokens[i].span)
 
@@ -95,7 +107,7 @@ function c_header(c: cursor.Cursor, text: str) -> bool
         else if token.is_closer(k)
             depth @ depth - 1
 
-            if depth == 0
+            if depth == 0 && inside == 1
                 return false
         else if k == .str_piece
             if piece[0] == '}'
@@ -103,7 +115,7 @@ function c_header(c: cursor.Cursor, text: str) -> bool
 
             if !lex_interp.ends_closed(piece)
                 holes @ holes + 1
-        else if depth == 1 && holes == 0 && k == .error && piece == ";"
+        else if depth == inside && holes == 0 && k == .error && piece[0] == ';'
             return true
         i @ i + 1
 
