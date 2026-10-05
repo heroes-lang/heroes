@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-05
-commit: 31ddec2b3fcaf98e9cbcab9d2697a10011a50ccd
+commit: c6aada1d4799b92ed9283edd52f85a2d899c6782
 github: none
 ---
 
@@ -16,3 +16,5 @@ github: none
     **Measured beside it, 2026-10-05**: the 11 files are 1 verdict, 4 dump units, 3 screen units and 3 screen texts of the pointee and layout probes. The scan covered the `.txt`, `.json` and `.c` files written since 2026-10-04 12:00 under every `/c/w/*/build` on the box and was cut by its own 300 s bound before its last line, so 11 is a floor; objects and listings were not scanned. **Unrun**: what a zeroed object, listing or screen text does to a later build, and a power cut on this Mac or Linux, which no machine here can be asked for (`replace.c`'s own *NOT RUN*). Two routes beside each other, neither chosen here: the publisher flushing before its rename, as `replace.c` does, at a cost per published file to be measured; and every reader of a kept file treating one it cannot read whole as absent and asking again.
 
     Repaired at `31ddec2b`, 2026-10-05 (lane cli12), for every kept text, gated by its cases and the compiler's own tests; the net is owed at the batch's close. Both routes: `publish.write_whole` flushes before the rename, and `cli/kept.hero` reads a kept text, and `deps.vouched` a record, only whole; the layout word is `sealed`. Measured at the base first, each kind planted zeroed on this Mac: the layout check's screen built at exit 0 a construction leaving out a field, a wrong program accepted, beside the verdicts' `internal error` over NULs. **Not reached, a row of this item**: an object clang writes, a unit's or the runtime's, is published with no flush, and a zeroed one stops every later link at exit 2 (planted, `ld: unknown file type`); flushing a file another process wrote needs a runtime primitive the language does not expose, reported to the coordinator with its shape.
+
+    Repaired at `c6aada1d` as well, 2026-10-05 (lane cli12), the shape beside the first: `files.stage` never opens a name that is taken, so a private name a killed build left, met again under a pid used again, failed the write at exit 2; the next private name is taken instead, up to four. Gated by its case, red with a single try, and the compiler's own tests.
