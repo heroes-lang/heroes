@@ -61,7 +61,7 @@ function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
                 tainted @ true
 
         if !tainted
-            out.diagnostics @ out.diagnostics.push(diagnose(a, s, decls, cycle))
+            state.append_diagnostic(@out.diagnostics, diagnose(a, s, decls, cycle))
 
 ## Which declaration an offset falls inside
 
@@ -179,7 +179,7 @@ function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
         if inside
             continue
         name = source.span_text(s, decls[offender.holder].name)
-        out.diagnostics @ out.diagnostics.push(body_diagnostic(name: name, what: offender.what, span: offender.span))
+        state.append_diagnostic(@out.diagnostics, body_diagnostic(name: name, what: offender.what, span: offender.span))
 
         if !contains(refused, offender.holder)
             refused @ refused.push(offender.holder)

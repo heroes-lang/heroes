@@ -195,8 +195,18 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
         braced: []
     )
 
+# A diagnostic the resolver says, appended in place: the list is lent to
+# `append_diagnostic`, whose parameter is a bare place, where
+# `r.out.diagnostics @ r.out.diagnostics.push(d)` is a FIELD place the in-place
+# store never reaches, so every report copied every one said before it and N
+# reports cost N² (defect 350, defect 146's rule: `cursor.push_diagnostic`).
 function push_diagnostic(@r: Resolver, d: diag.Diagnostic)
-    r.out.diagnostics @ r.out.diagnostics.push(d)
+    append_diagnostic(@r.out.diagnostics, d)
+
+# Append one diagnostic in place, the array lent; `resolve/cycles` appends
+# its own through this too.
+function append_diagnostic(@said: [diag.Diagnostic], d: diag.Diagnostic)
+    said @ said.push(d)
 
 # Membership in a module -> name table, shared by fields/suggested/reads.
 function keyed_has(table: name_rows.NameSets, module: str, name: str) -> bool

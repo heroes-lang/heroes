@@ -23,8 +23,14 @@ function intern(@b: build.Lowering, text: str) -> i64
     remember_id(@b.string_ids, text, id: id)
     return id
 
+# A diagnostic the lowering says, appended in place: lent, as the strings
+# below are, since a push through the field place copied every report said
+# before it (defect 350, defect 146's rule).
 function push_diagnostic(@b: build.Lowering, d: diag.Diagnostic)
-    b.out.diagnostics @ b.out.diagnostics.push(d)
+    append_diagnostic(@b.out.diagnostics, d)
+
+function append_diagnostic(@said: [diag.Diagnostic], d: diag.Diagnostic)
+    said @ said.push(d)
 
 # Lent, so the push and the store land in place (design.md Part 8 wart 8's
 # cheap spelling, defect 112).
