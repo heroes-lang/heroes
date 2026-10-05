@@ -108,7 +108,7 @@ function flush(@l: state.LexState)
 function goes_on_at_head(text: str, at: i64) -> i64
     first = punctuation.punct_at(text, at: at)
 
-    if !can_only_go_on(first.kind)
+    if !token.can_only_go_on(first.kind)
         return -1
 
     # `-1` and `-fee` against their operand begin a value of their own (panel
@@ -124,26 +124,6 @@ function goes_on_at_head(text: str, at: i64) -> i64
     if next_line.arrow_below(text, from: at + first.width)
         return -1
     return at
-
-# A token no statement begins with, which at the head of a line can only go
-# on with the line above: a binary operator (spec § 7), the `?` that
-# propagates and the `::` that names a field. ENUMERATED, never a catch-all:
-# a new kind is a compile error here until somebody decides it, which is
-# `layout.is_line_ender`'s own discipline. `-` answers true, and the caller
-# asks panel 180's question of it.
-function can_only_go_on(kind: token.TokenKind) -> bool
-    return match kind
-        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                    => true
-        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent => true
-        .question | .colon_colon                                                         => true
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit               => false
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if      => false
-        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue               => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use          => false
-        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot | .hole     => false
-        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace        => false
-        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof     => false
-        .error                                                                           => false
 
 # A `-` set apart from its operand, by a space, a comment or a line end.
 function set_apart(text: str, at: i64) -> bool
@@ -259,7 +239,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     # the join writes a pattern (`sign_above`), which says the refusal; left
     # out with its margin, the arm's line is laid out on its own, as the
     # deletion writes it, and is no break (`refused`, with no `\` asking).
-    if can_only_go_on(left.kind) && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.holds_an_arrow(text, from: l.pos)
+    if token.can_only_go_on(left.kind) && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.an_arm_below(text, at: l.pos)
         return sign_above.offer(@l, d, text, at: at)
 
     # Joining the lines is the program the parser reads. It is `certain` where
@@ -286,7 +266,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         else if left.kind == .minus && line_above.opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
             glue @ ""
         d.fixes @ d.fixes.push(join_fix.made(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
-    refused(@l, d, head: l.backslash >= 0 && !can_only_go_on(left.kind) && goes_on_at_head(text, at: l.pos) >= 0)
+    refused(@l, d, head: l.backslash >= 0 && !token.can_only_go_on(left.kind) && goes_on_at_head(text, at: l.pos) >= 0)
     return true
 
 # The line above could end, and this one begins with a token that can only
@@ -340,15 +320,3 @@ function refused(@l: state.LexState, d: diag.Diagnostic, head: bool)
 # it, so its statement's joins cannot repair it alone (defect 129).
 function ended(@l: state.LexState)
     state.push_break(@l.breaks, diagnostic: -1, after: l.tokens.len(), head: false)
-
-test "a token that can only go on is a binary operator, the propagating `?` or `::`"
-    assert can_only_go_on(.plus)
-    assert can_only_go_on(.and_and)
-    assert can_only_go_on(.question)
-    assert can_only_go_on(.colon_colon)
-    assert !can_only_go_on(.lparen)
-    assert !can_only_go_on(.lbracket)
-    assert !can_only_go_on(.dot)
-    assert !can_only_go_on(.hole)
-    assert !can_only_go_on(.arrow)
-    assert !can_only_go_on(.bang)

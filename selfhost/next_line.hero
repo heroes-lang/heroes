@@ -15,6 +15,7 @@
 # fix, an interpolated literal read as a line that may stand alone.
 
 use token
+use punctuation
 use keywords
 use bytes
 use foreign_at
@@ -81,7 +82,8 @@ function holds_an_arrow(text: str, from: i64) -> bool
 # next line with words hold an arm's `=>`? Then a `-` before `from` signs the
 # pattern of an arm broken after its sign, `-` over `1 => 10` (defect 126):
 # the line that ends with it is refused as one that cannot end, and it is
-# never a subtraction going on with the arm above.
+# never a subtraction going on with the arm above. Past lines that hold an
+# operator alone, each one more stray above the same arm (defect 351).
 function arrow_below(text: str, from: i64) -> bool
     i: i64 @ past_the_line(text, from: past_blanks(text, from: from))
 
@@ -89,10 +91,31 @@ function arrow_below(text: str, from: i64) -> bool
         i @ past_blanks(text, from: i + 1)
 
         if i < text.len() && text[i] != '\n' && text[i] != '#'
-            return holds_an_arrow(text, from: i)
+            if holds_an_arrow(text, from: i)
+                return true
+            alone = operator_alone(text, at: i)
+
+            if alone < 0
+                return false
+            i @ past_blanks(text, from: i + alone)
         i @ past_the_line(text, from: i)
 
     return false
+
+# Does the line with words at `at` hold an arm's `=>`, or an operator alone
+# over one (`arrow_below`)?
+function an_arm_below(text: str, at: i64) -> bool
+    alone = operator_alone(text, at: at)
+    return holds_an_arrow(text, from: at) || alone >= 0 && arrow_below(text, from: at + alone)
+
+# The width of the operator at `at`, one that can only go on with a line
+# above (`token.can_only_go_on`), or -1.
+function operator_alone(text: str, at: i64) -> i64
+    found = punctuation.punct_at(text, at: at)
+
+    if found.width == 0 || !token.can_only_go_on(found.kind)
+        return -1
+    return found.width
 
 # `from`, past spaces and carriage returns.
 function past_blanks(text: str, from: i64) -> i64
