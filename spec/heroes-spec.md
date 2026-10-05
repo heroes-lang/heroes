@@ -32,8 +32,9 @@ so a long expression, a condition included, breaks inside parentheses.
   declaration documents it; `##` is a section heading.
 - Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
   compile error. No braces, no semicolons; a condition needs no parentheses.
-- Syntax is ASCII-only; comments may contain any UTF-8, strings any but a raw
-  carriage return or line end: a string is one line.
+- Syntax is ASCII-only; comments and strings hold UTF-8 but no raw control
+  character (a comment's tab aside), bidirectional control, U+2028 or U+2029,
+  and a string is one line.
 
     File = { NEWLINE } { Use | Declaration } .
     Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .
@@ -44,8 +45,10 @@ so a long expression, a condition included, breaks inside parentheses.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so a literal must fit its type.
 - A character literal is an integer: `'a'`, `'0'`, `' '`.
-- Six escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
-  of `\"` in a character literal. Any other escape is a compile error.
+- Seven escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
+  of `\"` in a character literal, and in a string alone `\u{1b}`, a code in
+  lowercase hex with no leading zero, for a character it holds no other way
+  (here ESC), never 0 or a surrogate. Any other escape is a compile error.
 - An `f` before a literal's opening quote makes `{e}` write that value as
   `to_str` does: `f"line {n}: {word}"`. Any expression may stand there, and the
   hole ends at the `}` that closes it, nested brackets and literals skipped;
@@ -320,10 +323,11 @@ can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`
 … `to_u64` give a `T?`, because the number may not fit. `to_i64` takes a float
 too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
 and `to_f32` rounds.
-Files and the process, also provided: `read_file(path: str) -> str?` ·
-`write_file(path: str, text: str) -> ()?` · `args() -> [str]` (the arguments
-after the program name; one that is not UTF-8 aborts) · `args_checked() -> [str?]`
-(which does not) · `exit(code: i64)` (ends the program).
+Files and the process, also provided: `read_file(path: str) -> str?` (failing
+`file_not_found`, `not_text` or `read_failed`) · `write_file(path: str, text:
+str) -> ()?` (`write_failed`) · `args() -> [str]` (the arguments after the
+program name; one that is not UTF-8 aborts) · `args_checked() -> [str?]` (which
+does not) · `exit(code: i64)` (ends the program).
 
 ## 12. Tests and holes
 ```
@@ -379,10 +383,11 @@ parameter declared with it takes no other handle, and two records may not name
 one tag but `void`.
 A group's `constant` has no body: the header holds the value.
 
-`s.cstr()` lends a `str` to C; outside a group nothing answers `cstr` and no
-record holds one. `c.validated()` copies one back as a `str?`, and a null one
-fails `null_cstr`; `f.validated_bytes()` does the same for a field of bytes,
-reading to its first zero or the whole field, and either fails `not_text`.
+`s.cstr()` lends a `str` to C and, like `s.lease()`, aborts on one holding a
+zero byte; outside a group nothing answers `cstr` and no record holds one. `c.validated()` copies one back as a `str?`, and a
+null one fails `null_cstr`; `f.validated_bytes()` does the same for a field of
+bytes, reading to its first zero or the whole field, and for a `[u8]` every
+byte, and either fails `not_text`.
 Nothing lends a field to `cstr`, which promises a zero the field does not;
 `f.ptr()` lends a binding's field to a `ptr` parameter declared `counted_by n`,
 naming the sibling that gives the extent, and one past the field is refused.
@@ -426,9 +431,7 @@ no clause. A value takes one of the five words, and they mark only a value
 that reaches a handle, as itself or through a field or an array element; anywhere
 else they are errors.
 A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
-asks the system where its headers and libraries are and what else it needs. A
-package answering with anything this compiler does not pass on is refused,
-naming what it said.
+asks the system where its headers and libraries are and what else it needs.
 
     Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
              INDENT { Member } DEDENT .
