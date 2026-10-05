@@ -53,7 +53,7 @@ function arrow(@c: cursor.Cursor, text: str, own_block: bool) -> bool
     if !cursor.at_reported_error(c)
         d = diag.new_diagnostic(
             code: "expected_arm_arrow",
-            message: "expected `=>` and the arm's value, found " + cursor.found(c, text),
+            message: "expected `=>` and the arm's value, found " + cursor.found(c, text) + arrow_along(c, text),
             span: cursor.current_span(c)
         )
         seam = joined_after(c, text, at: at)
@@ -70,6 +70,27 @@ function arrow(@c: cursor.Cursor, text: str, own_block: bool) -> bool
         _ = cursor.bump(@c)
 
     return at >= 0
+
+# Where the `=>` stands further along the cursor's line, outside brackets,
+# said as the message's tail: what stands before it is no pattern, and the
+# author is told where the arrow they wrote is (defect 308); none, nothing.
+function arrow_along(c: cursor.Cursor, text: str) -> str
+    depth: i64 @ 0
+    i: i64 @ c.pos
+
+    while !token.ends_a_line(c.tokens[i].kind)
+        k = c.tokens[i].kind
+
+        if k == .fat_arrow && depth == 0
+            return " — this arm's `=>` stands " + text_lines.place_above(text, at: c.tokens[i].span.start, from: cursor.current_span(c).start) + ", past what no pattern holds: an arm's patterns are joined by `|`"
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if token.is_closer(k)
+            depth @ depth - 1
+        i @ i + 1
+
+    return ""
 
 # The index of the line end at the cursor's line's end, outside brackets, or
 # -1 where a block's edge or the stream's end comes first.
