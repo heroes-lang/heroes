@@ -43,6 +43,7 @@ use source
 use resolved
 use parse
 use resolve/state
+use resolve/unused_sweep
 use resolve/types
 use resolve/errors
 use resolve/qualified
@@ -287,7 +288,7 @@ function walked(text: str) -> state.Resolver
                 state.close_scope(@r)
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    state.report_unused(@r, s)
+    unused_sweep.report(@r, s)
     return r
 
 test "the value is resolved before the name is bound"

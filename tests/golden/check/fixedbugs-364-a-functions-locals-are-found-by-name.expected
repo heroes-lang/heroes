@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-364-a-functions-locals-are-found-by-name.hero:29:12: error[unknown_name]: nothing named `inner` is in scope
+tests/golden/check/fixedbugs-364-a-functions-locals-are-found-by-name.hero:37:12: error[unknown_name]: nothing named `first` is in scope
+tests/golden/check/fixedbugs-364-a-functions-locals-are-found-by-name.hero:49:9: error[shadowed_binding]: `outer` is already in scope, bound at line 47 — shadowing is an error here: a name means one thing for as long as it is visible
+tests/golden/check/fixedbugs-364-a-functions-locals-are-found-by-name.hero:53:5: error[shadowed_binding]: `n` is already in scope, bound at line 52 — shadowing is an error here: a name means one thing for as long as it is visible
+tests/golden/check/fixedbugs-364-a-functions-locals-are-found-by-name.hero:66:15: error[unused_binding]: the payload `v` is never read — write `_` in the pattern when the value is not needed
+tests/golden/check/fixedbugs-364-a-functions-locals-are-found-by-name.hero:66:26: error[duplicate_pattern_binding]: `v` is bound by two patterns of the same arm — one arm binds each name once
