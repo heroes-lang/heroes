@@ -13,6 +13,8 @@ use escape
 use bytes
 use escape_readings
 use escape_codes
+use raw_chars
+use shown_char
 
 # The diagnostic for the escape whose backslash is at `backslash`, in the
 # escape's own words, its fixes by its reading, pushed; and the position past
@@ -69,7 +71,22 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
                         diag.Fix(title: "write the number: `" + value.to_str() + "`", replacement: value.to_str(), span: token.Span(start: literal, end: c.end + 1), certainty: .guess)
                     )
             else
-                d.message @ opening + "a string holds its characters as themselves, and this language has no escape for one by its code; write `\\\\` for a literal backslash"
+                d.message @ opening + by_code(value) + "; write `\\\\` for a literal backslash"
+
+            # A character a line cannot show is written `\u{1b}` (panel 192's
+            # R5), its braces the escape's own, never doubled in an `f` piece,
+            # and a tab, a line feed or a carriage return by its letter. A
+            # guess: the same bytes are a path's backslash, `"bin\x86"`, as
+            # often as a character.
+            if ctx == .in_str && raw_chars.written_by_code(value)
+                d.fixes @ d.fixes.push(
+                    diag.Fix(title: "write it by its code: `" + raw_chars.escaped(value) + "`", replacement: raw_chars.escaped(value), span: span, certainty: .guess)
+                )
+
+            if ctx == .in_str && value >= 0 && value < 32 && escape.letter_of(value).len() > 0
+                d.fixes @ d.fixes.push(
+                    diag.Fix(title: "write it as `" + escape.letter_of(value) + "`", replacement: escape.letter_of(value), span: span, certainty: .guess)
+                )
 
             if !one.is_err()
                 itself = as_text(one.must(), in_piece: in_piece)
@@ -110,6 +127,24 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
 
     state.push_diagnostic(@l.diagnostics, d)
     return end
+
+# What a string says of an escape by code that names `value` (panel 192's
+# R5): a character a line cannot show is written `\u{…}`, a tab, a line feed
+# and a carriage return by their letters, a NUL by no escape, and any other
+# as itself.
+function by_code(value: i64) -> str
+    if value < 0 || value > 1114111 || value >= 55296 && value <= 57343
+        return "it names no character, and a string writes by its code only " + raw_chars.CLASS + ", as `\\u{1b}`, in lowercase hexadecimal"
+
+    if value == 0
+        return "no escape writes a NUL, a byte no screen shows: a `str` that must hold one is built from bytes as the program runs, a `[u8]` read by `validated_bytes()`"
+
+    if raw_chars.written_by_code(value)
+        return "a string writes " + shown_char.named(escape.encoded(value)) + " by its code, as `" + raw_chars.escaped(value) + "`"
+
+    if value < 32
+        return "a string writes this character as `" + escape.letter_of(value) + "`"
+    return "a string holds its characters as themselves, and writes by its code only " + raw_chars.CLASS + ", as `\\u{1b}`"
 
 # The value written into the string: in the piece of an `f"…"` literal the
 # hole alone, over the escape to its `)`; in a plain string the whole literal

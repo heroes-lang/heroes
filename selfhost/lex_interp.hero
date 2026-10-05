@@ -33,6 +33,7 @@ use state
 use layout
 use literals
 use escape
+use raw_chars
 
 # `f"` at the cursor: the head piece.
 function head(@l: state.LexState, text: str)
@@ -101,7 +102,7 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
                 break
         else
             if b == layout.CR
-                literals.raw_carriage_return(@l, l.pos, .in_str)
+                raw_chars.raw_carriage_return(@l, l.pos, .in_str)
             l.pos @ l.pos + 1
 
     span = token.Span(start: start, end: l.pos)
@@ -149,9 +150,10 @@ function ends_closed(text: str) -> bool
 # one byte at a time.
 #
 # **The pairs are read as the lexer read them.** A piece that reaches this
-# function lexed clean, so every brace of its text is one of a pair and no
-# escape's second byte is a brace (the six are `n` `t` `r` `\` `"` `'`): a
-# scan from the left meets the pairs `scan_piece` met.
+# function lexed clean, so every brace of its text is one of a pair or one of
+# a `\u{…}`'s, which the scan steps over whole as `scan_piece` did
+# (`escape.end_of`, panel 192): a scan from the left meets the pairs
+# `scan_piece` met.
 function piece_text(text: str) -> str
     from: i64 @ 1
 
@@ -166,7 +168,9 @@ function piece_text(text: str) -> str
     at: i64 @ 0
 
     while at < inner.len()
-        if (inner[at] == '{' || inner[at] == '}') && at + 1 < inner.len() && inner[at + 1] == inner[at]
+        if inner[at] == '\\'
+            at @ escape.end_of(inner, at: at)
+        else if (inner[at] == '{' || inner[at] == '}') && at + 1 < inner.len() && inner[at + 1] == inner[at]
             undoubled @ undoubled.push(inner.slice(from: run, to: at + 1))
             at @ at + 2
             run @ at

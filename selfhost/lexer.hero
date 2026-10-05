@@ -403,8 +403,16 @@ test "refused characters are told once a run and eight times a text, and a break
 # is the head's to tell (`escape_in_header_name`, at the parser), so the
 # lexer says nothing of it there; elsewhere it says what it always said.
 test "an escape inside a header's name is left to the head, and told everywhere else"
-    for text in ["extern \"a\\db.h\"\n    function seven() -> i32\n", "extern \"\\db.h\"\n    function seven() -> i32\n", "extern \"a\\u{41}.h\"\n    function seven() -> i32\n"]
+    for text in ["extern \"a\\db.h\"\n    function seven() -> i32\n", "extern \"\\db.h\"\n    function seven() -> i32\n", "extern \"a\\x{41}.h\"\n    function seven() -> i32\n"]
         assert lex_one(text).diagnostics.len() == 0
+
+    # Since panel 192 `\u{41}` is an escape the language has, writing `A`,
+    # which a string holds as itself: the lexer's to tell, the name it fixes
+    # to one the head accepts.
+    known = lex_one("extern \"a\\u{41}.h\"\n    function seven() -> i32\n").diagnostics
+    assert known.len() == 1
+    assert known[0].code == "escape_not_needed"
+    assert known[0].fixes[0].replacement == "A"
 
     for text in ["extern \"ab.h\" link \"a\\db\"\n    function seven() -> i32\n", "function main()\n    print(\"a\\db\")\n"]
         said = lex_one(text).diagnostics
@@ -685,6 +693,17 @@ test "an escape's repairs in an f literal write a closing brace doubled"
     assert out.diagnostics[1].code == "unknown_escape"
     assert out.diagnostics[1].fixes[0].replacement == "A"
     assert out.diagnostics[1].fixes[1].replacement == "\\\\x{{41}}"
+
+# Panel 192's R5: `\u{1b}` is read whole, so its braces are never a hole's
+# or text's, in an `f` literal as in a string: the stream is the one the same
+# literal has with no escape in it.
+test "an escape by code is read whole, its braces never a hole"
+    out = lex_one("s = f\"\\u{1b}[{n}m\\u{1b}[0m\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece ident str_piece terminator eof"
+    plain = lex_one("s = \"\\u{1b}[0m\\u{202e}\"\n")
+    assert plain.diagnostics.len() == 0
+    assert kind_line(plain.tokens) == "ident eq str terminator eof"
 
 test "a hole the line does not close is an unterminated string, and the next line starts clean"
     out = lex_one("s = f\"a {n\ny = 1\n")

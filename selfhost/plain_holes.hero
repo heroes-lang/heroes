@@ -25,6 +25,7 @@ use cursor
 use lexer
 use grammar_expr
 use escape_readings
+use escape
 
 # One hole a plain literal holds: the offsets of its two braces in the source,
 # and the names its expression reads, as spans of the source.
@@ -128,7 +129,7 @@ function with_f(text: str, span: token.Span, active: [PlainHole]) -> str
             at @ at + 1
             run @ at
         else if text[at] == '\\'
-            at @ at + 2
+            at @ escape.end_of(text, at: at)
         else
             at @ at + 1
 
