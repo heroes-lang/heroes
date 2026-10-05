@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a cost that grows as the square of the reports, no message or value wrong; unmeasured per site.
 
     Repaired at `f50b9102`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    Its instrument and its file's ceiling followed at `36396b71`, 2026-10-05 (lane b12-parse12): `layout/appends` reads every list of reports grown through a field place, and `selfhost/resolve/state.hero` is back under its decided 330; gated by `layout` and the net's own tests.
