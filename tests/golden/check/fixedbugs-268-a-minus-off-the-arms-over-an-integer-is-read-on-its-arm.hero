@@ -1,0 +1,64 @@
+# Fixed defect 268, 2026-10-05 (lane b11-parse). Symptom: a `-` alone on a
+# line deeper than the arms, over an integer arm, was told twice: the lexer's
+# `continuation_outside_brackets`, whose join and deletion are both guesses
+# (two readings), and the parser's `unexpected_block` at that line, true only
+# of the join as it was written, the arm at the `-`'s margin; two levels
+# deeper `indentation_jump` too, and over the first arm the same jump. Cause:
+# where both readings stand, `sign_above.offer` handed the parser the join
+# with the `-` line's margin, an indent the arm was joined into. Repair: the
+# margin and its reports are taken back and the arm's margin laid out in
+# their place, so the parser reads `-1 => …` where the arm stands, and the
+# join fix writes that text, the sign moved onto the arm's line (defect
+# 182's move made for two readings). One message each below; a `-` at the
+# arms' margin was one already and stays so.
+
+function deeper(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+            -
+        1 => "one"
+        _ => "many"
+    return k
+
+function two_levels_deeper(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+                -
+        1 => "one"
+        _ => "many"
+    return k
+
+function over_the_first_arm(n: i64) -> str
+    k = match n  #~v continuation_outside_brackets
+            -
+        1 => "one"
+        _ => "many"
+    return k
+
+function under_a_block_arm(n: i64) -> str
+    k = match n
+        2 =>
+            "two"  #~v continuation_outside_brackets
+                -
+        1 => "one"
+        _ => "many"
+    return k
+
+function statement_arms(n: i64)
+    match n
+        2 => print(2)  #~v continuation_outside_brackets
+            -
+        1 => print(1)
+        _ => print(0)
+
+function at_the_arms_margin(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+        -
+        1 => "one"
+        _ => "many"
+    return k
+
+function main()
+    print(deeper(1) + two_levels_deeper(2) + over_the_first_arm(3) + under_a_block_arm(4) + at_the_arms_margin(5))
+    statement_arms(1)
