@@ -428,12 +428,22 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     simple = atom_kind(refused_literal.read_as(c, text))
 
     if simple.is_err()
+        # Closers that begin a statement close nothing its line opened, nor
+        # do the ones after them there: the run is told at once (defect 368,
+        # the run defect 306 tells past a statement).
+        run: token.Span @ s
+        found: str @ cursor.found(c, text)
+
+        if token.is_closer(k) && cursor.at_fresh_line(c)
+            run @ brace_habit.stray_run(c, text, at: c.pos)
+            found @ brace_habit.found_run(c, text: text, found: found)
+
         if !cursor.at_reported_error(c) && !line_end.said_here(c)
             cursor.error(
                 @c,
                 code: "expected_expression",
-                message: "expected an expression, found " + cursor.found(c, text) + " — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`",
-                span: s
+                message: "expected an expression, found " + found + " — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`",
+                span: run
             )
 
         # Not consumed: the statement parser decides where the line ends.

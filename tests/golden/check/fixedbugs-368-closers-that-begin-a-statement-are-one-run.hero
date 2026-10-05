@@ -1,0 +1,64 @@
+# Fixed defect 368, 2026-10-05 (lane b12-parse12, found beside defect 306).
+# Symptom: a line holding `))` alone inside a function was told twice,
+# `expected_expression` at the first `)` and `expected_end_of_line` at the
+# second, two messages for one run of closers nothing opened. Cause: the
+# reader of a value told the one closer it stood on, and the line's end
+# found the rest a stray of its own; defect 306 tells such a run at once
+# past a statement, and a statement begun by one had no such reading.
+# Repair: closers that begin a statement's line close nothing it opened,
+# nor do the ones after them there, so the value's reader tells the run at
+# once (`grammar_expr.primary`, through `brace_habit.stray_run`), and the
+# line's end finds it told. The shapes: two, one, three, spaced, of two
+# kinds, a word after them, in a block, a comment after them, braces and
+# brackets; at the top level, as before, the declaration's reader tells it.
+
+function two()
+    ))  #~ expected_expression
+    print(1)
+
+function one()
+    )  #~ expected_expression
+    print(1)
+
+function three()
+    )))  #~ expected_expression
+    print(1)
+
+function spaced()
+    ) )  #~ expected_expression
+    print(1)
+
+function two_kinds()
+    )]  #~ expected_expression
+    print(1)
+
+function a_word_after()
+    )) x  #~ expected_expression
+    print(1)
+
+function in_a_block()
+    if true
+        ))  #~ expected_expression
+    print(1)
+
+function braces()
+    }}  #~ expected_expression
+    print(1)
+
+function brackets()
+    ]]  #~ expected_expression
+    print(1)
+
+function main()
+    ))  # a comment  #~ expected_expression
+    two()
+    one()
+    three()
+    spaced()
+    two_kinds()
+    a_word_after()
+    in_a_block()
+    braces()
+    brackets()
+
+)  #~ expected_declaration
