@@ -69,6 +69,7 @@ use lex_interp
 use parse/type
 use parse/line_end
 use parse/list_line
+use parse/map_line
 use parse/arm_line
 use parse/arm_pattern
 use parse/arm_body
@@ -566,6 +567,7 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     open = cursor.bump(@c).span
     entries: [ast.MapEntry] @ []
     reading: bool @ true
+    ended: bool @ false
 
     while reading
         cursor.skip_terminators(@c)
@@ -573,16 +575,23 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         if cursor.at(c, .rbrace) || cursor.at(c, .eof) || open_ended && !unclosed.in_reach(c, open: at)
             reading @ false
         else
+            # Past a `{` the lexer closed further down, a binding on a line
+            # below ends the map above its entry's line (defect 304).
+            first = c.pos
             key = parse_expr(@c, @a, text)
-            list_line.entry_colon(@c, text: text, open: at)
-            value = parse_expr(@c, @a, text)
-            entries @ entries.push(ast.MapEntry(key: key, value: value))
+            ended @ map_line.ended_at_a_binding(@c, text, open: at, first: first, keyed: true)
 
-            if !list_line.separator(@c, text: text, closer: .rbrace, what: "entry", open_ended: open_ended, open: at)
-                reading @ false
+            if !ended
+                list_line.entry_colon(@c, text: text, open: at)
+                value = parse_expr(@c, @a, text)
+                entries @ entries.push(ast.MapEntry(key: key, value: value))
+                ended @ map_line.ended_at_a_binding(@c, text, open: at, first: first, keyed: false)
+            reading @ !ended && list_line.separator(@c, text: text, closer: .rbrace, what: "entry", open_ended: open_ended, open: at)
 
     close = cursor.current_span(c)
-    unclosed.end_literal(@c, text: text, open: at)
+
+    if !ended
+        unclosed.end_literal(@c, text: text, open: at)
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .map(entries: entries), span: token.Span(start: open.start, end: close.end))
@@ -658,7 +667,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
 
             # A list in it on its line ended at a binding below and named
             # this `(` with its `[`: the call ends there too (defect 307).
-            if list_line.binding_begins(c) && bracket_head.holds(c, open: at, at: first) && unclosed.a_line_below(c, text, open: at, at: c.pos)
+            if list_line.ended_inside(c, open: at, first: first)
                 ended @ true
                 reading @ false
                 continue

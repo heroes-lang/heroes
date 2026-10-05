@@ -240,13 +240,13 @@ function separator(@c: cursor.Cursor, text: str, closer: token.TokenKind, what: 
 # where its `]` goes; the cursor at that line's first token, which the
 # statement reader reads with its own mistakes, its stray closer among them.
 function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64, binding: bool) -> bool
+    # A list or a map inside it on its line ended there first, and named
+    # this `[` with its own, as it named the call's `(` around both (307).
+    if !binding && ended_inside(c, open: open, first: first)
+        return true
+
     if !binding && !binding_begins(c)
         return false
-
-    # A list inside it on its line ended there first, and named this `[`
-    # with its own, as it named the call's `(` around both (defect 307).
-    if !binding && bracket_head.holds(c, open: open, at: first)
-        return true
     pair = pairing.paired_closer(c, text, open: open)
 
     if pair < 0 || c.tokens[pair].kind == .rbracket
@@ -261,6 +261,13 @@ function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64,
     if binding
         c.pos @ first
     return true
+
+# Whether the item begun at token `first` ended on a line below, the cursor at
+# that line's start, where a list or a map inside it ended at a binding, its
+# report naming the opener at `open` it stands in on its line with its own
+# (defects 307 and 304): the opener's list, call or map ends there too.
+function ended_inside(c: cursor.Cursor, open: i64, first: i64) -> bool
+    return cursor.at_fresh_line(c) && bracket_head.holds(c, open: open, at: first)
 
 # Whether the cursor stands on a line's first word, a name, and a binding,
 # a declaration or a mutation begins there: where a bracket inside the item

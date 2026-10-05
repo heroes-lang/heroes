@@ -1,0 +1,96 @@
+# Fixed defect 304, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 204). Symptom: defect 204's shape in a map literal whose `{`
+# the lexer paired with a closer further down, `x = {1: 2` over `print(x)`
+# over `y = 3 )`, was told `expected_map_entry_colon` twice, at `print(x)`'s
+# end and at `y`'s `=`, naming no `{`, and the lines were never read as the
+# statements they are. Cause: defect 204 ended a list above a binding below
+# its `[`, and a map had no such reading: every line below its `{` was a key.
+# Repair: a binding, a mutation or a declaration on a line below such a `{`
+# ends the map above its entry's line, told once at its `=` or `@` with the
+# `{`, the openers it stands in on its line and where their closers go; a
+# line with no `:` above that binding is no entry either, and the lines from
+# it on are read as the statements they are (`parse/map_line`). The shapes:
+# a line between, none, a declaration, a mutation, a `]` for the closer, a
+# map in a map, a map in a call, an empty map, a string key, a written `,`,
+# a whole entry between; and the `}` written, and no closer at all, as before.
+
+function g(m: {i64: i64}) -> i64
+    return 1
+
+function a_line_between()
+    x = {1: 2
+    print(x)
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function right_below()
+    x = {1: 2
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function a_declaration()
+    x = {1: 2
+    print(x)
+    z: i64 @ 3 )  #~ expected_separator expected_end_of_line
+    print(z)
+
+function a_mutation()
+    z: i64 @ 0
+    x = {1: 2
+    print(x)
+    z @ 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(z)
+
+function a_bracket_for_the_closer()
+    x = {1: 2
+    print(x)
+    y = 3 ]  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function a_map_in_a_map()
+    x = {1: {2: 3
+    print(x)
+    y = 3 ))  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function a_map_in_a_call()
+    k = g({1: 2
+    print(k)
+    y = 3 ))  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function an_empty_map()
+    x = {
+    print(x)
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function a_string_key()
+    x = {"a": 2
+    print(x)
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function after_a_comma()
+    x = {1: 2,
+    print(x)
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function a_whole_entry_between()
+    x = {1: 2
+    3: 4
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function the_brace_written()
+    x = {1: 2}
+    print(x)
+    y = 3 )  #~ expected_end_of_line
+    print(y)
+
+function main()
+    #~v unclosed_bracket
+    x = {1: 2
+    print(x)
+    y = 3
