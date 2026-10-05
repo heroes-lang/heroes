@@ -1,0 +1,4 @@
+- [ ] **panel 036** | **The two silent routes, as a retrieval exercise.** Before reading the panel file: a decoy `sqlite3.h` sits beside the generated `.c` in `build/<hash>/`. Say what `#include "sqlite3.h"` does, what `-Weverything` says about it, and why `_Static_assert(HERO_RUNTIME_ABI == 10)` — which saved the *runtime* from exactly this in panel 020 — cannot be written for a foreign header. Then: which of these six wrong bindings compile clean under include-only emission, and which fire? (`-> f64` on `sqlite3_step` · `-> int` on `sqrt` · `(col: f64)` where the header says `int` · `ptr` where the header says `const char *` · `-> int` on `sqlite3_errmsg` · a typo'd name)
+
+    **Where to look:** docs/panel/036 § Two silent-wrong-answer routes
+    **Why it matters:** four of the six compile clean, and the answer is why §4.19's sentence needed a mechanism rather than a promise

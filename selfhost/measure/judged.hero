@@ -141,7 +141,7 @@ constant CONTRACT_CEILING: i64
 # owes a named removal or a registered prediction in its body. It is vendored
 # because a key-gated check is structurally red on every fork PR forever (panel
 # 123 R1), and one number serves both documents because §1.6 had already queued
-# exactly this figure (`docs/design/design.md:355`), so no second threshold is
+# exactly this figure (`docs/design.md:355`), so no second threshold is
 # born.
 #
 # **Measured before it was chosen**: +50 fires on 2 of the last 22 commits

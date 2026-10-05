@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | panel 091 (the assertion that is a seatbelt) | The compiler writes `_Static_assert` lines and tiny `hero_ffi_probe_*` functions into the generated C so that clang checks your `extern` declarations against the real header. A sitting asked whether to stop writing them for declarations you never call, and the answer was no — because one of them turned out to be the ONLY thing standing between a program and four destroyed bytes of memory: `getline`'s `size_t` out-parameter declared `i32`, never called. Say why the ASSERT and the PROBE ask different questions, and which of the two saw that one
+
+    **Where to look:** selfhost/emit/extern_assert.hero · selfhost/emit/extern_probe.hero · docs/panel/091 § What the ffi-pragmatist compiled
+    **Why it matters:** the two look like the same thing in the emitted C and are not: one asks what the header RETURNS, the other what it ACCEPTS

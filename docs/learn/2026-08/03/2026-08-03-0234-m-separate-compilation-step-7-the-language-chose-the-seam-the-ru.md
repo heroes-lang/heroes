@@ -1,0 +1,4 @@
+- [ ] **M-separate-compilation step 7 (the language chose the seam)** | The runtime's object had the same header blindness, so `cli_toolchain` needed to call `cli_deps.fresh`. That did not compile: `cli_deps` hashes files, `digest` lived in `cli_toolchain`, and Heroes refuses module cycles — `module_cycle` fires on the `use` edge whatever it carries. The fix was to move `digest`/`hex8` into `selfhost/cli/digest.hero`. Say what the compiler would have had to do to ACCEPT the cycle, in terms of what it emits — and why `selfhost/cli/digest.hero` is a better file than the one it left, independently of the cycle
+
+    **Where to look:** selfhost/cli/digest.hero (the module header) · selfhost/cli/toolchain.hero · docs/panel/031 R6 (the cycle refusal as "the reversible direction")
+    **Why it matters:** a rule that forbids something usually forbids the wrong thing too, and this one pointed at a seam that was already there

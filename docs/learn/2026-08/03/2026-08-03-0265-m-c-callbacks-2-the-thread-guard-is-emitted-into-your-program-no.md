@@ -1,0 +1,4 @@
+- [ ] **M-c-callbacks.2** | **The thread guard is emitted into your program, not built into the runtime. Read the four measurements and say why.** `docs/measurements/018` raced four runtimes on the compiler's own test suite: at every str/array/map through a thread-local, the same through `pthread_self()`, at the allocator alone, and a control. One of the four numbers is three times what the brief predicted. Then say which fact about C makes the emitted placement free for a program that binds no callback: that the compiler knows which functions it hands out, that C cannot call an address nobody gave it, or that both are the same fact said twice
+
+    **Where to look:** docs/measurements/018 · selfhost/emit/callback_guard.hero · runtime/parts/thread.c
+    **Why it matters:** the answer that won was not among the three that were priced, and it was found by asking where a foreign thread ENTERS rather than where the corruption shows

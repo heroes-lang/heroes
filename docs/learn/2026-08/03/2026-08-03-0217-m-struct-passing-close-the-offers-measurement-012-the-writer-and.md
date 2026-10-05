@@ -1,0 +1,4 @@
+- [ ] **M-struct-passing close — the offers** | measurement 012 (the writer, and the 46×) | The compiler spent 43% of its own build re-copying text it had already written: `out @ out + line`, once per emitted line, copies everything so far every time. The repair keeps 128 lines in a small array, glues them into one string, and glues the strings once at the end. Say why the same trick cannot fix the lexer's token array — what does `join` give a `[str]` that nothing gives a `[Token]`?
+
+    **Where to look:** selfhost/emit/writer.hero (the module doc and CHUNK_LINES) · selfhost/source.hero (from_files, the loader's twin of the same defect) · docs/measurements/012 · design.md §4.10
+    **Why it matters:** the language's commonest line is quadratic, 56% of the build fell to two fixes that needed no permission, and most of the rest waits on a decision only the author can make (DECIDE R2)

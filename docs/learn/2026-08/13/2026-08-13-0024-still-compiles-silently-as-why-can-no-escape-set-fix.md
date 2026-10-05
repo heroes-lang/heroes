@@ -1,0 +1,1 @@
+- [x] The record | M1.5 | `"C:\temp"` still compiles silently as `C:<TAB>emp`. Why can no escape set fix that, and what would? | lexer/tests/literals.rs (the_residual_windows_path_trap_is_on_the_record) | knowing the limits of a fix is part of owning it
