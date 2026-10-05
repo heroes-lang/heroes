@@ -15,7 +15,7 @@ use parse/decl
 use parse/apart
 use parse/which_arm
 use parse/quote_held
-use parse/wrap_break
+use wrap_break
 use parse/unclosed
 use pairing
 

@@ -15,7 +15,7 @@ function deeper(n: i64)
     print(1)
 
 function an_else_at_the_margin(c: bool)
-    x = f(if c  #~ unclosed_bracket
+    x = f(if c  #~ unclosed_bracket missing_body
         1
     else
         2
@@ -40,3 +40,8 @@ extern "libxslt/keys.h"
     function xsltAddKey(style: ptr, name: cstr, nameURI: cstr,
 match: cstr,  #~ expected_parameter
 use: cstr, inst: ptr) -> i32
+
+# Moved 2026-10-05 with defect 269's repair (lane b12-parse12):
+# `an_else_at_the_margin`'s `if`, which cannot stand inside brackets whether
+# its `(` is closed or not, is told so beside the `(` named still open, a
+# second mistake of the line (`parse/bracket_head`).

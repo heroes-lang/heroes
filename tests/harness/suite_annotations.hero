@@ -207,9 +207,12 @@ constant LEAST: i64
 # and at 3581 it reads so again once the expectation half grows 133 marks
 # past it, which the total's quarter of slack lets it do in silence. A mark
 # stepped aside is reached, as for the total, so the number is the tree's on
-# every platform.
+# every platform. **132 since 2026-10-05**: defect 269's repair told
+# `brackets180/shape074`'s `match` inside brackets once, where its arm cost a
+# second mark, `expected_args_close`; the floor follows the count it guards
+# down as up, so that a walk short by one mark is still caught.
 constant RUN_LEAST: i64
-    133
+    132
 
 # `only` narrows the sweep to the cases whose name holds it (cases.matching);
 # a narrowed run asks neither the thesis witnesses, nor the groups, nor the

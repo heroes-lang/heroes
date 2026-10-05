@@ -73,6 +73,7 @@ use parse/arm_line
 use parse/arm_pattern
 use parse/arm_body
 use parse/opening
+use parse/bracket_head
 use parse/swap_reading
 use parse/annotation
 use parse/margin_arms
@@ -1013,6 +1014,9 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     start = cursor.bump(@c).span
     branches: [ast.Branch] @ []
     cond = parse_expr(@c, @a, text)
+
+    if bracket_head.in_brackets(@c, text, head: head, missing: opening.missing_body("an `if`"))
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     colon_habit.read_below(@c, text)
     first = block(@c, @a, text: text, owner: "an `if`", head: head)
     whole = !first.is_err()
@@ -1067,6 +1071,9 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     head = opening.mark(c)
     start = cursor.bump(@c).span
     scrutinee = parse_expr(@c, @a, text)
+
+    if bracket_head.in_brackets(@c, text, head: head, missing: opening.missing_arms())
+        return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
     failed = opening.refused(c, head)
     colon_habit.read_below(@c, text)
     eat_python_colon(@c)
