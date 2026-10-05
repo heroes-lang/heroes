@@ -90,12 +90,10 @@ function no_members_below(@c: cursor.Cursor, text: str, head: token.Span, member
     # written. Where the lexer spoke on the head's line its word is told, and
     # the head with no members lacks them as any does (defect 133's class,
     # lane recovery-b7): `record P fn` was told the `fn` alone. Where the junk
-    # is the members, a `:` and a name or a name and a `:`, `variant T: a` or
-    # `record R x: i64`, its report sends them below, and `empty` is its own
-    # debris (defect 315).
+    # is the members, `empty` is its debris (`members_on_its_line`).
     if !spoke && goes_on
         junk_after_head(@c, head: quoted, found: found, span: junk, members: members, generic: generic)
-    member = goes_on && !spoke && (cursor.at(c, .colon) && cursor.peek(c, 1) == .ident || cursor.at(c, .ident) && cursor.peek(c, 1) == .colon)
+    member = goes_on && !spoke && members_on_its_line(c)
 
     if goes_on
         brace_habit.drop_told(@c, text, from: c.pos)
@@ -122,6 +120,22 @@ function opening_brace(c: cursor.Cursor, text: str, goes_on: bool) -> i64
     if cursor.at(c, .lbrace) && brace_habit.alone(text, cursor.current_span(c))
         return c.pos
     return -1
+
+# Whether the junk from the cursor is the members, written on the head's line
+# and sent below by its report: past any type parameters or `extends`, a `:`
+# or `=` and a name, or a name and a `:`, `variant T: a`, `record R x: i64`,
+# `record Pair<T>: x: T`, `record R = x: i64` (defect 315).
+function members_on_its_line(c: cursor.Cursor) -> bool
+    i: i64 @ c.pos
+
+    while !token.ends_a_line(c.tokens[i].kind)
+        k = c.tokens[i].kind
+
+        if (k == .colon || k == .eq) && c.tokens[i + 1].kind == .ident || k == .ident && c.tokens[i + 1].kind == .colon
+            return true
+        i @ i + 1
+
+    return false
 
 # Whether nothing but line ends and comments stands between the tokens at
 # `from` and `to`.
