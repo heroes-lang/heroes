@@ -55,6 +55,7 @@ use line_above
 use backslash
 use join_fix
 use sign_above
+use word_place
 
 ## At the line end
 
@@ -124,6 +125,28 @@ function goes_on_at_head(text: str, at: i64) -> i64
     if next_line.arrow_below(text, from: at + first.width)
         return -1
     return at
+
+# The margin the statement that ends with the token at `at` was written at,
+# its first line's, where the layout's level `margin` is the one it capped a
+# jump at, or read four columns short of five (defect 352): the next line is
+# told where it stands against what the author wrote. A margin that holds a
+# tab, or a line under braces or an indentation habit, which keep their own
+# count, is `margin`.
+function written_margin(l: state.LexState, text: str, at: i64, margin: i64) -> i64
+    i: i64 @ at
+    first: i64 @ at
+
+    while i >= 0 && !token.is_line_end(l.tokens[i].kind)
+        if l.tokens[i].kind != .comment
+            first @ i
+        i @ i - 1
+
+    begins = l.tokens[first].span.start
+    start = word_place.line_start(text, at: begins)
+
+    if l.braced.len() > 0 || l.run[0].kind != .none || !sign_above.spaces_alone(text, from: start, to: begins)
+        return margin
+    return begins - start
 
 # A `-` set apart from its operand, by a space, a comment or a line end.
 function set_apart(text: str, at: i64) -> bool
@@ -227,10 +250,11 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         l.deeper @ l.bodies && spaces == margin
         return false
     where: str @ "at the same margin, where a new statement begins"
+    written = written_margin(l, text, at: at, margin: margin)
 
-    if spaces > margin
+    if spaces > written
         where @ "one level deeper, where a block would begin"
-    else if spaces < margin
+    else if spaces < written
         where @ "at a shallower margin, where the block above ends"
     message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)

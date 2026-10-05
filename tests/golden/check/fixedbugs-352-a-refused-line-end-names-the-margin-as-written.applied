@@ -1,0 +1,60 @@
+# Fixed defect 352, 2026-10-05 (lane b12-parse12; found by lane b11-parse
+# beside defect 268). Symptom: a line refused for an end it cannot end with,
+# written deeper than the layout lays it out, told the next line goes on with
+# it *at the same margin, where a new statement begins*, where the author
+# wrote that line shallower: over a `match`'s first arm, `-` two levels in
+# over the arm one level in. Cause: the message compared the next line's
+# margin with the level the layout capped the jump at, or read five spaces
+# as one level, not with the margin the statement was written at. Repair: it
+# compares with the margin the statement's first line was written at, where
+# that margin is spaces alone and no braces or indentation habit keep their
+# own count (`open_line.written_margin`). The shapes: a `-` and a `+` over
+# the first arm, three levels in, a statement after a jump, five spaces, a
+# jump over a deeper line, and two plain lines at one margin, as before.
+
+function a_minus_over_the_first_arm(n: i64) -> str
+    k = match n  #~v continuation_outside_brackets
+            -
+        1 => "one"
+        _ => "many"
+    return k
+
+function a_plus_over_the_first_arm(n: i64) -> str
+    k = match n  #~v continuation_outside_brackets
+        1 => "one"
+        _ => "many"
+    return k
+
+function three_levels_in(n: i64) -> str
+    k = match n  #~v continuation_outside_brackets
+                -
+        1 => "one"
+        _ => "many"
+    return k
+
+function a_statement_after_a_jump(a: i64, b: i64) -> i64
+    if a > 0
+        #~v indentation_jump continuation_outside_brackets
+            x = a + b
+        return x
+    return 0
+
+function five_spaces(a: i64, b: i64) -> i64
+     x = a +  #~ indentation_not_multiple_of_4 continuation_outside_brackets
+    b
+    return x
+
+function a_jump_over_a_deeper_line(a: i64, b: i64) -> i64
+    if a > 0
+        #~v indentation_jump continuation_outside_brackets
+            x = a + b
+        return x
+    return 0
+
+function two_plain_lines(a: i64, b: i64) -> i64
+    x = a +  #~ continuation_outside_brackets
+    b
+    return x
+
+function main()
+    print(1)
