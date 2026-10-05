@@ -15,4 +15,4 @@ github: none
 
     Repaired at `6b33db23`, 2026-10-05, gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the platform legs before it closes (panel 192's R13).
 
-    Repaired further at `8763d6be`, 2026-10-05: three `check` cases that named the prelude's old file doors (`extern-across-modules-library` and two of defect 138's) follow what it binds now; `6b33db23`'s gate had not run `check`.
+    Repaired at `8763d6be` too, 2026-10-05: three `check` cases that named the prelude's old file doors (`extern-across-modules-library` and two of defect 138's) follow what it binds now; `6b33db23`'s gate had not run `check`.
