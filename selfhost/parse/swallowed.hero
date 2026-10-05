@@ -30,7 +30,7 @@ use cursor
 use next_line
 use text_lines
 use word_place
-use parse/pairing
+use pairing
 use parse/unclosed
 use parse/line_end
 

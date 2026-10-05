@@ -34,7 +34,7 @@ use token
 use diag
 use cursor
 use parse/laid_braces
-use parse/pairing
+use pairing
 use parse/line_end
 use lexer
 use next_line

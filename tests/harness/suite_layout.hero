@@ -529,11 +529,15 @@ constant LEAST: i64
 # outside comments, because a list of lexer files is a premise that would
 # expire the day a new one appends. `state.push_break` joined them for the
 # refused breaks (defect 129, 2026-09-28), and so did its slow spelling here.
+# `state.push_bracket` joined them for the brackets open (defect 344,
+# 2026-10-05): 8,000 lines each leaving a bracket open copied the stack of
+# every one open below it, and the lexer cost the square of its openers.
 constant SLOW_APPENDS: [str]
     [
         "l.tokens @ l.tokens.push("
         "l.diagnostics @ l.diagnostics.push("
         "l.breaks @ l.breaks.push("
+        "l.open_brackets @ l.open_brackets.push("
     ]
 
 # A TEXT IS NEVER GROWN BY `+` WHERE THAT COPIES IT AT EVERY STEP (defect 105,
@@ -980,6 +984,11 @@ test "an append to the lexer's state through the field is found, and one in a co
     found = slow_appends(path: "x.hero", text: text)
     assert found.len() == 1
     assert strings.contains(text: found[0], needle: "x.hero:2:")
+    opened = slow_appends(
+        path: "y.hero",
+        text: "    l.open_brackets @ l.open_brackets.push(span)\n    push_bracket(@l.open_brackets, span)\n"
+    )
+    assert opened.len() == 1
 
 # Defect 105's check, both ways: a growth no allowance names fails, one it
 # names passes, and an allowance no growth matches fails as stale.

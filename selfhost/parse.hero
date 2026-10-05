@@ -17,6 +17,7 @@ use parse/which_arm
 use parse/quote_held
 use parse/wrap_break
 use parse/unclosed
+use pairing
 
 record ParseOutput
     decls: [ast.Decl]
@@ -89,6 +90,7 @@ function parse_source(s: source.Source) -> ParseOutput
             closes: lexed_file.closes,
             swaps: lexed_file.swaps
         )
+        pairing.pair_all(@c, s.text)
         decl.file(@c, @a, @decls, @uses, s.text)
 
         # Where the lexer refused a break, the file is read apart too, and
@@ -153,6 +155,7 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         closes: lexed.closes,
         swaps: lexed.swaps
     )
+    pairing.pair_all(@c, text)
     a: ast.Ast @ ast.new_ast()
     decls: [ast.Decl] @ []
     uses: [ast.Use] @ []

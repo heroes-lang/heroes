@@ -25,7 +25,7 @@ use cursor
 use text_lines
 use parse/line_end
 use parse/unclosed
-use parse/pairing
+use pairing
 
 # Whether the line end the parser just crossed may separate a literal's element
 # from what follows (§4.9). Asked only where a line end separates with no `,`,

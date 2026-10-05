@@ -251,7 +251,7 @@ function emit(@l: LexState, kind: token.TokenKind, start: i64)
     span = token.Span(start: start, end: l.pos)
 
     if kind == .lparen || kind == .lbracket || kind == .lbrace
-        l.open_brackets @ l.open_brackets.push(span)
+        push_bracket(@l.open_brackets, span)
 
     if kind == .rparen || kind == .rbracket || kind == .rbrace
         # Saturating pop: a stray closer never corrupts the following layout;
@@ -281,6 +281,13 @@ function push_token(@tokens: [token.Token], t: token.Token)
 # every module for the other spelling.
 function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
     diagnostics @ diagnostics.push(d)
+
+# And for the brackets open, a file of brackets left open being as many of
+# them as its lines: through the field, every opener copied every one open
+# below it, and 8,000 lines of `x = f([1` cost the square of their openers
+# (defect 344).
+function push_bracket(@brackets: [token.Span], span: token.Span)
+    brackets @ brackets.push(span)
 
 # The same spelling for the refused breaks, a file of broken lines being a
 # file of many of them: a break as the lexer records it, before `line_joins`
