@@ -490,10 +490,7 @@ test "a file whose name is not UTF-8 is named by its bytes, and the walk never p
 # empty path and one past `HERO_FS_PATH_MAX` are refused before `mkdir` is
 # asked. A path under a file is the system's refusal, and is told as its.
 test "a refusal the runtime makes itself is told as its own, never as the operating system's (defect 346)"
-    long: str @ "build/"
-
-    for _ in range(from: 0, to: 5000)
-        long @ long + "a"
+    long = "build/" + "a".repeat(5000)
 
     for refused in ["", long]
         match mkdir_all(refused)
