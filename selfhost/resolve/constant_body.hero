@@ -1,0 +1,205 @@
+# What a constant's body may contain (design.md §4.2, §4.16; panel 039), and
+# which declaration an offset falls inside, which the cycle check asks too.
+# Port of archive/bootstrap-rs/heroes/src/resolve/constbody.rs. Out of
+# `resolve/cycles.hero` on 2026-10-05 (defect 363), along the Rust side's own
+# seam, when the one sweep below took that module past its decided 331 lines:
+# what held the two in one knot was the helpers each called, which live here
+# now, so `cycles` uses this module and nothing here uses it.
+#
+# ## Why a body may contain no call
+#
+# Because without that rule a constant is not constant, measured
+# 2026-08-12: `constant ARGC: i64` with body `len(args())` printed 3 under
+# one command line and 0 under another — the same binary, two values. The
+# rule is SYNTACTIC on purpose: a purity analysis would admit `len("abc")`
+# and refuse `len(args())`, which is a better rule and a whole new pass;
+# the syntactic rule buys the property outright, because a call-free body
+# reads only literals and other constants, and the cycle check proves
+# those are not circular.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use resolve/state
+use stable
+
+## Which declaration an offset falls inside
+
+record Extent
+    start: i64
+    end: i64
+    decl: i64
+
+# Sorted by start. The declarations arrive in source order, which is
+# already ascending — but that is a fact about the parser, not about this
+# value, so the order is explicit: `stable.order` of the starts, a tie in
+# the order given (defect 363: the insertion sort it replaces copied the
+# list at every declaration, the square of their number).
+function extents(decls: [ast.Decl]) -> [Extent]
+    starts: [i64] @ []
+
+    for decl in decls
+        starts @ starts.push(decl.span.start)
+
+    out: [Extent] @ []
+
+    for at in stable.order(by: starts)
+        entry = Extent(start: decls[at].span.start, end: decls[at].span.end, decl: at)
+        out @ out.push(entry)
+
+    return out
+
+function owner(extent: [Extent], offset: i64) -> i64?
+    lo: i64 @ 0
+    hi: i64 @ extent.len() - 1
+
+    if extent.len() == 0
+        return fail(code: "outside", msg: "no declarations at all")
+
+    while lo < hi
+        mid = (lo + hi + 1) / 2
+
+        if extent[mid].start <= offset
+            lo @ mid
+        else
+            hi @ mid - 1
+
+    if extent[lo].start <= offset && offset < extent[lo].end
+        return ok(extent[lo].decl)
+    return fail(code: "outside", msg: "between declarations")
+
+# Is this declaration a constant WITH a body — the thing that cannot recur?
+function is_valued_constant(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .constant_decl k                                           => !k.body.is_err()
+        .function_decl | .record_decl | .variant_decl | .test_decl => false
+
+## What a constant's body may contain
+
+record Offender
+    span: token.Span
+    what: str
+    holder: i64
+
+function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [ast.Decl], extent: [Extent]) -> [bool]
+    found: [Offender] @ []
+
+    for expr in a.exprs
+        # Everything a definition may be — literals, the containers built
+        # from them, names, operators, a field or element of one, and the
+        # two constructs that choose between values — walks on; the four
+        # kinds that make a computation are named.
+        what = match expr.kind
+            .call                                                              => "a call"
+            .method                                                            => "a call written with `.`"
+            .try_expr                                                          => "a `?`"
+            .hole                                                              => "a `???`"
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => continue
+            .null_ptr | .name | .unary | .binary | .field | .field_name        => continue
+            .index | .variant_case | .array | .map                             => continue
+            .if_expr | .match_expr | .error                                    => continue
+
+        holder = owner(extent, expr.span.start)
+
+        if holder.is_err()
+            continue
+
+        if !is_valued_constant(decls, holder.must())
+            continue
+
+        # Built before the push, so the push is one block's and grows the
+        # list in place (`ir/place_store`): a `.must()` in its argument split
+        # the block, and each push copied every offender (defect 363).
+        offender = Offender(span: expr.span, what: what, holder: holder.must())
+        found @ found.push(offender)
+
+    # **The outermost offender only.** `len(args())` is two calls and one
+    # mistake, and two diagnostics for one mistake is a defect this project
+    # has fixed three times over. An expression strictly inside another
+    # offender is that one's inside (`inside_another`). The constants whose
+    # bodies are refused are a flag per declaration, which the cycles ask.
+    inside = inside_another(found)
+    refused: [bool] @ []
+
+    while refused.len() < decls.len()
+        refused @ refused.push(false)
+
+    at: i64 @ 0
+
+    for offender in found
+        nested = inside[at]
+        at @ at + 1
+
+        if nested
+            continue
+        name = source.span_text(s, decls[offender.holder].name)
+        state.append_diagnostic(@out.diagnostics, body_diagnostic(name: name, what: offender.what, span: offender.span))
+        refused[offender.holder] @ true
+
+    return refused
+
+# Which offenders stand strictly inside another, by index: ordered by where
+# they start, a tie the longer first (`stable.order` of the ends descending,
+# then of the starts), an offender is inside one before it that ends past
+# its end, so one sweep keeping the furthest end met answers each (defect
+# 363: each offender against every other cost the square of their number).
+function inside_another(found: [Offender]) -> [bool]
+    ends: [i64] @ []
+    inside: [bool] @ []
+
+    for offender in found
+        end = -offender.span.end
+        ends @ ends.push(end)
+        inside @ inside.push(false)
+
+    by_end = stable.order(by: ends)
+    starts: [i64] @ []
+
+    for at in by_end
+        start = found[at].span.start
+        starts @ starts.push(start)
+
+    furthest: i64 @ -1
+
+    for k in stable.order(by: starts)
+        at = by_end[k]
+        end = found[at].span.end
+
+        if furthest > end
+            inside[at] @ true
+
+        if end > furthest
+            furthest @ end
+
+    return inside
+
+# The message names the constant, because the caret is on the call and the
+# rule is about the declaration around it.
+function body_diagnostic(name: str, what: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "constant_body",
+        message: "`constant " + name + "`'s body may not contain " + what + " — it may only read literals and other constants",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a `constant` is read by calling its accessor, so a body that can call anything is re-evaluated on every read — and `len(args())` made one whose value depended on the command line (panel 039)"
+    )
+    d.notes @ d.notes.push("for a value that is computed, write a `function` and call it where the value is wanted")
+    return d
+
+## Tests
+
+# Defect 363: the outermost by one sweep, as each against every other said
+# it: nested, side by side, a tie of the same span (neither inside the
+# other), and one inside a tie.
+test "an offender strictly inside another is that one's inside, and a tie is neither's"
+    none: [Offender] = []
+    assert inside_another(none).len() == 0
+    at = Offender(span: token.Span(start: 0, end: 10), what: "a call", holder: 0)
+    inner = Offender(span: token.Span(start: 2, end: 5), what: "a call", holder: 0)
+    tie = Offender(span: token.Span(start: 12, end: 20), what: "a call", holder: 1)
+    deep = Offender(span: token.Span(start: 13, end: 14), what: "a call", holder: 1)
+    assert inside_another([inner, at, tie, tie, deep]) == [true, false, false, false, true]
+    assert inside_another([deep, tie, at]) == [true, false, false]

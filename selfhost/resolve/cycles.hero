@@ -1,21 +1,8 @@
-# What a constant's body may contain, and whether the bodies are circular
-# (design.md §4.2, §4.16; panel 039).
-# Port of archive/bootstrap-rs/heroes/src/resolve/{constbody,cycles}.rs — two files in
-# Rust, split by §11's threshold and held together by `super::`; one module
-# here because each calls the other (report → bodies, bodies → owner and
-# is_valued_constant) and Heroes refuses the cycle. The knot is small, but
-# the rule is the same one that shaped grammar_expr and decl.
-#
-# ## Why a body may contain no call
-#
-# Because without that rule a constant is not constant, measured
-# 2026-08-12: `constant ARGC: i64` with body `len(args())` printed 3 under
-# one command line and 0 under another — the same binary, two values. The
-# rule is SYNTACTIC on purpose: a purity analysis would admit `len("abc")`
-# and refuse `len(args())`, which is a better rule and a whole new pass;
-# the syntactic rule buys the property outright, because a call-free body
-# reads only literals and other constants, and the cycle check proves
-# those are not circular.
+# Whether the constants' bodies are circular (design.md §4.2, §4.16; panel
+# 039). Port of archive/bootstrap-rs/heroes/src/resolve/cycles.rs; what a
+# body may contain, constbody.rs, is `resolve/constant_body.hero`, out of this
+# module on 2026-10-05 (defect 363) with the helpers both ask, which is what
+# had held the two in one knot.
 #
 # ## Why a cycle is an error only where a constant is on it
 #
@@ -28,12 +15,11 @@
 # coincidence: the check that prevents a hang is the one that historically
 # hangs (rustc #84611, Nim #13715, Zig #21436).
 #
-# The two checks stay coupled through one value — the set of constants
-# whose bodies were already refused — because a cycle through a refused
-# body is a consequence, not a finding, and reporting both is the
+# The two checks stay coupled through one value — the constants whose bodies
+# were already refused, a flag per declaration — because a cycle through a
+# refused body is a consequence, not a finding, and reporting both is the
 # two-diagnostics-for-one-mistake defect.
 
-use token
 use diag
 use ast
 use source
@@ -42,12 +28,13 @@ use parse
 use resolve/state
 use resolve/top
 use resolve/decls as resolve_decls
+use resolve/constant_body
 
 ## Both checks, in the order a reader wants them
 
 function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [ast.Decl])
-    extent = extents(decls)
-    refused = bodies(@out, a, s, decls, extent)
+    extent = constant_body.extents(decls)
+    refused = constant_body.bodies(@out, a, s, decls, extent)
     adjacent = edges(out, a, decls, extent)
 
     for cycle in walk(decls, adjacent)
@@ -57,70 +44,13 @@ function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
         tainted: bool @ false
 
         for member in cycle
-            if contains(refused, member)
+            if refused[member]
                 tainted @ true
 
         if !tainted
             state.append_diagnostic(@out.diagnostics, diagnose(a, s, decls, cycle))
 
-## Which declaration an offset falls inside
-
-record Extent
-    start: i64
-    end: i64
-    decl: i64
-
-# Sorted by start. The declarations arrive in source order, which is
-# already ascending — but that is a fact about the parser, not about this
-# value, so the sort is explicit: an insertion sort, because `sort` orders
-# numbers and strings, never records.
-function extents(decls: [ast.Decl]) -> [Extent]
-    out: [Extent] @ []
-    index: i64 @ 0
-
-    for decl in decls
-        entry = Extent(start: decl.span.start, end: decl.span.end, decl: index)
-        at: i64 @ out.len()
-
-        while at > 0 && out[at - 1].start > entry.start
-            at @ at - 1
-
-        before = out.slice(from: 0, to: at)
-        after = out.slice(from: at, to: out.len())
-        grown: [Extent] @ before.push(entry)
-
-        for e in after
-            grown @ grown.push(e)
-
-        out @ grown
-        index @ index + 1
-
-    return out
-
-function owner(extent: [Extent], offset: i64) -> i64?
-    lo: i64 @ 0
-    hi: i64 @ extent.len() - 1
-
-    if extent.len() == 0
-        return fail(code: "outside", msg: "no declarations at all")
-
-    while lo < hi
-        mid = (lo + hi + 1) / 2
-
-        if extent[mid].start <= offset
-            lo @ mid
-        else
-            hi @ mid - 1
-
-    if extent[lo].start <= offset && offset < extent[lo].end
-        return ok(extent[lo].decl)
-    return fail(code: "outside", msg: "between declarations")
-
-# Is this declaration a constant WITH a body — the thing that cannot recur?
-function is_valued_constant(decls: [ast.Decl], decl: i64) -> bool
-    return match decls[decl].kind
-        .constant_decl k                                           => !k.body.is_err()
-        .function_decl | .record_decl | .variant_decl | .test_decl => false
+## The edges, and the walk over them
 
 function contains(xs: [i64], x: i64) -> bool
     for it in xs
@@ -129,85 +59,12 @@ function contains(xs: [i64], x: i64) -> bool
 
     return false
 
-## What a constant's body may contain
-
-record Offender
-    span: token.Span
-    what: str
-    holder: i64
-
-function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [ast.Decl], extent: [Extent]) -> [i64]
-    found: [Offender] @ []
-
-    for expr in a.exprs
-        # Everything a definition may be — literals, the containers built
-        # from them, names, operators, a field or element of one, and the
-        # two constructs that choose between values — walks on; the four
-        # kinds that make a computation are named.
-        what = match expr.kind
-            .call                                                              => "a call"
-            .method                                                            => "a call written with `.`"
-            .try_expr                                                          => "a `?`"
-            .hole                                                              => "a `???`"
-            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit => continue
-            .null_ptr | .name | .unary | .binary | .field | .field_name        => continue
-            .index | .variant_case | .array | .map                             => continue
-            .if_expr | .match_expr | .error                                    => continue
-
-        holder = owner(extent, expr.span.start)
-
-        if holder.is_err()
-            continue
-
-        if !is_valued_constant(decls, holder.must())
-            continue
-        found @ found.push(Offender(span: expr.span, what: what, holder: holder.must()))
-
-    # **The outermost offender only.** `len(args())` is two calls and one
-    # mistake, and two diagnostics for one mistake is a defect this project
-    # has fixed three times over. An expression strictly inside another
-    # offender is that one's inside.
-    refused: [i64] @ []
-
-    for offender in found
-        inside: bool @ false
-
-        for other in found
-            if other.span.start <= offender.span.start && offender.span.end < other.span.end
-                inside @ true
-
-        if inside
-            continue
-        name = source.span_text(s, decls[offender.holder].name)
-        state.append_diagnostic(@out.diagnostics, body_diagnostic(name: name, what: offender.what, span: offender.span))
-
-        if !contains(refused, offender.holder)
-            refused @ refused.push(offender.holder)
-
-    return refused
-
-# The message names the constant, because the caret is on the call and the
-# rule is about the declaration around it.
-function body_diagnostic(name: str, what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "constant_body",
-        message: "`constant " + name + "`'s body may not contain " + what + " — it may only read literals and other constants",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "a `constant` is read by calling its accessor, so a body that can call anything is re-evaluated on every read — and `len(args())` made one whose value depended on the command line (panel 039)"
-    )
-    d.notes @ d.notes.push("for a value that is computed, write a `function` and call it where the value is wanted")
-    return d
-
-## The edges, and the walk over them
-
 # Every "the body of `from` reads `to`" edge, deduplicated — the dedup is
 # what keeps a constant read fifty times from being fifty edges.
 # ORDER: each adjacency list ascending — adjacency order drives the DFS,
 # which decides the rotation the diagnostic names (the Rust BTreeSet gave
 # this for free; the port pays with one sort per list, §4.9's sentence).
-function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [Extent]) -> [[i64]]
+function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [constant_body.Extent]) -> [[i64]]
     adjacent: [[i64]] @ []
     i: i64 @ 0
 
@@ -227,7 +84,7 @@ function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [E
             .top t                                    => t.at
             .unresolved | .local | .builtin | .module => continue
 
-        from = owner(extent, a.exprs[here].span.start)
+        from = constant_body.owner(extent, a.exprs[here].span.start)
 
         if !from.is_err()
             home = from.must()
@@ -300,7 +157,7 @@ function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
                 constant_on_it: bool @ false
 
                 for member in cycle
-                    if is_valued_constant(decls, member)
+                    if constant_body.is_valued_constant(decls, member)
                         constant_on_it @ true
 
                 if constant_on_it
@@ -339,7 +196,7 @@ function diagnose(a: ast.Ast, s: source.Source, decls: [ast.Decl], cycle: [i64])
     best: i64 @ -1
 
     for member in cycle
-        if is_valued_constant(decls, member)
+        if constant_body.is_valued_constant(decls, member)
             start = decls[member].name.start
 
             if best < 0 || start < best
@@ -426,6 +283,15 @@ test "a call in a constant's body is refused once, at the outermost"
     dotted = checked_file("constant N: i64\n    \"abc\".len()\n")
     assert dotted.out.diagnostics.len() == 1
     assert dotted.out.diagnostics[0].message == "`constant N`'s body may not contain a call written with `.` — it may only read literals and other constants"
+
+# Defect 363: two constants, one with two offenders side by side, three
+# refusals through the report, the sweep in `resolve/constant_body`.
+test "each outermost offender of each body is refused, side by side included"
+    twice = checked_file("constant A: i64\n    len(args())\n\nconstant B: i64\n    len(args()) + len(args())\n")
+    assert twice.out.diagnostics.len() == 3
+
+    for d in twice.out.diagnostics
+        assert d.code == "constant_body"
 
 test "a constant defined as itself has no value"
     r = checked_file("constant A: i64\n    A\n")

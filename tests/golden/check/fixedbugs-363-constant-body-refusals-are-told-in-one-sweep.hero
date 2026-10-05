@@ -1,0 +1,54 @@
+# Fixed defect 363, 2026-10-05 (lane b12-parse12, found beside defect 350).
+# Symptom: N constants whose bodies `constant_body` refuses, each `constant
+# C<i>: i64` over `len(args())`, cost the square of N to check: 1.36 billion
+# instructions retired at 500 and 13.52 billion at 2,000. Cause, three
+# quadratic paths in `resolve/cycles`: the outermost offender was found by
+# comparing each offender with every other; each offender was pushed with a
+# `.must()` in the push's argument, which split the block, so the push
+# copied every offender before it (`ir/place_store` fires on one block's
+# load and store); and the declarations were ordered by an insertion that
+# copied the list at every one. Repair: one sweep over the offenders ordered
+# by start, the longer of a start first (`stable.order`), the offender built
+# before its push, the declarations ordered by `stable.order`, and the
+# refused bodies a flag per declaration where a list was searched: 0.69
+# billion at 500, 2.48 at 2,000, 9.71 at 8,000. Nothing said moves; the
+# shapes pin what the sweep must say as the comparisons said it: a call in
+# a call, two side by side, a call written with `.`, a `?`, a `???`, a call
+# inside a `match` arm, a cycle through a refused body, which is its
+# consequence, and a cycle with none.
+
+constant NESTED: i64
+    len(args())  #~ constant_body
+
+constant SIDE: i64
+    len(args()) + len(args())  #~ constant_body constant_body
+
+constant DOTTED: i64
+    "abc".len()  #~ constant_body
+
+constant TRIED: i32
+    to_i32(3)?  #~ constant_body
+
+constant HOLE: i64
+    ???  #~ constant_body
+
+constant CHOSEN: i64
+    match 2
+        1 => 1
+        _ => len(args())  #~ constant_body
+
+constant T: i64
+    depends()  #~ constant_body
+
+function depends() -> i64
+    return T
+
+constant A: i64  #~ constant_cycle
+    B
+
+constant B: i64
+    A
+
+function main()
+    print(NESTED + SIDE + DOTTED + HOLE + CHOSEN + A)
+    print(TRIED)
