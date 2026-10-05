@@ -233,8 +233,15 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
 function error_ty_of(c: Checker) -> i64
     return table.error_ty(c.out.types)
 
+# A diagnostic the checker says, appended in place: the list is lent, since
+# `c.out.diagnostics @ c.out.diagnostics.push(d)` is a FIELD place the in-place
+# store never reaches, and every report copied every one said before it
+# (defect 350, defect 146's rule: `cursor.push_diagnostic`).
 function push_diagnostic(@c: Checker, d: diag.Diagnostic)
-    c.out.diagnostics @ c.out.diagnostics.push(d)
+    append_diagnostic(@c.out.diagnostics, d)
+
+function append_diagnostic(@said: [diag.Diagnostic], d: diag.Diagnostic)
+    said @ said.push(d)
 
 # A type as the author would have written it — every message goes through
 # here so that no diagnostic ever prints a notation the language lacks.

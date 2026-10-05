@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-350-a-checkers-report-is-said-in-place.hero:13:12: error[bad_operand]: `+` takes `i64` with `i64`, `f64` with `f64`, or `str` with `str`, found `bool`
