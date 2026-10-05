@@ -22,6 +22,7 @@ use token
 use cursor
 use literals
 use lexer
+use text_outline
 
 # The index of the closer that closes the opener at token `open`, as the
 # lexer's stack pairs them, whatever its kind, or -1 where none does: every
@@ -127,12 +128,13 @@ function innermost(kinds: [token.TokenKind], opener: token.TokenKind) -> i64
     return at
 
 # The first offset past `at` where the lexer named the brackets still open,
-# or -1 where it named none there.
+# or -1 where it named none there, found by a search: the offsets ascend, each
+# named where the lexer stood as it read on (the test below; defect 266).
 function close_after(c: cursor.Cursor, at: i64) -> i64
-    for close in c.closes
-        if close > at
-            return close
+    next = text_outline.last_at_most(c.closes, at: at) + 1
 
+    if next < c.closes.len()
+        return c.closes[next]
     return -1
 
 ## Tests
@@ -152,3 +154,23 @@ test "a closer of another kind closes the opener of its own kind, and the one ab
 
     # `x = [1, 2)`: no `(` is open, so its `)` closes the `[` as before.
     assert paired_closer(c, text, open: 12) == 16
+
+# The premise `close_after`'s search rests on (defect 266): the lexer names
+# the brackets still open at offsets that ascend, each where it stands as it
+# reads on, at all four of its sites: a body's `}` with a bracket open in it
+# (`scan.finish`), a closer of another kind (`closers.close_to_its_kind`), a
+# declaration at column 0 (`bracket_reach.ends_at`) and a lost quote's line
+# end (`lost_quote`). A site that names an offset behind the lexer fails here,
+# and `close_after` with it, which finds the first past an offset by search.
+test "the lexer names the brackets still open at offsets that ascend, which close_after searches"
+    text = "function a() {\n    g(1\n}\nfunction b()\n    f(a, [b, c)\n    x = [1, 2\nfunction c()\n    assert report(\") == \"lines: 0\"\n"
+    out = lexer.lex_one(text)
+    assert out.closes.len() == 4
+
+    for at in range(from: 1, to: out.closes.len())
+        assert out.closes[at - 1] < out.closes[at]
+
+    c = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
+    assert close_after(c, at: -1) == out.closes[0]
+    assert close_after(c, at: out.closes[1]) == out.closes[2]
+    assert close_after(c, at: out.closes[3]) == -1

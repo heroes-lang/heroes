@@ -38,13 +38,11 @@ use token
 use diag
 use describe
 use swap_words
+use report_marks
 
 ## Reading the text
 
-# Line and column live in `text_lines.hero` — a seam, not a squeeze: reading
-# lines out of a text has nothing to do with tokens, and the file that does
-# it imports nothing at all. That module's own doc carries why three of its
-# four functions exist; `doc_comments` is what reads them for the cursor.
+# Line and column are `text_lines.hero`'s, which reads lines and no token.
 
 function slice_of(text: str, span: token.Span) -> str
     return text.slice(from: span.start, to: span.end)
@@ -63,6 +61,8 @@ record Cursor
     tokens: [token.Token]
     pos: i64
     diagnostics: [diag.Diagnostic]
+    # Where those reports stand, kept as each is said (`report_marks`).
+    marks: report_marks.Marks
     # Comment spans passed over since the last `take_docs`.
     comments: [token.Span]
     # Where the author's own text ends. The parse runs over the WHOLE
@@ -89,15 +89,11 @@ record Cursor
     # lexer reads them (`parse/swap_reading.swap_at`).
     lexed: bool
 
+# A cursor over tokens no lexer made, a test's, all of them the author's.
 function new_cursor(tokens: [token.Token]) -> Cursor
-    return bounded_cursor(tokens: tokens, root_end: -1)
-
-# The same, told where the author's text stops. -1 means "everything is
-# the author's", which is what a single-file parse is.
-function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
     none: [i64] = []
     no_swaps: [swap_words.Swap] = []
-    c: Cursor @ lexed_cursor(tokens: tokens, root_end: root_end, closes: none, swaps: no_swaps)
+    c: Cursor @ lexed_cursor(tokens: tokens, root_end: -1, closes: none, swaps: no_swaps)
     c.lexed @ false
     return c
 
@@ -111,6 +107,7 @@ function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps
         tokens: tokens,
         pos: 0,
         diagnostics: said,
+        marks: report_marks.none(),
         comments: comments,
         root_end: root_end,
         held: held,
@@ -122,9 +119,7 @@ function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps
     return c
 
 # The current token's span, or the fallback when the current token is
-# past the author's text. The bootstrap asks `src.is_library`; the port
-# asks the boundary it was given, which is the same question with one
-# less dependency.
+# past the author's text, at the boundary the cursor was given.
 function here_or(c: Cursor, fallback: token.Span) -> token.Span
     here = current_span(c)
 
@@ -149,9 +144,7 @@ function at(c: Cursor, kind: token.TokenKind) -> bool
     return c.tokens[c.pos].kind == kind
 
 # The kind `ahead` significant tokens on. Comments are skipped here too, so
-# lookahead sees what the grammar sees. Two places need it: telling
-# `name: value` from a bare argument, and telling `for x in xs` from a
-# condition mistakenly written after `for`.
+# lookahead sees what the grammar sees.
 function peek(c: Cursor, ahead: i64) -> token.TokenKind
     left: i64 @ ahead
     i: i64 @ c.pos
@@ -247,6 +240,7 @@ function trial(c: Cursor) -> Cursor
     none: [diag.Diagnostic] = []
     copy: Cursor @ c
     copy.diagnostics @ none
+    copy.marks @ report_marks.none()
     return copy
 
 # Whether the parser refused anything since it had said `said`. A thesis rule
@@ -263,7 +257,13 @@ function refused_since(c: Cursor, said: i64) -> bool
     return false
 
 function error(@c: Cursor, code: str, message: str, span: token.Span)
-    push_diagnostic(@c.diagnostics, diag.new_diagnostic(code: code, message: message, span: span))
+    say(@c, diag.new_diagnostic(code: code, message: message, span: span))
+
+# A report the parser says: appended in place, and where it stands marked, so
+# that asking whether one stands on a token is a lookup (defect 265).
+function say(@c: Cursor, d: diag.Diagnostic)
+    push_diagnostic(@c.diagnostics, d)
+    report_marks.noted(@c.marks, said: c.diagnostics)
 
 # Append one diagnostic said, in place. **The array is the parameter, and
 # that is the whole reason this exists**, `state.push_token`'s rule (§4.10):
@@ -272,7 +272,7 @@ function error(@c: Cursor, code: str, message: str, span: token.Span)
 # said before it, and a file of N mistakes cost N² copies (defect 146,
 # measured 2026-10-01 on the trunk's compiler: 3,000 `function f() {` heads
 # 0.19 s and 24,000 8.02 s of user time to parse, and `sample` under the
-# array's push). Every parser module appends through this.
+# array's push). Every parser module appends through this, by `say`.
 function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
     diagnostics @ diagnostics.push(d)
 
@@ -369,10 +369,8 @@ test "the caret underlines what a reader can see"
 
 ## Recovery — what to drop after a mistake
 
-# Port of archive/bootstrap-rs/heroes/src/syntax/recover.rs, which is an `impl Cursor` on the
-# Rust side: the same struct, a second file. Here it is the same record and the
-# same file, because the port's cursor is 250 lines rather than 268 + 117 — the
-# Rust split was §11's ceiling, and the port has not reached it.
+# Port of archive/bootstrap-rs/heroes/src/syntax/recover.rs, an `impl Cursor`
+# in a second file on the Rust side; here the same record and file.
 #
 # Four moves, each with a landmark it trusts. The error is the deliverable
 # (§4.17), and a model paying ten turns for ten mistakes is the cost these keep
@@ -588,7 +586,8 @@ test "fixedbugs: past the boundary, the fallback is what the caret gets"
     assert here_or(plain, keyword).start == current_span(plain).start
 
     # Bounded: a token at or past the author's end yields the fallback.
-    bounded: Cursor @ bounded_cursor(tokens: tokens, root_end: 20)
+    none: [i64] = []
+    bounded: Cursor @ lexed_cursor(tokens: tokens, root_end: 20, closes: none, swaps: [])
     _ = bump(@bounded)
     assert current_span(bounded).start == 40
     assert here_or(bounded, keyword).start == 0

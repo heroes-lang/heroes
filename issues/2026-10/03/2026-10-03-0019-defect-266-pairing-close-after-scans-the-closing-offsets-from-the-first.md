@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-03
-commit: none
+commit: 3e6f076e8b875613113f7f8b18b39d7a0a9221a4
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** batch 8's recovery lane, instructions retired, 2026-10-03, its report's *Found beside*.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): the lane's reading, a cost beside 184's, whose cause is another function.
+
+    Repaired at `3e6f076e`, 2026-10-04 (lane b11-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

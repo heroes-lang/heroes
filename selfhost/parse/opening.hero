@@ -209,15 +209,15 @@ function braced(@c: cursor.Cursor, text: str, head: Mark, failed: bool, brace: i
         _ = cursor.bump(@c)
 
     if !refused_here(c, head)
-        cursor.push_diagnostic(@c.diagnostics, missing_here(c, text, missing))
+        cursor.say(@c, missing_here(c, text, missing))
     return .braced(close: brace_habit.closer(c, open: brace))
 
 # What goes on past a head over its body, named, unless the lexer spoke there.
 function junk(@c: cursor.Cursor, text: str, missing: Missing)
     if swap_reading.at_reported_error(c, text)
         return
-    cursor.push_diagnostic(
-        @c.diagnostics,
+    cursor.say(
+        @c,
         diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + swap_reading.found(c, text) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: cursor.current_span(c))
     )
 
@@ -269,7 +269,7 @@ function absent(@c: cursor.Cursor, text: str, head: Mark, silent: bool, missing:
     if !seam.is_err()
         cursor.push_held(@c.held, diag.Held(at: c.diagnostics.len(), cause: seam.must(), diagnostic: d, apart: false))
         return
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
 
 function missing_here(c: cursor.Cursor, text: str, missing: Missing) -> diag.Diagnostic
     return diag.new_diagnostic(

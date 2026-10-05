@@ -1,0 +1,41 @@
+# Fixed defect 267, 2026-10-04 (lane b11-parse), the parser's half. Symptom:
+# reading a declaration of N members took work that grew with N squared:
+# `parse` over a clean record of 8,000 fields retired 5.37 billion
+# instructions against 0.63 at 2,000, a variant's cases, a case's fields, a
+# generic record's and a commented record's the same, and a record whose
+# fields each end with a `,` 17.0 billion. Causes, found with `sample`: each
+# member was pushed with a `.must()` inside the push, which kept the push
+# from growing the array in place (`parse/member_lines.fields_of`,
+# `case_block`); a case's fields in braces below it were pushed through
+# `cases[last]`, and each `,`'s deletion into its report through
+# `c.diagnostics[habit]`, places no push grows in place. Each push copied
+# every member before it. Repair: each member is matched out before its
+# push, and the other two grow in a local stored once; 8,000 fields now
+# retire 1.29 billion, and the `,` record 2.10. Nothing said moves: this
+# case pins each shape's messages and fixes, as before. The resolver's half,
+# a record's field names kept in a table copied at each name, is not this
+# repair's (`resolve/state.keyed_add`).
+
+record Point
+    x: i64,  #~ expected_end_of_line
+    y: i64,
+    # a doc comment above the last field
+    z: i64,
+
+variant Shape
+    dot
+    circle
+    {  #~ expected_case
+        r: i64
+        d: i64
+    }
+
+variant Plain
+    one
+    two
+        a: i64
+        b: i64
+
+function main()
+    p = Point(x: 1, y: 2, z: 3)
+    print(p.x)

@@ -1,0 +1,29 @@
+# Fixed defect 342, 2026-10-05 (lane b11-parse), the checker's half. Symptom:
+# a correct `match` arm of N patterns joined by `|` checked in work that grew
+# with N squared even once the parser read it in place (`43d6e237`): 7.96
+# billion instructions retired at 4,000 patterns and 118.61 billion at
+# 16,000. Cause, found with `sample`: `check/reach.after` walked every literal
+# value the arms had taken before each pattern, to find one taken twice, and
+# grew the values and their spellings through `seen`'s fields, places no push
+# grows in place. Repair: the values taken are a map from each to its first
+# spelling, one lookup a pattern; 16,000 patterns now check in 2.24 billion.
+# Nothing said moves: this case pins a value taken twice among many, a
+# number spelled another way, a string, and a pattern after a `_`.
+
+function numbers(n: i64) -> str
+    return match n
+        1 | 2 | 3 | 97 | 5 | 6 => "few"
+        7 | 0x61 | 8 => "again"  #~ duplicate_arm
+        -0 | 9 => "zero"
+        0 => "zero again"  #~ duplicate_arm
+        _ => "many"
+
+function words(s: str) -> str
+    return match s
+        "a" | "b" | "c" => "early"
+        "d" | "b" => "late"  #~ duplicate_arm
+        _ => "other"
+        "e" => "never"  #~ duplicate_arm
+
+function main()
+    print(numbers(1) + words("a"))

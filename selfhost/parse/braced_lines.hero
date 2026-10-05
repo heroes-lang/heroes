@@ -169,7 +169,7 @@ function said_by(@c: cursor.Cursor, view: cursor.Cursor)
     said = c.diagnostics.len()
 
     for d in view.diagnostics
-        cursor.push_diagnostic(@c.diagnostics, d)
+        cursor.say(@c, d)
 
     for h in view.held
         cursor.push_held(@c.held, diag.Held(at: said + h.at, cause: h.cause, diagnostic: h.diagnostic, apart: h.apart))

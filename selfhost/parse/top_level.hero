@@ -103,9 +103,9 @@ function bodiless_word(@c: cursor.Cursor, text: str, word: i64, head: opening.Ma
     kind = declared.must()
 
     if kind == "record"
-        cursor.push_diagnostic(@c.diagnostics, members_below.empty_record(t.span, in_group: false, partial: false))
+        cursor.say(@c, members_below.empty_record(t.span, in_group: false, partial: false))
     else if kind == "variant"
-        cursor.push_diagnostic(@c.diagnostics, members_below.empty_variant(t.span))
+        cursor.say(@c, members_below.empty_variant(t.span))
     else
         opening.absent(@c, text, head: head, silent: false, missing: opening.missing_body("a `" + kind + "`"))
     return true

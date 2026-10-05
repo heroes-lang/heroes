@@ -169,7 +169,7 @@ function climbs(@c: cursor.Cursor, text: str, keyword: token.Span)
     d.notes @ d.notes.push(
         "a module above that directory belongs to a different program: give this one its own root, or move the file in"
     )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
     skip_rest_of_line(@c, text, from: keyword)
 
 # `use syntax/` and `use syntax /decl` — a separator with no part after it,
@@ -186,7 +186,7 @@ function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: tok
         message: "a `/` in a `use` joins two names with nothing between them — `use " + written + "/decl` names one module, and `use " + written + "` names another",
         span: slash
     )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
     skip_rest_of_line(@c, text, from: name)
 
 # `use syntax/decl as` — the word is there and the name is not. The caret
@@ -251,7 +251,7 @@ function quoted_module(@c: cursor.Cursor, text: str)
         d.fixes @ d.fixes.push(
             diag.Fix(title: "write `use " + inner + "`", replacement: inner, span: s, certainty: .certain)
         )
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
     _ = cursor.bump(@c)
 
     # The line goes on as a name's would: `as g` is its alias, and anything

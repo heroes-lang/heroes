@@ -33,6 +33,7 @@ use ast
 use cursor
 use parse/arm_pattern
 use open_line
+use report_marks
 
 # An arm's patterns, none where an operator stood alone where they go; and
 # whether a refusal of them was told (`told`), the arm then read for its own
@@ -61,13 +62,13 @@ function lead(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Lead?
         if reading
             patterns @ [after.must()]
 
+    # Matched out before its push, which a `.must()` kept from growing in place.
     while reading && cursor.eat(@c, .pipe)
-        more = arm_pattern.read(@c, @a, text)
-        reading @ !more.is_err()
-        told @ told || !reading
-
-        if reading
-            patterns @ patterns.push(more.must())
+        match arm_pattern.read(@c, @a, text)
+            .ok more => patterns @ patterns.push(more)
+            .err =>
+                reading @ false
+                told @ true
 
     if told && !cursor.at(c, .fat_arrow) && !to_the_arrow(@c)
         return fail(code: "no_pattern", msg: "the arm has no pattern")
@@ -111,6 +112,7 @@ function pattern_after(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern
     read = arm_pattern.read(@c, @a, text)
 
     if read.is_err()
+        report_marks.cut(@c.marks, to: said)
         c.diagnostics @ c.diagnostics.slice(from: 0, to: said)
     return read
 

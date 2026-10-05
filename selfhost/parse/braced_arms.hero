@@ -63,7 +63,7 @@ function taken(@c: cursor.Cursor, lines: cursor.Cursor)
         )
 
     for d in lines.diagnostics
-        cursor.push_diagnostic(@c.diagnostics, d)
+        cursor.say(@c, d)
 
     brace_habit.pass(@c)
 

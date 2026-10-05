@@ -48,6 +48,7 @@ use line_above
 use brace_layout
 use parse/laid_braces
 use parse/pairing
+use parse/line_end
 
 ## The habit
 
@@ -213,7 +214,7 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
 
             if at >= 0
                 open @ open.slice(from: 0, to: at)
-            else if open.len() == 0 && i >= c.pos && !told_at(c, at: i)
+            else if open.len() == 0 && i >= c.pos && !line_end.said_at(c, at: i, said: 0)
                 cursor.error(
                     @c,
                     code: "expected_end_of_line",
@@ -222,14 +223,6 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
                 )
                 return
         i @ i + 1
-
-# Whether a report stands on the token at `at`.
-function told_at(c: cursor.Cursor, at: i64) -> bool
-    for d in c.diagnostics
-        if d.span.start == c.tokens[at].span.start
-            return true
-
-    return false
 
 # Move past the braces the `{` under the cursor opens, and past their `}` and
 # its line end, which goes with it as a dedent's does; or, where the lexer

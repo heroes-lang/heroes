@@ -1,0 +1,46 @@
+# Fixed defect 315, 2026-10-04 (lane b11-parse). Symptom: a member written
+# on its head's line over nothing, `variant T: a`, was told twice, the head's
+# junk at the `:` and `empty_variant` at the head, where moving the member
+# below cures both; `record R: x` the same with `empty_record`. Cause:
+# `parse/members_below.no_members_below` told `empty` beside the junk over no
+# members below, whatever the junk was (defect 198's repair). Repair: where
+# the junk is the members, a `:` and a name or a name and a `:`, the junk's
+# report is the one, its words sending them below. Where it is anything else,
+# a closer, a number, a word like `extends`, or a bare name, which may be a
+# case or a foreign word, the block is empty indeed and both are told, as
+# `check/panel-187-a-heads-line-that-goes-on-is-told-once` pins for a closer.
+
+variant One: a  #~ expected_end_of_line
+
+record Two: x  #~ expected_end_of_line
+
+variant Three: a, b  #~ expected_end_of_line
+
+record Four: x: i64  #~ expected_end_of_line
+
+record Five x: i64  #~ expected_end_of_line
+
+variant Six: a(x: i64)  #~ expected_end_of_line
+
+variant Closer )  #~ expected_end_of_line empty_variant
+
+variant Number: 1  #~ expected_end_of_line empty_variant
+
+record Extends Base  #~ expected_end_of_line empty_record
+
+variant Bare a  #~ expected_end_of_line empty_variant
+
+function main()
+    print(1)
+
+# Widened 2026-10-05 (lane b11-parse), the two rows its issue held owed: the
+# members are read past the head's type parameters and after a `=` as after a
+# `:`; a generic head over nothing keeps both, its record empty indeed.
+
+record Generic<T>: x: T  #~ expected_end_of_line
+
+record Equals = x: i64  #~ expected_end_of_line
+
+variant Union = a | b  #~ expected_end_of_line
+
+record GenericEmpty<T>  #~ expected_end_of_line empty_record

@@ -63,6 +63,7 @@ use token
 use separator_runs
 use line_opens
 use parse/loop_habit
+use parse/line_end
 
 # What hangs below the line a statement ended on, for the grammar to read.
 variant Below
@@ -127,10 +128,10 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
     return .nothing
 
 # What hangs below the line begun at token `from`, which said what is wrong:
-# a block it can open none of is an orphan, named here (`parse/orphans`),
-# and either is read by the grammar.
+# a block it can open none of is an orphan, named here unless a report stands
+# on it, `{` alone over it (`parse/orphans`); either is read by the grammar.
 function hangs_below(@c: cursor.Cursor, text: str, from: i64) -> Below
-    if cursor.at(c, .indent) && orphan_below(c, text, from: from) && !told_at_the_block(c, from: from)
+    if cursor.at(c, .indent) && orphan_below(c, text, from: from) && !line_end.said_here(c)
         orphans.read(@c)
 
     if cursor.at(c, .indent) || brace_habit.opens_here(c, text)
@@ -165,20 +166,6 @@ function orphan_below(c: cursor.Cursor, text: str, from: i64) -> bool
         i @ i + 1
 
     return true
-
-# Whether the statement begun at token `from` failed at the block under the
-# cursor, `{` alone on its line over it: what it said is the block's report.
-function told_at_the_block(c: cursor.Cursor, from: i64) -> bool
-    at = cursor.current_span(c).start
-    first = c.tokens[from].span.start
-    i: i64 @ c.diagnostics.len() - 1
-
-    while i >= 0 && c.diagnostics[i].span.start >= first
-        if c.diagnostics[i].span.start == at
-            return true
-        i @ i - 1
-
-    return false
 
 # Whether the name at token `at` is followed, past comments, by a token that
 # begins a value no suffix of the name's begins: not `(`, `[`, `.` or `-`.

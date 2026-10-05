@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:19:14: error[unclosed_bracket]: `(` opened here is still open at line 22, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:23:16: error[unclosed_bracket]: `(` opened here is still open at line 26, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:27:10: error[unclosed_bracket]: `(` opened here is still open at line 28, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:31:10: error[unclosed_bracket]: `(` opened here is still open at line 32, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:31:12: error[unclosed_bracket]: `(` opened here is still open at line 32, where the name `print` begins a line after one that ended without a `,`
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:34:21: error[unclosed_bracket]: `(` opened here is still open at line 37, where `function` begins a line no bracket can hold
+tests/golden/check/fixedbugs-266-a-file-of-unclosed-heads-finds-each-close-by-search.hero:19:9: error[for_missing_in]: `for` iterates — `for x in xs`; found a name (`n`) — a loop over a condition is `while`

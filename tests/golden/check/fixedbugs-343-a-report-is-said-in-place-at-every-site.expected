@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-343-a-report-is-said-in-place-at-every-site.hero:12:9: error[line_end_before_continuation]: a line end stands before `+`: the line above ends with a name (`n`), which keeps its line end, and inside brackets a line end may stand only before a closing bracket or a `,`; to break the line here, end the line above with `+`
+tests/golden/check/fixedbugs-343-a-report-is-said-in-place-at-every-site.hero:15:18: error[expected_type]: expected a type, found `function` without its parentheses — a function type is written in them, `(function(i64) -> i64)`
+tests/golden/check/fixedbugs-343-a-report-is-said-in-place-at-every-site.hero:18:40: error[parameter_name_not_a_name]: a parameter name is a plain name, `from`, and this is a type

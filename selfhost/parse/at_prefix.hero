@@ -117,7 +117,7 @@ function told(@c: cursor.Cursor, text: str) -> Reading
         span: at
     )
     d.fixes @ fixes(reading, text, at: at, after: after)
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
     return reading
 
 # At the token after a sigil's name, on a copy of the cursor: the line's
@@ -227,7 +227,7 @@ function in_value(@c: cursor.Cursor, text: str) -> bool
         span: at
     )
     d.fixes @ d.fixes.push(gone)
-    cursor.push_diagnostic(@c.diagnostics, d)
+    cursor.say(@c, d)
     return true
 
 # Is `d` a sigil's report: its span `@` and nothing else, a name after it?
