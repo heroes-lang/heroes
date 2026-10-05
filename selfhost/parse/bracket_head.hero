@@ -13,7 +13,7 @@
 # | entry | called by |
 # |---|---|
 # | `in_brackets` | `grammar_expr.match_expr`, `grammar_expr.if_expr` |
-# | `enclosing_openers`, `holds` | `parse/list_line`, `grammar_expr.call_args` |
+# | `enclosing_openers`, `holds`, `openers_around` | `parse/list_line`, `parse/map_line`, `grammar_expr.call_args` |
 
 use token
 use cursor
@@ -55,6 +55,37 @@ function enclosing(c: cursor.Cursor, at: i64) -> i64
     if around.len() == 0
         return -1
     return around[0]
+
+# The openers the one at `open` stands in on its line, which close with it
+# where an item ends at a binding below (defects 307, 304 and 310): their
+# names, "the `(` and the `[`", empty where there are none, and the closers
+# all of them owe, its own `own` first, "])".
+record Around
+    names: str
+    closers: str
+
+function openers_around(c: cursor.Cursor, text: str, open: i64, own: str) -> Around
+    names: [str] @ []
+    closers: [str] @ [own]
+
+    # One the lexer named never closed has its own report, and is no edit here.
+    for at in enclosing_openers(c, at: open)
+        written = cursor.slice_of(text, c.tokens[at].span)
+
+        if pairing.paired_closer(c, text, open: at) >= 0
+            names @ names.push("the `" + written + "`")
+            closers @ closers.push(closer_of(written))
+
+    return Around(names: names.join(" and "), closers: closers.join(""))
+
+# The closer of the opener written `opener`.
+function closer_of(opener: str) -> str
+    if opener == "("
+        return ")"
+
+    if opener == "["
+        return "]"
+    return "}"
 
 # Whether the opener at `open` is one the token `at` stands inside on its
 # line (`enclosing_openers`): a bracket around an item that ended at a
