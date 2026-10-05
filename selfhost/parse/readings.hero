@@ -20,7 +20,7 @@ use stable
 use swap_words
 use parse/decl
 use parse/which_arm
-use parse/joined_lines as seams
+use joined_lines as seams
 use pairing
 use text_outline
 use word_place

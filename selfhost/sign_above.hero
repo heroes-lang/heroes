@@ -54,7 +54,7 @@ use word_place
 # is left out with its margin and the arm's line is the caller's to lay out.
 # A break is recorded only over a join (`state.Break`): its `after` is the
 # first word of the line joined below it, and a line laid out on its own is
-# none (`parse/joined_lines` and `line_above` read the breaks as joins).
+# none (`joined_lines` and `line_above` read the breaks as joins).
 function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bool
     operator = l.tokens[at]
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
