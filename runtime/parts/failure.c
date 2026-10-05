@@ -107,13 +107,91 @@ HeroFailure hero_failure_not_text(void) {
     return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
 }
 
+/* -- the one printer of a failure's line (panel 192's R7, defect 355) ---------
+ *
+ * A failure's line holds the PROGRAM's texts, a `.must()`'s code and message
+ * and an `assert`'s expression and sides, and it reaches a terminal. Two things
+ * were wrong with writing them by `%s`, each measured by panel 192:
+ *
+ * - **by length**: `%s`, and `%.*s` too, stop at a NUL, and a `str` may hold
+ *   one (panel 192's R1), so a message holding `a`, NUL, `b` printed `a`;
+ * - **by code**: a control character went to the terminal as itself, so a
+ *   message holding ESC `[2J` cleared the screen of whoever read it.
+ *
+ * So each piece is written by its length, and every character a line cannot
+ * show is written by its code between angle brackets, `<U+001B>`, the form a
+ * compiler's diagnostic writes it in (`selfhost/shown_char.hero`, `visible`):
+ * a control character but the line feed and the tab, one of the twelve
+ * bidirectional controls, which reorder the line a terminal draws, and U+2028
+ * and U+2029. A `str` is well-formed UTF-8, so a sequence is read whole. The
+ * line is built first and written in one `fwrite`, so it stays one write, as
+ * the `fprintf` it replaces was. */
+static int64_t hero_failure_unshowable(const unsigned char *p, int64_t left, int64_t *width) {
+    unsigned char b = p[0];
+    *width = 1;
+    if (b < 0x80) return (b < 0x20 && b != '\n' && b != '\t') || b == 0x7f ? (int64_t)b : -1;
+    if (b == 0xc2 && left >= 2) {
+        *width = 2;
+        return p[1] >= 0x80 && p[1] < 0xa0 ? (int64_t)p[1] : -1;
+    }
+    if (b == 0xd8 && left >= 2) {
+        *width = 2;
+        return p[1] == 0x9c ? 0x061c : -1;
+    }
+    if (b == 0xe2 && left >= 3) {
+        *width = 3;
+        int64_t code = ((int64_t)(b & 0x0f) << 12) | ((int64_t)(p[1] & 0x3f) << 6) | (int64_t)(p[2] & 0x3f);
+        bool bidi = code == 0x200e || code == 0x200f || (code >= 0x202a && code <= 0x202e) ||
+                    (code >= 0x2066 && code <= 0x2069);
+        return bidi || code == 0x2028 || code == 0x2029 ? code : -1;
+    }
+    if (b >= 0xc0) *width = b >= 0xf0 ? 4 : b >= 0xe0 ? 3 : 2;
+    if (*width > left) *width = left;
+    return -1;
+}
+
+/* Writes the pieces into `line`, or only counts them where `line` is NULL. */
+static size_t hero_failure_shown(const HeroStr *pieces, int count, char *line) {
+    size_t at = 0;
+    for (int i = 0; i < count; i++) {
+        const unsigned char *p = (const unsigned char *)pieces[i].ptr;
+        int64_t k = 0;
+        while (k < pieces[i].len) {
+            int64_t width = 1;
+            int64_t code = hero_failure_unshowable(p + k, pieces[i].len - k, &width);
+            if (code >= 0) {
+                char name[16];
+                int n = snprintf(name, sizeof name, "<U+%04llX>", (unsigned long long)code);
+                if (line != NULL) memcpy(line + at, name, (size_t)n);
+                at += (size_t)n;
+            } else {
+                if (line != NULL) memcpy(line + at, p + k, (size_t)width);
+                at += (size_t)width;
+            }
+            k += width;
+        }
+    }
+    return at;
+}
+
+static void hero_failure_write(const HeroStr *pieces, int count) {
+    size_t total = hero_failure_shown(pieces, count, NULL);
+    char *line = hero_alloc(total + 1);
+    size_t wrote = hero_failure_shown(pieces, count, line);
+    fwrite(line, 1, wrote, stderr);
+    hero_release(line);
+}
+
+/* A text of the runtime's own, a piece beside the program's. */
+#define HERO_FAILURE_TEXT(text) ((HeroStr){(text), (int64_t)(sizeof(text) - 1)})
+
 _Noreturn void hero_panic_must(HeroFailure f) {
-    /* Built by hand rather than through `hero_panic`, so the two strings print
-     * without needing a NUL-terminated join: a `HeroStr` always has its NUL, but
-     * `code` and `msg` come from the program and one `fprintf` is one write. */
+    /* Built by hand rather than through `hero_panic`: `code` and `msg` come
+     * from the program, so they go through the printer above. */
     fflush(stdout);
-    fprintf(stderr, "panic: .must() on an error: %s: %s\n",
-            hero_str_cstr(f.code), hero_str_cstr(f.msg));
+    HeroStr pieces[5] = {HERO_FAILURE_TEXT("panic: .must() on an error: "), f.code,
+                         HERO_FAILURE_TEXT(": "), f.msg, HERO_FAILURE_TEXT("\n")};
+    hero_failure_write(pieces, 5);
     hero_abort();
 }
 
@@ -132,7 +210,8 @@ _Noreturn void hero_panic_must(HeroFailure f) {
 _Noreturn void hero_panic_assert(HeroStr text) {
     hero_str_require(text);
     fflush(stdout);
-    fprintf(stderr, "assert failed: %s\n", hero_str_cstr(text));
+    HeroStr pieces[3] = {HERO_FAILURE_TEXT("assert failed: "), text, HERO_FAILURE_TEXT("\n")};
+    hero_failure_write(pieces, 3);
     hero_abort();
 }
 
@@ -141,7 +220,8 @@ _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right
     hero_str_require(left);
     hero_str_require(right);
     fflush(stdout);
-    fprintf(stderr, "assert failed: %s\n  left:  %s\n  right: %s\n",
-            hero_str_cstr(text), hero_str_cstr(left), hero_str_cstr(right));
+    HeroStr pieces[7] = {HERO_FAILURE_TEXT("assert failed: "), text, HERO_FAILURE_TEXT("\n  left:  "),
+                         left, HERO_FAILURE_TEXT("\n  right: "), right, HERO_FAILURE_TEXT("\n")};
+    hero_failure_write(pieces, 7);
     hero_abort();
 }

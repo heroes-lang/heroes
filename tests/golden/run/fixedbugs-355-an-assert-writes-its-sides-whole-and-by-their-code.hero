@@ -1,0 +1,10 @@
+# Defect 355, panel 192's R7, 2026-10-05: an `assert`'s sides go through the
+# runtime's one printer too, so a side holding a control character, a
+# bidirectional control or a NUL is written by its code and whole, where
+# `%s` sent the ESC to the terminal and stopped at the NUL. The override is
+# written by its code because it would reorder the line the terminal draws.
+
+function main()
+    b: [u8] = [97, 0, 98]
+    x = "a\u{1b}[2J\u{202e}b\u{85}c" + b.validated_bytes().must()
+    assert x == "y"
