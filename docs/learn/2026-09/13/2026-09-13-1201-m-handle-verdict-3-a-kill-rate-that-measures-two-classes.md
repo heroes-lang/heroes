@@ -2,7 +2,7 @@
 
     **Where to look:** `docs/measurements/029-the-sixteenth-operator-and-a-kill-rate-that-means-the-opposite.md`;
     `selfhost/mutate/handles.hero`'s module comment; the row in
-    `harness/mutations/operators.md`; and § Scored at step 3 of
+    `docs/metrics/operators.md`; and § Scored at step 3 of
     `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md`.
 
     **Why it matters:** the operator exists to measure one thing — a C handle

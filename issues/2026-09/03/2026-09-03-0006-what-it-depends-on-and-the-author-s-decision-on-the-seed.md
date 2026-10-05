@@ -24,12 +24,12 @@ github: none
     Corpus material never enters the held-out set (CLAUDE.md §9).
 
     **Where to look also:** `design.md` Part 11 (`:2823-2860`) ·
-    `harness/tasks/README.md`.
+    `docs/metrics/tasks.md`.
     **Why it matters:** a thesis with one of two factors audited is an opinion
     with a decimal point, which §12 forbids.
 
     **Re-verified 2026-09-10: STILL OPEN, and it points at a contradiction the
-    ROADMAP now has with itself.** `harness/tasks/README.md` still says *"Status: 0
+    ROADMAP now has with itself.** `docs/metrics/tasks.md` still says *"Status: 0
     tasks"* and still keys the bulk to M-guide-book. Part 11 is `design.md:3114-3166`,
     not `:2823-2860`. **And the dependency's number moved**: the `net/http` client is
     M-core-packages **step 5** after the 2026-09-10 reorder, while

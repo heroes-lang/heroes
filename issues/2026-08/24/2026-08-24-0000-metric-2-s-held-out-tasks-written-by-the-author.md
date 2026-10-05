@@ -7,7 +7,7 @@ commit: none
 github: none
 ---
 
-- [ ] **M-guide-book** | metric 2's held-out tasks, written by the author | `harness/tasks/README.md` · `docs/panel/011`
+- [ ] **M-guide-book** | metric 2's held-out tasks, written by the author | `docs/metrics/tasks.md` · `docs/panel/011`
 
     **Origin:** author decision 2026-08-24, `/decide` answer `8b`. This item
     replaces both the 2026-08-11 original and the 2026-08-18 promotion to

@@ -1,5 +1,5 @@
 # One function per operator: every mutant it makes from one source, as text
-# edits guided by the tree (design.md Part 11, `harness/mutations/operators.md`).
+# edits guided by the tree (design.md Part 11, `docs/metrics/operators.md`).
 #
 # Port of archive/bootstrap-rs/heroes/src/mutate/edits.rs. Each operator imitates a
 # *plausible* mistake — a habit carried from another language, a one-character
