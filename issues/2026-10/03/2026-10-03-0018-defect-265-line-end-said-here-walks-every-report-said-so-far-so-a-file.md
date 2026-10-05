@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-03
-commit: none
+commit: 1e8b2315fcf4c57040bf24e5e4200de660bf521a
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): the lane's reading, a cost beside 184's, whose cause is another function.
 
     **Cause found 2026-10-04, lane b11-parse**: at 16,000 heads every sample of the square is `line_end.said_here`'s walk over every report said, asked at each `expected_expression` by `grammar_expr.primary` (`selfhost/grammar_expr.hero`). `said_here` has only the cursor's reports to ask, and they are said out of the text's order (an opener's `unclosed_bracket` after the reports inside it), so no early stop rests on the value: a sublinear answer needs the cursor to keep where its reports stand as each is appended (`selfhost/cursor.hero`, and the parse modules that append to `c.diagnostics` directly), not this lane's files. Not repaired; the three walks that asked the question are one since `7b63179e` (`line_end.said_at`), where such an index would answer all three.
+
+    Repaired at `1e8b2315`, 2026-10-05 (lane b11-parse, its files widened to `cursor.hero` that day), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The three appends in batch 12's files (`loop_habit`, `list_line`) stay plain and are walked as the marks' tail.
