@@ -234,6 +234,7 @@ function argv_probes() -> [probe.Probe]
         row(name: "and a control byte by its code, where it arrives inside an error token", argv: "lex tests/golden/surface-fixtures/json102/control.hero --dump-tokens --json", code: 1).out_has("\\u0001")
         row(name: "a control byte the language refuses is named by its code in check's JSON, where the byte went raw", argv: "check tests/golden/surface-fixtures/json102/control.hero --json", code: 1).err_has("\"message\": \"the control character U+0001 is not part of the language's syntax\"")
         row(name: "a character a terminal shows as nothing, or that reorders the line, is named by its code alone, and one that can be seen is shown and named", argv: "check tests/golden/surface-fixtures/json102/unseen.hero", code: 1).err_has("the invisible character U+202E is not").err_has("the invisible character U+200B is not").err_has("`€` (U+20AC) is not")
+        row(name: "and the token dump writes those two by their code as well, and the one that can be seen as itself (defect 291)", argv: "lex tests/golden/surface-fixtures/json102/unseen.hero --dump-tokens", code: 1).out_has("2:11 error <U+202E>\n").out_has("3:11 error <U+200B>\n").out_has("4:11 error €\n").out_lacks("\u{202e}")
         row(name: "a missing operand shows the shape", argv: "check", code: 2).err_is("error: `check` needs a file: `heroes check <file.hero>`\n")
         row(name: "two files are refused", argv: "check a.hero b.hero", code: 2).err_has("takes one file")
         row(name: "-o needs a path", argv: "build examples/gallery/00-first.hero -o", code: 2).err_has("needs a path")
@@ -473,7 +474,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "and the token dump shows the escape as it is written, its braces the escape's and never a hole's", argv: "lex tests/golden/surface-fixtures/escape251/main.hero --dump-tokens", code: 0).out_has("14:12 str_piece f\"\\u{1b}[3{").out_has("14:24 str_piece }m{{\\u{202e}}}\"").err_empty()
         row(name: "and the syntax tree's dump prints the literal as the author wrote it", argv: "parse tests/golden/surface-fixtures/escape251/main.hero --dump-ast", code: 0).out_has("return f\"\\u{1b}[3{n}m{{\\u{202e}}}\"").err_empty()
         row(name: "and the scopes' dump counts the hole beside the escape as a read and the escape's braces as none", argv: "check tests/golden/surface-fixtures/escape251/main.hero --dump-scopes", code: 0).out_has("param n (reads 1, writes 0)").err_empty()
-        row(name: "and the IR's strings are the characters the escapes write, each control by its code", argv: "build tests/golden/surface-fixtures/escape251/main.hero --dump-ir", code: 0).out_has("    0  \"<U+001B>[0m\"").out_has("    1  \"<U+001B>[3\"").out_has("    5  \"<U+007F>\"").err_empty()
+        row(name: "and the IR's strings are the characters the escapes write, each control by its code", argv: "build tests/golden/surface-fixtures/escape251/main.hero --dump-ir", code: 0).out_has("    0  \"<U+001B>[0m\"").out_has("    1  \"<U+001B>[3\"").out_has("    2  \"m{<U+202E>}\"").out_has("    5  \"<U+007F>\"").err_empty()
         row(name: "and mutate reads the program and scores it", argv: "mutate tests/golden/surface-fixtures/escape251", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/escape251")
         row(name: "unused_binding on a name a plain literal holds in braces quotes the literal and offers its `f`, a guess (panel 184 R2)", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("note: the literal `\"{n + gone} rows\"` holds `n` in braces, and without an `f` before its quote it prints them as they stand").err_has("fix (guess): write the `f`: `f\"{n + gone} rows\"`").err_lacks("fix (certain)")
         row(name: "and where the binding does not reach the literal, the note alone", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("holds `early` in braces where this binding is not in scope").err_lacks("`f\"{early} above\"`")
@@ -721,7 +722,9 @@ test "the tables are what this module is, so they are counted"
     # inside a string literal and over a control byte, `check --json` over the
     # same byte, and `check` over characters a terminal cannot show, each
     # pinned where the byte went into JSON raw or into a message unseen.
-    assert argv_probes().len() == 30
+    # 30 -> 31 on 2026-10-05, defect 291: `lex --dump-tokens` over the same
+    # characters a terminal cannot show, each written by its code.
+    assert argv_probes().len() == 31
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
     assert help_probes().len() == 5
