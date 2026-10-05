@@ -1,0 +1,4 @@
+- [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-ffi-ladder close | Milestone debrief offers, all optional: **walkthrough** (one `extern` from the group's head line to the emitted `#include`, the `_Static_assert`, the unmangled call and the `-l` flag — four artifacts from one declaration) · **ratify the 5 adversarial cases** (`check/ffi-type` · `fixedbugs/ffi-return-type` · `run/ffi-libm` · `run/ffi-cstr` · `run/edges-file-args-exit`) · **mutation drill** (change `HERO_RET_INT`'s `+(c)` back to `(c)` and predict which of the two acceptance programs fails — the answer is the milestone's best finding) · **exit-quiz** (write the `extern` group for three `curl` functions from `curl.h` alone, then compile it)
+
+    **Where to look:** /learn
+    **Why it matters:** the author's call, when and how much

@@ -34,4 +34,37 @@ with what each one measured in the git history and in `DESIGN-LOG.md`):
   apart, which is how one of them rots; they are one section under the summary
   table.
 
----
+## Decisions about the table
+
+What the chain decided about itself, here since 2026-10-05 (they were
+`docs/roadmap/decisions.md` from 2026-09-12, the ROADMAP's own § Decisions this
+file records before that).
+
+### `scheduled, no warrant` is not decoration
+
+Part 7's preamble defers everything on its list until the closure list compiles
+itself, and **a place in the table is not a warrant**. Measurement 003 rider 3 is
+the standing precedent: this file scheduled `outline` and `explain`, and
+CLAUDE.md §10's stopping rule refused them.
+
+### Two milestones were asked for and neither was added
+
+Asked 2026-08-12; the table is unchanged and this is why (panels 033 and 034).
+
+**Visibility**: three tiers, and two of them were never visibility questions —
+private record fields are an opaque type (§4.9 makes construction impossible from
+outside, and §4.20 makes a shim read the field anyway) and private variant cases
+are `#[non_exhaustive]`, which Rust deleted in 2014, re-added per type in 2019
+and documents as costing exhaustiveness. Both are now **Part 6, permanently**.
+The third, `private` on a declaration, is **Part 7 item 14** at a pre-fixed +18;
+M-selfhost-probe was assigned to decide it and **did, at its close 2026-08-15: no
+blockage, so it stays Part 7** — eleven modules ported, every cross-module read
+intended, and the rule's own words (*"a blockage there puts it on the closure
+list, a wish does not"*) made the close mechanical.
+
+**Errors**: the Rust shape landed at M-optional-map — `T?` is `Result<T,E>`, `?`
+is `?`, `.must()` is `.unwrap()` — and the part Rust has that Heroes does not,
+the typed error, stays **Part 8 wart 5** rather than becoming a deferral, because
+it loses on §4.12's positive rule as well as on simplicity. What is real
+underneath the question is measured: `docs/measurements/004-error-codes.md`,
+**25 mutants, 0 caught**, and the answer is a `constant`, not a feature.

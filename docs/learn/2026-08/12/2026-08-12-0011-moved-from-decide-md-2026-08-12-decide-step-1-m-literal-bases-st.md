@@ -1,0 +1,4 @@
+- [ ] **Moved from `DECIDE.md` 2026-08-12 — `/decide` step 1** | M-literal-bases step 1 | Two decoders became one, and the milestone could not have landed otherwise. Open `archive/bootstrap-rs/heroes/src/types/exprs.rs:41` and `archive/bootstrap-rs/heroes/src/ir/exprs.rs:206` at the commit before `944ee94`, where each calls `parse::<i64>()` on the same slice. Question: with one base, what did drift between them cost — name the observable symptom. With four, what does it cost instead? Then say why the *diagnostic* had to move into `lexer/digits.rs` too, and not only the decoder
+
+    **Where to look:** archive/bootstrap-rs/heroes/src/lexer/digits.rs · `git show 944ee94^:archive/bootstrap-rs/heroes/src/ir/exprs.rs` (2026-08-12, a revision rather than a file on disk)
+    **Why it matters:** the answer is the difference between a duplicated sentence and a wrong number
