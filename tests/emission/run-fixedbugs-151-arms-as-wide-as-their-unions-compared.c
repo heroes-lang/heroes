@@ -5,7 +5,7 @@
 #include <fixedbugs-151-unions.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -81,8 +81,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -133,19 +135,19 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs151armsaswideasthe
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs151armsaswideastheirunionscompared_make_sarr(uint32_t a0) { (void)(make_sarr)(a0); }
 #line 28 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs151armsaswideastheirunionscompared_make_sptr(int64_t a0) { (void)(make_sptr)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 151 "fixedbugs151armsaswideastheirunionscompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SA_eq(const SA *a, const SA *b);
@@ -192,7 +194,7 @@ void h_fixedbugs151armsaswideastheirunionscompared_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 void h_fixedbugs151armsaswideastheirunionscompared_main(void) {
-#line 196 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 198 "fixedbugs151armsaswideastheirunionscompared.c"
     HeroMapHeader * h0_seen = {0};
     HeroMapHeader * h1_own1 = {0};
     int32_t t1;
@@ -298,15 +300,15 @@ bb0:
     t56 = h1_own1;
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h1_own1 = t16;
-#line 302 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 304 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(t56);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t57 = h0_seen;
-#line 306 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 308 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_incref(t16);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h0_seen = t16;
-#line 310 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 312 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(t57);
 #line 36 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t17 = INT64_C(5);
@@ -416,10 +418,10 @@ bb0:
     hero_print_bool(t55);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_print_end();
-#line 420 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 422 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(h0_seen);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
-#line 423 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 425 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(h1_own1);
     return;
 }

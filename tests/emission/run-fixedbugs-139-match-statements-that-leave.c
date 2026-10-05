@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -41,7 +43,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "fixedbugs139matchstatementsthatleave.c"
+#line 47 "fixedbugs139matchstatementsthatleave.c"
 typedef enum h_fixedbugs139matchstatementsthatleave_Color_tag {
     h_fixedbugs139matchstatementsthatleave_Color_tag_red = 0,
     h_fixedbugs139matchstatementsthatleave_Color_tag_blue = 1,
@@ -81,19 +83,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "fixedbugs139matchstatementsthatleave.c"
+#line 99 "fixedbugs139matchstatementsthatleave.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs139matchstatementsthatleave_Color_eq(const h_fixedbugs139matchstatementsthatleave_Color *a, const h_fixedbugs139matchstatementsthatleave_Color *b);
@@ -127,7 +129,7 @@ void h_fixedbugs139matchstatementsthatleave_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_all_return(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 131 "fixedbugs139matchstatementsthatleave.c"
+#line 133 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h1_s0;
     int64_t h2_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
@@ -178,12 +180,12 @@ bb4:
     t6 = h2_ret0;
 #line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t6;
-#line 182 "fixedbugs139matchstatementsthatleave.c"
+#line 184 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_block_arms(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 187 "fixedbugs139matchstatementsthatleave.c"
+#line 189 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h1_s0;
     int64_t h2_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
@@ -248,12 +250,12 @@ bb4:
     t8 = h2_ret0;
 #line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t8;
-#line 252 "fixedbugs139matchstatementsthatleave.c"
+#line 254 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_arm_if_else(h_fixedbugs139matchstatementsthatleave_Color h0_c, int64_t h1_n) {
-#line 257 "fixedbugs139matchstatementsthatleave.c"
+#line 259 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     int64_t h3_ret0;
     h_fixedbugs139matchstatementsthatleave_Color t1;
@@ -326,12 +328,12 @@ bb7:
     t10 = h3_ret0;
 #line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t10;
-#line 330 "fixedbugs139matchstatementsthatleave.c"
+#line 332 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_both_branches(h_fixedbugs139matchstatementsthatleave_Color h0_c, bool h1_b) {
-#line 335 "fixedbugs139matchstatementsthatleave.c"
+#line 337 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     h_fixedbugs139matchstatementsthatleave_Color h3_s1;
     int64_t h4_ret0;
@@ -431,12 +433,12 @@ bb10:
     t12 = h4_ret0;
 #line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t12;
-#line 435 "fixedbugs139matchstatementsthatleave.c"
+#line 437 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_else_if_chain(h_fixedbugs139matchstatementsthatleave_Color h0_c, int64_t h1_n) {
-#line 440 "fixedbugs139matchstatementsthatleave.c"
+#line 442 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     h_fixedbugs139matchstatementsthatleave_Color h3_s1;
     int64_t h4_ret0;
@@ -564,12 +566,12 @@ bb12:
     t18 = h4_ret0;
 #line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t18;
-#line 568 "fixedbugs139matchstatementsthatleave.c"
+#line 570 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_nested(h_fixedbugs139matchstatementsthatleave_Color h0_c, h_fixedbugs139matchstatementsthatleave_Color h1_d) {
-#line 573 "fixedbugs139matchstatementsthatleave.c"
+#line 575 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     h_fixedbugs139matchstatementsthatleave_Color h3_s1;
     int64_t h4_ret0;
@@ -653,12 +655,12 @@ bb7:
     t10 = h4_ret0;
 #line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t10;
-#line 657 "fixedbugs139matchstatementsthatleave.c"
+#line 659 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_shades(h_fixedbugs139matchstatementsthatleave_Shade h0_c) {
-#line 662 "fixedbugs139matchstatementsthatleave.c"
+#line 664 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Shade h1_s0;
     int64_t h2_ret0;
     h_fixedbugs139matchstatementsthatleave_Shade t1;
@@ -711,12 +713,12 @@ bb4:
     t6 = h2_ret0;
 #line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t6;
-#line 715 "fixedbugs139matchstatementsthatleave.c"
+#line 717 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_on_an_i64(int64_t h0_n) {
-#line 720 "fixedbugs139matchstatementsthatleave.c"
+#line 722 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_s0;
     int64_t h2_ret0;
     int64_t t1;
@@ -766,12 +768,12 @@ bb5:
     t7 = h2_ret0;
 #line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t7;
-#line 770 "fixedbugs139matchstatementsthatleave.c"
+#line 772 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 82 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_in_a_loop(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 775 "fixedbugs139matchstatementsthatleave.c"
+#line 777 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_n;
     h_fixedbugs139matchstatementsthatleave_Color h2_s0;
     int64_t t1;
@@ -845,12 +847,12 @@ bb5:
 bb6:
 #line 92 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb1;
-#line 849 "fixedbugs139matchstatementsthatleave.c"
+#line 851 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_in_a_for(HeroArrayHeader * h0_xs) {
-#line 854 "fixedbugs139matchstatementsthatleave.c"
+#line 856 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_total;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -894,11 +896,11 @@ bb0:
     t2 = h0_xs;
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t27 = h2_xs0;
-#line 898 "fixedbugs139matchstatementsthatleave.c"
+#line 900 "fixedbugs139matchstatementsthatleave.c"
     hero_array_incref(t2);
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h2_xs0 = t2;
-#line 902 "fixedbugs139matchstatementsthatleave.c"
+#line 904 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t27);
 #line 97 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t3 = INT64_C(0);
@@ -1006,14 +1008,14 @@ bb10:
 bb11:
 #line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t26 = h6_ret0;
-#line 1010 "fixedbugs139matchstatementsthatleave.c"
+#line 1012 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h2_xs0);
     return t26;
 }
 
 #line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_two_in_sequence(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
-#line 1017 "fixedbugs139matchstatementsthatleave.c"
+#line 1019 "fixedbugs139matchstatementsthatleave.c"
     h_fixedbugs139matchstatementsthatleave_Color h1_s0;
     h_fixedbugs139matchstatementsthatleave_Color h2_s1;
     int64_t h3_ret0;
@@ -1110,12 +1112,12 @@ bb7:
     t11 = h3_ret0;
 #line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t11;
-#line 1114 "fixedbugs139matchstatementsthatleave.c"
+#line 1116 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 114 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_value_if(bool h0_b) {
-#line 1119 "fixedbugs139matchstatementsthatleave.c"
+#line 1121 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_r0;
     int64_t h2_s0;
     int64_t h3_s1;
@@ -1245,12 +1247,12 @@ bb11:
     hero_print_end();
 #line 124 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb8;
-#line 1249 "fixedbugs139matchstatementsthatleave.c"
+#line 1251 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 130 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_value_match(int64_t h0_k) {
-#line 1254 "fixedbugs139matchstatementsthatleave.c"
+#line 1256 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_s0;
     int64_t h2_r0;
     int64_t h3_s1;
@@ -1396,12 +1398,12 @@ bb12:
     hero_print_end();
 #line 141 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb9;
-#line 1400 "fixedbugs139matchstatementsthatleave.c"
+#line 1402 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_checked_if_one_branch_returns(bool h0_b) {
-#line 1405 "fixedbugs139matchstatementsthatleave.c"
+#line 1407 "fixedbugs139matchstatementsthatleave.c"
     int64_t h1_r0;
     int64_t h2_x;
     int64_t h3_ret0;
@@ -1451,12 +1453,12 @@ bb4:
     t6 = h3_ret0;
 #line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t6;
-#line 1455 "fixedbugs139matchstatementsthatleave.c"
+#line 1457 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 155 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 void h_fixedbugs139matchstatementsthatleave_main(void) {
-#line 1460 "fixedbugs139matchstatementsthatleave.c"
+#line 1462 "fixedbugs139matchstatementsthatleave.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     h_fixedbugs139matchstatementsthatleave_Color t1;
@@ -1741,7 +1743,7 @@ bb0:
     t75 = h0_own0;
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h0_own0 = t54;
-#line 1745 "fixedbugs139matchstatementsthatleave.c"
+#line 1747 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t75);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t55 = h_fixedbugs139matchstatementsthatleave_in_a_for(t54);
@@ -1773,7 +1775,7 @@ bb0:
     t76 = h1_own1;
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h1_own1 = t59;
-#line 1777 "fixedbugs139matchstatementsthatleave.c"
+#line 1779 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t76);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t60 = h_fixedbugs139matchstatementsthatleave_in_a_for(t59);
@@ -1837,10 +1839,10 @@ bb0:
     hero_print_int(t74);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     hero_print_end();
-#line 1841 "fixedbugs139matchstatementsthatleave.c"
+#line 1843 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h0_own0);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-#line 1844 "fixedbugs139matchstatementsthatleave.c"
+#line 1846 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h1_own1);
     return;
 }

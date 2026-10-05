@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -66,7 +68,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_3f5d7cc3, " err ");
 HERO_STR_STATIC(hero_str_2c, ",");
 
-#line 70 "fixedbugs231everywayoutofmanyistaken.c"
+#line 72 "fixedbugs231everywayoutofmanyistaken.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -95,19 +97,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugs231everywayoutofmanyistaken.c"
+#line 113 "fixedbugs231everywayoutofmanyistaken.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -131,7 +133,7 @@ void h_fixedbugs231everywayoutofmanyistaken_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 HeroStr h_fixedbugs231everywayoutofmanyistaken_ladder(int64_t h0_x) {
-#line 135 "fixedbugs231everywayoutofmanyistaken.c"
+#line 137 "fixedbugs231everywayoutofmanyistaken.c"
     HeroStr h1_s0 = {0};
     HeroStr h2_s1 = {0};
     HeroStr h3_s2 = {0};
@@ -284,7 +286,7 @@ bb0:
     t90 = h14_own14;
 #line 15 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h14_own14 = t2;
-#line 288 "fixedbugs231everywayoutofmanyistaken.c"
+#line 290 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t90);
 #line 15 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t3 = HERO_STR_LIT(hero_str_3a);
@@ -294,15 +296,15 @@ bb0:
     t91 = h15_own15;
 #line 15 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h15_own15 = t4;
-#line 298 "fixedbugs231everywayoutofmanyistaken.c"
+#line 300 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t91);
 #line 15 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t92 = h1_s0;
-#line 302 "fixedbugs231everywayoutofmanyistaken.c"
+#line 304 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t4);
 #line 15 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h1_s0 = t4;
-#line 306 "fixedbugs231everywayoutofmanyistaken.c"
+#line 308 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t92);
 #line 17 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t5 = h0_x;
@@ -324,15 +326,15 @@ bb1:
     t93 = h16_own16;
 #line 19 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h16_own16 = t11;
-#line 328 "fixedbugs231everywayoutofmanyistaken.c"
+#line 330 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t93);
 #line 19 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t94 = h2_s1;
-#line 332 "fixedbugs231everywayoutofmanyistaken.c"
+#line 334 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t11);
 #line 19 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h2_s1 = t11;
-#line 336 "fixedbugs231everywayoutofmanyistaken.c"
+#line 338 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t94);
 #line 21 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t12 = h0_x;
@@ -366,15 +368,15 @@ bb4:
     t95 = h17_own17;
 #line 23 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h17_own17 = t18;
-#line 370 "fixedbugs231everywayoutofmanyistaken.c"
+#line 372 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t95);
 #line 23 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t96 = h3_s2;
-#line 374 "fixedbugs231everywayoutofmanyistaken.c"
+#line 376 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t18);
 #line 23 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h3_s2 = t18;
-#line 378 "fixedbugs231everywayoutofmanyistaken.c"
+#line 380 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t96);
 #line 25 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t19 = h0_x;
@@ -408,15 +410,15 @@ bb7:
     t97 = h18_own18;
 #line 27 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h18_own18 = t25;
-#line 412 "fixedbugs231everywayoutofmanyistaken.c"
+#line 414 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t97);
 #line 27 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t98 = h4_s3;
-#line 416 "fixedbugs231everywayoutofmanyistaken.c"
+#line 418 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t25);
 #line 27 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h4_s3 = t25;
-#line 420 "fixedbugs231everywayoutofmanyistaken.c"
+#line 422 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t98);
 #line 29 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t26 = h0_x;
@@ -450,15 +452,15 @@ bb10:
     t99 = h19_own19;
 #line 31 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h19_own19 = t32;
-#line 454 "fixedbugs231everywayoutofmanyistaken.c"
+#line 456 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t99);
 #line 31 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t100 = h5_s4;
-#line 458 "fixedbugs231everywayoutofmanyistaken.c"
+#line 460 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t32);
 #line 31 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h5_s4 = t32;
-#line 462 "fixedbugs231everywayoutofmanyistaken.c"
+#line 464 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t100);
 #line 33 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t33 = h0_x;
@@ -492,15 +494,15 @@ bb13:
     t101 = h20_own20;
 #line 35 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h20_own20 = t39;
-#line 496 "fixedbugs231everywayoutofmanyistaken.c"
+#line 498 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t101);
 #line 35 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t102 = h6_s5;
-#line 500 "fixedbugs231everywayoutofmanyistaken.c"
+#line 502 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t39);
 #line 35 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h6_s5 = t39;
-#line 504 "fixedbugs231everywayoutofmanyistaken.c"
+#line 506 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t102);
 #line 37 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t40 = h0_x;
@@ -534,15 +536,15 @@ bb16:
     t103 = h21_own21;
 #line 39 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h21_own21 = t46;
-#line 538 "fixedbugs231everywayoutofmanyistaken.c"
+#line 540 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t103);
 #line 39 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t104 = h7_s6;
-#line 542 "fixedbugs231everywayoutofmanyistaken.c"
+#line 544 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t46);
 #line 39 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h7_s6 = t46;
-#line 546 "fixedbugs231everywayoutofmanyistaken.c"
+#line 548 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t104);
 #line 41 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t47 = h0_x;
@@ -576,15 +578,15 @@ bb19:
     t105 = h22_own22;
 #line 43 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h22_own22 = t53;
-#line 580 "fixedbugs231everywayoutofmanyistaken.c"
+#line 582 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t105);
 #line 43 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t106 = h8_s7;
-#line 584 "fixedbugs231everywayoutofmanyistaken.c"
+#line 586 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t53);
 #line 43 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h8_s7 = t53;
-#line 588 "fixedbugs231everywayoutofmanyistaken.c"
+#line 590 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t106);
 #line 45 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t54 = h0_x;
@@ -618,15 +620,15 @@ bb22:
     t107 = h23_own23;
 #line 47 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h23_own23 = t60;
-#line 622 "fixedbugs231everywayoutofmanyistaken.c"
+#line 624 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t107);
 #line 47 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t108 = h9_s8;
-#line 626 "fixedbugs231everywayoutofmanyistaken.c"
+#line 628 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t60);
 #line 47 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h9_s8 = t60;
-#line 630 "fixedbugs231everywayoutofmanyistaken.c"
+#line 632 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t108);
 #line 49 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t61 = h0_x;
@@ -660,15 +662,15 @@ bb25:
     t109 = h24_own24;
 #line 51 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h24_own24 = t67;
-#line 664 "fixedbugs231everywayoutofmanyistaken.c"
+#line 666 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t109);
 #line 51 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t110 = h10_s9;
-#line 668 "fixedbugs231everywayoutofmanyistaken.c"
+#line 670 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t67);
 #line 51 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h10_s9 = t67;
-#line 672 "fixedbugs231everywayoutofmanyistaken.c"
+#line 674 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t110);
 #line 53 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t68 = h0_x;
@@ -702,15 +704,15 @@ bb28:
     t111 = h25_own25;
 #line 55 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h25_own25 = t74;
-#line 706 "fixedbugs231everywayoutofmanyistaken.c"
+#line 708 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t111);
 #line 55 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t112 = h11_s10;
-#line 710 "fixedbugs231everywayoutofmanyistaken.c"
+#line 712 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t74);
 #line 55 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_s10 = t74;
-#line 714 "fixedbugs231everywayoutofmanyistaken.c"
+#line 716 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t112);
 #line 57 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t75 = h0_x;
@@ -744,15 +746,15 @@ bb31:
     t113 = h26_own26;
 #line 59 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h26_own26 = t81;
-#line 748 "fixedbugs231everywayoutofmanyistaken.c"
+#line 750 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t113);
 #line 59 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t114 = h12_s11;
-#line 752 "fixedbugs231everywayoutofmanyistaken.c"
+#line 754 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t81);
 #line 59 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h12_s11 = t81;
-#line 756 "fixedbugs231everywayoutofmanyistaken.c"
+#line 758 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t114);
 #line 61 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t82 = h0_x;
@@ -786,7 +788,7 @@ bb34:
     t115 = h27_own27;
 #line 63 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h27_own27 = t88;
-#line 790 "fixedbugs231everywayoutofmanyistaken.c"
+#line 792 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t115);
 #line 63 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h13_ret0 = t88;
@@ -808,92 +810,92 @@ bb36:
 bb37:
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t89 = h13_ret0;
-#line 812 "fixedbugs231everywayoutofmanyistaken.c"
+#line 814 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t89);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 815 "fixedbugs231everywayoutofmanyistaken.c"
+#line 817 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h1_s0);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 818 "fixedbugs231everywayoutofmanyistaken.c"
+#line 820 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h2_s1);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 821 "fixedbugs231everywayoutofmanyistaken.c"
+#line 823 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h3_s2);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 824 "fixedbugs231everywayoutofmanyistaken.c"
+#line 826 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h4_s3);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 827 "fixedbugs231everywayoutofmanyistaken.c"
+#line 829 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h5_s4);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 830 "fixedbugs231everywayoutofmanyistaken.c"
+#line 832 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h6_s5);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 833 "fixedbugs231everywayoutofmanyistaken.c"
+#line 835 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h7_s6);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 836 "fixedbugs231everywayoutofmanyistaken.c"
+#line 838 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h8_s7);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 839 "fixedbugs231everywayoutofmanyistaken.c"
+#line 841 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h9_s8);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 842 "fixedbugs231everywayoutofmanyistaken.c"
+#line 844 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h10_s9);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 845 "fixedbugs231everywayoutofmanyistaken.c"
+#line 847 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h11_s10);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 848 "fixedbugs231everywayoutofmanyistaken.c"
+#line 850 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h12_s11);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 851 "fixedbugs231everywayoutofmanyistaken.c"
+#line 853 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h14_own14);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 854 "fixedbugs231everywayoutofmanyistaken.c"
+#line 856 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h15_own15);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 857 "fixedbugs231everywayoutofmanyistaken.c"
+#line 859 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h16_own16);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 860 "fixedbugs231everywayoutofmanyistaken.c"
+#line 862 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h17_own17);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 863 "fixedbugs231everywayoutofmanyistaken.c"
+#line 865 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h18_own18);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 866 "fixedbugs231everywayoutofmanyistaken.c"
+#line 868 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h19_own19);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 869 "fixedbugs231everywayoutofmanyistaken.c"
+#line 871 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h20_own20);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 872 "fixedbugs231everywayoutofmanyistaken.c"
+#line 874 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h21_own21);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 875 "fixedbugs231everywayoutofmanyistaken.c"
+#line 877 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h22_own22);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 878 "fixedbugs231everywayoutofmanyistaken.c"
+#line 880 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h23_own23);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 881 "fixedbugs231everywayoutofmanyistaken.c"
+#line 883 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h24_own24);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 884 "fixedbugs231everywayoutofmanyistaken.c"
+#line 886 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h25_own25);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 887 "fixedbugs231everywayoutofmanyistaken.c"
+#line 889 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h26_own26);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 890 "fixedbugs231everywayoutofmanyistaken.c"
+#line 892 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h27_own27);
     return t89;
 }
 
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 h_0opt_f87774a h_fixedbugs231everywayoutofmanyistaken_pick(int64_t h0_x, int64_t *ph1_count) {
-#line 897 "fixedbugs231everywayoutofmanyistaken.c"
+#line 899 "fixedbugs231everywayoutofmanyistaken.c"
     int64_t h1_count;
     HeroStr h2_s0 = {0};
     HeroStr h3_s1 = {0};
@@ -1070,7 +1072,7 @@ bb0:
     t89 = h12_own12;
 #line 69 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h12_own12 = t6;
-#line 1074 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1076 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t89);
 #line 69 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t7 = hero_str_concat(t4, t6);
@@ -1078,15 +1080,15 @@ bb0:
     t90 = h13_own13;
 #line 69 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h13_own13 = t7;
-#line 1082 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1084 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t90);
 #line 69 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t91 = h2_s0;
-#line 1086 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1088 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t7);
 #line 69 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h2_s0 = t7;
-#line 1090 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1092 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t91);
 #line 71 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t8 = h0_x;
@@ -1108,15 +1110,15 @@ bb1:
     t92 = h14_own14;
 #line 73 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h14_own14 = t15;
-#line 1112 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1114 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t92);
 #line 73 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t93 = h3_s1;
-#line 1116 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1118 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t15);
 #line 73 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h3_s1 = t15;
-#line 1120 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1122 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t93);
 #line 75 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t16 = h0_x;
@@ -1130,7 +1132,7 @@ bb1:
 bb2:
 #line 72 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t11 = h2_s0;
-#line 1134 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1136 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t11);
 #line 72 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t12 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t11};
@@ -1138,7 +1140,7 @@ bb2:
     t94 = h15_own15;
 #line 72 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h15_own15 = t12;
-#line 1142 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1144 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t94);
 #line 72 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t12;
@@ -1160,15 +1162,15 @@ bb4:
     t95 = h16_own16;
 #line 77 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h16_own16 = t23;
-#line 1164 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1166 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t95);
 #line 77 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t96 = h4_s2;
-#line 1168 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1170 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t23);
 #line 77 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h4_s2 = t23;
-#line 1172 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1174 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t96);
 #line 79 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t24 = h0_x;
@@ -1182,7 +1184,7 @@ bb4:
 bb5:
 #line 76 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t19 = h3_s1;
-#line 1186 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1188 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t19);
 #line 76 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t20 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t19};
@@ -1190,7 +1192,7 @@ bb5:
     t97 = h17_own17;
 #line 76 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h17_own17 = t20;
-#line 1194 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1196 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t97);
 #line 76 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t20;
@@ -1212,15 +1214,15 @@ bb7:
     t98 = h18_own18;
 #line 81 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h18_own18 = t32;
-#line 1216 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1218 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t98);
 #line 81 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t99 = h5_s3;
-#line 1220 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1222 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t32);
 #line 81 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h5_s3 = t32;
-#line 1224 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1226 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t99);
 #line 83 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t33 = h0_x;
@@ -1236,10 +1238,10 @@ bb8:
     t27 = HERO_STR_LIT(hero_str_1e9d68);
 #line 80 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t28 = h4_s2;
-#line 1240 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1242 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t27);
 #line 80 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1243 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1245 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t28);
 #line 80 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t29 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t27, .msg = t28}};
@@ -1247,7 +1249,7 @@ bb8:
     t100 = h19_own19;
 #line 80 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h19_own19 = t29;
-#line 1251 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1253 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t100);
 #line 80 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t29;
@@ -1267,15 +1269,15 @@ bb10:
     t101 = h20_own20;
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h20_own20 = t41;
-#line 1271 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1273 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&t101);
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t102 = h6_f0;
-#line 1275 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1277 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_retain(&t41);
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h6_f0 = t41;
-#line 1279 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1281 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&t102);
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t42 = h6_f0;
@@ -1299,10 +1301,10 @@ bb11:
     t103 = h21_own21;
 #line 84 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h21_own21 = t38;
-#line 1303 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1305 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t103);
 #line 84 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1306 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1308 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t38);
 #line 84 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t39 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t38};
@@ -1310,7 +1312,7 @@ bb11:
     t104 = h22_own22;
 #line 84 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h22_own22 = t39;
-#line 1314 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1316 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t104);
 #line 84 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t39;
@@ -1338,7 +1340,7 @@ bb13:
     t105 = h23_own23;
 #line 86 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h23_own23 = t53;
-#line 1342 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1344 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t105);
 #line 86 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t54 = hero_str_concat(t51, t53);
@@ -1346,15 +1348,15 @@ bb13:
     t106 = h24_own24;
 #line 86 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h24_own24 = t54;
-#line 1350 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1352 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t106);
 #line 86 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t107 = h8_s4;
-#line 1354 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1356 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t54);
 #line 86 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h8_s4 = t54;
-#line 1358 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1360 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t107);
 #line 88 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t55 = h0_x;
@@ -1370,7 +1372,7 @@ bb14:
     t46 = h6_f0;
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t47 = t46.as.err;
-#line 1374 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1376 "fixedbugs231everywayoutofmanyistaken.c"
     hero_failure_retain(&t47);
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t48 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t47};
@@ -1378,7 +1380,7 @@ bb14:
     t108 = h25_own25;
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h25_own25 = t48;
-#line 1382 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1384 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t108);
 #line 85 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t48;
@@ -1396,15 +1398,15 @@ bb15:
     t109 = h26_own26;
 #line 90 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h26_own26 = t62;
-#line 1400 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1402 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t109);
 #line 90 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t110 = h9_s5;
-#line 1404 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1406 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t62);
 #line 90 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h9_s5 = t62;
-#line 1408 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1410 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t110);
 #line 92 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t63 = h0_x;
@@ -1418,7 +1420,7 @@ bb15:
 bb16:
 #line 89 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t58 = h8_s4;
-#line 1422 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1424 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t58);
 #line 89 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t59 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t58};
@@ -1426,7 +1428,7 @@ bb16:
     t111 = h27_own27;
 #line 89 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h27_own27 = t59;
-#line 1430 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1432 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t111);
 #line 89 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t59;
@@ -1462,7 +1464,7 @@ bb18:
     t112 = h28_own28;
 #line 94 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h28_own28 = t74;
-#line 1466 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1468 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_decref(t112);
 #line 94 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t75 = HERO_STR_LIT(hero_str_2d);
@@ -1472,15 +1474,15 @@ bb18:
     t113 = h29_own29;
 #line 94 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h29_own29 = t76;
-#line 1476 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1478 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t113);
 #line 94 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t114 = h10_s6;
-#line 1480 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1482 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t76);
 #line 94 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h10_s6 = t76;
-#line 1484 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1486 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t114);
 #line 96 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t77 = h0_x;
@@ -1504,10 +1506,10 @@ bb19:
     t115 = h30_own30;
 #line 93 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h30_own30 = t69;
-#line 1508 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1510 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t115);
 #line 93 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1511 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1513 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t69);
 #line 93 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t70 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t69};
@@ -1515,7 +1517,7 @@ bb19:
     t116 = h31_own31;
 #line 93 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h31_own31 = t70;
-#line 1519 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1521 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t116);
 #line 93 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t70;
@@ -1537,7 +1539,7 @@ bb21:
     t117 = h32_own32;
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h32_own32 = t84;
-#line 1541 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1543 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t117);
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t85 = h3_s1;
@@ -1547,10 +1549,10 @@ bb21:
     t118 = h33_own33;
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h33_own33 = t86;
-#line 1551 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1553 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t118);
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1554 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1556 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t86);
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t87 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t86};
@@ -1558,7 +1560,7 @@ bb21:
     t119 = h34_own34;
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h34_own34 = t87;
-#line 1562 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1564 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t119);
 #line 98 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t87;
@@ -1568,7 +1570,7 @@ bb21:
 bb22:
 #line 97 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t80 = h10_s6;
-#line 1572 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1574 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t80);
 #line 97 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t81 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t80};
@@ -1576,7 +1578,7 @@ bb22:
     t120 = h35_own35;
 #line 97 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h35_own35 = t81;
-#line 1580 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1582 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t120);
 #line 97 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h11_ret0 = t81;
@@ -1588,114 +1590,114 @@ bb23:
     goto bb21;
 #line 97 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb24:
-#line 1592 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1594 "fixedbugs231everywayoutofmanyistaken.c"
     *ph1_count = h1_count;
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t88 = h11_ret0;
-#line 1596 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1598 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_retain(&t88);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1599 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1601 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h2_s0);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1602 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1604 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h3_s1);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1605 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1607 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h4_s2);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1608 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1610 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h5_s3);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1611 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1613 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&h6_f0);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1614 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1616 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h8_s4);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1617 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1619 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h9_s5);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1620 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1622 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h10_s6);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1623 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1625 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h12_own12);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1626 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1628 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h13_own13);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1629 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1631 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h14_own14);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1632 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1634 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h15_own15);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1635 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1637 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h16_own16);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1638 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1640 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h17_own17);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1641 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1643 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h18_own18);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1644 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1646 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h19_own19);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1647 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1649 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&h20_own20);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1650 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1652 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h21_own21);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1653 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1655 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h22_own22);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1656 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1658 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h23_own23);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1659 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1661 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h24_own24);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1662 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1664 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h25_own25);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1665 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1667 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h26_own26);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1668 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1670 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h27_own27);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1671 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1673 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_decref(h28_own28);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1674 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1676 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h29_own29);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1677 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1679 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h30_own30);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1680 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1682 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h31_own31);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1683 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1685 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h32_own32);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1686 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1688 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h33_own33);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1689 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1691 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h34_own34);
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1692 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1694 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h35_own35);
     return t88;
 }
 
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 h_0opt_e201354 h_fixedbugs231everywayoutofmanyistaken_tens(int64_t h0_x) {
-#line 1699 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1701 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354 h1_ret0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -1736,7 +1738,7 @@ bb1:
     t12 = h2_own2;
 #line 103 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h2_own2 = t10;
-#line 1740 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1742 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&t12);
 #line 103 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h1_ret0 = t10;
@@ -1748,10 +1750,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_70509edc);
 #line 102 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t5 = HERO_STR_LIT(hero_str_24f659ad);
-#line 1752 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1754 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t4);
 #line 102 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1755 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1757 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t5);
 #line 102 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -1759,7 +1761,7 @@ bb2:
     t13 = h3_own3;
 #line 102 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h3_own3 = t6;
-#line 1763 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1765 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&t13);
 #line 102 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h1_ret0 = t6;
@@ -1773,20 +1775,20 @@ bb3:
 bb4:
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t11 = h1_ret0;
-#line 1777 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1779 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_retain(&t11);
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1780 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1782 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&h2_own2);
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 1783 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1785 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_e201354_release(&h3_own3);
     return t11;
 }
 
 #line 107 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 void h_fixedbugs231everywayoutofmanyistaken_tally(int64_t h0_x, HeroArrayHeader * *ph1_seen) {
-#line 1790 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1792 "fixedbugs231everywayoutofmanyistaken.c"
     HeroArrayHeader * h1_seen;
     HeroStr t2;
     int64_t t4;
@@ -1872,14 +1874,14 @@ bb6:
     goto bb4;
 #line 116 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb7:
-#line 1876 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1878 "fixedbugs231everywayoutofmanyistaken.c"
     *ph1_seen = h1_seen;
     return;
 }
 
 #line 118 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 void h_fixedbugs231everywayoutofmanyistaken_main(void) {
-#line 1883 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1885 "fixedbugs231everywayoutofmanyistaken.c"
     int64_t h0_x;
     int64_t h1_count;
     HeroArrayHeader * h2_seen = {0};
@@ -1973,7 +1975,7 @@ bb2:
     t48 = h6_own6;
 #line 122 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h6_own6 = t6;
-#line 1977 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1979 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t48);
 #line 122 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     hero_print_str(t6);
@@ -2001,15 +2003,15 @@ bb3:
     t49 = h7_own7;
 #line 126 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h7_own7 = t11;
-#line 2005 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2007 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_decref(t49);
 #line 126 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t50 = h2_seen;
-#line 2009 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2011 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_incref(t11);
 #line 126 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h2_seen = t11;
-#line 2013 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2015 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_decref(t50);
 #line 127 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t12 = INT64_C(0);
@@ -2037,15 +2039,15 @@ bb5:
     t51 = h8_own8;
 #line 130 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h8_own8 = t17;
-#line 2041 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2043 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t51);
 #line 130 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t52 = h3_s0;
-#line 2045 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2047 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_retain(&t17);
 #line 130 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h3_s0 = t17;
-#line 2049 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2051 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&t52);
 #line 130 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t18 = h3_s0;
@@ -2079,7 +2081,7 @@ bb6:
     t53 = h9_own9;
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h9_own9 = t47;
-#line 2083 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2085 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t53);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     hero_print_int(t43);
@@ -2089,28 +2091,28 @@ bb6:
     hero_print_str(t47);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     hero_print_end();
-#line 2093 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2095 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_decref(h2_seen);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2096 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2098 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h3_s0);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2099 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2101 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h4_s);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2102 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2104 "fixedbugs231everywayoutofmanyistaken.c"
     hero_failure_release(&h5_e);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2105 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2107 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h6_own6);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2108 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2110 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_decref(h7_own7);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2111 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2113 "fixedbugs231everywayoutofmanyistaken.c"
     h_0opt_f87774a_release(&h8_own8);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-#line 2114 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2116 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(h9_own9);
     return;
 bb7:
@@ -2136,11 +2138,11 @@ bb8:
     t21 = t20.as.ok;
 #line 131 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t54 = h4_s;
-#line 2140 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2142 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_incref(t21);
 #line 131 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h4_s = t21;
-#line 2144 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2146 "fixedbugs231everywayoutofmanyistaken.c"
     hero_str_decref(t54);
 #line 131 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t22 = h0_x;
@@ -2174,11 +2176,11 @@ bb9:
     t28 = t27.as.err;
 #line 132 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t55 = h5_e;
-#line 2178 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2180 "fixedbugs231everywayoutofmanyistaken.c"
     hero_failure_retain(&t28);
 #line 132 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     h5_e = t28;
-#line 2182 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2184 "fixedbugs231everywayoutofmanyistaken.c"
     hero_failure_release(&t55);
 #line 132 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t29 = h0_x;
@@ -2216,7 +2218,7 @@ bb9:
     hero_print_end();
 #line 132 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     goto bb7;
-#line 2220 "fixedbugs231everywayoutofmanyistaken.c"
+#line 2222 "fixedbugs231everywayoutofmanyistaken.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

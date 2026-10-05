@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -46,7 +48,7 @@ HERO_STR_STATIC(hero_str_75f7c07a, "line ");
 HERO_STR_STATIC(hero_str_1dce, ": ");
 HERO_STR_STATIC(hero_str_3ed33309, " and ");
 
-#line 50 "interpolationdesugar.c"
+#line 52 "interpolationdesugar.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -67,19 +69,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "interpolationdesugar.c"
+#line 85 "interpolationdesugar.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +97,7 @@ void h_interpolationdesugar_main(void);
 
 #line 8 "tests/golden/ir/interpolation-desugar.hero"
 void h_interpolationdesugar_main(void) {
-#line 99 "interpolationdesugar.c"
+#line 101 "interpolationdesugar.c"
     int64_t h0_n;
     HeroStr h1_word = {0};
     HeroStr h2_s = {0};
@@ -143,11 +145,11 @@ bb0:
     t2 = HERO_STR_LIT(hero_str_724db1e0);
 #line 10 "tests/golden/ir/interpolation-desugar.hero"
     t19 = h1_word;
-#line 147 "interpolationdesugar.c"
+#line 149 "interpolationdesugar.c"
     hero_str_incref(t2);
 #line 10 "tests/golden/ir/interpolation-desugar.hero"
     h1_word = t2;
-#line 151 "interpolationdesugar.c"
+#line 153 "interpolationdesugar.c"
     hero_str_decref(t19);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t3 = h0_n;
@@ -167,7 +169,7 @@ bb0:
     t20 = h3_own3;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h3_own3 = t9;
-#line 171 "interpolationdesugar.c"
+#line 173 "interpolationdesugar.c"
     hero_str_decref(t20);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t10 = HERO_STR_LIT(hero_str_1dce);
@@ -179,7 +181,7 @@ bb0:
     t21 = h4_own4;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h4_own4 = t12;
-#line 183 "interpolationdesugar.c"
+#line 185 "interpolationdesugar.c"
     hero_str_decref(t21);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t13 = hero_str_concat(t8, t9);
@@ -187,7 +189,7 @@ bb0:
     t22 = h5_own5;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h5_own5 = t13;
-#line 191 "interpolationdesugar.c"
+#line 193 "interpolationdesugar.c"
     hero_str_decref(t22);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t14 = hero_str_concat(t13, t10);
@@ -195,7 +197,7 @@ bb0:
     t23 = h6_own6;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h6_own6 = t14;
-#line 199 "interpolationdesugar.c"
+#line 201 "interpolationdesugar.c"
     hero_str_decref(t23);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t15 = hero_str_concat(t14, t4);
@@ -203,7 +205,7 @@ bb0:
     t24 = h7_own7;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h7_own7 = t15;
-#line 207 "interpolationdesugar.c"
+#line 209 "interpolationdesugar.c"
     hero_str_decref(t24);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t16 = hero_str_concat(t15, t11);
@@ -211,7 +213,7 @@ bb0:
     t25 = h8_own8;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h8_own8 = t16;
-#line 215 "interpolationdesugar.c"
+#line 217 "interpolationdesugar.c"
     hero_str_decref(t25);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t17 = hero_str_concat(t16, t12);
@@ -219,15 +221,15 @@ bb0:
     t26 = h9_own9;
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h9_own9 = t17;
-#line 223 "interpolationdesugar.c"
+#line 225 "interpolationdesugar.c"
     hero_str_decref(t26);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     t27 = h2_s;
-#line 227 "interpolationdesugar.c"
+#line 229 "interpolationdesugar.c"
     hero_str_incref(t17);
 #line 11 "tests/golden/ir/interpolation-desugar.hero"
     h2_s = t17;
-#line 231 "interpolationdesugar.c"
+#line 233 "interpolationdesugar.c"
     hero_str_decref(t27);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
     t18 = h2_s;
@@ -235,31 +237,31 @@ bb0:
     hero_print_str(t18);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
     hero_print_end();
-#line 239 "interpolationdesugar.c"
+#line 241 "interpolationdesugar.c"
     hero_str_decref(h1_word);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 242 "interpolationdesugar.c"
+#line 244 "interpolationdesugar.c"
     hero_str_decref(h2_s);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 245 "interpolationdesugar.c"
+#line 247 "interpolationdesugar.c"
     hero_str_decref(h3_own3);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 248 "interpolationdesugar.c"
+#line 250 "interpolationdesugar.c"
     hero_str_decref(h4_own4);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 251 "interpolationdesugar.c"
+#line 253 "interpolationdesugar.c"
     hero_str_decref(h5_own5);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 254 "interpolationdesugar.c"
+#line 256 "interpolationdesugar.c"
     hero_str_decref(h6_own6);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 257 "interpolationdesugar.c"
+#line 259 "interpolationdesugar.c"
     hero_str_decref(h7_own7);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 260 "interpolationdesugar.c"
+#line 262 "interpolationdesugar.c"
     hero_str_decref(h8_own8);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
-#line 263 "interpolationdesugar.c"
+#line 265 "interpolationdesugar.c"
     hero_str_decref(h9_own9);
     return;
 }

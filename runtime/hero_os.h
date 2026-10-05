@@ -48,6 +48,9 @@
  * it into `read_failed` for two weeks (panel 087 left the naming to the author,
  * who chose the robust form: a code that says what happened). */
 #define HERO_OS_NOT_TEXT 3
+/* Panel 192: a name holding a NUL byte, which names no file on any platform
+ * and which `fopen` would read only to its first NUL: answered, never opened. */
+#define HERO_OS_BAD_NAME 5
 
 /* The whole file, as an owned `str` (+1). `*status` says whether it worked; on
  * anything but HERO_OS_OK the returned string is empty and owns nothing — which
@@ -82,6 +85,11 @@ HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks);
 
 /* The text, written whole, replacing whatever was there. Returns a status. */
 int64_t hero_file_write(const char *path, HeroStr text);
+/* The same two doors taking the program's `str` rather than a lend of it
+ * (panel 192), so a name holding a NUL is a status the prelude turns into a
+ * failure, where the lend would abort before the door could answer. */
+HeroStr hero_file_read_str(HeroStr path, int64_t *status);
+int64_t hero_file_write_str(HeroStr path, HeroStr text);
 
 /* One blob to the error stream, written whole, no newline added and no status
  * returned (author decision 2026-08-24; `runtime/parts/os.c` carries the whole

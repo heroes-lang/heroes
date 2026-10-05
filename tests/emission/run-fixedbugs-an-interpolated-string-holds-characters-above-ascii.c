@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -73,7 +75,7 @@ HERO_STR_STATIC(hero_str_59108518, "\346\227\245\346\234\254\350\252\236 ");
 HERO_STR_STATIC(hero_str_4d6de728, " \344\270\255\346\226\207");
 HERO_STR_STATIC(hero_str_30d8065c, "\303\251 \342\202\254");
 
-#line 77 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 79 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -102,19 +104,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 120 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -135,7 +137,7 @@ void h_fixedbugsaninterpolatedstringholdscharactersaboveascii_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
 HeroStr h_fixedbugsaninterpolatedstringholdscharactersaboveascii_label(int64_t h0_n) {
-#line 139 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 141 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -160,7 +162,7 @@ bb0:
     t7 = h1_own1;
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h1_own1 = t3;
-#line 164 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 166 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t7);
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t4 = HERO_STR_LIT(hero_str_6401);
@@ -170,7 +172,7 @@ bb0:
     t8 = h2_own2;
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h2_own2 = t5;
-#line 174 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 176 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t8);
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t6 = hero_str_concat(t5, t4);
@@ -178,26 +180,26 @@ bb0:
     t9 = h3_own3;
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h3_own3 = t6;
-#line 182 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 184 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t9);
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 185 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 187 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_incref(t6);
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 188 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 190 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h1_own1);
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 191 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 193 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h2_own2);
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 194 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 196 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h3_own3);
     return t6;
 }
 
 #line 19 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
 void h_fixedbugsaninterpolatedstringholdscharactersaboveascii_main(void) {
-#line 201 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 203 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     int64_t h0_x;
     HeroStr h1_word = {0};
     HeroMapHeader * h2_m = {0};
@@ -480,11 +482,11 @@ bb0:
     t2 = HERO_STR_LIT(hero_str_1cc416);
 #line 21 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t140 = h1_word;
-#line 484 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 486 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_incref(t2);
 #line 21 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h1_word = t2;
-#line 488 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 490 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t140);
 #line 22 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t3 = h0_x;
@@ -496,7 +498,7 @@ bb0:
     t141 = h5_own5;
 #line 22 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h5_own5 = t5;
-#line 500 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 502 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t141);
 #line 22 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t6 = hero_str_concat(t4, t5);
@@ -504,7 +506,7 @@ bb0:
     t142 = h6_own6;
 #line 22 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h6_own6 = t6;
-#line 508 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 510 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t142);
 #line 22 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t6);
@@ -518,7 +520,7 @@ bb0:
     t143 = h7_own7;
 #line 23 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h7_own7 = t8;
-#line 522 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 524 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t143);
 #line 23 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t9 = HERO_STR_LIT(hero_str_8c592);
@@ -528,7 +530,7 @@ bb0:
     t144 = h8_own8;
 #line 23 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h8_own8 = t10;
-#line 532 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 534 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t144);
 #line 23 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t10);
@@ -548,7 +550,7 @@ bb0:
     t145 = h9_own9;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h9_own9 = t15;
-#line 552 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 554 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t145);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t16 = HERO_STR_LIT(hero_str_6472);
@@ -560,7 +562,7 @@ bb0:
     t146 = h10_own10;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h10_own10 = t18;
-#line 564 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 566 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t146);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t19 = HERO_STR_LIT(hero_str_2052b22f);
@@ -570,7 +572,7 @@ bb0:
     t147 = h11_own11;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h11_own11 = t20;
-#line 574 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 576 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t147);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t21 = hero_str_concat(t20, t16);
@@ -578,7 +580,7 @@ bb0:
     t148 = h12_own12;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h12_own12 = t21;
-#line 582 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 584 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t148);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t22 = hero_str_concat(t21, t12);
@@ -586,7 +588,7 @@ bb0:
     t149 = h13_own13;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h13_own13 = t22;
-#line 590 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 592 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t149);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t23 = hero_str_concat(t22, t17);
@@ -594,7 +596,7 @@ bb0:
     t150 = h14_own14;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h14_own14 = t23;
-#line 598 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 600 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t150);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t24 = hero_str_concat(t23, t18);
@@ -602,7 +604,7 @@ bb0:
     t151 = h15_own15;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h15_own15 = t24;
-#line 606 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 608 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t151);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t25 = hero_str_concat(t24, t19);
@@ -610,7 +612,7 @@ bb0:
     t152 = h16_own16;
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h16_own16 = t25;
-#line 614 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 616 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t152);
 #line 24 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t25);
@@ -628,7 +630,7 @@ bb0:
     t153 = h17_own17;
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h17_own17 = t29;
-#line 632 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 634 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t153);
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t30 = HERO_STR_LIT(hero_str_5021afb0);
@@ -638,7 +640,7 @@ bb0:
     t154 = h18_own18;
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h18_own18 = t31;
-#line 642 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 644 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t154);
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t32 = HERO_STR_LIT(hero_str_4852484);
@@ -648,7 +650,7 @@ bb0:
     t155 = h19_own19;
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h19_own19 = t33;
-#line 652 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 654 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t155);
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t34 = hero_str_concat(t33, t30);
@@ -656,7 +658,7 @@ bb0:
     t156 = h20_own20;
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h20_own20 = t34;
-#line 660 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 662 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t156);
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t35 = hero_str_concat(t34, t31);
@@ -664,7 +666,7 @@ bb0:
     t157 = h21_own21;
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h21_own21 = t35;
-#line 668 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 670 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t157);
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t36 = hero_str_concat(t35, t32);
@@ -672,7 +674,7 @@ bb0:
     t158 = h22_own22;
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h22_own22 = t36;
-#line 676 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 678 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t158);
 #line 25 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t36);
@@ -688,7 +690,7 @@ bb0:
     t159 = h23_own23;
 #line 26 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h23_own23 = t39;
-#line 692 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 694 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t159);
 #line 26 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t40 = HERO_STR_LIT(hero_str_2052b22f);
@@ -698,7 +700,7 @@ bb0:
     t160 = h24_own24;
 #line 26 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h24_own24 = t41;
-#line 702 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 704 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t160);
 #line 26 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t42 = hero_str_concat(t41, t40);
@@ -706,7 +708,7 @@ bb0:
     t161 = h25_own25;
 #line 26 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h25_own25 = t42;
-#line 710 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 712 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t161);
 #line 26 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t42);
@@ -722,7 +724,7 @@ bb0:
     t162 = h26_own26;
 #line 27 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h26_own26 = t45;
-#line 726 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 728 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t162);
 #line 27 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t46 = HERO_STR_LIT(hero_str_6d586af0);
@@ -732,7 +734,7 @@ bb0:
     t163 = h27_own27;
 #line 27 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h27_own27 = t47;
-#line 736 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 738 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t163);
 #line 27 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t48 = hero_str_concat(t47, t46);
@@ -740,7 +742,7 @@ bb0:
     t164 = h28_own28;
 #line 27 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h28_own28 = t48;
-#line 744 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 746 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t164);
 #line 27 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t48);
@@ -756,7 +758,7 @@ bb0:
     t165 = h29_own29;
 #line 28 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h29_own29 = t51;
-#line 760 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 762 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t165);
 #line 28 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t52 = HERO_STR_LIT(hero_str_63c68cf3);
@@ -766,7 +768,7 @@ bb0:
     t166 = h30_own30;
 #line 28 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h30_own30 = t53;
-#line 770 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 772 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t166);
 #line 28 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t54 = hero_str_concat(t53, t52);
@@ -774,7 +776,7 @@ bb0:
     t167 = h31_own31;
 #line 28 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h31_own31 = t54;
-#line 778 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 780 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t167);
 #line 28 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t54);
@@ -790,7 +792,7 @@ bb0:
     t168 = h32_own32;
 #line 29 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h32_own32 = t57;
-#line 794 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 796 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t168);
 #line 29 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t58 = HERO_STR_LIT(hero_str_7e0aef83);
@@ -800,7 +802,7 @@ bb0:
     t169 = h33_own33;
 #line 29 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h33_own33 = t59;
-#line 804 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 806 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t169);
 #line 29 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t60 = hero_str_concat(t59, t58);
@@ -808,7 +810,7 @@ bb0:
     t170 = h34_own34;
 #line 29 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h34_own34 = t60;
-#line 812 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 814 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t170);
 #line 29 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t60);
@@ -824,7 +826,7 @@ bb0:
     t171 = h35_own35;
 #line 30 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h35_own35 = t63;
-#line 828 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 830 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t171);
 #line 30 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t64 = HERO_STR_LIT(hero_str_211fd7);
@@ -834,7 +836,7 @@ bb0:
     t172 = h36_own36;
 #line 30 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h36_own36 = t65;
-#line 838 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 840 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t172);
 #line 30 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t66 = hero_str_concat(t65, t64);
@@ -842,7 +844,7 @@ bb0:
     t173 = h37_own37;
 #line 30 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h37_own37 = t66;
-#line 846 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 848 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t173);
 #line 30 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t66);
@@ -858,7 +860,7 @@ bb0:
     t174 = h38_own38;
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h38_own38 = t69;
-#line 862 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 864 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t174);
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t70 = hero_int_to_str(t68);
@@ -866,7 +868,7 @@ bb0:
     t175 = h39_own39;
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h39_own39 = t70;
-#line 870 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 872 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t175);
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t71 = HERO_STR_LIT(hero_str_6485);
@@ -876,7 +878,7 @@ bb0:
     t176 = h40_own40;
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h40_own40 = t72;
-#line 880 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 882 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t176);
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t73 = hero_str_concat(t72, t71);
@@ -884,7 +886,7 @@ bb0:
     t177 = h41_own41;
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h41_own41 = t73;
-#line 888 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 890 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t177);
 #line 31 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t73);
@@ -898,7 +900,7 @@ bb0:
     t178 = h42_own42;
 #line 32 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h42_own42 = t75;
-#line 902 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 904 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t178);
 #line 32 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t76 = HERO_STR_LIT(hero_str_647a);
@@ -910,7 +912,7 @@ bb0:
     t179 = h43_own43;
 #line 32 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h43_own43 = t78;
-#line 914 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 916 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t179);
 #line 32 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t79 = hero_str_concat(t78, t77);
@@ -918,7 +920,7 @@ bb0:
     t180 = h44_own44;
 #line 32 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h44_own44 = t79;
-#line 922 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 924 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t180);
 #line 32 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t79);
@@ -934,7 +936,7 @@ bb0:
     t181 = h45_own45;
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h45_own45 = t82;
-#line 938 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 940 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t181);
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t83 = HERO_STR_LIT(hero_str_6481);
@@ -944,7 +946,7 @@ bb0:
     t182 = h46_own46;
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h46_own46 = t84;
-#line 948 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 950 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t182);
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t85 = hero_str_concat(t84, t83);
@@ -952,7 +954,7 @@ bb0:
     t183 = h47_own47;
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h47_own47 = t85;
-#line 956 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 958 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t183);
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t86 = HERO_STR_LIT(hero_str_646e);
@@ -964,7 +966,7 @@ bb0:
     t184 = h48_own48;
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h48_own48 = t88;
-#line 968 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 970 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t184);
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t89 = hero_str_concat(t88, t86);
@@ -972,7 +974,7 @@ bb0:
     t185 = h49_own49;
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h49_own49 = t89;
-#line 976 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 978 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t185);
 #line 33 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t89);
@@ -984,15 +986,15 @@ bb0:
     t186 = h50_own50;
 #line 34 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h50_own50 = t90;
-#line 988 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 990 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_map_decref(t186);
 #line 34 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t187 = h2_m;
-#line 992 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 994 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_map_incref(t90);
 #line 34 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h2_m = t90;
-#line 996 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 998 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_map_decref(t187);
 #line 35 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t91 = h0_x;
@@ -1004,7 +1006,7 @@ bb0:
     t188 = h51_own51;
 #line 35 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h51_own51 = t93;
-#line 1008 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1010 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t188);
 #line 35 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t94 = hero_str_concat(t92, t93);
@@ -1012,7 +1014,7 @@ bb0:
     t189 = h52_own52;
 #line 35 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h52_own52 = t94;
-#line 1016 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1018 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t189);
 #line 35 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t95 = INT64_C(1);
@@ -1028,7 +1030,7 @@ bb0:
     t190 = h53_own53;
 #line 36 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h53_own53 = t98;
-#line 1032 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1034 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t190);
 #line 36 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t99 = hero_str_concat(t97, t98);
@@ -1036,7 +1038,7 @@ bb0:
     t191 = h54_own54;
 #line 36 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h54_own54 = t99;
-#line 1040 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1042 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t191);
 #line 36 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t100 = INT64_C(2);
@@ -1054,7 +1056,7 @@ bb0:
     t192 = h55_own55;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h55_own55 = t104;
-#line 1058 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1060 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t192);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t105 = hero_str_concat(t103, t104);
@@ -1062,7 +1064,7 @@ bb0:
     t193 = h56_own56;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h56_own56 = t105;
-#line 1066 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1068 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t193);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     {
@@ -1086,15 +1088,15 @@ bb0:
     t194 = h57_own57;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h57_own57 = t106;
-#line 1090 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1092 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&t194);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t195 = h3_f0;
-#line 1094 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1096 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_retain(&t106);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h3_f0 = t106;
-#line 1098 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1100 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&t195);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t107 = h3_f0;
@@ -1124,7 +1126,7 @@ bb1:
     t196 = h58_own58;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h58_own58 = t118;
-#line 1128 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1130 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t196);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t119 = hero_str_concat(t117, t118);
@@ -1132,7 +1134,7 @@ bb1:
     t197 = h59_own59;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h59_own59 = t119;
-#line 1136 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1138 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t197);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     {
@@ -1156,15 +1158,15 @@ bb1:
     t198 = h60_own60;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h60_own60 = t120;
-#line 1160 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1162 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&t198);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t199 = h4_f1;
-#line 1164 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1166 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_retain(&t120);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h4_f1 = t120;
-#line 1168 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1170 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&t199);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t121 = h4_f1;
@@ -1182,7 +1184,7 @@ bb2:
     t111 = h3_f0;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t112 = t111.as.err;
-#line 1186 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1188 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_panic_must(t112);
     hero_unreachable();
 bb3:
@@ -1196,7 +1198,7 @@ bb3:
     t200 = h61_own61;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h61_own61 = t129;
-#line 1200 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1202 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t200);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t130 = HERO_STR_LIT(hero_str_20);
@@ -1206,7 +1208,7 @@ bb3:
     t201 = h62_own62;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h62_own62 = t131;
-#line 1210 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1212 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t201);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t132 = hero_str_concat(t129, t130);
@@ -1214,7 +1216,7 @@ bb3:
     t202 = h63_own63;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h63_own63 = t132;
-#line 1218 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1220 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t202);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t133 = hero_str_concat(t132, t131);
@@ -1222,7 +1224,7 @@ bb3:
     t203 = h64_own64;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h64_own64 = t133;
-#line 1226 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1228 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t203);
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t133);
@@ -1240,7 +1242,7 @@ bb3:
     t204 = h65_own65;
 #line 38 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h65_own65 = t137;
-#line 1244 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1246 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t204);
 #line 38 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t138 = hero_str_concat(t137, t136);
@@ -1248,7 +1250,7 @@ bb3:
     t205 = h66_own66;
 #line 38 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h66_own66 = t138;
-#line 1252 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1254 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t205);
 #line 38 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_str(t138);
@@ -1260,202 +1262,202 @@ bb3:
     hero_print_str(t139);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_end();
-#line 1264 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1266 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h1_word);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1267 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1269 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_map_decref(h2_m);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1270 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1272 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&h3_f0);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1273 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1275 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&h4_f1);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1276 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1278 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h5_own5);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1279 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1281 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h6_own6);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1282 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1284 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h7_own7);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1285 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1287 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h8_own8);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1288 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1290 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h9_own9);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1291 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1293 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h10_own10);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1294 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1296 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h11_own11);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1297 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1299 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h12_own12);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1300 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1302 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h13_own13);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1303 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1305 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h14_own14);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1306 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1308 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h15_own15);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1309 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1311 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h16_own16);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1312 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1314 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h17_own17);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1315 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1317 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h18_own18);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1318 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1320 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h19_own19);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1321 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1323 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h20_own20);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1324 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1326 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h21_own21);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1327 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1329 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h22_own22);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1330 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1332 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h23_own23);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1333 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1335 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h24_own24);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1336 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1338 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h25_own25);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1339 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1341 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h26_own26);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1342 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1344 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h27_own27);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1345 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1347 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h28_own28);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1348 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1350 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h29_own29);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1351 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1353 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h30_own30);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1354 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1356 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h31_own31);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1357 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1359 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h32_own32);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1360 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1362 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h33_own33);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1363 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1365 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h34_own34);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1366 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1368 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h35_own35);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1369 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1371 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h36_own36);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1372 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1374 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h37_own37);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1375 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1377 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h38_own38);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1378 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1380 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h39_own39);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1381 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1383 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h40_own40);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1384 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1386 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h41_own41);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1387 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1389 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h42_own42);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1390 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1392 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h43_own43);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1393 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1395 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h44_own44);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1396 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1398 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h45_own45);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1399 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1401 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h46_own46);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1402 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1404 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h47_own47);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1405 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1407 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h48_own48);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1408 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1410 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h49_own49);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1411 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1413 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_map_decref(h50_own50);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1414 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1416 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h51_own51);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1417 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1419 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h52_own52);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1420 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1422 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h53_own53);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1423 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1425 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h54_own54);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1426 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1428 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h55_own55);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1429 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1431 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h56_own56);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1432 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1434 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&h57_own57);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1435 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1437 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h58_own58);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1438 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1440 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h59_own59);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1441 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1443 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     h_0opt_e201354_release(&h60_own60);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1444 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1446 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h61_own61);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1447 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1449 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h62_own62);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1450 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1452 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h63_own63);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1453 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1455 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h64_own64);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1456 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1458 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h65_own65);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
-#line 1459 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1461 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(h66_own66);
     return;
 bb4:
@@ -1463,7 +1465,7 @@ bb4:
     t125 = h4_f1;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t126 = t125.as.err;
-#line 1467 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1469 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_panic_must(t126);
     hero_unreachable();
 }

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -45,7 +47,7 @@ HERO_STR_STATIC(hero_str_b928f19, "false");
 HERO_STR_STATIC(hero_str_d839a22, "done");
 HERO_STR_STATIC(hero_str_188c0f4b, "never");
 
-#line 49 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 51 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 typedef enum h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color_tag {
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color_tag_red = 0,
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color_tag_blue = 1,
@@ -75,19 +77,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 93 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color_eq(const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *a, const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *b);
@@ -121,7 +123,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 19 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_checked(int64_t h0_n) {
-#line 125 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 127 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -155,12 +157,12 @@ bb2:
 bb3:
 #line 21 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb1;
-#line 159 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 161 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_by_position(int64_t h0_n) {
-#line 164 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 166 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -194,12 +196,12 @@ bb2:
 bb3:
 #line 26 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb1;
-#line 198 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 200 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_asserted(int64_t h0_n) {
-#line 203 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 205 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -241,14 +243,14 @@ bb4:
 #line 34 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb5:
 #line 35 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-#line 245 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 247 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert(t5);
     hero_unreachable();
 }
 
 #line 40 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_until_found(int64_t h0_n) {
-#line 252 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 254 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_i;
     int64_t t1;
     bool t2;
@@ -315,12 +317,12 @@ bb5:
 bb6:
 #line 45 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb4;
-#line 319 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 321 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_inner_for_breaks(int64_t h0_n) {
-#line 324 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 326 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_m;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -388,15 +390,15 @@ bb2:
     t27 = h5_own5;
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     h5_own5 = t5;
-#line 392 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 394 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_array_decref(t27);
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t28 = h2_xs0;
-#line 396 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 398 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_array_incref(t5);
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     h2_xs0 = t5;
-#line 400 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 402 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_array_decref(t28);
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t6 = INT64_C(0);
@@ -488,10 +490,10 @@ bb11:
 bb12:
 #line 57 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t23 = h1_m;
-#line 492 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 494 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_array_decref(h2_xs0);
 #line 57 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-#line 495 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 497 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_array_decref(h5_own5);
     return t23;
 bb13:
@@ -500,7 +502,7 @@ bb13:
 
 #line 60 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_inner_while_breaks(int64_t h0_n) {
-#line 504 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 506 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_m;
     int64_t t1;
     bool t2;
@@ -576,12 +578,12 @@ bb8:
 bb9:
 #line 68 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb7;
-#line 580 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 582 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 71 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_continues(int64_t h0_n) {
-#line 585 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 587 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_m;
     int64_t t1;
     bool t2;
@@ -642,12 +644,12 @@ bb5:
 bb6:
 #line 79 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb4;
-#line 646 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 648 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 82 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_every_branch_ends(int64_t h0_n) {
-#line 651 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 653 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -710,14 +712,14 @@ bb6:
     goto bb1;
 #line 88 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb7:
-#line 714 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 716 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert(t9);
     hero_unreachable();
 }
 
 #line 90 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_arm_exits(h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color h0_c) {
-#line 721 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 723 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color h1_s0;
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color t1;
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color t2;
@@ -762,12 +764,12 @@ bb3:
     h_library_exit(t5);
 #line 93 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     goto bb1;
-#line 766 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 768 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_defensive(int64_t h0_n) {
-#line 771 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 773 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -816,12 +818,12 @@ bb4:
     t7 = h1_ret0;
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return t7;
-#line 820 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 822 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_assert(int64_t h0_n) {
-#line 825 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 827 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -872,7 +874,7 @@ bb4:
 #line 106 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb5:
 #line 105 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-#line 876 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 878 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     hero_panic_assert(t5);
     hero_unreachable();
 bb6:
@@ -880,12 +882,12 @@ bb6:
     t8 = h1_ret0;
 #line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return t8;
-#line 884 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 886 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_loop(int64_t h0_n) {
-#line 889 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 891 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_i;
     int64_t h2_ret0;
     int64_t t1;
@@ -968,12 +970,12 @@ bb7:
     t12 = h2_ret0;
 #line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return t12;
-#line 972 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 974 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_if(int64_t h0_k) {
-#line 977 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 979 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -1013,12 +1015,12 @@ bb4:
     t6 = h1_ret0;
 #line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return t6;
-#line 1017 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1019 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_match(int64_t h0_k) {
-#line 1022 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1024 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t h1_s0;
     int64_t h2_ret0;
     int64_t t1;
@@ -1068,12 +1070,12 @@ bb5:
     t7 = h2_ret0;
 #line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return t7;
-#line 1072 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1074 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 140 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish(void) {
-#line 1077 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1079 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     HeroStr t1;
     int64_t t2;
     HeroStr t3;
@@ -1097,12 +1099,12 @@ bb0:
     hero_print_end();
 #line 143 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return;
-#line 1101 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1103 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
 #line 145 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_main(void) {
-#line 1106 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1108 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1249,22 +1251,22 @@ bb0:
     h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish();
 #line 160 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     return;
-#line 1253 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1255 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 
-#line 219 "<heroes library>"
+#line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 1258 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1260 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
     int64_t t1;
     goto bb0;
 bb0:
-#line 220 "<heroes library>"
+#line 228 "<heroes library>"
     t1 = h0_code;
-#line 220 "<heroes library>"
+#line 228 "<heroes library>"
     (void)hero_exit(t1);
-#line 220 "<heroes library>"
+#line 228 "<heroes library>"
     return;
-#line 1268 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 1270 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color_eq(const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *a, const h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color *b) {
     if (a->tag != b->tag) return false;

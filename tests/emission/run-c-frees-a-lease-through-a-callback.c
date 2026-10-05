@@ -5,7 +5,7 @@
 #include <c-frees-a-lease-through-a-callback.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -34,8 +34,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -46,7 +48,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 50 "cfreesaleasethroughacallback.c"
+#line 52 "cfreesaleasethroughacallback.c"
 typedef void (*h_0fn_2b4640ec)(const char *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -72,19 +74,19 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_cfreesaleasethroughacallback_take_cb(const char * a0, h_0fn_2b4640ec a1) { (void)(take_cb)(a0, a1); }
 #line 10 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_cfreesaleasethroughacallback_eat(const char * a0) { (void)(eat)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "cfreesaleasethroughacallback.c"
+#line 90 "cfreesaleasethroughacallback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -104,7 +106,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 void h_cfreesaleasethroughacallback_main(void) {
-#line 108 "cfreesaleasethroughacallback.c"
+#line 110 "cfreesaleasethroughacallback.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroStr t1;
@@ -120,11 +122,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t7 = h0_x;
-#line 124 "cfreesaleasethroughacallback.c"
+#line 126 "cfreesaleasethroughacallback.c"
     hero_str_incref(t1);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     h0_x = t1;
-#line 128 "cfreesaleasethroughacallback.c"
+#line 130 "cfreesaleasethroughacallback.c"
     hero_str_decref(t7);
 #line 14 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t2 = h0_x;
@@ -146,7 +148,7 @@ bb0:
     (void)take_cb(hero_cstr_nonnull(t5), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6));
 #line 17 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     hero_held_release(&h1_c);
-#line 150 "cfreesaleasethroughacallback.c"
+#line 152 "cfreesaleasethroughacallback.c"
     hero_str_decref(h0_x);
     return;
 }

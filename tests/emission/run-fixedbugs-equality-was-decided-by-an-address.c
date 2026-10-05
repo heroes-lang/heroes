@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -45,7 +47,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_6b, "k");
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 49 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 51 "fixedbugsequalitywasdecidedbyanaddress.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -66,19 +68,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 84 "fixedbugsequalitywasdecidedbyanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +96,7 @@ void h_fixedbugsequalitywasdecidedbyanaddress_main(void);
 
 #line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
 void h_fixedbugsequalitywasdecidedbyanaddress_main(void) {
-#line 98 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 100 "fixedbugsequalitywasdecidedbyanaddress.c"
     double h0_n;
     HeroArrayHeader * h1_a = {0};
     HeroArrayHeader * h2_b = {0};
@@ -227,25 +229,25 @@ bb0:
     t66 = h13_own13;
 #line 53 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h13_own13 = t5;
-#line 231 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 233 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t66);
 #line 53 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t67 = h1_a;
-#line 235 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 237 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_incref(t5);
 #line 53 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h1_a = t5;
-#line 239 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 241 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t67);
 #line 54 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t6 = h1_a;
 #line 54 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t68 = h2_b;
-#line 245 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 247 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_incref(t6);
 #line 54 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h2_b = t6;
-#line 249 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 251 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t68);
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t7 = h0_n;
@@ -259,15 +261,15 @@ bb0:
     t69 = h14_own14;
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h14_own14 = t8;
-#line 263 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 265 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t69);
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t70 = h3_c;
-#line 267 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 269 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_incref(t8);
 #line 55 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h3_c = t8;
-#line 271 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 273 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t70);
 #line 56 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t9 = h1_a;
@@ -303,25 +305,25 @@ bb0:
     t71 = h15_own15;
 #line 58 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h15_own15 = t18;
-#line 307 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 309 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t71);
 #line 58 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t72 = h4_ma;
-#line 311 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 313 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_incref(t18);
 #line 58 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h4_ma = t18;
-#line 315 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 317 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t72);
 #line 59 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t19 = h4_ma;
 #line 59 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t73 = h5_mb;
-#line 321 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 323 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_incref(t19);
 #line 59 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h5_mb = t19;
-#line 325 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 327 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t73);
 #line 60 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t20 = HERO_STR_LIT(hero_str_6b);
@@ -335,15 +337,15 @@ bb0:
     t74 = h16_own16;
 #line 60 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h16_own16 = t22;
-#line 339 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 341 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t74);
 #line 60 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t75 = h6_mc;
-#line 343 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 345 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_incref(t22);
 #line 60 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h6_mc = t22;
-#line 347 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 349 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t75);
 #line 61 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t23 = h4_ma;
@@ -391,25 +393,25 @@ bb0:
     t76 = h17_own17;
 #line 67 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h17_own17 = t33;
-#line 395 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 397 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t76);
 #line 67 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t77 = h7_xs;
-#line 399 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 401 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_incref(t33);
 #line 67 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h7_xs = t33;
-#line 403 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 405 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t77);
 #line 68 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t34 = h7_xs;
 #line 68 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t78 = h8_ys;
-#line 409 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 411 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_incref(t34);
 #line 68 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h8_ys = t34;
-#line 413 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 415 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t78);
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t35 = 0x1p+0;
@@ -435,15 +437,15 @@ bb0:
     t79 = h18_own18;
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h18_own18 = t38;
-#line 439 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 441 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t79);
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t80 = h9_zs;
-#line 443 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 445 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_incref(t38);
 #line 69 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h9_zs = t38;
-#line 447 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 449 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t80);
 #line 70 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t39 = h7_xs;
@@ -479,25 +481,25 @@ bb0:
     t81 = h19_own19;
 #line 72 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h19_own19 = t48;
-#line 483 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 485 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t81);
 #line 72 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t82 = h10_ns;
-#line 487 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 489 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_incref(t48);
 #line 72 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h10_ns = t48;
-#line 491 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 493 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t82);
 #line 73 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t49 = h10_ns;
 #line 73 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t83 = h11_os;
-#line 497 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 499 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_incref(t49);
 #line 73 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h11_os = t49;
-#line 501 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 503 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t83);
 #line 74 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t50 = HERO_STR_LIT(hero_str_61);
@@ -511,15 +513,15 @@ bb0:
     t84 = h20_own20;
 #line 74 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h20_own20 = t52;
-#line 515 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 517 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t84);
 #line 74 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t85 = h12_ps;
-#line 519 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 521 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_incref(t52);
 #line 74 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h12_ps = t52;
-#line 523 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 525 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(t85);
 #line 75 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t53 = h10_ns;
@@ -555,7 +557,7 @@ bb0:
     t86 = h21_own21;
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h21_own21 = t61;
-#line 559 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 561 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t86);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t62 = 0x1p+0;
@@ -575,7 +577,7 @@ bb0:
     t87 = h22_own22;
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     h22_own22 = t64;
-#line 579 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 581 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(t87);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t65 = hero_array_eq(t61, t64);
@@ -583,70 +585,70 @@ bb0:
     hero_print_bool(t65);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     hero_print_end();
-#line 587 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 589 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h1_a);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 590 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 592 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h2_b);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 593 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 595 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h3_c);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 596 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 598 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h4_ma);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 599 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 601 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h5_mb);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 602 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 604 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h6_mc);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 605 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 607 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h7_xs);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 608 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 610 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h8_ys);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 611 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 613 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h9_zs);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 614 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 616 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h10_ns);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 617 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 619 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h11_os);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 620 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 622 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h12_ps);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 623 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 625 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h13_own13);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 626 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 628 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h14_own14);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 629 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 631 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h15_own15);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 632 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 634 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h16_own16);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 635 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 637 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h17_own17);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 638 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 640 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h18_own18);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 641 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 643 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h19_own19);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 644 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 646 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_map_decref(h20_own20);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 647 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 649 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h21_own21);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-#line 650 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 652 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_decref(h22_own22);
     return;
 }

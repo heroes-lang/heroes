@@ -55,7 +55,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 26
+#define HERO_RUNTIME_ABI 27
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -158,6 +158,11 @@ typedef struct {
  * inside a valid allocation, so ASan said nothing and the program exited 0 —
  * silent corruption of foreign memory. The tag turns it into a panic. */
 #define HERO_STR_MAGIC UINT64_C(0x4845524f53535452) /* "HEROSSTR" */
+/* The same mark with its low bit set: this block's bytes hold a NUL (panel
+ * 192's R1, defect 245). A fact kept from the block's making, so the lend and
+ * the lease ask it in one load and one test; `parts/str.c` says who sets it.
+ * Every check of the mark accepts both values. */
+#define HERO_STR_MAGIC_NUL (HERO_STR_MAGIC | UINT64_C(1)) /* "HEROSSTS" */
 
 /* -- a lease, the held buffer (design.md §4.19's fourth case, panel 124) ---------------
  * Bytes the PROGRAM owns, copied out of a `str`, which C may read for as long
@@ -182,12 +187,21 @@ typedef struct {
 
 /* A literal is a static const block: no allocation, no runtime call, and a
  * negative refcount so decref is a no-op. The emitter writes one of these per
- * distinct literal at file scope and then `s = HERO_STR_LIT(name);`. */
-#define HERO_STR_STATIC(name, text)                     \
-    static const struct {                               \
-        HeroStrHeader h;                                \
-        char b[sizeof(text)];                           \
-    } name = {{-1, HERO_STR_MAGIC}, text}
+ * distinct literal at file scope and then `s = HERO_STR_LIT(name);`.
+ *
+ * Its mark says whether the literal holds a NUL (`HERO_STR_MAGIC_NUL`, panel
+ * 192): a literal whose length to its first NUL is its whole length holds
+ * none. clang folds `__builtin_strlen` of a string literal to a constant, so
+ * the test costs nothing at run time and is legal in a static initializer
+ * (the ffi-pragmatist's `fold.c`, both values printed, no warning under
+ * `-pedantic`); a binding's C writing this macro gets the same answer. */
+#define HERO_STR_STATIC(name, text)                                          \
+    static const struct {                                                    \
+        HeroStrHeader h;                                                     \
+        char b[sizeof(text)];                                                \
+    } name = {{-1, (__builtin_strlen(text) + 1 == sizeof(text)) ? HERO_STR_MAGIC \
+                                                                : HERO_STR_MAGIC_NUL}, \
+              text}
 #define HERO_STR_LIT(name) \
     ((HeroStr){(name).b, (int64_t)sizeof((name).b) - 1})
 
@@ -212,6 +226,9 @@ void hero_print_str(HeroStr s);
 
 /* cstr: the FFI spelling (design.md §4.19). Free because of the NUL. */
 const char *hero_str_cstr(HeroStr s);
+/* The lend a program writes, `.cstr()` (panel 192's R1): `hero_str_cstr`'s
+ * pointer, refused with an abort naming the byte where the str holds a NUL. */
+const char *hero_str_lend(HeroStr s);
 
 /* A copy of s's bytes, NUL-terminated, that the program owns and frees. */
 const char *hero_str_held(HeroStr s);

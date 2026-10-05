@@ -932,6 +932,30 @@ int64_t hero_file_write(const char *path, HeroStr text) {
     return HERO_OS_OK;
 }
 
+/* Panel 192: the door asks the BYTES, not the fact the lend asks, so a name
+ * that would open another file is caught here even if a constructor's fact
+ * were ever wrong; one `memchr` over a name, beside a system call. */
+static bool hero_name_holds_nul(HeroStr name) {
+    hero_str_require(name);
+    return name.len > 0 && memchr(name.ptr, 0, (size_t)name.len) != NULL;
+}
+
+HeroStr hero_file_read_str(HeroStr path, int64_t *status) {
+    if (hero_name_holds_nul(path)) {
+        *status = HERO_OS_BAD_NAME;
+        return hero_str_empty();
+    }
+    return hero_file_read(path.ptr, status);
+}
+
+int64_t hero_file_write_str(HeroStr path, HeroStr text) {
+    if (hero_name_holds_nul(path)) {
+        hero_fs_why_code = (int64_t)EINVAL;
+        return HERO_OS_BAD_NAME;
+    }
+    return hero_file_write(path.ptr, text);
+}
+
 /* The error stream, written whole. No status, and that absence is the point.
  *
  * WHY IT IS HERE RATHER THAN A POSIX BINDING IN THE COMPILER (author decision
