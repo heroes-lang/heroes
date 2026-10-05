@@ -116,6 +116,14 @@ HeroStr hero_args_at(int64_t index);
  * so nothing here allocates and nothing here can leak. */
 const char *hero_args_raw(int64_t index);
 
+/* The same argument read as the shown read reads a file (defect 281):
+ * HERO_OS_OK and the argument where it is UTF-8, HERO_OS_NOT_TEXT with marks
+ * and the shown text where it is not, counted as `hero_file_read_shown`
+ * counts them, so the compiler can name an argument of its own by its bytes.
+ * Bound in `selfhost/cli/process.hero`'s own group, like the reads above; out
+ * of range is `hero_args_at`'s panic. */
+HeroStr hero_args_shown(int64_t index, int64_t *status, int64_t *marks);
+
 /* Ends the program with this status, and never returns.
  *
  * `_Noreturn` is not decoration: without it clang's flow analysis treats the
@@ -199,7 +207,14 @@ int64_t hero_fs_rename(const char *from, const char *to);
  * and 0 after one that succeeded. `hero_run_why`'s counterpart for the files a
  * build writes (defect 134): a publish that failed said *cannot publish* and
  * nothing else, where the number separates a full disk, a read-only directory
- * and a file another process holds open. `parts/os.c` holds it. */
+ * and a file another process holds open. `parts/os.c` holds it.
+ *
+ * **Below zero it is the runtime's own reason**, the negation of the number
+ * the system gives for that reason: a path refused before any system call
+ * (empty, or past HERO_FS_PATH_MAX), a link's chain past forty or its target
+ * not UTF-8, a name the wide API cannot be handed. No system answers below
+ * zero, so the sign alone says whose reason it is; until defect 346 these
+ * were set as the system's own numbers, and told as the system's. */
 int64_t hero_fs_why(void);
 
 /* REPLACING A FILE WHOSE NAME THE AUTHOR GAVE, WHOLE OR NOT AT ALL (defect

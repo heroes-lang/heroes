@@ -89,14 +89,35 @@ static int hero_dir_remember(const char *prefix, const char *name) {
 }
 
 static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
-                         int64_t recursive);
+                         int64_t recursive, int follow);
+
+/* Is `path` a link itself, asked of the link and never of what it names: a
+ * symbolic link on POSIX (`lstat`), a symbolic link or a junction on Windows
+ * (`hero_fs_is_surrogate`, parts/fs.c). */
+static int hero_dir_is_link(const char *path) {
+#if defined(_WIN32)
+    return hero_fs_is_surrogate(path);
+#else
+    struct stat info;
+    return lstat(path, &info) == 0 && S_ISLNK(info.st_mode);
+#endif
+}
+
+static int64_t hero_dir_scan_walk(const char *root, int64_t want, int64_t recursive, int follow);
 
 /* Everything `root` holds, of the kind asked for. Returns how many names, or
  * -1 when the directory could not be read at all — which the shell's
- * `2>/dev/null` used to hide. */
+ * `2>/dev/null` used to hide. A link to a directory is walked into, as every
+ * listing here always has: a walk reads what its tree names. */
 int64_t hero_dir_scan(const char *root, int64_t want, int64_t recursive) {
+    return hero_dir_scan_walk(root, want, recursive, 1);
+}
+
+/* The scan, `follow` saying whether a link to a directory is walked into or
+ * listed as the one name it is (`hero_dir_remove_tree`, defect 345). */
+static int64_t hero_dir_scan_walk(const char *root, int64_t want, int64_t recursive, int follow) {
     hero_dir_reset();
-    if (!hero_dir_walk(root, "", want, recursive)) {
+    if (!hero_dir_walk(root, "", want, recursive, follow)) {
         /* **-1 means the runtime holds NOTHING**, array included, and that is an
          * invariant rather than a tidiness: a caller that gets -1 returns its
          * own failure, and it has no listing to release. Five call sites in
@@ -152,8 +173,16 @@ HeroStr hero_dir_at_shown(int64_t index, int64_t *status, int64_t *marks) {
 
 /* Delete a path and everything under it. `rm -rf`: a path that is not there is
  * success, because every caller of this asks for the end state and not for the
- * work. */
+ * work.
+ *
+ * **A LINK IS REMOVED AS THE LINK, and never followed** (defect 345), as `rm
+ * -rf` removes one: the walk below lists a link to a directory as the one
+ * name it is, and a path that is itself a link goes alone. Until 2026-10-05
+ * the walk entered such a link and deleted the files it named, outside the
+ * tree asked for, and answered success (measured on this Mac: a tree holding
+ * `link -> ../A` took `A/keep.txt` with it). */
 int64_t hero_dir_remove_tree(const char *path) {
+    if (hero_dir_is_link(path)) return hero_fs_remove(path);
     if (!hero_fs_exists(path)) return HERO_OS_OK;
     if (!hero_fs_is_directory(path)) return hero_fs_remove(path);
 
@@ -161,7 +190,7 @@ int64_t hero_dir_remove_tree(const char *path) {
      * directory while removing from it is unspecified in POSIX and wrong on
      * Windows, and the bug it makes is the worst kind: it deletes some of the
      * entries and reports success. */
-    int64_t found = hero_dir_scan(path, HERO_DIR_FILES, 1);
+    int64_t found = hero_dir_scan_walk(path, HERO_DIR_FILES, 1, 0);
     if (found < 0) return HERO_OS_FAILED;   /* a failed scan holds nothing */
 
     size_t room = strlen(path) + 2 + HERO_FS_PATH_MAX;
@@ -176,7 +205,7 @@ int64_t hero_dir_remove_tree(const char *path) {
 
     /* Directories, deepest first: the scan yields parents before children, so
      * the reverse order empties from the bottom. */
-    int64_t dirs = hero_dir_scan(path, HERO_DIR_DIRECTORIES, 1);
+    int64_t dirs = hero_dir_scan_walk(path, HERO_DIR_DIRECTORIES, 1, 0);
     if (dirs < 0) { hero_release(full); return HERO_OS_FAILED; }
 
     for (int64_t i = dirs - 1; i >= 0; i -= 1) {
@@ -198,29 +227,36 @@ int64_t hero_dir_remove_tree(const char *path) {
 }
 
 /* One directory level, recursing where asked. Answers 0 when the directory
- * could not be opened or the listing filled up. */
+ * could not be opened or the listing filled up. Where `follow` is 0 a link is
+ * one entry of the files, whatever it names, and is never entered. */
 static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
-                         int64_t recursive) {
+                         int64_t recursive, int follow) {
     size_t room = strlen(root) + 2 + HERO_FS_PATH_MAX;
     char *child = hero_alloc(room);
     char *deeper = hero_alloc(room);
     int ok = 1;
 
 #if defined(_WIN32)
-    char *pattern = hero_alloc(room);
-    if (snprintf(pattern, room, "%s\\*", root) < 0) { ok = 0; }
-    WIN32_FIND_DATAA found;
-    HANDLE search = ok ? FindFirstFileA(pattern, &found) : INVALID_HANDLE_VALUE;
-    hero_release(pattern);
+    /* Wide, and a name carried back by `hero_win_name_bytes` (parts/codepage.c
+     * says why the narrow listing cannot be kept). */
+    wchar_t *pattern = hero_win_wide(root, L"\\*");
+    WIN32_FIND_DATAW found;
+    HANDLE search = pattern != NULL ? FindFirstFileW(pattern, &found) : INVALID_HANDLE_VALUE;
+    if (pattern != NULL) hero_release(pattern);
     if (search == INVALID_HANDLE_VALUE) {
         hero_release(child);
         hero_release(deeper);
         return 0;
     }
+    char held[3 * MAX_PATH + 1];
     do {
-        const char *name = found.cFileName;
+        if (hero_win_name_bytes(found.cFileName, held, sizeof held) < 0) { ok = 0; break; }
+        const char *name = held;
         if (!hero_dir_keep(name)) continue;
         int is_dir = (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        if (!follow && (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+            IsReparseTagNameSurrogate(found.dwReserved0))
+            is_dir = 0;
 #else
     DIR *open_dir = opendir(root);
     if (open_dir == NULL) {
@@ -233,7 +269,7 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
         const char *name = entry->d_name;
         if (!hero_dir_keep(name)) continue;
         if (snprintf(child, room, "%s/%s", root, name) < 0) { ok = 0; break; }
-        int is_dir = hero_fs_is_directory(child) != 0;
+        int is_dir = (follow || !hero_dir_is_link(child)) && hero_fs_is_directory(child) != 0;
 #endif
         int wanted = is_dir ? (want == HERO_DIR_DIRECTORIES)
                             : (want == HERO_DIR_FILES);
@@ -242,10 +278,13 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
         if (is_dir && recursive) {
             if (snprintf(child, room, "%s/%s", root, name) < 0) { ok = 0; break; }
             if (snprintf(deeper, room, "%s%s/", prefix, name) < 0) { ok = 0; break; }
-            if (!hero_dir_walk(child, deeper, want, recursive)) { ok = 0; break; }
+            if (!hero_dir_walk(child, deeper, want, recursive, follow)) { ok = 0; break; }
         }
 #if defined(_WIN32)
-    } while (FindNextFileA(search, &found));
+    } while (FindNextFileW(search, &found));
+    /* The end of a listing is ERROR_NO_MORE_FILES; any other reason is a
+     * listing cut short, said as a failure and never as the whole. */
+    if (ok && GetLastError() != ERROR_NO_MORE_FILES) ok = 0;
     FindClose(search);
 #else
     }
