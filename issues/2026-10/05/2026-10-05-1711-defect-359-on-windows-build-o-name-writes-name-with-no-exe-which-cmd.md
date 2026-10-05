@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: e46b0adf9e814eca07529f45864b9100b34c06bf
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** batch 11's coordinator, 2026-10-05, on the Windows box, running panel 190's R10 pair: the script's `[ -f p231/astar800.exe ]` found nothing, and the binary was `p231/astar800`.
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): found beside the work; nothing said is false, *wrote name* names the file written, and the binary is right, but on Windows a build whose path has no extension leaves a program the platform's own shells cannot start by that path. **Unrun**: whether `heroes run` and `heroes test`, which name their own binaries, ever take an author's path; what clang or MinGW's gcc do for the same `-o`, the precedent a repair would weigh.
+
+    Repaired at `e46b0adf`, 2026-10-05 (lane cli12), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The precedent, measured before choosing: clang 23.1.1 on the box writes `-o name` as `name` (lld-link's `-out:name`), and GCC's driver appends `.exe` to an `-o` whose last part holds no `.` for MinGW and Cygwin (`gcc.cc`'s `convert_filename`, read 2026-10-05); gcc's rule is taken, a device left as written. `heroes run -o` takes the author's path too and gets the same suffix. **Unrun**: the repair on the Windows box, offline since about 19:40; it is the push's Windows leg's.
