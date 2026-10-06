@@ -1,0 +1,279 @@
+# A string in backticks told once, by name, and the literal that writes it
+# (defect 391, design.md §4.17: one mistake, one message). Split from
+# `backtick_strings.hero`, which reads where one ends, when its reading over
+# lines (defect 407) took that module past §11's 300: reading a template and
+# telling one are two seams.
+#
+# The `f"…"` or `"…"` that writes a template is offered as a `guess`: a hole
+# renders its value as `to_str` does, not as JavaScript's `String`, a string
+# in backticks is also Go's raw string and Python 2's `repr`, and the code in
+# a hole is copied as written.
+#
+# **A string is one line** (the specification's § 1), so a template written
+# over lines (defect 407) is quoted by its first line, the lines it spans
+# counted, and the literal that writes it writes each of its line ends `\n`,
+# a carriage return before one or alone included, as JavaScript reads it;
+# a `\` before a line end, JavaScript's line continuation, writes nothing. A
+# character a string refuses written as itself is written as a string writes
+# it (`raw_chars`, panel 192): a tab `\t`, a control character, a
+# bidirectional control, U+2028 and U+2029 by its code, where the template's
+# raw tab was copied into a string that refuses it. A NUL, which no escape
+# writes, and a hole whose code goes over lines have no spelling.
+#
+# | entry | called by |
+# |---|---|
+# | `template` | `refused_stretch.told` |
+
+use token
+use diag
+use bytes
+use shown_char
+use raw_chars
+use escape_readings
+use backtick_strings
+
+# The template from `from` to past its close, told: named for what it is,
+# with the literal that writes it offered as a guess where its text and
+# holes go over whole.
+function template(text: str, from: i64, to: i64) -> diag.Diagnostic
+    span = token.Span(start: from, end: to)
+    holes = holds_a_hole(text, from: from, to: to)
+    rewritten = rewritten_as(text, from: from, to: to, holes: holes)
+    lines = lines_in(text, from: from, to: to)
+    shown: str @ escape_readings.quoted(text.slice(from: from, to: to))
+    broken: str @ ""
+
+    if lines > 1
+        shown @ escape_readings.quoted(text.slice(from: from, to: first_line_end(text, from: from)) + "…") + ", over " + lines.to_str() + " lines,"
+        broken @ ", on one line, a line break in its text written `\\n`"
+    message: str @ shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes" + broken
+
+    if holes
+        message @ shown + backtick_strings.TEMPLATE_SAID + " — a value goes into a string through a hole of an `f\"…\"` literal" + broken
+    else if !rewritten.is_err() && rewritten.must().len() > 0 && rewritten.must()[0] == 'f'
+        message @ message + ", a brace as text doubled in an `f\"…\"` literal"
+
+    if !rewritten.is_err()
+        message @ message + ": `" + rewritten.must() + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "unexpected_character", message: message, span: span)
+
+    if !rewritten.is_err()
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write it as `" + rewritten.must() + "`", replacement: rewritten.must(), span: span, certainty: .guess)
+        )
+    return d
+
+# How many lines the template from `from` to `to` stands on.
+function lines_in(text: str, from: i64, to: i64) -> i64
+    n: i64 @ 1
+    i: i64 @ from
+
+    while i < to
+        if text[i] == '\n'
+            n @ n + 1
+        i @ i + 1
+
+    return n
+
+# Where the line holding `from` ends, before its `\r\n` or its `\n`.
+function first_line_end(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    if i > from && text[i - 1] == '\r'
+        return i - 1
+    return i
+
+# Whether the template from `from` holds a `${` in its own text.
+function holds_a_hole(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from + 1
+
+    while i < to - 1
+        if text[i] == '\\'
+            i @ i + 2
+        else if text[i] == '$' && text[i + 1] == '{'
+            return true
+        else
+            i @ i + 1
+
+    return false
+
+# The template from `from` to `to` as this language writes it, or a failure
+# where it has no such spelling: `f"…"` where it holds a hole or a brace,
+# each brace of its text doubled, since `"a {b}"` is `hole_without_f` where
+# `b` is a name in scope and `f"a {{b}}"` writes the text JavaScript meant
+# whatever is; `"…"` where it holds neither; a `"` escaped, a backtick, `$`
+# or `'` escaped in JavaScript written as itself, an escape the two
+# languages share kept, a line end `\n` and a line continuation nothing, a
+# character a string refuses as a string writes it (`written`), and a
+# hole's code copied as written. Only a template whose holes hold no
+# template, character, brace, line end or nothing goes over, and no escape
+# but those.
+function rewritten_as(text: str, from: i64, to: i64, holes: bool) -> str?
+    out: [str] @ []
+    braced: bool @ false
+    i: i64 @ from + 1
+    last = to - 1
+
+    while i < last
+        b = text[i]
+
+        if b == '\\'
+            if i + 1 >= last
+                return fail(code: "escape", msg: "a backslash ends the template")
+            next = text[i + 1]
+
+            if next == '`' || next == '$' || next == '\''
+                out @ out.push(text.slice(from: i + 1, to: i + 2))
+                i @ i + 2
+            else if next == 'n' || next == 't' || next == 'r' || next == '\\' || next == '"'
+                out @ out.push(text.slice(from: i, to: i + 2))
+                i @ i + 2
+            else if next == '\n' || next == '\r' && i + 2 < last && text[i + 2] == '\n'
+                i @ past_line_end(text, at: i + 1)
+            else
+                return fail(code: "escape", msg: "an escape this language does not share")
+        else if b == '$' && text[i + 1] == '{'
+            close = hole_end(text, at: i + 2, last: last)
+
+            if close < 0
+                return fail(code: "hole", msg: "a hole this language cannot hold")
+            out @ out.push("{" + text.slice(from: i + 2, to: close) + "}")
+            i @ close + 1
+        else if b == '"'
+            out @ out.push("\\\"")
+            i @ i + 1
+        else if b == '{' || b == '}'
+            out @ out.push(text.slice(from: i, to: i + 1).repeat(2))
+            braced @ true
+            i @ i + 1
+        else if b == '\n' || b == '\r'
+            out @ out.push("\\n")
+            i @ past_line_end(text, at: i)
+        else
+            ch = bytes.char_at(text, i)
+            spelled = written(ch)
+
+            if spelled.is_err()
+                return fail(code: "nul", msg: "no escape writes a NUL")
+            out @ out.push(spelled.must())
+            i @ i + ch.len()
+
+    if holes || braced
+        return ok("f\"" + out.join("") + "\"")
+    return ok("\"" + out.join("") + "\"")
+
+# Past the line end at `at`: a `\r\n` is one, as JavaScript reads it.
+function past_line_end(text: str, at: i64) -> i64
+    if text[at] == '\r' && at + 1 < text.len() && text[at + 1] == '\n'
+        return at + 2
+    return at + 1
+
+# One character of a template's text as a string writes it: a tab `\t`, one a
+# string refuses written as itself by its code (`raw_chars`), any other as
+# itself, and a NUL not at all.
+function written(ch: str) -> str?
+    code = shown_char.code_point(ch)
+
+    if code == 0
+        return fail(code: "nul", msg: "no escape writes a NUL")
+
+    if code == 9
+        return ok("\\t")
+
+    if raw_chars.written_by_code(code)
+        return ok(raw_chars.escaped(code))
+    return ok(ch)
+
+# Where the `}` closing a hole whose code begins at `at` stands, or -1 where
+# its code is empty or holds a brace, a backtick, a `'` or a line end, which
+# an `f"…"` hole would not read as JavaScript does.
+function hole_end(text: str, at: i64, last: i64) -> i64
+    i: i64 @ at
+
+    while i < last
+        b = text[i]
+
+        if b == '}'
+            if i == at
+                return -1
+            return i
+
+        if b == '{' || b == '`' || b == '\'' || b == '\n' || b == '\r'
+            return -1
+
+        if b == '"'
+            close = backtick_strings.quote_end(text, at: i, limit: last)
+
+            if close < 0
+                return -1
+            i @ close
+        else
+            i @ i + 1
+
+    return -1
+
+## Tests
+
+# The template a backtick at the start of `text` opens, told, or nothing.
+function told_at_start(text: str) -> diag.Diagnostic?
+    close = backtick_strings.template_close(text, at: 0, hole: false)
+
+    if close < 0
+        return fail(code: "none", msg: "no template")
+    return ok(template(text, from: 0, to: close))
+
+test "a template literal is told once by name, its f literal a guess"
+    d = told_at_start("`ключ${x}` + 1").must()
+    assert d.span == token.Span(start: 0, end: 14)
+    assert d.message == "`` `ключ${x}` `` is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f\"…\"` literal: `f\"ключ{x}\"`"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].replacement == "f\"ключ{x}\""
+    assert d.fixes[0].certainty == .guess
+    assert backtick_strings.is_template(d)
+
+test "a string in backticks is told as one, its quotes and braces written as a string writes them"
+    plain = told_at_start("`say \"hi\"`").must()
+    assert plain.fixes[0].replacement == "\"say \\\"hi\\\"\""
+    assert plain.message == "`` `say \"hi\"` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes: `\"say \\\"hi\\\"\"`"
+    assert backtick_strings.is_template(plain)
+
+    # A brace is text in either language, doubled where `f` writes it as
+    # text whatever names are in scope, `hole_without_f` refusing `"{b}"`
+    # where `b` is one.
+    braced = told_at_start("`a {zz}`").must()
+    assert braced.fixes[0].replacement == "f\"a {{zz}}\""
+    assert braced.message == "`` `a {zz}` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes, a brace as text doubled in an `f\"…\"` literal: `f\"a {{zz}}\"`"
+    assert told_at_start("`a{${b}}c\\``").must().fixes[0].replacement == "f\"a{{{b}}}c`\""
+
+    # Nested, a hole's string and an escape the two share go over whole or
+    # not at all; a template nested in a hole has no `f"…"` spelling.
+    assert backtick_strings.template_close("`a${`b${x}`}c` x", at: 0, hole: false) == 14
+    assert told_at_start("`a${`b${x}`}c` x").must().fixes.len() == 0
+    assert told_at_start("`${m[\"k\"]}\\n`").must().fixes[0].replacement == "f\"{m[\"k\"]}\\n\""
+    assert told_at_start("`\\x41`").must().fixes.len() == 0
+    assert told_at_start("`${}`").must().fixes.len() == 0
+
+# Defect 407: over lines, one message quoting its first line and counting
+# its lines, the literal writing each line end `\n`.
+test "a template over lines is told once, its line ends written as a string writes them"
+    two = told_at_start("`v=${x}\r\nand more` + 1").must()
+    assert two.span == token.Span(start: 0, end: 18)
+    assert two.message == "`` `v=${x}… ``, over 2 lines, is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f\"…\"` literal, on one line, a line break in its text written `\\n`: `f\"v={x}\\nand more\"`"
+    assert two.fixes[0].replacement == "f\"v={x}\\nand more\""
+    assert backtick_strings.is_template(two)
+    plain = told_at_start("`\n    a\\\n    b\n`\n").must()
+    assert plain.message == "`` `… ``, over 4 lines, is a string in backticks, which are not part of the language's syntax — a string is written in double quotes, on one line, a line break in its text written `\\n`: `\"\\n    a    b\\n\"`"
+
+    # A hole whose code goes over lines has no spelling; its message is one.
+    hole = told_at_start("`a ${\n    x\n} b`\n").must()
+    assert hole.fixes.len() == 0
+    assert backtick_strings.is_template(hole)
+
+test "a character a string refuses as itself is written as a string writes it"
+    assert told_at_start("`a\tb`").must().fixes[0].replacement == "\"a\\tb\""
+    assert told_at_start("`a\u{1b}b\u{202e}`").must().fixes[0].replacement == "\"a\\u{1b}b\\u{202e}\""
+    nul: [u8] = [96, 97, 0, 98, 96]
+    assert told_at_start(nul.validated_bytes().must()).must().fixes.len() == 0

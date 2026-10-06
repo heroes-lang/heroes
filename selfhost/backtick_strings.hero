@@ -1,43 +1,58 @@
 # A string in backticks, JavaScript's template literal among them, read to
-# its close and told once (defect 391, design.md §4.17: one mistake, one
-# message). Split from `refused_stretch.hero`, which tells the stretches the
-# scanner refuses, along the seam between reading another language's string
-# and telling a run of characters.
+# its close (defect 391, design.md §4.17: one mistake, one message), on its
+# line or over several (defect 407). Split from `refused_stretch.hero`, which
+# tells the stretches the scanner refuses, along the seam between reading
+# another language's string and telling a run of characters; how one is told,
+# and the literal that writes it, are `backtick_told.hero`'s.
 #
-# A backtick opening a string that closes on its line is read to its close
-# as JavaScript reads one, a hole's code holding its own braces, strings and
-# templates, and is told once by name, the `f"…"` or `"…"` that writes it
-# offered as a `guess`: a hole renders its value as `to_str` does, not as
-# JavaScript's `String`, a string in backticks is also Go's raw string and
-# Python 2's `repr`, and the code in a hole is copied as written.
+# A backtick opening a string is read to its close as JavaScript reads one, a
+# hole's code holding its own braces, strings and templates.
 #
 # **A template is read only where this language's own reading agrees on its
 # close**: a `"` in its text opening a string that runs past the closing
-# backtick, or a `#` after a space beginning a comment, leaves the backtick
-# alone, as a stray one before a comment quoting code `` `x` `` must be; and
-# two backticks with nothing between are no template, so a line of 4,000 is
-# one run (`refused_stretch`), where reading each pair as an empty string
-# told 2,000. **Its cost stays linear**: a template is read for `READ` bytes
-# from its backtick and no further, a falsifiable claim that one written on
-# a line is shorter, past which the backtick is told alone, as the scanner
-# told it before; read to the line's end from every backtick, a line of
-# 10,000 `` `${ `` retired 447 billion instructions to `check`, where the
-# base retired 188.
+# backtick or past its own line, a `#` after a space or at a line's start
+# beginning a comment, or the closing backtick written as a character,
+# `'`'`, leaves the backtick alone, as a stray one before a comment quoting
+# code `` `x` `` must be; and two backticks with nothing between are no
+# template, so a line of 4,000 is one run (`refused_stretch`), where reading
+# each pair as an empty string told 2,000.
+#
+# **Over lines it is read only where the lines it holds are no program's**
+# (defect 407): no line in it opens a declaration at column 0
+# (`next_line.opens_a_declaration`), and the line it closes on goes on as
+# JavaScript reads one, every backtick after its close opening a template
+# that closes on that line. So a stray backtick, or one never closed, does
+# not take the lines below it to the next backtick it meets, which opens a
+# template of its own: `` x = `oops `` above `` print(`y`) `` stays two
+# messages, each true, where one template would take the line between and
+# leave `` `) `` behind it. In a hole of an `f"…"` literal (`hole`) the line
+# goes on as that literal, whose text no reading here follows, so there no
+# backtick may stand after the close. The lexer reads a line at a time, and
+# no state carries a template from one line to the next: one read over lines
+# moves the cursor past them, as a block comment `/* … */` over lines does
+# (`comment_habit.comment_end`), their margins its text, and a hole open on
+# the line it opens on stays open on the line it closes on.
+#
+# **Its cost stays linear**: a template is read for `READ` bytes from its
+# backtick and no further, the rest of the line it closes on included, a
+# falsifiable claim that one written in a program is shorter, past which the
+# backtick is told alone, as the scanner told it before; read to the line's
+# end from every backtick, a line of 10,000 `` `${ `` retired 447 billion
+# instructions to `check`, where the base retired 188.
 #
 # | entry | called by |
 # |---|---|
 # | `template_close` | `refused_stretch.told`, `refused_stretch.refused_and_seen` |
-# | `template` | `refused_stretch.told` |
 # | `is_template` | `refused_runs.gathered` |
+# | `quote_end`, `TEMPLATE_SAID`, `BACKTICKS_SAID` | `backtick_told` |
 
-use token
 use diag
 use bytes
 use literals
-use escape_readings
+use next_line
 
 # How a template's message goes on from its quoted text, the one place both
-# are written and read (`template`, `is_template`).
+# are written and read (`backtick_told.template`, `is_template`).
 constant TEMPLATE_SAID: str
     " is JavaScript's template literal, and backticks are not part of the language's syntax"
 
@@ -49,65 +64,83 @@ constant READ: i64
     512
 
 # Past the backtick closing a template that opens at `at`, where it holds
-# something and both readings agree on its close, or -1.
-function template_close(text: str, at: i64) -> i64
+# something and both readings agree on its close, or -1. One that closes on a
+# line below its own is read only where `over_lines` holds, `hole` saying
+# whether it opens in a hole of an `f"…"` literal.
+function template_close(text: str, at: i64, hole: bool) -> i64
     if text[at] != '`'
         return -1
-    close = template_end(text, at: at)
+    limit = bound(text, at: at)
+    close = template_end(text, at: at, limit: limit)
 
     if close <= at + 2 || !agreed(text, from: at + 1, to: close - 1)
         return -1
+
+    if !spans_lines(text, from: at, to: close)
+        return close
+
+    if !over_lines(text, from: at, to: close, limit: limit, hole: hole)
+        return -1
     return close
 
-# Whether `d` tells a template, as `template` writes one.
+# Whether `d` tells a template, as `backtick_told.template` writes one.
 function is_template(d: diag.Diagnostic) -> bool
     if d.code != "unexpected_character"
         return false
     return !bytes.rfind(text: d.message, needle: TEMPLATE_SAID).is_err() || !bytes.rfind(text: d.message, needle: BACKTICKS_SAID).is_err()
 
+# Where the reading of a template from `at` stops: `READ` bytes on, or the
+# text's end.
+function bound(text: str, at: i64) -> i64
+    if at + READ > text.len()
+        return text.len()
+    return at + READ
+
 # Past the backtick that closes the one opening at `at`, read as JavaScript
-# reads a template on one line, or -1 where the line or `READ` ends first:
-# in its text a `\` takes the character after it and `${` opens a hole; in a
-# hole's code a `{` opens and a `}` closes, the last closing the hole, a `"`
-# or a `'` opens a string to its own quote, and a backtick a template of its
-# own. `open` holds, innermost last, 0 for a template's text and the braces
-# open plus one for a hole's code.
-function template_end(text: str, at: i64) -> i64
-    open: [i64] @ [0]
+# reads a template, or -1 where `limit` comes first: in its text a `\` takes
+# the character after it and `${` opens a hole; in a hole's code a `{` opens
+# and a `}` closes, the last closing the hole, a `"` or a `'` opens a string
+# to its own quote on its line, and a backtick a template of its own. A line
+# end is text, and space in a hole's code. `top` is where the reading stands,
+# 0 in a template's text and the braces open plus one in a hole's code, and
+# `open` what encloses it, innermost last, so that a byte read asks a local
+# and not the array: read over lines, a template is read for up to `READ`
+# bytes from every backtick that opens none.
+function template_end(text: str, at: i64, limit: i64) -> i64
+    open: [i64] @ []
+    top: i64 @ 0
     i: i64 @ at + 1
-    limit: i64 @ at + READ
 
-    if limit > text.len()
-        limit @ text.len()
-
-    while i < limit && !literals.ends_line(text, at: i)
+    while i < limit
         b = text[i]
-        top = open[open.len() - 1]
 
         if top == 0 && b == '\\'
             i @ i + 2
         else if top == 0 && b == '`'
-            open @ open.slice(from: 0, to: open.len() - 1)
-
             if open.len() == 0
                 return i + 1
+            top @ open[open.len() - 1]
+            open @ open.slice(from: 0, to: open.len() - 1)
             i @ i + 1
         else if top == 0 && b == '$' && i + 1 < text.len() && text[i + 1] == '{'
-            open @ open.push(1)
+            open @ open.push(0)
+            top @ 1
             i @ i + 2
         else if top == 0
             i @ i + 1
         else if b == '{'
-            open[open.len() - 1] @ top + 1
+            top @ top + 1
             i @ i + 1
         else if b == '}' && top == 1
+            top @ open[open.len() - 1]
             open @ open.slice(from: 0, to: open.len() - 1)
             i @ i + 1
         else if b == '}'
-            open[open.len() - 1] @ top - 1
+            top @ top - 1
             i @ i + 1
         else if b == '`'
-            open @ open.push(0)
+            open @ open.push(top)
+            top @ 0
             i @ i + 1
         else if b == '"' || b == '\''
             i @ quote_end(text, at: i, limit: limit)
@@ -137,9 +170,12 @@ function quote_end(text: str, at: i64, limit: i64) -> i64
 
 # Whether this language reads the text between a template's backticks, from
 # `from` up to the closing one at `to`, as ending where JavaScript does: no
-# `"` in it opens a string running past `to`, and no `#` after a space or a
-# tab begins a comment. A `"` closing before `to` is a string both read.
+# `"` in it opens a string running past `to` or its own line, no `#` after a
+# space, a tab or a line end begins a comment, and the closing backtick is
+# not a character, `'`'`. A `"` closing before `to` is a string both read.
 function agreed(text: str, from: i64, to: i64) -> bool
+    if text[to - 1] == '\'' && to + 1 < text.len() && text[to + 1] == '\''
+        return false
     i: i64 @ from
 
     while i < to
@@ -151,186 +187,114 @@ function agreed(text: str, from: i64, to: i64) -> bool
             if close < 0
                 return false
             i @ close
-        else if b == '#' && i > from && (text[i - 1] == ' ' || text[i - 1] == '\t')
+        else if b == '#' && i > from && (text[i - 1] == ' ' || text[i - 1] == '\t' || text[i - 1] == '\n')
             return false
         else
             i @ i + 1
 
     return true
 
-# The template from `from` to past its close, told: named for what it is,
-# with the literal that writes it offered as a guess where its text and
-# holes go over whole.
-function template(text: str, from: i64, to: i64) -> diag.Diagnostic
-    span = token.Span(start: from, end: to)
-    written = text.slice(from: from, to: to)
-    holes = holds_a_hole(text, from: from, to: to)
-    shown = escape_readings.quoted(written)
-    rewritten = rewritten_as(text, from: from, to: to, holes: holes)
-    message: str @ shown + BACKTICKS_SAID + " — a string is written in double quotes"
+# Whether a line end stands between `from` and `to`.
+function spans_lines(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from
 
-    if holes
-        message @ shown + TEMPLATE_SAID + " — a value goes into a string through a hole of an `f\"…\"` literal"
-    else if !rewritten.is_err() && rewritten.must().len() > 0 && rewritten.must()[0] == 'f'
-        message @ message + ", a brace as text doubled in an `f\"…\"` literal"
-
-    if !rewritten.is_err()
-        message @ message + ": `" + rewritten.must() + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unexpected_character", message: message, span: span)
-
-    if !rewritten.is_err()
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "write it as `" + rewritten.must() + "`", replacement: rewritten.must(), span: span, certainty: .guess)
-        )
-    return d
-
-# Whether the template from `from` holds a `${` in its own text.
-function holds_a_hole(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from + 1
-
-    while i < to - 1
-        if text[i] == '\\'
-            i @ i + 2
-        else if text[i] == '$' && text[i + 1] == '{'
+    while i < to
+        if text[i] == '\n'
             return true
-        else
-            i @ i + 1
+        i @ i + 1
 
     return false
 
-# The template from `from` to `to` as this language writes it, or a failure
-# where it has no such spelling: `f"…"` where it holds a hole or a brace,
-# each brace of its text doubled, since `"a {b}"` is `hole_without_f` where
-# `b` is a name in scope and `f"a {{b}}"` writes the text JavaScript meant
-# whatever is; `"…"` where it holds neither; a `"` escaped, a backtick, `$`
-# or `'` escaped in JavaScript written as itself, an escape the two
-# languages share kept, and a hole's code copied as written. Only a template
-# whose holes hold no template, character, brace or nothing goes over, and
-# no escape but those.
-function rewritten_as(text: str, from: i64, to: i64, holes: bool) -> str?
-    out: [str] @ []
-    braced: bool @ false
-    i: i64 @ from + 1
-    last = to - 1
+# Whether a template over lines, from its backtick at `from` to past its close
+# at `to`, holds no line a declaration opens at column 0, and the line it
+# closes on goes on as JavaScript reads one (`goes_on`).
+function over_lines(text: str, from: i64, to: i64, limit: i64, hole: bool) -> bool
+    i: i64 @ from
 
-    while i < last
+    while i < to
+        if text[i] == '\n' && next_line.opens_a_declaration(text, at: i + 1)
+            return false
+        i @ i + 1
+
+    return goes_on(text, from: to, limit: limit, hole: hole)
+
+# Whether the line a template closes on goes on from `from`, past its close,
+# to its end or a comment before `limit`, as JavaScript reads it: a backtick
+# opening a template that closes on the line, a `"` or a `'` a string that
+# closes on it, and anything else as itself. In a hole of an `f"…"` literal
+# it goes on as that literal, and holds no backtick to its end.
+function goes_on(text: str, from: i64, limit: i64, hole: bool) -> bool
+    i: i64 @ from
+
+    while i < limit
         b = text[i]
 
-        if b == '\\'
-            if i + 1 >= last
-                return fail(code: "escape", msg: "a backslash ends the template")
-            next = text[i + 1]
+        if literals.ends_line(text, at: i) || !hole && b == '#' && (text[i - 1] == ' ' || text[i - 1] == '\t')
+            return true
 
-            if next == '`' || next == '$' || next == '\''
-                out @ out.push(text.slice(from: i + 1, to: i + 2))
-            else if next == 'n' || next == 't' || next == 'r' || next == '\\' || next == '"'
-                out @ out.push(text.slice(from: i, to: i + 2))
-            else
-                return fail(code: "escape", msg: "an escape this language does not share")
-            i @ i + 2
-        else if b == '$' && text[i + 1] == '{'
-            close = hole_end(text, at: i + 2, last: last)
+        if b == '`' && hole
+            return false
 
-            if close < 0
-                return fail(code: "hole", msg: "a hole this language cannot hold")
-            out @ out.push("{" + text.slice(from: i + 2, to: close) + "}")
-            i @ close + 1
-        else if b == '"'
-            out @ out.push("\\\"")
+        if hole
             i @ i + 1
-        else if b == '{' || b == '}'
-            out @ out.push(text.slice(from: i, to: i + 1).repeat(2))
-            braced @ true
-            i @ i + 1
-        else
-            ch = bytes.char_at(text, i)
-            out @ out.push(ch)
-            i @ i + ch.len()
+        else if b == '`'
+            close = template_end(text, at: i, limit: limit)
 
-    if holes || braced
-        return ok("f\"" + out.join("") + "\"")
-    return ok("\"" + out.join("") + "\"")
-
-# Where the `}` closing a hole whose code begins at `at` stands, or -1 where
-# its code is empty or holds a brace, a backtick or a `'`, which an `f"…"`
-# hole would not read as JavaScript does.
-function hole_end(text: str, at: i64, last: i64) -> i64
-    i: i64 @ at
-
-    while i < last
-        b = text[i]
-
-        if b == '}'
-            if i == at
-                return -1
-            return i
-
-        if b == '{' || b == '`' || b == '\''
-            return -1
-
-        if b == '"'
-            close = quote_end(text, at: i, limit: last)
-
-            if close < 0
-                return -1
+            if close < 0 || spans_lines(text, from: i, to: close)
+                return false
             i @ close
+        else if b == '"' || b == '\''
+            i @ quote_end(text, at: i, limit: limit)
+
+            if i < 0
+                return false
         else
             i @ i + 1
 
-    return -1
+    return limit == text.len()
 
 ## Tests
 
-# The template a backtick at the start of `text` opens, told, or nothing.
-function told_at_start(text: str) -> diag.Diagnostic?
-    close = template_close(text, at: 0)
-
-    if close < 0
-        return fail(code: "none", msg: "no template")
-    return ok(template(text, from: 0, to: close))
-
-test "a template literal is told once by name, its f literal a guess"
-    d = told_at_start("`ключ${x}` + 1").must()
-    assert d.span == token.Span(start: 0, end: 14)
-    assert d.message == "`` `ключ${x}` `` is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f\"…\"` literal: `f\"ключ{x}\"`"
-    assert d.fixes.len() == 1
-    assert d.fixes[0].replacement == "f\"ключ{x}\""
-    assert d.fixes[0].certainty == .guess
-    assert is_template(d)
-
-test "a string in backticks is told as one, its quotes and braces written as a string writes them"
-    plain = told_at_start("`say \"hi\"`").must()
-    assert plain.fixes[0].replacement == "\"say \\\"hi\\\"\""
-    assert plain.message == "`` `say \"hi\"` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes: `\"say \\\"hi\\\"\"`"
-    assert is_template(plain)
-
-    # A brace is text in either language, doubled where `f` writes it as
-    # text whatever names are in scope, `hole_without_f` refusing `"{b}"`
-    # where `b` is one.
-    braced = told_at_start("`a {zz}`").must()
-    assert braced.fixes[0].replacement == "f\"a {{zz}}\""
-    assert braced.message == "`` `a {zz}` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes, a brace as text doubled in an `f\"…\"` literal: `f\"a {{zz}}\"`"
-    assert told_at_start("`a{${b}}c\\``").must().fixes[0].replacement == "f\"a{{{b}}}c`\""
-
-    # Nested, a hole's string and an escape the two share go over whole or
-    # not at all; a template nested in a hole has no `f"…"` spelling.
-    assert template_close("`a${`b${x}`}c` x", at: 0) == 14
-    assert told_at_start("`a${`b${x}`}c` x").must().fixes.len() == 0
-    assert told_at_start("`${m[\"k\"]}\\n`").must().fixes[0].replacement == "f\"{m[\"k\"]}\\n\""
-    assert told_at_start("`\\x41`").must().fixes.len() == 0
-    assert told_at_start("`${}`").must().fixes.len() == 0
-
 test "a backtick this language reads as a stray one opens no template"
-    # No close on the line, a comment after a space, a string past the
-    # close, nothing between two.
-    for text in ["` x", "` # see `x`", "` \"a`b\"", "``x"]
-        assert template_close(text, at: 0) == -1
+    # No close, a comment after a space, a string past the close, nothing
+    # between two, and a close written as a character.
+    for text in ["` x", "` # see `x`", "` \"a`b\"", "``x", "` c = '`'"]
+        assert template_close(text, at: 0, hole: false) == -1
 
     # A `#` with no space before it is the template's own.
-    assert template_close("`#${id}`", at: 0) == 8
+    assert template_close("`#${id}`", at: 0, hole: false) == 8
 
-test "a template is read for its bound and no further"
+test "a template over lines is read where its lines are no program's"
+    assert template_close("`a\nb` + 1\n", at: 0, hole: false) == 5
+    assert template_close("`a\r\n    b`)\n", at: 0, hole: false) == 10
+    assert template_close("`a ${\n    x\n} b`\n", at: 0, hole: false) == 16
+
+    # In a hole of an `f"…"` literal its line goes on as that literal, a
+    # backtick after the close refused there.
+    assert template_close("`a\nb`}\" # `\n", at: 0, hole: true) == -1
+    assert template_close("`a\nb`}\" # \n", at: 0, hole: true) == 5
+    assert template_close("`a\nb`}\" # \n", at: 0, hole: false) == -1
+
+    # Not over a comment's line, a string's or a declaration's at column 0,
+    # nor where the line it closes on leaves a backtick open.
+    stray = [
+        "`a\n# see `x`\n"
+        "`a\n    # see `x`\n"
+        "`a\ns = \"`\"\n"
+        "`a\nfunction b()\n    `c\n"
+        "`a\n    print(`y`)\n"
+    ]
+
+    for text in stray
+        assert template_close(text, at: 0, hole: false) == -1
+
+    # A template, a string and a comment on the line it closes on are read.
+    assert template_close("`a\nb`, `c`, \"`\") # `\n", at: 0, hole: false) == 5
+
+test "a template is read for its bound and no further, the line it closes on included"
     inside = "`" + "a".repeat(READ.to_u64().must() - 2) + "`"
-    assert template_close(inside, at: 0) == READ
+    assert template_close(inside, at: 0, hole: false) == READ
     past = "`" + "a".repeat(READ.to_u64().must() - 1) + "`"
-    assert template_close(past, at: 0) == -1
+    assert template_close(past, at: 0, hole: false) == -1
+    cut = "`a\nb`" + " ".repeat(READ.to_u64().must()) + "x\n"
+    assert template_close(cut, at: 0, hole: false) == -1
