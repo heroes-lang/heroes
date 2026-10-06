@@ -1,0 +1,54 @@
+# Defect 382, 2026-10-06. A `constant` of an array is a function of no
+# arguments, and every read of it builds the array again from its literal;
+# the literal was built by one copying push per element, n+1 blocks and
+# n(n+1)/2 element copies, so a million reads of 32 elements retired 56.9
+# billion instructions. An array literal is now one block sized to it, each
+# element copied in where it lies. Each constant below is read inside a loop,
+# one of each element kind: numbers, counted strings, arrays of arrays,
+# variant cases, an empty one, and an array literal written in a loop's body
+# rather than in a constant. The output is the values, and the program
+# reaching the end of `main` is the runtime's own count of the blocks: one
+# reference too many or too few in the literal and it aborts there.
+
+variant Shape
+    dot
+    line
+        n: i64
+
+constant DIGITS: [i64]
+    [3, 1, 4, 1, 5, 9, 2, 6]
+
+constant WORDS: [str]
+    ["ziggy", "stardust", "", "mars"]
+
+constant GRID: [[i64]]
+    [[1, 2], [], [3, 4, 5]]
+
+constant SHAPES: [Shape]
+    [.dot, .line(n: 7), .dot]
+
+constant NONE: [i64]
+    []
+
+function measure(s: Shape) -> i64
+    return match s
+        .dot    => 1
+        .line l => l.n
+
+function main()
+    total: i64 @ 0
+    letters: i64 @ 0
+    cells: i64 @ 0
+    lengths: i64 @ 0
+    at: i64 @ 0
+
+    while at < 1000
+        total @ total + DIGITS[at % 8] + NONE.len()
+        letters @ letters + WORDS[at % 4].len()
+        cells @ cells + GRID[at % 3].len() + measure(SHAPES[at % 3])
+        here = [at, at + 1, at + 2]
+        lengths @ lengths + here.len() + here[2] - here[0]
+        at @ at + 1
+
+    print(total, " ", letters, " ", cells, " ", lengths)
+    print(WORDS[1], " ", GRID[2][2], " ", NONE.len())

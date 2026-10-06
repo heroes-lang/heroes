@@ -141,18 +141,14 @@ bb0:
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t7 = hero_array_new(&hero_desc_f64, 2);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t5);
+    hero_array_push_owned(&t7, &t5);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
-      hero_array_decref(t7); t7 = grown; }
-#line 17 "tests/golden/run/abort-sort-nan.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t6);
-#line 17 "tests/golden/run/abort-sort-nan.hero"
-      hero_array_decref(t7); t7 = grown; }
+    hero_array_push_owned(&t7, &t6);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t18 = h2_own2;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h2_own2 = t7;
-#line 156 "abortsortnan.c"
+#line 152 "abortsortnan.c"
     hero_array_decref(t18);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t8 = hero_array_sort(t7);
@@ -160,7 +156,7 @@ bb0:
     t19 = h3_own3;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h3_own3 = t8;
-#line 164 "abortsortnan.c"
+#line 160 "abortsortnan.c"
     hero_array_decref(t19);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t9 = INT64_C(0);
@@ -179,22 +175,16 @@ bb0:
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t14 = hero_array_new(&hero_desc_f64, 3);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-    { HeroArrayHeader *grown = hero_array_push(t14, &t11);
+    hero_array_push_owned(&t14, &t11);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-      hero_array_decref(t14); t14 = grown; }
+    hero_array_push_owned(&t14, &t12);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-    { HeroArrayHeader *grown = hero_array_push(t14, &t12);
-#line 18 "tests/golden/run/abort-sort-nan.hero"
-      hero_array_decref(t14); t14 = grown; }
-#line 18 "tests/golden/run/abort-sort-nan.hero"
-    { HeroArrayHeader *grown = hero_array_push(t14, &t13);
-#line 18 "tests/golden/run/abort-sort-nan.hero"
-      hero_array_decref(t14); t14 = grown; }
+    hero_array_push_owned(&t14, &t13);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t20 = h4_own4;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h4_own4 = t14;
-#line 198 "abortsortnan.c"
+#line 188 "abortsortnan.c"
     hero_array_decref(t20);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t15 = hero_array_sort(t14);
@@ -202,7 +192,7 @@ bb0:
     t21 = h5_own5;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h5_own5 = t15;
-#line 206 "abortsortnan.c"
+#line 196 "abortsortnan.c"
     hero_array_decref(t21);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t16 = INT64_C(0);
@@ -212,16 +202,16 @@ bb0:
     hero_print_f64(t17);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     hero_print_end();
-#line 216 "abortsortnan.c"
+#line 206 "abortsortnan.c"
     hero_array_decref(h2_own2);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-#line 219 "abortsortnan.c"
+#line 209 "abortsortnan.c"
     hero_array_decref(h3_own3);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-#line 222 "abortsortnan.c"
+#line 212 "abortsortnan.c"
     hero_array_decref(h4_own4);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-#line 225 "abortsortnan.c"
+#line 215 "abortsortnan.c"
     hero_array_decref(h5_own5);
     return;
 }

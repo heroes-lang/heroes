@@ -2,7 +2,7 @@
 # instruction writes (design.md Part 5, §4.10; defect 230, 2026-10-03).
 #
 # The ownership pass gives such a load a reference of its own
-# (`ir/own.hero`; `ir/place_store.hero`'s `load_survives_write` says why:
+# (`ir/own.hero`; `load_survives_write` below says why:
 # once the place store makes counts honest, the header under a borrowed load
 # dies at the write). It asked that question of every counted load, a walk
 # from the load to the end of its block, so a block of N loads cost N walks
@@ -15,9 +15,18 @@
 # the second carries each root's nearest write below.
 #
 # What an instruction writes is read in ONE place, `roots_written`, which
-# `place_store.writes_root` asks too, so the place store's pattern and this
+# `writes_root` below asks for one root, and the place store's walk between a
+# load and its store (`ir/between.hero`) asks too, so the place store and this
 # pass cannot disagree about a writer. `load_survives_write` stays as the
-# per-load reading, and `ir/own.hero`'s test holds this one to it.
+# per-load reading, and `ir/own.hero`'s test holds this one to it; both lived
+# in `ir/place_store.hero` until defect 381 gave that module the walk.
+#
+# **The ownership pass no longer asks `survivors`** (defect 387, 2026-10-06):
+# a read in a later block, or of a field, an element, a payload or a cast of
+# the load, fell outside the one block it reads, and `ir/borrowed.hero`
+# answers the whole function. `survivors` stays as the block-local reading,
+# and `ir/own.hero`'s test holds the lenders to every counted load it says
+# survives.
 
 use ir
 use ir/containers
@@ -49,6 +58,36 @@ function roots_written(f: containers.Function, op: ir.OpKind) -> RootsWritten
         )
 
     return RootsWritten(roots: none, every: false)
+
+# Whether an operation writes no root at all, the answer `roots_written`
+# gives as an empty list and no `every`, asked without building that list:
+# the walks that put the question to every instruction paid an allocation
+# each until defect 387 (`ir/own.hero`'s test holds the two to agree). A
+# call, a construction and an abort write only through an `@` argument, read
+# where it lies in the function's pool; a run past the pool answers that it
+# may write, the loud way.
+function writes_nothing(f: containers.Function, op: ir.OpKind) -> bool
+    return match op
+        .store | .push_owned | .copy_out                                     => false
+        .call cl                                                             => !any_inout(f, over: cl.arguments)
+        .construct con                                                       => !any_inout(f, over: con.arguments)
+        .abort_op ab                                                         => !any_inout(f, over: ab.arguments)
+        .lit | .load | .unary | .binary | .cast | .field | .index | .map_get => true
+        .len_of | .tag_of | .payload | .func_ref | .incref | .decref         => true
+        .decref_slot | .hole | .missing                                      => true
+
+function any_inout(f: containers.Function, over: ir.Run) -> bool
+    at: i64 @ over.start
+
+    while at < over.start + over.length
+        if at < 0 || at >= f.arguments.len()
+            return true
+
+        match f.arguments[at]
+            .inout_arg => return true
+            .value_arg => at @ at + 1
+
+    return false
 
 # The root of every `@` argument a run holds.
 function inout_roots(f: containers.Function, over: ir.Run) -> [i64]
@@ -121,14 +160,65 @@ function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> S
 
             if write >= 0 && last[one.dest.must()].default(0 - 1) > write
                 survive[at] @ true
-        written = roots_written(f, one.op)
 
-        if written.every
-            every @ at
+        if !writes_nothing(f, one.op)
+            written = roots_written(f, one.op)
 
-        for r in written.roots
-            below[r] @ at
+            if written.every
+                every @ at
+
+            for r in written.roots
+                below[r] @ at
 
         at @ at - 1
 
     return Survivors(survive: survive, visits: visits)
+
+# Does this load's value outlive a write to its own root — an `@` call
+# on the slot, a push_owned, a store? Classic lowering never asked: rule
+# 5's synthetic slots kept every accumulator at refcount 2 by accident,
+# so the header under a borrowed load could not die. The place store
+# makes the count honest, which is exactly when the load needs a
+# reference of its own (ir_own gives it one; place-store-c5 case 5 is
+# the program that dies without this). Since defect 230 the ownership
+# pass asks `survival.survivors` of a whole block at once, where this walk
+# per load cost the block's length squared; this reading stays as the
+# oracle `ir/own.hero`'s test holds that one to.
+function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.Term, load_at: i64, root: i64, value: i64) -> bool
+    written: bool @ false
+    at: i64 @ load_at + 1
+
+    while at < insts.len()
+        if written
+            for v in uses.operands(f, insts[at].op)
+                if v == value
+                    return true
+        else
+            if writes_root(f, insts[at].op, root: root)
+                written @ true
+        at @ at + 1
+
+    if written
+        for v in uses.terminator_operands(term)
+            if v == value
+                return true
+    return false
+
+# Could this operation change what the root slot holds? `@` arguments
+# and stores are the only writers the IR has; copy_out is kept out of
+# caution — it writes a caller's place through a parameter. What an
+# operation writes is read in one place, `roots_written`, since
+# defect 230, so the place store and the ownership pass ask the same table.
+function writes_root(f: containers.Function, op: ir.OpKind, root: i64) -> bool
+    if writes_nothing(f, op)
+        return false
+    written = roots_written(f, op)
+
+    if written.every
+        return true
+
+    for one in written.roots
+        if one == root
+            return true
+
+    return false

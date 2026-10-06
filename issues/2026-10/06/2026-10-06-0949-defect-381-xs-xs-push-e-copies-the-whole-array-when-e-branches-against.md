@@ -3,7 +3,7 @@ kind: defect
 area: ir
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 805a6974f55ce1c24cda9c2e5cfb133530d734e6
 github: none
 ---
 
@@ -29,3 +29,5 @@ github: none
             print(fill("ab".repeat(20000)))
 
     `place_store.hero`'s own header names the shape it keeps classic on purpose, *anything that could mutate p while the pushed value is computed (`f(@p)` in an argument, a block re-entering p)*; a branch to an abort or a short circuit writes nothing, so what the repair must keep is that reason, not the one-block premise standing in for it.
+
+    Repaired at `805a6974`, 2026-10-06 (lane b12-ir12), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The title's closing read `*grows in place***` until then, which `records/lists` refused (26 passed and 1 failed at 10:51 on the lane's tree, this file as it was filed); the italic is written `_grows in place_` since, and `records` reads 27 and 0.

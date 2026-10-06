@@ -1,0 +1,230 @@
+# What can run between two points of a function: whether an instruction that
+# may write a root can execute after one instruction and before another
+# (design.md §4.10, Part 10 step 6; defect 381, 2026-10-06).
+#
+# The place store (`ir/place_store.hero`) asks it of `p @ p.push(v)`: the
+# load of `p` and the store into `p` stand at two points, and the rewrite is
+# sound only where nothing writes `p` while `v` is computed. Until defect 381
+# it asked for the two in ONE block instead, which stood in for that reason:
+# `.must()`, `.default()`, `?`, `&&` and `||` in `v` open blocks between the
+# load and the store without writing anything, and the push copied the whole
+# array at each of them.
+#
+# The answer is a walk of the edges BACKWARDS from the later point's block,
+# stopping at the earlier one's. A path from the earlier point to the later
+# runs the rest of the earlier block, then blocks that reach the later block
+# without passing the earlier one (passing it would run the earlier
+# instruction again, and the path would start over there), then the later
+# block up to its point. The walk finds exactly those blocks, so it costs
+# the size of what lies between and not of the function.
+#
+# Three answers are the loud one, `true`, because the walk would otherwise
+# rest on a premise about the world rather than on the function in hand
+# (`.claude/rules/module-shape.md`):
+# - the walk reaches the entry block: a path arrives at the later point
+#   without running the earlier one, which then does not dominate it;
+# - the later block reaches itself without passing the earlier one: a path
+#   runs the later block whole, its own writes included, before arriving;
+# - two points of one block in the wrong order.
+
+use token
+use ir
+use ir/containers
+use ir/graph
+use ir/survival
+
+# Whether some instruction that may write `root` can run after instruction
+# `from_at` of block `from_block` and before instruction `to_at` of block
+# `to_block`. `into` is `graph.jumps_into` of the function's blocks, computed
+# once by the caller for every question it asks of one function.
+function written(f: containers.Function, into: graph.Edges, root: i64, from_block: i64, from_at: i64, to_block: i64, to_at: i64) -> bool
+    if from_block == to_block
+        if from_at >= to_at
+            return true
+        return writes_in(f, block: from_block, from: from_at + 1, to: to_at, root: root)
+
+    if to_block == 0
+        return true
+
+    # The blocks wholly between, in the order the walk found them.
+    found: [i64] @ [to_block]
+    seen: {i64: bool} @ {}
+    looped: bool @ false
+    next: i64 @ 0
+
+    while next < found.len()
+        here = found[next]
+        next @ next + 1
+
+        for before in sources(into, block: here)
+            if before == to_block
+                looped @ true
+            else if before != from_block && !seen[before].default(false)
+                if before == 0
+                    return true
+                seen[before] @ true
+                found @ found.push(before)
+
+    at: i64 @ 1
+
+    while at < found.len()
+        whole = found[at]
+
+        if writes_in(f, block: whole, from: 0, to: f.blocks[whole].insts.len(), root: root)
+            return true
+        at @ at + 1
+
+    head: i64 @ to_at
+
+    if looped
+        head @ f.blocks[to_block].insts.len()
+
+    if writes_in(f, block: to_block, from: 0, to: head, root: root)
+        return true
+    return writes_in(f, block: from_block, from: from_at + 1, to: f.blocks[from_block].insts.len(), root: root)
+
+# The blocks whose terminators jump into `block`.
+function sources(into: graph.Edges, block: i64) -> [i64]
+    if block < 0 || block + 1 >= into.first.len()
+        return []
+    return into.targets.slice(from: into.first[block], to: into.first[block + 1])
+
+# Whether an instruction from `from` up to `to` (excluded) of one block may
+# write the root. `survival.writes_root` reads the one table of what an
+# operation writes, which the ownership pass reads too.
+function writes_in(f: containers.Function, block: i64, from: i64, to: i64, root: i64) -> bool
+    at: i64 @ from
+
+    while at < to
+        if survival.writes_root(f, f.blocks[block].insts[at].op, root: root)
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+# A function of the blocks the terminators and bodies give, one each. Its one
+# argument is `@` slot 0, which a call naming it writes.
+function blocks_of(terms: [ir.Term], bodies: [[ir.Inst]]) -> containers.Function
+    blocks: [containers.Block] @ []
+    at: i64 @ 0
+
+    for term in terms
+        blocks @ blocks.push(containers.Block(preds: [], insts: bodies[at], term: term, note: "test"))
+        at @ at + 1
+
+    return containers.Function(
+        name: "t",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: blocks,
+        values: [0, 0],
+        arguments: [.inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)))],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+
+function one(op: ir.OpKind) -> ir.Inst
+    return ir.Inst(dest: fail(code: "none", msg: "void"), op: op, ty: 0, span: token.Span(start: 0, end: 1))
+
+function store_into(root: i64) -> ir.Inst
+    return one(.store(place: ir.Place(root: root, path: ir.Run(start: 0, length: 0)), value: 0))
+
+function quiet() -> ir.Inst
+    return ir.Inst(dest: ok(1), op: .lit(value: .bool_const(value: true)), ty: 0, span: token.Span(start: 0, end: 1))
+
+function asked(f: containers.Function, from_block: i64, from_at: i64, to_block: i64, to_at: i64) -> bool
+    return written(
+        f,
+        graph.jumps_into(f.blocks),
+        root: 0,
+        from_block: from_block,
+        from_at: from_at,
+        to_block: to_block,
+        to_at: to_at
+    )
+
+test "a branch to an abort between the two points writes nothing; a write on the way does"
+    # bb0 holds the earlier point and branches to bb1, the later point's, or
+    # to bb2, which aborts.
+    terms: [ir.Term] = [
+        .branch(cond: 1, then_to: 1, else_to: 2)
+        .return_term(value: fail(code: "none", msg: "bare"))
+        .unreachable
+    ]
+    two: [ir.Inst] = [quiet(), quiet()]
+    assert !asked(blocks_of(terms: terms, bodies: [two, two, two]), from_block: 0, from_at: 0, to_block: 1, to_at: 1)
+
+    # A write to the root after the earlier point, before the later one, in
+    # the abort's block, or to another root: the first two are between.
+    assert asked(
+        blocks_of(terms: terms, bodies: [[quiet(), store_into(0)], two, two]),
+        from_block: 0,
+        from_at: 0,
+        to_block: 1,
+        to_at: 1
+    )
+    assert asked(
+        blocks_of(terms: terms, bodies: [two, [store_into(0), quiet()], two]),
+        from_block: 0,
+        from_at: 0,
+        to_block: 1,
+        to_at: 1
+    )
+    assert !asked(blocks_of(terms: terms, bodies: [two, two, [store_into(0)]]), from_block: 0, from_at: 0, to_block: 1, to_at: 1)
+    assert !asked(blocks_of(terms: terms, bodies: [[quiet(), store_into(3)], two, two]), from_block: 0, from_at: 0, to_block: 1, to_at: 1)
+
+    # Before the earlier point, or at or after the later one, is not between.
+    assert !asked(blocks_of(terms: terms, bodies: [[store_into(0), quiet()], [quiet(), store_into(0)], two]), from_block: 0, from_at: 1, to_block: 1, to_at: 1)
+
+test "a block in the middle is read whole, an @ argument and a copy-out write, and the loud answers stay loud"
+    # bb0 -> bb1 -> bb2, and bb1 is wholly between.
+    terms: [ir.Term] = [.jump(to: 1), .jump(to: 2), .return_term(value: fail(code: "none", msg: "bare"))]
+    two: [ir.Inst] = [quiet(), quiet()]
+    assert !asked(blocks_of(terms: terms, bodies: [two, two, two]), from_block: 0, from_at: 0, to_block: 2, to_at: 1)
+    assert asked(
+        blocks_of(terms: terms, bodies: [two, [store_into(0)], two]),
+        from_block: 0,
+        from_at: 0,
+        to_block: 2,
+        to_at: 1
+    )
+    inout = one(.call(callee: .builtin_fn(at: 0), arguments: ir.Run(start: 0, length: 1), variadic: false))
+    assert asked(blocks_of(terms: terms, bodies: [two, [inout], two]), from_block: 0, from_at: 0, to_block: 2, to_at: 1)
+    assert asked(
+        blocks_of(terms: terms, bodies: [two, [one(.copy_out(param: 5))], two]),
+        from_block: 0,
+        from_at: 0,
+        to_block: 2,
+        to_at: 1
+    )
+
+    # Two points of one block in the wrong order; and the later block run
+    # again before it is reached, bb2 branching back to itself.
+    assert asked(blocks_of(terms: terms, bodies: [two, two, two]), from_block: 1, from_at: 1, to_block: 1, to_at: 0)
+    looping: [ir.Term] = [.jump(to: 1), .jump(to: 2), .branch(cond: 1, then_to: 2, else_to: 1)]
+    assert asked(
+        blocks_of(terms: looping, bodies: [two, two, [quiet(), store_into(0)]]),
+        from_block: 0,
+        from_at: 0,
+        to_block: 2,
+        to_at: 1
+    )
+
+    # bb1 reached from the entry without passing bb2, and the entry as the
+    # later block: the earlier point does not dominate the later one.
+    around: [ir.Term] = [
+        .branch(cond: 1, then_to: 1, else_to: 2)
+        .return_term(value: fail(code: "none", msg: "bare"))
+        .jump(to: 1)
+    ]
+    assert asked(blocks_of(terms: around, bodies: [two, two, two]), from_block: 2, from_at: 0, to_block: 1, to_at: 1)
+    assert asked(blocks_of(terms: around, bodies: [two, two, two]), from_block: 2, from_at: 0, to_block: 0, to_at: 1)
