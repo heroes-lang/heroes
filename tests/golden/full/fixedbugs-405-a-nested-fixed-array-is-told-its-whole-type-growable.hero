@@ -1,0 +1,18 @@
+# Defect 405, 2026-10-06, the whole form of `check/fixedbugs-405-a-nested-
+# fixed-array-outside-a-group-is-told-once.hero`. Symptom: a nested fixed
+# array outside a group was told once per level, and the outermost's note
+# offered a `[T]` read off the type's spelling, which strips the `[N]`s the
+# name ends with and no other: `[i64[2]][3]` was told to become
+# `[[i64[2]]]` and `{str: u8[4]}[2]` to become `[{str: u8[4]}]`, types
+# still refused, each with the inner array's own message beside it. Cause:
+# the sweep asked every type node, and `ffi_errors.hero` read the name.
+# Repair: one message, at the outermost, whose `[T]` comes from the type
+# (`check/fixed_repairs.hero`), every fixed array inside it growable too.
+# This program written as the three notes say checks clean and prints `110`
+# (measured on this Mac).
+
+function main()
+    x: i64[2][3] @ [[1, 2], [3, 4], [5, 6]]  #~ fixed_outside_a_group
+    mixed: [i64[2]][3] @ [[[1, 2]], [[3, 4]], [[5, 6]]]  #~ fixed_outside_a_group
+    keyed: {str: u8[4]}[2] @ [{}, {}]  #~ fixed_outside_a_group
+    print(x[0][0], len(mixed[0]), len(keyed[1]))
