@@ -1,0 +1,1 @@
+no. The cell starts as an all-zero literal written out in full, with no `zero` claim on the record, only because every binding needs a starting value; pthread_mutex_init fills it before any lock or unlock.

@@ -1,0 +1,24 @@
+1 heroes-base base-input real 19.98 user 19.81 sys 0.04 
+1 heroes-r1 base-input real 20.02 user 19.89 sys 0.04 
+1 heroes-a base-input real 19.77 user 19.68 sys 0.04 
+1 heroes-z base-input real 19.85 user 19.75 sys 0.04 
+2 heroes-base base-input real 19.80 user 19.73 sys 0.05 
+2 heroes-r1 base-input real 19.71 user 19.66 sys 0.03 
+2 heroes-a base-input real 19.57 user 19.52 sys 0.03 
+2 heroes-z base-input real 19.59 user 19.54 sys 0.04 
+3 heroes-base base-input real 19.47 user 19.42 sys 0.04 
+3 heroes-r1 base-input real 19.55 user 19.49 sys 0.04 
+3 heroes-a base-input real 19.80 user 19.72 sys 0.05 
+3 heroes-z base-input real 19.81 user 19.72 sys 0.05 
+4 heroes-base base-input real 19.79 user 19.72 sys 0.05 
+4 heroes-r1 base-input real 19.79 user 19.72 sys 0.05 
+4 heroes-a base-input real 19.85 user 19.76 sys 0.05 
+4 heroes-z base-input real 19.79 user 19.70 sys 0.05 
+5 heroes-base base-input real 19.99 user 19.86 sys 0.05 
+5 heroes-r1 base-input real 19.98 user 19.87 sys 0.04 
+5 heroes-a base-input real 19.66 user 19.55 sys 0.04 
+5 heroes-z base-input real 19.77 user 19.65 sys 0.06 
+1 heroes-r1 own-tree real 20.02 user 19.86 sys 0.06 
+2 heroes-r1 own-tree real 19.84 user 19.78 sys 0.05 
+3 heroes-r1 own-tree real 19.83 user 19.77 sys 0.05 
+21:20  up 6 days, 11:31, 1 user, load averages: 2.32 2.58 2.89

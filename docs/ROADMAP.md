@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 99 defects · 0 decisions.** The defects are the open issues whose card
+**Open: 101 defects · 0 decisions.** The defects are the open issues whose card
 says `kind: defect` and the decisions the open ones that say `kind: decision`,
 files of `issues/` since 2026-10-04 (their rules `issues/README.md`); this line
 must equal both.
@@ -26,7 +26,7 @@ against a banner reading 3.
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **6838** on the vendored ranks and **9060** on the reader's own, against a ceiling of **10240**. The milestone spent six rows of `docs/measurements/010-spec-budget-ledger.md`: four in § 13 for what a C call does with a handle (panels 175 to 177, 8270 to 8861 real) and two for where a line breaks inside brackets and ends outside them (panels 180 and 181, 8861 to 9060) |
 | The contract | **7875** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-28 when § Verification gained the author's rule that a lane lives under `.claude/worktrees/` |
-| Records | sittings **179** · journals **62**, numbered files only · milestone pages **52** in `docs/roadmap/milestones/` · measurements **38** · issues **1,708** in `issues/`, 155 open, since 2026-10-04 · questions **461** in `docs/learn/`, 436 open, not issues since 2026-10-05 · `docs/records/book/beats/` **129** |
+| Records | sittings **179** · journals **62**, numbered files only · milestone pages **53** in `docs/roadmap/milestones/` · measurements **38** · issues **1,720** in `issues/`, 163 open, since 2026-10-04 · questions **461** in `docs/learn/`, 436 open, not issues since 2026-10-05 · `docs/records/book/beats/` **129** |
 | Waiting on the author | **panel 189's ratification**, the one item on the decision list (with the critic's two-arm run, about 1.4 to 2.0 USD, the author's to fund or not); batch 8 closed on 2026-10-04, 29 defects, its four platforms green on the closing code, its push to be asked for |
 
 **Re-measured 2026-09-28 at the close, the full net on a compiler built from
@@ -154,7 +154,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 60 | **M-readable-bytes** | done 2026-09-18 | `m-readable-bytes` | [059](journal/059-readable-bytes.md) | a C byte buffer becomes text a program can print: the inbound direction `str` has never had · **§1.11** |
 | 61 | **M-declared-extents** | done 2026-09-21 | `m-declared-extents` | [060](journal/060-declared-extents.md) | how far C may read through a lent address, and what becomes of the pointer afterwards: `counted_by` declares the extent and the emitter checks it against the field's own `sizeof` in C; then the author flipped the default, so a C parameter is taken to KEEP what it is handed and a lend reaches only one declared `lent`; and where no word can reach — C frees the bytes from a callback, or from a later call with no pointer at all — the runtime names the leases that were live. **Seven defects, all closed** · **§1.12**, **§4.19** |
 | 62 | **M-agreed-retention** | done 2026-09-28 | `m-agreed-retention` | [061](journal/061-agreed-retention.md) | one C function, one story about who frees what it is handed: two modules may declare it with contradictory retention marks and the compiler takes both; one declaration cannot carry a contract chosen per call, which is `sqlite3_bind_text`'s three modes; and nothing says a pointer C made is C's to free once. Opened at M-declared-extents's close, because its four carried items had no home a reader would look in · **§1.11**, **§4.19** |
-| 63 | **M-buildable-structs** | scheduled | — | — | a real five-field `utsname` needs 1280 literal zeros, 4312 bytes for a nine-line program, measured and RUN at panel 164. Not a defect, because nothing is broken: what is missing is a way to write *the rest are zero* |
+| 63 | **M-buildable-structs** | scheduled | — | — | a C struct with long arrays is built by naming the fields that matter and ending with `rest: zero`. Panel 178 counted 42 public structs on Darwin, 29 and 23 on the two Linux legs, with an array longer than 8, where the repository has none; today a five-field `utsname` needs 1280 literal zeros (panel 164) · **§1.11**, **§1.12** |
 | 64 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 65 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 66 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |

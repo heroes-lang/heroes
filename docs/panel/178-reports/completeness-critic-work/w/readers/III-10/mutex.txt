@@ -1,0 +1,1 @@
+no. The program fills the storage with zeros, because every binding must start with a value and `rest: zero` is the only way the spec gives to make one, but it calls pthread_mutex_init on that storage before any lock or unlock.

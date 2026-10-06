@@ -1,0 +1,1 @@
+no. The zero-filled record is only the starting value handed to pthread_mutex_init, and lock/unlock run only after init returns 0. It is still built from zeros first, because the spec gives no other way to make a record value.

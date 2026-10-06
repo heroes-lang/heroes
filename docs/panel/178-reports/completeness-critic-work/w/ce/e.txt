@@ -1,0 +1,29 @@
+internal error: compiling the generated C failed:
+mutexinit.c:32:16: warning: '(' and '{' tokens introducing statement expression appear in different macro expansion contexts [-Wcompound-token-split-by-macro]
+   32 | _Static_assert(HERO_RET_RECORD(PTHREAD_MUTEX_INITIALIZER, struct _opaque_pthread_mutex_t), "heroes-ffi-return PTHREAD_MUTEX_INITIALIZER Mutex");
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mutexinit.c:31:70: note: expanded from macro 'HERO_RET_RECORD'
+   31 | #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
+      |                                                                      ^
+mutexinit.c:32:32: note: '{' token is here
+   32 | _Static_assert(HERO_RET_RECORD(PTHREAD_MUTEX_INITIALIZER, struct _opaque_pthread_mutex_t), "heroes-ffi-return PTHREAD_MUTEX_INITIALIZER Mutex");
+      |                                ^~~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/pthread.h:185:35: note: expanded from macro 'PTHREAD_MUTEX_INITIALIZER'
+  185 | #define PTHREAD_MUTEX_INITIALIZER {_PTHREAD_MUTEX_SIG_init, {0}}
+      |                                   ^
+mutexinit.c:32:16: error: statement expression not allowed at file scope
+   32 | _Static_assert(HERO_RET_RECORD(PTHREAD_MUTEX_INITIALIZER, struct _opaque_pthread_mutex_t), "heroes-ffi-return PTHREAD_MUTEX_INITIALIZER Mutex");
+      |                ^
+mutexinit.c:31:70: note: expanded from macro 'HERO_RET_RECORD'
+   31 | #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
+      |                                                                      ^
+mutexinit.c:54:12: error: expected expression
+   54 |     return PTHREAD_MUTEX_INITIALIZER;
+      |            ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/pthread.h:185:35: note: expanded from macro 'PTHREAD_MUTEX_INITIALIZER'
+  185 | #define PTHREAD_MUTEX_INITIALIZER {_PTHREAD_MUTEX_SIG_init, {0}}
+      |                                   ^
+1 warning and 2 errors generated.
+
+the generated C is at build/tu-0c3574e425702402/mutexinit.c
+error: clang refused the generated C

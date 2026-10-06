@@ -1,0 +1,1 @@
+no (the mutex starts as zeroed storage via rest: zero, but pthread_mutex_init runs on it before lock or unlock touches it)

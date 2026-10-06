@@ -1,0 +1,20 @@
+# Critic, panel 178: Z3, the header's own initialiser as a group constant (defect 094 repaired).
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t
+        __sig: i64
+        __opaque: i8[56]
+    constant PTHREAD_MUTEX_INITIALIZER: Mutex
+    constant PTHREAD_RECURSIVE_MUTEX_INITIALIZER: Mutex
+    function pthread_mutex_lock(@m: Mutex) -> i32
+    function pthread_mutex_unlock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ PTHREAD_MUTEX_INITIALIZER
+    print(pthread_mutex_lock(@m))
+    print(pthread_mutex_unlock(@m))
+    r: Mutex @ PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+    print(pthread_mutex_lock(@r))
+    print(pthread_mutex_lock(@r))
+    print(pthread_mutex_unlock(@r))
+    print(pthread_mutex_unlock(@r))
+    print(m == PTHREAD_MUTEX_INITIALIZER)

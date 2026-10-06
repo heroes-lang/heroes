@@ -1,0 +1,14 @@
+extern "uz.h"
+    record Utsname tag utsname
+        sysname: i8[256]
+        nodename: i8[256]
+        release: i8[256]
+        version: i8[256]
+        machine: i8[256]
+    function utsname_zero() -> Utsname
+    function uname(@u: Utsname) -> i32
+
+function main()
+    u: Utsname @ utsname_zero()
+    _ = uname(@u).to_i64().must()
+    print(u.sysname.validated_bytes().must())

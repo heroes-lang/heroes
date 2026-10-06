@@ -1,0 +1,801 @@
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ast.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/ast.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ast.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/ast.hero	2026-09-24 20:41:45
+@@ -157,12 +157,16 @@
+     call
+         callee: i64
+         args: [Arg]
++        # `rest: zero` closing a group record's construction (panel 178 R1):
++        # the words themselves, and no argument, because nothing is passed.
++        rest: token.Span?
+     # `x.f(y)` — UFCS, sugar for `f(x, y)` erased in the frontend (§4.11, Part
+     # 5). Kept here because errors must speak in the syntax written.
+     method
+         receiver: i64
+         name: token.Span
+         args: [Arg]
++        rest: token.Span?
+     # `.plus`, `.num(v: 12)` — a variant case, its type coming from context
+     # (§4.5's ⇐ mode). Named `variant_case` because `case` is a FOREIGN word:
+     # the registry that exists to catch a model reaching for `switch`/`case`
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/rest.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/check/rest.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/rest.hero	1970-01-01 01:00:00
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/check/rest.hero	2026-09-24 20:50:01
+@@ -0,0 +1,123 @@
++# `rest: zero` at a construction (panel 178 R1): which declared field each
++# written argument names, asked of the declaration and the labels alone, so the
++# checker and the lowering read one answer rather than two.
++#
++# The rule is §4.9's with one clause removed and none added: every argument is
++# named, none is repeated, and they come in declared order; what `rest: zero`
++# lifts is only that ALL of them be there, and only for a record a header
++# declares, whose layout is C's and whose zero C already defines.
++
++use token
++use diag
++use ast
++use source
++use resolved
++use data_errors
++
++# One entry per written argument: the field it names, or -1 where it named
++# none in order (the diagnostic says which).
++record Plan
++    fields: [i64]
++    diagnostics: [diag.Diagnostic]
++
++# The words, read off the node that carries them.
++function rest_of(a: ast.Ast, at: i64) -> token.Span?
++    return match a.exprs[at].kind
++        .call cl  => cl.rest
++        .method m => m.rest
++        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fail(
++            code: "none",
++            msg: "no rest"
++        )
++        .name | .hole | .unary | .binary | .field | .field_name | .index => fail(code: "none", msg: "no rest")
++        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => fail(
++            code: "none",
++            msg: "no rest"
++        )
++
++# Whether the callee names a record, which is the one call `rest: zero` closes.
++function names_a_record(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], callee: i64) -> bool
++    match a.exprs[callee].kind
++        .name =>
++            match r.uses[callee]
++                .top t                                    => return is_record(decls[t.at].kind)
++                .local | .builtin | .module | .unresolved => return false
++        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
++        .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => return false
++        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return false
++
++    return false
++
++# `geom.Point(...)`: the receiver names a module and the name after it a record.
++function qualified_record(r: resolved.Resolved, decls: [ast.Decl], receiver: i64, at: i64) -> bool
++    if r.uses[receiver] != .module
++        return false
++
++    match r.uses[at]
++        .top t                                    => return is_record(decls[t.at].kind)
++        .local | .builtin | .module | .unresolved => return false
++
++    return false
++
++function names_rest(names: [str]) -> bool
++    for n in names
++        if n == "rest"
++            return true
++
++    return false
++
++function is_record(kind: ast.DeclKind) -> bool
++    return match kind
++        .record_decl                                                 => true
++        .constant_decl | .function_decl | .variant_decl | .test_decl => false
++
++function plan(a: ast.Ast, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], rest: token.Span, declared_at: str) -> Plan
++    out: Plan @ Plan(fields: [], diagnostics: [])
++    holder = source.span_text(s, decls[decl].name)
++    fields: [ast.Field] @ []
++    in_group: bool @ false
++
++    match decls[decl].kind
++        .record_decl rec =>
++            fields @ rec.fields
++            in_group @ !rec.header.is_err()
++        .constant_decl | .function_decl | .variant_decl | .test_decl => in_group @ false
++
++    names: [str] @ []
++
++    for f in fields
++        names @ names.push(source.span_text(s, f.name))
++
++    if !in_group
++        out.diagnostics @ out.diagnostics.push(
++            data_errors.rest_outside_a_group(holder: holder, declared_at: declared_at, span: rest)
++        )
++    else if names_rest(names)
++        out.diagnostics @ out.diagnostics.push(data_errors.rest_is_a_field(holder: holder, span: rest))
++    next: i64 @ 0
++
++    for arg in given
++        found: i64 @ -1
++
++        if arg.name.is_err()
++            out.diagnostics @ out.diagnostics.push(
++                data_errors.field_unnamed(holder: holder, span: a.exprs[arg.value].span)
++            )
++        else
++            written = source.span_text(s, arg.name.must())
++            at: i64 @ next
++
++            while at < names.len() && found < 0
++                if names[at] == written
++                    found @ at
++                at @ at + 1
++
++            if found < 0
++                out.diagnostics @ out.diagnostics.push(
++                    data_errors.field_out_of_order(holder: holder, written: written, fields: names, span: arg.name.must())
++                )
++            else
++                next @ found + 1
++        out.fields @ out.fields.push(found)
++
++    return out
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/walk.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/check/walk.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/walk.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/check/walk.hero	2026-09-24 20:49:46
+@@ -57,6 +57,7 @@
+ use check/labels
+ use check/generics as check_generics
+ use check/discard
++use check/rest
+ use value_errors
+ use discard_errors
+ use data_errors
+@@ -1281,7 +1282,11 @@
+ # argument bound takes it (panel 105).
+ function dispatch_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, callee: i64, given: [ast.Arg], expected: i64?) -> i64
+     span = a.exprs[at].span
++    closing = rest.rest_of(a, at)
+ 
++    if !closing.is_err() && !rest.names_a_record(a, r, decls, callee)
++        state.push_diagnostic(@c, data_errors.rest_not_a_construction(span: closing.must()))
++
+     callee_is_name = match a.exprs[callee].kind
+         .name                                                                          => true
+         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+@@ -1289,7 +1294,18 @@
+         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
+ 
+     if callee_is_name
+-        direct = named_call(@c, a, r, s, decls, callee: callee, given: given, span: span, expected: expected)
++        direct = named_call(
++            @c,
++            a,
++            r,
++            s,
++            decls,
++            callee: callee,
++            given: given,
++            span: span,
++            expected: expected,
++            closing: closing
++        )
+ 
+         if !direct.is_err()
+             return direct.must()
+@@ -1310,7 +1326,7 @@
+     )
+ 
+ # The named-callee half of the dispatch; fail = fall to the indirect path.
+-function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], span: token.Span, expected: i64?) -> i64?
++function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], span: token.Span, expected: i64?, closing: token.Span?) -> i64?
+     match r.uses[callee]
+         .top t =>
+             match decls[t.at].kind
+@@ -1324,7 +1340,9 @@
+                     return ok(
+                         user_call(@c, a, r, s, decls, decl: t.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span, expected: expected)
+                     )
+-                .record_decl => return ok(construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span))
++                .record_decl => return ok(
++                    construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span, closing: closing)
++                )
+                 .variant_decl =>
+                     name = source.span_text(s, decls[t.at].name)
+                     state.push_diagnostic(@c, contextless_errors.variant_not_callable(name, span))
+@@ -1491,6 +1509,11 @@
+     # comes BEFORE the receiver is synthesised, because a module has no
+     # type, and asking for one is how the qualified form turns into an
+     # unknown name.
++    closing = rest.rest_of(a, at)
++
++    if !closing.is_err() && !rest.qualified_record(r, decls, receiver: receiver, at: at)
++        state.push_diagnostic(@c, data_errors.rest_not_a_construction(span: closing.must()))
++
+     if r.uses[receiver] == .module
+         match r.uses[at]
+             .top t =>
+@@ -1498,7 +1521,17 @@
+                     # geom.Point(x: 3, y: 4) is a CONSTRUCTION (§4.9), not
+                     # a call: routing it through user_call is how the
+                     # emitter ends up asking clang to call a record.
+-                    .record_decl => return construct_record(@c, a, r, s, decls, decl: t.at, given: given, span: span)
++                    .record_decl => return construct_record(
++                        @c,
++                        a,
++                        r,
++                        s,
++                        decls,
++                        decl: t.at,
++                        given: given,
++                        span: span,
++                        closing: closing
++                    )
+                     .function_decl => return user_call(
+                         @c,
+                         a,
+@@ -1848,7 +1881,7 @@
+ 
+ # Point(x: 3, y: 4) — §4.9 makes every field name mandatory, always,
+ # which is why there is no positional form to get wrong.
+-function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], span: token.Span) -> i64
++function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], span: token.Span, closing: token.Span?) -> i64
+     match decls[decl].kind
+         .record_decl rec =>
+             name = source.span_text(s, decls[decl].name)
+@@ -1858,6 +1891,39 @@
+                 expected @ expected.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
+ 
+             declared_at = source.elsewhere(s, here: span.start, there: decls[decl].name.start)
++
++            if !closing.is_err()
++                chosen = rest.plan(
++                    a,
++                    s,
++                    decls,
++                    decl: decl,
++                    given: given,
++                    rest: closing.must(),
++                    declared_at: declared_at
++                )
++
++                for d in chosen.diagnostics
++                    state.push_diagnostic(@c, d)
++
++                index: i64 @ 0
++
++                for arg in given
++                    if chosen.fields[index] < 0
++                        _ = synth(@c, a, r, s, decls, arg.value)
++                    else
++                        check(
++                            @c,
++                            a,
++                            r,
++                            s,
++                            decls,
++                            id: arg.value,
++                            expected: lower.lower_ty(@c, a, r, expected[chosen.fields[index]].ty)
++                        )
++                    index @ index + 1
++
++                return table.intern(@c.out.types, .named(decl: decl))
+             check_named_fields(
+                 @c,
+                 a,
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/data_errors.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/data_errors.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/data_errors.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/data_errors.hero	2026-09-24 20:46:17
+@@ -67,6 +67,51 @@
+     d.notes @ d.notes.push("`" + holder + "` is declared at " + declared_at)
+     return d
+ 
++## `rest: zero` (panel 178 R1)
++
++# A Heroes record has no default values (design.md §4.9), so a field left out of
++# one is `missing_fields`; only the header's struct, whose layout is C's, has a
++# zero C already gives it.
++function rest_outside_a_group(holder: str, declared_at: str, span: token.Span) -> diag.Diagnostic
++    d: diag.Diagnostic @ diag.new_diagnostic(
++        code: "rest_outside_a_group",
++        message: "`rest: zero` fills a record a header declares, and `" + holder + "` is the program's own — build it with every field, named",
++        span: span
++    )
++    d.notes @ d.notes.push("`" + holder + "` is declared at " + declared_at)
++    return d
++
++function rest_not_a_construction(span: token.Span) -> diag.Diagnostic
++    return diag.new_diagnostic(
++        code: "rest_not_a_construction",
++        message: "`rest: zero` closes the construction of a group's record, and this is a call, which takes every argument",
++        span: span
++    )
++
++# The words would say two things where the record has a field called `rest`.
++function rest_is_a_field(holder: str, span: token.Span) -> diag.Diagnostic
++    return diag.new_diagnostic(
++        code: "rest_is_a_field",
++        message: "`" + holder + "` has a field called `rest`, so `rest: zero` could be either — name every field of it",
++        span: span
++    )
++
++# No position says which field an unnamed value is once some may be left out.
++function field_unnamed(holder: str, span: token.Span) -> diag.Diagnostic
++    return diag.new_diagnostic(
++        code: "missing_label",
++        message: "`" + holder + "`'s fields are always named, and with `rest: zero` no position says which one this is",
++        span: span
++    )
++
++# With `rest: zero` the fields written are some of them, still in declared order.
++function field_out_of_order(holder: str, written: str, fields: [str], span: token.Span) -> diag.Diagnostic
++    return diag.new_diagnostic(
++        code: "field_out_of_order",
++        message: "`" + written + "` is not a field of `" + holder + "` after the ones before it — its fields, in order: " + fields.join(", "),
++        span: span
++    )
++
+ # The span is the label's IDENTIFIER — the `:` is not in it — so the
+ # replacement is the bare name. Applying `y:` here produced `y:: 2`, which
+ # the .fixed goldens caught the first time they ran: a certain fix is a
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/emit/container.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/emit/container.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/emit/container.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/emit/container.hero	2026-09-24 20:33:51
+@@ -112,9 +112,7 @@
+ 
+         if !rendered.is_err()
+             base_text @ rendered.must()
+-        return ok(
+-            base_text + "[((uint64_t)(" + i + ") >= UINT64_C(" + fixed_len.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + i + "))]"
+-        )
++        return ok(base_text + checked_subscript(index: i, length: fixed_len))
+     element: i64 @ 0 - 1
+ 
+     match table.get(c.types, containers.value_type(f, base))
+@@ -133,6 +131,11 @@
+         "*(" + spelling.must() + " const *)hero_array_at(" + mangle.value(base) + ", " + mangle.value(index) + ")"
+     )
+ 
++# `[i]` on a `T[N]`, guarded by the compiler: the read above and the write
++# below spell it through here, so the two cannot drift apart.
++function checked_subscript(index: str, length: i64) -> str
++    return "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + index + "))]"
++
+ # xs[i] @ v, and every deeper spelling of it: one unshare per array
+ # step, each writing back at its own level. The walk keeps a C LVALUE
+ # for the place reached so far rather than an address. The last step's
+@@ -197,13 +200,31 @@
+                 # is no element to descend into.
+                 is_map: bool @ false
+                 element: i64 @ 0 - 1
++                fixed_len: i64 @ 0
+ 
+                 match table.get(c.types, ty)
+-                    .map                                                      => is_map @ true
+-                    .array arr                                                => element @ arr.element
++                    .map       => is_map @ true
++                    .array arr => element @ arr.element
++                    .fixed x =>
++                        element @ x.element
++                        fixed_len @ x.length
+                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
+-                    .fixed | .fallible | .function_ty | .named                => is_map @ is_map
++                    .fallible | .function_ty | .named                         => is_map @ is_map
+                     .case_ty | .failure | .generic | .error                   => is_map @ is_map
++
++                # Defect 091: a `T[N]` is C's own array, inside the record
++                # that holds it, so nothing is shared and nothing unshares.
++                # The step is a guarded subscript on the lvalue reached so
++                # far, the same spelling the read uses.
++                if fixed_len > 0
++                    lvalue @ lvalue + checked_subscript(index: mangle.value(ix.value), length: fixed_len)
++                    ty @ element
++
++                    if last
++                        lines @ lines.push(lvalue + " = " + mangle.value(value) + ";")
++                        return ok(lines)
++                    position @ position + 1
++                    continue
+ 
+                 if is_map
+                     if !last
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/emit/storageless.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/emit/storageless.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/emit/storageless.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/emit/storageless.hero	2026-09-24 20:49:45
+@@ -70,6 +70,10 @@
+                                         parts @ parts.push(inner.must())
+                                 .inout_arg => continue
+ 
++                        # An empty one is `rest: zero`'s (ir/zeros.hero): a
++                        # literal of a `T[N]` always has N elements.
++                        if parts.len() == 0
++                            return ok("{0}")
+                         return ok("{" + parts.join(", ") + "}")
+                     .field fl =>
+                         owner = containers.value_type(f, fl.base)
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/grammar_expr.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/grammar_expr.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/grammar_expr.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/grammar_expr.hero	2026-09-24 20:49:45
+@@ -287,9 +287,12 @@
+             base @ after_colon_colon(@c, @a, text, base)
+         else if k == .lparen
+             start = a.exprs[base].span
+-            arguments = call_args(@c, @a, text)
++            given = call_args(@c, @a, text)
+             span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+-            base @ ast.push_expr(@a.exprs, ast.Expr(kind: .call(callee: base, args: arguments), span: span))
++            base @ ast.push_expr(
++                @a.exprs,
++                ast.Expr(kind: .call(callee: base, args: given.args, rest: given.rest), span: span)
++            )
+         else if k == .lbracket
+             _ = cursor.bump(@c)
+             index = parse_expr(@c, @a, text)
+@@ -329,9 +332,12 @@
+     start = a.exprs[base].span
+ 
+     if cursor.at(c, .lparen)
+-        arguments = call_args(@c, @a, text)
++        given = call_args(@c, @a, text)
+         span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+-        return ast.push_expr(@a.exprs, ast.Expr(kind: .method(receiver: base, name: name, args: arguments), span: span))
++        return ast.push_expr(
++            @a.exprs,
++            ast.Expr(kind: .method(receiver: base, name: name, args: given.args, rest: given.rest), span: span)
++        )
+     return ast.push_expr(
+         @a.exprs,
+         ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end))
+@@ -581,7 +587,16 @@
+     arguments: [ast.Arg] @ []
+ 
+     if cursor.at(c, .lparen)
+-        arguments @ call_args(@c, @a, text)
++        given = call_args(@c, @a, text)
++        arguments @ given.args
++
++        if !given.rest.is_err()
++            cursor.error(
++                @c,
++                code: "rest_not_a_construction",
++                message: "`rest: zero` closes the construction of a group's record, and a variant case is built with every field",
++                span: given.rest.must()
++            )
+     return ast.push_expr(
+         @a.exprs,
+         ast.Expr(kind: .variant_case(name: name, args: arguments), span: token.Span(start: dot.start, end: cursor.previous_significant_span(c).end))
+@@ -589,15 +604,22 @@
+ 
+ ## Entry point 3 — the argument list
+ 
++# What a parenthesised list holds: its arguments, and the words `rest: zero`
++# when they close it (panel 178 R1), which pass nothing and so are no argument.
++record Given
++    args: [ast.Arg]
++    rest: token.Span?
++
+ # `(x, name: y, @l)` — the argument list of a call, of a record construction,
+ # and of a variant case, which are the same thing (§4.9).
+-function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
++function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Given
+     arguments: [ast.Arg] @ []
++    rest: token.Span? @ fail(code: "none", msg: "every field is written")
+     _ = cursor.bump(@c)
+     cursor.skip_terminators(@c)
+ 
+     if cursor.eat(@c, .rparen)
+-        return arguments
++        return Given(args: arguments, rest: rest)
+     reading: bool @ true
+ 
+     while reading
+@@ -613,6 +635,19 @@
+             if cursor.at(c, .ident) && cursor.peek(c, 1) == .colon
+                 name @ ok(cursor.bump(@c).span)
+                 _ = cursor.bump(@c)
++
++            if !name.is_err() && cursor.slice_of(text, name.must()) == "rest" && cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == "zero"
++                rest @ ok(token.Span(start: name.must().start, end: cursor.bump(@c).span.end))
++                cursor.skip_terminators(@c)
++
++                if !cursor.at(c, .rparen)
++                    cursor.error(
++                        @c,
++                        code: "rest_not_last",
++                        message: "`rest: zero` says what every field not written is, so it closes the list",
++                        span: rest.must()
++                    )
++                break
+             mutable = cursor.eat(@c, .at)
+             value = parse_expr(@c, @a, text)
+ 
+@@ -647,7 +682,7 @@
+ 
+     if !cursor.expect(@c, text: text, kind: .rparen, code: "expected_args_close", what: "`)`, or `,` and another argument")
+         cursor.recover_past_closer(@c, opener: .lparen, closer: .rparen)
+-    return arguments
++    return Given(args: arguments, rest: rest)
+ 
+ ## The two habits from other languages, each met with a certain fix
+ 
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ir/flatten.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/ir/flatten.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ir/flatten.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/ir/flatten.hero	2026-09-24 20:49:47
+@@ -52,6 +52,7 @@
+ use ir/emissions
+ use ir/owned_release
+ use ir/interp
++use ir/zeros
+ use inventory
+ 
+ ## Statements
+@@ -494,7 +495,7 @@
+ 
+ # `f(x)`, `Point(x: 3, y: 4)`, `ok(v)`, `fail(c, m)`, `h.cb(n)` — one
+ # syntax, and what it IS depends on what the callee resolved to.
+-function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
++function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], rest: token.Span?, ty: i64, span: token.Span) -> i64
+     is_name: bool @ false
+ 
+     match a.exprs[callee].kind
+@@ -511,7 +512,10 @@
+                 # the IR does, because the layout decision belongs to the
+                 # descriptor pass.
+                 if questions.is_record(decls, t.at)
+-                    run = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a record construction")).run
++                    run: ir.Run @ lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a record construction")).run
++
++                    if !rest.is_err()
++                        run @ zeros.fill(@b, c, s, decls, decl: t.at, given: given, lowered: run, span: span)
+                     return build.emit(
+                         @b,
+                         op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+@@ -661,9 +665,19 @@
+                 # A record is constructed, not called — the same split
+                 # call makes.
+                 if questions.is_record(decls, t.at)
++                    run: ir.Run @ handed.run
++
++                    match a.exprs[at].kind
++                        .method m =>
++                            if !m.rest.is_err()
++                                run @ zeros.fill(@b, c, s, decls, decl: t.at, given: given, lowered: run, span: span)
++                        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => run @ run
++                        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => run @ run
++                        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => run @ run
++
+                     return build.emit(
+                         @b,
+-                        op: .construct(shape: .record_shape(decl: t.at), arguments: handed.run),
++                        op: .construct(shape: .record_shape(decl: t.at), arguments: run),
+                         ty: ty,
+                         span: span
+                     )
+@@ -1272,7 +1286,7 @@
+             run = emissions.value_args(@b, values)
+             return build.emit(@b, op: .construct(shape: .map_shape, arguments: run), ty: ty, span: span)
+         .call cl =>
+-            return call(@b, a, r, c, s, decls, callee: cl.callee, given: cl.args, ty: ty, span: span)
++            return call(@b, a, r, c, s, decls, callee: cl.callee, given: cl.args, rest: cl.rest, ty: ty, span: span)
+         .method m =>
+             return method(
+                 @b,
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ir/zeros.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/ir/zeros.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ir/zeros.hero	1970-01-01 01:00:00
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/ir/zeros.hero	2026-09-24 20:49:46
+@@ -0,0 +1,92 @@
++# The fields `rest: zero` leaves out, lowered to what they are (panel 178 R1).
++# Erased HERE, on the way into the IR (design.md §1.7): the construction that
++# leaves this module names every declared field in declared order, exactly as
++# Part 5's row says, and the fields the author left out are zero values of
++# their own types — so nothing after lowering knows the words were written.
++#
++# A group's field is a number, `bool`, `ptr`, `cstr`, another record of the
++# group or a fixed array of one (spec § 13), and each has a zero that is a
++# value of Heroes: 0, false, nullptr, a record of zeros, a handle's nullptr.
++# The fixed array is the one with no C value to spell, and it is an EMPTY
++# construction of its type, which `emit/storageless.hero` writes `{0}`; a
++# literal of a `T[N]` always has N elements, so an empty one means nothing else.
++
++use token
++use ast
++use source
++use check/table
++use check/state
++use check/contextual
++use ir
++use ir/build
++use ir/containers
++use handles
++
++# The declared-order run: each written argument where its label names the
++# field, a zero of the field's type everywhere else.
++function fill(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], lowered: ir.Run, span: token.Span) -> ir.Run
++    written = containers.args_of(b.building, lowered)
++    out: [ir.Arg] @ []
++    next: i64 @ 0
++
++    for f in fields_of(decls, decl)
++        name = source.span_text(s, f.name)
++
++        if next < given.len() && source.span_text(s, given[next].name.must()) == name
++            out @ out.push(written[next])
++            next @ next + 1
++        else
++            out @ out.push(.value_arg(value: zero_of(@b, c, s, decls, ty: field_type(c, f), span: span)))
++
++    return build.args_run(@b, out)
++
++function fields_of(decls: [ast.Decl], decl: i64) -> [ast.Field]
++    return match decls[decl].kind
++        .record_decl rec                                             => rec.fields
++        .constant_decl | .function_decl | .variant_decl | .test_decl => []
++
++function field_type(c: state.Checked, f: ast.Field) -> i64
++    return state.written_type(c, f.ty).must()
++
++function zero_of(@b: build.Lowering, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span) -> i64
++    nothing: [ir.Arg] = []
++
++    match table.get(c.types, ty)
++        .int_ty => return build.emit(
++            @b,
++            op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 0))),
++            ty: ty,
++            span: span
++        )
++        .float_ty    => return build.emit(@b, op: .lit(value: .float_const(text: "0.0")), ty: ty, span: span)
++        .bool        => return build.emit(@b, op: .lit(value: .bool_const(value: false)), ty: ty, span: span)
++        .ptr | .cstr => return build.emit(@b, op: .lit(value: .null_ptr), ty: ty, span: span)
++        .fixed => return build.emit(
++            @b,
++            op: .construct(shape: .array_shape, arguments: build.args_run(@b, nothing)),
++            ty: ty,
++            span: span
++        )
++        .named n =>
++            if handles.is_handle(decls[n.decl])
++                return build.emit(@b, op: .lit(value: .null_ptr), ty: ty, span: span)
++            parts: [ir.Arg] @ []
++
++            for f in fields_of(decls, n.decl)
++                parts @ parts.push(.value_arg(value: zero_of(@b, c, s, decls, ty: field_type(c, f), span: span)))
++
++            return build.emit(
++                @b,
++                op: .construct(shape: .record_shape(decl: n.decl), arguments: build.args_run(@b, parts)),
++                ty: ty,
++                span: span
++            )
++        .str | .unit | .array | .map | .fallible | .function_ty => return build.emit(
++            @b,
++            op: .missing,
++            ty: ty,
++            span: span
++        )
++        .case_ty | .failure | .generic | .error => return build.emit(@b, op: .missing, ty: ty, span: span)
++
++    return build.emit(@b, op: .missing, ty: ty, span: span)
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/bodies.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/print/bodies.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/bodies.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/print/bodies.hero	2026-09-24 20:49:46
+@@ -182,8 +182,8 @@
+         .field f      => return render_expr(tree, f.base, s) + "." + source.span_text(s, f.name)
+         .field_name f => return render_expr(tree, f.base, s) + "::" + source.span_text(s, f.name)
+         .index ix     => return render_expr(tree, ix.base, s) + "[" + render_expr(tree, ix.index, s) + "]"
+-        .call cl      => return render_expr(tree, cl.callee, s) + "(" + render_args(tree, s, given: cl.args) + ")"
+-        .method m => return render_expr(tree, m.receiver, s) + "." + source.span_text(s, m.name) + "(" + render_args(tree, s, given: m.args) + ")"
++        .call cl => return render_expr(tree, cl.callee, s) + "(" + render_args(tree, s, given: cl.args) + rest_text(cl.rest, given: cl.args) + ")"
++        .method m => return render_expr(tree, m.receiver, s) + "." + source.span_text(s, m.name) + "(" + render_args(tree, s, given: m.args) + rest_text(m.rest, given: m.args) + ")"
+         .variant_case vc =>
+             if vc.args.len() == 0
+                 return "." + source.span_text(s, vc.name)
+@@ -211,6 +211,14 @@
+         .error      => return "<?>"
+ 
+     return "<?>"
++
++function rest_text(rest: token.Span?, given: [ast.Arg]) -> str
++    if rest.is_err()
++        return ""
++
++    if given.len() == 0
++        return "rest: zero"
++    return ", rest: zero"
+ 
+ function render_args(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
+     rendered: [str] @ []
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/fmt.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/print/fmt.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/fmt.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/selfhost/print/fmt.hero	2026-09-24 20:50:36
+@@ -958,7 +958,15 @@
+         # comma-separated list (the parser requires it).
+ 
+         .call cl =>
+-            broken_args(@f, tree, s, open: head + render(tree, s, id: cl.callee) + "(", given: cl.args, indent: indent)
++            broken_args(
++                @f,
++                tree,
++                s,
++                open: head + render(tree, s, id: cl.callee) + "(",
++                given: cl.args,
++                rest: cl.rest,
++                indent: indent
++            )
+         .method m =>
+             broken_args(
+                 @f,
+@@ -966,6 +974,7 @@
+                 s,
+                 open: head + render(tree, s, id: m.receiver) + "." + source.span_text(s, m.name) + "(",
+                 given: m.args,
++                rest: m.rest,
+                 indent: indent
+             )
+         .variant_case vc =>
+@@ -976,6 +985,7 @@
+                     s,
+                     open: head + "." + source.span_text(s, vc.name) + "(",
+                     given: vc.args,
++                    rest: fail(code: "none", msg: "a case has no rest"),
+                     indent: indent
+                 )
+             else
+@@ -1040,16 +1050,17 @@
+ 
+     return ""
+ 
+-function broken_args(@f: Fmt, tree: ast.Ast, s: source.Source, open: str, given: [ast.Arg], indent: i64)
++function broken_args(@f: Fmt, tree: ast.Ast, s: source.Source, open: str, given: [ast.Arg], rest: token.Span?, indent: i64)
+     put_line(@f, indent: indent, text: open)
++    texts = arg_texts(tree, s, given: given, rest: rest)
+     index: i64 @ 0
+ 
+-    for arg in given
++    for text in texts
+         comma: str @ ","
+ 
+-        if index == given.len() - 1
++        if index == texts.len() - 1
+             comma @ ""
+-        put_line(@f, indent: indent + 4, text: arg_text(tree, s, arg: arg) + comma)
++        put_line(@f, indent: indent + 4, text: text + comma)
+         index @ index + 1
+ 
+     put_line(@f, indent: indent, text: ")")
+@@ -1322,8 +1333,8 @@
+         .field fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "." + source.span_text(s, fl.name)
+         .field_name fl => return wrapped(tree, s, id: fl.base, needed: POSTFIX_POWER) + "::" + source.span_text(s, fl.name)
+         .index ix => return wrapped(tree, s, id: ix.base, needed: POSTFIX_POWER) + "[" + render(tree, s, id: ix.index) + "]"
+-        .call cl => return wrapped(tree, s, id: cl.callee, needed: POSTFIX_POWER) + "(" + args_line(tree, s, given: cl.args) + ")"
+-        .method m => return wrapped(tree, s, id: m.receiver, needed: POSTFIX_POWER) + "." + source.span_text(s, m.name) + "(" + args_line(tree, s, given: m.args) + ")"
++        .call cl => return wrapped(tree, s, id: cl.callee, needed: POSTFIX_POWER) + "(" + arg_texts(tree, s, given: cl.args, rest: cl.rest).join(", ") + ")"
++        .method m => return wrapped(tree, s, id: m.receiver, needed: POSTFIX_POWER) + "." + source.span_text(s, m.name) + "(" + arg_texts(tree, s, given: m.args, rest: m.rest).join(", ") + ")"
+         .variant_case vc =>
+             if vc.args.len() == 0
+                 return "." + source.span_text(s, vc.name)
+@@ -1373,12 +1384,18 @@
+     return text
+ 
+ function args_line(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
++    return arg_texts(tree, s, given: given, rest: fail(code: "none", msg: "a case has no rest")).join(", ")
++
++# Every argument as written, and `rest: zero` last where it closes the list.
++function arg_texts(tree: ast.Ast, s: source.Source, given: [ast.Arg], rest: token.Span?) -> [str]
+     rendered: [str] @ []
+ 
+     for arg in given
+         rendered @ rendered.push(arg_text(tree, s, arg: arg))
+ 
+-    return rendered.join(", ")
++    if !rest.is_err()
++        rendered @ rendered.push("rest: zero")
++    return rendered
+ 
+ function arg_text(tree: ast.Ast, s: source.Source, arg: ast.Arg) -> str
+     name: str @ ""

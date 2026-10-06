@@ -1,0 +1,8 @@
+extern "sys/un.h"
+    record SockaddrUn tag sockaddr_un partial
+        sun_path: i8[104]
+
+function main()
+    path = "/tmp/heroes-178.sock"
+    a = SockaddrUn(sun_path: path.to_fixed().must())
+    print(a.sun_path.validated_bytes().must())

@@ -1,0 +1,17 @@
+# Critic, panel 178: 091's neighbours, a group record held by a Heroes record, and a [T] of those, shared.
+extern "next.h"
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+
+record Box
+    h: Slot
+    k: i64
+
+function main()
+    b: Box @ Box(h: Slot(name: [0, 0, 0, 0], id: 1), k: 2)
+    b.h.name[1] @ 5
+    boxes: [Box] @ [b, b]
+    keep = boxes
+    boxes[1].h.name[2] @ 9
+    print(b.h.name[1], boxes[1].h.name[2], keep[1].h.name[2], boxes[0].h.name[2])

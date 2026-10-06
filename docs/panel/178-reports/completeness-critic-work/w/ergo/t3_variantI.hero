@@ -1,0 +1,13 @@
+extern "pthread_brief.h"
+    record pthread_mutex_t
+        __sig: i64
+        __opaque: i8[56]
+    function pthread_mutex_init(@m: pthread_mutex_t, attr: ptr) -> i32
+    function pthread_mutex_lock(@m: pthread_mutex_t) -> i32
+    function pthread_mutex_unlock(@m: pthread_mutex_t) -> i32
+
+function main()
+    m: pthread_mutex_t @ pthread_mutex_t(__sig: 0, __opaque: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    print(pthread_mutex_init(@m, attr: nullptr))
+    print(pthread_mutex_lock(@m))
+    print(pthread_mutex_unlock(@m))

@@ -1,0 +1,5 @@
+use geom
+
+function main()
+    a = geom.Pt(x: 7, rest: zero)
+    print(a.x, " ", geom.origin_y(a))

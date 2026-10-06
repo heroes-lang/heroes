@@ -1,0 +1,11 @@
+# Critic, panel 178: 091's neighbours, a write through a for-loop's name.
+extern "next.h"
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+
+function main()
+    xs: [Slot] @ [Slot(name: [0, 0, 0, 0], id: 7)]
+    for s in xs
+        s.name[0] @ 1
+    print(xs[0].name[0])

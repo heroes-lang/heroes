@@ -1,0 +1,15 @@
+# Panel 178, compiler-engineer: the padding of a record built by `rest: zero`, read by C.
+extern "padprobe.h"
+    record Hints tag addrinfo partial
+        ai_family: i32
+        ai_socktype: i32
+    function dirty_stack() -> i32
+    function padding_nonzero(@p: Hints) -> i32
+
+function probe() -> i32
+    h: Hints @ Hints(ai_family: 0, ai_socktype: 1)
+    return padding_nonzero(@h)
+
+function main()
+    _ = dirty_stack()
+    print(probe())

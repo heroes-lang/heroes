@@ -1,0 +1,42 @@
+=== Linux aarch64 -O0
+utsname (390 bytes):
+  R1 uname=0 sysname=Linux machine=aarch64
+  A  uname=0 sysname=Linux machine=aarch64
+sockaddr_un (110 bytes, sun_path 108):
+  R1L bind=0 listen=0 connect=0 getsockname=0 path=/tmp/heroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+  R1T bind=0 listen=0 connect=0 getsockname=0 path=/tmp/heroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+  AL  bind=0 listen=0 connect=0 getsockname=0 path=/tmp/heroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+ the UTF-8 path, 23 bytes:
+  R1L bind=0 listen=0 connect=0 getsockname=0 path=/tmp/hèroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+  R1T bind=0 listen=0 connect=0 getsockname=0 path=/tmp/hèroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+addrinfo hints (48 bytes):
+  S  getaddrinfo=0, 0xAA left in hints: 0
+  R1 getaddrinfo=0, 0xAA left in hints: 0
+  garbage in ai_addrlen/ai_canonname/ai_addr/ai_next: getaddrinfo=0 (ok)
+filesystem:
+  R1 statvfs=0 bsize=4096 namemax=255
+pthread_mutex_t (48 bytes):
+  R0 zero then lock=0
+  R0 zero then init=0 then lock=0
+EXIT=0
+=== Linux aarch64 -O2
+utsname (390 bytes):
+  R1 uname=0 sysname=Linux machine=aarch64
+  A  uname=0 sysname=Linux machine=aarch64
+sockaddr_un (110 bytes, sun_path 108):
+  R1L bind=0 listen=0 connect=0 getsockname=0 path=/tmp/heroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+  R1T bind=0 listen=0 connect=0 getsockname=0 path=/tmp/heroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+  AL  bind=0 listen=0 connect=0 getsockname=0 path=/tmp/heroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+ the UTF-8 path, 23 bytes:
+  R1L bind=0 listen=0 connect=0 getsockname=0 path=/tmp/hèroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+  R1T bind=0 listen=0 connect=0 getsockname=0 path=/tmp/hèroes-178-r.sock | storage getsockname=0 family=1, 0xAA left in addr: 0
+addrinfo hints (48 bytes):
+  S  getaddrinfo=0, 0xAA left in hints: 0
+  R1 getaddrinfo=0, 0xAA left in hints: 0
+  garbage in ai_addrlen/ai_canonname/ai_addr/ai_next: getaddrinfo=0 (ok)
+filesystem:
+  R1 statvfs=0 bsize=4096 namemax=255
+pthread_mutex_t (48 bytes):
+  R0 zero then lock=0
+  R0 zero then init=0 then lock=0
+EXIT=0

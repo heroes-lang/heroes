@@ -1,0 +1,13 @@
+# Can a whole group record's bytes, padding included, reach a raw-byte C API?
+extern "netdb.h"
+    record Hints tag addrinfo partial
+        ai_family: i32
+        ai_socktype: i32
+
+extern "unistd.h"
+    function write(fd: i32, @buf: Hints, n: u64) -> i64
+
+function main()
+    h: Hints @ Hints(ai_family: 0, ai_socktype: 1)
+    n = write(fd: 1, buf: @h, n: 4096)
+    print(n)

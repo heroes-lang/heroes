@@ -1,0 +1,22 @@
+extern "shapes.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Inner tag inner
+        b: u8[3]
+    record Outer tag outer
+        inn: Inner
+        pts: Pt[2]
+        tail: i64
+
+function main()
+    o: Outer @ Outer(inn: Inner(b: [0, 0, 0]), pts: [Pt(x: 1, y: 2), Pt(x: 3, y: 4)], tail: 9)
+    o.inn.b[2] @ 200
+    o.pts[1].y @ 40
+    o.pts[0] @ Pt(x: 10, y: 20)
+    print(o.inn.b[2])
+    print(o.pts[1].y)
+    print(o.pts[0].x)
+    k: i64 @ 3
+    o.inn.b[k] @ 1
+    print(o.inn.b[0])

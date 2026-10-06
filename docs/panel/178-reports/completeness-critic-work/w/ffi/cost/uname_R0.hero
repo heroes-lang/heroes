@@ -1,0 +1,18 @@
+# Panel 178 ffi-pragmatist, route S: the whole `utsname`, a producer spelling every zero.
+extern "sys/utsname.h"
+    record Utsname tag utsname
+        sysname: i8[256]
+        nodename: i8[256]
+        release: i8[256]
+        version: i8[256]
+        machine: i8[256]
+    function uname(@u: Utsname) -> i32
+
+function main()
+    u: Utsname @ Utsname.zero()
+    print(uname(@u))
+    print(u.sysname.validated_bytes().must())
+    print(u.machine.validated_bytes().must())
+    v: Utsname @ Utsname.zero()
+    print(uname(@v))
+    print(u == v)
