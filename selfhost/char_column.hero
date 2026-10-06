@@ -4,6 +4,9 @@
 # every walk that places many offsets without asking `source` for each
 # (`cli/lex.hero`'s token dump).
 #
+# **A column costs two binary searches** over the offsets of the bytes that
+# continue a character (defect 372), never a walk of its line.
+#
 # A line is split at `\n` alone, and every character before the offset on its
 # line counts, but one: **a carriage return that ends its line is the line's
 # end and takes no column** (defect 373, 2026-10-06). A `\r\n`'s line feed is
@@ -13,13 +16,49 @@
 # completeness critic), `expected_expression` at 13:37 where the same file
 # with `\n` said 13:36. A `\r` anywhere else is a character of its line.
 
-# The column of `offset` on the line that starts at `start`.
-function of(text: str, start: i64, offset: i64) -> i64
-    col: i64 @ text.slice(from: start, to: offset).chars().len() + 1
+# The column of `offset` on the line that starts at `start`: the line's bytes
+# before it, less those that continue a character, which `continuations`
+# holds for the whole text, ascending (`source.Source`). **Two binary
+# searches, and never a walk of the line** (defect 372, 2026-10-06): the
+# column was the characters of a slice from the line's start, counted for
+# every message, so a line of 14,039 bytes holding 2,000 messages cost
+# `check --brief` 11.5 billion instructions more than the same messages on
+# 2,000 lines (this Mac, the base's compiler).
+function at(text: str, continuations: [i64], start: i64, offset: i64) -> i64
+    col: i64 @ offset - start - (first_from(continuations, bound: offset) - first_from(continuations, bound: start)) + 1
 
     if ends_crlf(text: text, start: start, offset: offset)
         col @ col - 1
     return col
+
+# The offset of every byte of `text` that continues a character, 0x80 to 0xBF
+# in UTF-8, ascending: what a column leaves out of a line's bytes.
+function continuations_of(text: str) -> [i64]
+    out: [i64] @ []
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] >= 128 && text[i] < 192
+            out @ out.push(i)
+        i @ i + 1
+
+    return out
+
+# The index of the first entry of `sorted` at or past `bound`, `sorted.len()`
+# where none is.
+function first_from(sorted: [i64], bound: i64) -> i64
+    lo: i64 @ 0
+    hi: i64 @ sorted.len()
+
+    while lo < hi
+        mid = (lo + hi) / 2
+
+        if sorted[mid] < bound
+            lo @ mid + 1
+        else
+            hi @ mid
+
+    return lo
 
 # Whether `offset` is the line feed of a `\r\n` whose carriage return stands
 # on the line that starts at `start`: the one place a byte of the line takes
@@ -44,3 +83,36 @@ test "a CRLF line's end is told where a line feed's is (defect 373)"
     assert of(stray, start: 0, offset: 2) == 3
     assert of(stray, start: 0, offset: 3) == 4
     assert of("é€😀,", start: 0, offset: 9) == 4
+
+# The column a table gives, as `source.line_col` asks it.
+function of(text: str, start: i64, offset: i64) -> i64
+    return at(text, continuations: continuations_of(text), start: start, offset: offset)
+
+# Defect 372's witness: at every offset of a text of characters of one to four
+# bytes, a tab and CRLF and LF line ends, the table's column is the characters
+# a slice of the line counts, but at a `\r\n`'s line feed, one fewer.
+test "a column from the table is the characters of its line before it (defect 372)"
+    text = "a\té€😀 x\r\n\r\nü = 1 # ✓\nend"
+    table = continuations_of(text)
+    start: i64 @ 0
+    offset: i64 @ 0
+
+    while offset <= text.len()
+        if offset < text.len() && text[offset] >= 128 && text[offset] < 192
+            offset @ offset + 1
+            continue
+        counted: i64 @ text.slice(from: start, to: offset).chars().len() + 1
+
+        if ends_crlf(text: text, start: start, offset: offset)
+            counted @ counted - 1
+        assert at(text, continuations: table, start: start, offset: offset) == counted
+
+        if offset < text.len() && text[offset] == '\n'
+            start @ offset + 1
+        offset @ offset + 1
+
+    assert first_from([2, 5, 9], bound: 0) == 0
+    assert first_from([2, 5, 9], bound: 5) == 1
+    assert first_from([2, 5, 9], bound: 10) == 3
+    none: [i64] = []
+    assert first_from(none, bound: 4) == 0
