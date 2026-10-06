@@ -1,0 +1,27 @@
+# Defect 400, lane run400, 2026-10-06: the shape beside the defect's own, a
+# handle over a union's tag compared in a test and nowhere else.
+#
+# SYMPTOM: `heroes test` said `ffi_tag_is_a_union`, true, and `build` and
+# `run` said `ffi_unknown_name`, *declares no `utag`*, which the header does,
+# as a union's tag.
+#
+# CAUSE: the program build spelled the handle's word only inside an
+# expression, `*(utag * *)0`, where clang says *use of undeclared identifier*
+# and never *must use 'union' tag*, the sentence the tag's kind was read from;
+# that identifier reached the reader of a name the header lacks.
+#
+# FIX: the header's answer to the record's own question (`typedef utag
+# hero_q;`, asked once the round is refused) says the tag is a union's, and
+# that answer tells the same refusal `heroes test` gives; a tag the header
+# holds is never told absent. Whether the handle binds as written stays
+# panel 186's R9.
+
+extern "fixedbugs-400-tags-of-three-kinds.h"
+    record UH tag utag  #~ ffi_tag_is_a_union
+
+function main()
+    print(1)
+
+test "a handle over a union's tag compared in a test alone"
+    h: UH = nullptr
+    assert h == nullptr

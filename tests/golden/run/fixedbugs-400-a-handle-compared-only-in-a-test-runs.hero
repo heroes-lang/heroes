@@ -1,0 +1,29 @@
+# Defect 400, lane run400, 2026-10-06; found by lane b13-bs beside panel
+# 194's landing and reproduced by the coordinator.
+#
+# SYMPTOM: a handle over a struct the header names only by its tag, compared
+# in a test and nowhere else, passed `heroes test` and was refused by `build`
+# and `run`, exit 1, `ffi_unknown_name`: *declares no `opaque`*, which the
+# header does, as a struct's tag.
+#
+# CAUSE: a build asks the header whether each record a comparison reaches is
+# a union, test blocks included, and for a handle it writes the author's word
+# inside an expression, `*(opaque * *)0`. There clang says *use of undeclared
+# identifier* and never *must use 'struct' tag*, the one sentence a build
+# learned `struct` from. The test build also declared `opaque * h`, a type,
+# which drew that sentence; the program build spelled the word nowhere else.
+#
+# FIX: a refused round whose program has a handle's tag still unlearned asks
+# the header about the record's own declaration (`cli/header_ask.hero`, the
+# question `typedef opaque hero_q;`), and clang's answer there, *must use
+# 'struct' tag*, is learned as that sentence is learned anywhere else.
+
+extern "fixedbugs-400-a-struct-tag-with-no-typedef.h"
+    record Opaque tag opaque
+
+function main()
+    print(1)
+
+test "a handle compared in a test alone"
+    h: Opaque = nullptr
+    assert h == nullptr
