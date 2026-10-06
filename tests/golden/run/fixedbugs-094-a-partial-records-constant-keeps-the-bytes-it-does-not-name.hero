@@ -1,0 +1,17 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the shape beside the
+# defect's that panel 178 was asking about, Darwin's `PTHREAD_MUTEX_INITIALIZER`
+# bound at a `partial` record: a signature the record names and bytes it does
+# not, spelled `{0x32AAABA7, {0}}` as Darwin spells it. The record keeps C's
+# size, so the bytes it does not name are the header's value too, zero here,
+# and C reads them back. `internal error`, exit 2, before the repair.
+
+extern "fixedbugs-094-values.h"
+    record Big tag big partial
+        sig: i64
+    constant BIG_INIT: Big
+    function big_rest(b: Big) -> i64
+
+function main()
+    b = BIG_INIT
+    print(b.sig)
+    print(big_rest(b))

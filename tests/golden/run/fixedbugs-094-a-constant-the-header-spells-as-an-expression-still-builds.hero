@@ -1,0 +1,17 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the spellings that built
+# before the repair, held now that the accessor's declaration asks their type
+# instead of the return assertion: a compound literal as raylib's `CLITERAL`
+# writes it, a call, and an object. Green before and after.
+
+extern "fixedbugs-094-values.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant PT_LIT: Pt
+    constant PT_CALL: Pt
+    constant PT_OBJ: Pt
+
+function main()
+    print(PT_LIT.y)
+    print(PT_CALL.y)
+    print(PT_OBJ.y)

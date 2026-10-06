@@ -29,6 +29,7 @@ use ir/containers
 use emit/ctype
 use emit/externs as emit_externs
 use emit/assert_spelling
+use emit/record_constant
 use emit/writer
 use parse
 use resolve
@@ -40,8 +41,12 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
     # question both answer is "does a header declare this".
     externs: [containers.Function] @ []
 
+    # A record's constant is asked by its own accessor, which initialises the
+    # header's struct with the header's value (`emit/record_constant.hero`,
+    # defect 094): `__typeof__` takes no brace list, and at file scope it read
+    # `{1, 2}` as a statement expression and stopped the build at exit 2.
     for f in p.functions
-        if !emit_externs.extern_spans(decls, f).header.is_err()
+        if !emit_externs.extern_spans(decls, f).header.is_err() && !record_constant.is_record_value(c, decls, f)
             externs @ externs.push(f)
 
     if externs.len() == 0

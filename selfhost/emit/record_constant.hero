@@ -1,0 +1,173 @@
+# A group `constant` whose type is a record of the group: its accessor builds
+# the record from the header's own value, as C initialises the header's struct
+# with it (design.md §4.19; spec § 13; CLAUDE.md §7; defect 094, 2026-10-06).
+#
+# **WHY AN INITIALISATION, AND NOT `return NAME;`.** A header spells the value
+# of a struct two ways. As an EXPRESSION of the struct's type, raylib's
+# `CLITERAL(Color){ 245, 245, 245, 255 }`, a function's call, an object; and as
+# a BRACE LIST, `#define PT_INIT {1, 2}`, Darwin's `PTHREAD_MUTEX_INITIALIZER`,
+# which C reads only as an initialiser. The accessor said `return PT_INIT;` and
+# the return assertion asked `__typeof__(PT_INIT)` at file scope, and a brace
+# list is neither an expression nor something `__typeof__` takes: every such
+# constant passed `check` and stopped the build with `internal error: compiling
+# the generated C failed`, exit 2 (panel 178's compiler-engineer). C11 6.7.9p13
+# gives the one form that takes both spellings: an object of automatic storage
+# whose initialiser is a brace list, or a single expression of a compatible
+# struct type. So the accessor declares the struct with the header's value and
+# returns it, and that declaration is also the type question the return
+# assertion asked of an expression: `emit/extern_assert.hero` no longer writes
+# one for such a constant. A compound literal, `(struct pt)PT_INIT`, was
+# measured beside it: it builds a brace list, and an expression only through a
+# GNU cast of a struct to its own type, refusing another struct as *used type
+# 'struct pt' where arithmetic or pointer type is required*.
+#
+# **WHAT THE INITIALISATION REFUSES, AND WHERE IT IS TOLD.** The declaration is
+# written at the constant's own line, `#line`d as every probe is
+# (`emit/ffi_site.hero`), so what clang says of it lands on the author's
+# declaration and `emit/ffi_value.hero` reads it back as `ffi_constant_type`
+# at exit 1. Under the build's flags C refuses a field the struct does not
+# have, an expression of another type, and a pointer for a number; and it only
+# WARNS where the value it builds is not the one the header wrote, an element
+# dropped (`{1, 2, 3}` for two fields) or a number changed (`300` into a
+# `char`), which reached the author as clang's words about the generated file
+# over a program that ran with another value. So inside the accessor those
+# warnings are errors (`REFUSED`), and the two that only say how a header
+# spelled a value C builds exactly as written are not given (`SPELLING`).
+# Measured 2026-10-06 on Apple clang 21 and Debian clang 22: every correct
+# shape below builds with no warning, every wrong one is an error.
+#
+# **WHAT C CANNOT SAY, written down rather than absorbed.** A brace list has no
+# type, so one fits every struct of a compatible shape: panel 178's critic bound
+# Darwin's `PTHREAD_COND_INITIALIZER` at a mutex's record and it built and ran
+# (`docs/panel/178-reports/completeness-critic-work/w/c094/wrongtype.hero`).
+# The enumeration and pointer-sign warnings below are the one evidence of the
+# value's kind a brace list carries, which is why they are refusals. And the
+# constancy question stays unasked of a struct (panel 063,
+# `emit/assert_spelling.hero`'s `asks_for_a_value`).
+#
+# A HANDLE is a pointer, which `__typeof__` takes and C converts more freely
+# than it compares (any object pointer initialises a `void *`), so a handle's
+# constant keeps the return assertion and `return NAME;`.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit/ctype
+use emit/externs as emit_externs
+use emit/signature
+use emit/writer
+use handles
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The accessor's one local: a name the unit's own C gives nothing else.
+constant VALUE: str
+    "hero_constant_value"
+
+# The warnings that say the value C builds is not the one the header wrote, or
+# is of another kind than the member it fills. Each is on under the build's
+# flags (`cli/flags.hero`) and each is an error inside the accessor.
+constant REFUSED: [str]
+    [
+        "-Wexcess-initializers"
+        "-Wconstant-conversion"
+        "-Wliteral-conversion"
+        "-Wimplicit-const-int-float-conversion"
+        "-Wenum-conversion"
+        "-Wpointer-sign"
+    ]
+
+# The warnings about how a header spelled a value C builds exactly as written:
+# a brace elided around a member, a member written twice, the later one kept.
+constant SPELLING: [str]
+    [
+        "-Wmissing-braces"
+        "-Winitializer-overrides"
+    ]
+
+# Whether `f` is a group constant whose type is a record of the group and not a
+# handle: the one kind of constant whose value may be a brace list.
+function is_record_value(c: state.Checked, decls: [ast.Decl], f: containers.Function) -> bool
+    if !emit_externs.is_extern_constant(decls, f)
+        return false
+
+    return match table.get(c.types, f.result)
+        .named n                                                  => !handles.is_handle(decls[n.decl])
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .function_ty         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# The accessor: the signature at the declaration, as `emit/body.hero` points
+# every signature; the diagnostics the value is held to; the declaration at
+# the constant's own line; and the value returned.
+function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    name = decls[f.decl].name
+    spelled = ctype.c_type(names, c: c, ty: f.result).must()
+    writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
+    writer.at_generated(@w)
+    writer.line(@w, text: "#pragma clang diagnostic push")
+
+    for one in REFUSED
+        writer.line(@w, text: "#pragma clang diagnostic error \"" + one + "\"")
+
+    for one in SPELLING
+        writer.line(@w, text: "#pragma clang diagnostic ignored \"" + one + "\"")
+
+    writer.at_span(@w, s, offset: name.start)
+    writer.line(@w, text: "    " + spelled + " " + VALUE + " = " + source.span_text(s, name) + ";")
+    writer.at_generated(@w)
+    writer.line(@w, text: "#pragma clang diagnostic pop")
+    writer.line(@w, text: "    return " + VALUE + ";")
+    writer.line(@w, text: "}")
+
+## Tests
+
+function has(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+constant TEXT: str
+    "extern \"cinit.h\"\n    record Pt tag pt\n        x: i32\n        y: i32\n    record Db tag sqlite3\n    constant PT_INIT: Pt\n    constant NO_DB: Db\n    constant LIMIT: i64\n\nfunction main()\n    print(PT_INIT.y)\n    print(NO_DB == NO_DB)\n    print(LIMIT)\n"
+
+test "a record's constant is built from the header's value at its own line, a handle's and a number's are not (defect 094)"
+    parsed = parse.parse(TEXT)
+    s = source.new_source(name: "t.hero", text: TEXT)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    kinds: [str] @ []
+
+    for f in low.program.functions
+        if !emit_externs.is_extern_constant(parsed.decls, f)
+            continue
+        name = source.span_text(s, parsed.decls[f.decl].name)
+        kinds @ kinds.push(name + ":" + is_record_value(c, parsed.decls, f).to_str())
+
+        if name == "PT_INIT"
+            w: writer.Writer @ writer.new_writer("t")
+            accessor(@w, f, c, names, s, parsed.decls)
+            got = writer.finish(w)
+
+            # The declaration stands at the constant's line, 6, and nothing
+            # else does: the pragmas and the return are the generated file's.
+            assert has(text: got, needle: "#line 6 \"t.hero\"\n    struct pt hero_constant_value = PT_INIT;\n#line ")
+            assert has(text: got, needle: "#pragma clang diagnostic error \"-Wexcess-initializers\"\n")
+            assert has(text: got, needle: "#pragma clang diagnostic ignored \"-Wmissing-braces\"\n")
+            assert has(text: got, needle: "#pragma clang diagnostic pop\n    return hero_constant_value;\n}\n")
+
+    assert kinds.len() == 3
+    assert has(text: kinds.join(" "), needle: "PT_INIT:true")
+    assert has(text: kinds.join(" "), needle: "NO_DB:false")
+    assert has(text: kinds.join(" "), needle: "LIMIT:false")

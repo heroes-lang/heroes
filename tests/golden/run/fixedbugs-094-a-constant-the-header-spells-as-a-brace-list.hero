@@ -1,0 +1,29 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06 (panel 178's compiler-engineer
+# found it, measuring whether C itself could say which value of a struct is
+# valid).
+#
+# SYMPTOM: a group `constant` whose header value is a brace list, `#define
+# PT_INIT {1, 2}`, passed `check` and stopped the build with `internal error:
+# compiling the generated C failed`, exit 2, on Darwin arm64 and both Linux
+# legs: the compiler blaming itself for a binding it had accepted.
+#
+# CAUSE: the accessor said `return PT_INIT;` and the return assertion asked
+# `__typeof__(PT_INIT)` at file scope, and a brace list is neither an
+# expression nor what `__typeof__` takes.
+#
+# FIX: the accessor declares the header's struct with the header's value and
+# returns it (`selfhost/emit/record_constant.hero`), C11 6.7.9p13's one form
+# that takes a brace list and an expression alike. The value is built, read,
+# and compared with itself.
+
+extern "fixedbugs-094-values.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant PT_INIT: Pt
+
+function main()
+    p = PT_INIT
+    print(p.x)
+    print(p.y)
+    print(p == PT_INIT)

@@ -59,6 +59,7 @@ use emit/field_lend
 use emit/inst
 use emit/term
 use emit/unread
+use emit/record_constant
 use emit/writer
 use parse
 use resolve
@@ -90,6 +91,13 @@ function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, 
             @w,
             text: "/* " + f.name + "<" + signature.render_instance(c, s, decls, bound: f.instance) + "> */"
         )
+
+    # A record's constant is built from the header's value, which may be a
+    # brace list that `return` cannot take (`emit/record_constant.hero`,
+    # defect 094).
+    if record_constant.is_record_value(c, decls, f)
+        record_constant.accessor(@w, f, c, names, s, decls)
+        return
 
     if is_extern_constant(decls, f)
         extern_name = source.span_text(s, decls[f.decl].name)
