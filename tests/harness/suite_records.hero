@@ -13,6 +13,7 @@
 use cards
 use report
 use floors
+use portable
 use shell
 use strings
 
@@ -859,6 +860,7 @@ function run_all(scratch: str) -> report.Report?
     numbering(@r, present: walked)
     unmerged(@r, scratch: scratch)
     entries(@r, present: walked)
+    portable.check(@r, present: walked)
     return ok(r)
 
 # A MILESTONE IS TAGGED ONLY OVER A CLEAN LIST (author instruction

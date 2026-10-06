@@ -1,0 +1,133 @@
+# Every path git names as the project's checks out on every platform the
+# project builds on, the Windows box and the CI's Windows leg included
+# (defect 404, 2026-10-06). Panel 178's records brought in two files named
+# `nul.hero`, and a fixture of defect 357 was `nul.txt`: Windows reserves
+# NUL as a device's name, with any extension, so the CI's checkout of the
+# whole repository failed at `git checkout` (`error: invalid path`) and no
+# test ran there. No suite looked at a path's name until then.
+#
+# What is refused, each a fact about one part of the path, the rule Windows
+# documents for a file's name (Naming Files, Paths, and Namespaces): a device
+# name it reserves, in any case and with any extension; a part ending in a
+# space or a dot; and the characters `<`, `>`, `:`, `"`, `|`, `?`, `*`, the
+# backslash and every control character.
+
+use report
+use strings
+
+# The names Windows reserves for its devices, matched in any case on the part
+# of a name before its first dot.
+constant RESERVED: [str]
+    [
+        "con"
+        "prn"
+        "aux"
+        "nul"
+        "com1"
+        "com2"
+        "com3"
+        "com4"
+        "com5"
+        "com6"
+        "com7"
+        "com8"
+        "com9"
+        "lpt1"
+        "lpt2"
+        "lpt3"
+        "lpt4"
+        "lpt5"
+        "lpt6"
+        "lpt7"
+        "lpt8"
+        "lpt9"
+    ]
+
+# One pass over the project's paths, one failure naming every path refused.
+function check(@r: report.Report, present: [str])
+    refused: [str] @ []
+
+    for path in present
+        why = refusal(path)
+
+        if why.len() > 0
+            refused @ refused.push("  " + path + ": " + why)
+
+    if refused.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "records/portable",
+        detail: refused.join("\n") + "\n  a path every platform checks out names no device Windows reserves, ends in no space or dot, and holds none of < > : \" | ? * \\ or a control character; rename it, and every line that cites it"
+    )
+
+# Why one path cannot be checked out on Windows, or the empty text when it can.
+function refusal(path: str) -> str
+    for part in strings.split_on(text: path, byte: 47)
+        if part.len() == 0
+            continue
+        last = part[part.len() - 1]
+
+        if last == 32 || last == 46
+            return "`" + part + "` ends in a space or a dot"
+        at: i64 @ 0
+
+        while at < part.len()
+            b = part[at]
+
+            if b < 32 || b == 34 || b == 42 || b == 58 || b == 60 || b == 62 || b == 63 || b == 92 || b == 124
+                return "`" + part + "` holds a character Windows refuses in a name"
+            at @ at + 1
+
+        if reserved(part)
+            return "`" + part + "` is a device name Windows reserves"
+
+    return ""
+
+# Whether the part of a name before its first dot is a reserved device name,
+# in any case.
+function reserved(part: str) -> bool
+    stem: [u8] @ []
+    at: i64 @ 0
+
+    while at < part.len() && part[at] != 46
+        b = part[at]
+
+        if b >= 65 && b <= 90
+            stem @ stem.push(b + 32)
+        else
+            stem @ stem.push(b)
+        at @ at + 1
+
+    lowered = stem.validated_bytes().default("")
+
+    for name in RESERVED
+        if lowered == name
+            return true
+
+    return false
+
+## Tests
+
+test "a device name Windows reserves is refused in any case and with any extension"
+    assert refusal("docs/panel/178-reports/ffi-pragmatist-work/nul.hero").len() > 0
+    assert refusal("tests/golden/surface-fixtures/notext357/NUL.txt").len() > 0
+    assert refusal("a/Com1").len() > 0
+    assert refusal("a/lpt9.tar.gz").len() > 0
+    assert refusal("a/aux").len() > 0
+
+test "a name that only begins like a device name is allowed"
+    assert refusal("docs/panel/178-reports/ffi-pragmatist-work/nul-byte.hero").len() == 0
+    assert refusal("tests/golden/surface-fixtures/notext357/one-nul.txt").len() == 0
+    assert refusal("a/console.hero").len() == 0
+    assert refusal("a/com10.txt").len() == 0
+    assert refusal("selfhost/cli/null.hero").len() == 0
+
+test "a part ending in a space or a dot, or holding a refused character, is refused"
+    assert refusal("a/name.").len() > 0
+    assert refusal("a/name ").len() > 0
+    assert refusal("a/what?.hero").len() > 0
+    assert refusal("a/b:c").len() > 0
+    assert refusal("a/b|c").len() > 0
+    assert refusal("a/b.hero").len() == 0
