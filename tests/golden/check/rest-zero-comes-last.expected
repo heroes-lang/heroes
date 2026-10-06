@@ -1,0 +1,1 @@
+tests/golden/check/rest-zero-comes-last.hero:11:14: error[rest_not_last]: `rest: zero` ends a construction, after every field it names: the fields it does not name are the rest

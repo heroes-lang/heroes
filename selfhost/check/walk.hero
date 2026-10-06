@@ -58,6 +58,8 @@ use check/join
 use check/builtins
 use check/labels
 use check/group_fields
+use check/handle_built
+use handles
 use check/markers
 use check/generics as check_generics
 use check/discard
@@ -1759,6 +1761,15 @@ record FieldSpec
 # Point(x: 3, y: 4) — §4.9 makes every field name mandatory, always,
 # which is why there is no positional form to get wrong.
 function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], span: token.Span) -> i64
+    # A handle is C's pointer, which only C makes (defect 397).
+    if handles.is_handle(decls[decl])
+        state.push_diagnostic(@c, handle_built.told(s, decls[decl], span: span))
+
+        for arg in given
+            _ = synth(@c, a, r, s, decls, arg.value)
+
+        return table.intern(@c.out.types, .named(decl: decl))
+
     match decls[decl].kind
         .record_decl rec =>
             name = source.span_text(s, decls[decl].name)

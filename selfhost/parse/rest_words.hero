@@ -1,0 +1,62 @@
+# `rest: zero`, the words that end a construction of a group's record
+# (panel 194; spec § 13): every field it does not name is zero. Written where
+# a labelled argument is, they are none: the parser takes them off the list
+# into `Ast.rests`, so no later pass reads `zero` as a name. Which call may
+# end with them is `check/rest_zero.hero`'s question; where they stand, this
+# file's. Called by `grammar_expr`'s call suffix and `after_dot`. A variant
+# case keeps them as an argument: `.c(rest: zero)` names a field `rest`.
+
+use token
+use ast
+use cursor
+
+# An argument list with the words taken off its end, and their index in
+# `Ast.rests`, or -1.
+record Split
+    args: [ast.Arg]
+    rest: i64
+
+# The words come last, after the fields named in their declared order;
+# anywhere else they are refused and dropped. Asked of every call, so a
+# list without them is handed back as it came, and the test is a `bool`.
+function split(@c: cursor.Cursor, @a: ast.Ast, text: str, given: [ast.Arg]) -> Split
+    rest: i64 @ -1
+    found: bool @ false
+    k: i64 @ 0
+
+    for arg in given
+        if is_words(a, text, arg: arg)
+            found @ true
+
+            if k == given.len() - 1
+                rest @ a.rests.len()
+                a.rests @ a.rests.push(arg)
+            else
+                cursor.error(
+                    @c,
+                    code: "rest_not_last",
+                    message: "`rest: zero` ends a construction, after every field it names: the fields it does not name are the rest",
+                    span: token.Span(start: arg.name.must().start, end: a.exprs[arg.value].span.end)
+                )
+        k @ k + 1
+
+    if !found
+        return Split(args: given, rest: -1)
+    kept: [ast.Arg] @ []
+
+    for arg in given
+        if !is_words(a, text, arg: arg)
+            kept @ kept.push(arg)
+
+    return Split(args: kept, rest: rest)
+
+# Whether `arg` is the words: the label `rest`, no `@`, the bare name `zero`,
+# by length and first byte before the arena is read.
+function is_words(a: ast.Ast, text: str, arg: ast.Arg) -> bool
+    if arg.mutable || arg.name.is_err()
+        return false
+    label = arg.name.must()
+
+    if label.end - label.start != 4 || text[label.start] != 114 || a.exprs[arg.value].kind != .name
+        return false
+    return cursor.slice_of(text, label) == "rest" && cursor.slice_of(text, a.exprs[arg.value].span) == "zero"

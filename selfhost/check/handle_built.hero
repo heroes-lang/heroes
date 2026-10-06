@@ -1,0 +1,40 @@
+# A handle is never built (defect 397; spec § 13; design.md §4.19).
+#
+# A handle is a group's `record` with a `tag` and no fields (`handles.hero`):
+# C's pointer to a type the header names, which only C makes and hands to the
+# program, through a result or an `@` out-parameter, and whose null is
+# `nullptr`. A construction of one, `Opaque()`, names every field it has,
+# which is none, so the checker took it as a record built whole, and C had no
+# literal for it: `emit/aggregate.hero` refuses an empty construction, and the
+# program came back at run time as *entered unreachable code — this is a
+# compiler bug*, exit 134 (panel 194's compiler-engineer, 2026-10-06). With an
+# argument, `Opaque(x: 1)`, it was `wrong_label` listing no field at all.
+#
+# So the construction itself is refused, once, whatever it is handed: the
+# words `rest: zero` included (`check/rest_zero.hero` leaves a handle to this
+# file), a module's handle `g.Opaque()`, one inside an array or a field.
+
+use token
+use ast
+use source
+use diag
+
+function told(s: source.Source, decl: ast.Decl, span: token.Span) -> diag.Diagnostic
+    name = source.span_text(s, decl.name)
+    pointee: str @ name
+
+    match decl.kind
+        .record_decl rec =>
+            if !rec.tag.is_err()
+                pointee @ source.span_text(s, rec.tag.must())
+        .constant_decl | .function_decl | .variant_decl | .test_decl => pointee @ pointee
+
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "handle_built",
+        message: "`" + name + "` is a handle, C's pointer to `" + pointee + "`, and a handle is never built: only C makes one and hands it to the program",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "take it from a function of the group that returns one, `function new_one() -> " + name + "`, or that writes one through an `@` parameter; where the program means no handle at all, write `h: " + name + " = nullptr`"
+    )
+    return d

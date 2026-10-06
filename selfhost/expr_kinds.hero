@@ -11,7 +11,9 @@
 # |---|---|
 # | `ends_the_expression` | `grammar_expr.binary` |
 # | `is_place` | `grammar_expr.expression_or_mutation` and `call_args` |
+# | `depth` | its own test: moved out of `ast.hero` (panel 194), the walk that proves the arena needs no recursive type |
 
+use token
 use ast
 
 # Does this operand carry a block, so that the expression ends with it, or
@@ -42,3 +44,64 @@ function is_place(a: ast.Ast, at: i64) -> bool
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr | .hole => false
         .unary | .binary | .call | .method | .variant_case                                     => false
         .array | .map | .try_expr | .if_expr | .match_expr | .error                            => false
+
+# The depth of an expression, following the arena by index. It exists to prove
+# the point of this file: a tree that links by index is walked by an ordinary
+# recursive function, and the VALUE semantics never enter it — nothing is
+# copied but an `i64`.
+function depth(a: ast.Ast, at: i64) -> i64
+    node = a.exprs[at]
+
+    # **Every case is named, and that is the point rather than the cost.** `_`
+    # is forbidden on a variant (§4.7), so a walk that cares about five shapes
+    # still says what it does with the other sixteen — and the day a
+    # twenty-second `ExprKind` arrives, this function stops compiling instead
+    # of quietly answering 1. The bootstrap has the same walk with a `_`, and
+    # the same walk is where the Rust lexer's `nullptr` defect came from.
+    return match node.kind
+        .unary u => 1 + depth(a, u.operand)
+        .binary b => 1 + max_of(a: depth(a, b.left), b: depth(a, b.right))
+        .field f => 1 + depth(a, f.base)
+        .field_name f => 1 + depth(a, f.base)
+        .index i => 1 + max_of(a: depth(a, i.base), b: depth(a, i.index))
+        .try_expr t => 1 + depth(a, t.value)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => 1
+        .interp ip => 1 + holes_depth(a, ip.holes)
+        .null_ptr | .name | .hole | .error => 1
+        # The compound shapes a depth this simple does not descend into: they
+        # carry lists, and a list walk is the parser's own job rather than
+        # this measurement's.
+
+        .call | .method | .variant_case        => 1
+        .array | .map | .if_expr | .match_expr => 1
+
+# The deepest hole, or nothing: an interpolated literal is one node whose
+# children are its holes.
+function holes_depth(a: ast.Ast, holes: [i64]) -> i64
+    deepest: i64 @ 0
+
+    for h in holes
+        d = depth(a, h)
+
+        if d > deepest
+            deepest @ d
+
+    return deepest
+
+function max_of(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+test "a walk over the arena is an ordinary recursive function"
+    a: ast.Ast @ ast.new_ast()
+    zero = token.Span(start: 0, end: 1)
+    x = ast.push_expr(@a.exprs, ast.Expr(kind: .int_lit, span: zero))
+    y = ast.push_expr(@a.exprs, ast.Expr(kind: .int_lit, span: zero))
+    sum = ast.push_expr(@a.exprs, ast.Expr(kind: .binary(op: .add, left: x, right: y), span: zero))
+    neg = ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: .neg, operand: sum), span: zero))
+    tried = ast.push_expr(@a.exprs, ast.Expr(kind: .try_expr(value: neg), span: zero))
+    assert depth(a, x) == 1
+    assert depth(a, sum) == 2
+    assert depth(a, neg) == 3
+    assert depth(a, tried) == 4

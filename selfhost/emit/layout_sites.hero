@@ -58,7 +58,8 @@ function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str
     index: i64 @ 0
 
     for m in order
-        if named[index].is_err() && unsized[m].is_err()
+        # Not asked where the program said the rest is zero (panel 194).
+        if named[index].is_err() && unsized[m].is_err() && !site.rest
             terms: [str] @ [layout_compare.size_of(t: t, m: m) + " == 0"]
 
             for k in site.given

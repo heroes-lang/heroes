@@ -1,0 +1,44 @@
+# Panel 194 R1 (M-buildable-structs), lane b13-bs, 2026-10-06: a construction
+# ending with `rest: zero` may name none of a union's members, and the union is
+# then zero in all its bytes (spec § 13), the double's seven past the char
+# included. C11 zeroes only a union's first member and its padding for a member
+# an initialiser leaves out; clang zeroes the rest too and GCC 15 stopped doing
+# so, so the sitting ruled it a whole-object zero the emitted C performs itself
+# (`selfhost/emit/zeroed.hero`), which `memset` is.
+#
+# A union inside a struct, a union type, and a struct naming nothing, each
+# counted by C after `dirty` filled the frame with 0xAA.
+
+extern "ffi-rest-zero.h"
+    record SA
+        kind: i32
+        c: i8
+        d: f64
+        x: i32
+    record UD
+        c: i8
+        d: f64
+    function dirty()
+    function sa_union(@s: SA) -> i64
+    function sa_x(@s: SA) -> i64
+    function ud_all(@u: UD) -> i64
+
+function in_a_struct() -> SA
+    return SA(kind: 1, rest: zero)
+
+function a_union_type() -> UD
+    return UD(rest: zero)
+
+function nothing_named() -> SA
+    return SA(rest: zero)
+
+function main()
+    dirty()
+    s: SA @ in_a_struct()
+    print(s.kind, " ", sa_union(@s), " ", sa_x(@s))
+    dirty()
+    u: UD @ a_union_type()
+    print(ud_all(@u), " ", u.d)
+    dirty()
+    n: SA @ nothing_named()
+    print(n.kind, " ", sa_union(@n), " ", sa_x(@n))

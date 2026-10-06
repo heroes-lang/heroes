@@ -54,6 +54,21 @@ function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: st
     d.notes @ d.notes.push(
         "a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `" + member + "`, or name the header that spells `" + type_name + "` this way"
     )
+    declared = found.must().declared
+
+    # C's `char` is `i8` in every build (`-fsigned-char`, `cli/flags.hero`),
+    # and `u8` is what 22 of panel 178's 50 readers wrote for it first (panel
+    # 194's K0). Asked of the type the author wrote, `u8` or an array of it,
+    # never of a name that merely begins so; the fix is a `guess`, since the
+    # header may as well write a type wider than a byte.
+    if declared == "u8" || declared.len() > 2 && declared.slice(from: 0, to: 3) == "u8["
+        written = found.must().type_span
+        d.notes @ d.notes.push(
+            "where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`"
+        )
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "declare `" + member + "` with `i8`", replacement: "i8", span: token.Span(start: written.start, end: written.start + 2), certainty: .guess)
+        )
     return ok(d)
 
 # The record a group declares under this C name, plus the span and the
@@ -62,6 +77,7 @@ function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: st
 record RecordField
     header: str
     field_span: token.Span
+    type_span: token.Span
     declared: str
 
 function record_field(s: source.Source, tree: ast.Ast, decls: [ast.Decl], type_name: str, member: str) -> RecordField?
@@ -78,7 +94,7 @@ function record_field(s: source.Source, tree: ast.Ast, decls: [ast.Decl], type_n
                     if source.span_text(s, field.name) == member
                         written = type_text.named_text(source.span_text(s, tree.types[field.ty].span))
                         return ok(
-                            RecordField(header: emit_externs.unquoted(s, span: rec.header.must()), field_span: field.name, declared: written)
+                            RecordField(header: emit_externs.unquoted(s, span: rec.header.must()), field_span: field.name, type_span: tree.types[field.ty].span, declared: written)
                         )
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
@@ -351,6 +367,32 @@ test "field_type and flex read their markers and point at the field"
     # A record nobody declared in a group stays the compiler's.
     ghost = "e: static assertion failed: heroes-ffi-field Ghost r"
     assert field_type(s, parsed.tree, parsed.decls, line: ghost).is_err()
+
+test "a `u8` field clang refuses is told C's `char` is `i8`, and nothing else is (panel 194's K0)"
+    text = "extern \"k.h\"\n    record u8pair tag pair\n        a: i32\n    record Uts tag utsname\n        sysname: u8[256]\n        id: u8\n        u8x: i32\n        p: u8pair\n\nfunction touch(u: Uts)\n    _ = u\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    failed = "t.hero:5:9: error: static assertion failed due to requirement 'x': heroes-ffi-field Uts "
+    array = field_type(s, parsed.tree, parsed.decls, line: failed + "sysname").must()
+    assert array.notes.len() == 2
+    assert array.fixes.len() == 1
+    assert array.fixes[0].replacement == "i8"
+    assert source.span_text(s, array.fixes[0].span) == "u8"
+    assert array.fixes[0].certainty == .guess
+    scalar = field_type(s, parsed.tree, parsed.decls, line: failed + "id").must()
+    assert scalar.fixes.len() == 1
+
+    # An `i32` field, and one whose record's name begins with `u8`, are told
+    # their width and sign alone.
+    wide = field_type(s, parsed.tree, parsed.decls, line: failed + "u8x").must()
+    assert wide.notes.len() == 1
+    assert wide.fixes.len() == 0
+    named = field_type(s, parsed.tree, parsed.decls, line: failed + "p").must()
+    assert named.notes.len() == 1
+    assert named.fixes.len() == 0
 
 test "unknown_field reads clang's own wording and lands on the field token"
     text = "extern \"raylib.h\"\n    record Color\n        red: u8\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(1)\n"
