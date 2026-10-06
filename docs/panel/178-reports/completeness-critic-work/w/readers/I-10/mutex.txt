@@ -1,0 +1,1 @@
+no. The program does build the value from zeros, because every binding has to start with a value, but pthread_mutex_init runs on it before any lock or unlock.

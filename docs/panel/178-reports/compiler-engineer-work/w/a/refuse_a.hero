@@ -1,0 +1,12 @@
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Kinds tag kinds partial
+        f: f32[2]
+
+function main()
+    a = Kinds(f: [1.5; 3])
+    xs: [i64] = [0; 4]
+    ys = [1; 2]
+    print(a.f[0], xs.len(), ys.len())

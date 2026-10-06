@@ -1,0 +1,15 @@
+extern "sys/socket.h"
+    constant AF_UNIX: i64
+    constant SOCK_STREAM: i64
+    function socket(domain: i32, kind: i32, protocol: i32) -> i32
+
+extern "sys/un.h"
+    record SockaddrUn tag sockaddr_un partial
+        sun_family: u8
+    function bind(fd: i32, @addr: SockaddrUn, len: u32) -> i32
+
+function main()
+    a: SockaddrUn @ SockaddrUn(sun_family: 1)
+    fd = socket(domain: 1, kind: 1, protocol: 0)
+    r = bind(fd, @a, len: 106)
+    print(r)

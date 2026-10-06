@@ -1,0 +1,7 @@
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+
+function origin_y(p: Pt) -> i32
+    return p.y

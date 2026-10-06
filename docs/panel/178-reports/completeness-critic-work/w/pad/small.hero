@@ -1,0 +1,38 @@
+# Critic, panel 178: does a padded record's zero padding survive a by-value call and return?
+extern "small.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    record Ci tag ci
+        c: i8
+        i: i32
+    record Fc tag fc
+        f: f32
+        c: i8
+    function w_cd(@p: Cd) -> i64
+    function w_ci(@p: Ci) -> i64
+    function w_fc(@p: Fc) -> i64
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function ci_through(x: Ci) -> Ci
+    return x
+
+function fc_through(x: Fc) -> Fc
+    return x
+
+function main()
+    a: Cd @ Cd(c: 1, d: 2.0)
+    n1 = w_cd(@a)
+    b: Cd @ cd_through(x: a)
+    n2 = w_cd(@b)
+    c: Ci @ Ci(c: 1, i: 2)
+    n3 = w_ci(@c)
+    e: Ci @ ci_through(x: c)
+    n4 = w_ci(@e)
+    f: Fc @ Fc(f: 1.0, c: 2)
+    n5 = w_fc(@f)
+    g: Fc @ fc_through(x: f)
+    n6 = w_fc(@g)
+    print(n1 + n2 + n3 + n4 + n5 + n6)

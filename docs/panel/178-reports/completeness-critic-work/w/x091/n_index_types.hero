@@ -1,0 +1,14 @@
+# Critic, panel 178: 091's neighbours, an index that is not i64, and one past the end as u64.
+extern "next.h"
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+
+function main()
+    s: Slot @ Slot(name: [0, 0, 0, 0], id: 7)
+    b: u8 @ 2
+    s.name[b] @ 3
+    print(s.name[2])
+    big: u64 @ 18446744073709551615
+    s.name[big] @ 1
+    print(s.id)

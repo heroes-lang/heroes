@@ -1,0 +1,13 @@
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Kinds tag kinds partial
+        at: Pt
+        pts: Pt[3]
+        f: f32[2]
+        last: i64
+
+function main()
+    k = Kinds(at: Pt(x: 1, y: 2), pts: [Pt(x: 3, y: 4); 3], f: [1.5; 2], last: 9)
+    print(k.pts[2].y, " ", k.f[1], " ", k.last)

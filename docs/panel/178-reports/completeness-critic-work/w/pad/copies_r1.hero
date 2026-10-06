@@ -1,0 +1,37 @@
+# Critic, panel 178: does a record's padding survive the copies value semantics makes?
+extern "netdb.h"
+    record Hints tag addrinfo partial
+        ai_family: i32
+        ai_socktype: i32
+
+extern "unistd.h"
+    function write(fd: i32, @buf: Hints, n: u64) -> i64
+
+extern "ctl.h"
+    function ctl_write() -> i64
+
+record Box
+    h: Hints
+    k: i64
+
+function make(s: i32) -> Hints
+    return Hints(ai_socktype: s, rest: zero)
+
+function through(h: Hints) -> Hints
+    return h
+
+function main()
+    a: Hints @ Hints(ai_socktype: 1, rest: zero)
+    n1 = write(fd: 1, buf: @a, n: 48)
+    b: Hints @ make(s: 2)
+    n2 = write(fd: 1, buf: @b, n: 48)
+    c: Hints @ through(h: b)
+    n3 = write(fd: 1, buf: @c, n: 48)
+    x: Box @ Box(h: c, k: 3)
+    d: Hints @ x.h
+    n4 = write(fd: 1, buf: @d, n: 48)
+    list: [Hints] @ [a, b]
+    e: Hints @ list[1]
+    n5 = write(fd: 1, buf: @e, n: 48)
+    n6 = ctl_write()
+    print(n1 + n2 + n3 + n4 + n5 + n6)

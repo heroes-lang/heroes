@@ -1,0 +1,1 @@
+no. The program builds the cell from zeros, because every binding must be initialised before `@m` can be passed, but it calls pthread_mutex_init on it before any lock or unlock.

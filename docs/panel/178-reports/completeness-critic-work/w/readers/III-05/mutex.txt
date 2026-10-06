@@ -1,0 +1,1 @@
+no. The cell starts as `pthread_mutex_t(rest: zero)`, but `pthread_mutex_init(@m, nullptr)` always runs on it before any lock or unlock.

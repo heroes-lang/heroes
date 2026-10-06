@@ -1,0 +1,7 @@
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    s = read_file("p/nul.bin").must()
+    print(s.len())
+    print(strlen(s.cstr()))

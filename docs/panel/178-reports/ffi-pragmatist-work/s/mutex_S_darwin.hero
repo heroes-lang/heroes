@@ -1,0 +1,15 @@
+# Panel 178 ffi-pragmatist, route S: `pthread_mutex_t` by value needs a private field named.
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t partial
+        __sig: i64
+    function pthread_mutex_init(@m: Mutex, attr: ptr) -> i32
+    function pthread_mutex_lock(@m: Mutex) -> i32
+    function pthread_mutex_unlock(@m: Mutex) -> i32
+
+function main()
+    z: Mutex @ Mutex(__sig: 0)
+    print(pthread_mutex_lock(@z))
+    m: Mutex @ Mutex(__sig: 0)
+    print(pthread_mutex_init(@m, attr: nullptr))
+    print(pthread_mutex_lock(@m))
+    print(pthread_mutex_unlock(@m))

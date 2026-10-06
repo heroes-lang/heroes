@@ -1,0 +1,10 @@
+# Panel 178, compiler-engineer: can a group constant name the header's initializer of a struct?
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t partial
+        __sig: i64
+    constant PTHREAD_MUTEX_INITIALIZER: Mutex
+    function pthread_mutex_lock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ PTHREAD_MUTEX_INITIALIZER
+    print(pthread_mutex_lock(@m))

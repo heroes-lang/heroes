@@ -1,0 +1,1 @@
+no. The cell is built from zeros only because the `@` out-parameter needs an initialised binding; pthread_mutex_init fills it and its result is checked before any lock.

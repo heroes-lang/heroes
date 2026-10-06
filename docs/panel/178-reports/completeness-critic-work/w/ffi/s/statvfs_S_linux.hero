@@ -1,0 +1,12 @@
+# Panel 178 ffi-pragmatist, route S: Linux `statvfs`, no long array at all.
+extern "sys/statvfs.h"
+    record Statvfs tag statvfs partial
+        f_bsize: u64
+        f_namemax: u64
+    function statvfs(path: cstr lent, @s: Statvfs) -> i32
+
+function main()
+    s: Statvfs @ Statvfs(f_bsize: 0, f_namemax: 0)
+    print(statvfs(path: "/".cstr(), @s))
+    print(s.f_bsize)
+    print(s.f_namemax)

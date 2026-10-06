@@ -1,0 +1,1 @@
+no. The storage starts as `pthread_mutex_t(rest: zero)`, but pthread_mutex_init runs on it before any lock or unlock, and the program never uses a zeroed value that skipped init.

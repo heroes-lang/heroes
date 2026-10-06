@@ -1,0 +1,309 @@
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ast.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/ast.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ast.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/ast.hero	2026-09-24 21:00:44
+@@ -174,6 +174,8 @@
+     # when the literal is written across several (§4.9).
+     array
+         elements: [i64]
++        # `[x; N]`: the N as written, and then `elements` holds x alone.
++        count: token.Span?
+     # `{ "mario": 30 }`
+     map
+         entries: [MapEntry]
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/contextual.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/check/contextual.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/contextual.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/check/contextual.hero	2026-09-24 21:01:43
+@@ -237,10 +237,16 @@
+ test "the empty literals are contextual and the filled ones are not"
+     a: ast.Ast @ ast.new_ast()
+     none: [i64] = []
+-    empty = ast.push_expr(@a.exprs, ast.Expr(kind: .array(elements: none), span: token.Span(start: 0, end: 2)))
++    empty = ast.push_expr(
++        @a.exprs,
++        ast.Expr(kind: .array(elements: none, count: fail(code: "none", msg: "each")), span: token.Span(start: 0, end: 2))
++    )
+     one = lit(@a, kind: .int_lit, start: 0, end: 1)
+     filled: [i64] = [one]
+-    full = ast.push_expr(@a.exprs, ast.Expr(kind: .array(elements: filled), span: token.Span(start: 0, end: 3)))
++    full = ast.push_expr(
++        @a.exprs,
++        ast.Expr(kind: .array(elements: filled, count: fail(code: "none", msg: "each")), span: token.Span(start: 0, end: 3))
++    )
+     assert contextual(a, empty)
+     assert !contextual(a, full)
+     hole = ast.push_expr(@a.exprs, ast.Expr(kind: .hole, span: token.Span(start: 0, end: 3)))
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/walk.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/check/walk.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/check/walk.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/check/walk.hero	2026-09-24 21:01:07
+@@ -236,6 +236,9 @@
+                     contextless_errors.cannot_infer_empty(what: "array literal", span: span)
+                 )
+                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
++
++            if !items.count.is_err()
++                state.push_diagnostic(@c, ffi_errors.repeat_outside_a_fixed(span: span))
+             first = synth(@c, a, r, s, decls, items.elements[0])
+             n: i64 @ 1
+ 
+@@ -482,7 +485,7 @@
+             # A literal takes a FIXED array's type when the length agrees
+             # (panel 062) — the length is checked here and nowhere else,
+             # because here is the only place both numbers exist.
+-            if checked_array_literal(@c, a, r, s, decls, id: id, elements: items.elements, expected: expected, span: span)
++            if checked_array_literal(@c, a, r, s, decls, id: id, elements: items.elements, count: items.count, expected: expected, span: span)
+                 return
+             got = synth(@c, a, r, s, decls, id)
+             compare(@c, s, decls, expected: expected, got: got, span: span)
+@@ -606,14 +609,19 @@
+     return
+ 
+ # The array-literal half of ⇐, true when the expectation's shape took it.
+-function checked_array_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, elements: [i64], expected: i64, span: token.Span) -> bool
++function checked_array_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, elements: [i64], count: token.Span?, expected: i64, span: token.Span) -> bool
++    written: i64 @ elements.len()
++
++    if !count.is_err()
++        written @ digits.decode_u64(source.span_text(s, count.must())).default(0).to_i64().default(0)
++
+     match table.get(c.out.types, expected)
+         .fixed x =>
+-            if elements.len() != x.length
++            if written != x.length
+                 want = state.show(c, s, decls, expected)
+                 state.push_diagnostic(
+                     @c,
+-                    ffi_errors.fixed_array_length(want: want, expected: x.length, got: elements.len(), span: span)
++                    ffi_errors.fixed_array_length(want: want, expected: x.length, got: written, span: span)
+                 )
+                 _ = state.record_expr(@c, at: id, ty: expected)
+                 return true
+@@ -624,6 +632,9 @@
+             _ = state.record_expr(@c, at: id, ty: expected)
+             return true
+         .array arr =>
++            if !count.is_err()
++                state.push_diagnostic(@c, ffi_errors.repeat_outside_a_fixed(span: span))
++
+             for item in elements
+                 check(@c, a, r, s, decls, id: item, expected: arr.element)
+ 
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/describe.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/describe.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/describe.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/describe.hero	2026-09-24 21:00:44
+@@ -52,6 +52,7 @@
+         .at          => "`@`"
+         .colon       => "`:`"
+         .colon_colon => "`::`"
++        .semicolon   => "`;`"
+         .comma       => "`,`"
+         .dot         => "`.`"
+         .question    => "`?`"
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ffi_errors.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/ffi_errors.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ffi_errors.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/ffi_errors.hero	2026-09-24 21:01:07
+@@ -189,6 +189,15 @@
+     )
+ 
+ # `i32[4]` in an ordinary record (panel 062).
++# `[x; N]` spells a fixed array's elements, whose count the type fixes; a `[T]`
++# grows, and its literal writes what it holds (panel 178 A).
++function repeat_outside_a_fixed(span: token.Span) -> diag.Diagnostic
++    return diag.new_diagnostic(
++        code: "repeat_outside_a_fixed",
++        message: "`[x; N]` fills a fixed array such as `i8[256]`, and this position wants no fixed array — write the elements",
++        span: span
++    )
++
+ function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
+     d: diag.Diagnostic @ diag.new_diagnostic(
+         code: "fixed_outside_a_group",
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/grammar_expr.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/grammar_expr.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/grammar_expr.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/grammar_expr.hero	2026-09-24 21:01:43
+@@ -136,7 +136,7 @@
+             code: "not_an_operator",
+             msg: "a keyword is not an operator"
+         )
+-        .eq | .at | .colon | .colon_colon | .comma | .dot | .question | .hole => fail(
++        .eq | .at | .colon | .colon_colon | .semicolon | .comma | .dot | .question | .hole => fail(
+             code: "not_an_operator",
+             msg: "punctuation is not an operator"
+         )
+@@ -478,6 +478,7 @@
+ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+     open = cursor.bump(@c).span
+     items: [i64] @ []
++    count: token.Span? @ fail(code: "none", msg: "each element written")
+     reading: bool @ true
+ 
+     while reading
+@@ -488,8 +489,21 @@
+         else
+             items @ items.push(parse_expr(@c, @a, text))
+ 
+-            if !separator(@c, text: text, closer: .rbracket, what: "element")
++            # `[x; N]` (panel 178 A): one element and how many, the count an
++            # integer literal as a fixed array's length is (parse/type.hero).
++            if items.len() == 1 && cursor.eat(@c, .semicolon)
++                if cursor.at(c, .int_lit)
++                    count @ ok(cursor.bump(@c).span)
++                else
++                    cursor.error(
++                        @c,
++                        code: "expected_repeat_count",
++                        message: "`[x; N]` repeats `x` N times, and N is an integer literal",
++                        span: cursor.current_span(c)
++                    )
+                 reading @ false
++            else if !separator(@c, text: text, closer: .rbracket, what: "element")
++                reading @ false
+ 
+     close = cursor.current_span(c)
+ 
+@@ -497,7 +511,7 @@
+         cursor.recover_past_closer(@c, opener: .lbracket, closer: .rbracket)
+     return ast.push_expr(
+         @a.exprs,
+-        ast.Expr(kind: .array(elements: items), span: token.Span(start: open.start, end: close.end))
++        ast.Expr(kind: .array(elements: items, count: count), span: token.Span(start: open.start, end: close.end))
+     )
+ 
+ # `{ "mario": 30 }`, `{}`, or one entry per line.
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ir/flatten.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/ir/flatten.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/ir/flatten.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/ir/flatten.hero	2026-09-24 21:01:26
+@@ -480,6 +480,21 @@
+     build.store_slot(@b, slot_id: slot, value: value, span: span)
+     return slot
+ 
++function repeated(c: state.Checked, value: i64, ty: i64) -> [i64]
++    out: [i64] @ []
++    times: i64 @ 1
++
++    match table.get(c.types, ty)
++        .fixed x                                                  => times @ x.length
++        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => times @ times
++        .array | .map | .fallible | .function_ty | .named         => times @ times
++        .case_ty | .failure | .generic | .error                   => times @ times
++
++    while out.len() < times
++        out @ out.push(value)
++
++    return out
++
+ ## Calls, construction, and UFCS erased (§4.9, §4.11, §4.13, §4.19)
+ 
+ # Two of Part 5's rows cost nothing here, and the reason is a surface
+@@ -1257,6 +1272,9 @@
+             for e in elements.elements
+                 values @ values.push(expr(@b, a, r, c, s, decls, id: e))
+ 
++            # `[x; N]`: x once, and its value N times, N the type's own length.
++            if !elements.count.is_err()
++                values @ repeated(c, value: values[0], ty: ty)
+             run = emissions.value_args(@b, values)
+             return build.emit(@b, op: .construct(shape: .array_shape, arguments: run), ty: ty, span: span)
+         .map entries =>
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/layout.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/layout.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/layout.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/layout.hero	2026-09-24 21:01:43
+@@ -39,19 +39,19 @@
+ # postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`.
+ function is_line_ender(kind: token.TokenKind) -> bool
+     return match kind
+-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit              => true
+-        .kw_true | .kw_false | .kw_nullptr                                              => true
+-        .kw_return | .kw_break | .kw_continue                                           => true
+-        .hole | .question | .rparen | .rbracket | .rbrace                               => true
+-        .kw_constant | .kw_function | .kw_record | .kw_variant                          => false
+-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                    => false
+-        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                         => false
+-        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
+-        .lparen | .lbracket | .lbrace                                                   => false
+-        .plus | .minus | .star | .slash | .percent                                      => false
+-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                       => false
+-        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                => false
+-        .comment | .terminator | .indent | .dedent | .eof | .error                      => false
++        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                           => true
++        .kw_true | .kw_false | .kw_nullptr                                                           => true
++        .kw_return | .kw_break | .kw_continue                                                        => true
++        .hole | .question | .rparen | .rbracket | .rbrace                                            => true
++        .kw_constant | .kw_function | .kw_record | .kw_variant                                       => false
++        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                                 => false
++        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                                      => false
++        .eq | .at | .colon | .colon_colon | .semicolon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
++        .lparen | .lbracket | .lbrace                                                                => false
++        .plus | .minus | .star | .slash | .percent                                                   => false
++        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                                    => false
++        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                             => false
++        .comment | .terminator | .indent | .dedent | .eof | .error                                   => false
+ 
+ ## The margin
+ 
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/bodies.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/print/bodies.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/bodies.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/print/bodies.hero	2026-09-24 21:01:43
+@@ -194,6 +194,8 @@
+             for item in arr.elements
+                 rendered @ rendered.push(render_expr(tree, item, s))
+ 
++            if !arr.count.is_err()
++                return "[" + rendered.join(", ") + "; " + source.span_text(s, arr.count.must()) + "]"
+             return "[" + rendered.join(", ") + "]"
+         .map mp =>
+             rendered: [str] @ []
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/fmt.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/print/fmt.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/print/fmt.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/print/fmt.hero	2026-09-24 21:01:43
+@@ -936,6 +936,9 @@
+     match tree.exprs[value].kind
+         # §4.9: a multi-line list separates by newline, not by comma.
+         .array arr =>
++            if !arr.count.is_err()
++                put_line(@f, indent: indent, text: head + render(tree, s, id: value))
++                return
+             put_line(@f, indent: indent, text: head + "[")
+ 
+             for item in arr.elements
+@@ -1334,6 +1337,8 @@
+             for item in arr.elements
+                 rendered @ rendered.push(render(tree, s, id: item))
+ 
++            if !arr.count.is_err()
++                return "[" + rendered.join(", ") + "; " + source.span_text(s, arr.count.must()) + "]"
+             return "[" + rendered.join(", ") + "]"
+         .map mp =>
+             rendered: [str] @ []
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/scan.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/scan.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/scan.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/scan.hero	2026-09-24 21:00:44
+@@ -244,6 +244,9 @@
+     if b == ':'
+         return ok(.colon)
+ 
++    if b == ';'
++        return ok(.semicolon)
++
+     if b == ','
+         return ok(.comma)
+ 
+diff -ruN /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/token.hero /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/token.hero
+--- /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/base-sh/selfhost/token.hero	2026-09-24 20:22:23
++++ /private/tmp/claude-501/-Users-joseph-Temp-heroes-heroes-lang/07a257f7-6606-4944-b558-0be3c97d5c11/scratchpad/178-compiler-engineer/proto-a/selfhost/token.hero	2026-09-24 21:00:44
+@@ -60,6 +60,8 @@
+     eq
+     at
+     colon
++    # `;`, and only inside `[x; N]` (panel 178 route A).
++    semicolon
+     # `::`, the field-name operator: `Point::x` is the `str` `"x"`.
+     # Two bytes rather than a second meaning for `.`, which already
+     # qualifies a module and already reads a field from a value
+@@ -143,6 +145,7 @@
+         .at          => "at"
+         .colon       => "colon"
+         .colon_colon => "colon_colon"
++        .semicolon   => "semicolon"
+         .comma       => "comma"
+         .dot         => "dot"
+         .question    => "question"
