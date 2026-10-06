@@ -36,7 +36,7 @@
 # |---|---|
 # | `refuse` | `grammar_expr.for_stmt` |
 # | `do_tail`, `passed_clauses` | `grammar_expr.while_stmt` |
-# | `past_a_statement` | `parse/statement_end.close` |
+# | `past_a_statement`, `under_a_do` | `parse/statement_end.close` |
 
 use token
 use diag
@@ -44,7 +44,7 @@ use cursor
 use parse/brace_habit
 use parse/opening
 use parse/line_end
-use parse/laid_braces
+use laid_braces
 use pairing
 use text_lines
 use operators
@@ -205,8 +205,44 @@ function past_a_statement(c: cursor.Cursor, text: str, from: i64) -> str
         close = brace_habit.closer(c, open: c.pos)
 
         if c.tokens[close].kind == .rbrace && c.tokens[close + 1].kind == .kw_while || c.tokens[close].kind == .kw_while
-            return "C's `do { … } while (c)`, which runs its body before asking `c`, is no loop here: write the body under `while true`, ending it with `if !(c)` over `break`"
+            return do_while()
     return "one statement per line, no semicolons"
+
+# C's do-while, which no word here writes, and what to write for it.
+function do_while() -> str
+    return "C's `do { … } while (c)`, which runs its body before asking `c`, is no loop here: write the body under `while true`, ending it with `if !(c)` over `break`"
+
+# Whether the statement begun at token `from`, whose line end the cursor
+# stands past, is the name `do` alone on its line over a block: braces the
+# lexer laid out, their `{` on a line of its own, or an indented block, C's
+# do-while with its `{` below the `do` or none. Told once at the block, for
+# what it is, where it was a map refused for its block, or a block nothing
+# opens, and the `while` below it a loop with no body (defect 367); the
+# caller reads the block, and `do_tail` the `while`.
+function under_a_do(@c: cursor.Cursor, text: str, from: i64) -> bool
+    i: i64 @ c.pos - 1
+
+    while i > from && (c.tokens[i].kind == .comment || token.is_line_end(c.tokens[i].kind))
+        i @ i - 1
+
+    if i != from || !alone_do(c, text, at: from) || !cursor.at(c, .indent) && !(brace_habit.opens_here(c, text) && laid_braces.laid_out_by_lexer(c, open: c.pos))
+        return false
+    cursor.error(
+        @c,
+        code: "unexpected_block",
+        message: "this block is opened by nothing, `do` opening none — " + do_while(),
+        span: cursor.current_span(c)
+    )
+    return true
+
+# Whether the token at `at` is the name `do`, the first on its line.
+function alone_do(c: cursor.Cursor, text: str, at: i64) -> bool
+    i: i64 @ at - 1
+
+    while i >= 0 && c.tokens[i].kind == .comment
+        i @ i - 1
+
+    return c.tokens[at].kind == .ident && cursor.slice_of(text, c.tokens[at].span) == "do" && (i < 0 || token.is_line_end(c.tokens[i].kind))
 
 # Whether the `while` at token `head`, whose condition the cursor stands
 # after, is the tail of braces whose `{` a report names, with no body after
@@ -227,7 +263,7 @@ function do_tail(c: cursor.Cursor, text: str, head: i64) -> bool
     if close >= 0 && c.tokens[close].kind == .rbrace && text_lines.newlines_between(text, from: c.tokens[close].span.end, to: c.tokens[head].span.start) == 0
         opener @ opener_of(c, close: close)
     else
-        opener @ laid_opener(c, head: head)
+        opener @ laid_opener(c, text, head: head)
 
     if opener < 0 || c.tokens[below].kind == .indent || opening.tabbed_line(c, text) || brace_habit.ending(c, text) >= 0
         return false
@@ -237,7 +273,7 @@ function do_tail(c: cursor.Cursor, text: str, head: i64) -> bool
 # its `}` alone on the line above and no token (`laid_braces.laid_block`), or
 # -1: past the indent the block's last dedent closes, by depth, where it has
 # a block, the `{`.
-function laid_opener(c: cursor.Cursor, head: i64) -> i64
+function laid_opener(c: cursor.Cursor, text: str, head: i64) -> i64
     i: i64 @ head - 1
     depth: i64 @ 0
 
@@ -253,9 +289,15 @@ function laid_opener(c: cursor.Cursor, head: i64) -> i64
             i @ i - 1
 
         i @ i - 1
+    indent = i + 1
 
     while i > 0 && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
         i @ i - 1
+
+    # Or the block with no braces below `do` alone, told at its indent
+    # (`under_a_do`, defect 367).
+    if indent < head && c.tokens[indent].kind == .indent && i >= 0 && alone_do(c, text, at: i)
+        return indent
 
     if i < 0 || !laid_braces.laid_out_by_lexer(c, open: i) || laid_braces.laid_block(c, open: i).past != head
         return -1

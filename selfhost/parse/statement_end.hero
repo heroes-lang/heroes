@@ -88,6 +88,8 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
     ended = c.pos > from && cursor.at_fresh_line(c)
 
     if ended || cursor.at(c, .dedent) || cursor.at(c, .eof) || cursor.eat(@c, .terminator)
+        if loop_habit.under_a_do(@c, text, from: from)
+            return .read
         return .nothing
     said = !cursor.at_reported_error(c) || refused_literal.here(c, text)
 

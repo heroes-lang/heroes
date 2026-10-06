@@ -37,7 +37,7 @@ use cursor
 use lexer
 use text_lines
 use parse/brace_habit
-use parse/laid_braces
+use laid_braces
 
 ## The view
 

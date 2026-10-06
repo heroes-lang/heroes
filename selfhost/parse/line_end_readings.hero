@@ -14,7 +14,7 @@ use diag
 use cursor
 use lexer
 use pairing
-use parse/laid_braces
+use laid_braces
 
 # What else the line end refused before a token may have been, beside going on
 # with the line above, which is what the fix writes:
