@@ -3,7 +3,7 @@ kind: defect
 area: print
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 5438d3d60863b71961214f9acdf5aaa1c55dcbc9
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-c382, 2026-10-06 (its report, *found beside* 1), landing panel 195; filed by the coordinator at 15:33.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a cost, the product of a literal's length with itself, every output right; it keeps panel 195's 70,000-element golden out of the tree, since `canonical` would format it and `probe` nine times. Into batch 13 under the author's instruction of 2026-10-05.
+
+    Repaired at `5438d3d6`, 2026-10-06 (lane b13-front), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
