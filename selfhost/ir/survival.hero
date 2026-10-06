@@ -2,7 +2,7 @@
 # instruction writes (design.md Part 5, §4.10; defect 230, 2026-10-03).
 #
 # The ownership pass gives such a load a reference of its own
-# (`ir/own.hero`; `ir/place_store.hero`'s `load_survives_write` says why:
+# (`ir/own.hero`; `load_survives_write` below says why:
 # once the place store makes counts honest, the header under a borrowed load
 # dies at the write). It asked that question of every counted load, a walk
 # from the load to the end of its block, so a block of N loads cost N walks
@@ -15,9 +15,11 @@
 # the second carries each root's nearest write below.
 #
 # What an instruction writes is read in ONE place, `roots_written`, which
-# `place_store.writes_root` asks too, so the place store's pattern and this
+# `writes_root` below asks for one root, and the place store's walk between a
+# load and its store (`ir/between.hero`) asks too, so the place store and this
 # pass cannot disagree about a writer. `load_survives_write` stays as the
-# per-load reading, and `ir/own.hero`'s test holds this one to it.
+# per-load reading, and `ir/own.hero`'s test holds this one to it; both lived
+# in `ir/place_store.hero` until defect 381 gave that module the walk.
 
 use ir
 use ir/containers
@@ -132,3 +134,50 @@ function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> S
         at @ at - 1
 
     return Survivors(survive: survive, visits: visits)
+
+# Does this load's value outlive a write to its own root — an `@` call
+# on the slot, a push_owned, a store? Classic lowering never asked: rule
+# 5's synthetic slots kept every accumulator at refcount 2 by accident,
+# so the header under a borrowed load could not die. The place store
+# makes the count honest, which is exactly when the load needs a
+# reference of its own (ir_own gives it one; place-store-c5 case 5 is
+# the program that dies without this). Since defect 230 the ownership
+# pass asks `survival.survivors` of a whole block at once, where this walk
+# per load cost the block's length squared; this reading stays as the
+# oracle `ir/own.hero`'s test holds that one to.
+function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.Term, load_at: i64, root: i64, value: i64) -> bool
+    written: bool @ false
+    at: i64 @ load_at + 1
+
+    while at < insts.len()
+        if written
+            for v in uses.operands(f, insts[at].op)
+                if v == value
+                    return true
+        else
+            if writes_root(f, insts[at].op, root: root)
+                written @ true
+        at @ at + 1
+
+    if written
+        for v in uses.terminator_operands(term)
+            if v == value
+                return true
+    return false
+
+# Could this operation change what the root slot holds? `@` arguments
+# and stores are the only writers the IR has; copy_out is kept out of
+# caution — it writes a caller's place through a parameter. What an
+# operation writes is read in one place, `roots_written`, since
+# defect 230, so the place store and the ownership pass ask the same table.
+function writes_root(f: containers.Function, op: ir.OpKind, root: i64) -> bool
+    written = roots_written(f, op)
+
+    if written.every
+        return true
+
+    for one in written.roots
+        if one == root
+            return true
+
+    return false
