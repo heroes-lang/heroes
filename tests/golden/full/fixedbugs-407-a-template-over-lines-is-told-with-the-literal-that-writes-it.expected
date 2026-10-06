@@ -1,0 +1,6 @@
+error[unexpected_character]: `` `… ``, over 5 lines, is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f"…"` literal, on one line, a line break in its text written `\n`: `f"\n        SELECT name\n        FROM users\n        WHERE id = {id}\n    "`
+  at tests/golden/full/fixedbugs-407-a-template-over-lines-is-told-with-the-literal-that-writes-it.hero:10:11
+     |
+  10 |     print(`
+     |           ^
+  fix (guess): write it as `f"\n        SELECT name\n        FROM users\n        WHERE id = {id}\n    "`

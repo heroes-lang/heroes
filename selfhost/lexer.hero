@@ -414,6 +414,29 @@ test "a stretch is told once, and a flood of stretches eight times a text"
     ticks = lex_one("x = " + "`".repeat(4000) + "\n")
     assert ticks.diagnostics.len() == 1
 
+# Defect 407: a template over lines is one stretch, told once, the lines it
+# holds laying out nothing, and in a hole of an `f"…"` literal the hole goes
+# on after it; a stray backtick takes no line below it to a backtick that
+# opens a template of its own, nor a line a declaration opens at column 0.
+test "a template over lines is one stretch, and a stray backtick takes no line below it"
+    two = lex_one("function main()\n    s = `v=${x}\nand more`\n    print(s)\n")
+    assert two.diagnostics.len() == 1
+    assert kind_line(two.tokens) == "kw_function ident lparen rparen terminator indent ident eq error terminator ident lparen ident rparen terminator dedent eof"
+    hole = lex_one("print(f\"{`a\nb`}\")\n")
+    assert hole.diagnostics.len() == 1
+    assert kind_line(hole.tokens) == "ident lparen str_piece error str_piece rparen terminator eof"
+    stray = lex_one("function main()\n    x = 1 `\n    print(`y`)\n")
+    assert stray.diagnostics.len() == 2
+    declared = lex_one("function a()\n    x = 1 `\n\nfunction b()\n    y = 2 `\n")
+    assert declared.diagnostics.len() == 2
+    assert kind_line(declared.tokens) == "kw_function ident lparen rparen terminator indent ident eq int error terminator dedent kw_function ident lparen rparen terminator indent ident eq int error terminator dedent eof"
+
+    # Bounded as one on a line is: eight told, the rest counted by their
+    # characters, their line ends not among them.
+    flood = lex_one("x = `a\nb`\n".repeat(40))
+    assert flood.diagnostics.len() == 8
+    assert flood.diagnostics[7].notes == ["128 more characters of this file are not part of the language's syntax either, not told one by one"]
+
 # Defect 250: an escape the language does not have inside a header's name
 # is the head's to tell (`escape_in_header_name`, at the parser), so the
 # lexer says nothing of it there; elsewhere it says what it always said.

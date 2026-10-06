@@ -1,0 +1,61 @@
+# Defect 407, 2026-10-06 (lane b13-front's finding beside defect 391).
+# Symptom: JavaScript's template literal written over lines was told three to
+# five times, under `check` and `check --permissive` alike: its opening
+# backtick, its `$`, its closing backtick, and what the parser made of its
+# text read as code, `continuation_outside_brackets`, `unexpected_block` or
+# `expected_declaration`. Cause: defect 391's repair read a template to a
+# close on its own line, and the lexer reads a line at a time. A template
+# over lines is read to its close as JavaScript reads it, within the 512
+# bytes defect 391 bounds a template by, the cursor moved past its lines as
+# a block comment over lines moves it, and told once, by name, its first
+# line quoted and its lines counted, with the literal that writes it on one
+# line, each line break `\n`, as a guess (`backtick_strings.hero`,
+# `backtick_told.hero`). The backticks a template over lines cannot hold are
+# the case beside this one.
+
+function two_lines(x: i64)
+    #~v unexpected_character
+    print(`v=${x}
+and more`)
+
+function many_lines(id: i64)
+    #~v unexpected_character
+    print(`
+        SELECT name
+        FROM users
+        WHERE id = ${id}
+    `)
+
+function no_hole()
+    #~v unexpected_character
+    print(`first line
+    second line`)
+
+# A hole whose code goes over lines has no `f"…"` spelling: one message.
+function a_hole_over_lines(x: i64)
+    #~v unexpected_character
+    print(`a ${
+        x
+    } b`)
+
+# A `\` before a line end is JavaScript's line continuation, no part of the
+# string.
+function continued()
+    #~v unexpected_character
+    print(`one \
+two`)
+
+# In a hole of an `f"…"` literal the line it closes on goes on as that
+# literal.
+function in_a_hole(x: i64)
+    #~v unexpected_character
+    print(f"{`a${x}
+b`}")
+
+function main()
+    two_lines(7)
+    many_lines(7)
+    no_hole()
+    a_hole_over_lines(7)
+    continued()
+    in_a_hole(7)

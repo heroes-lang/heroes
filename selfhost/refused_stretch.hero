@@ -6,8 +6,9 @@
 # backticks, its four Cyrillic letters and its `$`; `ключ` alone four; `$$$`
 # three. Here, at the first character the scanner refuses:
 #
-# - a backtick opening a string that closes on its line is told once, by
-#   name, with the literal that writes it (`backtick_strings.hero`);
+# - a backtick opening a string is told once, by name, with the literal that
+#   writes it (`backtick_told.hero`), where it closes on its line or on a
+#   line below (`backtick_strings.hero`, defect 407);
 # - a run of refused characters that can be seen, through the spaces
 #   between them, is told once in the scanner's own words, its first
 #   `SHOWN` characters quoted and the rest counted, so `refused_runs` counts
@@ -35,6 +36,7 @@ use shown_char
 use punctuation
 use escape_readings
 use backtick_strings
+use backtick_told
 
 # How the scanner's refusal of one character ends (`scan.punct`), which a
 # run's message keeps, so `refused_runs.gathered` counts it.
@@ -47,15 +49,16 @@ constant SHOWN: i64
 
 # Whether a stretch begins at `at`, the character `scan.punct` has just
 # refused and told no one else about: told as one `error` token if so, the
-# cursor past it.
+# cursor past it, past the lines a template spans included.
 function told(@l: state.LexState, text: str, at: i64) -> bool
-    close = backtick_strings.template_close(text, at: at)
+    hole = l.holes.len() > 0
+    close = backtick_strings.template_close(text, at: at, hole: hole)
 
     if close > 0
-        state.error_token(@l, backtick_strings.template(text, from: at, to: close))
+        state.error_token(@l, backtick_told.template(text, from: at, to: close))
         l.pos @ close
         return true
-    end = run_end(text, at: at)
+    end = run_end(text, at: at, hole: hole)
 
     if end < 0
         return false
@@ -78,9 +81,13 @@ function run_shown(run: str) -> str
 
 # Past the last of a run of refused characters that can be seen, from `at`
 # through the spaces between them, where it holds more than one; -1 where
-# the one at `at` stands alone.
-function run_end(text: str, at: i64) -> i64
-    if !refused_and_seen(text, at: at)
+# the one at `at` stands alone, `hole` saying whether in a hole of an
+# `f"…"` literal (`backtick_strings.template_close`). The one at `at` is
+# asked no template: `told` has asked it, and read over lines a template is
+# read for up to `READ` bytes from a backtick that opens none, which twice
+# would read twice.
+function run_end(text: str, at: i64, hole: bool) -> i64
+    if !seen(text, at: at)
         return -1
     end: i64 @ at + bytes.char_at(text, at).len()
     many: bool @ false
@@ -91,7 +98,7 @@ function run_end(text: str, at: i64) -> i64
         while next < text.len() && text[next] == ' '
             next @ next + 1
 
-        if next >= text.len() || !refused_and_seen(text, at: next)
+        if next >= text.len() || !refused_and_seen(text, at: next, hole: hole)
             break
         end @ next + bytes.char_at(text, next).len()
         many @ true
@@ -101,21 +108,22 @@ function run_end(text: str, at: i64) -> i64
     return end
 
 # Whether the scanner refuses the character at `at` as one with no reading
-# of its own, and a reader can see it: none of the bytes `scan.line_body`
-# hands elsewhere (a space, a line's end, a comment, a quote, a digit, a
-# letter, `_`, a `\` or a `;`, each with its own habit), no punctuation of
-# the language, no backtick opening a template, and no character
-# `shown_char` writes by its code.
-function refused_and_seen(text: str, at: i64) -> bool
+# of its own, and a reader can see it (`seen`), and it is no backtick
+# opening a template.
+function refused_and_seen(text: str, at: i64, hole: bool) -> bool
+    return seen(text, at: at) && backtick_strings.template_close(text, at: at, hole: hole) < 0
+
+# Whether the character at `at` is none of the bytes `scan.line_body` hands
+# elsewhere (a space, a line's end, a comment, a quote, a digit, a letter,
+# `_`, a `\` or a `;`, each with its own habit), no punctuation of the
+# language, and no character `shown_char` writes by its code.
+function seen(text: str, at: i64) -> bool
     b = text[at]
 
     if b == ' ' || b == '\t' || b == '\n' || b == 13 || b == '#' || b == '"' || b == '\'' || b == '\\' || b == ';' || b == '_'
         return false
 
     if bytes.is_alnum(b) || punctuation.punct_at(text, at: at).width > 0
-        return false
-
-    if backtick_strings.template_close(text, at: at) > 0
         return false
     return !shown_char.is_control(bytes.char_at(text, at))
 
@@ -141,6 +149,21 @@ test "a template literal is one error token, the cursor past it"
         assert stray.diagnostics.len() == 0
         assert stray.pos == 0
 
+    # Over lines, one token too, the cursor past them (defect 407), in a
+    # hole of an `f"…"` literal where no backtick follows it on its line.
+    over = lexed_one("`a\nb` + 1\n")
+    assert over.pos == 5
+    assert over.tokens.len() == 1
+
+    in_a_hole: state.LexState @ state.new_state()
+    in_a_hole.holes @ [0]
+    assert told(@in_a_hole, "`a\nb`}\"\n", at: 0)
+    assert in_a_hole.pos == 5
+    ticked: state.LexState @ state.new_state()
+    ticked.holes @ [0]
+    assert !told(@ticked, "`a\nb`}`\"\n", at: 0)
+    assert ticked.pos == 0
+
 test "a run of refused characters that can be seen is told once, through its spaces"
     l = lexed_one("ключ слово = 1")
     assert l.diagnostics.len() == 1
@@ -154,7 +177,7 @@ test "a run of refused characters that can be seen is told once, through its spa
 
     # A backtick ends a run where it opens a template, and is in one where
     # it opens none, two with nothing between among them.
-    assert run_end("$$`a`", at: 0) == 2
+    assert run_end("$$`a`", at: 0, hole: false) == 2
     assert lexed_one("$` x").diagnostics[0].message == "`` $` ``" + SAID
     assert lexed_one("````").diagnostics[0].span == token.Span(start: 0, end: 4)
 

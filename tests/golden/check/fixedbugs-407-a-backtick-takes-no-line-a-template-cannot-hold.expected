@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:15:11: error[unexpected_character]: `` `c` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes: `"c"`
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:19:11: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:20:11: error[unexpected_character]: `` `y` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes: `"y"`
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:25:11: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:31:11: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:38:11: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:42:11: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:57:9: error[unexpected_character]: ``` is not part of the language's syntax
