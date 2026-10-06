@@ -17,3 +17,7 @@ static inline int32_t w_atomic(unsigned char *_Atomic p) { p[0] = 'Z'; return 1;
 static inline int32_t w_char(char *p) { p[0] = 'Z'; return 1; }
 static inline int32_t w_const_pointer(char *const p) { p[0] = 'Z'; return 1; }
 static inline int32_t w_void(void *p) { ((unsigned char *)p)[0] = 'Z'; return 1; }
+
+/* Three parameters where a binding declares two: the first is written, the
+   two the binding names are read. */
+static inline int32_t w_shifted(char *x, const char *a, const char *b) { x[0] = a[0]; return b[0]; }

@@ -1,0 +1,362 @@
+# What the header answers about a READ-ONLY LEND (design.md §1.12, §4.19,
+# §4.20; panel 058; defect 411, 2026-10-06): whether the pointer a `cstr`
+# parameter crosses to points at `const` bytes.
+#
+# `.cstr()` is zero-copy: it hands C the interior pointer of a refcounted,
+# copy-on-write buffer, and a lease or a literal is no more C's to write. The
+# refusal of a header that may write such bytes read clang's words
+# *discards qualifiers* about the probe's call, and clang tells a `const char
+# *` handed to an `unsigned char *` another way, `-Wpointer-sign`, a warning:
+# `SHA256_Final(md: cstr lent)` built at exit 0, wrote SHA-256's 32 bytes
+# through a `str` the program shared, and a literal lent the same way was
+# SIGBUS. So every `cstr` parameter that is not `@` is asked in the pointee
+# check's unit (`cli/header_types.hero`), at the author's own line, as C11
+# arithmetic on the header's own type `P`:
+#     __builtin_types_compatible_p(P, __typeof__(*(P)0) const *)
+# which holds exactly when what `P` points at is already `const`, whatever
+# typedef, sign, `restrict` or array spelling the header uses. Its failure
+# carries `WRITABLE_MARKER`, and `writable_pointee` reads it back into
+# `ffi_writable_parameter`, the diagnostic `emit/ffi_mutable.hero`'s second
+# route, clang's phrase, gives where the check could not ask.
+#
+# Split out of `emit/ffi_mutable.hero` on 2026-10-07, when the question took
+# the parameter count it is asked under past §11's 300 lines there, along the
+# seam the two routes already drew: the header's answer here, clang's phrase
+# there, and the one diagnostic both give here, which the phrase's route
+# imports.
+
+use ast
+use bytes
+use source
+use token
+use diag
+use check/state
+use check/render
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/ffi_pointee
+use cli/pointee_ask
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The contract between the check unit that asks the question and the reader
+# below: one string, one home (CLAUDE.md §11). No other `heroes-ffi-` marker
+# is a prefix of it, nor it of one.
+constant WRITABLE_MARKER: str
+    "heroes-ffi-writable "
+
+# The one diagnostic both routes give, so the header's answer and clang's
+# phrase tell the author the same thing.
+function refusal(name: str, which: str, declared: str, c_type: str, span: token.Span) -> diag.Diagnostic
+    # "does not promise to leave it alone", not "would write through
+    # it" (author decision 2026-08-15, from panel 059): free(void *)
+    # does not WRITE through its argument, it deallocates it — both
+    # are the same defect for this program and neither is "writing",
+    # so the message states what the header actually declares.
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_writable_parameter",
+        message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type + "` — C does not promise to leave it alone",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+    )
+
+    # The repair is not "add const", which is the header's to choose
+    # and not this program's. It is to stop lending and start owning.
+    d.notes @ d.notes.push("declare it `ptr` and give `" + name + "` a buffer C owns, then read the result back")
+    d.fixes @ d.fixes.push(diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: span, certainty: .guess))
+    return d
+
+## The header's answer
+
+# `heroes-ffi-writable <name> <param> <header type…>` failed: the pointer the
+# header takes for a `cstr` parameter points at bytes it does not promise to
+# leave alone. Gated on the LOCATION like clang's phrase is, since the check
+# unit `#line`s the question at the author's declaration: a line in a file
+# this compilation does not own, the library's among them, is not the
+# author's to be told.
+function writable_pointee(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: WRITABLE_MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not a read-only lend's assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 3
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no usable location")
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if found.is_err() || found.must().name != parts[0]
+        return fail(code: "none", msg: "no extern of that name is declared at that line")
+    f = found.must().f
+    tail: [str] @ []
+    index: i64 @ 2
+
+    while index < parts.len()
+        tail @ tail.push(parts[index])
+        index @ index + 1
+
+    header_type = unqualified(ffi_pointee.trim_quote(tail.join(" ")))
+
+    for slot_id in f.params
+        if f.slots[slot_id].name == parts[1]
+            none: [str] = []
+            declared = render.render_ty(c.types, s, decls, f.slots[slot_id].ty, none)
+            return ok(
+                refusal(name: parts[0], which: "`" + parts[1] + "`", declared: declared, c_type: header_type, span: decls[f.decl].span)
+            )
+
+    return fail(code: "none", msg: "no parameter of that name")
+
+# The line the check unit writes for one answered ask of this file's.
+function question(asked: pointee_ask.Pointee, header_type: str) -> str
+    return read_only_assertion(asked, header_type: header_type)
+
+# The question, as the line the check unit writes for one parameter whose
+# header type is `header_type`. `*(P)0` names the pointee as C reads it, so a
+# typedef (`LPSTR`, `uint8_t *`), an array parameter (adjusted to a pointer)
+# and a `void *` are asked alike; `__builtin_types_compatible_p` ignores the
+# qualifiers on the pointer itself, `char *const` and `restrict`, which bind
+# the callee's own copy. On a function pointer `const` has no effect, so the
+# question holds and the probe's call says what is wrong with the binding.
+function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> str
+    return "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + asked.name + " " + asked.param + " " + header_type + "\");"
+
+# `out`, then every read-only ask's answer the dump allows. **A function whose
+# header takes another number of parameters than the declaration gives is
+# asked nothing here** (2026-10-07, `tests/golden/fixedbugs/ffi-call-arity`):
+# which header parameter a declared one stands for is then unknown, so a
+# verdict on one could name a parameter the header leaves alone, a false
+# message. `f(a: cstr lent, b: cstr lent)` against `int f(char *x, const char
+# *a, const char *b)` would be told that `a` may be written. The probe's call
+# tells the count (`ffi_call_shape`), and the question is asked once the
+# counts agree. The count is the declaration's own, an `ARITY` ask's index.
+function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}) -> [pointee_ask.Answered]
+    counts: {str: i64} @ {}
+
+    for one in wanted
+        if one.declared == pointee_ask.ARITY
+            counts[one.name] @ one.index
+
+    kept: [pointee_ask.Answered] @ out
+
+    for one in wanted
+        if one.declared != pointee_ask.READ
+            continue
+        params = types[one.name]
+        declared = counts[one.name]
+
+        if params.is_err() || declared.is_err() || declared.must() != params.must().len()
+            continue
+
+        if one.index >= params.must().len()
+            continue
+        through: str @ ""
+        bent = sugar[one.name]
+
+        if !bent.is_err() && one.index < bent.must().len()
+            through @ bent.must()[one.index]
+        pointer = asked_type(written: params.must()[one.index], through: through)
+
+        if !pointer.is_err()
+            kept @ kept.push(pointee_ask.Answered(asked: one, header_type: pointer.must(), pointee: ""))
+
+    return kept
+
+# The type a `cstr` parameter's question is asked of, from the two spellings
+# the pointee check's dump gives it, the header's own (`written`) and the one
+# through its typedefs (`through`, empty where they agree); or absent where
+# the header takes the parameter by value, where the probe's call is the
+# verdict. The header's own spelling is asked, as a lend's other questions
+# ask it, since a type spelled through its typedefs can name a struct with
+# no name C can write. An ATOMIC pointer (`_Atomic(char *)`) is the one
+# exception: C cannot apply `*` to it, so the pointer inside is asked, which
+# is what the call converts the argument to.
+function asked_type(written: str, through: str) -> str?
+    plain: str @ through
+
+    if plain.len() == 0
+        plain @ written
+    bare = without_leading_qualifiers(plain)
+
+    if bytes.bytes_at(text: bare, at: 0, needle: "_Atomic(") && bytes.bytes_at(text: bare, at: bare.len() - 1, needle: ")")
+        inner = ffi_lookup.trimmed(bare.slice(from: 8, to: bare.len() - 1))
+
+        if !ffi_lookup.has(text: inner, needle: "*")
+            return fail(code: "none", msg: "an atomic value or a pointer only its typedef spells")
+        return ok(inner)
+
+    if !ffi_lookup.has(text: plain, needle: "*")
+        return fail(code: "none", msg: "the header takes it by value")
+    return ok(written)
+
+# The type without the qualifiers written before it, `const _Atomic(char *)`
+# being an atomic pointer that is itself `const`.
+function without_leading_qualifiers(text: str) -> str
+    kept: str @ ffi_lookup.trimmed(text)
+    cut: bool @ true
+
+    while cut
+        cut @ false
+
+        for word in ["const ", "volatile "]
+            if !cut && bytes.bytes_at(text: kept, at: 0, needle: word)
+                kept @ ffi_lookup.trimmed(kept.slice(from: word.len(), to: kept.len()))
+                cut @ true
+
+    return kept
+
+# A qualifier written after a pointer's last `*` binds the parameter itself,
+# which only the callee sees: the type the call hands its argument to is the
+# type without it. So the message names that, as clang's own word for the
+# call always did, and reads the same on a libc that writes glibc's `char
+# *restrict` as on one that writes `char *`. Asked of the bytes: the text after
+# the last `*` is cut only where every word of it is such a qualifier, so `int
+# (*)[4]` and a type with no `*` are left whole.
+constant TOP_QUALIFIERS: [str]
+    [
+        "const"
+        "volatile"
+        "restrict"
+        "__restrict"
+        "__restrict__"
+        "_Nonnull"
+        "_Nullable"
+        "_Null_unspecified"
+        "_Nullable_result"
+    ]
+
+function unqualified(text: str) -> str
+    kept = ffi_lookup.trimmed(text)
+    star: i64 @ kept.len() - 1
+
+    while star >= 0 && !bytes.bytes_at(text: kept, at: star, needle: "*")
+        star @ star - 1
+
+    if star < 0
+        return kept
+
+    for word in ffi_lookup.words(text: kept.slice(from: star + 1, to: kept.len()))
+        qualifier: bool @ false
+
+        for one in TOP_QUALIFIERS
+            if one == word
+                qualifier @ true
+
+        if !qualifier
+            return kept
+
+    return kept.slice(from: 0, to: star + 1)
+
+## Tests
+
+# Defect 411: the pointee check's answer, read off its marker at the author's
+# line, names the parameter and the header's type as the call sees it.
+test "the header's answer names the parameter and the type the call hands it to (defect 411)"
+    text = "extern \"sha.h\"\n    function SHA256_Final(md: cstr lent, n: u64) -> i32\n\nfunction main()\n    print(SHA256_Final(md: \"a\".cstr(), n: 1))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:2:1: error: static assertion failed due to requirement '__builtin_types_compatible_p(unsigned char *, const unsigned char *)': heroes-ffi-writable SHA256_Final md unsigned char *restrict"
+    d = writable_pointee(s, parsed.decls, low.program, c, line: line)
+    assert d.must().code == "ffi_writable_parameter"
+    assert d.must().message == "`md` of `SHA256_Final` is declared `cstr`, and the header says `unsigned char *` — C does not promise to leave it alone"
+    assert d.must().fixes[0].replacement == "ptr"
+    assert d.must().fixes[0].certainty == .guess
+
+    # clang's echo of the unit's line carries the marker and is no failure; a
+    # line at a file this compilation does not own, the library's among them,
+    # and a parameter the extern does not have are not the author's.
+    echo = "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
+    assert writable_pointee(s, parsed.decls, low.program, c, line: echo).is_err()
+    elsewhere = "<heroes library>:2:1: error: static assertion failed: heroes-ffi-writable SHA256_Final md unsigned char *"
+    assert writable_pointee(s, parsed.decls, low.program, c, line: elsewhere).is_err()
+    other = "t.hero:2:1: error: static assertion failed: heroes-ffi-writable SHA256_Final key unsigned char *"
+    assert writable_pointee(s, parsed.decls, low.program, c, line: other).is_err()
+
+test "the question is asked of the header's own pointer, an atomic one's inner pointer, and nothing by value"
+    asked = pointee_ask.Pointee(
+        name: "SHA256_Final",
+        param: "md",
+        index: 0,
+        declared: pointee_ask.READ,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    assert question(asked, header_type: "unsigned char *") == "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
+    assert asked_type(written: "unsigned char *", through: "").must() == "unsigned char *"
+    assert asked_type(written: "LPSTR", through: "char *").must() == "LPSTR"
+    assert asked_type(written: "cb_t", through: "void (*)(int)").must() == "cb_t"
+    assert asked_type(written: "_Atomic(char *)", through: "").must() == "char *"
+    assert asked_type(written: "const _Atomic(unsigned char *)", through: "").must() == "unsigned char *"
+    assert asked_type(written: "ap", through: "_Atomic(const char *)").must() == "const char *"
+    assert asked_type(written: "int", through: "").is_err()
+    assert asked_type(written: "struct sv", through: "").is_err()
+    assert asked_type(written: "_Atomic(ubuf)", through: "").is_err()
+
+# The count the declaration gives, against the header's: equal, the question
+# is asked, through a typedef where the dump read one; one more or one fewer,
+# nothing is, since the parameter it would be asked of is not known.
+test "a read-only lend is asked only where the header's parameters line up with the declaration's"
+    read = pointee_ask.Pointee(
+        name: "f",
+        param: "b",
+        index: 1,
+        declared: pointee_ask.READ,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    two = pointee_ask.Pointee(
+        name: "f",
+        param: "",
+        index: 2,
+        declared: pointee_ask.ARITY,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    three = pointee_ask.Pointee(
+        name: "f",
+        param: "",
+        index: 3,
+        declared: pointee_ask.ARITY,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    types: {str: [str]} @ {}
+    types["f"] @ ["int", "ap"]
+    sugar: {str: [str]} @ {}
+    sugar["f"] @ ["", "_Atomic(unsigned char *)"]
+    none: [pointee_ask.Answered] = []
+    agreed = lend_answers(none, [read, two], types: types, sugar: sugar)
+    assert agreed.len() == 1
+    assert agreed[0].header_type == "unsigned char *"
+    assert lend_answers(none, [read, three], types: types, sugar: sugar).len() == 0
+    assert lend_answers(none, [read], types: types, sugar: sugar).len() == 0
+
+test "a qualifier after the pointer's last star is the callee's, and nothing else is cut"
+    assert unqualified("char *restrict") == "char *"
+    assert unqualified("unsigned char *const") == "unsigned char *"
+    assert unqualified("char *const restrict") == "char *"
+    assert unqualified("char * _Nonnull") == "char *"
+    assert unqualified("int (*)[4]") == "int (*)[4]"
+    assert unqualified("foo_const") == "foo_const"
+    assert unqualified("const LPSTR") == "const LPSTR"
+    assert unqualified("漢 *restrict") == "漢 *"
+    assert unqualified("restrict") == "restrict"
