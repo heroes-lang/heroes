@@ -1,0 +1,25 @@
+# Defect 400, lane run400, 2026-10-06: the shape beside the defect's own, a
+# handle over an enum's tag compared in a test and nowhere else.
+#
+# SYMPTOM: `heroes test` said `ffi_tag_is_a_union`, the tag an `enum`'s, true,
+# and `build` and `run` said `ffi_unknown_name`, *declares no `colour`*, which
+# the header does, as an enum's tag.
+#
+# CAUSE: the program build spelled the handle's word only inside an
+# expression, `*(colour * *)0`, where clang says *use of undeclared
+# identifier* and never *must use 'enum' tag*; that identifier reached the
+# reader of a name the header lacks.
+#
+# FIX: the header's answer to the record's own question (`typedef colour
+# hero_q;`, asked once the round is refused) says the tag is an enum's, and
+# that answer tells the same refusal `heroes test` gives.
+
+extern "fixedbugs-400-tags-of-three-kinds.h"
+    record EH tag colour  #~ ffi_tag_is_a_union
+
+function main()
+    print(1)
+
+test "a handle over an enum's tag compared in a test alone"
+    h: EH = nullptr
+    assert h == nullptr

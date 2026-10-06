@@ -17,6 +17,7 @@ use diag
 use handles
 use emit/externs as emit_externs
 use emit/ffi_lookup
+use emit/ffi_held
 use parse
 use resolve
 use checker
@@ -225,7 +226,22 @@ function tag_is_a_union(s: source.Source, decls: [ast.Decl], line: str, types: {
 # 157 widened): the handle was told *declares no `utag`* through clang's
 # *undeclared identifier* beside it, false, and one named for its tag was
 # `internal error`, exit 2.
-function tag_of_another_kind(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+#
+# **And that undeclared identifier, where it is all clang said** (defect 400):
+# a unit that spells the handle's word only inside an expression, the union
+# question's `*(utag * *)0`, draws no *must use 'union' tag*, so the kind is the
+# header's answer to the record's own question (`types`, `emit/ffi_held.hero`).
+function tag_of_another_kind(s: source.Source, decls: [ast.Decl], line: str, types: {str: str}) -> diag.Diagnostic?
+    undeclared = ffi_lookup.after(text: line, marker: "use of undeclared identifier '")
+
+    if !undeclared.is_err()
+        word = ffi_lookup.up_to_quote(undeclared.must())
+        kind = ffi_held.held_kind(s, decls, name: word, types: types).default("")
+        handle = record_by_tag(s, decls, tag_name: word, want_handle: true)
+
+        if (kind == "union" || kind == "enum") && !handle.is_err()
+            return ok(another_kind(handle.must(), tag: word, kind: kind, by_name: false))
+
     for kind in ["union", "enum"]
         quoted = ffi_lookup.after(text: line, marker: "must use '" + kind + "' tag to refer to type '")
 
@@ -396,11 +412,48 @@ test "a handle over a union's tag is told the tag's kind and the typedef that re
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    k = tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'union' tag to refer to type 'utag'")
+    unasked: {str: str} = {}
+    k = tag_of_another_kind(
+        s,
+        parsed.decls,
+        line: "m.c:28:41: error: must use 'union' tag to refer to type 'utag'",
+        types: unasked
+    )
     assert k.must().code == "ffi_tag_is_a_union"
     assert source.span_text(s, k.must().span) == "utag"
     assert ffi_lookup.has(text: k.must().notes[0], needle: "`typedef union utag UH_t;`, and write `record UH tag UH_t`")
-    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'union' tag to refer to type 'ghost'").is_err(
+    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'union' tag to refer to type 'ghost'", types: unasked).is_err(
     )
-    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'struct' tag to refer to type 'utag'").is_err(
+    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'struct' tag to refer to type 'utag'", types: unasked).is_err(
     )
+
+# DEFECT 400: a unit that spells a handle's word only inside an expression, the
+# union question's `*(utag * *)0`, draws *use of undeclared identifier* and no
+# *must use 'union' tag*; the header's answer to the record's own question says
+# the kind, and the refusal is the one a type's spelling would have drawn.
+test "a handle's tag clang called undeclared is told by the header's answer (defect 400)"
+    text = "extern \"tags.h\"\n    record UH tag utag\n    record EH tag colour\n    record OH tag opaque\n    record GH tag shared\n    function shared() -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    types: {str: str} @ {}
+    types["utag"] @ "union"
+    types["colour"] @ "enum"
+    types["opaque"] @ "tag"
+    types["shared"] @ "tag"
+    said = "m.c:14:42: error: use of undeclared identifier '"
+    u = tag_of_another_kind(s, parsed.decls, line: said + "utag'", types: types)
+    assert u.must().code == "ffi_tag_is_a_union"
+    assert source.span_text(s, u.must().span) == "utag"
+    assert ffi_lookup.has(text: u.must().message, needle: "as a `union`, not a struct")
+    e = tag_of_another_kind(s, parsed.decls, line: said + "colour'", types: types)
+    assert ffi_lookup.has(text: e.must().message, needle: "as an `enum`, not a struct")
+
+    # A struct's tag is not another kind, and a word nothing answered for, or
+    # a group function's spelling, is not known to be a tag at all.
+    assert tag_of_another_kind(s, parsed.decls, line: said + "opaque'", types: types).is_err()
+    assert tag_of_another_kind(s, parsed.decls, line: said + "shared'", types: types).is_err()
+    unasked: {str: str} = {}
+    assert tag_of_another_kind(s, parsed.decls, line: said + "utag'", types: unasked).is_err()
