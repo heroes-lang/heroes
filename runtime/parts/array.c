@@ -61,10 +61,35 @@ HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {
     return a;
 }
 
+/* A count of -1 is a constant's static block (`HERO_ARRAY_STATIC`), which no
+ * count moves: both entry points return on it before they write, `str.c`'s
+ * rule for a literal, read relaxed for its reason. Any OTHER count below 1 is a
+ * block this runtime does not hold: a heap block's count is 1 from
+ * `hero_array_new` and frees at the release that takes it to 0, so a count of 0
+ * or below is a release after the last, read in memory already given back.
+ * That stops here by name where it used to free the block a second time. How
+ * often it is reached is the allocator's: a freed block's first word is what
+ * the allocator wrote there, and panel 195's critic found it below 1 on Darwin
+ * at 32 elements alone (where malloc used to trap, exit 133) and a pointer,
+ * above 0, under glibc, the Windows heap and Darwin at 4 elements, which pass
+ * as before. ASan names every one of them, this load being its read of freed
+ * memory.
+ *
+ * Written out in both entry points rather than called: at -O0, where the
+ * compiler itself runs, a call per count costs what the test does not. */
+_Noreturn static void hero_array_overreleased(void) {
+    hero_panic("an array released after its last reference — a compiler bug, please report it");
+}
+
 /* Relaxed up, acquire-release down — `str.c`'s two paragraphs carry the reason,
  * and it is the same reason here because it is the same counter type. */
 void hero_array_incref(HeroArrayHeader *a) {
     if (a == NULL) return;
+    int64_t seen = atomic_load_explicit(&a->refcount, memory_order_relaxed);
+    if (seen < 1) {
+        if (seen == -1) return; /* a constant's static block */
+        hero_array_overreleased();
+    }
     atomic_fetch_add_explicit(&a->refcount, 1, memory_order_relaxed);
 }
 
@@ -77,11 +102,17 @@ void hero_array_incref(HeroArrayHeader *a) {
  * arrays and maps unwinds without a frame per level. */
 void hero_array_decref(HeroArrayHeader *a) {
     if (a == NULL) return; /* the zero-init non-value: a no-op */
-    /* `> 1` on the count BEFORE the subtraction is exactly the old `> 0` on the
-     * count after it, negative counts included — and a doomed block must reach
-     * the drop list on the path that used to read a negative, not be returned
-     * from as if it were still shared. */
-    if (atomic_fetch_sub_explicit(&a->refcount, 1, memory_order_acq_rel) > 1) return;
+    int64_t seen = atomic_load_explicit(&a->refcount, memory_order_relaxed);
+    if (seen < 1) {
+        if (seen == -1) return; /* a constant's static block */
+        hero_array_overreleased();
+    }
+    /* `> 1` on the count BEFORE the subtraction: another holder remains. At 1
+     * this call took the last reference and the block is doomed. Below 1 two
+     * releases raced for one reference. */
+    int64_t before = atomic_fetch_sub_explicit(&a->refcount, 1, memory_order_acq_rel);
+    if (before > 1) return;
+    if (before < 1) hero_array_overreleased();
     if (hero_drop_running) {
         hero_drop_push_array(a);
         return;

@@ -80,8 +80,12 @@ constant LIBRARY_FILE: str
 # machine, asked, agrees (`absence.machine_lacks`, defect 246), named,
 # counted, the suite red when the skips reach a third of the tree; every other
 # failure to emit is a failure.
+#
+# **311 on 2026-10-06**, in lane b13-c382: panel 195's fifteen `fixedbugs-382-`
+# run cases took the directory to 311 from 296, which was already past 235 by
+# more than a quarter at that lane's base, and the suite asked 311.
 constant LEAST: i64
-    235
+    311
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

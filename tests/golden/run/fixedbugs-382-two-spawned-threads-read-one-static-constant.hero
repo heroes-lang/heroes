@@ -1,0 +1,28 @@
+# Defect 382, 2026-10-06. Two spawned threads and `main` read one constant
+# laid out as a static block at once (panel 195's R1). Its count is -1 and
+# no read or release writes it, so the block is shared by every thread and
+# none of them races on it; under `--sanitize` each read builds its own
+# array (R2). The three sums must agree.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant K: [i64]
+    [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 6, 2, 6, 4, 3, 3, 8, 3, 2, 7, 9, 5]
+
+function worker(n: i64) -> i64
+    sum: i64 @ 0
+    at: i64 @ 0
+
+    while at < n
+        sum @ sum + K[at % 32]
+        at @ at + 1
+
+    return sum
+
+function main()
+    a = hero_thread_spawn(body: worker, arg: 20000)
+    b = hero_thread_spawn(body: worker, arg: 20000)
+    here = worker(20000)
+    print(hero_thread_join(handle: a), " ", hero_thread_join(handle: b), " ", here)

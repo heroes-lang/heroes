@@ -181,6 +181,14 @@ function value(index: i64) -> str
 function block(index: i64) -> str
     return "bb" + index.to_str()
 
+# A constant's static block (panel 195): the constant's own C name, already
+# mangled, then the value of its IR the block holds. The value is digits and
+# the last part, so two owners never spell one block; the prefix opens no
+# mangled name, every one of which opens `h_`, and no runtime word; and the
+# block is `static`, so one unit's names never meet another's.
+function constant_block(owner: str, held: i64) -> str
+    return "hero_constant_" + owner + "_" + held.to_str()
+
 ## Tests
 
 test "the typehash matches the witness golden, in hex"
@@ -222,3 +230,5 @@ test "names collide with nothing: library capture, sanitised slots, foreign fiel
     assert case_type(ty: "h_m_Tok", case_name: "word") == "h_m_Tok_c_word"
     assert out_param(index: 0, name: "l") == "ph0_l"
     assert test_name(module: "geom", index: 2) == "h_geom_test2"
+    assert constant_block(owner: "h_geom_K", held: 5) == "hero_constant_h_geom_K_5"
+    assert constant_block(owner: "h_geom_K_3", held: 5) != constant_block(owner: "h_geom_K", held: 35)
