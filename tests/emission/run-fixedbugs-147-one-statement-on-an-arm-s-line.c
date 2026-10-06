@@ -230,26 +230,22 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t6 = hero_array_new(&hero_desc_int, 2);
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    { HeroArrayHeader *grown = hero_array_push(t6, &t4);
+    hero_array_push_owned(&t6, &t4);
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-      hero_array_decref(t6); t6 = grown; }
-#line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    { HeroArrayHeader *grown = hero_array_push(t6, &t5);
-#line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-      hero_array_decref(t6); t6 = grown; }
+    hero_array_push_owned(&t6, &t5);
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t22 = h5_own5;
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h5_own5 = t6;
-#line 245 "fixedbugs147onestatementonanarmsline.c"
+#line 241 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t22);
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t23 = h3_ys;
-#line 249 "fixedbugs147onestatementonanarmsline.c"
+#line 245 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t6);
 #line 38 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h3_ys = t6;
-#line 253 "fixedbugs147onestatementonanarmsline.c"
+#line 249 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t23);
 #line 40 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t7 = h0_c;
@@ -289,10 +285,10 @@ bb1:
     t20 = *(int64_t const *)hero_array_at(t18, t19);
 #line 45 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     if (__builtin_add_overflow(t17, t20, &t21)) hero_panic_overflow();
-#line 293 "fixedbugs147onestatementonanarmsline.c"
+#line 289 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h3_ys);
 #line 45 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-#line 296 "fixedbugs147onestatementonanarmsline.c"
+#line 292 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h5_own5);
     return t21;
 bb2:
@@ -320,12 +316,12 @@ bb4:
     hero_array_set(&(h3_ys), t12, &t13);
 #line 43 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     goto bb1;
-#line 324 "fixedbugs147onestatementonanarmsline.c"
+#line 320 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_loops(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
-#line 329 "fixedbugs147onestatementonanarmsline.c"
+#line 325 "fixedbugs147onestatementonanarmsline.c"
     int64_t h1_n;
     h_fixedbugs147onestatementonanarmsline_Color h2_s0;
     HeroArrayHeader * h3_xs0 = {0};
@@ -396,10 +392,10 @@ bb0:
 bb1:
 #line 58 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t32 = h1_n;
-#line 400 "fixedbugs147onestatementonanarmsline.c"
+#line 396 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h3_xs0);
 #line 58 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-#line 403 "fixedbugs147onestatementonanarmsline.c"
+#line 399 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h6_own6);
     return t32;
 bb2:
@@ -412,26 +408,22 @@ bb3:
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t13 = hero_array_new(&hero_desc_int, 2);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    { HeroArrayHeader *grown = hero_array_push(t13, &t11);
+    hero_array_push_owned(&t13, &t11);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-      hero_array_decref(t13); t13 = grown; }
-#line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    { HeroArrayHeader *grown = hero_array_push(t13, &t12);
-#line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-      hero_array_decref(t13); t13 = grown; }
+    hero_array_push_owned(&t13, &t12);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t33 = h6_own6;
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h6_own6 = t13;
-#line 427 "fixedbugs147onestatementonanarmsline.c"
+#line 419 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t33);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t34 = h3_xs0;
-#line 431 "fixedbugs147onestatementonanarmsline.c"
+#line 423 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t13);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h3_xs0 = t13;
-#line 435 "fixedbugs147onestatementonanarmsline.c"
+#line 427 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t34);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t14 = INT64_C(0);
@@ -539,12 +531,12 @@ bb13:
 bb14:
 #line 56 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     goto bb12;
-#line 543 "fixedbugs147onestatementonanarmsline.c"
+#line 535 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_jumps(int64_t h0_n) {
-#line 548 "fixedbugs147onestatementonanarmsline.c"
+#line 540 "fixedbugs147onestatementonanarmsline.c"
     int64_t h1_total;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -621,15 +613,15 @@ bb0:
     t52 = h9_own9;
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h9_own9 = t4;
-#line 625 "fixedbugs147onestatementonanarmsline.c"
+#line 617 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t52);
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t53 = h2_xs0;
-#line 629 "fixedbugs147onestatementonanarmsline.c"
+#line 621 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t4);
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h2_xs0 = t4;
-#line 633 "fixedbugs147onestatementonanarmsline.c"
+#line 625 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t53);
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t5 = INT64_C(0);
@@ -790,7 +782,7 @@ bb13:
 #line 68 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb14:
 #line 67 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-#line 794 "fixedbugs147onestatementonanarmsline.c"
+#line 786 "fixedbugs147onestatementonanarmsline.c"
     hero_panic_assert_sides(t28, hero_int_to_str(t31), hero_int_to_str(t32));
     hero_unreachable();
 bb15:
@@ -840,17 +832,17 @@ bb22:
 bb23:
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t51 = h8_ret0;
-#line 844 "fixedbugs147onestatementonanarmsline.c"
+#line 836 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h2_xs0);
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-#line 847 "fixedbugs147onestatementonanarmsline.c"
+#line 839 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h9_own9);
     return t51;
 }
 
 #line 80 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_discards(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
-#line 854 "fixedbugs147onestatementonanarmsline.c"
+#line 846 "fixedbugs147onestatementonanarmsline.c"
     int64_t h1_k;
     h_fixedbugs147onestatementonanarmsline_Color h2_s0;
     h_fixedbugs147onestatementonanarmsline_Color h3_s1;
@@ -961,12 +953,12 @@ bb7:
     h1_k = t15;
 #line 90 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     goto bb4;
-#line 965 "fixedbugs147onestatementonanarmsline.c"
+#line 957 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_measured(h_fixedbugs147onestatementonanarmsline_Shape h0_s) {
-#line 970 "fixedbugs147onestatementonanarmsline.c"
+#line 962 "fixedbugs147onestatementonanarmsline.c"
     int64_t h1_total;
     h_fixedbugs147onestatementonanarmsline_Shape h2_s0;
     h_fixedbugs147onestatementonanarmsline_Shape_c_line h3_l;
@@ -1029,12 +1021,12 @@ bb3:
     h1_total = t9;
 #line 99 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     goto bb1;
-#line 1033 "fixedbugs147onestatementonanarmsline.c"
+#line 1025 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 103 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_nested(h_fixedbugs147onestatementonanarmsline_Color h0_c, int64_t h1_n) {
-#line 1038 "fixedbugs147onestatementonanarmsline.c"
+#line 1030 "fixedbugs147onestatementonanarmsline.c"
     int64_t h2_m;
     h_fixedbugs147onestatementonanarmsline_Color h3_s0;
     int64_t h4_s1;
@@ -1123,12 +1115,12 @@ bb7:
     h2_m = t10;
 #line 109 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     goto bb4;
-#line 1127 "fixedbugs147onestatementonanarmsline.c"
+#line 1119 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_early(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
-#line 1132 "fixedbugs147onestatementonanarmsline.c"
+#line 1124 "fixedbugs147onestatementonanarmsline.c"
     h_fixedbugs147onestatementonanarmsline_Color h1_s0;
     int64_t h2_ret0;
     h_fixedbugs147onestatementonanarmsline_Color t1;
@@ -1185,12 +1177,12 @@ bb4:
     t7 = h2_ret0;
 #line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     return t7;
-#line 1189 "fixedbugs147onestatementonanarmsline.c"
+#line 1181 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 121 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 void h_fixedbugs147onestatementonanarmsline_main(void) {
-#line 1194 "fixedbugs147onestatementonanarmsline.c"
+#line 1186 "fixedbugs147onestatementonanarmsline.c"
     h_fixedbugs147onestatementonanarmsline_Color t1;
     int64_t t2;
     HeroStr t3;
@@ -1394,12 +1386,12 @@ bb0:
     hero_print_end();
 #line 128 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     return;
-#line 1398 "fixedbugs147onestatementonanarmsline.c"
+#line 1390 "fixedbugs147onestatementonanarmsline.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 1403 "fixedbugs147onestatementonanarmsline.c"
+#line 1395 "fixedbugs147onestatementonanarmsline.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -1423,15 +1415,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 1427 "fixedbugs147onestatementonanarmsline.c"
+#line 1419 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 1431 "fixedbugs147onestatementonanarmsline.c"
+#line 1423 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 1435 "fixedbugs147onestatementonanarmsline.c"
+#line 1427 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -1469,13 +1461,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 1473 "fixedbugs147onestatementonanarmsline.c"
+#line 1465 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 1476 "fixedbugs147onestatementonanarmsline.c"
+#line 1468 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 1479 "fixedbugs147onestatementonanarmsline.c"
+#line 1471 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h4_own4);
     return t12;
 }

@@ -204,17 +204,15 @@ bb2:
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t10 = hero_array_new(&h_fixedbugsadeepvaluecompareswithoutastack_Node_desc, 1);
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t10, &t9);
-#line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t10); t10 = grown; }
+    hero_array_push_owned(&t10, &t9);
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t19 = h6_own6;
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h6_own6 = t10;
-#line 215 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 213 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t19);
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 218 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 216 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_incref(t10);
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t11 = (h_fixedbugsadeepvaluecompareswithoutastack_Node){.f_label = t8, .f_children = t10};
@@ -222,15 +220,15 @@ bb2:
     t20 = h7_own7;
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h7_own7 = t11;
-#line 226 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 224 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t20);
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t21 = h2_n;
-#line 230 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 228 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t11);
 #line 42 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h2_n = t11;
-#line 234 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 232 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t21);
 #line 43 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t12 = h3_i;
@@ -246,29 +244,29 @@ bb2:
 bb3:
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t15 = h2_n;
-#line 250 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 248 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t15);
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 253 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 251 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h2_n);
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 256 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 254 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h4_own4);
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 259 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 257 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h5_own5);
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 262 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 260 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h6_own6);
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 265 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 263 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h7_own7);
     return t15;
 }
 
 #line 47 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 void h_fixedbugsadeepvaluecompareswithoutastack_main(void) {
-#line 272 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 270 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node h0_a = {0};
     h_fixedbugsadeepvaluecompareswithoutastack_Node h1_b = {0};
     h_fixedbugsadeepvaluecompareswithoutastack_Node h2_c = {0};
@@ -358,15 +356,15 @@ bb0:
     t42 = h3_own3;
 #line 48 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h3_own3 = t3;
-#line 362 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 360 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t42);
 #line 48 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t43 = h0_a;
-#line 366 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 364 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t3);
 #line 48 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h0_a = t3;
-#line 370 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 368 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t43);
 #line 49 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t4 = INT64_C(60000);
@@ -378,15 +376,15 @@ bb0:
     t44 = h4_own4;
 #line 49 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h4_own4 = t6;
-#line 382 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 380 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t44);
 #line 49 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t45 = h1_b;
-#line 386 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 384 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t6);
 #line 49 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h1_b = t6;
-#line 390 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 388 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t45);
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t7 = h0_a;
@@ -408,15 +406,15 @@ bb0:
     t46 = h5_own5;
 #line 51 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h5_own5 = t12;
-#line 412 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 410 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t46);
 #line 51 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t47 = h2_c;
-#line 416 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 414 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t12);
 #line 51 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h2_c = t12;
-#line 420 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 418 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&t47);
 #line 52 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t13 = h0_a;
@@ -435,48 +433,38 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t18 = hero_array_new(&hero_desc_int, 2);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t18, &t16);
+    hero_array_push_owned(&t18, &t16);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t18); t18 = grown; }
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t18, &t17);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t18); t18 = grown; }
+    hero_array_push_owned(&t18, &t17);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t48 = h6_own6;
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h6_own6 = t18;
-#line 450 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 444 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t48);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t19 = INT64_C(3);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t20 = hero_array_new(&hero_desc_int, 1);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t20, &t19);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t20); t20 = grown; }
+    hero_array_push_owned(&t20, &t19);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t49 = h7_own7;
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h7_own7 = t20;
-#line 464 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 456 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t49);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t21 = hero_array_new(&hero_desc_array, 2);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t21, &t18);
+    hero_array_push_owned(&t21, &t18);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t21); t21 = grown; }
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t21, &t20);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t21); t21 = grown; }
+    hero_array_push_owned(&t21, &t20);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t50 = h8_own8;
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h8_own8 = t21;
-#line 480 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 468 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t50);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t22 = INT64_C(1);
@@ -485,48 +473,38 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t24 = hero_array_new(&hero_desc_int, 2);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t24, &t22);
+    hero_array_push_owned(&t24, &t22);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t24); t24 = grown; }
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t24, &t23);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t24); t24 = grown; }
+    hero_array_push_owned(&t24, &t23);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t51 = h9_own9;
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h9_own9 = t24;
-#line 500 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 484 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t51);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t25 = INT64_C(3);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t26 = hero_array_new(&hero_desc_int, 1);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t26, &t25);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t26); t26 = grown; }
+    hero_array_push_owned(&t26, &t25);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t52 = h10_own10;
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h10_own10 = t26;
-#line 514 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 496 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t52);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t27 = hero_array_new(&hero_desc_array, 2);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t27, &t24);
+    hero_array_push_owned(&t27, &t24);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t27); t27 = grown; }
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t27, &t26);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t27); t27 = grown; }
+    hero_array_push_owned(&t27, &t26);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t53 = h11_own11;
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h11_own11 = t27;
-#line 530 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 508 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t53);
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t28 = hero_array_eq(t21, t27);
@@ -541,48 +519,38 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t31 = hero_array_new(&hero_desc_int, 2);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t31, &t29);
+    hero_array_push_owned(&t31, &t29);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t31); t31 = grown; }
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t31, &t30);
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t31); t31 = grown; }
+    hero_array_push_owned(&t31, &t30);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t54 = h12_own12;
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h12_own12 = t31;
-#line 556 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 530 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t54);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t32 = INT64_C(3);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t33 = hero_array_new(&hero_desc_int, 1);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t33, &t32);
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t33); t33 = grown; }
+    hero_array_push_owned(&t33, &t32);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t55 = h13_own13;
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h13_own13 = t33;
-#line 570 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 542 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t55);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t34 = hero_array_new(&hero_desc_array, 2);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t34, &t31);
+    hero_array_push_owned(&t34, &t31);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t34); t34 = grown; }
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t34, &t33);
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t34); t34 = grown; }
+    hero_array_push_owned(&t34, &t33);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t56 = h14_own14;
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h14_own14 = t34;
-#line 586 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 554 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t56);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t35 = INT64_C(1);
@@ -591,48 +559,38 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t37 = hero_array_new(&hero_desc_int, 2);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t37, &t35);
+    hero_array_push_owned(&t37, &t35);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t37); t37 = grown; }
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t37, &t36);
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t37); t37 = grown; }
+    hero_array_push_owned(&t37, &t36);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t57 = h15_own15;
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h15_own15 = t37;
-#line 606 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 570 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t57);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t38 = INT64_C(4);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t39 = hero_array_new(&hero_desc_int, 1);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t39, &t38);
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t39); t39 = grown; }
+    hero_array_push_owned(&t39, &t38);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t58 = h16_own16;
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h16_own16 = t39;
-#line 620 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 582 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t58);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t40 = hero_array_new(&hero_desc_array, 2);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t40, &t37);
+    hero_array_push_owned(&t40, &t37);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t40); t40 = grown; }
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    { HeroArrayHeader *grown = hero_array_push(t40, &t39);
-#line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-      hero_array_decref(t40); t40 = grown; }
+    hero_array_push_owned(&t40, &t39);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t59 = h17_own17;
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     h17_own17 = t40;
-#line 636 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 594 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(t59);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t41 = hero_array_eq(t34, t40);
@@ -640,58 +598,58 @@ bb0:
     hero_print_bool(t41);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     hero_print_end();
-#line 644 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 602 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h0_a);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 647 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 605 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h1_b);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 650 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 608 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h2_c);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 653 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 611 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h3_own3);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 656 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 614 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h4_own4);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 659 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 617 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h5_own5);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 662 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 620 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h6_own6);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 665 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 623 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h7_own7);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 668 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 626 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h8_own8);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 671 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 629 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h9_own9);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 674 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 632 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h10_own10);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 677 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 635 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h11_own11);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 680 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 638 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h12_own12);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 683 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 641 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h13_own13);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 686 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 644 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h14_own14);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 689 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 647 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h15_own15);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 692 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 650 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h16_own16);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-#line 695 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 653 "fixedbugsadeepvaluecompareswithoutastack.c"
     hero_array_decref(h17_own17);
     return;
 }

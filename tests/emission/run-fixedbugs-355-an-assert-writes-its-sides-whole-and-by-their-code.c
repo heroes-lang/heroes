@@ -146,30 +146,24 @@ bb0:
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t4 = hero_array_new(&hero_desc_u8, 3);
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t1);
+    hero_array_push_owned(&t4, &t1);
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t2);
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t2);
-#line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-      hero_array_decref(t4); t4 = grown; }
-#line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t3);
-#line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t3);
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t23 = h5_own5;
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h5_own5 = t4;
-#line 165 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 159 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_array_decref(t23);
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t24 = h0_b;
-#line 169 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 163 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_array_incref(t4);
 #line 8 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h0_b = t4;
-#line 173 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 167 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_array_decref(t24);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t5 = HERO_STR_LIT(hero_str_2cf99681);
@@ -197,15 +191,15 @@ bb0:
     t25 = h6_own6;
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h6_own6 = t7;
-#line 201 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 195 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     h_0opt_f87774a_release(&t25);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t26 = h1_f0;
-#line 205 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 199 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     h_0opt_f87774a_retain(&t7);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h1_f0 = t7;
-#line 209 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 203 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     h_0opt_f87774a_release(&t26);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t8 = h1_f0;
@@ -229,15 +223,15 @@ bb1:
     t27 = h7_own7;
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h7_own7 = t16;
-#line 233 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 227 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(t27);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t28 = h2_x;
-#line 237 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 231 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_incref(t16);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h2_x = t16;
-#line 241 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 235 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(t28);
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t17 = HERO_STR_LIT(hero_str_31d87148);
@@ -249,19 +243,19 @@ bb1:
     t20 = hero_str_eq(t18, t19);
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t29 = h3_assert0;
-#line 253 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 247 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_incref(t18);
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h3_assert0 = t18;
-#line 257 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 251 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(t29);
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t30 = h4_assert1;
-#line 261 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 255 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_incref(t19);
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     h4_assert1 = t19;
-#line 265 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 259 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(t30);
     if (t20) goto bb3; else goto bb4;
 bb2:
@@ -269,33 +263,33 @@ bb2:
     t12 = h1_f0;
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t13 = t12.as.err;
-#line 273 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 267 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_panic_must(t13);
     hero_unreachable();
 bb3:
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 278 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 272 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_array_decref(h0_b);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 281 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 275 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     h_0opt_f87774a_release(&h1_f0);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 284 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 278 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(h2_x);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 287 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 281 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(h3_assert0);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 290 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 284 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(h4_assert1);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 293 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 287 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_array_decref(h5_own5);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 296 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 290 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-#line 299 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 293 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_str_decref(h7_own7);
     return;
 bb4:
@@ -303,7 +297,7 @@ bb4:
     t21 = h3_assert0;
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t22 = h4_assert1;
-#line 307 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 301 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_panic_assert_sides(t17, hero_str_identity(t21), hero_str_identity(t22));
     hero_unreachable();
 }

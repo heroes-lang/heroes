@@ -3971,38 +3971,28 @@ bb0:
 #line 108 "examples/logs/mask.hero"
     t7 = hero_array_new(&hero_desc_str, 5);
 #line 108 "examples/logs/mask.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t2);
+    hero_array_push_owned(&t7, &t2);
 #line 108 "examples/logs/mask.hero"
-      hero_array_decref(t7); t7 = grown; }
+    hero_array_push_owned(&t7, &t3);
 #line 108 "examples/logs/mask.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t3);
+    hero_array_push_owned(&t7, &t4);
 #line 108 "examples/logs/mask.hero"
-      hero_array_decref(t7); t7 = grown; }
+    hero_array_push_owned(&t7, &t5);
 #line 108 "examples/logs/mask.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t4);
-#line 108 "examples/logs/mask.hero"
-      hero_array_decref(t7); t7 = grown; }
-#line 108 "examples/logs/mask.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t5);
-#line 108 "examples/logs/mask.hero"
-      hero_array_decref(t7); t7 = grown; }
-#line 108 "examples/logs/mask.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t6);
-#line 108 "examples/logs/mask.hero"
-      hero_array_decref(t7); t7 = grown; }
+    hero_array_push_owned(&t7, &t6);
 #line 108 "examples/logs/mask.hero"
     t28 = h6_own6;
 #line 108 "examples/logs/mask.hero"
     h6_own6 = t7;
-#line 3998 "main.c"
+#line 3988 "main.c"
     hero_array_decref(t28);
 #line 108 "examples/logs/mask.hero"
     t29 = h2_xs0;
-#line 4002 "main.c"
+#line 3992 "main.c"
     hero_array_incref(t7);
 #line 108 "examples/logs/mask.hero"
     h2_xs0 = t7;
-#line 4006 "main.c"
+#line 3996 "main.c"
     hero_array_decref(t29);
 #line 108 "examples/logs/mask.hero"
     t8 = INT64_C(0);
@@ -4032,11 +4022,11 @@ bb2:
     t15 = *(HeroStr const *)hero_array_at(t13, t14);
 #line 108 "examples/logs/mask.hero"
     t30 = h4_level;
-#line 4036 "main.c"
+#line 4026 "main.c"
     hero_str_incref(t15);
 #line 108 "examples/logs/mask.hero"
     h4_level = t15;
-#line 4040 "main.c"
+#line 4030 "main.c"
     hero_str_decref(t30);
 #line 109 "examples/logs/mask.hero"
     t16 = h0_mask;
@@ -4062,22 +4052,22 @@ bb3:
 bb4:
 #line 112 "examples/logs/mask.hero"
     t25 = h1_out;
-#line 4066 "main.c"
+#line 4056 "main.c"
     hero_array_incref(t25);
 #line 112 "examples/logs/mask.hero"
-#line 4069 "main.c"
+#line 4059 "main.c"
     hero_array_decref(h1_out);
 #line 112 "examples/logs/mask.hero"
-#line 4072 "main.c"
+#line 4062 "main.c"
     hero_array_decref(h2_xs0);
 #line 112 "examples/logs/mask.hero"
-#line 4075 "main.c"
+#line 4065 "main.c"
     hero_str_decref(h4_level);
 #line 112 "examples/logs/mask.hero"
-#line 4078 "main.c"
+#line 4068 "main.c"
     hero_array_decref(h5_own5);
 #line 112 "examples/logs/mask.hero"
-#line 4081 "main.c"
+#line 4071 "main.c"
     hero_array_decref(h6_own6);
     return t25;
 bb5:
@@ -4093,12 +4083,12 @@ bb6:
 bb7:
 #line 110 "examples/logs/mask.hero"
     goto bb5;
-#line 4097 "main.c"
+#line 4087 "main.c"
 }
 
 #line 115 "examples/logs/mask.hero"
 h_0opt_e201354 h_mask_read(HeroStr h0_text) {
-#line 4102 "main.c"
+#line 4092 "main.c"
     int64_t h1_mask;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -4177,15 +4167,15 @@ bb0:
     t38 = h6_own6;
 #line 118 "examples/logs/mask.hero"
     h6_own6 = t4;
-#line 4181 "main.c"
+#line 4171 "main.c"
     hero_array_decref(t38);
 #line 118 "examples/logs/mask.hero"
     t39 = h2_xs0;
-#line 4185 "main.c"
+#line 4175 "main.c"
     hero_array_incref(t4);
 #line 118 "examples/logs/mask.hero"
     h2_xs0 = t4;
-#line 4189 "main.c"
+#line 4179 "main.c"
     hero_array_decref(t39);
 #line 118 "examples/logs/mask.hero"
     t5 = INT64_C(0);
@@ -4215,11 +4205,11 @@ bb2:
     t12 = *(HeroStr const *)hero_array_at(t10, t11);
 #line 118 "examples/logs/mask.hero"
     t40 = h4_name;
-#line 4219 "main.c"
+#line 4209 "main.c"
     hero_str_incref(t12);
 #line 118 "examples/logs/mask.hero"
     h4_name = t12;
-#line 4223 "main.c"
+#line 4213 "main.c"
     hero_str_decref(t40);
 #line 119 "examples/logs/mask.hero"
     t13 = h4_name;
@@ -4253,7 +4243,7 @@ bb4:
     t41 = h7_own7;
 #line 126 "examples/logs/mask.hero"
     h7_own7 = t36;
-#line 4257 "main.c"
+#line 4247 "main.c"
     h_0opt_e201354_release(&t41);
 #line 126 "examples/logs/mask.hero"
     h5_ret0 = t36;
@@ -4279,7 +4269,7 @@ bb6:
     t42 = h8_own8;
 #line 121 "examples/logs/mask.hero"
     h8_own8 = t17;
-#line 4283 "main.c"
+#line 4273 "main.c"
     hero_str_decref(t42);
 #line 122 "examples/logs/mask.hero"
     t18 = HERO_STR_LIT(hero_str_60);
@@ -4291,7 +4281,7 @@ bb6:
     t43 = h9_own9;
 #line 122 "examples/logs/mask.hero"
     h9_own9 = t20;
-#line 4295 "main.c"
+#line 4285 "main.c"
     hero_str_decref(t43);
 #line 122 "examples/logs/mask.hero"
     t21 = HERO_STR_LIT(hero_str_23ad5593);
@@ -4301,7 +4291,7 @@ bb6:
     t44 = h10_own10;
 #line 122 "examples/logs/mask.hero"
     h10_own10 = t22;
-#line 4305 "main.c"
+#line 4295 "main.c"
     hero_str_decref(t44);
 #line 122 "examples/logs/mask.hero"
     t23 = h_mask_EVERY();
@@ -4311,7 +4301,7 @@ bb6:
     t45 = h11_own11;
 #line 122 "examples/logs/mask.hero"
     h11_own11 = t24;
-#line 4315 "main.c"
+#line 4305 "main.c"
     hero_array_decref(t45);
 #line 122 "examples/logs/mask.hero"
     t25 = HERO_STR_LIT(hero_str_16a4);
@@ -4321,7 +4311,7 @@ bb6:
     t46 = h12_own12;
 #line 122 "examples/logs/mask.hero"
     h12_own12 = t26;
-#line 4325 "main.c"
+#line 4315 "main.c"
     hero_str_decref(t46);
 #line 122 "examples/logs/mask.hero"
     t27 = hero_str_concat(t22, t26);
@@ -4329,13 +4319,13 @@ bb6:
     t47 = h13_own13;
 #line 122 "examples/logs/mask.hero"
     h13_own13 = t27;
-#line 4333 "main.c"
+#line 4323 "main.c"
     hero_str_decref(t47);
 #line 120 "examples/logs/mask.hero"
-#line 4336 "main.c"
+#line 4326 "main.c"
     hero_str_incref(t17);
 #line 120 "examples/logs/mask.hero"
-#line 4339 "main.c"
+#line 4329 "main.c"
     hero_str_incref(t27);
 #line 120 "examples/logs/mask.hero"
     t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t17, .msg = t27}};
@@ -4343,7 +4333,7 @@ bb6:
     t48 = h14_own14;
 #line 120 "examples/logs/mask.hero"
     h14_own14 = t28;
-#line 4347 "main.c"
+#line 4337 "main.c"
     h_0opt_e201354_release(&t48);
 #line 120 "examples/logs/mask.hero"
     h5_ret0 = t28;
@@ -4357,47 +4347,47 @@ bb7:
 bb8:
 #line 115 "examples/logs/mask.hero"
     t37 = h5_ret0;
-#line 4361 "main.c"
+#line 4351 "main.c"
     h_0opt_e201354_retain(&t37);
 #line 115 "examples/logs/mask.hero"
-#line 4364 "main.c"
+#line 4354 "main.c"
     hero_array_decref(h2_xs0);
 #line 115 "examples/logs/mask.hero"
-#line 4367 "main.c"
+#line 4357 "main.c"
     hero_str_decref(h4_name);
 #line 115 "examples/logs/mask.hero"
-#line 4370 "main.c"
+#line 4360 "main.c"
     hero_array_decref(h6_own6);
 #line 115 "examples/logs/mask.hero"
-#line 4373 "main.c"
+#line 4363 "main.c"
     h_0opt_e201354_release(&h7_own7);
 #line 115 "examples/logs/mask.hero"
-#line 4376 "main.c"
+#line 4366 "main.c"
     hero_str_decref(h8_own8);
 #line 115 "examples/logs/mask.hero"
-#line 4379 "main.c"
+#line 4369 "main.c"
     hero_str_decref(h9_own9);
 #line 115 "examples/logs/mask.hero"
-#line 4382 "main.c"
+#line 4372 "main.c"
     hero_str_decref(h10_own10);
 #line 115 "examples/logs/mask.hero"
-#line 4385 "main.c"
+#line 4375 "main.c"
     hero_array_decref(h11_own11);
 #line 115 "examples/logs/mask.hero"
-#line 4388 "main.c"
+#line 4378 "main.c"
     hero_str_decref(h12_own12);
 #line 115 "examples/logs/mask.hero"
-#line 4391 "main.c"
+#line 4381 "main.c"
     hero_str_decref(h13_own13);
 #line 115 "examples/logs/mask.hero"
-#line 4394 "main.c"
+#line 4384 "main.c"
     h_0opt_e201354_release(&h14_own14);
     return t37;
 }
 
 #line 128 "examples/logs/mask.hero"
 HeroArrayHeader * h_mask_split_on(HeroStr h0_text, uint8_t h1_c) {
-#line 4401 "main.c"
+#line 4391 "main.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_start;
     int64_t h4_i;
@@ -4449,15 +4439,15 @@ bb0:
     t35 = h7_own7;
 #line 129 "examples/logs/mask.hero"
     h7_own7 = t1;
-#line 4453 "main.c"
+#line 4443 "main.c"
     hero_array_decref(t35);
 #line 129 "examples/logs/mask.hero"
     t36 = h2_out;
-#line 4457 "main.c"
+#line 4447 "main.c"
     hero_array_incref(t1);
 #line 129 "examples/logs/mask.hero"
     h2_out = t1;
-#line 4461 "main.c"
+#line 4451 "main.c"
     hero_array_decref(t36);
 #line 130 "examples/logs/mask.hero"
     t2 = INT64_C(0);
@@ -4499,19 +4489,19 @@ bb2:
 bb3:
 #line 142 "examples/logs/mask.hero"
     t34 = h2_out;
-#line 4503 "main.c"
+#line 4493 "main.c"
     hero_array_incref(t34);
 #line 142 "examples/logs/mask.hero"
-#line 4506 "main.c"
+#line 4496 "main.c"
     hero_array_decref(h2_out);
 #line 142 "examples/logs/mask.hero"
-#line 4509 "main.c"
+#line 4499 "main.c"
     hero_str_decref(h6_piece);
 #line 142 "examples/logs/mask.hero"
-#line 4512 "main.c"
+#line 4502 "main.c"
     hero_array_decref(h7_own7);
 #line 142 "examples/logs/mask.hero"
-#line 4515 "main.c"
+#line 4505 "main.c"
     hero_str_decref(h8_own8);
     return t34;
 bb4:
@@ -4561,15 +4551,15 @@ bb7:
     t37 = h8_own8;
 #line 135 "examples/logs/mask.hero"
     h8_own8 = t21;
-#line 4565 "main.c"
+#line 4555 "main.c"
     hero_str_decref(t37);
 #line 135 "examples/logs/mask.hero"
     t38 = h6_piece;
-#line 4569 "main.c"
+#line 4559 "main.c"
     hero_str_incref(t21);
 #line 135 "examples/logs/mask.hero"
     h6_piece = t21;
-#line 4573 "main.c"
+#line 4563 "main.c"
     hero_str_decref(t38);
 #line 137 "examples/logs/mask.hero"
     t22 = h6_piece;
@@ -4607,25 +4597,25 @@ bb10:
 bb11:
 #line 138 "examples/logs/mask.hero"
     goto bb9;
-#line 4611 "main.c"
+#line 4601 "main.c"
 }
 
 #line 20 "examples/logs/summary.hero"
 HeroStr h_summary_ERR_NONE_AT_LEVEL(void) {
-#line 4616 "main.c"
+#line 4606 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 21 "examples/logs/summary.hero"
     t1 = HERO_STR_LIT(hero_str_17788c5d);
-#line 4622 "main.c"
+#line 4612 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 23 "examples/logs/summary.hero"
 HeroMapHeader * h_summary_tally(HeroArrayHeader * h0_names) {
-#line 4629 "main.c"
+#line 4619 "main.c"
     HeroMapHeader * h1_counts = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -4676,25 +4666,25 @@ bb0:
     t29 = h7_own7;
 #line 24 "examples/logs/summary.hero"
     h7_own7 = t1;
-#line 4680 "main.c"
+#line 4670 "main.c"
     hero_map_decref(t29);
 #line 24 "examples/logs/summary.hero"
     t30 = h1_counts;
-#line 4684 "main.c"
+#line 4674 "main.c"
     hero_map_incref(t1);
 #line 24 "examples/logs/summary.hero"
     h1_counts = t1;
-#line 4688 "main.c"
+#line 4678 "main.c"
     hero_map_decref(t30);
 #line 26 "examples/logs/summary.hero"
     t2 = h0_names;
 #line 26 "examples/logs/summary.hero"
     t31 = h2_xs0;
-#line 4694 "main.c"
+#line 4684 "main.c"
     hero_array_incref(t2);
 #line 26 "examples/logs/summary.hero"
     h2_xs0 = t2;
-#line 4698 "main.c"
+#line 4688 "main.c"
     hero_array_decref(t31);
 #line 26 "examples/logs/summary.hero"
     t3 = INT64_C(0);
@@ -4724,11 +4714,11 @@ bb2:
     t10 = *(HeroStr const *)hero_array_at(t8, t9);
 #line 26 "examples/logs/summary.hero"
     t32 = h4_name;
-#line 4728 "main.c"
+#line 4718 "main.c"
     hero_str_incref(t10);
 #line 26 "examples/logs/summary.hero"
     h4_name = t10;
-#line 4732 "main.c"
+#line 4722 "main.c"
     hero_str_decref(t32);
 #line 27 "examples/logs/summary.hero"
     t11 = h4_name;
@@ -4758,15 +4748,15 @@ bb2:
     t33 = h8_own8;
 #line 27 "examples/logs/summary.hero"
     h8_own8 = t14;
-#line 4762 "main.c"
+#line 4752 "main.c"
     h_0opt_e201354_release(&t33);
 #line 27 "examples/logs/summary.hero"
     t34 = h5_f0;
-#line 4766 "main.c"
+#line 4756 "main.c"
     h_0opt_e201354_retain(&t14);
 #line 27 "examples/logs/summary.hero"
     h5_f0 = t14;
-#line 4770 "main.c"
+#line 4760 "main.c"
     h_0opt_e201354_release(&t34);
 #line 27 "examples/logs/summary.hero"
     t15 = h5_f0;
@@ -4794,25 +4784,25 @@ bb3:
 bb4:
 #line 29 "examples/logs/summary.hero"
     t28 = h1_counts;
-#line 4798 "main.c"
+#line 4788 "main.c"
     hero_map_incref(t28);
 #line 29 "examples/logs/summary.hero"
-#line 4801 "main.c"
+#line 4791 "main.c"
     hero_map_decref(h1_counts);
 #line 29 "examples/logs/summary.hero"
-#line 4804 "main.c"
+#line 4794 "main.c"
     hero_array_decref(h2_xs0);
 #line 29 "examples/logs/summary.hero"
-#line 4807 "main.c"
+#line 4797 "main.c"
     hero_str_decref(h4_name);
 #line 29 "examples/logs/summary.hero"
-#line 4810 "main.c"
+#line 4800 "main.c"
     h_0opt_e201354_release(&h5_f0);
 #line 29 "examples/logs/summary.hero"
-#line 4813 "main.c"
+#line 4803 "main.c"
     hero_map_decref(h7_own7);
 #line 29 "examples/logs/summary.hero"
-#line 4816 "main.c"
+#line 4806 "main.c"
     h_0opt_e201354_release(&h8_own8);
     return t28;
 bb5:
@@ -4844,12 +4834,12 @@ bb7:
     hero_map_set(&(h1_counts), &t11, &t24);
 #line 27 "examples/logs/summary.hero"
     goto bb3;
-#line 4848 "main.c"
+#line 4838 "main.c"
 }
 
 #line 31 "examples/logs/summary.hero"
 HeroArrayHeader * h_summary_levels_of(HeroArrayHeader * h0_entries) {
-#line 4853 "main.c"
+#line 4843 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -4883,25 +4873,25 @@ bb0:
     t19 = h5_own5;
 #line 32 "examples/logs/summary.hero"
     h5_own5 = t1;
-#line 4887 "main.c"
+#line 4877 "main.c"
     hero_array_decref(t19);
 #line 32 "examples/logs/summary.hero"
     t20 = h1_out;
-#line 4891 "main.c"
+#line 4881 "main.c"
     hero_array_incref(t1);
 #line 32 "examples/logs/summary.hero"
     h1_out = t1;
-#line 4895 "main.c"
+#line 4885 "main.c"
     hero_array_decref(t20);
 #line 34 "examples/logs/summary.hero"
     t2 = h0_entries;
 #line 34 "examples/logs/summary.hero"
     t21 = h2_xs0;
-#line 4901 "main.c"
+#line 4891 "main.c"
     hero_array_incref(t2);
 #line 34 "examples/logs/summary.hero"
     h2_xs0 = t2;
-#line 4905 "main.c"
+#line 4895 "main.c"
     hero_array_decref(t21);
 #line 34 "examples/logs/summary.hero"
     t3 = INT64_C(0);
@@ -4931,11 +4921,11 @@ bb2:
     t10 = *(h_entry_Entry const *)hero_array_at(t8, t9);
 #line 34 "examples/logs/summary.hero"
     t22 = h4_one;
-#line 4935 "main.c"
+#line 4925 "main.c"
     h_entry_Entry_retain(&t10);
 #line 34 "examples/logs/summary.hero"
     h4_one = t10;
-#line 4939 "main.c"
+#line 4929 "main.c"
     h_entry_Entry_release(&t22);
 #line 35 "examples/logs/summary.hero"
     t12 = h4_one;
@@ -4961,26 +4951,26 @@ bb3:
 bb4:
 #line 37 "examples/logs/summary.hero"
     t18 = h1_out;
-#line 4965 "main.c"
+#line 4955 "main.c"
     hero_array_incref(t18);
 #line 37 "examples/logs/summary.hero"
-#line 4968 "main.c"
+#line 4958 "main.c"
     hero_array_decref(h1_out);
 #line 37 "examples/logs/summary.hero"
-#line 4971 "main.c"
+#line 4961 "main.c"
     hero_array_decref(h2_xs0);
 #line 37 "examples/logs/summary.hero"
-#line 4974 "main.c"
+#line 4964 "main.c"
     h_entry_Entry_release(&h4_one);
 #line 37 "examples/logs/summary.hero"
-#line 4977 "main.c"
+#line 4967 "main.c"
     hero_array_decref(h5_own5);
     return t18;
 }
 
 #line 39 "examples/logs/summary.hero"
 HeroArrayHeader * h_summary_sources_of(HeroArrayHeader * h0_entries) {
-#line 4984 "main.c"
+#line 4974 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -5014,25 +5004,25 @@ bb0:
     t19 = h5_own5;
 #line 40 "examples/logs/summary.hero"
     h5_own5 = t1;
-#line 5018 "main.c"
+#line 5008 "main.c"
     hero_array_decref(t19);
 #line 40 "examples/logs/summary.hero"
     t20 = h1_out;
-#line 5022 "main.c"
+#line 5012 "main.c"
     hero_array_incref(t1);
 #line 40 "examples/logs/summary.hero"
     h1_out = t1;
-#line 5026 "main.c"
+#line 5016 "main.c"
     hero_array_decref(t20);
 #line 42 "examples/logs/summary.hero"
     t2 = h0_entries;
 #line 42 "examples/logs/summary.hero"
     t21 = h2_xs0;
-#line 5032 "main.c"
+#line 5022 "main.c"
     hero_array_incref(t2);
 #line 42 "examples/logs/summary.hero"
     h2_xs0 = t2;
-#line 5036 "main.c"
+#line 5026 "main.c"
     hero_array_decref(t21);
 #line 42 "examples/logs/summary.hero"
     t3 = INT64_C(0);
@@ -5062,11 +5052,11 @@ bb2:
     t10 = *(h_entry_Entry const *)hero_array_at(t8, t9);
 #line 42 "examples/logs/summary.hero"
     t22 = h4_one;
-#line 5066 "main.c"
+#line 5056 "main.c"
     h_entry_Entry_retain(&t10);
 #line 42 "examples/logs/summary.hero"
     h4_one = t10;
-#line 5070 "main.c"
+#line 5060 "main.c"
     h_entry_Entry_release(&t22);
 #line 43 "examples/logs/summary.hero"
     t12 = h4_one;
@@ -5092,26 +5082,26 @@ bb3:
 bb4:
 #line 45 "examples/logs/summary.hero"
     t18 = h1_out;
-#line 5096 "main.c"
+#line 5086 "main.c"
     hero_array_incref(t18);
 #line 45 "examples/logs/summary.hero"
-#line 5099 "main.c"
+#line 5089 "main.c"
     hero_array_decref(h1_out);
 #line 45 "examples/logs/summary.hero"
-#line 5102 "main.c"
+#line 5092 "main.c"
     hero_array_decref(h2_xs0);
 #line 45 "examples/logs/summary.hero"
-#line 5105 "main.c"
+#line 5095 "main.c"
     h_entry_Entry_release(&h4_one);
 #line 45 "examples/logs/summary.hero"
-#line 5108 "main.c"
+#line 5098 "main.c"
     hero_array_decref(h5_own5);
     return t18;
 }
 
 #line 47 "examples/logs/summary.hero"
 HeroArrayHeader * h_summary_hours_of(HeroArrayHeader * h0_entries) {
-#line 5115 "main.c"
+#line 5105 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -5147,25 +5137,25 @@ bb0:
     t19 = h5_own5;
 #line 48 "examples/logs/summary.hero"
     h5_own5 = t1;
-#line 5151 "main.c"
+#line 5141 "main.c"
     hero_array_decref(t19);
 #line 48 "examples/logs/summary.hero"
     t20 = h1_out;
-#line 5155 "main.c"
+#line 5145 "main.c"
     hero_array_incref(t1);
 #line 48 "examples/logs/summary.hero"
     h1_out = t1;
-#line 5159 "main.c"
+#line 5149 "main.c"
     hero_array_decref(t20);
 #line 50 "examples/logs/summary.hero"
     t2 = h0_entries;
 #line 50 "examples/logs/summary.hero"
     t21 = h2_xs0;
-#line 5165 "main.c"
+#line 5155 "main.c"
     hero_array_incref(t2);
 #line 50 "examples/logs/summary.hero"
     h2_xs0 = t2;
-#line 5169 "main.c"
+#line 5159 "main.c"
     hero_array_decref(t21);
 #line 50 "examples/logs/summary.hero"
     t3 = INT64_C(0);
@@ -5195,11 +5185,11 @@ bb2:
     t10 = *(h_entry_Entry const *)hero_array_at(t8, t9);
 #line 50 "examples/logs/summary.hero"
     t22 = h4_one;
-#line 5199 "main.c"
+#line 5189 "main.c"
     h_entry_Entry_retain(&t10);
 #line 50 "examples/logs/summary.hero"
     h4_one = t10;
-#line 5203 "main.c"
+#line 5193 "main.c"
     h_entry_Entry_release(&t22);
 #line 51 "examples/logs/summary.hero"
     t12 = h4_one;
@@ -5209,7 +5199,7 @@ bb2:
     t23 = h6_own6;
 #line 51 "examples/logs/summary.hero"
     h6_own6 = t13;
-#line 5213 "main.c"
+#line 5203 "main.c"
     hero_str_decref(t23);
 #line 51 "examples/logs/summary.hero"
     hero_array_push_owned(&h1_out, &t13);
@@ -5231,29 +5221,29 @@ bb3:
 bb4:
 #line 53 "examples/logs/summary.hero"
     t18 = h1_out;
-#line 5235 "main.c"
+#line 5225 "main.c"
     hero_array_incref(t18);
 #line 53 "examples/logs/summary.hero"
-#line 5238 "main.c"
+#line 5228 "main.c"
     hero_array_decref(h1_out);
 #line 53 "examples/logs/summary.hero"
-#line 5241 "main.c"
+#line 5231 "main.c"
     hero_array_decref(h2_xs0);
 #line 53 "examples/logs/summary.hero"
-#line 5244 "main.c"
+#line 5234 "main.c"
     h_entry_Entry_release(&h4_one);
 #line 53 "examples/logs/summary.hero"
-#line 5247 "main.c"
+#line 5237 "main.c"
     hero_array_decref(h5_own5);
 #line 53 "examples/logs/summary.hero"
-#line 5250 "main.c"
+#line 5240 "main.c"
     hero_str_decref(h6_own6);
     return t18;
 }
 
 #line 57 "examples/logs/summary.hero"
 HeroArrayHeader * h_summary_ranked(HeroMapHeader * h0_counts) {
-#line 5257 "main.c"
+#line 5247 "main.c"
     HeroArrayHeader * h1_left = {0};
     HeroArrayHeader * h2_out = {0};
     int64_t h3_best;
@@ -5353,7 +5343,7 @@ bb0:
     t62 = h11_own11;
 #line 58 "examples/logs/summary.hero"
     h11_own11 = t2;
-#line 5357 "main.c"
+#line 5347 "main.c"
     hero_array_decref(t62);
 #line 58 "examples/logs/summary.hero"
     t3 = hero_array_sort(t2);
@@ -5361,15 +5351,15 @@ bb0:
     t63 = h12_own12;
 #line 58 "examples/logs/summary.hero"
     h12_own12 = t3;
-#line 5365 "main.c"
+#line 5355 "main.c"
     hero_array_decref(t63);
 #line 58 "examples/logs/summary.hero"
     t64 = h1_left;
-#line 5369 "main.c"
+#line 5359 "main.c"
     hero_array_incref(t3);
 #line 58 "examples/logs/summary.hero"
     h1_left = t3;
-#line 5373 "main.c"
+#line 5363 "main.c"
     hero_array_decref(t64);
 #line 59 "examples/logs/summary.hero"
     t4 = hero_array_new(&hero_desc_str, 1);
@@ -5377,15 +5367,15 @@ bb0:
     t65 = h13_own13;
 #line 59 "examples/logs/summary.hero"
     h13_own13 = t4;
-#line 5381 "main.c"
+#line 5371 "main.c"
     hero_array_decref(t65);
 #line 59 "examples/logs/summary.hero"
     t66 = h2_out;
-#line 5385 "main.c"
+#line 5375 "main.c"
     hero_array_incref(t4);
 #line 59 "examples/logs/summary.hero"
     h2_out = t4;
-#line 5389 "main.c"
+#line 5379 "main.c"
     hero_array_decref(t66);
     goto bb1;
 bb1:
@@ -5417,15 +5407,15 @@ bb2:
     t67 = h14_own14;
 #line 64 "examples/logs/summary.hero"
     h14_own14 = t13;
-#line 5421 "main.c"
+#line 5411 "main.c"
     hero_array_decref(t67);
 #line 64 "examples/logs/summary.hero"
     t68 = h4_xs0;
-#line 5425 "main.c"
+#line 5415 "main.c"
     hero_array_incref(t13);
 #line 64 "examples/logs/summary.hero"
     h4_xs0 = t13;
-#line 5429 "main.c"
+#line 5419 "main.c"
     hero_array_decref(t68);
 #line 64 "examples/logs/summary.hero"
     t14 = INT64_C(0);
@@ -5437,43 +5427,43 @@ bb2:
 bb3:
 #line 71 "examples/logs/summary.hero"
     t61 = h2_out;
-#line 5441 "main.c"
+#line 5431 "main.c"
     hero_array_incref(t61);
 #line 71 "examples/logs/summary.hero"
-#line 5444 "main.c"
+#line 5434 "main.c"
     hero_array_decref(h1_left);
 #line 71 "examples/logs/summary.hero"
-#line 5447 "main.c"
+#line 5437 "main.c"
     hero_array_decref(h2_out);
 #line 71 "examples/logs/summary.hero"
-#line 5450 "main.c"
+#line 5440 "main.c"
     hero_array_decref(h4_xs0);
 #line 71 "examples/logs/summary.hero"
-#line 5453 "main.c"
+#line 5443 "main.c"
     h_0opt_e201354_release(&h7_f0);
 #line 71 "examples/logs/summary.hero"
-#line 5456 "main.c"
+#line 5446 "main.c"
     h_0opt_e201354_release(&h9_f1);
 #line 71 "examples/logs/summary.hero"
-#line 5459 "main.c"
+#line 5449 "main.c"
     hero_array_decref(h11_own11);
 #line 71 "examples/logs/summary.hero"
-#line 5462 "main.c"
+#line 5452 "main.c"
     hero_array_decref(h12_own12);
 #line 71 "examples/logs/summary.hero"
-#line 5465 "main.c"
+#line 5455 "main.c"
     hero_array_decref(h13_own13);
 #line 71 "examples/logs/summary.hero"
-#line 5468 "main.c"
+#line 5458 "main.c"
     hero_array_decref(h14_own14);
 #line 71 "examples/logs/summary.hero"
-#line 5471 "main.c"
+#line 5461 "main.c"
     h_0opt_e201354_release(&h15_own15);
 #line 71 "examples/logs/summary.hero"
-#line 5474 "main.c"
+#line 5464 "main.c"
     hero_array_decref(h16_own16);
 #line 71 "examples/logs/summary.hero"
-#line 5477 "main.c"
+#line 5467 "main.c"
     h_0opt_e201354_release(&h17_own17);
     return t61;
 bb4:
@@ -5527,15 +5517,15 @@ bb5:
     t69 = h15_own15;
 #line 65 "examples/logs/summary.hero"
     h15_own15 = t26;
-#line 5531 "main.c"
+#line 5521 "main.c"
     h_0opt_e201354_release(&t69);
 #line 65 "examples/logs/summary.hero"
     t70 = h7_f0;
-#line 5535 "main.c"
+#line 5525 "main.c"
     h_0opt_e201354_retain(&t26);
 #line 65 "examples/logs/summary.hero"
     h7_f0 = t26;
-#line 5539 "main.c"
+#line 5529 "main.c"
     h_0opt_e201354_release(&t70);
 #line 65 "examples/logs/summary.hero"
     t27 = h7_f0;
@@ -5579,15 +5569,15 @@ bb7:
     t71 = h16_own16;
 #line 69 "examples/logs/summary.hero"
     h16_own16 = t60;
-#line 5583 "main.c"
+#line 5573 "main.c"
     hero_array_decref(t71);
 #line 69 "examples/logs/summary.hero"
     t72 = h1_left;
-#line 5587 "main.c"
+#line 5577 "main.c"
     hero_array_incref(t60);
 #line 69 "examples/logs/summary.hero"
     h1_left = t60;
-#line 5591 "main.c"
+#line 5581 "main.c"
     hero_array_decref(t72);
     goto bb1;
 bb8:
@@ -5643,15 +5633,15 @@ bb11:
     t73 = h17_own17;
 #line 65 "examples/logs/summary.hero"
     h17_own17 = t39;
-#line 5647 "main.c"
+#line 5637 "main.c"
     h_0opt_e201354_release(&t73);
 #line 65 "examples/logs/summary.hero"
     t74 = h9_f1;
-#line 5651 "main.c"
+#line 5641 "main.c"
     h_0opt_e201354_retain(&t39);
 #line 65 "examples/logs/summary.hero"
     h9_f1 = t39;
-#line 5655 "main.c"
+#line 5645 "main.c"
     h_0opt_e201354_release(&t74);
 #line 65 "examples/logs/summary.hero"
     t40 = h9_f1;
@@ -5701,12 +5691,12 @@ bb15:
 bb16:
 #line 66 "examples/logs/summary.hero"
     goto bb8;
-#line 5705 "main.c"
+#line 5695 "main.c"
 }
 
 #line 73 "examples/logs/summary.hero"
 HeroArrayHeader * h_summary_without(HeroArrayHeader * h0_names, int64_t h1_at) {
-#line 5710 "main.c"
+#line 5700 "main.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -5748,15 +5738,15 @@ bb0:
     t26 = h6_own6;
 #line 74 "examples/logs/summary.hero"
     h6_own6 = t1;
-#line 5752 "main.c"
+#line 5742 "main.c"
     hero_array_decref(t26);
 #line 74 "examples/logs/summary.hero"
     t27 = h2_out;
-#line 5756 "main.c"
+#line 5746 "main.c"
     hero_array_incref(t1);
 #line 74 "examples/logs/summary.hero"
     h2_out = t1;
-#line 5760 "main.c"
+#line 5750 "main.c"
     hero_array_decref(t27);
 #line 76 "examples/logs/summary.hero"
     t2 = INT64_C(0);
@@ -5770,15 +5760,15 @@ bb0:
     t28 = h7_own7;
 #line 76 "examples/logs/summary.hero"
     h7_own7 = t5;
-#line 5774 "main.c"
+#line 5764 "main.c"
     hero_array_decref(t28);
 #line 76 "examples/logs/summary.hero"
     t29 = h3_xs0;
-#line 5778 "main.c"
+#line 5768 "main.c"
     hero_array_incref(t5);
 #line 76 "examples/logs/summary.hero"
     h3_xs0 = t5;
-#line 5782 "main.c"
+#line 5772 "main.c"
     hero_array_decref(t29);
 #line 76 "examples/logs/summary.hero"
     t6 = INT64_C(0);
@@ -5832,19 +5822,19 @@ bb3:
 bb4:
 #line 80 "examples/logs/summary.hero"
     t25 = h2_out;
-#line 5836 "main.c"
+#line 5826 "main.c"
     hero_array_incref(t25);
 #line 80 "examples/logs/summary.hero"
-#line 5839 "main.c"
+#line 5829 "main.c"
     hero_array_decref(h2_out);
 #line 80 "examples/logs/summary.hero"
-#line 5842 "main.c"
+#line 5832 "main.c"
     hero_array_decref(h3_xs0);
 #line 80 "examples/logs/summary.hero"
-#line 5845 "main.c"
+#line 5835 "main.c"
     hero_array_decref(h6_own6);
 #line 80 "examples/logs/summary.hero"
-#line 5848 "main.c"
+#line 5838 "main.c"
     hero_array_decref(h7_own7);
     return t25;
 bb5:
@@ -5864,12 +5854,12 @@ bb6:
 bb7:
 #line 78 "examples/logs/summary.hero"
     goto bb5;
-#line 5868 "main.c"
+#line 5858 "main.c"
 }
 
 #line 83 "examples/logs/summary.hero"
 HeroArrayHeader * h_summary_rows(HeroMapHeader * h0_counts) {
-#line 5873 "main.c"
+#line 5863 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -5935,15 +5925,15 @@ bb0:
     t36 = h7_own7;
 #line 84 "examples/logs/summary.hero"
     h7_own7 = t1;
-#line 5939 "main.c"
+#line 5929 "main.c"
     hero_array_decref(t36);
 #line 84 "examples/logs/summary.hero"
     t37 = h1_out;
-#line 5943 "main.c"
+#line 5933 "main.c"
     hero_array_incref(t1);
 #line 84 "examples/logs/summary.hero"
     h1_out = t1;
-#line 5947 "main.c"
+#line 5937 "main.c"
     hero_array_decref(t37);
 #line 86 "examples/logs/summary.hero"
     t2 = h0_counts;
@@ -5953,15 +5943,15 @@ bb0:
     t38 = h8_own8;
 #line 86 "examples/logs/summary.hero"
     h8_own8 = t3;
-#line 5957 "main.c"
+#line 5947 "main.c"
     hero_array_decref(t38);
 #line 86 "examples/logs/summary.hero"
     t39 = h2_xs0;
-#line 5961 "main.c"
+#line 5951 "main.c"
     hero_array_incref(t3);
 #line 86 "examples/logs/summary.hero"
     h2_xs0 = t3;
-#line 5965 "main.c"
+#line 5955 "main.c"
     hero_array_decref(t39);
 #line 86 "examples/logs/summary.hero"
     t4 = INT64_C(0);
@@ -5991,11 +5981,11 @@ bb2:
     t11 = *(HeroStr const *)hero_array_at(t9, t10);
 #line 86 "examples/logs/summary.hero"
     t40 = h4_name;
-#line 5995 "main.c"
+#line 5985 "main.c"
     hero_str_incref(t11);
 #line 86 "examples/logs/summary.hero"
     h4_name = t11;
-#line 5999 "main.c"
+#line 5989 "main.c"
     hero_str_decref(t40);
 #line 87 "examples/logs/summary.hero"
     t13 = HERO_STR_LIT(hero_str_1080);
@@ -6007,7 +5997,7 @@ bb2:
     t41 = h9_own9;
 #line 87 "examples/logs/summary.hero"
     h9_own9 = t15;
-#line 6011 "main.c"
+#line 6001 "main.c"
     hero_str_decref(t41);
 #line 87 "examples/logs/summary.hero"
     t16 = HERO_STR_LIT(hero_str_20);
@@ -6017,7 +6007,7 @@ bb2:
     t42 = h10_own10;
 #line 87 "examples/logs/summary.hero"
     h10_own10 = t17;
-#line 6021 "main.c"
+#line 6011 "main.c"
     hero_str_decref(t42);
 #line 87 "examples/logs/summary.hero"
     t18 = h0_counts;
@@ -6045,15 +6035,15 @@ bb2:
     t43 = h11_own11;
 #line 87 "examples/logs/summary.hero"
     h11_own11 = t20;
-#line 6049 "main.c"
+#line 6039 "main.c"
     h_0opt_e201354_release(&t43);
 #line 87 "examples/logs/summary.hero"
     t44 = h5_f0;
-#line 6053 "main.c"
+#line 6043 "main.c"
     h_0opt_e201354_retain(&t20);
 #line 87 "examples/logs/summary.hero"
     h5_f0 = t20;
-#line 6057 "main.c"
+#line 6047 "main.c"
     h_0opt_e201354_release(&t44);
 #line 87 "examples/logs/summary.hero"
     t21 = h5_f0;
@@ -6081,40 +6071,40 @@ bb3:
 bb4:
 #line 89 "examples/logs/summary.hero"
     t35 = h1_out;
-#line 6085 "main.c"
+#line 6075 "main.c"
     hero_array_incref(t35);
 #line 89 "examples/logs/summary.hero"
-#line 6088 "main.c"
+#line 6078 "main.c"
     hero_array_decref(h1_out);
 #line 89 "examples/logs/summary.hero"
-#line 6091 "main.c"
+#line 6081 "main.c"
     hero_array_decref(h2_xs0);
 #line 89 "examples/logs/summary.hero"
-#line 6094 "main.c"
+#line 6084 "main.c"
     hero_str_decref(h4_name);
 #line 89 "examples/logs/summary.hero"
-#line 6097 "main.c"
+#line 6087 "main.c"
     h_0opt_e201354_release(&h5_f0);
 #line 89 "examples/logs/summary.hero"
-#line 6100 "main.c"
+#line 6090 "main.c"
     hero_array_decref(h7_own7);
 #line 89 "examples/logs/summary.hero"
-#line 6103 "main.c"
+#line 6093 "main.c"
     hero_array_decref(h8_own8);
 #line 89 "examples/logs/summary.hero"
-#line 6106 "main.c"
+#line 6096 "main.c"
     hero_str_decref(h9_own9);
 #line 89 "examples/logs/summary.hero"
-#line 6109 "main.c"
+#line 6099 "main.c"
     hero_str_decref(h10_own10);
 #line 89 "examples/logs/summary.hero"
-#line 6112 "main.c"
+#line 6102 "main.c"
     h_0opt_e201354_release(&h11_own11);
 #line 89 "examples/logs/summary.hero"
-#line 6115 "main.c"
+#line 6105 "main.c"
     hero_str_decref(h12_own12);
 #line 89 "examples/logs/summary.hero"
-#line 6118 "main.c"
+#line 6108 "main.c"
     hero_str_decref(h13_own13);
     return t35;
 bb5:
@@ -6144,7 +6134,7 @@ bb7:
     t45 = h12_own12;
 #line 87 "examples/logs/summary.hero"
     h12_own12 = t29;
-#line 6148 "main.c"
+#line 6138 "main.c"
     hero_str_decref(t45);
 #line 87 "examples/logs/summary.hero"
     t30 = hero_str_concat(t17, t29);
@@ -6152,18 +6142,18 @@ bb7:
     t46 = h13_own13;
 #line 87 "examples/logs/summary.hero"
     h13_own13 = t30;
-#line 6156 "main.c"
+#line 6146 "main.c"
     hero_str_decref(t46);
 #line 87 "examples/logs/summary.hero"
     hero_array_push_owned(&h1_out, &t30);
 #line 87 "examples/logs/summary.hero"
     goto bb3;
-#line 6162 "main.c"
+#line 6152 "main.c"
 }
 
 #line 92 "examples/logs/summary.hero"
 h_0opt_1cbc30d0 h_summary_first_at(HeroArrayHeader * h0_entries, HeroStr h1_level) {
-#line 6167 "main.c"
+#line 6157 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     h_entry_Entry h4_one = {0};
@@ -6208,11 +6198,11 @@ bb0:
     t1 = h0_entries;
 #line 93 "examples/logs/summary.hero"
     t25 = h2_xs0;
-#line 6212 "main.c"
+#line 6202 "main.c"
     hero_array_incref(t1);
 #line 93 "examples/logs/summary.hero"
     h2_xs0 = t1;
-#line 6216 "main.c"
+#line 6206 "main.c"
     hero_array_decref(t25);
 #line 93 "examples/logs/summary.hero"
     t2 = INT64_C(0);
@@ -6242,11 +6232,11 @@ bb2:
     t9 = *(h_entry_Entry const *)hero_array_at(t7, t8);
 #line 93 "examples/logs/summary.hero"
     t26 = h4_one;
-#line 6246 "main.c"
+#line 6236 "main.c"
     h_entry_Entry_retain(&t9);
 #line 93 "examples/logs/summary.hero"
     h4_one = t9;
-#line 6250 "main.c"
+#line 6240 "main.c"
     h_entry_Entry_release(&t26);
 #line 94 "examples/logs/summary.hero"
     t10 = h4_one;
@@ -6278,7 +6268,7 @@ bb4:
     t27 = h6_own6;
 #line 97 "examples/logs/summary.hero"
     h6_own6 = t19;
-#line 6282 "main.c"
+#line 6272 "main.c"
     hero_str_decref(t27);
 #line 97 "examples/logs/summary.hero"
     t20 = HERO_STR_LIT(hero_str_6e6a828b);
@@ -6290,13 +6280,13 @@ bb4:
     t28 = h7_own7;
 #line 97 "examples/logs/summary.hero"
     h7_own7 = t22;
-#line 6294 "main.c"
+#line 6284 "main.c"
     hero_str_decref(t28);
 #line 97 "examples/logs/summary.hero"
-#line 6297 "main.c"
+#line 6287 "main.c"
     hero_str_incref(t19);
 #line 97 "examples/logs/summary.hero"
-#line 6300 "main.c"
+#line 6290 "main.c"
     hero_str_incref(t22);
 #line 97 "examples/logs/summary.hero"
     t23 = (h_0opt_1cbc30d0){.tag = INT64_C(1), .as.err = {.code = t19, .msg = t22}};
@@ -6304,7 +6294,7 @@ bb4:
     t29 = h8_own8;
 #line 97 "examples/logs/summary.hero"
     h8_own8 = t23;
-#line 6308 "main.c"
+#line 6298 "main.c"
     h_0opt_1cbc30d0_release(&t29);
 #line 97 "examples/logs/summary.hero"
     h5_ret0 = t23;
@@ -6318,7 +6308,7 @@ bb5:
 bb6:
 #line 95 "examples/logs/summary.hero"
     t14 = h4_one;
-#line 6322 "main.c"
+#line 6312 "main.c"
     h_entry_Entry_retain(&t14);
 #line 95 "examples/logs/summary.hero"
     t15 = (h_0opt_1cbc30d0){.tag = INT64_C(0), .as.ok = t14};
@@ -6326,7 +6316,7 @@ bb6:
     t30 = h9_own9;
 #line 95 "examples/logs/summary.hero"
     h9_own9 = t15;
-#line 6330 "main.c"
+#line 6320 "main.c"
     h_0opt_1cbc30d0_release(&t30);
 #line 95 "examples/logs/summary.hero"
     h5_ret0 = t15;
@@ -6340,32 +6330,32 @@ bb7:
 bb8:
 #line 92 "examples/logs/summary.hero"
     t24 = h5_ret0;
-#line 6344 "main.c"
+#line 6334 "main.c"
     h_0opt_1cbc30d0_retain(&t24);
 #line 92 "examples/logs/summary.hero"
-#line 6347 "main.c"
+#line 6337 "main.c"
     hero_array_decref(h2_xs0);
 #line 92 "examples/logs/summary.hero"
-#line 6350 "main.c"
+#line 6340 "main.c"
     h_entry_Entry_release(&h4_one);
 #line 92 "examples/logs/summary.hero"
-#line 6353 "main.c"
+#line 6343 "main.c"
     hero_str_decref(h6_own6);
 #line 92 "examples/logs/summary.hero"
-#line 6356 "main.c"
+#line 6346 "main.c"
     hero_str_decref(h7_own7);
 #line 92 "examples/logs/summary.hero"
-#line 6359 "main.c"
+#line 6349 "main.c"
     h_0opt_1cbc30d0_release(&h8_own8);
 #line 92 "examples/logs/summary.hero"
-#line 6362 "main.c"
+#line 6352 "main.c"
     h_0opt_1cbc30d0_release(&h9_own9);
     return t24;
 }
 
 #line 99 "examples/logs/summary.hero"
 int64_t h_summary_how_many_at(HeroArrayHeader * h0_entries, HeroStr h1_level) {
-#line 6369 "main.c"
+#line 6359 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_r0;
     HeroArrayHeader * h4_own4 = {0};
@@ -6398,7 +6388,7 @@ bb0:
     t14 = h4_own4;
 #line 100 "examples/logs/summary.hero"
     h4_own4 = t2;
-#line 6402 "main.c"
+#line 6392 "main.c"
     hero_array_decref(t14);
 #line 100 "examples/logs/summary.hero"
     t3 = h_summary_tally(t2);
@@ -6406,7 +6396,7 @@ bb0:
     t15 = h5_own5;
 #line 100 "examples/logs/summary.hero"
     h5_own5 = t3;
-#line 6410 "main.c"
+#line 6400 "main.c"
     hero_map_decref(t15);
 #line 100 "examples/logs/summary.hero"
     t4 = h1_level;
@@ -6432,15 +6422,15 @@ bb0:
     t16 = h6_own6;
 #line 100 "examples/logs/summary.hero"
     h6_own6 = t5;
-#line 6436 "main.c"
+#line 6426 "main.c"
     h_0opt_e201354_release(&t16);
 #line 100 "examples/logs/summary.hero"
     t17 = h2_f0;
-#line 6440 "main.c"
+#line 6430 "main.c"
     h_0opt_e201354_retain(&t5);
 #line 100 "examples/logs/summary.hero"
     h2_f0 = t5;
-#line 6444 "main.c"
+#line 6434 "main.c"
     h_0opt_e201354_release(&t17);
 #line 100 "examples/logs/summary.hero"
     t6 = h2_f0;
@@ -6474,23 +6464,23 @@ bb2:
 bb3:
 #line 100 "examples/logs/summary.hero"
     t13 = h3_r0;
-#line 6478 "main.c"
+#line 6468 "main.c"
     h_0opt_e201354_release(&h2_f0);
 #line 100 "examples/logs/summary.hero"
-#line 6481 "main.c"
+#line 6471 "main.c"
     hero_array_decref(h4_own4);
 #line 100 "examples/logs/summary.hero"
-#line 6484 "main.c"
+#line 6474 "main.c"
     hero_map_decref(h5_own5);
 #line 100 "examples/logs/summary.hero"
-#line 6487 "main.c"
+#line 6477 "main.c"
     h_0opt_e201354_release(&h6_own6);
     return t13;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 6494 "main.c"
+#line 6484 "main.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -6514,15 +6504,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 6518 "main.c"
+#line 6508 "main.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 6522 "main.c"
+#line 6512 "main.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 6526 "main.c"
+#line 6516 "main.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -6560,44 +6550,44 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 6564 "main.c"
+#line 6554 "main.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 6567 "main.c"
+#line 6557 "main.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 6570 "main.c"
+#line 6560 "main.c"
     hero_array_decref(h4_own4);
     return t12;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 6577 "main.c"
+#line 6567 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 6583 "main.c"
+#line 6573 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 6589 "main.c"
+#line 6579 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 6595 "main.c"
+#line 6585 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 6601 "main.c"
+#line 6591 "main.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     h_0opt_f87774a h3_ret0 = {0};
@@ -6674,15 +6664,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 6678 "main.c"
+#line 6668 "main.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 6682 "main.c"
+#line 6672 "main.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 6686 "main.c"
+#line 6676 "main.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -6706,7 +6696,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 6710 "main.c"
+#line 6700 "main.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -6714,7 +6704,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 6718 "main.c"
+#line 6708 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -6740,10 +6730,10 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 6744 "main.c"
+#line 6734 "main.c"
     hero_str_incref(t12);
 #line 175 "<heroes library>"
-#line 6747 "main.c"
+#line 6737 "main.c"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -6751,7 +6741,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 6755 "main.c"
+#line 6745 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -6785,13 +6775,13 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 6789 "main.c"
+#line 6779 "main.c"
     hero_str_decref(t43);
 #line 177 "<heroes library>"
-#line 6792 "main.c"
+#line 6782 "main.c"
     hero_str_incref(t18);
 #line 177 "<heroes library>"
-#line 6795 "main.c"
+#line 6785 "main.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -6799,7 +6789,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 6803 "main.c"
+#line 6793 "main.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -6823,13 +6813,13 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 6827 "main.c"
+#line 6817 "main.c"
     hero_str_decref(t45);
 #line 183 "<heroes library>"
-#line 6830 "main.c"
+#line 6820 "main.c"
     hero_str_incref(t33);
 #line 183 "<heroes library>"
-#line 6833 "main.c"
+#line 6823 "main.c"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -6837,7 +6827,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 6841 "main.c"
+#line 6831 "main.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -6857,7 +6847,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 6861 "main.c"
+#line 6851 "main.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -6867,13 +6857,13 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 6871 "main.c"
+#line 6861 "main.c"
     hero_str_decref(t48);
 #line 182 "<heroes library>"
-#line 6874 "main.c"
+#line 6864 "main.c"
     hero_str_incref(t26);
 #line 182 "<heroes library>"
-#line 6877 "main.c"
+#line 6867 "main.c"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -6881,7 +6871,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 6885 "main.c"
+#line 6875 "main.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -6895,47 +6885,47 @@ bb12:
 bb13:
 #line 167 "<heroes library>"
     t38 = h3_ret0;
-#line 6899 "main.c"
+#line 6889 "main.c"
     h_0opt_f87774a_retain(&t38);
 #line 167 "<heroes library>"
-#line 6902 "main.c"
+#line 6892 "main.c"
     hero_str_decref(h2_text);
 #line 167 "<heroes library>"
-#line 6905 "main.c"
+#line 6895 "main.c"
     hero_str_decref(h4_own4);
 #line 167 "<heroes library>"
-#line 6908 "main.c"
+#line 6898 "main.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 167 "<heroes library>"
-#line 6911 "main.c"
+#line 6901 "main.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 167 "<heroes library>"
-#line 6914 "main.c"
+#line 6904 "main.c"
     hero_str_decref(h7_own7);
 #line 167 "<heroes library>"
-#line 6917 "main.c"
+#line 6907 "main.c"
     h_0opt_f87774a_release(&h8_own8);
 #line 167 "<heroes library>"
-#line 6920 "main.c"
+#line 6910 "main.c"
     hero_str_decref(h9_own9);
 #line 167 "<heroes library>"
-#line 6923 "main.c"
+#line 6913 "main.c"
     h_0opt_f87774a_release(&h10_own10);
 #line 167 "<heroes library>"
-#line 6926 "main.c"
+#line 6916 "main.c"
     hero_str_decref(h11_own11);
 #line 167 "<heroes library>"
-#line 6929 "main.c"
+#line 6919 "main.c"
     hero_str_decref(h12_own12);
 #line 167 "<heroes library>"
-#line 6932 "main.c"
+#line 6922 "main.c"
     h_0opt_f87774a_release(&h13_own13);
     return t38;
 }
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 6939 "main.c"
+#line 6929 "main.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -6962,15 +6952,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 6966 "main.c"
+#line 6956 "main.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 6970 "main.c"
+#line 6960 "main.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 6974 "main.c"
+#line 6964 "main.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -6998,7 +6988,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 7002 "main.c"
+#line 6992 "main.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -7016,23 +7006,23 @@ bb2:
 bb3:
 #line 202 "<heroes library>"
     t13 = h0_out;
-#line 7020 "main.c"
+#line 7010 "main.c"
     hero_array_incref(t13);
 #line 202 "<heroes library>"
-#line 7023 "main.c"
+#line 7013 "main.c"
     hero_array_decref(h0_out);
 #line 202 "<heroes library>"
-#line 7026 "main.c"
+#line 7016 "main.c"
     hero_array_decref(h2_own2);
 #line 202 "<heroes library>"
-#line 7029 "main.c"
+#line 7019 "main.c"
     hero_str_decref(h3_own3);
     return t13;
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 7036 "main.c"
+#line 7026 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -7042,7 +7032,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 7046 "main.c"
+#line 7036 "main.c"
 }
 HERO_TU_LOCAL void h_entry_Entry_retain(const h_entry_Entry *v) {
     hero_str_incref(v->f_stamp);

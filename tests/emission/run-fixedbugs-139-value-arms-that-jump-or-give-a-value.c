@@ -1102,26 +1102,18 @@ bb0:
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t21 = hero_array_new(&hero_desc_int, 4);
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    { HeroArrayHeader *grown = hero_array_push(t21, &t17);
+    hero_array_push_owned(&t21, &t17);
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-      hero_array_decref(t21); t21 = grown; }
+    hero_array_push_owned(&t21, &t18);
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    { HeroArrayHeader *grown = hero_array_push(t21, &t18);
+    hero_array_push_owned(&t21, &t19);
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-      hero_array_decref(t21); t21 = grown; }
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    { HeroArrayHeader *grown = hero_array_push(t21, &t19);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-      hero_array_decref(t21); t21 = grown; }
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    { HeroArrayHeader *grown = hero_array_push(t21, &t20);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-      hero_array_decref(t21); t21 = grown; }
+    hero_array_push_owned(&t21, &t20);
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t43 = h0_own0;
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     h0_own0 = t21;
-#line 1125 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 1117 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     hero_array_decref(t43);
 #line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t22 = h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(t21);
@@ -1209,7 +1201,7 @@ bb0:
     hero_print_int(t42);
 #line 124 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     hero_print_end();
-#line 1213 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 1205 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     hero_array_decref(h0_own0);
     return;
 }
