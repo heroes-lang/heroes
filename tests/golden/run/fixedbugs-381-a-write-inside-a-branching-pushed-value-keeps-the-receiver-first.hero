@@ -11,6 +11,11 @@
 # `kept` holds each receiver's array as well, so the case asks only the order:
 # without a second holder, the `@` call frees the array the copying push still
 # reads, a separate defect found beside this one the same day.
+#
+# **That defect is 387, repaired the same day**: the receiver's load keeps a
+# reference of its own across the `@` call, so the shape holds its order with
+# no second holder too, which defect 387's receiver case runs; `kept` stays as
+# it was written.
 
 record Bag
     xs: [i64]
