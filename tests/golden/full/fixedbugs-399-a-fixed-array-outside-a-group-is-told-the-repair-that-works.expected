@@ -3,14 +3,14 @@ error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as 
      |
   33 | constant ZEROS: i8[4]  #~ fixed_outside_a_group
      |                 ^^^^^
-  note: `Name`'s field `bytes` is built from it at line 46: write the elements there instead, `bytes: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `bytes` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Name`'s field `bytes` is built from it at line 46: write the elements there instead, `bytes: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `bytes` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i32[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-399-a-fixed-array-outside-a-group-is-told-the-repair-that-works.hero:37:13
      |
   37 |     counts: i32[4]  #~ fixed_outside_a_group
      |             ^^^^^^
-  note: where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i32[4]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant or parameter holds a fixed array, and `[i32]` is not one
+  note: where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i32[4]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant, parameter or result holds a fixed array, and `[i32]` is not one
   note: where no C struct holds it, use `[i32]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds
 
 error[fixed_outside_a_group]: `i64[2][3]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
@@ -25,7 +25,7 @@ error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as 
      |
   43 |     zero: i8[4] = [0, 0, 0, 0]  #~ fixed_outside_a_group
      |           ^^^^^
-  note: `Name`'s field `bytes` is built from it at line 45: write the elements there instead, `bytes: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `bytes` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Name`'s field `bytes` is built from it at line 45: write the elements there instead, `bytes: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `bytes` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `str[2]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-399-a-fixed-array-outside-a-group-is-told-the-repair-that-works.hero:44:13

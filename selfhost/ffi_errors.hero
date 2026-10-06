@@ -212,13 +212,15 @@ function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: 
 # program builds it into a group record's field, when it does. Then the
 # construction is named, with `rest: zero` where it can end it, and the `[T]`
 # is not offered: a C struct holds it, so `[T]` is the dead end defect 399 was.
+# The places no fixed array stands name a function's result since defect 424:
+# the note said *binding, constant or parameter* at a result too.
 function fixed_outside_a_group(name: str, growable: str, fills: bool, into: BuiltInto?, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "fixed_outside_a_group",
         message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)",
         span: span
     )
-    no_value = ": no binding, constant or parameter holds a fixed array, and `" + growable + "` is not one"
+    no_value = ": no binding, constant, parameter or result holds a fixed array, and `" + growable + "` is not one"
 
     if !into.is_err()
         d.notes @ d.notes.push(built_into(into.must()) + no_value)
@@ -318,7 +320,7 @@ test "a fixed array outside a group is told the repairs that work, each under it
     bytes_field = fixed_outside_a_group(name: "i8[256]", growable: "[i8]", fills: true, into: none, span: span)
     assert bytes_field.message == "`i8[256]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
     assert bytes_field.notes.len() == 2
-    assert bytes_field.notes[0] == "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[256]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
+    assert bytes_field.notes[0] == "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[256]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
     assert bytes_field.notes[1] == "where no C struct holds it, use `[i8]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
     nested = fixed_outside_a_group(name: "i64[2][3]", growable: "[[i64]]", fills: false, into: none, span: span)
     assert nested.notes.len() == 1
@@ -332,10 +334,10 @@ test "a fixed array outside a group is told the repairs that work, each under it
     )
     built = fixed_outside_a_group(name: "i8[65]", growable: "[i8]", fills: true, into: ok(uts), span: span)
     assert built.notes.len() == 1
-    assert built.notes[0] == "`Uts`'s fields `sysname`, `nodename` and `machine` are built from it at line 9: write the elements there instead, `sysname: [a, b, …]`, as many as `i8[65]` says, or, where they are zero, leave those fields out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
+    assert built.notes[0] == "`Uts`'s fields `sysname`, `nodename` and `machine` are built from it at line 9: write the elements there instead, `sysname: [a, b, …]`, as many as `i8[65]` says, or, where they are zero, leave those fields out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
     odd = BuiltInto(holder: "Odd", fields: ["head"], field_type: "i8[4]", at: "line 3", rests: false)
     held = fixed_outside_a_group(name: "i8[4]", growable: "[i8]", fills: true, into: ok(odd), span: span)
-    assert held.notes[0] == "`Odd`'s field `head` is built from it at line 3: write the elements there instead, `head: [a, b, …]`, as many as `i8[4]` says, and `rest: zero` cannot end that construction, `Odd` having a field called `rest`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
+    assert held.notes[0] == "`Odd`'s field `head` is built from it at line 3: write the elements there instead, `head: [a, b, …]`, as many as `i8[4]` says, and `rest: zero` cannot end that construction, `Odd` having a field called `rest`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
 
 test "a float key splits on is-a-float versus reaches-one"
     span = token.Span(start: 0, end: 4)

@@ -300,7 +300,7 @@ test "a value built into a group record's field is told that construction"
         "extern \"r.h\"\n    record Tag\n        name: i8[4]\n        id: i32\n\nfunction main()\n    zero: i8[4] = [0, 0, 0, 0]\n    t = Tag(name: zero, id: 7)\n    print(t.id)\n"
     )
     assert told.len() == 1
-    assert told[0].notes == ["`Tag`'s field `name` is built from it at line 8: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"]
+    assert told[0].notes == ["`Tag`'s field `name` is built from it at line 8: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"]
 
 # The sweep over `text`, its types lowered as the declaration pass leaves
 # them; the bodies are not typed, which the sweep does not read.
