@@ -23,6 +23,9 @@ record NameRows
     at: {str: i64}
     # name -> declaration index, one map per module
     rows: [{str: i64}]
+    # How many names have been written, which a list read off the rows
+    # compares to know it still stands (`resolve/offered.hero`).
+    written: i64
 
 # The same two levels for the `use` table: file -> binding -> module.
 record UseRows
@@ -40,7 +43,7 @@ record NameSets
 function new_name_rows() -> NameRows
     at: {str: i64} = {}
     rows: [{str: i64}] = []
-    return NameRows(at: at, rows: rows)
+    return NameRows(at: at, rows: rows, written: 0)
 
 function new_use_rows() -> UseRows
     at: {str: i64} = {}

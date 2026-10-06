@@ -25,6 +25,7 @@ use ast
 use source
 use resolved
 use resolve/state
+use resolve/offered
 use resolve/errors
 use module/diagnostics
 use resolve/binding as resolve_binding
@@ -70,8 +71,8 @@ function qualified(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
             .record_decl | .constant_decl | .test_decl => state.record_use(@r, at: at, to: .top(at: decl))
 
         return true
-    names = resolved.names_in(r.out, module)
-    near = state.near_names(@r, text, names)
+    names = offered.named(@r.offered, r.out, module: module).names
+    near = state.near_names(@r, text, [names])
 
     # The qualifier is read off the RECEIVER, which is the name the author
     # actually wrote — their `as` name where they gave one. Deriving it from
