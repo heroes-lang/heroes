@@ -36,6 +36,7 @@ use check/state
 use check/lower
 use check/ffi
 use check/fixed_repairs
+use check/fixed_judged
 use ffi_errors
 
 # It asks the value, not the world: the legal set is built by reading the
@@ -71,6 +72,7 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
 
     built: {i64: ffi_errors.BuiltInto} @ {}
     scanned: bool @ false
+    refused: {i64: bool} @ {}
 
     # ORDER: ascending type-node id. It decided which of a nested pair
     # printed first, the two sharing span.start, until defect 405 told the
@@ -96,6 +98,8 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
             if d.span == span
                 already @ true
 
+        refused[node] @ true
+
         if already
             continue
 
@@ -105,6 +109,11 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
             built @ built_into(c, a, r, s, decls)
             scanned @ true
         fixed_repairs.told(@c, s, decls, ty: ty, span: span, into: built[node])
+
+    # A value the walk judged against a type refused here was told twice,
+    # once for the type and once for the judgement (defect 423).
+    if refused.len() > 0
+        fixed_judged.withdraw(@c, a, r, s, decls, refused)
 
 function is_fixed(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
