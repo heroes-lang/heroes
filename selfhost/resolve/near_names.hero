@@ -35,7 +35,7 @@ function nearest(name: str, candidates: [str]) -> [str]
 
     for candidate in candidates
         if candidate != name && !already_listed(near, candidate) && near.len() < 3
-            if distance(a: name, b: candidate) <= allowed
+            if within(a: name, b: candidate, most: allowed)
                 near @ near.push(candidate)
 
     return near
@@ -166,7 +166,8 @@ function swapped(a: str, b: str) -> bool
     return a.slice(from: i + 2, to: a.len()) == b.slice(from: i + 2, to: b.len())
 
 # Levenshtein distance, two rows, over bytes — exact for the ASCII names it
-# is asked about. Names are short; this is not a hot path.
+# is asked about. The did-you-mean asks `within` below instead, of every name
+# in scope.
 function distance(a: str, b: str) -> i64
     previous: [i64] @ []
     j: i64 @ 0
@@ -203,6 +204,77 @@ function min3(a: i64, b: i64, c: i64) -> i64
     if c < least
         least @ c
     return least
+
+# Whether `distance(a: a, b: b)` is `most` or less, read from a band of the
+# table rather than all of it: the did-you-mean asks it of every name in
+# scope for each name nothing answers, in every reading of a program, and a
+# rename's trials read the program sixteen times more (defect 372). It is
+# the same answer, for three facts about the table:
+#
+# - the cell `i` bytes into `a` and `j` into `b` holds at least `|i - j|`,
+#   so two names further apart in length than `most` are further apart, and
+#   only the cells within `most` of the diagonal can hold `most` or less;
+# - each value is held at `most + 1` at most, and a least of sums of costs
+#   that are never negative is the same below that cap whether the values
+#   it reads were capped or not, so a cell outside the band reads as the cap;
+# - a cell is at least the least of the row above it, so once a row holds
+#   nothing under the cap, no later row does.
+#
+# Row `i`'s band is `band[d]` for column `i + d - most`: the cell above-left
+# is the row before's `d`, the one above its `d + 1`, the one left this
+# row's `d - 1`.
+function within(a: str, b: str, most: i64) -> bool
+    if most < 0 || a.len() - b.len() > most || b.len() - a.len() > most
+        return false
+    over = most + 1
+    width = 2 * most + 1
+    band: [i64] @ []
+    d: i64 @ 0
+
+    while d < width
+        j = d - most
+        cell: i64 @ over
+
+        if j >= 0 && j <= b.len()
+            cell @ j
+        band @ band.push(cell)
+        d @ d + 1
+
+    i: i64 @ 1
+
+    while i <= a.len()
+        next: [i64] @ []
+        least: i64 @ over
+        d @ 0
+
+        while d < width
+            j = i + d - most
+            cell: i64 @ over
+
+            if j == 0
+                cell @ min3(a: i, b: over, c: over)
+            else if j > 0 && j <= b.len()
+                cost: i64 @ 1
+
+                if a[i - 1] == b[j - 1]
+                    cost @ 0
+                cell @ min3(a: band[d] + cost, b: over, c: over)
+
+                if d + 1 < width
+                    cell @ min3(a: cell, b: band[d + 1] + 1, c: over)
+
+                if d > 0
+                    cell @ min3(a: cell, b: next[d - 1] + 1, c: over)
+            next @ next.push(cell)
+            least @ min3(a: least, b: cell, c: over)
+            d @ d + 1
+
+        if least > most
+            return false
+        band @ next
+        i @ i + 1
+
+    return band[b.len() - a.len() + most] <= most
 
 ## Tests
 
@@ -253,3 +325,65 @@ test "the edit budget follows the name's length"
     assert distance(a: "total", b: "totale") == 1
     assert distance(a: "kitten", b: "sitting") == 3
     assert distance(a: "", b: "abc") == 3
+
+# Defect 372: the band answers what the whole table answers, for every pair
+# of words of up to four bytes over three letters, the empty one among them,
+# and for pairs of names a program writes, the built-ins' and slips of
+# theirs, with every budget from none to three, and a budget below none,
+# which no distance is within.
+test "a band of the table answers what the whole table answers"
+    words = words_of(letters: ["a", "b", "c"], longest: 4)
+    assert words.len() == 1 + 3 + 9 + 27 + 81
+    names: [str] = [
+        ""
+        "print"
+        "pirnt"
+        "len"
+        "lenn"
+        "total"
+        "totl"
+        "tottal"
+        "read_file"
+        "read_fiel"
+        "validated_bytes"
+        "validated_byte"
+        "to_i64"
+        "to_i32"
+        "kitten"
+        "sitting"
+        "total_aaabbbccc"
+        "totl_aaabbbccc"
+        "total_aaabbbddd"
+        "Point"
+        "point"
+    ]
+
+    for set in [words, names]
+        for a in set
+            for b in set
+                most: i64 @ -1
+
+                while most <= 3
+                    assert within(a: a, b: b, most: most) == (distance(a: a, b: b) <= most)
+                    most @ most + 1
+
+# Every word of at most `longest` letters drawn from `letters`.
+function words_of(letters: [str], longest: i64) -> [str]
+    out: [str] @ [""]
+    last: [str] @ [""]
+    size: i64 @ 0
+
+    while size < longest
+        longer: [str] @ []
+
+        for word in last
+            for letter in letters
+                longer @ longer.push(word + letter)
+
+        for word in longer
+            out @ out.push(word)
+
+        last @ longer
+        size @ size + 1
+
+    return out
