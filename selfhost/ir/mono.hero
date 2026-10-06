@@ -12,9 +12,9 @@
 # ownership pass running first does not fail to decide, it DECIDES
 # WRONGLY (panel 029 R1).
 #
-# What it does not do: recompute the substitution. The checker bound
-# the type parameters to type each call, keyed by the call's span
-# start. Re-deriving them here would be a second answer to one question.
+# What it does not do: recompute the substitution. The checker bound the
+# type parameters at each call's span end, and at a generic value's name
+# (defect 402): re-deriving them would be a second answer to one question.
 #
 # TERMINATION IS NOT AN ACCIDENT AND NOT A DEPTH LIMIT. Polymorphic
 # recursion — f<T> calling f<[T]> — instantiates forever, type-checks
@@ -165,21 +165,35 @@ function calls_in(f: containers.Function, generic: {i64: bool}, c: state.Checked
                 .call cl =>
                     match cl.callee
                         .heroes_fn h =>
-                            if generic[h.decl].is_err()
-                                continue
-                            recorded = c.instantiations[inst.span.end]
+                            one = generic_use(decl: h.decl, span: inst.span, generic: generic, c: c)
 
-                            if recorded.is_err()
-                                continue
-                            found @ found.push(
-                                FoundCall(instance: Instance(decl: h.decl, bound: recorded.must()), span: inst.span)
-                            )
+                            if !one.is_err()
+                                found @ found.push(one.must())
                         .extern_fn | .builtin_fn | .indirect => continue
-                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct             => continue
-                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+                # A generic function named as a VALUE is an instance too
+                # (defect 402): the checker recorded its types at the name.
+                .func_ref fr =>
+                    match fr.callee
+                        .heroes_fn h =>
+                            one = generic_use(decl: h.decl, span: inst.span, generic: generic, c: c)
+
+                            if !one.is_err()
+                                found @ found.push(one.must())
+                        .extern_fn | .builtin_fn | .indirect => continue
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                   => continue
+                .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     return found
+
+# The instance one instruction reaches: its target generic, at the types the
+# checker recorded at its span, a call's at the call and a value's at its name.
+function generic_use(decl: i64, span: token.Span, generic: {i64: bool}, c: state.Checked) -> FoundCall?
+    recorded = c.instantiations[span.end]
+
+    if generic[decl].is_err() || recorded.is_err()
+        return fail(code: "none", msg: "not a generic use the checker recorded")
+    return ok(FoundCall(instance: Instance(decl: decl, bound: recorded.must()), span: span))
 
 # Add what has not been seen, remembering which instance reached it.
 function enqueue(calls: [FoundCall], parent: i64?, @queue: [Pending], @seen: {str: bool})
@@ -503,3 +517,30 @@ test "polymorphic recursion is refused with the whole explanation"
     assert got.diagnostics.len() == 1
     assert got.diagnostics[0].code == "polymorphic_recursion"
     assert got.diagnostics[0].notes.len() == 2
+
+# Defect 402: a generic function named as a VALUE is an instance like a call,
+# at the type its context named, and inside a generic body at the enclosing
+# copy's own type. Before the repair nothing queued either: the template was
+# deleted and the value named a function no copy defined.
+test "a generic function named as a value is copied at the type its context names"
+    got = monoed(
+        "function id<T>(x: T) -> T\n    return x\n\nfunction outer<B>(x: B) -> B\n    f: (function(B) -> B) = id\n    return f(x)\n\nfunction main()\n    g: (function(i64) -> i64) = id\n    print(g(3))\n    print(outer(\"a\"))\n"
+    )
+    assert got.diagnostics.len() == 0
+    copies: i64 @ 0
+    at_int: bool @ false
+    at_str: bool @ false
+
+    for f in got.program.functions
+        assert f.generics.len() == 0
+
+        if f.name == "id"
+            assert f.instance.len() == 1
+            copies @ copies + 1
+            at_int @ at_int || f.instance[0] == table.int_ty_id(got.checked.types)
+            at_str @ at_str || f.instance[0] == table.str_ty(got.checked.types)
+
+    assert copies == 2
+    assert at_int
+    assert at_str
+    assert verify.verify(got.program, got.checked, got.decls).len() == 0
