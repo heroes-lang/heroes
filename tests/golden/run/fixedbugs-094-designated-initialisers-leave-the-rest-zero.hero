@@ -1,0 +1,21 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the shape beside the
+# defect's, a value spelled with designators. A field the list does not name
+# is zero, as C makes it, and a field named twice holds the later value, which
+# is C's too: the accessor does not pass on clang's warning about that
+# spelling, since the value is the one the header wrote. Both were `internal
+# error`, exit 2, before the repair.
+
+extern "fixedbugs-094-values.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant PT_Y: Pt
+    constant PT_TWICE: Pt
+
+function main()
+    p = PT_Y
+    print(p.x)
+    print(p.y)
+    t = PT_TWICE
+    print(t.x)
+    print(t.y)

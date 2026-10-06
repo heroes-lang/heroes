@@ -1,0 +1,16 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: a brace list has no type, so
+# the kind of value that fills each field is the one evidence it carries of
+# the struct it was written for. An enumerator of another enumeration is built
+# by C with a warning; the accessor makes it an error, told on the constant.
+# `internal error`, exit 2, before the repair. Its twin for a pointer, text
+# for `unsigned char *` (`-Wpointer-sign`), was measured on clang 21 and 22
+# and is not pinned here, since its words on clang 18, the floor, were not.
+
+extern "fixedbugs-094-values.h"
+    record Painted tag painted
+        c: i32
+        y: i32
+    constant PAINTED_SHADE: Painted  #~ ffi_constant_type
+
+function main()
+    print(PAINTED_SHADE.y)

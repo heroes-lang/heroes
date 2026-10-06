@@ -1,0 +1,12 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: a designator naming a field
+# the struct does not have, which C refuses outright, told on the constant's
+# line in clang's words. `internal error`, exit 2, before the repair.
+
+extern "fixedbugs-094-values.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant PT_NO_Z: Pt  #~ ffi_constant_type
+
+function main()
+    print(PT_NO_Z.y)
