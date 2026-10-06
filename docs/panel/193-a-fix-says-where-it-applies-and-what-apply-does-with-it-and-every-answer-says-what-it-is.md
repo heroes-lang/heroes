@@ -214,6 +214,18 @@ licenses writing a fix*, which R2 and R3 answer.
 
 ## Author's verdict
 
-**Pending**, queued as the decision issue `panel 193`. A yes settles R1 to R11
-as written, the robust route at each disagreement; each conservative
-alternative is named where it stands.
+**RATIFIED 2026-10-06**, on the author's answer between 03:50 and 07:24 by
+the clock read before and after it, meant as: *OK to both*, the paid refresh
+of the spec's count and this sitting. **Recorded as a reading**, CLAUDE.md
+§ 4's default; not `by delegation`.
+
+**What the yes settles**: R1 to R11 as the resolution above states them,
+the robust route at each disagreement over each conservative alternative
+named where it stands; the blind seat not funded now.
+
+The landing is batch 12's lane b12-cli12 (`155603c7` for 271's JSON half,
+`315d22ed` for 371, `17f3f1a4` for 372, `27980034` for 373). It computes
+each place with two binary searches over the line's starts rather than R6's
+one forward walk, reported by the lane, which removes the same cost.
+
+**What it does not settle**: what only the landing's gate and legs measure.
