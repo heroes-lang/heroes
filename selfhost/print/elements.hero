@@ -75,17 +75,26 @@ function bracket(c: Code, value: i64) -> Bracket?
         keeps: false
     )
 
+    # **The elements grow in a name of their own and are stored once**
+    # (defect 393). Grown as `b.items @ b.items.push(...)`, each push copied
+    # every element before it, a field being no plain name (spec § 10), and
+    # `fmt` retired 24.8 billion instructions for 8,000 elements, four times
+    # as many for each doubling.
     match c.tree.exprs[value].kind
         # §4.9: a multi-line list separates by newline, not by comma.
         .array arr =>
             b.open @ "["
             b.close @ "]"
+            listed: [Element] @ []
 
             for item in arr.elements
-                b.items @ b.items.push(plain(c, value: item, needed: 0, after: ""))
+                listed @ listed.push(plain(c, value: item, needed: 0, after: ""))
+
+            b.items @ listed
         .map mp =>
             b.open @ "{"
             b.close @ "}"
+            entries: [Element] @ []
 
             for entry in mp.entries
                 item: Element @ plain(c, value: entry.value, needed: 0, after: "")
@@ -93,7 +102,9 @@ function bracket(c: Code, value: i64) -> Bracket?
                 item.lead @ ": "
                 item.from @ extent(c, id: entry.key).end
                 item.first @ source.line_of(c.s, extent(c, id: entry.key).start)
-                b.items @ b.items.push(item)
+                entries @ entries.push(item)
+
+            b.items @ entries
         .call cl =>
             b.before @ cl.callee
             b.open @ "("
@@ -168,17 +179,19 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
 
     if rest.len() > 0
         needed @ mine
-    b.items @ b.items.push(plain(c, value: left, needed: needed, after: ""))
+    operands: [Element] @ [plain(c, value: left, needed: needed, after: "")]
     at: i64 @ rest.len() - 1
 
     # The chain was walked from its right end, and each operator goes after
-    # the operand to its left.
+    # the operand to its left. The operands grow in a name of their own, as
+    # a bracket's elements do (defect 393).
     while at >= 0
-        b.items[b.items.len() - 1].after @ rest[at].after
+        operands[operands.len() - 1].after @ rest[at].after
         rest[at].after @ ""
-        b.items @ b.items.push(rest[at])
+        operands @ operands.push(rest[at])
         at @ at - 1
 
+    b.items @ operands
     return b
 
 # The author's `pair` around a value, kept for a comment and printed as a
