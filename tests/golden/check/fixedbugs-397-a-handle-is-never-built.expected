@@ -1,0 +1,8 @@
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:27:9: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:28:9: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:29:9: error[handle_built]: `V` is a handle, C's pointer to `void`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:30:9: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:31:16: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:32:25: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:33:9: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program
+tests/golden/check/fixedbugs-397-a-handle-is-never-built.hero:37:9: error[handle_built]: `Opaque` is a handle, C's pointer to `opaque`, and a handle is never built: only C makes one and hands it to the program

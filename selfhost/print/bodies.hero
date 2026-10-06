@@ -182,8 +182,8 @@ function render_expr(tree: ast.Ast, id: i64, s: source.Source) -> str
         .field f      => return render_expr(tree, f.base, s) + "." + source.span_text(s, f.name)
         .field_name f => return render_expr(tree, f.base, s) + "::" + source.span_text(s, f.name)
         .index ix     => return render_expr(tree, ix.base, s) + "[" + render_expr(tree, ix.index, s) + "]"
-        .call cl      => return render_expr(tree, cl.callee, s) + "(" + render_args(tree, s, given: cl.args) + ")"
-        .method m => return render_expr(tree, m.receiver, s) + "." + source.span_text(s, m.name) + "(" + render_args(tree, s, given: m.args) + ")"
+        .call cl => return render_expr(tree, cl.callee, s) + "(" + render_args(tree, s, given: written(tree, cl.args, rest: cl.rest)) + ")"
+        .method m => return render_expr(tree, m.receiver, s) + "." + source.span_text(s, m.name) + "(" + render_args(tree, s, given: written(tree, m.args, rest: m.rest)) + ")"
         .variant_case vc =>
             if vc.args.len() == 0
                 return "." + source.span_text(s, vc.name)
@@ -211,6 +211,13 @@ function render_expr(tree: ast.Ast, id: i64, s: source.Source) -> str
         .error      => return "<?>"
 
     return "<?>"
+
+# A call's arguments as written: the list, then the `rest: zero` that ends
+# a construction (panel 194), which the parser keeps off the list.
+function written(tree: ast.Ast, given: [ast.Arg], rest: i64) -> [ast.Arg]
+    if rest < 0
+        return given
+    return given.push(tree.rests[rest])
 
 function render_args(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
     rendered: [str] @ []

@@ -99,13 +99,13 @@ function bracket(c: Code, value: i64) -> Bracket?
             b.open @ "("
             b.from @ opener(c, after: cl.callee)
             b.seam @ extent(c, id: cl.callee).end
-            b.items @ arguments(c, given: cl.args)
+            b.items @ arguments(c, given: bodies.written(c.tree, cl.args, rest: cl.rest))
         .method m =>
             b.before @ m.receiver
             b.open @ "." + source.span_text(c.s, m.name) + "("
             b.from @ opener_at(c, at: m.name)
             b.seam @ extent(c, id: m.receiver).end
-            b.items @ arguments(c, given: m.args)
+            b.items @ arguments(c, given: bodies.written(c.tree, m.args, rest: m.rest))
         .variant_case vc =>
             if vc.args.len() > 0
                 b.open @ "." + source.span_text(c.s, vc.name) + "("

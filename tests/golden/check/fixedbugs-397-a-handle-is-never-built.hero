@@ -1,0 +1,38 @@
+# fixedbugs, defect 397, lane b13-bs, 2026-10-06, found by panel 194's
+# compiler-engineer while building `rest: zero`.
+#
+# SYMPTOM: `Opaque()`, a handle built with no argument, was `check` 0 and then
+# `run` 134, *entered unreachable code — this is a compiler bug*: in an
+# array, a record's field, a discard and a test alike. With an argument it was
+# `wrong_label` listing no field.
+#
+# CAUSE: a handle is a group's record with a `tag` and no fields, so a call
+# naming none named all of them, and C has no literal for a pointer the
+# program builds from nothing: the emitter refused it and wrote a trap.
+#
+# FIX: a handle is never built (spec § 13: C's pointer, `nullptr` its null),
+# so its construction is refused at `check`, once, naming what makes one.
+
+extern "fixedbugs-397.h"
+    record Opaque tag opaque
+    record V tag void
+    record Holder tag holder
+        n: i32
+        h: Opaque
+
+function count(hs: [Opaque]) -> i64
+    return hs.len()
+
+function main()
+    h = Opaque()  #~ handle_built
+    a = Opaque(x: 1)  #~ handle_built
+    v = V()  #~ handle_built
+    z = Opaque(rest: zero)  #~ handle_built
+    n = count([Opaque(), h])  #~ handle_built
+    k = Holder(n: 1, h: Opaque())  #~ handle_built
+    _ = Opaque()  #~ handle_built
+    print(h == a, v == nullptr, z == nullptr, n, k.n)
+
+test "a handle built in a test"
+    t = Opaque()  #~ handle_built
+    assert t == nullptr

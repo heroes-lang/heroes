@@ -177,8 +177,12 @@ function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls
             if parts.is_err()
                 return fail(code: "none", msg: "fewer arguments than fields")
 
-            # A record with no fields is error[empty_record], so this
-            # cannot be empty — and (T){} is not C11 anyway.
+            # A record with no fields is error[empty_record] or a handle,
+            # whose construction `check/handle_built.hero` refuses (defect
+            # 397: until then this line was reached, and the program died at
+            # run time as a compiler bug), and a group's record built naming
+            # none ends with `rest: zero`, which `emit/zeroed.hero` writes;
+            # so this cannot be empty — and (T){} is not C11 anyway.
             if parts.must().len() == 0
                 return fail(code: "none", msg: "an empty record cannot be built")
             return ok("(" + name + "){" + parts.must().join(", ") + "}")

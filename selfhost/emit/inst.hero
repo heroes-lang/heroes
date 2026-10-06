@@ -251,7 +251,8 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
                     f,
                     shape: con.shape,
                     run: con.arguments,
-                    target: target
+                    target: target,
+                    span: inst.span
                 )
                 .array_shape => construct.array(@w, c, names, f, ty: inst.ty, run: con.arguments, target: target)
                 .map_shape => construct.map_literal(

@@ -32,6 +32,7 @@ use check/decls as check_decls
 use check/map_keys
 use check/type_labels
 use check/ffi_sweep
+use check/rest_zero
 use check/marks
 use check/acquiring
 use check/releasers
@@ -74,6 +75,9 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # panel 062 wired its rule to one call site and three other positions
     # shipped.
     ffi_sweep.fixed_only_in_a_group(@c, a, s, decls)
+
+    # `rest: zero` ends only a construction of a group's record (panel 194).
+    rest_zero.judged(@c, a, r, s, decls)
 
     # panel 150 R3: a mark on a type that reaches no handle is a word nothing
     # reads, and it is refused before the rule below asks what the marks say.

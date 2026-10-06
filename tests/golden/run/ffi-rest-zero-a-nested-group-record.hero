@@ -1,0 +1,30 @@
+# Panel 194 R1 (M-buildable-structs), lane b13-bs, 2026-10-06: a field that is
+# itself a group's record shares no byte with the fields named beside it, so a
+# construction ending with `rest: zero` that leaves it out leaves it zero, its
+# union included; one built with the words of its own keeps what it named.
+
+extern "ffi-rest-zero.h"
+    record SA
+        kind: i32
+        c: i8
+        d: f64
+        x: i32
+    record Outer tag outer
+        k: i32
+        inner: SA
+    function dirty()
+    function outer_union(@o: Outer) -> i64
+
+function left_out() -> Outer
+    return Outer(k: 1, rest: zero)
+
+function built() -> Outer
+    return Outer(k: 2, inner: SA(kind: 3, rest: zero), rest: zero)
+
+function main()
+    dirty()
+    a: Outer @ left_out()
+    print(a.k, " ", a.inner.kind, " ", outer_union(@a))
+    dirty()
+    b: Outer @ built()
+    print(b.k, " ", b.inner.kind, " ", outer_union(@b))
