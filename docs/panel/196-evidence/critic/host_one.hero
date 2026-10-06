@@ -1,0 +1,13 @@
+# Probe: gethostname's `char *name` lent as one `@` cell, no `counted_by`, namelen 64; the cell is a group field before `after`.
+extern "host_box.h"
+    record HBox tag hbox
+        n: i8
+        pad: i8[7]
+        after: i64
+    function gethostname(@name: i8, namelen: u64) -> i32
+
+function main()
+    b: HBox @ HBox(after: 7, rest: zero)
+    print(gethostname(@b.n, namelen: 64))
+    print(b.pad[0])
+    print(b.after)
