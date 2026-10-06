@@ -242,3 +242,5 @@ This is **the only route that makes `utsname` a single binding for every platfor
 - **Zero-validity**: `p/zinit.c`, `p/ctors.sh`, `p/zinit-darwin.txt`, `p/zinit-linux.txt`.
 - **Costs**: `p/cost/`.
 - **Findings**: `p/rec_overwrite.hero`, `p/rec_overread.hero`, `p/nul.hero`, `p/shapes.hero`, `p/sun_bind_direct.hero`, `p/selftest.txt`.
+
+2026-10-06, defect 404: `p/nul.hero` is `ffi-pragmatist-work/nul-byte.hero` in this tree from this day, and the completeness critic's `w/ffi/nul.hero` is `w/ffi/nul-byte.hero`, both renamed because Windows reserves `nul` as a device's name with any extension and the CI's checkout refused them.
