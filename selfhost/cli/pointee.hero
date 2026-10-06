@@ -75,7 +75,7 @@ use cli/strings
 use cli/read_back
 use cli/kept
 use emit/ffi_lookup
-use emit/ffi_mutable
+use emit/ffi_read_only
 use parse
 use resolve
 use checker
@@ -566,4 +566,4 @@ test "the pointee check refuses a cstr to bytes C may write and takes one to con
         # Each writable parameter is its own failure, carrying the marker the
         # reader turns into `ffi_writable_parameter`.
         for name in names
-            assert ffi_lookup.has(text: failure_text(asked), needle: ffi_mutable.WRITABLE_MARKER + name + " p ") == (names[0] == "w_uchar")
+            assert ffi_lookup.has(text: failure_text(asked), needle: ffi_read_only.WRITABLE_MARKER + name + " p ") == (names[0] == "w_uchar")

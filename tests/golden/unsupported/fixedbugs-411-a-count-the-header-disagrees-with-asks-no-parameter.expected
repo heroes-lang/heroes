@@ -1,0 +1,6 @@
+error[ffi_call_shape]: `w_shifted` is declared with 2 parameters, and `fixedbugs-411-writes.h` gives it 3 — clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-411-a-count-the-header-disagrees-with-asks-no-parameter.hero:20:5
+     |
+  20 |     function w_shifted(a: cstr lent, b: cstr lent) -> i32  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with
