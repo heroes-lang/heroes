@@ -52,15 +52,11 @@ function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
 
 ## The edges, and the walk over them
 
-function contains(xs: [i64], x: i64) -> bool
-    for it in xs
-        if it == x
-            return true
-
-    return false
-
 # Every "the body of `from` reads `to`" edge, deduplicated — the dedup is
-# what keeps a constant read fifty times from being fifty edges.
+# what keeps a constant read fifty times from being fifty edges. Each edge
+# is asked once of a set keyed by both ends and grown in place on its lent
+# list, where each read scanned its declaration's list and copied it to
+# push, the square of what one body reads (defect 374).
 # ORDER: each adjacency list ascending — adjacency order drives the DFS,
 # which decides the rotation the diagnostic names (the Rust BTreeSet gave
 # this for free; the port pays with one sort per list, §4.9's sentence).
@@ -75,6 +71,7 @@ function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [c
 
     count = a.exprs.len()
     idx: i64 @ 0
+    seen: {i64: bool} @ {}
 
     while idx < count
         here = idx
@@ -88,9 +85,11 @@ function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [c
 
         if !from.is_err()
             home = from.must()
+            key = home * decls.len() + to
 
-            if !contains(adjacent[home], to)
-                adjacent[home] @ adjacent[home].push(to)
+            if seen[key].is_err()
+                seen[key] @ true
+                add_edge(@adjacent[home], to: to)
 
     sorted: [[i64]] @ []
 
@@ -98,6 +97,9 @@ function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [c
         sorted @ sorted.push(sort(list))
 
     return sorted
+
+function add_edge(@list: [i64], to: i64)
+    list @ list.push(to)
 
 record PathStep
     node: i64
@@ -119,22 +121,28 @@ function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
     seen: {str: bool} @ {}
     root: i64 @ 0
 
+    # The path is a stack and its height, its steps written over as it grows
+    # again: popped by a slice, it was copied whole at every step, the
+    # square of a chain's length (defect 374).
+    path: [PathStep] @ []
+    height: i64 @ 0
+
     while root < decls.len()
         if colour[root] != 0
             root @ root + 1
             continue
-        path: [PathStep] @ [PathStep(node: root, taken: 0)]
+        height @ put_step(@path, at: 0, step: PathStep(node: root, taken: 0))
         colour[root] @ 1
 
-        while path.len() > 0
-            frame = path[path.len() - 1]
-            path @ path.slice(from: 0, to: path.len() - 1)
+        while height > 0
+            frame = path[height - 1]
 
             if frame.taken >= adjacent[frame.node].len()
                 colour[frame.node] @ 2
+                height @ height - 1
                 continue
             next = adjacent[frame.node][frame.taken]
-            path @ path.push(PathStep(node: frame.node, taken: frame.taken + 1))
+            path[height - 1] @ PathStep(node: frame.node, taken: frame.taken + 1)
 
             if colour[next] == 1
                 # The cycle is the suffix of the path from `next` on — no
@@ -142,16 +150,17 @@ function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
                 at: i64 @ 0
                 j: i64 @ 0
 
-                for step in path
-                    if step.node == next
+                while j < height
+                    if path[j].node == next
                         at @ j
                     j @ j + 1
 
                 cycle: [i64] @ []
                 k: i64 @ at
 
-                while k < path.len()
-                    cycle @ cycle.push(path[k].node)
+                while k < height
+                    node = path[k].node
+                    cycle @ cycle.push(node)
                     k @ k + 1
 
                 constant_on_it: bool @ false
@@ -168,11 +177,20 @@ function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
                         found @ found.push(cycle)
             else if colour[next] == 0
                 colour[next] @ 1
-                path @ path.push(PathStep(node: next, taken: 0))
+                height @ put_step(@path, at: height, step: PathStep(node: next, taken: 0))
 
         root @ root + 1
 
     return found
+
+# The step `step` at `at` of the path, over a step a pop left or past them
+# all, and the path's new height.
+function put_step(@path: [PathStep], at: i64, step: PathStep) -> i64
+    if at < path.len()
+        path[at] @ step
+    else
+        path @ path.push(step)
+    return at + 1
 
 # One cycle per SET: the key sorts the members, so two rotations of one
 # cycle collapse. `/` cannot occur in a rendered index.

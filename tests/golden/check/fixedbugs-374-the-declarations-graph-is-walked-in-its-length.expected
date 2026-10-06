@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-374-the-declarations-graph-is-walked-in-its-length.hero:29:10: error[constant_cycle]: `constant SELF` is defined as itself, so it has no value
+tests/golden/check/fixedbugs-374-the-declarations-graph-is-walked-in-its-length.hero:32:10: error[constant_cycle]: `constant RING1` is defined in terms of itself through `RING2`, `RING3`, so it has no value
+tests/golden/check/fixedbugs-374-the-declarations-graph-is-walked-in-its-length.hero:44:10: error[constant_cycle]: `constant LOOP1` is defined in terms of itself through `LOOP2`, so it has no value
+tests/golden/check/fixedbugs-374-the-declarations-graph-is-walked-in-its-length.hero:63:5: error[constant_body]: `constant T`'s body may not contain a call — it may only read literals and other constants
