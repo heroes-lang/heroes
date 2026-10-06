@@ -1,0 +1,1 @@
+no. The mutex starts as all zeros (`pthread_mutex_t(rest: zero)`), but `pthread_mutex_init` runs on it before it is locked or unlocked.

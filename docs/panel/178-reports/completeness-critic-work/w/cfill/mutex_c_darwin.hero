@@ -1,0 +1,13 @@
+# Critic, panel 178: route C for Darwin's mutex, from the header's own initialiser.
+extern "zshim.h"
+    record Mutex tag _opaque_pthread_mutex_t
+        __sig: i64
+        __opaque: i8[56]
+    function hero_mutex_new() -> Mutex
+    function pthread_mutex_lock(@m: Mutex) -> i32
+    function pthread_mutex_unlock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ hero_mutex_new()
+    print(pthread_mutex_lock(@m))
+    print(pthread_mutex_unlock(@m))

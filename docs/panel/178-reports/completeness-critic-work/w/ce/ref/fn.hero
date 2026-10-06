@@ -1,0 +1,6 @@
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function main()
+    print(add(a: 1, rest: zero))
+    print(1.add(rest: zero))

@@ -1,0 +1,23 @@
+# Critic, panel 178: 091's neighbours, an element of a fixed array lent as an @ parameter.
+extern "next.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+    record Outer tag outer
+        inner: Slot
+        pts: Pt[3]
+
+function bump(@p: Pt)
+    p.x @ p.x + 10
+
+function main()
+    o: Outer @ Outer(inner: Slot(name: [0, 0, 0, 0], id: 1), pts: [Pt(x: 1, y: 0), Pt(x: 2, y: 0), Pt(x: 3, y: 0)])
+    i: i64 @ 2
+    bump(@o.pts[i])
+    print(o.pts[2].x)
+    i @ 3
+    bump(@o.pts[i])
+    print(o.pts[2].x)

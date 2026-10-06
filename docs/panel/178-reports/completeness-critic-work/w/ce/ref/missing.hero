@@ -1,0 +1,13 @@
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+
+record Point
+    x: i64
+    y: i64
+
+function main()
+    a = Pt(x: 1)
+    b = Point(x: 1)
+    print(a.x, b.x)

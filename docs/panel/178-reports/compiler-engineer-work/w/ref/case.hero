@@ -1,0 +1,9 @@
+variant Shape
+    circle
+        r: i64
+    square
+        s: i64
+
+function main()
+    x: Shape = .circle(rest: zero)
+    print(1)

@@ -1,0 +1,23 @@
+extern "pthread.h"
+    record pthread_mutex_t
+        __sig: i64
+        __opaque: i8[56]
+    function pthread_mutex_init(@m: pthread_mutex_t, attr: ptr) -> i32
+    function pthread_mutex_lock(@m: pthread_mutex_t) -> i32
+    function pthread_mutex_unlock(@m: pthread_mutex_t) -> i32
+
+function main()
+    m: pthread_mutex_t @ pthread_mutex_t(__sig: 0, __opaque: [0; 56])
+    init = pthread_mutex_init(@m, nullptr)
+    if init != 0
+        print(f"pthread_mutex_init failed: {init}")
+        exit(code: 1)
+    locked = pthread_mutex_lock(@m)
+    if locked != 0
+        print(f"pthread_mutex_lock failed: {locked}")
+        exit(code: 1)
+    unlocked = pthread_mutex_unlock(@m)
+    if unlocked != 0
+        print(f"pthread_mutex_unlock failed: {unlocked}")
+        exit(code: 1)
+    print("locked and unlocked")

@@ -1,0 +1,2 @@
+struct __sbuf 4
+struct timeval 4

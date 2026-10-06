@@ -1,0 +1,9 @@
+extern "restfield.h"
+    record Span tag span
+        start: i32
+        rest: i32
+
+function main()
+    zero: i32 = 5
+    a = Span(start: 1, rest: zero)
+    print(a.rest, zero)

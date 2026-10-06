@@ -1,0 +1,28 @@
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Opaque tag opaque
+    record Kinds tag kinds
+        tag: i8
+        ratio: f64
+        on: bool
+        p: ptr
+        name: cstr
+        at: Pt
+        pts: Pt[3]
+        f: f32[2]
+        h: Opaque
+        last: i64
+
+function main()
+    k = Kinds(
+        tag: 1,
+        ratio: 2.5,
+        at: Pt(x: 100000000, y: 200000000),
+        pts: [Pt(x: 1, y: 2), Pt(x: 3, y: 4), Pt(x: 5, y: 6)],
+        last: 9,
+        rest: zero
+    )
+    j = Kinds(rest: zero)
+    print(k.tag, j.tag)
