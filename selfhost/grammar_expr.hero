@@ -925,7 +925,13 @@ function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 function while_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     head = opening.mark(c)
     _ = cursor.bump(@c)
-    cond = parse_expr(@c, @a, text)
+    cond: i64 @ -1
+
+    # C's clauses in its `(`, told by the lexer, are passed whole (defect 365).
+    if loop_habit.passed_clauses(@c, text)
+        cond @ ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: cursor.previous_significant_span(c)))
+    else
+        cond @ parse_expr(@c, @a, text)
     colon_habit.read_below(@c, text)
 
     if loop_habit.do_tail(c, text, head: head.pos)
