@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-391-a-stretch-the-language-does-not-have-is-told-once.hero:10:9: error[unexpected_character]: `ключ` is not part of the language's syntax
+tests/golden/check/fixedbugs-391-a-stretch-the-language-does-not-have-is-told-once.hero:14:11: error[unexpected_character]: `$$$` is not part of the language's syntax
+tests/golden/check/fixedbugs-391-a-stretch-the-language-does-not-have-is-told-once.hero:18:9: error[unexpected_character]: `привет мир` is not part of the language's syntax
+tests/golden/check/fixedbugs-391-a-stretch-the-language-does-not-have-is-told-once.hero:22:11: error[unexpected_character]: `$` is not part of the language's syntax

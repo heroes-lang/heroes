@@ -8,15 +8,19 @@
 # - a run of one refused character that cannot be seen, a control character
 #   or an invisible one (`shown_char` names each by its code), is told once,
 #   at its first, a note counting the run, where each character of it was a
-#   message; one that can be seen keeps a message each, as panel 187 pinned
-#   `;;` in a C-style `for` header;
+#   message; a run that can be seen the scanner tells once itself since
+#   defect 391 (`refused_stretch`), and two `;` keep a message each, as panel
+#   187 pinned `;;` in a C-style `for` header;
 # - past `TOLD` such messages in one text the rest are counted in a note on
-#   the last one told, as `not_text` counts the lines it does not tell.
+#   the last one told, as `not_text` counts the lines it does not tell, a
+#   stretch counting the characters it holds.
 #
 # Only the scanner's plain refusal is gathered, `unexpected_character` with
-# no fix and no note, its message ending as `scan.hero` writes it: a refusal
-# a fix repairs (`separator_runs`, the comment habits) keeps every message,
-# since a message dropped is a repair `--apply` would no longer make.
+# no fix and no note, its message ending as `scan.hero` writes it, and a
+# stretch `refused_stretch` tells, a string in backticks among them, whose
+# fix is a guess: a refusal a certain fix repairs (`separator_runs`, the
+# comment habits) keeps every message, since a message dropped is a repair
+# `--apply` would no longer make.
 #
 # **A refused break names its diagnostic by its place** among its text's
 # (`state.Break`), which `parse/apart` reads; a message counted rather than
@@ -27,6 +31,7 @@ use token
 use diag
 use state
 use shown_char
+use backtick_strings
 
 # How many refused characters are told one by one in a text.
 constant TOLD: i64
@@ -82,7 +87,7 @@ function told_once(diagnostics: [diag.Diagnostic], text: str) -> Told
 
         if kept == TOLD
             first @ -1
-            unsaid @ unsaid + 1
+            unsaid @ unsaid + characters(d, text: text)
             at @ at.push(-1)
             continue
         out @ out.push(d)
@@ -145,11 +150,37 @@ function renumbered(breaks: [state.Break], at: [i64]) -> [state.Break]
 
     return out
 
-# Whether `d` is the scanner's plain refusal of one character.
+# Whether `d` is the scanner's plain refusal of one character, or of a
+# stretch told once (`refused_stretch`, defect 391): a run, in the same
+# words, or a string in backticks, whose fix is a guess `--apply` never
+# writes, so that a flood of them is bounded as one of characters is.
 function gathered(d: diag.Diagnostic) -> bool
+    if backtick_strings.is_template(d)
+        return true
+
     if d.code != "unexpected_character" || d.fixes.len() > 0 || d.notes.len() > 0
         return false
     return d.message.len() >= SAID.len() && d.message.slice(from: d.message.len() - SAID.len(), to: d.message.len()) == SAID
+
+# How many characters a refusal counted rather than told stands for, so the
+# note's count stays one of characters: one for the scanner's own, and a
+# stretch's every character but the spaces a run is told through. Counted
+# by the bytes that begin a character, never by a slice, so no span can stop
+# the count by splitting one.
+function characters(d: diag.Diagnostic, text: str) -> i64
+    n: i64 @ 0
+    at: i64 @ d.span.start
+
+    while at >= 0 && at < d.span.end && at < text.len()
+        b = text[at]
+
+        if b != ' ' && (b < 128 || b >= 192)
+            n @ n + 1
+        at @ at + 1
+
+    if n == 0
+        return 1
+    return n
 
 # Whether the character `d` refuses is one `shown_char` writes by its code,
 # a control character or an invisible one, which a reader cannot count by
@@ -191,6 +222,29 @@ test "a run of one refused character that cannot be seen is told once, at its fi
     assert got[0].notes == ["the first of 3 in a row"]
     assert got[1].notes.len() == 0
     assert got[2].span.start == 5
+
+test "a stretch counted rather than told stands for its characters, its spaces aside"
+    text = "ключ слово `a b`"
+    run = diag.new_diagnostic(
+        code: "unexpected_character",
+        message: "`ключ слово`" + SAID,
+        span: token.Span(start: 0, end: 19)
+    )
+    assert characters(run, text: text) == 9
+
+    # A span splitting a character is counted, never sliced.
+    assert characters(refused(start: 0, said: "`к`"), text: text) == 1
+    shown = "`` `a b` ``" + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes"
+    template: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unexpected_character",
+        message: shown,
+        span: token.Span(start: 20, end: 25)
+    )
+    template.fixes @ template.fixes.push(
+        diag.Fix(title: "write it as `\"a b\"`", replacement: "\"a b\"", span: template.span, certainty: .guess)
+    )
+    assert gathered(template)
+    assert characters(template, text: text) == 4
 
 test "past eight refused characters the rest are counted on the last told, and a refusal with a fix is never gathered"
     said: [diag.Diagnostic] @ []

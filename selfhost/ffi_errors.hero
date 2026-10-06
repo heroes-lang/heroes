@@ -10,6 +10,7 @@
 
 use token
 use diag
+use bytes
 
 # A type in an extern's signature that no C header can declare (§4.19).
 # The message names what the boundary DOES carry, because the repair is
@@ -188,17 +189,96 @@ function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: 
         span: span
     )
 
-# `i32[4]` in an ordinary record (panel 062).
+# A fixed array where no group's record holds it (panel 062): an ordinary
+# record's field, and since the sweep asks every written type, a binding, a
+# constant, a parameter, a result, or an element of another type. So the
+# message names no record, and the notes name each repair that works with
+# the condition that makes it the program's: where the array is meant for
+# a C struct's field, that struct declared in its header's group and the
+# elements written out where it is built; where nothing C's holds it, the
+# `[T]` it becomes and how one is built.
+#
+# **One note said *use `[T]` here* until defect 399** (2026-10-06, panel
+# 194's blind readers, task 1): a program whose `utsname` fields are
+# `i8[256]` and which built them from a binding of that type, written as the
+# note said, met five `type_mismatch`, a `[T]` never being a fixed array;
+# what works for it is the literal written in the construction. The first
+# reading is offered only for one dimension, since a group's field holds a
+# fixed array of a number, `bool`, `ptr`, `cstr` or a record, never of a
+# `str` or another array.
 function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "fixed_outside_a_group",
-        message: "`" + name + "` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)",
+        message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)",
         span: span
     )
+    growable = growable_of(name)
+
+    if fills_a_field(name)
+        d.notes @ d.notes.push(
+            "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `" + name + "` says, `R(field: [a, b, …])`: no binding, constant or parameter holds a fixed array, and `" + growable + "` is not one"
+        )
     d.notes @ d.notes.push(
-        "use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+        "where no C struct holds it, use `" + growable + "`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
     )
     return d
+
+# The `[T]` a fixed array's place takes: each `[N]` its written name ends
+# with becomes brackets around what it holds, `i64[2][3]` read as `[[i64]]`.
+function growable_of(name: str) -> str
+    out: str @ held_by(name)
+
+    for _ in range(from: 0, to: dimensions(name))
+        out @ "[" + out + "]"
+
+    return out
+
+# How many `[N]` a written fixed array's name ends with.
+function dimensions(name: str) -> i64
+    depth: i64 @ 0
+    rest: str @ name
+
+    while length_at_end(rest) >= 0
+        rest @ rest.slice(from: 0, to: length_at_end(rest))
+        depth @ depth + 1
+
+    return depth
+
+# What a written fixed array's name holds under its `[N]`s: `i64[2][3]`
+# holds `i64`.
+function held_by(name: str) -> str
+    rest: str @ name
+
+    while length_at_end(rest) >= 0
+        rest @ rest.slice(from: 0, to: length_at_end(rest))
+
+    return rest
+
+# Where the `[N]` a name ends with opens, its digits one or more, or -1.
+function length_at_end(text: str) -> i64
+    if text.len() < 3 || text[text.len() - 1] != ']'
+        return -1
+    at: i64 @ text.len() - 2
+
+    while at > 0 && bytes.is_digit(text[at])
+        at @ at - 1
+
+    if at == text.len() - 2 || text[at] != '['
+        return -1
+    return at
+
+# Whether a group's field could be what the name writes: one dimension, of
+# something other than a `str` or a type written in brackets, a function's
+# parentheses or a failure's `?`.
+function fills_a_field(name: str) -> bool
+    if dimensions(name) != 1
+        return false
+    held = held_by(name)
+
+    if held == "str" || held.len() == 0
+        return false
+    first = held[0]
+    return first != '[' && first != '{' && first != '(' && held[held.len() - 1] != '?'
 
 # A map key that reaches a float (panel 069 R4). A compile error where
 # `==` on a float is not, because key-eligibility is a property of the
@@ -241,6 +321,33 @@ test "the fixed-array messages carry both numbers and the last index"
     assert short.message == "`f32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (§4.19)"
     past = fixed_index_out_of_range(shown: "i32[4]", length: 4, got_text: "7", span: span)
     assert past.message == "`i32[4]` holds 4, so its last index is 3, and this is 7 — a fixed array's length is part of its type, so the index is checked here rather than at run time"
+
+# Defect 399: the reader's binding of a C struct's `i8[256]` is told both
+# repairs, the one that works for it first; a nested array and a `str` one,
+# which no group's field holds, are told the `[T]` alone.
+test "a fixed array outside a group is told the repairs that work, each under its condition"
+    span = token.Span(start: 0, end: 4)
+    bytes_field = fixed_outside_a_group("i8[256]", span)
+    assert bytes_field.message == "`i8[256]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert bytes_field.notes.len() == 2
+    assert bytes_field.notes[0] == "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[256]` says, `R(field: [a, b, …])`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
+    assert bytes_field.notes[1] == "where no C struct holds it, use `[i8]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    nested = fixed_outside_a_group("i64[2][3]", span)
+    assert nested.notes.len() == 1
+    assert nested.notes[0] == "where no C struct holds it, use `[[i64]]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    assert fixed_outside_a_group("str[4]", span).notes.len() == 1
+    assert fixed_outside_a_group("Color[4]", span).notes.len() == 2
+    assert growable_of("Color[4]") == "[Color]"
+    assert growable_of("u8[16]") == "[u8]"
+    assert dimensions("i32[2][3][4]") == 3
+    assert held_by("i32[2][3][4]") == "i32"
+
+    # A name with no length to strip is itself, and is no field of a group.
+    assert dimensions("[i64]") == 0
+    assert dimensions("x[]") == 0
+    assert dimensions("x[a]") == 0
+    assert !fills_a_field("[i64][4]")
+    assert !fills_a_field("i64?[4]")
 
 test "a float key splits on is-a-float versus reaches-one"
     span = token.Span(start: 0, end: 4)

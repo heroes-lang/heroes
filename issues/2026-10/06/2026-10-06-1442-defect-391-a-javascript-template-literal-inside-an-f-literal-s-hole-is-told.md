@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 7092f6667ae42b15737b6c25eb101f9fbb511657
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 187's R2 instrument, rebuilt after the restart of 2026-10-06, its round arm at batch 12's gate; the mutant's lines read by the coordinator at 14:42.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): seven true messages for one mistake, a second message for one mistake; the trunk's one message named the hole's type rather than the backticks. Into batch 13 under the author's instruction of 2026-10-05.
+
+    Repaired at `7092f666`, 2026-10-06 (lane b13-front), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
