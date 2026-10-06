@@ -1,0 +1,106 @@
+# An `@` before an argument of a construction (design.md §4.8, §4.9; spec
+# § 9; defect 412). `@` at a call site repeats an `@` parameter: the call
+# copies the argument in and writes it back. A construction has no `@`
+# parameter and writes nothing back, it keeps a copy of each value it is
+# handed, so an `@` there claims what never happens, and no later stage has
+# a meaning for it: the emitter would hand the field an address.
+#
+# Which call is a construction is a question of what the callee names, so it
+# is asked here, where the walk has just resolved the callee:
+#
+# - a `record`, a Heroes one or a group's, named or qualified
+#   (`geom.Point(x: @n)`);
+# - a case of a variant, `.circle(r: @n)`, whatever its type turns out to be;
+# - `ok` and `fail`, the two constructors of a `T?`.
+#
+# Each such `@` is told once, `marker_mismatch`, the code a function's
+# argument marked `@` against a parameter without it already has, and the
+# argument is handed on unmarked: its value is still read, and the rule of the
+# left of `@` (`resolve/writes`) is not asked of a place nothing writes, so a
+# name bound with `=` is not told it should be a cell. A handle's construction
+# is unmarked and not told: it is refused whole, `@` and all, by
+# `check/handle_built.hero` (defect 397).
+
+use token
+use ast
+use source
+use diag
+use handles
+use label_errors
+use resolve/state
+
+# The arguments of a call whose callee, the node at `callee` (the method node
+# itself for a qualified name), the walk has just resolved: each `@` a
+# construction is handed told and set aside. A call to a function is handed
+# back as it came, its markers the checker's (`marker_mismatch`).
+function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg]) -> [ast.Arg]
+    match r.out.uses[callee]
+        .top t =>
+            match decls[t.at].kind
+                .record_decl =>
+                    built = source.span_text(s, decls[t.at].name)
+                    tell = !handles.is_handle(decls[t.at])
+                    return unmarked(@r, a, s, built: built, what: "a `record`", tell: tell, given: given)
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return given
+        .builtin =>
+            if a.exprs[callee].kind == .name && is_a_constructor(source.span_text(s, a.exprs[callee].span))
+                built = source.span_text(s, a.exprs[callee].span)
+                return unmarked(@r, a, s, built: built, what: "a `T?`", tell: true, given: given)
+            return given
+        .unresolved | .local | .module => return given
+
+# The arguments of a variant case, `name` its case: all of them, since a case
+# is always built.
+function of_a_case(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Span, given: [ast.Arg]) -> [ast.Arg]
+    built = "." + source.span_text(s, name)
+    return unmarked(@r, a, s, built: built, what: "a case of a `variant`", tell: true, given: given)
+
+function is_a_constructor(name: str) -> bool
+    return name == "ok" || name == "fail"
+
+# `given` with every `@` told, where `tell`, and taken off; `built` is what
+# the construction names and `what` the kind of value it builds. A list
+# without one is handed back as it came, since every construction passes here.
+function unmarked(@r: state.Resolver, a: ast.Ast, s: source.Source, built: str, what: str, tell: bool, given: [ast.Arg]) -> [ast.Arg]
+    marked: bool @ false
+
+    for arg in given
+        if arg.mutable
+            marked @ true
+
+    if !marked
+        return given
+    kept: [ast.Arg] @ []
+
+    for arg in given
+        if arg.mutable
+            if tell
+                state.push_diagnostic(@r, told(a, s, built: built, what: what, arg: arg))
+            kept @ kept.push(ast.Arg(name: arg.name, mutable: false, value: arg.value))
+        else
+            kept @ kept.push(arg)
+
+    return kept
+
+function told(a: ast.Ast, s: source.Source, built: str, what: str, arg: ast.Arg) -> diag.Diagnostic
+    value_span = a.exprs[arg.value].span
+    at = label_errors.argument_front(s.text, value_start: value_span.start, mutable: true)
+    value = source.span_text(s, value_span)
+    written: str @ "@" + value
+
+    if !arg.name.is_err()
+        written @ source.span_text(s, arg.name.must()) + ": @" + value
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "marker_mismatch",
+        message: "`" + built + "(…)` builds " + what + ", which keeps a copy of each value: the `@` in `" + written + "` says `" + value + "` is changed and written back, and only a function's `@` parameter does that (§4.8)",
+        span: token.Span(start: at, end: value_span.end)
+    )
+
+    if !arg.name.is_err() && source.span_text(s, arg.name.must()) == "rest" && value == "zero"
+        d.notes @ d.notes.push(
+            "`rest: zero`, the words that end a construction of a group's `record`, every field it does not name zero, take no `@`"
+        )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "drop the `@`", replacement: "", span: token.Span(start: at, end: value_span.start), certainty: .guess)
+    )
+    return d
