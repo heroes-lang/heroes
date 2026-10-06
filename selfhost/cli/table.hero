@@ -89,7 +89,7 @@ function commands() -> [Command]
     parse_flags: [Flag] = [plain(spelling: "--dump-ast", what: "print the syntax tree")]
     check_flags: [Flag] = [
         plain(spelling: "--dump-scopes", what: "print the symbols and every binding")
-        plain(spelling: "--json", what: "print the diagnostics as JSON (schema 1) instead of text")
+        plain(spelling: "--json", what: "write the diagnostics to stderr as JSON, schema 2 (design.md §4.17), instead of text")
         plain(spelling: "--brief", what: "one line per diagnostic instead of the full form")
         plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis — the control arm of Part 11's measurement")
         plain(spelling: "--apply", what: "print the program with every certain fix applied")

@@ -36,8 +36,11 @@
     A fix marked <code>certain</code> uses information checked by the compiler, such as an inferred type or the only similar name available. <code>heroes check --apply</code> applies these fixes. Other errors may still need correction before the program is complete. Fixes marked <code>guess</code> are suggestions to review; the command does not apply them automatically.
   </p>
   <p>
-    The same messages also come out as JSON, the format programs read easily,
-    for when the reader is not a person but another program.
+    The same messages also come out as JSON, schema 2, written to stderr, the
+    format programs read easily, for when the reader is not a person but
+    another program. Each fix says where it applies, and
+    <code>heroes check --apply</code> is the command that writes the certain
+    ones into the program.
   </p>
   <p>The loop, as commands:</p>
   <pre><code>$ heroes check program.hero           <span class="c"># diagnostics, on stderr</span>
