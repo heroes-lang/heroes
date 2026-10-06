@@ -76,7 +76,8 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # shipped.
     ffi_sweep.fixed_only_in_a_group(@c, a, s, decls)
 
-    # `rest: zero` ends only a construction of a group's record (panel 194).
+    # Each construction of a group's record ending with `rest: zero`, marked
+    # (panel 194); a misuse of the words is the resolver's (defect 401).
     rest_zero.judged(@c, a, r, s, decls)
 
     # panel 150 R3: a mark on a type that reaches no handle is a word nothing

@@ -1,0 +1,38 @@
+# Defect 401, lane b13-zero401, 2026-10-06: the whole form of what a binding
+# called `zero` beside the words `rest: zero` is told. Read nowhere else, it
+# is `unused_binding`, its note naming the words, which read no name; the
+# rename to `_` a loop variable is offered is a guess there, since whoever
+# wrote it may have meant the words to read it. Where a field is called
+# `rest`, the note on the words says what its value needs.
+
+extern "fixedbugs-401.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+
+record Hr
+    a: i64
+    rest: i64
+
+variant Shape
+    ring
+        r: i64
+        rest: i64
+
+function first(xs: [i32]) -> i32
+    total: i32 @ 0
+
+    for zero in xs  #~ unused_binding
+        total @ total + Pair(a: 1, rest: zero).a
+
+    return total
+
+function main()
+    zero: i64 @ 2
+    print(zero, first([1]))
+    h = Hr(a: 1, rest: zero)  #~ rest_outside_a_group
+    s: Shape = .ring(r: 2, rest: zero)  #~ rest_outside_a_group
+    print(h.a)
+
+    match s
+        .ring g => print(g.r)

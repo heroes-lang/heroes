@@ -1,0 +1,21 @@
+error[unused_binding]: the loop variable `zero` is never read — write `for _ in …` when the element is not needed
+  at tests/golden/full/fixedbugs-401-what-a-binding-called-zero-beside-the-words-is-told.hero:25:9
+     |
+  25 |     for zero in xs  #~ unused_binding
+     |         ^^^^
+  note: `rest: zero` at line 26 is not a read of this binding: the words end a construction of a group's `record`, every field it does not name zero, and read no name
+  fix (guess): rename `zero` to `_`
+
+error[rest_outside_a_group]: `Hr` is a Heroes `record`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's
+  at tests/golden/full/fixedbugs-401-what-a-binding-called-zero-beside-the-words-is-told.hero:33:18
+     |
+  33 |     h = Hr(a: 1, rest: zero)  #~ rest_outside_a_group
+     |                  ^^^^^^^^^^
+  note: name each field of `Hr` with its value, and write the value of its field `rest` as anything but the bare name `zero`: `rest: zero` is always the words, never that field
+
+error[rest_outside_a_group]: `.ring` builds a case of a Heroes `variant`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's
+  at tests/golden/full/fixedbugs-401-what-a-binding-called-zero-beside-the-words-is-told.hero:34:28
+     |
+  34 |     s: Shape = .ring(r: 2, rest: zero)  #~ rest_outside_a_group
+     |                            ^^^^^^^^^^
+  note: name each field of `.ring` with its value, and write the value of a field called `rest` as anything but the bare name `zero`: `rest: zero` is always the words, never that field

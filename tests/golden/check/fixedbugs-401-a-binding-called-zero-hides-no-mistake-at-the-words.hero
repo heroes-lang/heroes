@@ -1,0 +1,88 @@
+# fixedbugs, defect 401, lane b13-zero401, 2026-10-06, found by lane b13-bs
+# beside panel 194's R1.
+#
+# SYMPTOM: with `zero = 0` bound, `add(a: 1, b: 2, rest: zero)` was told only
+# `unused_binding` for `zero`, and `rest_not_a_construction` came only once
+# the binding was removed; so for every kind of binding and every
+# construction the words may be misused on.
+#
+# CAUSE: the words read no name, so a binding called `zero` they stand
+# beside is read nowhere, and the name stage told it; the words' misuse was
+# asked at `check`, which a name stage's mistake stops before.
+#
+# FIX: which call the words may end is what its callee names, so it is told
+# at the name stage, beside `unused_binding` and never behind it, and the
+# binding is told as its own mistake, its note naming the words. Each
+# function below binds `zero` one way; the last two are correct and stay so.
+
+extern "fixedbugs-401.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+        zero: i32
+    record Withrest tag withrest
+        rest: i32
+        n: i32
+
+record Point
+    x: i64
+    y: i64
+
+record Hr
+    a: i64
+    rest: i64
+
+variant Choice
+    one
+        z: i32
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function a_local() -> i64
+    zero = 0  #~ unused_binding
+    return add(a: 1, b: 2, rest: zero)  #~ rest_not_a_construction
+
+function a_parameter(zero: i64) -> i64  #~ unused_binding
+    return 1.add(b: 2, rest: zero)  #~ rest_not_a_construction
+
+function a_loop_variable(xs: [i64]) -> i64
+    total: i64 @ 0
+
+    for zero in xs  #~ unused_binding
+        total @ total + Point(x: 1, y: 2, rest: zero).x  #~ rest_outside_a_group
+
+    return total
+
+function a_payload(c: Choice) -> i32
+    return match c
+        .one zero => Withrest(n: 1, rest: zero).n  #~ unused_binding rest_is_a_field
+
+function a_cell_read_elsewhere() -> i64
+    zero: i64 @ 5
+    print(zero)
+    return Hr(a: 1, rest: zero).a  #~ rest_outside_a_group
+
+function in_an_enclosing_block(k: i64) -> i32
+    zero = 0  #~ unused_binding
+
+    if k > 0
+        return Pair(a: 1, rest: zero).b
+    return 0
+
+function read_elsewhere_and_beside_the_words() -> i32
+    zero: i32 = 7
+    print(zero)
+    return Pair(a: zero, rest: zero).b
+
+function a_field_called_zero(zero: i32) -> i32
+    return Pair(a: 1, zero: zero, rest: zero).zero
+
+function main()
+    print(a_local(), a_parameter(zero: 0), a_loop_variable([1]), a_payload(.one(z: 1)))
+    print(
+        a_cell_read_elsewhere(),
+        in_an_enclosing_block(1),
+        read_elsewhere_and_beside_the_words(),
+        a_field_called_zero(zero: 3)
+    )
