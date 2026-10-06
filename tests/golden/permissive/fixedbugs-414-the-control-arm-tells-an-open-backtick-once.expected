@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-414-the-control-arm-tells-an-open-backtick-once.hero:8:9: error[unexpected_character]: `` `never closed ${x} ``, closed nowhere on its line, is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f"…"` literal, opened and closed on one line
