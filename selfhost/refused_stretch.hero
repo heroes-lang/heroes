@@ -8,7 +8,8 @@
 #
 # - a backtick opening a string is told once, by name, with the literal that
 #   writes it (`backtick_told.hero`), where it closes on its line or on a
-#   line below (`backtick_strings.hero`, defect 407);
+#   line below (`backtick_strings.hero`, defect 407), and one its line
+#   leaves open is told once with the rest of its line (defect 414);
 # - a run of refused characters that can be seen, through the spaces
 #   between them, is told once in the scanner's own words, its first
 #   `SHOWN` characters quoted and the rest counted, so `refused_runs` counts
@@ -57,6 +58,12 @@ function told(@l: state.LexState, text: str, at: i64) -> bool
     if close > 0
         state.error_token(@l, backtick_told.template(text, from: at, to: close))
         l.pos @ close
+        return true
+    open = backtick_strings.open_end(text, at: at, hole: hole)
+
+    if open > 0
+        state.error_token(@l, backtick_told.unclosed(text, from: at, to: open))
+        l.pos @ open
         return true
     end = run_end(text, at: at, hole: hole)
 
@@ -143,11 +150,18 @@ test "a template literal is one error token, the cursor past it"
     assert l.tokens[0].kind == .error
     assert l.tokens[0].span == token.Span(start: 0, end: 14)
 
-    # A stray one is the scanner's alone.
-    for text in ["` x", "` # see `x`", "` \"a`b\""]
+    # A stray one is the scanner's alone: closed on its line as this language
+    # reads it otherwise, or with nothing after it on its line.
+    for text in ["` # see `x`", "` \"a`b\"", "`  # c\nx"]
         stray = lexed_one(text)
         assert stray.diagnostics.len() == 0
         assert stray.pos == 0
+
+    # One its line leaves open is one token with the rest of its line, to a
+    # closer of the line's (defect 414).
+    open = lexed_one("` x ${y})")
+    assert open.pos == 8
+    assert open.tokens.len() == 1
 
     # Over lines, one token too, the cursor past them (defect 407), in a
     # hole of an `f"…"` literal where no backtick follows it on its line.
@@ -159,10 +173,13 @@ test "a template literal is one error token, the cursor past it"
     in_a_hole.holes @ [0]
     assert told(@in_a_hole, "`a\nb`}\"\n", at: 0)
     assert in_a_hole.pos == 5
+
+    # Where a backtick follows its close there, it is no template over lines,
+    # and its line, which leaves it open, holds the rest (defect 414).
     ticked: state.LexState @ state.new_state()
     ticked.holes @ [0]
-    assert !told(@ticked, "`a\nb`}`\"\n", at: 0)
-    assert ticked.pos == 0
+    assert told(@ticked, "`a\nb`}`\"\n", at: 0)
+    assert ticked.pos == 2
 
 test "a run of refused characters that can be seen is told once, through its spaces"
     l = lexed_one("ключ слово = 1")

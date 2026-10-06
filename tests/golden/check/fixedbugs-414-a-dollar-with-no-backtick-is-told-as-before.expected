@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-414-a-dollar-with-no-backtick-is-told-as-before.hero:9:9: error[unexpected_character]: `$` is not part of the language's syntax
+tests/golden/check/fixedbugs-414-a-dollar-with-no-backtick-is-told-as-before.hero:10:9: error[unexpected_character]: `$` is not part of the language's syntax
+tests/golden/check/fixedbugs-414-a-dollar-with-no-backtick-is-told-as-before.hero:15:11: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-414-a-dollar-with-no-backtick-is-told-as-before.hero:19:9: error[unexpected_character]: ``` is not part of the language's syntax

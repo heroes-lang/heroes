@@ -1,0 +1,27 @@
+# Defect 414, 2026-10-06: the shapes beside a backtick its line leaves open,
+# which stay what they were. A `$` or a `${` with no backtick before it is a
+# character the syntax does not have, told at each as before; a backtick
+# with nothing after it on its line, or closed on its line in a way this
+# language reads otherwise, is told alone, as defect 391 tells it; and a
+# backtick in a comment or a string opens nothing: `x ${y}`.
+
+function dollars(x: i64)
+    s = $x  #~ unexpected_character
+    t = ${x}  #~ unexpected_character
+    print(s)
+    print(t)
+
+function nothing_after_it()
+    x = 1 `  #~ unexpected_character
+    print(x)
+
+function closed_in_a_string(x: i64)
+    s = ` "a`b ${x}"  #~ unexpected_character
+    t = "`never closed ${x}"
+    print(s)
+    print(t)
+
+function main()
+    dollars(7)
+    nothing_after_it()
+    closed_in_a_string(7)
