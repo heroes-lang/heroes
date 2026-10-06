@@ -3,7 +3,7 @@ kind: defect
 area: ir
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: a2d349b67181b0828dafd0495d2687990e1d1d47
 github: none
 ---
 
@@ -31,3 +31,5 @@ github: none
             out: [i64] @ []
             out @ out.push(5)
             print(total(out, half(4).must() + bump(@out)))
+
+    Repaired at `a2d349b6`, 2026-10-06 (lane b12-ir12), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The shapes beside it held the same cause and stay in the item: a field, an element or a `str` field of a load read after a write to its root, which `total(b.xs, bump(@b.xs))` shows in ONE block (the base printed 4002 where 1002 is meant, `heap-use-after-free` under `--sanitize`); a write in the load's own block read in a later one; a callee writing by a store (5002 printed, 1002 meant); a loop, where the borrowed array grows in place on some turns and moves on others (7020 printed, 10020 meant). Each is a line of `tests/golden/run/fixedbugs-387-*`, the base's output kept in the lane's scratch.
