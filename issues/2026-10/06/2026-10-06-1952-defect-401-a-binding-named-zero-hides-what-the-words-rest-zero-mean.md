@@ -3,7 +3,7 @@ kind: defect
 area: resolve
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 03123b3141162fdaf42c8b262a5fe05657483d34
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-bs, 2026-10-06 (its report, *found beside* 2); filed by the coordinator at 19:52.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only after another is fixed, and a message that does not name the words; R1's own surface, landing in this batch. The lane recommends that `rest: zero` be refused at the words whenever a binding named `zero` is visible, since a reader cannot tell the two meanings apart.
+
+    Repaired at `03123b3141162fdaf42c8b262a5fe05657483d34`, 2026-10-06, gated by its cases and the compiler's own tests; the net is owed at the batch's close.
