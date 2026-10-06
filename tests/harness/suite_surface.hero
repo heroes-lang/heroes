@@ -733,7 +733,13 @@ test "the tables are what this module is, so they are counted"
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
     assert help_probes().len() == 5
-    assert render_probes().len() == 9
+
+    # 9 -> 13 on 2026-10-06, defect 271's JSON half (panel 193): a fix's place
+    # and first round, withheld and written inside `certain137-inside`,
+    # elsewhere in `applyx`, a guess's place with no first round, and a CRLF
+    # line's end (defect 373). The commit that added them, `155603c7`, left
+    # this count at 9, so the net's own tests read 1 failed until this line.
+    assert render_probes().len() == 13
 
     # 17 -> 19 on 2026-09-04: defect 010's two rows (`ffi-pointee-void`,
     # `ffi-pointee-opaque`). An addition is the direction this assert
@@ -919,7 +925,10 @@ test "the tables are what this module is, so they are counted"
     # `}}` took it: `fmt` printing `\u{1b}` as written, the token,
     # syntax-tree, scopes and IR dumps each held to a line, and `mutate`
     # scoring the file.
-    assert verb_probes().len() == 176
+    # 176 -> 177 on 2026-10-06: `check --apply` telling a certain fix in a
+    # module only a later round reads (`applylater/`), added by `de2e9770`
+    # with this count left behind.
+    assert verb_probes().len() == 177
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
