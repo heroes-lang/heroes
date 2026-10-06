@@ -76,7 +76,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     offered: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 0)
     state.open_scope(@offered)
     assert !state.declare(@offered, s, decls, state.span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
-    candidates: [str] = ["x"]
+    candidates: [[str]] = [["x"]]
     offered.module @ "t"
     _ = state.near_names(@offered, "z", candidates)
     report(@offered, s)

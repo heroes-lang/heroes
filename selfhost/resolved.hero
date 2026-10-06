@@ -321,6 +321,7 @@ function hole_covers(r: Resolved, module: str) -> bool
 function declare_top(@r: Resolved, module: str, name: str, decl: i64)
     row = name_rows.name_row(@r.top, key: module)
     r.top.rows[row][name] @ decl
+    r.top.written @ r.top.written + 1
 
 # `from` calls `module` by the name `binding`. A caller that has no alias
 # passes the path's last part, which the parser has already put in the `use`
