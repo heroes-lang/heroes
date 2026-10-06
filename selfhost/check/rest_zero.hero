@@ -3,18 +3,21 @@
 # The parser took the words off the argument list (`parse/rest_words.hero`),
 # so the construction reaches `check/walk.hero` naming some of its fields,
 # which is panel 186's partial construction: its labels are checked there
-# (`check/group_fields.hero`), C writes the zeros through the designated
-# initialiser (`emit/aggregate.hero`), and `build` stops asking whether a
-# field left out shares a byte with one named (`emit/layout_sites.hero`).
-# Two fields named in one union are still refused there.
+# (`check/group_fields.hero`), C zeroes every byte of the record before it
+# writes the fields named (`emit/zeroed.hero`, which reads `rested`), and
+# `build` stops asking whether a field left out shares a byte with one named
+# (`emit/layout_sites.hero`). Two fields named in one union are still refused
+# there.
 #
 # Any other call is told here, once, at the words:
 #
 # - a Heroes record names every field, always (§4.9): `rest_outside_a_group`;
 # - a group's record with a field called `rest`: the words would hide it,
 #   `rest_is_a_field`;
-# - a handle, a function, a built-in, a value called, UFCS:
-#   `rest_not_a_construction`.
+# - a function, a built-in, a value called, UFCS: `rest_not_a_construction`.
+#
+# A handle is not told here: it is never built, and its construction is
+# refused whole by `check/handle_built.hero` (defect 397).
 #
 # A flat scan of the arena, run from `checker.hero` after the bodies, as
 # `ffi_sweep` is: it reads what the resolver said each callee is, and no type.
@@ -66,9 +69,10 @@ function told(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl]
                 .record_decl rec =>
                     name = source.span_text(s, decls[t.at].name)
 
-                    # A handle is made by C and never built (§ 13).
+                    # A handle is made by C and never built (§ 13): its
+                    # construction is refused whole, once, words and all
+                    # (`check/handle_built.hero`, defect 397).
                     if handles.is_handle(decls[t.at])
-                        state.push_diagnostic(@c, not_a_construction(span))
                         return
 
                     if rec.header.is_err()
