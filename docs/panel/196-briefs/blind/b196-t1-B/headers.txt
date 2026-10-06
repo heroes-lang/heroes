@@ -1,0 +1,18 @@
+From `openssl/sha.h` (OpenSSL 4.0.3; its `OSSL_DEPRECATEDIN_3_0` marks before the first three functions left out), on a system where `SHA_LONG` is `typedef unsigned int SHA_LONG;` and `#define SHA_LBLOCK 16`:
+
+```c
+typedef struct SHA256state_st {
+    SHA_LONG h[8]; /* Hash values (32 bytes) */
+    SHA_LONG Nl, Nh; /* The length of the message in bits is stored into 64 bits */
+    SHA_LONG data[SHA_LBLOCK]; /* Buffer used to store input less than 512 bits */
+    unsigned int num; /* The size of the partial buffered input in data[] */
+    unsigned int md_len; /* The output size (used for truncation) */
+} SHA256_CTX;
+
+int SHA256_Init(SHA256_CTX *c);
+int SHA256_Update(SHA256_CTX *c, const void *data, size_t len);
+int SHA256_Final(unsigned char *md, SHA256_CTX *c);
+unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md);
+
+#define SHA256_DIGEST_LENGTH 32
+```

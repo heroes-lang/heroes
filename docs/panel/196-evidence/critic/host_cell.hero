@@ -1,0 +1,8 @@
+# Probe: gethostname's `char *name` lent as one `@` cell with `counted_by namelen`, namelen 64.
+extern "unistd.h"
+    function gethostname(@name: i8 counted_by namelen, namelen: u64) -> i32
+
+function main()
+    n: i8 @ 0
+    print(gethostname(@n, namelen: 64))
+    print(n)

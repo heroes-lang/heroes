@@ -1,0 +1,22 @@
+extern "openssl/sha.h" package "libcrypto"
+    function SHA256(d: ptr counted_by n lent, n: u64, @md: u8[32] lent) -> ptr
+
+record Input
+    b: u8[3]
+
+record Digest
+    b: u8[32]
+
+function main()
+    input = Input(b: ['a', 'b', 'c'])
+    out: Digest @ Digest(b: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    _ = SHA256(d: input.b.ptr(), n: 3, md: @out.b)
+    digits = "0123456789abcdef"
+    parts: [str] @ []
+    for i in range(from: 0, to: 32)
+        v = to_i64(out.b[i]).must()
+        hi = v >> 4
+        lo = v & 15
+        parts @ parts.push(digits.slice(from: hi, to: hi + 1))
+        parts @ parts.push(digits.slice(from: lo, to: lo + 1))
+    print(join(parts, ""))
