@@ -10,6 +10,7 @@
 
 use token
 use source
+use char_column
 use lexer
 use diag
 use shown_char
@@ -122,9 +123,14 @@ function moved(s: source.Source, w: Walk, offset: i64) -> Walk
     return Walk(line: line, at: offset, col: w.col + characters(s.text, from: w.at, to: offset))
 
 # The place `locate` gives a token of the root file, the one file a dump
-# shows, whose lines are its own from the first.
+# shows, whose lines are its own from the first; a `\r\n`'s line feed at the
+# carriage return's column, as `source.line_col` gives it (defect 373).
 function placed(s: source.Source, w: Walk) -> source.Location
-    return source.Location(file: s.files[0].name, line: w.line + 1 - s.files[0].lines_before, col: w.col)
+    col: i64 @ w.col
+
+    if char_column.ends_crlf(text: s.text, start: s.line_starts[w.line], offset: w.at)
+        col @ col - 1
+    return source.Location(file: s.files[0].name, line: w.line + 1 - s.files[0].lines_before, col: col)
 
 # How many characters begin in the bytes `from` to `to`: every byte but a
 # continuation byte, which is what `chars().len()` counts of a `str`.
@@ -210,6 +216,34 @@ test "one walk places every token where locate does (defect 256)"
     back = moved(s, w: w, offset: 2)
     assert placed(s, w: back).line == 1
     assert placed(s, w: back).col == source.locate(s, 2).col
+
+    # And the same text with CRLF line ends, whose line feeds take the
+    # carriage return's column (defect 373).
+    crlf = source.with_library(name: "t.hero", user: crlf_of(text), library: "constant HIDDEN: i64\n    9\n")
+    walked: Walk @ started()
+    placed_count: i64 @ 0
+
+    for t in lexer.lex(crlf).tokens
+        if !source.is_root(crlf, t.span.start)
+            continue
+        walked @ moved(crlf, w: walked, offset: t.span.start)
+        assert placed(crlf, w: walked).col == source.locate(crlf, t.span.start).col
+        assert placed(crlf, w: walked).line == source.locate(crlf, t.span.start).line
+        placed_count @ placed_count + 1
+
+    assert placed_count > 20
+
+# `text` with every line feed after a carriage return.
+function crlf_of(text: str) -> str
+    pieces: [str] @ []
+
+    for ch in text.chars()
+        if ch == "\n"
+            pieces @ pieces.push("\r\n")
+        else
+            pieces @ pieces.push(ch)
+
+    return pieces.join("")
 
 # A text from its UTF-8 bytes, since a string literal names no control
 # character by its code (spec § 2 Literals).

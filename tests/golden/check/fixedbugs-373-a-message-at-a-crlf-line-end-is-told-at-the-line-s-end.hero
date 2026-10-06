@@ -1,0 +1,19 @@
+# fixedbugs, defect 373, lane cli12, 2026-10-06. THIS FILE ENDS ITS LINES
+# WITH CRLF, and `.gitattributes` keeps them (`-text`).
+#
+# SYMPTOM: a message placed at a line's end, `expected_expression` where a
+# line ends after `=`, or after an operator and a comment above a binding,
+# said one column more than the same file with LF line ends, 16:9 for 16:8:
+# the carriage return was counted as a character of the line (12 of 137
+# check cases made CRLF, panel 193's completeness critic).
+#
+# FIX: `source.line_col` gives the line feed of a `\r\n` the carriage
+# return's column, the line's end, as an LF file gives its line feed.
+
+function main()
+    a = 1
+    #~v expected_expression
+    x =
+    y = a +  #~ expected_expression
+    z = 2
+    print(a + z)

@@ -28,6 +28,7 @@
 # nothing that hands a program back may print it.
 
 use token
+use char_column
 use module/names as module_names
 
 ## The two tables
@@ -261,12 +262,12 @@ record Position
 # 1-based line and column in the whole text; **the column counts
 # characters**, not bytes — the consumer is the reader, and for a caret a
 # byte is not a column (the byte-counting version disagreed with its own
-# caret by three columns on one tabbed line, 2026-08-12).
+# caret by three columns on one tabbed line, 2026-08-12). `char_column` counts
+# it, a CRLF line's end at its carriage return (defect 373).
 function line_col(s: Source, offset: i64) -> Position
     line = floor_start(s.line_starts, offset)
     start = s.line_starts[line]
-    col = s.text.slice(from: start, to: offset).chars().len() + 1
-    return Position(line: line + 1, col: col)
+    return Position(line: line + 1, col: char_column.of(s.text, start: start, offset: offset))
 
 # The 1-based line in the whole text — the printer's question. `locate`
 # answers the reader's; nobody assembles the triple by hand. The line alone,
