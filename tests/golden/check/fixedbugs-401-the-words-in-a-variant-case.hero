@@ -1,0 +1,48 @@
+# fixedbugs, defect 401, lane b13-zero401, 2026-10-06, found by lane b13-bs
+# beside panel 194's R1.
+#
+# SYMPTOM: a variant case kept `rest: zero` as an argument, so
+# `.circle(r: 2, rest: zero)` was told only `unknown_name: zero`, never
+# naming the words; with a binding called `zero` in scope it was told
+# `missing_fields` naming the one field it had; and on a case with a field
+# called `rest` the binding was handed to that field, `check` 0.
+#
+# CAUSE: the parser takes the words off a call's list and left a variant
+# case's whole, so the name stage read their `zero` as a name, and what it
+# meant depended on whether a binding of that name was in scope.
+#
+# FIX: the words are the words wherever they are written. A case of a Heroes
+# variant names every field, always (design.md §4.9), so they are refused at
+# them, `rest_outside_a_group`, as on a Heroes record; their `zero` is never
+# read, so a binding called `zero` beside them is read nowhere and told so.
+
+variant Shape
+    circle
+        r: i64
+    ring
+        r: i64
+        rest: i64
+
+function no_binding() -> Shape
+    return .circle(r: 2, rest: zero)  #~ rest_outside_a_group
+
+function a_binding_and_a_field_called_rest() -> Shape
+    zero = 0  #~ unused_binding
+    return .ring(r: 2, rest: zero)  #~ rest_outside_a_group
+
+function a_binding_read_elsewhere() -> Shape
+    zero: i64 @ 3
+    print(zero)
+    return .ring(r: 2, rest: zero)  #~ rest_outside_a_group
+
+function not_last(zero: i64) -> Shape  #~ unused_binding
+    return .ring(rest: zero, r: 2)  #~ rest_outside_a_group
+
+function twice() -> Shape
+    return .ring(r: 2, rest: zero, rest: zero)  #~ rest_outside_a_group rest_outside_a_group
+
+function main()
+    for s in [no_binding(), a_binding_and_a_field_called_rest(), a_binding_read_elsewhere(), not_last(zero: 1), twice()]
+        match s
+            .circle c => print(c.r)
+            .ring g   => print(g.r, g.rest)

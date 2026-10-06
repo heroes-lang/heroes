@@ -1,0 +1,33 @@
+# fixedbugs, defect 401, lane b13-zero401, 2026-10-06: a constant called
+# `zero` is in scope everywhere in its module, and the words `rest: zero`
+# never read it. A case of a variant with a field called `rest` handed the
+# constant to that field, `check` 0; it is refused at the words now, as a
+# call to a function with a parameter called `rest` already was. A group's
+# record is built as the words say, the constant beside them read only where
+# a field names it.
+
+extern "fixedbugs-401.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+        zero: i32
+
+variant Shape
+    ring
+        r: i64
+        rest: i64
+
+constant zero: i32
+    7
+
+function addr(a: i64, rest: i64) -> i64
+    return a + rest
+
+function main()
+    s: Shape = .ring(r: 2, rest: zero)  #~ rest_outside_a_group
+    n = addr(a: 1, rest: zero)  #~ rest_not_a_construction
+    p = Pair(a: 1, zero: zero, rest: zero)
+    print(n, p.zero)
+
+    match s
+        .ring g => print(g.r)

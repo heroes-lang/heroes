@@ -8,6 +8,13 @@
 #   `rest_not_a_construction`;
 # - a group's record with a field called `rest` would have the words hide it:
 #   `rest_is_a_field`.
+#
+# Corrected 2026-10-06, defect 401 (lane b13-zero401): the words are told at
+# the name stage since, where a binding called `zero` beside them can no
+# longer hide them, so `missing_fields`, the checker's, is no longer told
+# beside `rest_outside_a_group`: the cause once, its note naming each field
+# to write. The rule `missing_fields` states stands unchanged, and is told
+# once the words are gone.
 
 extern "rest-zero-elsewhere.h"
     record Withrest tag withrest
@@ -25,7 +32,7 @@ function pick() -> (function(a: i64, b: i64) -> i64)
     return add
 
 function main()
-    p = Point(x: 1, rest: zero)  #~ missing_fields rest_outside_a_group
+    p = Point(x: 1, rest: zero)  #~ rest_outside_a_group
     q = add(a: 1, b: 2, rest: zero)  #~ rest_not_a_construction
     r = 1.add(b: 2, rest: zero)  #~ rest_not_a_construction
     s = pick()(a: 1, b: 2, rest: zero)  #~ rest_not_a_construction

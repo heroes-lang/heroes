@@ -1,0 +1,29 @@
+# fixedbugs, defect 401, lane b13-zero401, 2026-10-06: a binding called
+# `zero` changes nothing the words `rest: zero` mean. Read beside them, a
+# binding of 7 leaves every field the construction does not name zero, and
+# a field called `zero` holds the 7 only where a field names it. This held
+# before the repair as after: the case pins it, so the repair that made the
+# words the words wherever they are written cannot have moved it.
+
+extern "fixedbugs-401-a-binding-called-zero-beside-the-words.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+        zero: i32
+    function dirty()
+
+# A binding of 7, read, beside the words: `b` and the field `zero` are 0.
+function beside() -> Pair
+    zero: i32 = 7
+    print(zero)
+    return Pair(a: 1, rest: zero)
+
+# A parameter of 7 given to the field called `zero`; the words zero `b`.
+function named(zero: i32) -> Pair
+    return Pair(a: 1, zero: zero, rest: zero)
+
+function main()
+    dirty()
+    p = beside()
+    q = named(zero: 7)
+    print(p.a, " ", p.b, " ", p.zero, " ", q.a, " ", q.b, " ", q.zero)
