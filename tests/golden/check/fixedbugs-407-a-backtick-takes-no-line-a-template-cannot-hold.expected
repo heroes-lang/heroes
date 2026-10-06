@@ -5,4 +5,4 @@ tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold
 tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:31:11: error[unexpected_character]: ``` is not part of the language's syntax
 tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:38:11: error[unexpected_character]: ``` is not part of the language's syntax
 tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:42:11: error[unexpected_character]: ``` is not part of the language's syntax
-tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:57:9: error[unexpected_character]: ``` is not part of the language's syntax
+tests/golden/check/fixedbugs-407-a-backtick-takes-no-line-a-template-cannot-hold.hero:59:9: error[unexpected_character]: `` `never closed ``, closed nowhere on its line, is a string in backticks, which are not part of the language's syntax — a string is written in double quotes, opened and closed on one line

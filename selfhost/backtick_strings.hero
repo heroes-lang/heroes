@@ -33,6 +33,17 @@
 # (`comment_habit.comment_end`), their margins its text, and a hole open on
 # the line it opens on stays open on the line it closes on.
 #
+# **A backtick its line leaves open holds the rest of its line** (defect
+# 414): where JavaScript's reading of its line closes nothing it opens, what
+# follows it on that line is its string's, as what follows a `"` its line
+# does not close is that string's (`unterminated_string`), so a `${` in it,
+# a run of characters and a quote are no messages of their own. It ends
+# before a comment begun after a space, and before the first closer that
+# closes nothing opened after the backtick, which is the line's: the `)` of
+# `` print(`a ${x}) ``, the `}` closing a hole of an `f"…"` literal it stands
+# in (`open_end`). One closed on its line in a way this language reads
+# otherwise, or with nothing after it, stays the scanner's alone.
+#
 # **Its cost stays linear**: a template is read for `READ` bytes from its
 # backtick and no further, the rest of the line it closes on included, a
 # falsifiable claim that one written in a program is shorter, past which the
@@ -43,8 +54,9 @@
 # | entry | called by |
 # |---|---|
 # | `template_close` | `refused_stretch.told`, `refused_stretch.refused_and_seen` |
+# | `open_end` | `refused_stretch.told` |
 # | `is_template` | `refused_runs.gathered` |
-# | `quote_end`, `TEMPLATE_SAID`, `BACKTICKS_SAID` | `backtick_told` |
+# | `quote_end`, `line_end`, `TEMPLATE_SAID`, `BACKTICKS_SAID` | `backtick_told` |
 
 use diag
 use bytes
@@ -253,6 +265,57 @@ function goes_on(text: str, from: i64, limit: i64, hole: bool) -> bool
 
     return limit == text.len()
 
+# Past the rest of the line after the backtick at `at` where JavaScript's
+# reading of that line closes no template it opens: up to the line's end, a
+# comment begun after a space, or the first closer that closes nothing
+# opened after the backtick, the spaces before it left out; -1 where its
+# line closes one, runs past `READ` bytes, or holds nothing after it. In a
+# hole of an `f"…"` literal (`hole`) the line is that literal's text, which
+# holds no comment.
+function open_end(text: str, at: i64, hole: bool) -> i64
+    if text[at] != '`'
+        return -1
+    line = line_end(text, from: at)
+
+    if line > at + READ || template_end(text, at: at, limit: line) > 0
+        return -1
+    depth: i64 @ 0
+    last: i64 @ at + 1
+    i: i64 @ at + 1
+
+    while i < line
+        b = text[i]
+
+        if !hole && b == '#' && (text[i - 1] == ' ' || text[i - 1] == '\t')
+            break
+
+        if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if b == ')' || b == ']' || b == '}'
+            if depth == 0
+                break
+            depth @ depth - 1
+
+        if b != ' ' && b != '\t'
+            last @ i + 1
+        i @ i + 1
+
+    if last == at + 1
+        return -1
+    return last
+
+# Where the line holding `from` ends, before its `\r\n` or its `\n`, or the
+# text's end.
+function line_end(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    if i > from && text[i - 1] == '\r'
+        return i - 1
+    return i
+
 ## Tests
 
 test "a backtick this language reads as a stray one opens no template"
@@ -290,6 +353,23 @@ test "a template over lines is read where its lines are no program's"
 
     # A template, a string and a comment on the line it closes on are read.
     assert template_close("`a\nb`, `c`, \"`\") # `\n", at: 0, hole: false) == 5
+
+test "a backtick its line leaves open holds the rest of its line, to a comment or a closer of the line's"
+    assert open_end("`a ${x}\nb", at: 0, hole: false) == 7
+    assert open_end("`a ${x})\n", at: 0, hole: false) == 7
+    assert open_end("`a ${x}  # c\r\n", at: 0, hole: false) == 7
+    assert open_end("`a (b) ${x}", at: 0, hole: false) == 11
+
+    # In a hole of an `f"…"` literal, to the brace that closes it, and a `#`
+    # is that literal's text.
+    assert open_end("`a ${x}}\")\n", at: 0, hole: true) == 7
+    assert open_end("`a # c\n", at: 0, hole: true) == 6
+
+    # Closed on its line, nothing after it, or past the bound: told alone.
+    for text in ["`a` b\n", "` # `x`\n", "`\nb`\n", "`  # c\n", "`)\n", "x"]
+        assert open_end(text, at: 0, hole: false) == -1
+
+    assert open_end("`" + "a".repeat(READ.to_u64().must()) + "\n", at: 0, hole: false) == -1
 
 test "a template is read for its bound and no further, the line it closes on included"
     inside = "`" + "a".repeat(READ.to_u64().must() - 2) + "`"
