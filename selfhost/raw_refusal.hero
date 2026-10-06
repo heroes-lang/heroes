@@ -53,6 +53,48 @@ function refused(code: i64) -> bool
 function might_begin(b: u8) -> bool
     return b < 32 || b == 127 || b == 194 || b == 216 || b == 226
 
+# Whether the lead byte at `at`, at or above 0xC2, begins a refused character:
+# a string's scan asks this before it calls `past`, so an em dash, which
+# every message of this compiler holds, costs a decode and no call that
+# copies the lexer's state.
+function leads_refused(text: str, at: i64) -> bool
+    b = text[at]
+    return (b == 194 || b == 216 || b == 226) && refused(code_at(text, at: at))
+
+# The code point of the character whose lead byte is at `at`, read from the
+# bytes where they stand, allocating nothing: a `str` is well-formed UTF-8
+# (spec § 3), and the bytes past the text's end are not read.
+function code_at(text: str, at: i64) -> i64
+    lead = to_i64(text[at]).must()
+
+    if lead < 192
+        return lead
+    width = width_at(text[at])
+    code: i64 @ lead & 31
+
+    if width == 3
+        code @ lead & 15
+    else if width == 4
+        code @ lead & 7
+
+    for k in range(from: 1, to: width)
+        if at + k < text.len()
+            code @ code * 64 + (to_i64(text[at + k]).must() & 63)
+
+    return code
+
+# How many bytes the character led by `b` takes.
+function width_at(b: u8) -> i64
+    if b >= 240
+        return 4
+
+    if b >= 224
+        return 3
+
+    if b >= 192
+        return 2
+    return 1
+
 ## The scanners' calls
 
 # Past the bytes from `from` that can begin no refused character, to the first
@@ -63,77 +105,47 @@ function might_begin(b: u8) -> bool
 # compiler-engineer, measured).
 function clear(text: str, from: i64) -> i64
     i: i64 @ from
+    n = text.len()
 
-    # `might_begin`, written out over one read of the byte, a printable ASCII
-    # byte answered in three comparisons; a lead byte it names is decoded
-    # here, so an em dash costs no call that copies the lexer's state.
-    while i < text.len()
+    # `might_begin`, written out over one read of the byte: a printable ASCII
+    # byte, nearly every byte a comment holds, is answered in two comparisons;
+    # a lead byte it names is decoded here, so an em dash costs no call that
+    # copies the lexer's state. The length is read once, a `str` being
+    # immutable.
+    while i < n
         b = text[i]
 
-        if b < 32 || b == 127
-            return i
+        if b >= 32 && b < 127
+            i @ i + 1
+            continue
 
-        if b >= 194 && (b == 194 || b == 216 || b == 226) && refused(shown_char.code_point(bytes.char_at(text, i)))
+        if b < 32 || b == 127 || b >= 194 && leads_refused(text, at: i)
             return i
         i @ i + 1
 
     return i
 
-# Past the byte at `at` of a string's text or a comment's: past the run of
-# refused characters that starts there, told once; past the run of tabs a
-# string holds, told once; or past the one byte, which is everything else. A
-# carriage return is its caller's in a string (`raw_chars.raw_carriage_return`),
-# and in a comment the one before a line feed ends the line.
-function past(@l: state.LexState, text: str, at: i64, holder: Holder) -> i64
+# Past the byte at `at` of a string's text, or of an `f` literal's: past the
+# run of refused characters that starts there, told once; past the run of
+# tabs, told once; or past the one byte, which is everything else. A carriage
+# return is its caller's (`raw_chars.raw_carriage_return`). A comment is
+# walked apart, after its line (`comment_refusal`).
+function past(@l: state.LexState, text: str, at: i64) -> i64
     if at >= text.len() || text[at] == 10
         return at
     b = text[at]
 
-    if !might_begin(b)
+    if !might_begin(b) || b == 13
         return at + 1
 
     if b == 9
-        if holder == .comment
-            return at + 1
         return tabs(@l, text: text, at: at, word: "a string")
-
-    if b == 13 && (holder == .string || at + 1 < text.len() && text[at + 1] == 10)
-        return at + 1
     end = run_end(text, at: at)
 
     if end == at
         return at + 1
-    told(@l, text, from: at, to: end, holder: holder)
+    state.push_diagnostic(@l.diagnostics, told_as(text, from: at, to: end, holder: .string))
     return end
-
-# The comments the scan of one line made, from `from` on, each held to what a
-# comment may hold (panel 192's R3). Asked by `lexer.lexed` after the line and
-# not inside the comment's own scan, which a `#` or `//` comment ends its
-# line with, so what is said of it follows what was said of the code before
-# it. A `/* … */` comment is refused whole already (`scan.foreign_comment`),
-# its fix writing it with `#`, which this reads at the next check.
-function comments(@l: state.LexState, text: str, from: i64)
-    spans: [token.Span] @ []
-    i: i64 @ l.tokens.len() - 1
-
-    while i >= 0 && l.tokens[i].span.start >= from
-        if l.tokens[i].kind == .comment
-            spans @ spans.push(l.tokens[i].span)
-        i @ i - 1
-
-    i @ l.held.len() - 1
-
-    while i >= 0 && l.held[i].span.start >= from
-        if l.held[i].kind == .comment
-            spans @ spans.push(l.held[i].span)
-        i @ i - 1
-
-    for span in spans
-        if text[span.start] == '#' || span.end > span.start + 1 && text[span.start + 1] == '/'
-            at: i64 @ span.start
-
-            while at < span.end
-                at @ past(@l, text, at: clear(text, from: at), holder: .comment)
 
 # Past the run of refused characters from `at`, or `at` itself where the one
 # there is not refused. A NUL is a run of its own, having no spelling where
@@ -144,13 +156,12 @@ function run_end(text: str, at: i64) -> i64
     nul = text[at] == 0
 
     while i < text.len() && might_begin(text[i])
-        ch = bytes.char_at(text, i)
-        code = shown_char.code_point(ch)
+        code = code_at(text, at: i)
         another_kind = code == 0 && !nul || code != 0 && nul
 
         if !refused(code) || another_kind || code == 13 && i > at
             return i
-        i @ i + ch.len()
+        i @ i + width_at(text[i])
 
     return i
 
@@ -158,7 +169,7 @@ function run_end(text: str, at: i64) -> i64
 
 # The refusal of the run from `from` to `to`, named by its first character,
 # with the repair that writes every one of them as its holder can.
-function told(@l: state.LexState, text: str, from: i64, to: i64, holder: Holder)
+function told_as(text: str, from: i64, to: i64, holder: Holder) -> diag.Diagnostic
     ch = bytes.char_at(text, from)
     code = shown_char.code_point(ch)
     span = token.Span(start: from, end: to)
@@ -173,8 +184,7 @@ function told(@l: state.LexState, text: str, from: i64, to: i64, holder: Holder)
             span: span
         )
         nul.fixes @ nul.fixes.push(diag.Fix(title: "delete it", replacement: "", span: span, certainty: .guess))
-        state.push_diagnostic(@l.diagnostics, nul)
-        return
+        return nul
     word: str @ "string"
     how: str @ "a string writes it by its code, as `" + raw_chars.escaped(code) + "`"
 
@@ -190,7 +200,7 @@ function told(@l: state.LexState, text: str, from: i64, to: i64, holder: Holder)
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write each by its " + noun(holder) + ": `" + replacement + "`", replacement: replacement, span: span, certainty: .certain)
     )
-    state.push_diagnostic(@l.diagnostics, d)
+    return d
 
 function noun(holder: Holder) -> str
     return match holder

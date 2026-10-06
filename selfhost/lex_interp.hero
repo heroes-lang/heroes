@@ -105,9 +105,10 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
             if b == layout.CR
                 raw_chars.raw_carriage_return(@l, l.pos, .in_str)
 
-            # `raw_refusal.might_begin`, written out: no call for a byte.
-            if b < 32 || b >= 127 && (b == 127 || b == 194 || b == 216 || b == 226)
-                l.pos @ raw_refusal.past(@l, text, at: l.pos, holder: .string)
+            # `raw_refusal.might_begin`, written out: a printable byte costs no
+            # call, and a lead byte is decoded before the state is copied.
+            if b < 32 || b == 127 || b >= 194 && raw_refusal.leads_refused(text, at: l.pos)
+                l.pos @ raw_refusal.past(@l, text, at: l.pos)
             else
                 l.pos @ l.pos + 1
 
