@@ -20,7 +20,7 @@
 use diag
 use lexer
 use parse/readings
-use parse/joined_lines as seams
+use joined_lines as seams
 use text_outline
 
 # Which reading a line below a bodiless head is read as: the head's body, one

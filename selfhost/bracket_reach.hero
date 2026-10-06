@@ -22,11 +22,14 @@
 # | entry | called by |
 # |---|---|
 # | `ends_at` | `layout.line_start` |
+# | `ended_by_a_brace` | `scan.finish`, a `{` that ends the line of C's `for` header |
 
 use token
 use state
 use next_line
 use closers
+use loop_headers
+use brace_layout
 
 # Whether the line under `l.pos`, whose margin is `spaces`, ends the reach
 # of every opener still open: where it does, each is named there and the
@@ -35,10 +38,11 @@ use closers
 function ends_at(@l: state.LexState, text: str, spaces: i64) -> bool
     margin = l.level * 4
     word = next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin)
+    header = !word && below_a_header(l, text)
 
-    if !word && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
+    if !word && !header && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
         return false
-    end_the_reach(@l, text, name: !word)
+    end_the_reach(@l, text, name: !word, header: header)
     state.push_offset(@l.closes, at: l.pos)
 
     # The statement they were opened in is over at the line end above, one
@@ -67,6 +71,67 @@ function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, marg
     inner = text[l.open_brackets[l.open_brackets.len() - 1].start]
     return kept && inner == '(' && next_line.opens_with_a_name(text, at: l.pos)
 
+# Inside the `(` of C's `for` header, which holds a `;` the lexer left to
+# the parser's one report of it, a line that holds no `;` and closes nothing
+# it did not open is no clause of the header: the body below it, or the next
+# statement, which the `)` left out took in (defect 302). A line that holds
+# one is the header split over lines, as C allows, its `)` below.
+function below_a_header(l: state.LexState, text: str) -> bool
+    return a_header_open(l, text) && !a_clause(text, at: l.pos)
+
+# The same `(` at a `{` at `at` that ends its line, the body's brace C's
+# header opens, `for (i = 0; i < 3; i++ {`: its reach ends there, named, so
+# the brace is read as a body's (`brace_layout.hero`) and the `(` withdrawn
+# where the parser tells the header (`parse/unclosed.withdrawn`).
+function ended_by_a_brace(@l: state.LexState, text: str, at: i64) -> bool
+    if !a_header_open(l, text) || !brace_layout.ends_its_line(text, from: at + 1)
+        return false
+    end_the_reach(@l, text, name: false, header: true)
+    state.push_offset(@l.closes, at: at)
+    return true
+
+# Whether a bracket open is the `(` of C's `for` header (`loop_headers.for_header`)
+# holding a `;` the lexer left to the parser, in it or in a bracket it holds,
+# a call or a list left open there (defect 366).
+function a_header_open(l: state.LexState, text: str) -> bool
+    k = loop_headers.for_header(l, text)
+
+    if k < 0
+        return false
+    open = l.open_brackets[k].start
+    i: i64 @ l.tokens.len() - 1
+
+    while i >= 0 && l.tokens[i].span.start > open
+        if l.tokens[i].kind == .error && text.slice(from: l.tokens[i].span.start, to: l.tokens[i].span.end) == ";"
+            return true
+        i @ i - 1
+
+    return false
+
+# Whether the line from `at` holds a `;`, or a closer of no opener on it: a
+# clause of a header split over lines, the `(` closing below.
+function a_clause(text: str, at: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ at
+
+    while i < text.len() && text[i] != '\n' && text[i] != '#'
+        b = text[i]
+
+        if b == '"' || b == '\''
+            i @ closers.past_literal(text, from: i)
+            continue
+
+        if b == ';' || depth == 0 && (b == ')' || b == ']' || b == '}')
+            return true
+
+        if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if b == ')' || b == ']' || b == '}'
+            depth @ depth - 1
+        i @ i + 1
+
+    return false
+
 # The index of the last token laid out that is no comment, or -1.
 function last_not_a_comment(l: state.LexState) -> i64
     last: i64 @ l.tokens.len() - 1
@@ -79,14 +144,14 @@ function last_not_a_comment(l: state.LexState) -> i64
 # Every opener still open named still open at the line under `l.pos`, whose
 # first word ended their reach (R1, or R2 where `name`), at that line and
 # that word, and the stack emptied.
-function end_the_reach(@l: state.LexState, text: str, name: bool)
+function end_the_reach(@l: state.LexState, text: str, name: bool, header: bool)
     line = state.line_of(@l, text, at: l.pos)
     word = next_line.word_at(text, at: l.pos)
 
     for span in l.open_brackets
         state.push_diagnostic(
             @l.diagnostics,
-            closers.still_open(text: text, span: span, line: line, word: word, name: name)
+            closers.still_open(text: text, span: span, line: line, word: word, name: name, header: header)
         )
 
     none: [token.Span] = []

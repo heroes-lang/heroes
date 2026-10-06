@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 5663f4dd00ac0608c8f4f4a7a2687353e8b8670c
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b9-recovery, 2026-10-04, reproduced on its compiler (its final reply's *Found beside*; scratch `<scratchpad>/batch9/recovery/`), beside 204.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake, and neither names its cause.
+
+    Repaired at `5663f4dd`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

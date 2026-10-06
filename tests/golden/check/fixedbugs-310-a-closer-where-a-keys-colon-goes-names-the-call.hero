@@ -1,0 +1,67 @@
+# Fixed defect 310, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 205). Symptom: defect 205's shape inside a call's arguments,
+# `k = g({1: 2` over `x) )`, was told its two readings, and the second, *if
+# it closes on a line above, write its `}` there and delete this `)`*, was
+# true and incomplete: the call's `(` closes above with the `{` in that
+# reading, and the call's `)` on this line is a stray too. Cause: the message
+# named the `{` alone, whatever it stood in. Repair: the second reading names
+# the openers the `{` or `[` stands in on its line, which close with it, and
+# the closers it writes there, `})`, and deletes every closer on this line
+# from the one found, `) )` (`parse/list_line.another_kind`); an opener the
+# lexer named never closed has its own report and is no part of it. The
+# shapes: a call, a closer of another kind, a second argument, two calls
+# deep, nested, a map in a list, a statement's call, padded; and one line,
+# as before.
+
+function g(m: {i64: i64}) -> i64
+    return 1
+
+function h(m: {i64: i64}, b: i64) -> i64
+    return b
+
+function in_a_call(x: i64)
+    k = g({1: 2
+    x) )  #~ expected_map_entry_colon
+    print(k)
+
+function a_closer_of_another_kind(x: i64)
+    k = g({1: 2
+    x] )  #~ expected_map_entry_colon
+    print(k)
+
+function a_second_argument(x: i64)
+    k = h({1: 2
+    x), 3)  #~ expected_map_entry_colon
+    print(k)
+
+function two_calls_deep(x: i64)
+    k = g(g({1: 2
+    x) ))  #~ expected_map_entry_colon
+    print(k)
+
+function nested(x: i64)
+    if x > 0
+        k = g({1: 2
+        x) )  #~ expected_map_entry_colon
+        print(k)
+
+function a_map_in_a_list(x: i64)
+    k = [{1: 2
+    x] ]  #~ expected_map_entry_colon
+    print(k)
+
+function a_statements_call(x: i64)
+    print(g({1: 2
+    x) ))  #~ expected_map_entry_colon
+
+function padded(x: i64)
+    k = g({1: 2
+    x  )  )  #~ expected_map_entry_colon
+    print(k)
+
+function one_line(x: i64)
+    k = g({1: 2, 3 ))  #~ expected_map_entry_colon
+    print(k)
+
+function main()
+    print(1)

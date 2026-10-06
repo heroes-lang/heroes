@@ -340,17 +340,17 @@ function to_the_closer(@c: cursor.Cursor, closer: token.TokenKind)
 # One fact about the language, asked in two places: which token, at the head
 # of a line, goes on with a value the line above ended. Inside brackets it is
 # this module's `goes_on_with_a_value`; outside them it is the lexer's
-# `open_line.can_only_go_on`, less the three that also begin a statement
+# `token.can_only_go_on`, less the three that also begin a statement
 # there (panel 181). A new binary operator lands in `operators.binary_tokens`
 # and must answer the same in both, or this fails and names the two lists.
 test "outside brackets and inside, the same tokens go on with a value"
     for kind in operators.binary_tokens()
-        assert open_line.can_only_go_on(kind)
+        assert token.can_only_go_on(kind)
         assert goes_on_with_a_value(kind)
 
-    assert open_line.can_only_go_on(.question) && goes_on_with_a_value(.question)
-    assert open_line.can_only_go_on(.colon_colon) && goes_on_with_a_value(.colon_colon)
+    assert token.can_only_go_on(.question) && goes_on_with_a_value(.question)
+    assert token.can_only_go_on(.colon_colon) && goes_on_with_a_value(.colon_colon)
     begin: [token.TokenKind] = [.dot, .lparen, .lbracket]
 
     for kind in begin
-        assert goes_on_with_a_value(kind) && !open_line.can_only_go_on(kind)
+        assert goes_on_with_a_value(kind) && !token.can_only_go_on(kind)

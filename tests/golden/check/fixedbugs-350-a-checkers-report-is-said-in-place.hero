@@ -1,0 +1,16 @@
+# Fixed defect 350, 2026-10-05 (lane b12-parse12; found by lane b11-parse
+# beside defects 267 and 343). Symptom: the checker said its reports through
+# `c.out.diagnostics @ c.out.diagnostics.push(d)`, a field place the in-place
+# store never reaches, so every report copied every one said before it: 2,000
+# lines of `x = 1 + true` took 1.55 billion instructions retired. Cause and
+# repair: the list is lent to `state.append_diagnostic`, whose parameter is a
+# bare place (defect 146's rule); the same 2,000 lines now retire 0.70
+# billion, 2.96 times the 500 lines' where they were 5.32. The resolver's
+# sites are `fixedbugs-350-a-resolvers-report-is-said-in-place`. Nothing said
+# moves.
+
+function f(n: i64) -> i64
+    return n + true  #~ bad_operand
+
+function main()
+    print(f(1))

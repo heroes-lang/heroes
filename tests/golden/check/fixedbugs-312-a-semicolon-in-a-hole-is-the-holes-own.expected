@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:19:14: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:23:19: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:27:21: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:31:17: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:39:13: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:43:16: error[reserved_word]: `int` is not a word in this language — an integer type says its width, `i64`, and a type is written where a type goes: after a name and `:`, or after `->`
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:19:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:23:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:27:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — C's three-clause header is no loop here: count with `for i in range(from: a, to: b)`, and loop on a condition with `while`
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:31:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`
+tests/golden/check/fixedbugs-312-a-semicolon-in-a-hole-is-the-holes-own.hero:35:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — a loop over a condition is `while`

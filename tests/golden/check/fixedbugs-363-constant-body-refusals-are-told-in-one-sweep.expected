@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:21:5: error[constant_body]: `constant NESTED`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:24:5: error[constant_body]: `constant SIDE`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:24:19: error[constant_body]: `constant SIDE`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:27:5: error[constant_body]: `constant DOTTED`'s body may not contain a call written with `.` — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:30:5: error[constant_body]: `constant TRIED`'s body may not contain a `?` — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:33:5: error[constant_body]: `constant HOLE`'s body may not contain a `???` — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:38:14: error[constant_body]: `constant CHOSEN`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:41:5: error[constant_body]: `constant T`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-363-constant-body-refusals-are-told-in-one-sweep.hero:46:10: error[constant_cycle]: `constant A` is defined in terms of itself through `B`, so it has no value

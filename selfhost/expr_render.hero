@@ -1,0 +1,49 @@
+# An expression tree written back out fully parenthesised, for the grammar's
+# own tests (design.md §3.3): a precedence table is only testable through
+# what it BUILDS, and this is the cheapest way to see it. Moved out of
+# `grammar_expr.hero` on 2026-10-05 (defect 307), the knot standing at its
+# decided ceiling: it reads the tree and the text, and nothing of the grammar.
+
+use token
+use ast
+use cursor
+use operators
+
+# `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
+# call inside a hole shows in the dump as it shows anywhere.
+function interp_render(a: ast.Ast, pieces: [token.Span], holes: [i64], text: str) -> str
+    parts: [str] @ ["(interp"]
+    i: i64 @ 0
+
+    while i < pieces.len()
+        parts @ parts.push(" " + cursor.slice_of(text, pieces[i]))
+
+        if i < holes.len()
+            parts @ parts.push(" " + render(a, holes[i], text))
+        i @ i + 1
+
+    parts @ parts.push(")")
+    return parts.join("")
+
+function render(a: ast.Ast, at: i64, text: str) -> str
+    node = a.exprs[at]
+
+    return match node.kind
+        .binary b => "(" + render(a, b.left, text) + " " + operators.spelling(b.op) + " " + render(a, b.right, text) + ")"
+        .unary u      => "(" + operators.unary_spelling(u.op) + render(a, u.operand, text) + ")"
+        .field f      => "(" + render(a, f.base, text) + "." + cursor.slice_of(text, f.name) + ")"
+        .field_name f => "(" + render(a, f.base, text) + "::" + cursor.slice_of(text, f.name) + ")"
+        .index i      => "(" + render(a, i.base, text) + "[" + render(a, i.index, text) + "])"
+        .try_expr t   => "(" + render(a, t.value, text) + "?)"
+        .call c       => "(call " + render(a, c.callee, text) + "/" + c.args.len().to_str() + ")"
+        .method m => "(" + render(a, m.receiver, text) + "." + cursor.slice_of(text, m.name) + "()/" + m.args.len().to_str() + ")"
+        .variant_case v                                          => "." + cursor.slice_of(text, v.name)
+        .array ar                                                => "[" + ar.elements.len().to_str() + "]"
+        .map mp                                                  => "{" + mp.entries.len().to_str() + "}"
+        .interp ip                                               => interp_render(a, ip.pieces, ip.holes, text)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => cursor.slice_of(text, node.span)
+        .name                                                    => cursor.slice_of(text, node.span)
+        .null_ptr                                                => "nullptr"
+        .hole                                                    => "???"
+        .if_expr | .match_expr                                   => "<control>"
+        .error                                                   => "<error>"

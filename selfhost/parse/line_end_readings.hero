@@ -13,8 +13,8 @@ use token
 use diag
 use cursor
 use lexer
-use parse/pairing
-use parse/laid_braces
+use pairing
+use laid_braces
 
 # What else the line end refused before a token may have been, beside going on
 # with the line above, which is what the fix writes:
@@ -86,12 +86,12 @@ function operand_act(kind: token.TokenKind) -> str
 
 # Whether a closer closes the bracket the cursor stands in, by the lexer's own
 # stack: the innermost opener before the cursor whose closer, if it has one,
-# stands past it, paired as `parse/pairing.paired_closer` pairs it, a closer of
+# stands past it, paired as `pairing.paired_closer` pairs it, a closer of
 # another kind included that the lexer paired with an opener of its own kind
 # below the innermost (`closers.hero`, the recovery batches' C3, 2026-10-01).
 # Until that day this was the pairing's walk begun inside the bracket, since
 # `parse/unclosed` reads `parse/line_end` and could not be read from it; the
-# walk now lives apart in `parse/pairing`, which reads neither, so the two
+# walk now lives apart in `pairing`, which reads neither, so the two
 # answer alike by being one.
 function closed_below(c: cursor.Cursor, text: str) -> bool
     here = cursor.current_span(c).start

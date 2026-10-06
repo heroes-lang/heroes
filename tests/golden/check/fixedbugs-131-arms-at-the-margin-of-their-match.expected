@@ -15,4 +15,4 @@ tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:66:5: er
 tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:67:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:73:13: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
 tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:79:9: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
-tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:85:9: error[missing_match_arms]: a `match` needs its arms indented one level below it, found a name (`_`)
+tests/golden/check/fixedbugs-131-arms-at-the-margin-of-their-match.hero:84:9: error[missing_match_arms]: a `match` cannot stand inside brackets: its arms go on the lines below it, one level deeper, and no line inside a bracket is: the `(` that holds it stands on the line above, at column 10 — give its value a name on a line of its own above, and write the name here

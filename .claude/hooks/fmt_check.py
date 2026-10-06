@@ -25,7 +25,18 @@ hook now says, on the one file written and nothing else:
 - for a `tests/harness/` module, `heroes check <file>`, since that package is
   flat and a module checks alone;
 - for a `selfhost/` module, its line ceiling by the mirror in `ceiling.py`,
-  the `layout` suite staying the judge.
+  the `layout` suite staying the judge;
+- for a `tests/golden/` case, its `#~` marks against its `.expected`, asked of
+  the `annotations` suite itself narrowed to the case (defect 286, 2026-10-05),
+  on a write of either file. `.claude/rules/verification.md` listed this check
+  under layer 0 from 2026-09-29 and no hook performed it, so a case whose marks
+  and expectation disagreed waited for the suite. It asks the judge rather than
+  mirroring it: the comparison is `mark_readers.hero`'s, and a second reader in
+  Python would be a copy that can disagree with it in silence. Measured that
+  day, beside three lanes' work so only a size: 24.83 s with the harness built
+  cold, 6.82 and 7.02 s warm. The suite decides which directories it sweeps: a
+  case it does not select (exit 2, *no case ... matches*) gets no opinion, nor
+  does a case whose `.hero` or `.expected` is not written yet.
 
 It NOTICES and does not rewrite. A suite reading the tree owns the tree until it
 exits (CL-025), and a hook that edited a file under a running suite would be the
@@ -40,6 +51,7 @@ inability to run.
 
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -69,7 +81,7 @@ def main():
         return 0
 
     path = (payload.get("tool_input") or {}).get("file_path")
-    if not isinstance(path, str) or not path.endswith(".hero"):
+    if not isinstance(path, str) or not (path.endswith(".hero") or path.endswith(".expected")):
         return 0
 
     root = payload.get("cwd") or os.getcwd()
@@ -80,12 +92,24 @@ def main():
         return 0
     rel = os.path.relpath(os.path.abspath(path), root)
 
+    # An expectation written is judged against its case's marks, and nothing
+    # else here reads it.
+    if path.endswith(".expected"):
+        return marks_against_expectation(compiler, root, rel)
+
     # 1. The file parses, and it is canonical. `heroes fmt <file>` prints the
     #    canonical form and writes nothing; a file that does not parse makes it
     #    exit non-zero with the diagnostic on stderr.
     fmt = run(compiler, ["fmt", path], root)
     if fmt is None:
         return 0
+    if fmt.returncode != 0 and rel.startswith("tests/golden/") and has_marks(path):
+        # A golden case whose `#~` marks claim diagnostics is refused by `fmt`
+        # on purpose: its diagnostics are its subject (defect 272, 2026-10-05).
+        # This hook said *does not parse* of every such case, a false alarm
+        # that teaches its reader to pass it by; the marks are judged against
+        # the expectation instead, which is the question the case asks.
+        return marks_against_expectation(compiler, root, rel)
     if fmt.returncode != 0:
         print(
             rel + " does not parse; the compiler says:\n" + head(fmt.stderr) + "\n" + LAYER,
@@ -131,7 +155,55 @@ def main():
         print(over, file=sys.stderr)
         return 2
 
-    return 0
+    # 4. A golden case's marks against its expectation.
+    return marks_against_expectation(compiler, root, rel)
+
+
+def has_marks(path):
+    """Whether the case claims a diagnostic with a `#~` or `#~v` mark. A mark
+    quoted in prose reads as one here, and costs only the marks' question being
+    asked of the suite, which reads marks exactly (`mark_readers.hero`)."""
+    try:
+        with open(path, "rb") as handle:
+            text = handle.read().decode("utf-8", errors="replace")
+    except OSError:
+        return False
+    return re.search(r"#~v? [a-z_]+", text) is not None
+
+
+def marks_against_expectation(compiler, root, rel):
+    """The `annotations` suite narrowed to the case `rel` names (defect 286).
+
+    Exit 2 with the suite's own words where it fails THIS case; no opinion
+    where the case is not a golden one, has no `.hero` or no `.expected` yet,
+    is not one the suite selects, or the run could not be made."""
+    if not rel.startswith("tests/golden/"):
+        return 0
+    stem = rel[: rel.rfind(".")]
+    if not (os.path.isfile(os.path.join(root, stem + ".hero")) and os.path.isfile(os.path.join(root, stem + ".expected"))):
+        return 0
+    name = os.path.basename(stem)
+    judged = run(compiler, ["run", "tests/harness/main.hero", "--", "./heroes", "annotations", name], root)
+    if judged is None or judged.returncode != 1:
+        return 0
+    said = judged.stdout.decode("utf-8", errors="replace").split("\n")
+    failed = "FAIL annotations/" + name
+    if failed not in said:
+        return 0
+    at = said.index(failed)
+    rows = [failed]
+    for row in said[at + 1:]:
+        if row.startswith("FAIL ") or row.startswith("harness:") or not row.startswith("  "):
+            break
+        rows.append(row)
+    print(
+        stem + "'s marks and its expectation disagree; the `annotations` suite says:\n"
+        + "\n".join(rows) + "\n"
+        "Change whichever side is wrong; if the `.expected` is being rewritten "
+        "next, this clears when it is.\n" + LAYER,
+        file=sys.stderr,
+    )
+    return 2
 
 
 if __name__ == "__main__":

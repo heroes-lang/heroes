@@ -1,0 +1,88 @@
+# Fixed defect 351, 2026-10-05 (lane b12-parse12; found by lane b11-parse
+# beside defect 268). Symptom: two lines in a row that each hold a `-` alone,
+# under an integer arm and deeper, were told three messages, where defect
+# 268 tells one such line once: each line's `continuation_outside_brackets`,
+# and `unexpected_block` at the first line's margin, a block deeper than
+# anything that opens one. Cause: an operator alone above an arm is refused
+# with its deletion, its line and margin taken out of the stream
+# (`sign_above.hero`), but only where the next line with words holds the
+# arm's `=>`, so the first of two was joined to the second, its margin a
+# block. Repair: past lines that each hold an operator alone, the arm below
+# is the arm they all stand above (`next_line.arrow_below`, `an_arm_below`);
+# each is refused once, the first ones' deletion certain, since no pattern
+# is signed twice, and the last's the two readings of defect 268, each
+# line's margin taken back. The shapes: deeper and deeper, at one depth,
+# three, the second shallower, a `+`, statement arms, and one line as before;
+# each line's annotation is a comment on the line above it, since a comment
+# after the last operator would take its join away.
+
+function deeper_and_deeper(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+            -  #~v continuation_outside_brackets
+                -
+        1 => "one"
+        _ => "many"
+    return k
+
+function at_one_depth(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+            -  #~v continuation_outside_brackets
+            -
+        1 => "one"
+        _ => "many"
+    return k
+
+function three(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+            -  #~v continuation_outside_brackets
+                -  #~v continuation_outside_brackets
+                    -
+        1 => "one"
+        _ => "many"
+    return k
+
+function the_second_shallower(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+                -  #~v continuation_outside_brackets
+            -
+        1 => "one"
+        _ => "many"
+    return k
+
+function plus_signs(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+            +  #~v continuation_outside_brackets
+                +
+        1 => "one"
+        _ => "many"
+    return k
+
+function statement_arms(n: i64)
+    match n
+        2 => print(2)  #~v continuation_outside_brackets
+            -  #~v continuation_outside_brackets
+                -
+        1 => print(1)
+        _ => print(0)
+
+function one_line(n: i64) -> str
+    k = match n
+        2 => "two"  #~v continuation_outside_brackets
+            -
+        1 => "one"
+        _ => "many"
+    return k
+
+function main()
+    print(deeper_and_deeper(1) + at_one_depth(2) + three(3) + the_second_shallower(4) + plus_signs(5) + one_line(6))
+    statement_arms(1)
+
+# Moved 2026-10-05 with defect 352's repair (lane b12-parse12):
+# `the_second_shallower`'s first `-`, written two levels in and laid out one,
+# is told the second at a shallower margin, as written
+# (`open_line.written_margin`).

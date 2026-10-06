@@ -218,7 +218,7 @@ function junk(@c: cursor.Cursor, text: str, missing: Missing)
         return
     cursor.say(
         @c,
-        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + swap_reading.found(c, text) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: cursor.current_span(c))
+        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + brace_habit.found_run(c, text: text, found: swap_reading.found(c, text)) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: brace_habit.stray_run(c, text, at: c.pos))
     )
 
 # Whether a body stands below the line under the cursor: where dropping the

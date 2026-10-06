@@ -55,6 +55,8 @@ use line_above
 use backslash
 use join_fix
 use sign_above
+use alone_lines
+use word_place
 
 ## At the line end
 
@@ -108,7 +110,7 @@ function flush(@l: state.LexState)
 function goes_on_at_head(text: str, at: i64) -> i64
     first = punctuation.punct_at(text, at: at)
 
-    if !can_only_go_on(first.kind)
+    if !token.can_only_go_on(first.kind)
         return -1
 
     # `-1` and `-fee` against their operand begin a value of their own (panel
@@ -117,33 +119,35 @@ function goes_on_at_head(text: str, at: i64) -> i64
     if first.kind == .minus && (!set_apart(text, at: at + 1) || next_line.holds_an_arrow(text, from: at))
         return -1
 
-    # Nor does an operator alone on its line, a comment at most after it,
-    # whose next line with words holds an arm's `=>`: its line end is refused
-    # alone (`sign_above`), a `-` there since defect 126 and any other since
-    # defect 165, which went on with an arm above and was refused twice.
-    if next_line.arrow_below(text, from: at + first.width)
+    # Nor do operators alone on their line, a comment at most after them,
+    # whose next line with words holds an arm's `=>`: its end is refused alone
+    # (`sign_above`), a `-` there since defect 126, any other since defect
+    # 165, which went on with an arm above, and `- -` since defect 369.
+    if next_line.arrow_below(text, from: next_line.past_operators(text, at: at))
         return -1
     return at
 
-# A token no statement begins with, which at the head of a line can only go
-# on with the line above: a binary operator (spec § 7), the `?` that
-# propagates and the `::` that names a field. ENUMERATED, never a catch-all:
-# a new kind is a compile error here until somebody decides it, which is
-# `layout.is_line_ender`'s own discipline. `-` answers true, and the caller
-# asks panel 180's question of it.
-function can_only_go_on(kind: token.TokenKind) -> bool
-    return match kind
-        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                    => true
-        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent => true
-        .question | .colon_colon                                                         => true
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit               => false
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if      => false
-        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue               => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use          => false
-        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot | .hole     => false
-        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace        => false
-        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof     => false
-        .error                                                                           => false
+# The margin the statement that ends with the token at `at` was written at,
+# its first line's, where the layout's level `margin` is the one it capped a
+# jump at, or read four columns short of five (defect 352): the next line is
+# told where it stands against what the author wrote. A margin that holds a
+# tab, or a line under braces or an indentation habit, which keep their own
+# count, is `margin`.
+function written_margin(l: state.LexState, text: str, at: i64, margin: i64) -> i64
+    i: i64 @ at
+    first: i64 @ at
+
+    while i >= 0 && !token.is_line_end(l.tokens[i].kind)
+        if l.tokens[i].kind != .comment
+            first @ i
+        i @ i - 1
+
+    begins = l.tokens[first].span.start
+    start = word_place.line_start(text, at: begins)
+
+    if l.braced.len() > 0 || l.run[0].kind != .none || !sign_above.spaces_alone(text, from: start, to: begins)
+        return margin
+    return begins - start
 
 # A `-` set apart from its operand, by a space, a comment or a line end.
 function set_apart(text: str, at: i64) -> bool
@@ -235,32 +239,33 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     # written one line down.
     split = fresh || binding || line_above.ends_with_a_separator(l.tokens, at: at, spaces: spaces, margin: margin) || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
 
-    if split && left.kind != .fat_arrow
+    if split && left.kind != .fat_arrow && !alone_lines.alone(l, text, at: at, spaces: spaces)
         ended(@l)
         plant(@l)
         return false
 
     # Read apart, the line ends here (`LexState.apart`); read as bodies, a line
     # below at this margin is read one level deeper.
-    if l.apart
+    if l.apart && !alone_lines.alone(l, text, at: at, spaces: spaces)
         plant(@l)
         l.deeper @ l.bodies && spaces == margin
         return false
     where: str @ "at the same margin, where a new statement begins"
+    written = written_margin(l, text, at: at, margin: margin)
 
-    if spaces > margin
+    if spaces > written
         where @ "one level deeper, where a block would begin"
-    else if spaces < margin
+    else if spaces < written
         where @ "at a shallower margin, where the block above ends"
     message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
 
-    # An operator alone above an arm: its deletion, and its join only where
-    # the join writes a pattern (`sign_above`), which says the refusal; left
-    # out with its margin, the arm's line is laid out on its own, as the
-    # deletion writes it, and is no break (`refused`, with no `\` asking).
-    if can_only_go_on(left.kind) && l.backslash < 0 && line_above.opens_a_line(l.tokens, at: at) && next_line.holds_an_arrow(text, from: l.pos)
-        return sign_above.offer(@l, d, text, at: at)
+    # Operators alone on their line, a stray above an arm or a statement, or
+    # an expression broken around them over its operand (`alone_lines`):
+    # told once, the stream as the deletion or the join writes it, and no
+    # break where the line is left out (`refused`, with no `\` asking).
+    if alone_lines.alone(l, text, at: at, spaces: spaces)
+        return alone_lines.offer(@l, d, text, at: at, spaces: spaces)
 
     # Joining the lines is the program the parser reads. It is `certain` where
     # the next line cannot stand alone, so the join is the only repair; a
@@ -286,7 +291,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         else if left.kind == .minus && line_above.opens_a_line(l.tokens, at: at) && text[l.pos] != '>'
             glue @ ""
         d.fixes @ d.fixes.push(join_fix.made(glue: glue, from: left.span.end, to: l.pos, certainty: certainty))
-    refused(@l, d, head: l.backslash >= 0 && !can_only_go_on(left.kind) && goes_on_at_head(text, at: l.pos) >= 0)
+    refused(@l, d, head: l.backslash >= 0 && !token.can_only_go_on(left.kind) && goes_on_at_head(text, at: l.pos) >= 0)
     return true
 
 # The line above could end, and this one begins with a token that can only
@@ -340,15 +345,3 @@ function refused(@l: state.LexState, d: diag.Diagnostic, head: bool)
 # it, so its statement's joins cannot repair it alone (defect 129).
 function ended(@l: state.LexState)
     state.push_break(@l.breaks, diagnostic: -1, after: l.tokens.len(), head: false)
-
-test "a token that can only go on is a binary operator, the propagating `?` or `::`"
-    assert can_only_go_on(.plus)
-    assert can_only_go_on(.and_and)
-    assert can_only_go_on(.question)
-    assert can_only_go_on(.colon_colon)
-    assert !can_only_go_on(.lparen)
-    assert !can_only_go_on(.lbracket)
-    assert !can_only_go_on(.dot)
-    assert !can_only_go_on(.hole)
-    assert !can_only_go_on(.arrow)
-    assert !can_only_go_on(.bang)

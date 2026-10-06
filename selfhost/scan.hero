@@ -30,6 +30,9 @@ use open_line
 use backslash
 use brace_layout
 use closers
+use loop_headers
+use arrow_inside
+use bracket_reach
 use lost_quote
 use comment_habit
 use word_place
@@ -229,8 +232,8 @@ function ident(@l: state.LexState, text: str)
     entry = foreign_at.foreign_word_at(text, span)
 
     # A foreign word a lost quote left outside every string is that quote's
-    # (`lost_quote.hero`): no report and no swap.
-    if !entry.is_err() && lost_quote.lost_in(text, at: start)
+    # (`lost_quote.hero`): no report and no swap. One in a hole is code.
+    if !entry.is_err() && l.holes.len() == 0 && lost_quote.lost_in(text, at: start)
         state.error_token_at(@l, start)
         return
 
@@ -276,21 +279,21 @@ function punct(@l: state.LexState, text: str)
 
     # A character a lost quote left outside every string, a `\` or a `§`
     # its string held, is that quote's, which the literal its line ends in
-    # reports (`lost_quote.hero`).
-    if lost_quote.lost_in(text, at: start)
+    # reports (`lost_quote.hero`). One in a hole is code, the literal's own
+    # closing quote after it on the line no lost one (defect 312).
+    if l.holes.len() == 0 && lost_quote.lost_in(text, at: start)
         state.error_token_at(@l, start)
+        return
+
+    # One of C's `for (i = 0; i < n; i++)`, or of the header written bare, is
+    # that header's, which the parser tells once (defects 194 and 301).
+    if ch == ";" && loop_headers.header_semicolon(@l, text, at: start)
         return
 
     # C's `;` that ends its line outside brackets is a habit told once a run,
     # its deletion certain (`separator_runs`, defect 178).
     if ch == ";" && l.open_brackets.len() == 0 && separator_runs.ends_its_line(text, at: l.pos)
         separator_runs.semicolon(@l.diagnostics, text, at: span)
-        state.error_token_at(@l, start)
-        return
-
-    # One inside C's `for (i = 0; i < n; i++)` is that header's, which the
-    # parser tells once at its `(` (`closers.in_a_for_header`, defect 194).
-    if ch == ";" && closers.in_a_for_header(l)
         state.error_token_at(@l, start)
         return
 
@@ -307,8 +310,9 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
     l.pos @ start + width
 
     # A `{` that ends its head's line is read as the line's end, a `}` that
-    # closes it as nothing where its line ends (`brace_layout.hero`, ruling 1).
-    if kind == .lbrace && brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: start)
+    # closes it as nothing where its line ends (`brace_layout.hero`, ruling 1);
+    # and one that ends C's `for` header, whose `)` was left out (defect 302).
+    if kind == .lbrace && (bracket_reach.ended_by_a_brace(@l, text, at: start) || brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: start))
         brace_layout.opened(@l)
         state.emit_open_body(@l, start)
         return
@@ -326,13 +330,11 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
             state.emit_close_body(@l, start)
         return
 
-    # A closer closes the opener of its own kind where one is open below
-    # another kind's, which is then named never closed (`closers.hero`); a
-    # closer of the innermost's own kind, every one of a program that
-    # compiles, asks nothing more.
-    if (kind == .rparen || kind == .rbracket || kind == .rbrace) && l.open_brackets.len() > 0
-        if text[l.open_brackets[l.open_brackets.len() - 1].start] != closers.opener_of(kind)
-            closers.close_to_its_kind(@l, text, kind, start: start)
+    # What the token owes the brackets open: a closer of another kind than
+    # the innermost closes its own (`closers.before`), and a function type's
+    # `->` the `(` whose `)` was left out before it (`arrow_inside`).
+    closers.before(@l, text, kind, start: start)
+    arrow_inside.close(@l, text, kind, start: start)
     state.emit(@l, kind, start)
 
 # A line that ends with a value owes its terminator until the next line with

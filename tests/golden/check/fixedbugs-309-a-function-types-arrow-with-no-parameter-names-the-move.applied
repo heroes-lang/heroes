@@ -17,13 +17,13 @@ function repro(g: (function( -> i64)))  #~ expected_function_type_params_close
 function bare(g: (function( -> i64)))  #~ expected_function_type_params_close expected_type
     print(1)
 
-function outer_open(g: (function( -> i64))  #~ unclosed_bracket expected_function_type_params_close
+function outer_open(g: (function( -> i64))  #~ expected_function_type_params_close
     print(1)
 
 function no_result(g: (function( -> )))  #~ expected_function_type_params_close expected_type
     print(1)
 
-function nothing_closed(g: (function( -> i64  #~ unclosed_bracket unclosed_bracket unclosed_bracket
+function nothing_closed(g: (function( -> i64  #~ expected_function_type_params_close unclosed_bracket unclosed_bracket
     print(1)
 
 function generic<A>(g: (function( -> A)))  #~ expected_function_type_params_close
@@ -47,3 +47,11 @@ function in_place(g: (function() -> i64))
 
 function main()
     print(1)
+
+# Moved 2026-10-05 with defect 300's repair (lane b12-parse12): a `)` left
+# out before the `->`, rather than written past the result, is written there
+# by the lexer, zero wide, and told once, *its `)` is left out there*
+# (`arrow_inside.hero`): `outer_open` is that one message, the `)` past the
+# result being the outer `(`'s; and `nothing_closed`, which the header above
+# tells by the lexer's `unclosed_bracket` alone, now tells where the
+# parameters' `)` goes, beside the two openers it never closes.

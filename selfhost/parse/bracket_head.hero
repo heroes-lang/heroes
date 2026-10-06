@@ -1,0 +1,119 @@
+# A `match` or an `if` that stands inside brackets (design.md §4.7, §4.17;
+# defect 269, 2026-10-05). A head's arms or body go on the lines below it,
+# one level deeper, and inside a bracket the lexer lays out no line, so no
+# `match` and no `if` stands in one in a program that compiles (panel 180's
+# reading: they never stand in brackets). `print(match t` over `.a => 1)` was
+# told its arms missing at the `.`, a margin named to an author who wrote one,
+# and the call then read the arm as an argument and refused its `=>`.
+#
+# A leaf of the expression knot: it reads the cursor, the pairing and the
+# reach of an opener never closed, and `parse/opening`'s words for what a
+# head owes, and nothing that reads the grammar.
+#
+# | entry | called by |
+# |---|---|
+# | `in_brackets` | `grammar_expr.match_expr`, `grammar_expr.if_expr` |
+# | `enclosing_openers`, `holds`, `openers_around` | `parse/list_line`, `parse/map_line`, `grammar_expr.call_args` |
+
+use token
+use cursor
+use text_lines
+use pairing
+use parse/opening
+use parse/unclosed
+
+# A head inside brackets, `print(match t` over its arms or `f(if c` over its
+# body (defect 269): what it owes goes on the lines below it, one level
+# deeper, which no line inside a bracket is, so it is told once, at its word,
+# as what it owes named missing, with the opener that holds it, where it was
+# told as a margin to an author who wrote one and the bracket read the arms
+# as more of its items; and the cursor is passed to that opener's closer,
+# which the bracket's reader takes. True where it was told.
+function in_brackets(@c: cursor.Cursor, text: str, head: opening.Mark, missing: opening.Missing) -> bool
+    open = enclosing(c, at: head.pos)
+
+    if open < 0
+        return false
+    word = c.tokens[head.pos].span
+    cursor.error(
+        @c,
+        code: missing.code,
+        message: missing.owner + " cannot stand inside brackets: its " + missing.members + " on the lines below it, one level deeper, and no line inside a bracket is: the `" + cursor.slice_of(text, c.tokens[open].span) + "` that holds it stands " + text_lines.place_above(text, at: c.tokens[open].span.start, from: word.start) + " — give its value a name on a line of its own above, and write the name here",
+        span: word
+    )
+    pair = pairing.paired_closer(c, text, open: open)
+
+    while !cursor.at(c, .eof) && (pair >= 0 && c.pos < pair || pair < 0 && unclosed.in_reach(c, open: open))
+        _ = cursor.bump(@c)
+
+    return true
+
+# The opener the token `at` stands inside on its line, or -1.
+function enclosing(c: cursor.Cursor, at: i64) -> i64
+    around = enclosing_openers(c, at: at)
+
+    if around.len() == 0
+        return -1
+    return around[0]
+
+# The openers the one at `open` stands in on its line, which close with it
+# where an item ends at a binding below (defects 307, 304 and 310): their
+# names, "the `(` and the `[`", empty where there are none, and the closers
+# all of them owe, its own `own` first, "])".
+record Around
+    names: str
+    closers: str
+
+function openers_around(c: cursor.Cursor, text: str, open: i64, own: str) -> Around
+    names: [str] @ []
+    closers: [str] @ [own]
+
+    # One the lexer named never closed has its own report, and is no edit here.
+    for at in enclosing_openers(c, at: open)
+        written = cursor.slice_of(text, c.tokens[at].span)
+
+        if pairing.paired_closer(c, text, open: at) >= 0
+            names @ names.push("the `" + written + "`")
+            closers @ closers.push(closer_of(written))
+
+    return Around(names: names.join(" and "), closers: closers.join(""))
+
+# The closer of the opener written `opener`.
+function closer_of(opener: str) -> str
+    if opener == "("
+        return ")"
+
+    if opener == "["
+        return "]"
+    return "}"
+
+# Whether the opener at `open` is one the token `at` stands inside on its
+# line (`enclosing_openers`): a bracket around an item that ended at a
+# binding, which the item's report named with its own (defect 307).
+function holds(c: cursor.Cursor, open: i64, at: i64) -> bool
+    for around in enclosing_openers(c, at: at)
+        if around == open
+            return true
+
+    return false
+
+# The openers the token `at` stands inside on its line, the innermost first:
+# the line walked back by depth to its start. A list ended at a binding below
+# names them with its own, which close where it does (defect 307).
+function enclosing_openers(c: cursor.Cursor, at: i64) -> [i64]
+    out: [i64] @ []
+    depth: i64 @ 0
+    i: i64 @ at - 1
+
+    while i >= 0 && !token.is_line_end(c.tokens[i].kind)
+        k = c.tokens[i].kind
+
+        if token.is_closer(k)
+            depth @ depth + 1
+        else if (k == .lparen || k == .lbracket || k == .lbrace) && depth == 0
+            out @ out.push(i)
+        else if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth - 1
+        i @ i - 1
+
+    return out

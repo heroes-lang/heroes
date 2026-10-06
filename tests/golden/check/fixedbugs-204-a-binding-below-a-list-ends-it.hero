@@ -48,13 +48,13 @@ function a_brace_for_the_closer()
 function two_lists()
     x = [[1, 2
     print(x)
-    y = 3 ))  #~ expected_separator expected_separator expected_end_of_line
+    y = 3 ))  #~ expected_separator expected_end_of_line
     print(y)
 
 function in_a_call()
     k = f([1, 2
     print(k)
-    y = 3 ))  #~ expected_separator expected_args_close
+    y = 3 ))  #~ expected_separator expected_end_of_line
     print(y)
 
 function the_bracket_written()
@@ -68,3 +68,14 @@ function main()
     x = [1, 2
     print(x)
     y = 3
+
+# Moved 2026-10-05 with defect 306's repair (lane b12-parse12): `two_lists`'
+# two closers are one run of strays past the binding, told at once, `))`,
+# where the first was told and the second only once it went.
+
+# Moved 2026-10-05 with defect 307's repair (lane b12-parse12): the list that
+# ends at the binding names the openers it stands in on its line with its own
+# `[`, which close where it does, so `two_lists` is told once, `]]`, where the
+# outer `[` was told again at the `y`, and `in_a_call` names the call's `(`
+# with it, `])`, the binding line then read as the statement it is, its two
+# closers a run of strays, where the call was told owed its `)` at the `y`.
