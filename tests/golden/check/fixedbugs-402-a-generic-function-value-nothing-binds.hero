@@ -1,0 +1,102 @@
+# Fixed defect 402, 2026-10-06 (lane b13-gen402; found by lane b13-unit beside
+# defect 398). Symptom: `function ident<A>(x: A) -> A` and `_ = ident` in `main`
+# was `check` 0 and then `run` 2, *internal error: monomorphisation produced an
+# ill-formed program*. Cause: a generic function's name used as a value took
+# its signature, type parameters and all, wherever it stood, and nothing bound
+# them. Repair: spec § 9, a type parameter takes its type from the arguments,
+# else from the type the context asks for. A value has no arguments, so where
+# its position asks for a type the value is the instance that type names (the
+# `run/` case of this defect), and where it asks for none the name is refused,
+# `cannot_infer`, naming every type parameter left unbound and the two ways to
+# bind one (`check/function_value.hero`). A context the value cannot be is the
+# ordinary `type_mismatch`, showing the instance where the context binds every
+# letter, as a call shows its substituted result, and the generic signature
+# with its own letters where it does not.
+# The shapes: discarded, bound unannotated, printed, handed to a generic
+# callee (panel 105's flat rule: nothing is bound through another generic's
+# parameter), first in an array literal, compared, a letter in the result
+# alone, two letters, nothing binding it inside a generic function, a context
+# of another shape, one that binds one letter of two, one that binds the only
+# letter and disagrees with the result, and one whose two `i64` positions name
+# nothing, where the instance names them `x` and `y` as `first` does.
+
+function ident<A>(x: A) -> A
+    return x
+
+function twice(x: i64) -> i64
+    return x * 2
+
+function nothing<A>(why: str) -> A?
+    return fail(code: "none", msg: why)
+
+function first<A, B>(x: A, y: B) -> A
+    kept: [B] = [y]
+    assert kept.len() == 1
+    return x
+
+function pick<A, B>(x: A) -> B?
+    kept: [A] = [x]
+    return fail(code: "none", msg: kept.len().to_str())
+
+function discarded()
+    _ = ident  #~ cannot_infer
+
+function bound_unannotated()
+    f = ident  #~ cannot_infer
+    print(f(1))
+
+function printed()
+    print(ident)  #~ cannot_infer
+
+function through_a_generic_callee()
+    xs: [i64] = [1, 2, 3]
+    ys = xs.map(ident)  #~ cannot_infer
+    print(ys.len())
+
+function first_in_an_array()
+    fs = [ident, twice]  #~ cannot_infer
+    print(fs.len())
+
+function compared()
+    print(ident == twice)  #~ cannot_infer
+
+function a_letter_in_the_result_alone()
+    _ = nothing  #~ cannot_infer
+
+function two_letters()
+    _ = first  #~ cannot_infer
+
+function inside_a_generic<B>(x: B) -> B
+    _ = ident  #~ cannot_infer
+    return x
+
+function a_context_of_another_shape()
+    n: i64 = ident  #~ type_mismatch
+    print(n)
+
+function a_context_that_binds_one_letter_of_two()
+    f: (function(i64) -> i64) = pick  #~ type_mismatch
+    print(f(1))
+
+function a_context_that_disagrees_with_the_result()
+    f: (function(i64) -> str) = ident  #~ type_mismatch
+    print(f(1))
+
+function a_context_that_names_no_parameter()
+    f: (function(i64, i64) -> i64) = first  #~ needs_parameter_names type_mismatch
+    print(f(1, 2))
+
+function main()
+    discarded()
+    bound_unannotated()
+    printed()
+    through_a_generic_callee()
+    first_in_an_array()
+    compared()
+    a_letter_in_the_result_alone()
+    two_letters()
+    print(inside_a_generic(1))
+    a_context_of_another_shape()
+    a_context_that_binds_one_letter_of_two()
+    a_context_that_disagrees_with_the_result()
+    a_context_that_names_no_parameter()

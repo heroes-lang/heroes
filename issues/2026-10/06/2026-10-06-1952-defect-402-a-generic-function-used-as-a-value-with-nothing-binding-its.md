@@ -3,7 +3,7 @@ kind: defect
 area: ir
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 6a181ef0116be0f13406a8a336f6cdc726b053fb
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-unit, 2026-10-06 (its report, *found beside*), beside defect 398; reproduced by the coordinator.
 
     **Class: blocking**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told; `check` accepts what the build cannot make. Into batch 13.
+
+    Repaired at `6a181ef0`, 2026-10-06 (lane b13-gen402), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Spec § 9 decided it: a type parameter takes its type from the arguments, else from the type the context asks for, so a generic function used as a value is the instance its position's type names, copied by monomorphisation and named by the emitter, and where the position asks for none the name is `cannot_infer`, every unbound letter named.

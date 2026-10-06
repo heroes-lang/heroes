@@ -28,22 +28,25 @@ use ir
 use ir/containers
 use source
 use ast
-use emit/mangle
+use check/state
+use emit/signature
 use emit/writer
 
 # The name a callee has when it stands as a value, or an error where the form
-# has none. `.builtin_fn` has no C designator at all — a built-in is a shape the
-# emitter expands, not a symbol — and `.indirect` is already a pointer in a
-# temporary, so its reference would be the address of an address, which
-# `ir.hero`'s own comment refuses.
-function designator(p: containers.Program, s: source.Source, decls: [ast.Decl], callee: ir.Callee) -> str?
+# has none. A Heroes function is named as a call names it, `instance` being
+# the type arguments it is used at, empty for an ordinary one: a GENERIC
+# function stands as a value at the instance its context named (defect 402),
+# and the template, deleted by monomorphisation, has no C. `.builtin_fn` has
+# no C designator at all — a built-in is a shape the emitter expands, not a
+# symbol — and `.indirect` is already a pointer in a temporary, so its
+# reference would be the address of an address, which `ir.hero`'s own comment
+# refuses.
+function designator(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, instance: [i64]) -> str?
     match callee
         .heroes_fn h =>
             for candidate in p.functions
-                if candidate.decl == h.decl
-                    return ok(
-                        mangle.function_name(module: source.component_at(s, candidate.span.start), name: candidate.name)
-                    )
+                if candidate.decl == h.decl && candidate.instance == instance
+                    return ok(signature.instance_name(candidate, c, s, decls))
 
             return fail(code: "no_function", msg: "a Heroes function the parse does not hold")
         .extern_fn e  => return ok(source.span_text(s, decls[e.decl].name))
@@ -53,15 +56,31 @@ function designator(p: containers.Program, s: source.Source, decls: [ast.Decl], 
 # The assignment itself. A target the caller does not have means the value is
 # discarded, and a function designator has no side effect, so nothing is
 # written — the same reasoning `emit/unread.hero` applies everywhere else.
-function emit(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl], callee: ir.Callee, target: str?)
+# `at` is the instruction's span end, where the type arguments are kept.
+function emit(@w: writer.Writer, p: containers.Program, f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, at: i64, target: str?)
     if target.is_err()
         return
-    named = designator(p, s, decls, callee: callee)
+    named = designator(p, c, s, decls, callee: callee, instance: instance_at(f, c, at: at))
 
     if named.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* a function value with no C name */")
         return
     writer.line(@w, text: "    " + target.must() + " = " + named.must() + ";")
+
+# The type arguments the instruction at span end `at` names, as a call's are
+# read: this copy's own table first, since monomorphisation substituted it per
+# copy, then what the checker recorded; empty where nothing generic is named.
+function instance_at(f: containers.Function, c: state.Checked, at: i64) -> [i64]
+    on_copy = f.call_instances[at]
+
+    if !on_copy.is_err()
+        return on_copy.must()
+    recorded = c.instantiations[at]
+
+    if !recorded.is_err()
+        return recorded.must()
+    none: [i64] = []
+    return none
 
 ## Tests
 
