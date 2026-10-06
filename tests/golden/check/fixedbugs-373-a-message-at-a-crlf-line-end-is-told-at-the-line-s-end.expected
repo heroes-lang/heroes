@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-373-a-message-at-a-crlf-line-end-is-told-at-the-line-s-end.hero:16:8: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
+tests/golden/check/fixedbugs-373-a-message-at-a-crlf-line-end-is-told-at-the-line-s-end.hero:17:36: error[expected_expression]: expected an expression, found end of line — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`

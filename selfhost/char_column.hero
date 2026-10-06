@@ -1,0 +1,46 @@
+# How a column is counted: the 1-based place of a byte on its line, in
+# characters, the unit every message, caret and `--json` place gives
+# (design.md §4.17; panel 193's R1). `source.line_col` asks it, and so does
+# every walk that places many offsets without asking `source` for each
+# (`cli/lex.hero`'s token dump).
+#
+# A line is split at `\n` alone, and every character before the offset on its
+# line counts, but one: **a carriage return that ends its line is the line's
+# end and takes no column** (defect 373, 2026-10-06). A `\r\n`'s line feed is
+# given the carriage return's column, where the line ends, as a file with
+# `\n` line ends gives its line feed. A message at a line's end said one
+# column more in a CRLF file, in 12 of 137 check cases converted (panel 193's
+# completeness critic), `expected_expression` at 13:37 where the same file
+# with `\n` said 13:36. A `\r` anywhere else is a character of its line.
+
+# The column of `offset` on the line that starts at `start`.
+function of(text: str, start: i64, offset: i64) -> i64
+    col: i64 @ text.slice(from: start, to: offset).chars().len() + 1
+
+    if ends_crlf(text: text, start: start, offset: offset)
+        col @ col - 1
+    return col
+
+# Whether `offset` is the line feed of a `\r\n` whose carriage return stands
+# on the line that starts at `start`: the one place a byte of the line takes
+# no column.
+function ends_crlf(text: str, start: i64, offset: i64) -> bool
+    return offset > start && offset < text.len() && text[offset] == '\n' && text[offset - 1] == '\r'
+
+## Tests
+
+# A line feed after a carriage return stands at the line's end, where a line
+# feed alone does; the carriage return there too; one inside a line is a
+# character; and the next line starts at column 1 either way.
+test "a CRLF line's end is told where a line feed's is (defect 373)"
+    lf = "x =\ny\n"
+    crlf = "x =\r\ny\r\n"
+    assert of(lf, start: 0, offset: 3) == 4
+    assert of(crlf, start: 0, offset: 3) == 4
+    assert of(crlf, start: 0, offset: 4) == 4
+    assert of(crlf, start: 5, offset: 5) == 1
+    assert of(crlf, start: 5, offset: 7) == 2
+    stray = "a\rb\n"
+    assert of(stray, start: 0, offset: 2) == 3
+    assert of(stray, start: 0, offset: 3) == 4
+    assert of("é€😀,", start: 0, offset: 9) == 4
