@@ -57,9 +57,33 @@ function pointees(p: containers.Program, c: state.Checked, s: source.Source, dec
                 out @ out.push(
                     pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: lent.must(), file: found.file, line: found.line, depth: false)
                 )
+
+            if read_only(c, slot)
+                out @ out.push(
+                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: pointee_ask.READ, file: found.file, line: found.line, depth: false)
+                )
             index @ index + 1
 
     return out
+
+# A `cstr` parameter that is not `@` (defect 411): whatever reaches it, a
+# `.cstr()` of a `str` the program may share, a lease or a literal, is bytes
+# the program does not hand C to write, so the header is asked whether its
+# pointer points at `const` ones. Asked of every such parameter, `lent` or
+# not, as the probe's own `const char *` always held them all. A `@cstr` is a
+# cell C writes a pointer into, and that question is the probe's.
+function read_only(c: state.Checked, slot: containers.Slot) -> bool
+    match slot.kind
+        .param_slot ps =>
+            if ps.mutable
+                return false
+        .local_slot | .synthetic_slot | .return_slot => return false
+
+    return match table.get(c.types, slot.ty)
+        .cstr                                                      => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => false
+        .array | .fixed | .map | .fallible | .function_ty | .named => false
+        .case_ty | .failure | .generic | .error                    => false
 
 # What a LEND asks of the header at this parameter (panel 194's R7, defects
 # 092 and 395), or absent. A parameter declared `counted_by` asks the UNIT
@@ -209,3 +233,21 @@ test "a lend asks the unit of a counted parameter, and a record lent whole with 
             named @ named.push(one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared)
 
     assert sort(named) == ["eat.h@0:handle", "fill.p@0:unit", "plain.buf@0:whole", "read_into.buf@0:unit"]
+
+# Defect 411: a `cstr` that is not `@` asks whether the header's pointer points
+# at `const` bytes, `lent` or not; a `@cstr` cell and a `ptr` ask nothing of it.
+test "a cstr parameter asks whether its pointer points at const bytes, and a cstr cell does not"
+    text = "extern \"s.h\"\n    function free(p: ptr)\n    function digest(md: cstr lent, n: u64, key: cstr) -> i32\n    function name_of(@out: cstr owned free, p: ptr) -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    named: [str] @ []
+
+    for one in pointees(low.program, c, s, parsed.decls)
+        if one.file == "t.hero"
+            named @ named.push(one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared)
+
+    assert sort(named) == ["digest.key@2:read", "digest.md@0:read"]
