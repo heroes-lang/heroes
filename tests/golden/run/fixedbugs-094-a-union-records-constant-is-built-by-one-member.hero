@@ -1,0 +1,17 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the shape beside the
+# defect's, a record over a C union whose value a brace list builds by its
+# first member or by a designated one. `internal error`, exit 2, before the
+# repair.
+
+extern "fixedbugs-094-values.h"
+    record Num
+        i: i32
+        f: f32
+    constant NUM_INIT: Num
+    constant NUM_F: Num
+
+function main()
+    n = NUM_INIT
+    print(n.i)
+    g = NUM_F
+    print(g.f)

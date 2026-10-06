@@ -1,0 +1,14 @@
+error[ffi_constant_type]: `PT_OTHER` is `struct other` in `fixedbugs-094-values.h`, not `Pt` — clang read the header and the types disagree
+  at tests/golden/unsupported/fixedbugs-094-an-expression-of-another-type-is-told-by-its-type.hero:10:5
+     |
+  10 |     constant PT_OTHER: Pt  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `PT_OTHER` as `Pt`
+
+error[ffi_constant_type]: `PT_SCALAR` is `int` in `fixedbugs-094-values.h`, not `Pt` — clang read the header and the types disagree
+  at tests/golden/unsupported/fixedbugs-094-an-expression-of-another-type-is-told-by-its-type.hero:11:5
+     |
+  11 |     constant PT_SCALAR: Pt  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern constant` takes its value and its type from the header (§4.19), and is declared at that type or one that holds every value of it — or the header named is not the one that spells `PT_SCALAR` as `Pt`
+  fix (guess): declare it `i32`

@@ -1,0 +1,17 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the empty shape beside the
+# defect's, `{}` and `{0}`, each a record of zeros. `internal error`, exit 2,
+# before the repair.
+
+extern "fixedbugs-094-values.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant PT_EMPTY: Pt
+    constant PT_ZERO: Pt
+
+function main()
+    e = PT_EMPTY
+    z = PT_ZERO
+    print(e.x + e.y)
+    print(z.x + z.y)
+    print(e == z)

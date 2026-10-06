@@ -1,0 +1,8 @@
+error[ffi_constant_type]: `NAMED_EXTRA` in `fixedbugs-094-outer.h` cannot be a `Named`: clang refuses the header's value at line 7 of `fixedbugs-094-inner.h`: excess elements in struct initializer
+  at tests/golden/unsupported/fixedbugs-094-a-value-spelled-in-a-header-the-group-includes.hero:9:5
+    |
+  9 |     constant NAMED_EXTRA: Named  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-094-inner.h` line 7 reads `#define NAMED_EXTRA {"seven", 7, 8}`
+  note: C only warns of this, and the accessor that builds a record's constant makes it an error: the value C would build is not the one the header wrote, or is of another kind than the field it fills
+  note: a group's `constant` of a record is the value C builds when it initialises the header's `struct named` with `NAMED_EXTRA` (§ 13): declare it at the record whose value the header spells, or name the header that spells `NAMED_EXTRA` for `struct named`
