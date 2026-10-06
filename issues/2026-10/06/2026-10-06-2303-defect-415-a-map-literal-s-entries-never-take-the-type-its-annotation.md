@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 23d00fbe0cc3777821c7850142cf805d48ce73b2
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-gen402, 2026-10-06 (its report, *found beside*), filed by the coordinator at 23:03; reproduced by the coordinator.
 
     **Class: blocking**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused, the spec's own rule (§ 2, line 43) not applied to a map's entries.
+
+    Repaired at `23d00fbe`, 2026-10-07 (lane b13-gen402): a map literal's keys and values checked against the key and value types its context asks for, as an array literal's elements are; cases `run/` and `check/fixedbugs-415-*`; gated by its cases and the compiler's own tests, the net owed at the batch's close; merged into round b13 by the coordinator, the card filled by the coordinator since the lane was told not to edit it.
