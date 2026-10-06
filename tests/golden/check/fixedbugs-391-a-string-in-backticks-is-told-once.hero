@@ -49,3 +49,11 @@ function main()
     brace_in_a_hole()
     stray_before_a_comment()
     closed_in_a_string()
+
+# Corrected 2026-10-06, defect 407 (lane b13-tmpl407, `03779be8`), written
+# below the program so no line above moves: the header's last sentence, *a
+# template written over two lines is not one stretch*, is false from that
+# repair on. A template written over lines is read to its close, as a block
+# comment is, and told once where its lines could not be code
+# (`backtick_strings.template_end`); see
+# `fixedbugs-407-a-template-over-lines-is-told-once`.
