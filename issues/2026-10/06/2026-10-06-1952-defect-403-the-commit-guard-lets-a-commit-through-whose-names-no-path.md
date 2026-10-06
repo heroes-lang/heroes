@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-unit, 2026-10-06 (its report, *for you to decide*); filed by the coordinator at 19:52.
 
     **Class: improvement**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): an instrument's reach, no program judged wrong; the same hazard the hard stop names, an index carrying more than the commit means, reached by an empty list. Outside the batch.
+
+    **Measured beside it, 2026-10-06 20:08**: a conflicted merge cannot take a pathspec (git refuses a partial commit during a merge), so the guard's rule leaves it one route, and that route is unguarded: `git commit` with no `--` was refused, and `GIT_EDITOR=true git merge --continue` concluded `fae893f7`, main into round b13, with no check at all. The coordinator compared the index to `git diff --name-only HEAD...main` first, 12 files and no seed, by hand; the guard asked for nothing. A repair covers both shapes: an empty `--` and a merge concluded by `merge --continue` or a bare commit while `MERGE_HEAD` exists, the latter judged by comparing the index to the merge's own files.
