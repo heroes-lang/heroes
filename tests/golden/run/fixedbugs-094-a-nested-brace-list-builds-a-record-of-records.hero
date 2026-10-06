@@ -1,0 +1,23 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the shape beside the
+# defect's, a record holding records, its value a brace list of brace lists
+# and one whose inner braces the header left out, which C reads as the same
+# fields in order. Both were `internal error`, exit 2, before the repair.
+
+extern "fixedbugs-094-values.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Line tag line
+        a: Pt
+        b: Pt
+    constant LINE_INIT: Line
+    constant LINE_FLAT: Line
+
+function main()
+    l = LINE_INIT
+    print(l.a.x)
+    print(l.a.y)
+    print(l.b.x)
+    print(l.b.y)
+    f = LINE_FLAT
+    print(f.a.x + f.b.y)

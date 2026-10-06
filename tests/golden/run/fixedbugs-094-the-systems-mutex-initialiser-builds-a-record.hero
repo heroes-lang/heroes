@@ -1,0 +1,20 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the issue's own second
+# witness, a system header's `PTHREAD_MUTEX_INITIALIZER`, which Darwin spells
+# `{_PTHREAD_MUTEX_SIG_init, {0}}` and glibc as nested braces. A binding of
+# `pthread_mutex_t` itself names fields that differ by platform, so the
+# system's initialiser stands inside a brace list of a header of the
+# program's own, and the mutex it builds is locked and unlocked by the system.
+# `internal error`, exit 2, before the repair.
+
+extern "fixedbugs-094-mutex.h"
+    record hero_mutex partial
+        id: i32
+    constant HERO_MUTEX_INIT: hero_mutex
+    function hero_lock(@h: hero_mutex) -> i32
+    function hero_unlock(@h: hero_mutex) -> i32
+
+function main()
+    m: hero_mutex @ HERO_MUTEX_INIT
+    print(m.id)
+    print(hero_lock(@m))
+    print(hero_unlock(@m))

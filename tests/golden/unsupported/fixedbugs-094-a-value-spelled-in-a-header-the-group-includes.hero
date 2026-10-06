@@ -1,0 +1,12 @@
+# fixedbugs, defect 094, lane ffi13, 2026-10-06: the value is spelled in a
+# header the group's header includes, and the author is told which, named as
+# its `#include` names it, the same on every platform.
+
+extern "fixedbugs-094-outer.h"
+    record Named tag named
+        name: cstr
+        n: i32
+    constant NAMED_EXTRA: Named  #~ ffi_constant_type
+
+function main()
+    print(NAMED_EXTRA.n)

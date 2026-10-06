@@ -23,6 +23,7 @@ use ir/containers
 use emit/ctype
 use emit/ffi_lookup
 use emit/ffi_declared
+use emit/ffi_value
 use emit/ffi_pointee
 use emit/ffi_call
 use emit/ffi_record
@@ -96,6 +97,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !wrong.is_err()
             found @ ffi_lookup.add_once(found, d: wrong.must())
+
+        # A record's constant asks its value's question in its accessor, at
+        # its own line, where no return assertion stands (defect 094).
+        value = ffi_value.refused_value(s, decls, tree, p, c, names, line: line, stderr: text, word_bits: word_bits)
+
+        if !value.is_err()
+            found @ ffi_lookup.add_once(found, d: value.must())
 
         # The two sizeless pointees BEFORE the width reader (defect 010): a
         # `void` pointee fails its guard as a marker line, and an incomplete

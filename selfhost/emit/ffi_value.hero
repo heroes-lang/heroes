@@ -1,0 +1,275 @@
+# What clang said of a record constant's value, told on the constant's own
+# line (design.md §4.19, §4.17; CLAUDE.md §7's named exception; defect 094,
+# 2026-10-06).
+#
+# `emit/record_constant.hero` builds a group record's constant by declaring
+# the header's struct with the header's value, at the constant's own line, so
+# a refusal of that value lands where the author declared it, as every probe's
+# does (`emit/ffi_site.hero`: the gate is the location, not the text). An
+# error clang writes there is one of two things:
+#
+# - **an expression of another type**, *initializing 'struct pt' with an
+#   expression of incompatible type 'struct other'*: the question the return
+#   assertion used to ask, and told as it was told, by `ffi_result.told`,
+#   naming the header's type (defect 186);
+# - **a value C will not build as the record**: a field the struct does not
+#   have, an element too many, a number C would change. Told as
+#   `ffi_constant_type` with clang's own words and the line of the header that
+#   spells the value, read from clang's *expanded from macro* note, without
+#   the path, which differs by platform.
+#
+# **Two things at that line are not the value's.** The accessor's signature
+# stands there too, so a record whose tag the header lacks makes clang say
+# *incomplete result type* and *variable has incomplete type* at it; the
+# record's own readers tell that mistake on the record (`emit/ffi_incomplete
+# .hero`), and this one steps aside. And a warning is never read: the accessor
+# makes every warning that says the value changed an error, and only an error
+# is the author's to answer.
+
+use ast
+use source
+use diag
+use check/state
+use check/render
+use ir/containers
+use emit/ctype
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/ffi_asked
+use emit/ffi_result
+use emit/clang_place
+use emit/clang_name
+use emit/record_constant
+use cli/header_refused
+use parse
+use resolve
+use checker
+use ir/lower
+
+constant ERROR: str
+    "error: "
+
+# What clang says of a struct it cannot lay out, at the signature and at the
+# declaration alike: the record's readers' mistake, not the value's.
+constant INCOMPLETE: str
+    "incomplete"
+
+# What clang puts in a message when a warning is an error, as the accessor's
+# own pragmas make the value's warnings (`record_constant.REFUSED`), and where
+# the flag it names begins.
+constant AS_ERROR: str
+    "[-Werror,"
+
+constant FLAG: str
+    " [-W"
+
+# Where a header spells the constant's value: the file as clang named it, the
+# line, and that line as clang quoted it, where it did.
+record Spelled
+    path: str
+    row: i64
+    quoted: str?
+
+# The diagnostic for an error clang wrote at a record constant's own line, or
+# none where the line is not that.
+function refused_value(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: containers.Program, c: state.Checked, names: ctype.Names, line: str, stderr: str, word_bits: i64) -> diag.Diagnostic?
+    at = ffi_site.location(s, line)?
+
+    # What follows the position, `: error: ...`, from the space after its colon.
+    said = ffi_lookup.trimmed(clang_place.without_return(at.rest))
+
+    if !clang_place.same_bytes(text: said, from: 0, part: ERROR)
+        return fail(code: "none", msg: "not an error")
+    message = said.slice(from: ERROR.len(), to: said.len())
+    found = ffi_site.extern_at_line(p, s, decls, file: at.file, at_line: at.line)?
+
+    if !record_constant.is_record_value(c, decls, found.f)
+        return fail(code: "none", msg: "not a record's constant")
+
+    if !clang_place.offset_of(text: message, needle: INCOMPLETE).is_err()
+        return fail(code: "none", msg: "the record's own readers tell an incomplete type")
+    known = ffi_lookup.declaration(s, decls, name: found.name)?
+    none: [str] = []
+    declared = render.render_ty(c.types, s, decls, found.f.result, none)
+    typed = ffi_asked.typed_in(message)
+
+    if !typed.is_err()
+        return ok(
+            ffi_result.told(s, decls, tree, name: found.name, declared: declared, found: known, typed: typed.must(), word_bits: word_bits)
+        )
+    struct_c = ctype.c_type(names, c: c, ty: found.f.result).must()
+    rows = ffi_lookup.lines(text: stderr)
+    return ok(
+        told(name: found.name, declared: declared, struct_c: struct_c, known: known, message: message, spelled: spelled_at(rows, line: line, name: found.name), program: s.files[at.file].name)
+    )
+
+# The diagnostic for a value C will not build as the record: clang's message,
+# the header's line that spells the value, and what a record's constant is.
+# `program` is the file that declares the constant.
+function told(name: str, declared: str, struct_c: str, known: ffi_lookup.Declared, message: str, spelled: Spelled?, program: str) -> diag.Diagnostic
+    where: str @ ""
+    file: str @ known.header
+
+    if !spelled.is_err()
+        file @ shown(path: spelled.must().path, header: known.header, program: program)
+        where @ " at line " + spelled.must().row.to_str()
+
+        if file != known.header
+            where @ where + " of `" + file + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_constant_type",
+        message: "`" + name + "` in `" + known.header + "` cannot be a `" + declared + "`: clang refuses the header's value" + where + ": " + without_flag(message),
+        span: known.span
+    )
+
+    if !spelled.is_err() && !spelled.must().quoted.is_err()
+        d.notes @ d.notes.push(
+            "`" + file + "` line " + spelled.must().row.to_str() + " reads `" + spelled.must().quoted.must() + "`"
+        )
+
+    if !clang_place.offset_of(text: message, needle: AS_ERROR).is_err()
+        d.notes @ d.notes.push(
+            "C only warns of this, and the accessor that builds a record's constant makes it an error: the value C would build is not the one the header wrote, or is of another kind than the field it fills"
+        )
+    d.notes @ d.notes.push(
+        "a group's `constant` of a record is the value C builds when it initialises the header's `" + struct_c + "` with `" + name + "` (§ 13): declare it at the record whose value the header spells, or name the header that spells `" + name + "` for `" + struct_c + "`"
+    )
+    return d
+
+# clang's message without the flag it names in brackets, `[-Werror,-Wx]`,
+# whose name differs between clang versions where the words do not (clang 21
+# split `-Wimplicit-enum-enum-cast` out of `-Wenum-conversion`).
+function without_flag(message: str) -> str
+    at = clang_place.offset_of(text: message, needle: FLAG)
+
+    if at.is_err() || message.len() == 0 || message[message.len() - 1] != ']'
+        return message
+    return message.slice(from: 0, to: at.must())
+
+# The header's line that spells `name`'s value: clang's note *expanded from
+# macro 'name'* under the error, among the notes before the next diagnostic
+# that is not one, and the line clang quoted under that note.
+function spelled_at(rows: [str], line: str, name: str) -> Spelled?
+    target = clang_place.without_return(line)
+    index: i64 @ 0
+
+    while index < rows.len() && clang_place.without_return(rows[index]) != target
+        index @ index + 1
+
+    index @ index + 1
+    wanted = "expanded from macro '" + name + "'"
+
+    while index < rows.len()
+        row = clang_place.without_return(rows[index])
+
+        if row.len() > 0 && row[0] != ' '
+            if header_refused.severity_of(row) != header_refused.NOTE
+                return fail(code: "none", msg: "no note names the macro")
+            place = clang_place.place(row)
+
+            if !place.is_err() && !clang_place.offset_of(text: row, needle: wanted).is_err()
+                return ok(
+                    Spelled(path: place.must().path, row: place.must().row, quoted: header_refused.excerpt(rows, after: index))
+                )
+        index @ index + 1
+
+    return fail(code: "none", msg: "no note names the macro")
+
+# The file a note names: as the group names it where it is the group's header;
+# from the program's own directory where it stands under it, which is where a
+# header beside the program is found and how its `#include` names it; and as
+# clang printed it otherwise. clang prints the directory the build searched,
+# `./` or the program's own, with this machine's separator, so a name read
+# from the program's directory is the same on every platform.
+function shown(path: str, header: str, program: str) -> str
+    for spelled in clang_place.spellings(path)
+        if clang_name.printed_as(printed: spelled, value: header)
+            return header
+
+    p = clang_place.slashed(path)
+    named = clang_place.slashed(program)
+    cut: i64 @ named.len()
+
+    while cut > 0 && named[cut - 1] != '/'
+        cut @ cut - 1
+
+    for directory in [named.slice(from: 0, to: cut), "./"]
+        if directory.len() > 0 && p.len() > directory.len() && clang_place.same_bytes(text: p, from: 0, part: directory)
+            return p.slice(from: directory.len(), to: p.len())
+
+    return path
+
+## Tests
+
+constant TEXT: str
+    "extern \"cinit.h\"\n    record Pt tag pt\n        x: i32\n        y: i32\n    constant PT_INIT: Pt\n    constant LIMIT: i64\n\nfunction main()\n    print(PT_INIT.y + LIMIT.to_i32().must())\n"
+
+function read_back(stderr: str) -> [diag.Diagnostic]
+    parsed = parse.parse(TEXT)
+    s = source.new_source(name: "t.hero", text: TEXT)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    found: [diag.Diagnostic] @ []
+
+    for line in ffi_lookup.lines(text: stderr)
+        d = refused_value(
+            s,
+            parsed.decls,
+            parsed.tree,
+            low.program,
+            c,
+            names,
+            line: line,
+            stderr: stderr,
+            word_bits: 64
+        )
+
+        if !d.is_err()
+            found @ found.push(d.must())
+
+    return found
+
+# clang's words as Apple clang 21 wrote them for the accessor of
+# `tests/golden/unsupported/fixedbugs-094-*`, and the Windows form of the
+# first, its separator a backslash and its lines ended `\r\n`.
+test "a value C will not build as the record is told on the constant's line, in clang's words (defect 094)"
+    mac = "t.hero:5:28: error: excess elements in struct initializer [-Werror,-Wexcess-initializers]\n    5 |     struct pt hero_constant_value = PT_INIT;\n      |                                     ^~~~~~~\n./cinit.h:2:23: note: expanded from macro 'PT_INIT'\n    2 | #define PT_INIT {1, 2, 3}\n      |                       ^\n1 error generated.\n"
+    said = read_back(mac)
+    assert said.len() == 1
+    assert said[0].code == "ffi_constant_type"
+    assert said[0].message == "`PT_INIT` in `cinit.h` cannot be a `Pt`: clang refuses the header's value at line 2: excess elements in struct initializer"
+    assert said[0].notes[0] == "`cinit.h` line 2 reads `#define PT_INIT {1, 2, 3}`"
+    assert said[0].notes.len() == 3
+    windows = "t.hero:5:28: error: excess elements in struct initializer [-Werror,-Wexcess-initializers]\r\n    5 |     struct pt hero_constant_value = PT_INIT;\r\n      |                                     ^~~~~~~\r\ntests\\cinit.h:2:23: note: expanded from macro 'PT_INIT'\r\n    2 | #define PT_INIT {1, 2, 3}\r\n"
+    assert read_back(windows)[0].message == said[0].message
+
+test "an expression of another type is told by the header's type, and the record's tag is not the value's (defect 094)"
+    other = "t.hero:5:15: error: initializing 'struct pt' with an expression of incompatible type 'struct other'\n"
+    said = read_back(other)
+    assert said.len() == 1
+    assert said[0].message == "`PT_INIT` is `struct other` in `cinit.h`, not `Pt` — clang read the header and the types disagree"
+
+    # The signature and the declaration at the same line, when the tag is
+    # wrong; a warning; and a number's constant's line: none is this reader's.
+    assert read_back("t.hero:5:11: error: incomplete result type 'struct pt' in function definition\n").len() == 0
+    assert read_back("t.hero:5:15: error: variable has incomplete type 'struct pt'\n").len() == 0
+    assert read_back("t.hero:5:28: warning: excess elements in struct initializer [-Wexcess-initializers]\n").len() == 0
+    assert read_back("t.hero:6:5: error: expected expression\n").len() == 0
+
+test "a header's file is named as the group names it, else from the program's directory on every platform (defect 094)"
+    assert shown(path: "./cinit.h", header: "cinit.h", program: "t.hero") == "cinit.h"
+    assert shown(path: "./inner.h", header: "outer.h", program: "t.hero") == "inner.h"
+    assert shown(path: "tests/golden/unsupported/inner.h", header: "outer.h", program: "tests/golden/unsupported/x.hero") == "inner.h"
+    assert shown(path: "tests/golden/unsupported\\inner.h", header: "outer.h", program: "tests/golden/unsupported/x.hero") == "inner.h"
+    assert shown(path: "/usr/include/pthread.h", header: "outer.h", program: "x.hero") == "/usr/include/pthread.h"
+
+# clang 22 names the enumeration's warning `-Wimplicit-enum-enum-cast`, and
+# clang 18, the floor, `-Wenum-conversion`: the words before them are the same.
+test "the flag clang names in brackets is left out of the message, its words kept (defect 094)"
+    words = "implicit conversion from enumeration type 'enum shade' to different enumeration type 'enum colour'"
+    assert without_flag(words + " [-Werror,-Wimplicit-enum-enum-cast]") == words
+    assert without_flag(words + " [-Werror,-Wenum-conversion]") == words
+    assert without_flag("field designator 'z' does not refer to any field in type 'struct pt'") == "field designator 'z' does not refer to any field in type 'struct pt'"

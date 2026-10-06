@@ -1,0 +1,8 @@
+error[ffi_constant_type]: `PT_EXCESS` in `fixedbugs-094-values.h` cannot be a `Pt`: clang refuses the header's value at line 15: excess elements in struct initializer
+  at tests/golden/unsupported/fixedbugs-094-an-element-too-many-is-told-on-the-constant.hero:11:5
+     |
+  11 |     constant PT_EXCESS: Pt  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-094-values.h` line 15 reads `#define PT_EXCESS {1, 2, 3}`
+  note: C only warns of this, and the accessor that builds a record's constant makes it an error: the value C would build is not the one the header wrote, or is of another kind than the field it fills
+  note: a group's `constant` of a record is the value C builds when it initialises the header's `struct pt` with `PT_EXCESS` (§ 13): declare it at the record whose value the header spells, or name the header that spells `PT_EXCESS` for `struct pt`
