@@ -276,7 +276,7 @@ function counted(words: [seed.Word]) -> [bool]
     out: [bool] @ []
 
     # A local before its push: a `&&` in the argument parts the push from its
-    # store, and the push copies the array (`ir/place_store.hero`'s pattern).
+    # store, and the push copied the array until defect 381 (`ir/place_store.hero`).
     for w in words
         kept = w.kind != .comment && w.kind != .comma && w.kind != .lparen && w.kind != .rparen
         out @ out.push(kept)

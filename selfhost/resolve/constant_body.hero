@@ -111,7 +111,7 @@ function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
 
         # Built before the push, so the push is one block's and grows the
         # list in place (`ir/place_store`): a `.must()` in its argument split
-        # the block, and each push copied every offender (defect 363).
+        # the block, and each push copied every offender (defect 363, until 381).
         offender = Offender(span: expr.span, what: what, holder: holder.must())
         found @ found.push(offender)
 
