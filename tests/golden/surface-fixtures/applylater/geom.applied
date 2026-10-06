@@ -1,0 +1,6 @@
+# Read by `main.hero` only once `check --apply`'s first round has written its
+# `use` line, so there this `fn` is told by `--apply` alone, as a certain fix
+# in another module that was not applied. `other.hero` reads it from the
+# start, which is where its mark is provoked.
+function area(side: i64) -> i64  #~ reserved_word
+    return side * side
