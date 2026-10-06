@@ -1,0 +1,23 @@
+# Today: the digest written through a ONE-byte cell lent to `unsigned char *md`; C writes 32. Canaries around it.
+extern "sha_shim.h" package "libcrypto"
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: u8, @c: Sha256Ctx) -> i32
+
+function digest_first() -> i64
+    before: i64 @ 1111111111
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    m: u8 @ 0
+    after: i64 @ 2222222222
+    _ = SHA256_Init(@c)
+    _ = SHA256_Update(@c, data: "abc".cstr(), len: 3)
+    _ = SHA256_Final(md: @m, @c)
+    print(before)
+    print(after)
+    print(c.num)
+    return m.to_i64().must()
+
+function main()
+    print(digest_first())
