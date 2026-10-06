@@ -17,4 +17,4 @@ github: none
 
     Repaired at `3bcd21fa` too, 2026-10-05: the escape's walk through every tool that re-prints a program (six surface rows over `escape251/main.hero`, and `heroes probe`'s default reading it).
 
-    Repaired at `4efb0a8e` too, 2026-10-05: the refusal's cost on the compiler's own check within panel 192's R11, +1.43% instructions retired against the base, measured.
+    Repaired at `4efb0a8e` too, 2026-10-06: the refusal's cost on the compiler's own check within panel 192's R11, +1.43% instructions retired against the base, measured.

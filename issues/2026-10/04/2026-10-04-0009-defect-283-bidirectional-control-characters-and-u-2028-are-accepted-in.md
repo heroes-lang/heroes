@@ -15,4 +15,4 @@ github: none
 
     Repaired at `36c69447`, 2026-10-05, on panel 192's R2 and R3 (the refusal of `462b4a2d` widened, the escape of `aa150c8c` its fix's spelling), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
 
-    Repaired at `4efb0a8e` too, 2026-10-05: the refusal's cost on the compiler's own check within panel 192's R11, +1.43% instructions retired against the base, measured.
+    Repaired at `4efb0a8e` too, 2026-10-06: the refusal's cost on the compiler's own check within panel 192's R11, +1.43% instructions retired against the base, measured.
