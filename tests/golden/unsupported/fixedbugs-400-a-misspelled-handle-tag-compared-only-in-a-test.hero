@@ -1,0 +1,19 @@
+# Defect 400, lane run400, 2026-10-06: the control beside the repair, a
+# handle's tag one letter from the header's struct, compared in a test and
+# nowhere else.
+#
+# What it pins: the repair stops `ffi_unknown_name` from calling a tag absent
+# where the header's answer to the record's own question holds it (`typedef
+# opaqe hero_q;`). Here clang answers *unknown type name*: the header holds
+# no `opaqe` by any kind, so the message that says so is true and stays, in
+# `build` and `run` as in `heroes test`, and the round learns nothing.
+
+extern "fixedbugs-400-tags-of-three-kinds.h"
+    record Opaque tag opaqe  #~ ffi_unknown_name
+
+function main()
+    print(1)
+
+test "a misspelled handle tag compared in a test alone"
+    h: Opaque = nullptr
+    assert h == nullptr

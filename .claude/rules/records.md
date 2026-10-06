@@ -408,7 +408,7 @@ diff --stat` against the base shows before the second lane opens. A widening
 found beside a defect is the lane's next item, not a filing on the trunk. The
 lane is the batch of `.claude/rules/verification.md` § The batch: repairs gated
 by their cases, the full net once at its close. Four more rules from the same
-reading:
+reading, and a fifth from 2026-10-06:
 
 - **`git merge --ff-only` first; a merge commit only when it refuses.** Three of
   the seven trunk merges of that night were made over a trunk that had not
@@ -424,6 +424,19 @@ reading:
 - **A lane is taken over only once its agent is known to have stopped**
   (journal 061: a lane resumed an hour before was still working when the
   coordinator committed, and the trunk's seed was not its source's fixpoint).
+- **A lane's committed repairs are merged into the round as soon as they are
+  committed, several lanes together when several are ready, never held until
+  the lane is idle** (author instruction 2026-10-06, meant as: *put this
+  merging of lanes down as an optimisation*, given on the question *can you
+  not merge more lanes?*). Merging a branch is not taking a lane over: the
+  merge takes the branch's commits and nothing in its worktree, so a lane whose
+  agent has moved to its next item gives the round its finished repairs at
+  once. Measured the night it was given: lane b13-zero401's two commits for
+  defect 401 merged at 23:27 while its worktree held 412's uncommitted repair,
+  and the round read records 28, layout 5, check 566 and full 16, all 0
+  failed, on 401 beside the other lanes' merges. The lane's next item begins by
+  merging the round into its own branch, so the two meet at a merge rather than
+  at the gate.
 
 **A lane's agent starts no paid run its brief does not name** (author
 instruction 2026-09-30): no `claude -p` session, API call or cloud run of its

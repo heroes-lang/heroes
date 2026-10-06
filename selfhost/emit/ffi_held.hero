@@ -1,0 +1,79 @@
+# Whether the header HOLDS a word clang called undeclared, by its answer to a
+# record's own question (design.md §4.19, §4.17; defect 400, 2026-10-06).
+#
+# A handle's tag is written bare, `opaque *`, and where a unit writes it only
+# inside an expression, the union question's `*(opaque * *)0`
+# (`emit/extern_union.hero`), clang says *use of undeclared identifier
+# 'opaque'* of a header that declares `struct opaque`, and never the *must use
+# 'struct' tag* it says where the word stands as a type. Until defect 400 that
+# line reached the reader of a name the header lacks, and the author was told
+# *`fwd.h` declares no `opaque`*, false. The refused round's question unit asks
+# each record's own tag as a type, `typedef opaque hero_q;`
+# (`emit/ffi_asked.hero`), and its answer, `tag`, `union`, `enum`, `type` or
+# `neither`, is what the readers ask here: the header holds the word wherever
+# the answer is anything but `neither`. Two readers ask it, which is why it is
+# a module of its own below both: `emit/ffi_declared.hero`'s `unknown_name`,
+# which then says nothing, and `emit/ffi_tag.hero`'s `tag_of_another_kind`,
+# which tells a union's or an enum's tag as the type's spelling would have.
+
+use ast
+use source
+use handles
+use parse
+
+# The answer for `name` where it is a HANDLE's tag the header holds, and absent
+# where the answer is `neither`, none was given, the word is no handle's tag,
+# or a group function or constant is spelled the same, since that one's
+# absence is then what clang's line may be about. A handle is asked because
+# its tag is the one word the emitter writes bare: a record with fields is
+# always `struct <tag>`, which clang never calls an identifier.
+function held_kind(s: source.Source, decls: [ast.Decl], name: str, types: {str: str}) -> str?
+    answer = types[name].default("neither")
+    tagged: bool @ false
+
+    if answer == "neither"
+        return fail(code: "none", msg: "the header holds no such word")
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if handles.is_handle(decl)
+                    if source.span_text(s, rec.tag.must()) == name
+                        tagged @ true
+            .function_decl fd =>
+                if !fd.value.header.is_err() && source.span_text(s, decl.name) == name
+                    return fail(code: "none", msg: "a group function has this name")
+            .constant_decl k =>
+                if !k.header.is_err() && source.span_text(s, decl.name) == name
+                    return fail(code: "none", msg: "a group constant has this name")
+            .variant_decl | .test_decl => continue
+
+    if !tagged
+        return fail(code: "none", msg: "no handle has this tag")
+    return ok(answer)
+
+## Tests
+
+test "a handle's tag is held where the header answered any kind, and only there (defect 400)"
+    text = "extern \"tags.h\"\n    record UH tag utag\n    record OH tag opaque\n    record GH tag shared\n    function shared() -> i32\n    record F tag fielded\n        n: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    types: {str: str} @ {}
+
+    for kind in ["tag", "union", "enum", "type"]
+        types["opaque"] @ kind
+        assert held_kind(s, parsed.decls, name: "opaque", types: types).must() == kind
+
+    # `neither`, or nothing answered: the header is not known to hold it.
+    types["utag"] @ "neither"
+    assert held_kind(s, parsed.decls, name: "utag", types: types).is_err()
+    assert held_kind(s, parsed.decls, name: "ghost", types: types).is_err()
+
+    # The Heroes name is not the tag, a record with fields is not a handle,
+    # and a group function of the same spelling keeps the question its own.
+    types["UH"] @ "tag"
+    types["fielded"] @ "tag"
+    types["shared"] @ "tag"
+    assert held_kind(s, parsed.decls, name: "UH", types: types).is_err()
+    assert held_kind(s, parsed.decls, name: "fielded", types: types).is_err()
+    assert held_kind(s, parsed.decls, name: "shared", types: types).is_err()

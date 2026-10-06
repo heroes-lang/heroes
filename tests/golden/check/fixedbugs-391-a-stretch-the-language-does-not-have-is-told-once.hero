@@ -1,0 +1,29 @@
+# Defect 391, 2026-10-06: a run of characters the syntax does not have was
+# told one message a character, `ключ` four and `$$$` three (`scan.punct`).
+# A run of refused characters that can be seen is told once now, in the
+# scanner's words, through the spaces between them, so a word in another
+# script and an unquoted phrase are one message each; one alone stays one
+# (`refused_stretch.hero`). The strings in backticks are the case beside
+# this one.
+
+function a_word()
+    x = ключ  #~ unexpected_character
+    print(x)
+
+function a_run()
+    x = 1 $$$ 2  #~ unexpected_character
+    print(x)
+
+function through_spaces()
+    x = привет мир  #~ unexpected_character
+    print(x)
+
+function alone()
+    x = 1 $ 2  #~ unexpected_character
+    print(x)
+
+function main()
+    a_word()
+    a_run()
+    through_spaces()
+    alone()

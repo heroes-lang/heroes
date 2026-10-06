@@ -188,17 +188,81 @@ function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: 
         span: span
     )
 
-# `i32[4]` in an ordinary record (panel 062).
-function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
+# A fixed array where no group's record holds it (panel 062): an ordinary
+# record's field, and since the sweep asks every written type, a binding, a
+# constant, a parameter, a result, or an element of another type. So the
+# message names no record, and the notes name each repair that works with
+# the condition that makes it the program's: where the array is meant for
+# a C struct's field, that struct declared in its header's group and the
+# elements written out where it is built; where nothing C's holds it, the
+# `[T]` it becomes and how one is built.
+#
+# **One note said *use `[T]` here* until defect 399** (2026-10-06, panel
+# 194's blind readers, task 1): a program whose `utsname` fields are
+# `i8[256]` and which built them from a binding of that type, written as the
+# note said, met five `type_mismatch`, a `[T]` never being a fixed array;
+# what works for it is the literal written in the construction. The first
+# reading is offered only where a group's field could hold the type, one
+# dimension of a number, `bool`, `ptr`, `cstr` or a record.
+#
+# **What it is told comes from the checker since defects 405 and 408**
+# (2026-10-06), `check/fixed_repairs.hero`, where it was read off the type's
+# spelling: `growable` is the `[T]` with every fixed array inside it growable
+# too, which `[i64[2]][3]`'s spelling could not give, and `into` is where the
+# program builds it into a group record's field, when it does. Then the
+# construction is named, with `rest: zero` where it can end it, and the `[T]`
+# is not offered: a C struct holds it, so `[T]` is the dead end defect 399 was.
+function fixed_outside_a_group(name: str, growable: str, fills: bool, into: BuiltInto?, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "fixed_outside_a_group",
-        message: "`" + name + "` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)",
+        message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)",
         span: span
     )
+    no_value = ": no binding, constant or parameter holds a fixed array, and `" + growable + "` is not one"
+
+    if !into.is_err()
+        d.notes @ d.notes.push(built_into(into.must()) + no_value)
+        return d
+
+    if fills
+        d.notes @ d.notes.push(
+            "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `" + name + "` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`" + no_value
+        )
     d.notes @ d.notes.push(
-        "use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+        "where no C struct holds it, use `" + growable + "`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
     )
     return d
+
+# Where a program builds a fixed array refused outside a group into fields
+# of a group's `record` (defect 408): the record, the fields one
+# construction fills from that value in the order written, the first one's
+# type, where the construction is, and whether it may end with `rest: zero`,
+# which a field called `rest` forbids (panel 194's R1).
+record BuiltInto
+    holder: str
+    fields: [str]
+    field_type: str
+    at: str
+    rests: bool
+
+# The construction named, and the two ways it is written without the value.
+function built_into(b: BuiltInto) -> str
+    names: [str] @ []
+
+    for f in b.fields
+        names @ names.push("`" + f + "`")
+
+    which: str @ "field " + names[0] + " is"
+    them: str @ names[0]
+
+    if names.len() > 1
+        which @ "fields " + names.slice(from: 0, to: names.len() - 1).join(", ") + " and " + names[names.len() - 1] + " are"
+        them @ "those fields"
+    head = "`" + b.holder + "`'s " + which + " built from it at " + b.at + ": write the elements there instead, `" + b.fields[0] + ": [a, b, …]`, as many as `" + b.field_type + "` says"
+
+    if !b.rests
+        return head + ", and `rest: zero` cannot end that construction, `" + b.holder + "` having a field called `rest`"
+    return head + ", or, where they are zero, leave " + them + " out and end that construction with `rest: zero`, which makes zero every field it does not name"
 
 # A map key that reaches a float (panel 069 R4). A compile error where
 # `==` on a float is not, because key-eligibility is a property of the
@@ -241,6 +305,37 @@ test "the fixed-array messages carry both numbers and the last index"
     assert short.message == "`f32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (§4.19)"
     past = fixed_index_out_of_range(shown: "i32[4]", length: 4, got_text: "7", span: span)
     assert past.message == "`i32[4]` holds 4, so its last index is 3, and this is 7 — a fixed array's length is part of its type, so the index is checked here rather than at run time"
+
+# Defect 399: the reader's binding of a C struct's `i8[256]` is told both
+# repairs, the one that works for it first, `rest: zero` in it since defect
+# 408; a type no group's field holds is told the `[T]` alone. Where the
+# program builds the value into a group record's fields, that construction
+# is named instead, and no `[T]` (defect 408). What the checker hands in is
+# `check/fixed_repairs.hero`'s, tested there on programs.
+test "a fixed array outside a group is told the repairs that work, each under its condition"
+    span = token.Span(start: 0, end: 4)
+    none: BuiltInto? = fail(code: "none", msg: "built into no group record")
+    bytes_field = fixed_outside_a_group(name: "i8[256]", growable: "[i8]", fills: true, into: none, span: span)
+    assert bytes_field.message == "`i8[256]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert bytes_field.notes.len() == 2
+    assert bytes_field.notes[0] == "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[256]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
+    assert bytes_field.notes[1] == "where no C struct holds it, use `[i8]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    nested = fixed_outside_a_group(name: "i64[2][3]", growable: "[[i64]]", fills: false, into: none, span: span)
+    assert nested.notes.len() == 1
+    assert nested.notes[0] == "where no C struct holds it, use `[[i64]]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    uts = BuiltInto(
+        holder: "Uts",
+        fields: ["sysname", "nodename", "machine"],
+        field_type: "i8[65]",
+        at: "line 9",
+        rests: true
+    )
+    built = fixed_outside_a_group(name: "i8[65]", growable: "[i8]", fills: true, into: ok(uts), span: span)
+    assert built.notes.len() == 1
+    assert built.notes[0] == "`Uts`'s fields `sysname`, `nodename` and `machine` are built from it at line 9: write the elements there instead, `sysname: [a, b, …]`, as many as `i8[65]` says, or, where they are zero, leave those fields out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
+    odd = BuiltInto(holder: "Odd", fields: ["head"], field_type: "i8[4]", at: "line 3", rests: false)
+    held = fixed_outside_a_group(name: "i8[4]", growable: "[i8]", fills: true, into: ok(odd), span: span)
+    assert held.notes[0] == "`Odd`'s field `head` is built from it at line 3: write the elements there instead, `head: [a, b, …]`, as many as `i8[4]` says, and `rest: zero` cannot end that construction, `Odd` having a field called `rest`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"
 
 test "a float key splits on is-a-float versus reaches-one"
     span = token.Span(start: 0, end: 4)

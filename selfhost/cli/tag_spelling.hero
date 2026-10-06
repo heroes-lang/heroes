@@ -1,0 +1,137 @@
+# How a handle's tag is spelled on a build's next round: what a refused round
+# teaches it (design.md §4.19; defects 037 and 400). Split out of
+# `cli/produce.hero`, whose rounds ask it, on 2026-10-06.
+#
+# A handle's tag is written as the author wrote it, and `struct` goes in front
+# of it only where clang asked for that in its own words, *must use 'struct'
+# tag to refer to type 'opaque'*, which it says only when the bare word names a
+# struct tag of exactly that spelling (`emit/ffi_tag.hero`'s `needs_struct`,
+# panel 152). **Clang says it only where the word stands as a TYPE.** Where a
+# unit spells the word only inside an expression, as the union question a
+# comparison asks, `*(opaque * *)0` (`emit/extern_union.hero`), clang says *use
+# of undeclared identifier 'opaque'*, and a round learns nothing from that.
+# Until defect 400 (2026-10-06) that was the program build of a handle compared
+# only in a test: the test build also declared `opaque * h` and learned, the
+# program build emits no test and learned nothing, and the author was told that
+# the header declares no `opaque`.
+#
+# So a refused round that learned nothing from its own words, in a program with
+# a handle's tag still spelled bare, asks the header about each record's OWN
+# declaration (`cli/header_ask.hero`): `typedef opaque hero_q;` stands the word
+# as a type, and clang's answer there is the same sentence, said of the
+# declaration rather than of wherever the unit happened to write the word. It
+# is learned as the round's own is, so nothing is guessed: a misspelled tag
+# answers *unknown type name* and a union's or an enum's tag answers in its own
+# kind, and neither is ever spelled `struct`. The answer is handed to the
+# refusal's reader (`cli/whose.hero`), which would otherwise ask it again.
+
+use ast
+use source
+use handles
+use emit/ffi_tag
+use emit/ffi_asked
+use cli/compile
+use cli/toolchain
+use cli/compiling
+use cli/header_ask
+use parse
+
+# What one refused round taught the next: how many tags it learned, and the
+# header's answer where it was asked. The answer is for the refusal's reader
+# only when nothing was learned, since it was asked under the tags the round
+# had, and those are the tags the refusal is read under exactly then.
+record Lesson
+    learned: i64
+    asked: ffi_asked.Asked?
+
+# Learn from the round's own refusals first, then, where they taught nothing
+# and a handle's tag is still bare, from the header's answer to each record's
+# own question. `struct_tags` only grows, by tags no round had, so the rounds
+# end: each one that runs again has learned a tag the program declares.
+function learn(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling, refusals: [str], @struct_tags: {str: bool}) -> Lesson
+    learned: i64 @ 0
+
+    for tag in ffi_tag.needs_struct(s, art.decls, stderr: refusals.join("\n"))
+        if struct_tags[tag].is_err()
+            struct_tags[tag] @ true
+            learned @ learned + 1
+
+    unasked: ffi_asked.Asked? = fail(code: "none", msg: "the header was not asked")
+    still = bare_tags(s, art.decls, struct_tags: struct_tags)
+
+    if learned > 0 || still.len() == 0
+        return Lesson(learned: learned, asked: unasked)
+    asked = header_ask.ask(t, art, s, under: under, struct_tags: struct_tags)
+
+    for tag in answered_struct(asked, tags: still)
+        struct_tags[tag] @ true
+        learned @ learned + 1
+
+    return Lesson(learned: learned, asked: ok(asked))
+
+# The tags of this program's own handles still written bare, each once and
+# sorted, so the question and what it teaches are functions of the program. A
+# library handle is never asked about (`emit/ffi_asked.hero`, which asks only
+# of the program's own files), and `void` is no tag at all.
+function bare_tags(s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> [str]
+    seen: {str: bool} @ {}
+    found: [str] @ []
+
+    for decl in decls
+        if !handles.is_handle(decl) || source.is_library(s, decl.name.start)
+            continue
+
+        match decl.kind
+            .record_decl rec =>
+                tag = source.span_text(s, rec.tag.must())
+
+                if tag != "void" && struct_tags[tag].is_err() && seen[tag].is_err()
+                    seen[tag] @ true
+                    found @ found.push(tag)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return sort(found)
+
+# Which of the bare tags the header answered as a struct's tag and nothing
+# else (`emit/ffi_asked.hero`'s `tag`): clang said *must use 'struct' tag* of
+# the word standing as a type, the sentence `needs_struct` reads in a round.
+function answered_struct(asked: ffi_asked.Asked, tags: [str]) -> [str]
+    out: [str] @ []
+
+    for tag in tags
+        if asked.types[tag].default("") == "tag"
+            out @ out.push(tag)
+
+    return out
+
+## Tests
+
+function asked_with(types: {str: str}) -> ffi_asked.Asked
+    none: {str: bool} = {}
+    untyped: {str: ffi_asked.Typed} = {}
+    return ffi_asked.Asked(said: "", values: none, macros: none, types: types, results: untyped)
+
+test "a bare tag the header answers as a struct's is learned, and no other answer is (defect 400)"
+    types: {str: str} @ {}
+    types["opaque"] @ "tag"
+    types["utag"] @ "union"
+    types["colour"] @ "enum"
+    types["opaqe"] @ "neither"
+    types["typed_t"] @ "type"
+    asked = asked_with(types)
+    assert answered_struct(asked, tags: ["colour", "opaqe", "opaque", "typed_t", "unasked", "utag"]) == ["opaque"]
+
+    # Asked only of what is still bare: a tag no list holds is never learned,
+    # whatever the header answered for it.
+    assert answered_struct(asked, tags: ["utag"]).len() == 0
+    assert answered_struct(asked, tags: []).len() == 0
+
+test "the bare tags are the program's own handles', once each, and `void` is none"
+    text = "extern \"h.h\"\n    record B tag opaque_b\n    record A tag opaque\n    record C tag opaque\n    record V tag void\n    record F tag fielded\n        n: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    none: {str: bool} = {}
+    assert bare_tags(s, parsed.decls, struct_tags: none) == ["opaque", "opaque_b"]
+    learned: {str: bool} @ {}
+    learned["opaque"] @ true
+    assert bare_tags(s, parsed.decls, struct_tags: learned) == ["opaque_b"]

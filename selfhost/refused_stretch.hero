@@ -1,0 +1,186 @@
+# A stretch of characters the language does not have, told once (defect
+# 391, design.md §4.17: one mistake, one message). The scanner refused each
+# such character alone (`scan.punct`), so a mistake written in another
+# language's terms cost a message a character: JavaScript's template
+# literal `` `ключ${x}` `` in a hole of an `f"…"` literal was seven, its two
+# backticks, its four Cyrillic letters and its `$`; `ключ` alone four; `$$$`
+# three. Here, at the first character the scanner refuses:
+#
+# - a backtick opening a string is told once, by name, with the literal that
+#   writes it (`backtick_told.hero`), where it closes on its line or on a
+#   line below (`backtick_strings.hero`, defect 407);
+# - a run of refused characters that can be seen, through the spaces
+#   between them, is told once in the scanner's own words, its first
+#   `SHOWN` characters quoted and the rest counted, so `refused_runs` counts
+#   it among a text's eight like any one of them;
+# - one character alone, and one that cannot be seen, stay the scanner's
+#   (`refused_runs` tells a run of an unseen one once, counting it).
+#
+# **The stretch is one `error` token**: the code between a template's
+# braces is not lexed, so its `}` closes no hole of an `f"…"` literal it
+# stands in, where it closed one and left a `lone_brace` behind. **A flood
+# stays bounded, as defect 282 bounded one**: `refused_runs` counts a
+# template among a text's eight told refusals as it counts a run, its guess
+# dropped with it past them, and a count past them is of the characters a
+# stretch holds.
+#
+# | entry | called by |
+# |---|---|
+# | `told` | `scan.punct` |
+
+use token
+use diag
+use state
+use bytes
+use shown_char
+use punctuation
+use escape_readings
+use backtick_strings
+use backtick_told
+
+# How the scanner's refusal of one character ends (`scan.punct`), which a
+# run's message keeps, so `refused_runs.gathered` counts it.
+constant SAID: str
+    " is not part of the language's syntax"
+
+# How many characters of a run its message quotes.
+constant SHOWN: i64
+    32
+
+# Whether a stretch begins at `at`, the character `scan.punct` has just
+# refused and told no one else about: told as one `error` token if so, the
+# cursor past it, past the lines a template spans included.
+function told(@l: state.LexState, text: str, at: i64) -> bool
+    hole = l.holes.len() > 0
+    close = backtick_strings.template_close(text, at: at, hole: hole)
+
+    if close > 0
+        state.error_token(@l, backtick_told.template(text, from: at, to: close))
+        l.pos @ close
+        return true
+    end = run_end(text, at: at, hole: hole)
+
+    if end < 0
+        return false
+    span = token.Span(start: at, end: end)
+    state.error_token(
+        @l,
+        diag.new_diagnostic(code: "unexpected_character", message: run_shown(text.slice(from: at, to: end)) + SAID, span: span)
+    )
+    l.pos @ end
+    return true
+
+# A run quoted, its first `SHOWN` characters and how many it holds where it
+# holds more.
+function run_shown(run: str) -> str
+    each = run.chars()
+
+    if each.len() <= SHOWN
+        return escape_readings.quoted(run)
+    return escape_readings.quoted(each.slice(from: 0, to: SHOWN).join("") + "…") + ", a run of " + each.len().to_str() + " characters,"
+
+# Past the last of a run of refused characters that can be seen, from `at`
+# through the spaces between them, where it holds more than one; -1 where
+# the one at `at` stands alone, `hole` saying whether in a hole of an
+# `f"…"` literal (`backtick_strings.template_close`). The one at `at` is
+# asked no template: `told` has asked it, and read over lines a template is
+# read for up to `READ` bytes from a backtick that opens none, which twice
+# would read twice.
+function run_end(text: str, at: i64, hole: bool) -> i64
+    if !seen(text, at: at)
+        return -1
+    end: i64 @ at + bytes.char_at(text, at).len()
+    many: bool @ false
+
+    while true
+        next: i64 @ end
+
+        while next < text.len() && text[next] == ' '
+            next @ next + 1
+
+        if next >= text.len() || !refused_and_seen(text, at: next, hole: hole)
+            break
+        end @ next + bytes.char_at(text, next).len()
+        many @ true
+
+    if !many
+        return -1
+    return end
+
+# Whether the scanner refuses the character at `at` as one with no reading
+# of its own, and a reader can see it (`seen`), and it is no backtick
+# opening a template.
+function refused_and_seen(text: str, at: i64, hole: bool) -> bool
+    return seen(text, at: at) && backtick_strings.template_close(text, at: at, hole: hole) < 0
+
+# Whether the character at `at` is none of the bytes `scan.line_body` hands
+# elsewhere (a space, a line's end, a comment, a quote, a digit, a letter,
+# `_`, a `\` or a `;`, each with its own habit), no punctuation of the
+# language, and no character `shown_char` writes by its code.
+function seen(text: str, at: i64) -> bool
+    b = text[at]
+
+    if b == ' ' || b == '\t' || b == '\n' || b == 13 || b == '#' || b == '"' || b == '\'' || b == '\\' || b == ';' || b == '_'
+        return false
+
+    if bytes.is_alnum(b) || punctuation.punct_at(text, at: at).width > 0
+        return false
+    return !shown_char.is_control(bytes.char_at(text, at))
+
+## Tests
+
+function lexed_one(text: str) -> state.LexState
+    l: state.LexState @ state.new_state()
+    l.pos @ 0
+    _ = told(@l, text, at: 0)
+    return l
+
+test "a template literal is one error token, the cursor past it"
+    l = lexed_one("`ключ${x}` + 1")
+    assert l.pos == 14
+    assert l.diagnostics.len() == 1
+    assert l.tokens.len() == 1
+    assert l.tokens[0].kind == .error
+    assert l.tokens[0].span == token.Span(start: 0, end: 14)
+
+    # A stray one is the scanner's alone.
+    for text in ["` x", "` # see `x`", "` \"a`b\""]
+        stray = lexed_one(text)
+        assert stray.diagnostics.len() == 0
+        assert stray.pos == 0
+
+    # Over lines, one token too, the cursor past them (defect 407), in a
+    # hole of an `f"…"` literal where no backtick follows it on its line.
+    over = lexed_one("`a\nb` + 1\n")
+    assert over.pos == 5
+    assert over.tokens.len() == 1
+
+    in_a_hole: state.LexState @ state.new_state()
+    in_a_hole.holes @ [0]
+    assert told(@in_a_hole, "`a\nb`}\"\n", at: 0)
+    assert in_a_hole.pos == 5
+    ticked: state.LexState @ state.new_state()
+    ticked.holes @ [0]
+    assert !told(@ticked, "`a\nb`}`\"\n", at: 0)
+    assert ticked.pos == 0
+
+test "a run of refused characters that can be seen is told once, through its spaces"
+    l = lexed_one("ключ слово = 1")
+    assert l.diagnostics.len() == 1
+    assert l.diagnostics[0].message == "`ключ слово`" + SAID
+    assert l.pos == "ключ слово".len()
+    assert lexed_one("$$$").diagnostics[0].message == "`$$$`" + SAID
+
+    # One alone, one before punctuation, and an unseen one stay the scanner's.
+    for text in ["$ x", "$+", "\u{1}\u{1}", "€\t€"]
+        assert lexed_one(text).diagnostics.len() == 0
+
+    # A backtick ends a run where it opens a template, and is in one where
+    # it opens none, two with nothing between among them.
+    assert run_end("$$`a`", at: 0, hole: false) == 2
+    assert lexed_one("$` x").diagnostics[0].message == "`` $` ``" + SAID
+    assert lexed_one("````").diagnostics[0].span == token.Span(start: 0, end: 4)
+
+test "a long run is quoted to its bound and counted"
+    assert run_shown("$$$") == "`$$$`"
+    assert run_shown("€".repeat(40)) == "`" + "€".repeat(32) + "…`, a run of 40 characters,"

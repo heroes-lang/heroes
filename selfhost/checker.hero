@@ -73,8 +73,9 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
 
     # Same reason, same table, and the same defect one milestone apart:
     # panel 062 wired its rule to one call site and three other positions
-    # shipped.
-    ffi_sweep.fixed_only_in_a_group(@c, a, s, decls)
+    # shipped. It reads the resolver's answers to name the construction a
+    # refused array is built into (defect 408).
+    ffi_sweep.fixed_only_in_a_group(@c, a, r, s, decls)
 
     # Each construction of a group's record ending with `rest: zero`, marked
     # (panel 194); a misuse of the words is the resolver's (defect 401).

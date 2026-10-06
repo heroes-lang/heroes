@@ -1,0 +1,62 @@
+# Defect 405, 2026-10-06 (lane b13-front, found beside defect 399; filed by
+# the coordinator). Symptom: `i64[2][3]` outside a group's record was told
+# `fixed_outside_a_group` twice at one column, for the outer type and again
+# for its inner `i64[2]`, and three times at three levels: one mistake, one
+# edit of one annotation, a message per level. Cause: the sweep
+# (`selfhost/check/ffi_sweep.hero`) asks every written type node, and a
+# nested fixed array's element is a node of its own. Repair: a fixed array
+# written inside another is told with it, once, at the outermost, whose
+# `[T]` is the whole type's (`check/fixed_repairs.hero`). One message per
+# line below, at every position the sweep reaches and at the ordinary
+# record's field `check/ffi.hero` tells, and through a growable array or a
+# map between the two levels. Two fixed arrays written apart in one type, a
+# map's key and its value, are two mistakes and two messages; a nested one
+# in a group's record is `ffi_field_type`'s, once, as it was; and one an
+# extern's parameter or constant declares is `ffi_type`'s alone, where the
+# inner array was told beside it.
+
+extern "cells.h"
+    record Cell
+        v: i32
+    record Grid
+        g: i32[2][3]  #~ ffi_field_type
+    function take(grid: i64[2][3]) -> i64  #~ ffi_type
+    constant LIMITS: i64[2][3]  #~ ffi_type
+
+record Plain
+    p: i64
+
+record Holder
+    nested: i64[2][3]  #~ fixed_outside_a_group
+    deep: i64[2][3][4]  #~ fixed_outside_a_group
+    plains: Plain[2][3]  #~ fixed_outside_a_group
+
+constant TABLE: i64[2][3]  #~ fixed_outside_a_group
+    [[1, 2], [3, 4], [5, 6]]
+
+function corner(grid: i64[2][3]) -> i64  #~ fixed_outside_a_group
+    return grid[0][0]
+
+function made() -> i64[2][3]  #~ fixed_outside_a_group
+    return [[1, 2], [3, 4], [5, 6]]
+
+function main()
+    x: i64[2][3] @ [[1, 2], [3, 4], [5, 6]]  #~ fixed_outside_a_group
+    cells: Cell[2][2] @ [[Cell(v: 1), Cell(v: 2)], [Cell(v: 3), Cell(v: 4)]]  #~ fixed_outside_a_group
+    rows: [i64[2][3]] @ []  #~ fixed_outside_a_group
+    by_name: {str: i64[2][3]} @ {}  #~ fixed_outside_a_group
+    maybe: i64[2][3]? = ok(x)  #~ fixed_outside_a_group
+    mixed: [i64[2]][3] @ [[[1, 2]], [[3, 4]], [[5, 6]]]  #~ fixed_outside_a_group
+    apart: {i64[2]: i64[3]} @ {}  #~ fixed_outside_a_group fixed_outside_a_group
+    print(
+        x[0][0],
+        cells[0][0].v,
+        len(rows),
+        len(by_name),
+        maybe.is_err(),
+        len(mixed[0]),
+        len(apart),
+        TABLE[0][0],
+        corner(x),
+        made()[2][1]
+    )

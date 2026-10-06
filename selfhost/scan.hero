@@ -39,6 +39,7 @@ use word_place
 use separator_runs
 use text_lines
 use comment_refusal
+use refused_stretch
 
 ## One line of words
 
@@ -271,6 +272,12 @@ function punct(@l: state.LexState, text: str)
     if ch == ";" && l.open_brackets.len() == 0 && separator_runs.ends_its_line(text, at: l.pos)
         separator_runs.semicolon(@l.diagnostics, text, at: span)
         state.error_token_at(@l, start)
+        return
+
+    # A stretch of them is one mistake, told once: a string in backticks,
+    # JavaScript's template literal among them, whole, and a run that can be
+    # seen, through its spaces (defect 391, `refused_stretch.hero`).
+    if refused_stretch.told(@l, text, at: start)
         return
 
     # Not "(ASCII-only)": that read as an encoding fault for `&`, which is

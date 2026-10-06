@@ -1,0 +1,11 @@
+# Defect 407, 2026-10-06: JavaScript's template literal written over lines
+# was told three to five times under `check --permissive` as under `check`,
+# the lexer reading it a line at a time; the control arm reads the same
+# lexer, and tells it once, as it tells one written on a line.
+
+function main()
+    x = 7
+    #~v unexpected_character
+    print(`v=${x}
+and more`)
+    print(`on one line`)  #~ unexpected_character

@@ -1,0 +1,146 @@
+# What a fixed array outside a group is told to become (design.md §4.17,
+# §4.19; panel 062; defects 399, 405 and 408): the one diagnostic, pushed for
+# the ordinary record's field by `check/ffi.hero` and for every other
+# position by `check/ffi_sweep.hero`, and the two facts its notes rest on,
+# each asked of the type in hand.
+#
+# - **The `[T]` it becomes**, with every fixed array inside it growable too.
+#   It was read off the type's spelling until defect 405, which tells a
+#   nested fixed array once, at its outermost: `[i64[2]][3]` spelled
+#   `[[i64[2]]]`, a type still refused, where the type gives `[[[i64]]]`.
+# - **Whether a group's field could hold it**: one dimension, of a number,
+#   `bool`, `ptr`, `cstr` or a record, which a C struct's array member is.
+#
+# Where the program builds the value into a group record's field is the
+# sweep's to find (defect 408), since it reads what the resolver said each
+# name is, and it is handed in as `into`.
+
+use token
+use ast
+use source
+use parse
+use resolve
+use check/table
+use check/state
+use check/lower
+use ffi_errors
+
+function told(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span, into: ffi_errors.BuiltInto?)
+    growable = growable_twin(@c, ty)
+    d = ffi_errors.fixed_outside_a_group(
+        name: state.show(c, s, decls, ty),
+        growable: state.show(c, s, decls, growable),
+        fills: fills_a_field(c, decls, ty),
+        into: into,
+        span: span
+    )
+    state.push_diagnostic(@c, d)
+
+# The type with every fixed array in it, at any depth, made the `[T]` of
+# what it holds. Interned, so the one renderer spells it; the program it is
+# asked for is refused, so nothing past the checker sees the new rows. Each
+# form is enumerated rather than caught with `_`, so a type form added later
+# is a compile error here instead of a fixed array left in the repair.
+function growable_twin(@c: state.Checker, ty: i64) -> i64
+    match table.get(c.out.types, ty)
+        .fixed x => return table.intern(@c.out.types, .array(element: growable_twin(@c, x.element)))
+        .array e => return table.intern(@c.out.types, .array(element: growable_twin(@c, e.element)))
+        .map m =>
+            key = growable_twin(@c, m.key)
+            value = growable_twin(@c, m.value)
+            return table.intern(@c.out.types, .map(key: key, value: value))
+        .fallible o => return table.intern(@c.out.types, .fallible(payload: growable_twin(@c, o.payload)))
+        .function_ty f =>
+            params: [i64] @ []
+
+            for p in table.params_of(c.out.types, f.params)
+                params @ params.push(growable_twin(@c, p))
+
+            result = growable_twin(@c, f.result)
+            labels = table.labels_of(c.out.types, f.labels)
+            return table.intern_function(@c.out.types, params: params, labels: labels, result: result)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .named => return ty
+        .case_ty | .failure | .generic | .error                            => return ty
+
+    return ty
+
+# Whether a group's field could be this type, so that the reading *meant for
+# a C struct's field* is offered: one dimension of what a C array member
+# holds. A record counts whether or not it is a group's, since the reader may
+# be about to move it into one; a variant never does.
+function fills_a_field(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
+    element: i64 @ -1
+
+    match table.get(c.out.types, ty)
+        .fixed x                                                           => element @ x.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => return false
+        .map | .fallible | .function_ty | .named | .case_ty | .failure     => return false
+        .generic | .error                                                  => return false
+
+    match table.get(c.out.types, element)
+        .int_ty | .float_ty | .bool | .ptr | .cstr => return true
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl                                                 => return true
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .str | .unit | .array | .fixed | .map | .fallible | .function_ty => return false
+        .case_ty | .failure | .generic | .error                          => return false
+
+    return false
+
+## Tests
+
+# A parameter written `spelled` beside a record `Plain`, its types lowered
+# as the checker's declaration pass leaves them, and the type it names.
+record Declared
+    c: state.Checker
+    ty: i64
+    s: source.Source
+    decls: [ast.Decl]
+
+function declared(spelled: str) -> Declared
+    text = "record Plain\n    p: i64\n\nfunction f(x: " + spelled + ")\n    return\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @ 0
+
+    while i < p.tree.types.len()
+        _ = lower.lower_ty(@c, p.tree, out, i)
+        i @ i + 1
+
+    node: i64 @ 0
+
+    match p.decls[1].kind
+        .function_decl f                                           => node @ f.value.params[0].ty
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
+    return Declared(c: c, ty: c.out.written_types[node].must(), s: s, decls: p.decls)
+
+function twin_of(spelled: str) -> str
+    d: Declared @ declared(spelled)
+    twin = growable_twin(@d.c, d.ty)
+    return state.show(d.c, d.s, d.decls, twin)
+
+function fills(spelled: str) -> bool
+    d = declared(spelled)
+    return fills_a_field(d.c, d.decls, d.ty)
+
+# Defect 405: the repair of a nested fixed array is the whole type's, at any
+# depth and through any form, where the spelling gave `[[i64[2]]]`.
+test "the growable twin makes every fixed array in a type growable"
+    assert twin_of("i64[2][3]") == "[[i64]]"
+    assert twin_of("u8[2][3][4]") == "[[[u8]]]"
+    assert twin_of("[i64[2]][3]") == "[[[i64]]]"
+    assert twin_of("{str: u8[4]}[2]") == "[{str: [u8]}]"
+    assert twin_of("(function(i8[2]) -> i64)[3]") == "[(function([i8]) -> i64)]"
+    assert twin_of("Plain[4]") == "[Plain]"
+
+    # One dimension of a number or a record is what a C array member is; a
+    # nested one, a `str` one and an array inside one are not.
+    assert fills("Plain[4]")
+    assert fills("u8[4]")
+    assert !fills("i64[2][3]")
+    assert !fills("[i64[2]][3]")
+    assert !fills("str[2]")
