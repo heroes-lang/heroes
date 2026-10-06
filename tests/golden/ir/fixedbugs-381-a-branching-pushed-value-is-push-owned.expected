@@ -206,7 +206,7 @@ function flags(n: i64) -> [bool]
         return $t20
 
 function kept_classic() -> [i64]
-    slots  out: [i64] · kept: [i64] · $f0: i64? · $own3: [i64] · $own4: i64? · $own5: [i64]
+    slots  out: [i64] · kept: [i64] · $f0: i64? · $own3: [i64] · $own4: [i64] · $own5: i64? · $own6: [i64]
     bb0  entry
         $t1: i64 = const 1
         $t2: [i64] = construct array($t1)
@@ -223,15 +223,19 @@ function kept_classic() -> [i64]
         store kept <- $t3
         decref $t23
         $t4: [i64] = load out
+        incref $t4
+        $t24: [i64] = load $own4
+        store $own4 <- $t4
+        decref $t24
         $t5: i64 = const 2
         $t6: i64? = call heroes half($t5)
-        $t24: i64? = load $own4
-        store $own4 <- $t6
-        decref $t24
-        $t25: i64? = load $f0
+        $t25: i64? = load $own5
+        store $own5 <- $t6
+        decref $t25
+        $t26: i64? = load $f0
         incref $t6
         store $f0 <- $t6
-        decref $t25
+        decref $t26
         $t7: i64? = load $f0
         $t8: i64 = tag $t7
         $t9: i64 = const 0
@@ -243,13 +247,13 @@ function kept_classic() -> [i64]
         $t15: i64 = call heroes bump(@out)
         $t16: i64 = add! $t14, $t15
         $t17: [i64] = call builtin push($t4, $t16)
-        $t26: [i64] = load $own5
-        store $own5 <- $t17
-        decref $t26
-        $t27: [i64] = load out
+        $t27: [i64] = load $own6
+        store $own6 <- $t17
+        decref $t27
+        $t28: [i64] = load out
         incref $t17
         store out <- $t17
-        decref $t27
+        decref $t28
         $t18: [i64] = load kept
         $t19: i64 = call builtin len($t18)
         call builtin print($t19) variadic
@@ -261,6 +265,7 @@ function kept_classic() -> [i64]
         decref_slot $own3
         decref_slot $own4
         decref_slot $own5
+        decref_slot $own6
         return $t20
     bb2  must: abort    preds bb0
         $t11: i64? = load $f0

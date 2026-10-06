@@ -60,6 +60,7 @@ use ir/mono
 use ir/verify
 use ir/place_store
 use ir/survival
+use ir/borrowed
 use ir/uses
 use ir/released
 
@@ -83,8 +84,10 @@ function run(@p: containers.Program, c: state.Checked)
 #
 # **Linear in a block, since defect 230 (2026-10-03).** Three costs made
 # this pass the square of a block's length, counted on one function of 800
-# strings: a walk to the block's end for every counted load (now
-# `survival.survivors`, two walks of the block for all its loads); a
+# strings: a walk to the block's end for every counted load (then
+# `survival.survivors`, two walks of the block for all its loads, and since
+# defect 387 `borrowed.lenders`, one reading of the function that asks it
+# across blocks and of the values borrowed from a load too); a
 # `.must()` inside a pushed instruction, which opens a block between the
 # load of `out` and its store, so the place store could not grow `out` in
 # place and the push copied it whole, and its result's synthetic slot made
@@ -97,16 +100,20 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
     worked: containers.Function @ f
     slots: [containers.Slot] @ worked.slots
     values: [i64] @ worked.values
+
+    # The counted loads whose header a read after a write to their root
+    # borrows: in their block or a later one, of the load or of a field, an
+    # element, a payload or a cast of it (defect 387). Asked of the function
+    # as lowering left it, before this walk adds anything; it answers every
+    # load `survival.survivors` answers in its block, which this walk asked
+    # until then, and the test below holds it to that.
+    lent = borrowed.lenders(f, counted: c.counted)
     index: i64 @ 0
 
     while index < worked.blocks.len()
         out: [ir.Inst] @ []
-        pos: i64 @ 0
-        lives = survival.survivors(worked, worked.blocks[index].insts, worked.blocks[index].term).survive
 
         for inst in worked.blocks[index].insts
-            here = pos
-            pos @ pos + 1
             handled: bool @ false
 
             match inst.op
@@ -116,7 +123,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                 # reference of its own, and rule 5's slot machinery does
                 # the rest.
                 .load =>
-                    if !inst.dest.is_err() && layout.is_refcounted(c, inst.ty) && lives[here]
+                    if !inst.dest.is_err() && layout.is_refcounted(c, inst.ty) && lent[inst.dest.must()].default(false)
                         moved = inst.dest.must()
                         out @ out.push(inst)
                         out @ out.push(
@@ -455,6 +462,8 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
         place_store.run(@p)
 
         for f in p.functions
+            lent = borrowed.lenders(f, counted: c.counted)
+
             for blk in f.blocks
                 got = survival.survivors(f, blk.insts, blk.term)
                 operands: i64 @ uses.terminator_operands(blk.term).len()
@@ -475,6 +484,12 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
                                     value: one.dest.must()
                                 )
                                 assert got.survive[at] == old
+
+                                # The ownership pass asks the lenders alone
+                                # since defect 387: every counted survivor
+                                # of the block is one of them.
+                                if old && layout.is_refcounted(c, one.ty)
+                                    assert lent[one.dest.must()].default(false)
 
                                 if old
                                     survived @ survived + 1
@@ -525,6 +540,7 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
 
                         assert now == before
                         assert survival.writes_root(f, one.op, root: root) == before
+                        assert survival.writes_nothing(f, one.op) == (written.roots.len() == 0 && !written.every)
                         root @ root + 1
 
                     at @ at + 1
