@@ -1,0 +1,11 @@
+# fixedbugs, defect 360, lane cli12, 2026-10-05.
+#
+# Beside `fixedbugs-360-a-header-that-does-not-compile`: a header's own
+# `#error` is clang's refusal of it as much as a syntax error is, and is told
+# in the header's words.
+
+extern "fixedbugs-360-directive.h"  #~ ffi_header_refused
+    function five() -> i64
+
+function main()
+    print(five())

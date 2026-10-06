@@ -118,7 +118,63 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     probe.run_table(scratch: scratch, compiler: compiler, probes: verb_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: bracket_probes(), r: @r)
     in_place_cases(scratch: scratch, compiler: compiler, r: @r)
+    apply_json_in_place(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
+
+# **`check --apply --in-place --json` writes the file and prints the applied
+# document all the same** (defect 371, panel 193's R4): its `output` is the
+# bytes the file holds afterwards, its `read` the bytes it held before. A
+# row's file is the tree's own, so the case makes its file in scratch.
+function apply_json_in_place(scratch: str, compiler: str, @r: report.Report)
+    label = "surface/check --apply --in-place --json writes the file and prints the document of what it wrote (defect 371)"
+    dir = scratch + "/apply-json-in-place"
+    path = dir + "/p.hero"
+    wanted = "function main()\n    print(1)\n"
+    _ = shell.remove_tree(dir).is_err()
+
+    if shell.mkdir_all(dir).is_err() || write_file(path: path, text: "fn main()\n    print(1)\n").is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot make " + path)
+        return
+    ran = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", path, "--apply", "--in-place", "--json"]
+    )
+    after = read_file(path).default("(unreadable)")
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.refusal(ran))
+        return
+    said = ran.must()
+    wrong: [str] @ []
+
+    if said.code != 0
+        wrong @ wrong.push("  exit " + said.code.to_str() + ", where a write that succeeded is 0")
+
+    if after != wanted
+        wrong @ wrong.push(report.mismatch(what: path + " afterwards", expected: wanted, actual: after))
+
+    # The bytes it read, `fn main()` and its line, by `shasum -a 256`, and
+    # what it wrote as the document's last field.
+    read_said = strings.contains(
+        text: said.out,
+        needle: "\"sha256\": \"6fab839e9cdb8212aa763381eda66978867e6461bfca0005002f5874b0d6b02a\""
+    )
+    wrote_said = strings.ends_with(
+        text: said.out,
+        suffix: "  \"rounds\": 1,\n  \"not_applied\": [],\n  \"output\": \"function main()\\n    print(1)\\n\"\n}\n"
+    )
+
+    if !strings.contains(text: said.out, needle: "\"kind\": \"applied\"") || !read_said || !wrote_said
+        wrong @ wrong.push("  stdout is not the applied document of what it read and wrote:\n" + said.out)
+
+    if !strings.contains(text: said.err, needle: "rewrote " + path)
+        wrong @ wrong.push("  stderr does not say the file was rewritten: " + said.err)
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
 
 # **A VERB THAT REWRITES THE AUTHOR'S FILE AND CANNOT FINISH LEAVES IT BYTE
 # FOR BYTE** (defect 136), which no row can hold: the case makes its own file
@@ -284,7 +340,11 @@ function render_probes() -> [probe.Probe]
     return [
         row(name: "the rich form carries the line, the caret and the other end", argv: "check tests/golden/check/certain-labels.hero", code: 1).err_starts("error[wrong_label]: `Point` has nothing called `z` at this position — it is `y`\n").err_has("  at tests/golden/check/certain-labels.hero:10:21").err_has("    a = Point(x: 1, z: 2)").err_has("^").err_has("fix (certain): write `y:`")
         row(name: "brief is one line per diagnostic", argv: "check tests/golden/check/certain-labels.hero --brief", code: 1).err_lines(3).err_starts("tests/golden/check/certain-labels.hero:")
-        row(name: "json is versioned and carries the fixes", argv: "check tests/golden/check/certain-labels.hero --json", code: 1).err_starts("{\n  \"schema\": 1,\n").err_has("\"code\": \"wrong_label\"").err_has("\"certainty\": \"certain\"").err_has("\"line\": 10")
+        row(name: "json is versioned and carries the fixes", argv: "check tests/golden/check/certain-labels.hero --json", code: 1).err_starts("{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n").err_has("\"code\": \"wrong_label\"").err_has("\"certainty\": \"certain\"").err_has("\n      \"line\": 10,\n")
+        row(name: "a certain fix says where it applies and what --apply's first round does with it: the enclosing one withheld, the one inside written (defect 271, panel 193)", argv: "check tests/golden/surface-fixtures/certain137-inside/main.hero --json", code: 1).err_has("\"line\": 25, \"col\": 11, \"end_line\": 25, \"end_col\": 34, \"byte_start\": 726, \"byte_end\": 749, \"text\": \"total(xs.must()).must()\", \"first_round\": \"withheld\"").err_has("\"byte_start\": 732, \"byte_end\": 741, \"text\": \"xs.must()\", \"first_round\": \"written\"").err_has("\"byte_start\": 825, \"byte_end\": 825, \"text\": \"\", \"first_round\": \"written\"")
+        row(name: "a certain fix in another module is placed in that module's own bytes, and --apply's first round leaves it elsewhere", argv: "check tests/golden/surface-fixtures/applyx/main.hero --json", code: 1).err_has("\"file\": \"tests/golden/surface-fixtures/applyx/geom.hero\", \"line\": 3, \"col\": 12, \"end_line\": 3, \"end_col\": 17, \"byte_start\": 66, \"byte_end\": 71, \"text\": \"total\", \"first_round\": \"elsewhere\"")
+        row(name: "a guess carries its place, for showing, and no first round", argv: "check tests/golden/check/a-label-that-names-another-position-of-a-function-value.hero --json", code: 1).err_has("\"certainty\": \"guess\", \"file\": \"tests/golden/check/a-label-that-names-another-position-of-a-function-value.hero\", \"line\": 19, \"col\": 16, \"end_line\": 19, \"end_col\": 18, \"byte_start\": 994, \"byte_end\": 996, \"text\": \"to\"}")
+        row(name: "a message at a CRLF line's end is placed in JSON where the LF file places it (defect 373)", argv: "check tests/golden/check/fixedbugs-373-a-message-at-a-crlf-line-end-is-told-at-the-line-s-end.hero --json", code: 1).err_has("\"line\": 16,\n      \"col\": 8,\n").err_has("\"line\": 17,\n      \"col\": 36,\n")
         row(name: "the thesis rules fire by default", argv: "check tests/golden/check/unused-bindings.hero --brief", code: 1).err_lines(4)
         row(name: "permissive drops them", argv: "check tests/golden/check/unused-bindings.hero --brief --permissive", code: 0).err_empty()
         row(name: "permissive keeps the rest", argv: "check tests/golden/check/unknown-type.hero --brief --permissive", code: 1)
@@ -370,7 +430,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "a file with no main is the author's error under build", argv: "build tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
         row(name: "a file with no main is the author's error under run", argv: "run tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
         row(name: "a file of zero bytes checks clean, where every verb that reads a program panicked on it (defect 109)", argv: "check tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_empty().err_empty()
-        row(name: "and its diagnostics as JSON are none", argv: "check tests/golden/surface-fixtures/empty109/empty.hero --json", code: 0).out_empty().err_empty()
+        row(name: "and its answer as JSON is a document holding no diagnostic, naming the file it read and its SHA-256 (panel 193's R3 and R5)", argv: "check tests/golden/surface-fixtures/empty109/empty.hero --json", code: 0).out_empty().err_is("{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"tests/golden/surface-fixtures/empty109/empty.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"diagnostics\": []\n}\n")
         row(name: "its token stream is the end of the file, at line 1 and column 1", argv: "lex tests/golden/surface-fixtures/empty109/empty.hero --dump-tokens", code: 0).out_is("1:1 eof\n").err_empty()
         row(name: "and the same stream as JSON", argv: "lex tests/golden/surface-fixtures/empty109/empty.hero --dump-tokens --json", code: 0).out_is("[\n  {\"kind\": \"eof\", \"text\": \"\", \"line\": 1, \"col\": 1}\n]\n").err_empty()
         row(name: "its syntax tree is a file with nothing in it", argv: "parse tests/golden/surface-fixtures/empty109/empty.hero --dump-ast", code: 0).out_is("file tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
@@ -427,6 +487,15 @@ function verb_probes() -> [probe.Probe]
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
         row(name: "apply does not panic on a fix in another module", argv: "check tests/golden/surface-fixtures/applyx/main.hero --apply", code: 0).err_has("another module").err_has("geom.hero").out_has("use geom").out_lacks("function area")
+        row(name: "and a fix in a module only a later round reads is told as not applied, where it was dropped in silence", argv: "check tests/golden/surface-fixtures/applylater/main.hero --apply", code: 0).out_has("\nuse geom  #~ use_wants_a_name\n").err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applylater/geom.hero:5\n")
+        row(name: "apply with json answers a document holding the program, where it printed the program as text (defect 371, panel 193's R4)", argv: "check tests/golden/surface-fixtures/apply141/remark.hero --apply --json", code: 0).out_is("{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"tests/golden/surface-fixtures/apply141/remark.hero\", \"sha256\": \"0c06c20685b97e8740711b3cc71f77122a89c4666f635f31ec6b2c370a9598c4\"}\n  ],\n  \"file\": \"tests/golden/surface-fixtures/apply141/remark.hero\",\n  \"rounds\": 0,\n  \"not_applied\": [],\n  \"output\": \"# Defect 141 (2026-10-01): a file of one remark, its line open.\"\n}\n").err_empty()
+        row(name: "and where rounds wrote, it says how many, the program inside being what apply writes, one round a link of the chain", argv: "check tests/golden/surface-fixtures/certain137-inside/main.hero --apply --json", code: 0).out_has("  \"rounds\": 3,\n  \"not_applied\": [],\n").out_has("\\n    print(total(xs))  #~ bad_operand bad_operand\\n    k: Counter @ Counter(n: 0)\\n    print(bump(@k))  #~ bad_operand marker_mismatch\\n    print(copy_text(from: \\\"a\\\", to: \\\"b\\\"))  #~ bad_operand needs_label\\n    print(one())  #~ bad_operand\\n").err_empty()
+        row(name: "and it names the fixes left in another module, and every file a round read with its SHA-256", argv: "check tests/golden/surface-fixtures/applylater/main.hero --apply --json", code: 0).out_has("    {\"file\": \"tests/golden/surface-fixtures/applylater/geom.hero\", \"sha256\": \"af570637f6e94adf8a9112328c04bee10739be27944ea9ea3d852108a923a537\"}\n  ],\n  \"file\": \"tests/golden/surface-fixtures/applylater/main.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"tests/golden/surface-fixtures/applylater/geom.hero:5\"],\n").err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applylater/geom.hero:5\n")
+        row(name: "and with --in-place on a file no fix applies to, the document all the same", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply --in-place --json", code: 0).out_starts("{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n").out_has("  \"rounds\": 0,\n  \"not_applied\": [],\n").err_empty()
+        row(name: "apply refuses --brief, which it dropped in silence (defect 371)", argv: "check tests/golden/check/certain-labels.hero --apply --brief", code: 2).err_is("error: `--brief` prints the diagnostics one to a line, and `--apply` prints the program instead of them: ask for one\n").out_empty()
+        row(name: "and --dump-scopes, which it dropped the same way", argv: "check tests/golden/check/certain-labels.hero --apply --dump-scopes", code: 2).err_is("error: `--dump-scopes` prints the program's scopes, and `--apply` prints the program with its fixes written: ask for one artifact at a time\n").out_empty()
+        row(name: "in-place without apply is refused, where it was dropped in silence", argv: "check tests/golden/check/certain-labels.hero --in-place", code: 2).err_is("error: `--in-place` rewrites the file with what `--apply` writes, and `--apply` was not given: `heroes check <file.hero> --apply --in-place`\n").out_empty()
+        row(name: "and json with brief is refused, where brief was dropped in silence", argv: "check tests/golden/check/certain-labels.hero --brief --json", code: 2).err_is("error: `--json` and `--brief` are two forms of the diagnostics: ask for one\n").out_empty()
         row(name: "apply hands a clean file back byte for byte, its open last line included, where it printed nothing (defect 141)", argv: "check tests/golden/surface-fixtures/apply141/clean.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a clean file whose last line is open. `check\n# --apply` owes it back byte for byte; on the compiler of `9d1c209d` it\n# printed nothing, so `check --apply > file` emptied the file.\n\nfunction main()\n    print(1)").err_empty()
         row(name: "and a file of one remark, its line open", argv: "check tests/golden/surface-fixtures/apply141/remark.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a file of one remark, its line open.").err_empty()
         row(name: "and a clean file with a hole, where it printed the hole's report", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a clean file with a hole. `check --apply` owes\n# the program back as it is; on the compiler of `9d1c209d` it printed the\n# hole's report, `check`'s own artifact and not this flag's, and with\n# `--in-place` it printed that report too.\n\nfunction main()\n    n: i64 @ ???\n    print(n)\n").err_empty()
@@ -728,7 +797,13 @@ test "the tables are what this module is, so they are counted"
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
     assert help_probes().len() == 5
-    assert render_probes().len() == 9
+
+    # 9 -> 13 on 2026-10-06, defect 271's JSON half (panel 193): a fix's place
+    # and first round, withheld and written inside `certain137-inside`,
+    # elsewhere in `applyx`, a guess's place with no first round, and a CRLF
+    # line's end (defect 373). The commit that added them, `155603c7`, left
+    # this count at 9, so the net's own tests read 1 failed until this line.
+    assert render_probes().len() == 13
 
     # 17 -> 19 on 2026-09-04: defect 010's two rows (`ffi-pointee-void`,
     # `ffi-pointee-opaque`). An addition is the direction this assert
@@ -914,7 +989,15 @@ test "the tables are what this module is, so they are counted"
     # `}}` took it: `fmt` printing `\u{1b}` as written, the token,
     # syntax-tree, scopes and IR dumps each held to a line, and `mutate`
     # scoring the file.
-    assert verb_probes().len() == 176
+    # 176 -> 177 on 2026-10-06: `check --apply` telling a certain fix in a
+    # module only a later round reads (`applylater/`), added by `de2e9770`
+    # with this count left behind.
+    # 177 -> 185 the same day, defect 371 (panel 193's R4): `check --apply
+    # --json` answering the applied document, whole over a clean file, its
+    # rounds over a chain, what it left in another module and every file a
+    # round read, and beside `--in-place`; and the four flags it dropped in
+    # silence, each refused at exit 2.
+    assert verb_probes().len() == 185
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map

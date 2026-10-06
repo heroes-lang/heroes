@@ -73,14 +73,32 @@ function unquoted(s: source.Source, span: token.Span) -> str
         return escape.unescape(text)
     return text
 
+# The two headers every unit includes whatever the program binds: math.h
+# for HUGE_VAL, hero_os.h because the generated main calls hero_args_set
+# whether or not the program asks for args().
+constant SEEDS: [str]
+    ["math.h", "hero_os.h"]
+
+# Whether `header` is the compiler's own: a seed, or the runtime's header,
+# which the library binds and every unit has already included. The prelude
+# writes these above the groups' guard (`emit/macro_guard.hero`), so a
+# program that binds nothing else has no guard at all.
+function is_own(header: str) -> bool
+    if header == "heroes_runtime.h"
+        return true
+
+    for one in SEEDS
+        if one == header
+            return true
+
+    return false
+
 # Every header a group named, without its quotes, deduplicated and in
 # declaration order — deterministic, so the double-emit test holds.
-# Two seeds, both unconditional: math.h for HUGE_VAL, hero_os.h because
-# the generated main calls hero_args_set whether or not the program
-# asks for args(). Seeded here so a program that also BINDS one does
-# not include it twice.
+# The two seeds first, unconditional, seeded here so a program that also
+# BINDS one does not include it twice.
 function headers(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
-    seen: [str] @ ["math.h", "hero_os.h"]
+    seen: [str] @ SEEDS
 
     for f in p.functions
         spans = extern_spans(decls, f)

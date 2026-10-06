@@ -610,6 +610,51 @@ int64_t hero_fs_replace(const char *staged, const char *path) {
 #endif
 }
 
+/* A file ANOTHER process wrote, flushed to the device before the publisher
+ * renames it into place (defect 357, its object row, 2026-10-06). clang writes
+ * an object, and the linker a binary, under a private name and exit with no
+ * flush of their own; after a power cut a name renamed over such a file can
+ * hold its length in zeros, as 11 kept texts did on the Windows box on
+ * 2026-10-04, and a zeroed object stopped every later link at `ld: unknown
+ * file type` (planted on this Mac). `hero_file_stage` flushes what this
+ * process writes itself; this is the same flush asked of a path, and a
+ * filesystem that cannot flush (EINVAL, ENOTSUP) is no failure, as there.
+ *
+ * POSIX opens the file read-only, which is all `fsync` and Darwin's
+ * F_BARRIERFSYNC need (measured 2026-10-06 on this Mac, on a file of mode
+ * 444: both answered 0); Windows opens it for writing, which
+ * `FlushFileBuffers` needs, sharing it with any reader. NOT RUN: a power cut,
+ * on any machine here. */
+int64_t hero_fs_flush(const char *path) {
+    hero_fs_why_code = 0;
+#if defined(_WIN32)
+    HANDLE h = CreateFileA(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE) {
+        hero_fs_why_code = (int64_t)GetLastError();
+        return HERO_OS_FAILED;
+    }
+    BOOL flushed = FlushFileBuffers(h);
+    DWORD why = GetLastError();
+    CloseHandle(h);
+    if (flushed) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)why;
+    return HERO_OS_FAILED;
+#else
+    int fd = open(path, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        hero_fs_why_code = (int64_t)errno;
+        return HERO_OS_FAILED;
+    }
+    int flushed = hero_stage_flush(fd);
+    int why = errno;
+    close(fd);
+    if (flushed == 0) return HERO_OS_OK;
+    hero_fs_why_code = (int64_t)why;
+    return HERO_OS_FAILED;
+#endif
+}
+
 /* The staged file removed, after `hero_fs_replace` could not put it in place;
  * a file that is not there is removed already. Only the caller that staged it
  * calls this, which is what makes removing it safe (`hero_file_stage`'s THE

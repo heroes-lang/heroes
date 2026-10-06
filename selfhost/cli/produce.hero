@@ -14,12 +14,12 @@
 # `cli/assemble.hero`, one ROUND, because this file now asks for a round
 # twice when clang's refusal of a handle's tag says the header needs
 # `struct` in front of it. What stays here is what decides: the cache
-# directory, the runtime object, the package question, the rounds and the
-# verdict on their failure.
+# directory, the runtime object, the package question and the rounds. Whose
+# mistake a refused round is went to `cli/whose.hero` on 2026-10-05 (defect
+# 360), the question both verbs that compile ask once it fails.
 
 use source
 use modules
-use emit/ffi
 use emit/ffi_tag
 use emit/ffi_asked
 use emit/externs as emit_externs
@@ -30,12 +30,14 @@ use cli/pointee_ask
 use cli/clang_floor
 use cli/artifact
 use cli/assemble
-use cli/header_ask
 use cli/libraries
 use cli/input
 use cli/process
-use cli/deep_types
+use cli/whose
 use library_source
+use cli/kept
+use cli/publish
+use bytes
 
 record Produced
     binary: str
@@ -154,7 +156,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         # compiler is allowed to blame the author's own `extern` (§7).
         message = failure_text(package_flags)
 
-        if blamed(message, art.must(), s, answered, struct_tags: no_tags, asked: ffi_asked.nothing())
+        if whose.blamed(message, art.must(), s, answered, struct_tags: no_tags, asked: ffi_asked.nothing())
             return fail(code: "diagnostics", msg: "the package could not answer")
         io.eprint(text: message)
         return fail(code: "diagnostics", msg: "the package could not answer")
@@ -220,26 +222,19 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     if linked.is_err()
         # Some clang failures are the AUTHOR's, and the ffi mapping is
-        # the only place that decides which (panel 036 rider 3). The
-        # pipeline pieces ride in the Artifact for exactly this call. Only
-        # clang's own words are read for it: a path the author wrote after
-        # `-o` could spell a marker, and a publish that failed there is not
-        # the header disagreeing with anybody.
-        message = failure_message(linked) + deep_types.note(failure_code(linked), art.must().decls, art.must().checked, s)
-
-        if failure_code(linked) != "clang"
-            return fail(code: "failed", msg: message)
-
-        # Asked only now, of a round clang refused (defect 152).
-        asked = header_ask.ask(t, art.must(), s, under: under, struct_tags: struct_tags)
-
-        if blamed(message, art.must(), s, answered, struct_tags: struct_tags, asked: asked)
-            return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
-
-        # A unit clang refused carries its own path inside the message
-        # (`units.tu_object`), the fused test unit's included.
-        io.eprint(text: "internal error: " + message)
-        return fail(code: "failed", msg: "clang refused the generated C")
+        # the only place that decides which (panel 036 rider 3); the
+        # pipeline pieces ride in the Artifact for exactly this call.
+        refused = whose.of_refusal(
+            linked,
+            art.must(),
+            s,
+            t,
+            under: under,
+            answered: answered,
+            struct_tags: struct_tags,
+            refused: "clang refused the generated C"
+        )
+        return fail(code: failure_code(refused), msg: failure_message(refused))
 
     # **`--emit-c` WRITES AFTER THE ROUNDS, WHICH COMPILE AND DO NOT LINK FOR
     # IT** (panel 157 R1; defect 049, 2026-09-17). It sat above them until then,
@@ -259,16 +254,17 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         )
 
         if wrote.is_err()
-            message = failure_message(wrote) + deep_types.note(failure_code(wrote), art.must().decls, art.must().checked, s)
-
-            if failure_code(wrote) != "clang"
-                return fail(code: "failed", msg: message)
-            asked = header_ask.ask(t, art.must(), s, under: under, struct_tags: struct_tags)
-
-            if blamed(message, art.must(), s, answered, struct_tags: struct_tags, asked: asked)
-                return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
-            io.eprint(text: "internal error: " + message)
-            return fail(code: "failed", msg: "the artifact was not written")
+            refused = whose.of_refusal(
+                wrote,
+                art.must(),
+                s,
+                t,
+                under: under,
+                answered: answered,
+                struct_tags: struct_tags,
+                refused: "the artifact was not written"
+            )
+            return fail(code: failure_code(refused), msg: failure_message(refused))
         none_e: [str] = []
         return ok(Produced(binary: "", tests: none_e, stopped: true))
     return ok(Produced(binary: binary, tests: art.must().tests, stopped: false))
@@ -278,29 +274,6 @@ function failure_text(failed: [str]?) -> str
     match failed
         .ok    => return ""
         .err e => return e.msg
-
-# Whether a clang failure is the AUTHOR's: `emit/ffi.hero` reads its marker
-# lines back into diagnostics on the `.hero` line, prints them, and the answer
-# is yes (CLAUDE.md §7's named exception). One door for the package that could
-# not answer and the unit clang refused — the same eleven lines twice, before.
-function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked) -> bool
-    theirs = ffi.explain(
-        message,
-        s,
-        art.tree,
-        art.decls,
-        art.checked,
-        art.program,
-        word_bits: io.word_bits(),
-        answered: answered,
-        struct_tags: struct_tags,
-        asked: asked
-    )
-
-    if theirs.len() == 0
-        return false
-    _ = compile.stage(theirs, s).is_err()
-    return true
 
 # The message of a failed `()?` — the clang floor's and the round's alike.
 # It was two identical functions under two names until 2026-09-04.
@@ -363,7 +336,13 @@ test "a failure that is not clang's refusal is not worded as one (defect 134)"
         # One sentence for the author's file whichever verb writes it (defect
         # 136, `publish.landing_for`), where the C said the operating
         # system's number for a missing directory and the link said this.
-        assert said == "cannot write build/selftest-no-such-directory/out: its directory is not there; build/selftest-no-such-directory/out was not created"
+        # The binary's path takes the platform's suffix where the C's does
+        # not (defect 359): `out.exe` on Windows, the file that would be.
+        landed: str @ "build/selftest-no-such-directory/out"
+
+        if !emit_c
+            landed @ landed + process.exe_suffix()
+        assert said == "cannot write " + landed + ": its directory is not there; " + landed + " was not created"
 
 function produced_failure(made: Produced?) -> str
     match made
@@ -374,3 +353,73 @@ function produced_code(made: Produced?) -> str
     match made
         .ok    => return ""
         .err e => return e.code
+
+# DEFECT 357's CASE: what a power cut left under `build/`, each kept text of a
+# program's checks zeroed at its length as the Windows box's crash left eleven
+# (one NUL is `surface-fixtures/notext357/nul.txt`, since no literal holds
+# one), the records that name them left whole. Before the repair the pointee
+# check's verdict said `internal error` over NULs at exit 2, and the layout
+# check's screen built at exit 0 a construction leaving out a field; a unit's
+# warnings replayed as NULs. Each kept text is now asked again and kept whole.
+test "kept texts a power cut zeroed are asked again, and the author's mistake is told as before (defect 357)"
+    library = library_source.text()
+    dir = "build/selftest-zeroed-357"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/p.h", text: "#include <stdint.h>\n#warning \"a header warning\"\nvoid fill(int64_t *out);\ntypedef struct { int32_t kind; int32_t x; } SA;\nstatic inline int32_t sa_x(SA s) { return s.x; }\nstatic inline int64_t six(void) { return 6; }\n").is_err()
+    pointee_wrong = "extern \"p.h\"\n    function fill(@out: i32)\n\nfunction main()\n    n: i32 @ 0\n    fill(@n)\n    print(n)\n"
+    field_left_out = "extern \"p.h\"\n    record SA\n        kind: i32\n        x: i32\n    function sa_x(s: SA) -> i32\n\nfunction main()\n    b = SA(kind: 2)\n    print(sa_x(b))\n"
+    warned = "extern \"p.h\"\n    function six() -> i64\n\nfunction main()\n    print(six())\n"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-zeroed").must()
+    each: i64 @ 0
+    nul = read_file("tests/golden/surface-fixtures/notext357/nul.txt").must()
+    none: [str] = []
+    options = compile.Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: false,
+        output: ok(dir + "/out"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: none,
+        library: none
+    )
+
+    # Each program its own `build/`, so what one zeroes the next does not.
+    for program in [pointee_wrong, field_left_out, warned]
+        each @ each + 1
+        t.build @ dir + "/build-" + each.to_str()
+        path = dir + "/p.hero"
+        assert !write_file(path: path, text: program).is_err()
+        s = input.read_compilation(path: path, library: library).must()
+        first = produced_code(produce(path: path, s: s, options: options, t: t, version: "0.0.0-port"))
+        zeroed: i64 @ 0
+
+        for file in process.files_under(t.build).must()
+            if zeroable(file)
+                size = read_file(file).must().len()
+                assert !write_file(path: file, text: nul.repeat(size.to_u64().must())).is_err()
+                zeroed @ zeroed + 1
+
+        assert zeroed > 0
+        assert produced_code(produce(path: path, s: s, options: options, t: t, version: "0.0.0-port")) == first
+
+        # Asked again, and kept whole again.
+        for file in process.files_under(t.build).must()
+            if zeroable(file)
+                assert !kept.read(file).is_err()
+
+    assert !process.remove_tree(dir).is_err()
+
+# A kept text, by the name its writer gives it: a check's verdict, the layout
+# check's screen and its record-layout dump, the pointee check's dump, a
+# unit's warnings. A record, `.deps.txt`, is not one: it is left whole so the
+# kept texts it names are the ones read.
+function zeroable(file: str) -> bool
+    base = publish.base_of(file)
+
+    for start in ["verdict-", "screen-", "clang-dump-", "dump-", "warnings-"]
+        if bytes.bytes_at(text: base, at: 0, needle: start) && (bytes.bytes_at(text: base, at: base.len() - 4, needle: ".txt") || bytes.bytes_at(text: base, at: base.len() - 5, needle: ".json"))
+            return true
+
+    return false

@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-171-a-loaders-pointers-set-then-called.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-171-a-loaders-pointers-set-then-called.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -47,7 +49,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 51 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 53 "fixedbugs171aloaderspointerssetthencalled.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -84,7 +86,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 90 "fixedbugs171aloaderspointerssetthencalled.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,7 +102,7 @@ void h_fixedbugs171aloaderspointerssetthencalled_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 void h_fixedbugs171aloaderspointerssetthencalled_main(void) {
-#line 104 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 106 "fixedbugs171aloaderspointerssetthencalled.c"
     int32_t t1;
     int32_t t2;
     int32_t t3;
@@ -133,7 +135,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     return;
-#line 137 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 139 "fixedbugs171aloaderspointerssetthencalled.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

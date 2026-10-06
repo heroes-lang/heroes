@@ -35,6 +35,7 @@ use library_source
 use cli/lex
 use cli/syntax_cmds
 use cli/check
+use cli/check_flags
 use cli/verbs
 use cli/doctor
 use cli/help
@@ -147,6 +148,15 @@ function command(_: i64) -> i64
         io.eprint(text: "error: " + message_of(parsed))
         exit(code: 2)
     inv = parsed.must()
+
+    # Flags of `check` no one answer can hold are refused before anything is
+    # read, as an unknown flag is (defect 371): each was dropped in silence.
+    if inv.tag == .check_cmd
+        clash = check_flags.refused(inv)
+
+        if !clash.is_err()
+            io.eprint(text: "error: " + clash.must())
+            exit(code: 2)
     reading: bool @ false
 
     # `fmt` reads THE FILE IT WAS NAMED and nothing else, where the other

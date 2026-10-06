@@ -2,8 +2,11 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.h>
+#pragma push_macro("value")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -11,7 +14,7 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 
 #line 18 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 _Static_assert(__builtin_classify_type(*(outer * *)0) != 13, "heroes-ffi-union Outer ");
-#line 15 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 18 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -95,7 +98,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 102 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b);
@@ -113,7 +116,7 @@ void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
 
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
-#line 117 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 120 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
     outer * h0_a;
     outer * h1_kept;
     outer * h2_b;
@@ -222,7 +225,7 @@ bb0:
     }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 226 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 229 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

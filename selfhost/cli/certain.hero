@@ -109,31 +109,82 @@ variant Choice
     twin
 
 # The fixes by where their span starts, then where it ends, a tie in the
-# order they were found: two stable passes, by end and then by start.
+# order they were found.
 function in_order(edits: [diag.Fix]) -> [diag.Fix]
+    ordered: [diag.Fix] @ []
+
+    for at in order_of(edits)
+        taken = edits[at]
+        ordered @ ordered.push(taken)
+
+    return ordered
+
+# That order as indices into `edits`: two stable passes, by end and then by
+# start, so `outcomes` can say of each fix what `chosen` decided.
+function order_of(edits: [diag.Fix]) -> [i64]
     ends: [i64] @ []
 
     for fix in edits
         ends @ ends.push(fix.span.end)
 
-    by_end: [diag.Fix] @ []
-
-    for at in stable.order(by: ends)
-        taken = edits[at]
-        by_end @ by_end.push(taken)
-
+    by_end = stable.order(by: ends)
     starts: [i64] @ []
 
-    for fix in by_end
-        starts @ starts.push(fix.span.start)
+    for at in by_end
+        starts @ starts.push(edits[at].span.start)
 
-    ordered: [diag.Fix] @ []
+    order: [i64] @ []
 
     for at in stable.order(by: starts)
-        taken = by_end[at]
-        ordered @ ordered.push(taken)
+        order @ order.push(by_end[at])
 
-    return ordered
+    return order
+
+# What the first round of `check --apply` does with each fix of
+# `diagnostics`, in their order (panel 193's spec-warden): `written`, `twin`,
+# `withheld`, `elsewhere` or `malformed` for a certain fix, as `applied`
+# decides it, and "" for a guess, which no round writes. `check --json` says
+# it beside each place, so a tool writing exactly the `written` ones writes
+# that round and nothing else.
+function outcomes(diagnostics: [diag.Diagnostic], s: source.Source) -> [str]
+    said: [str] @ []
+    edits: [diag.Fix] @ []
+    slots: [i64] @ []
+    limit = source_extent.root_end(s)
+
+    for d in diagnostics
+        for fix in d.fixes
+            word: str @ ""
+
+            if fix.certainty == .certain
+                word @ "written"
+
+                if fix.span.start < 0 || fix.span.end < fix.span.start
+                    word @ "malformed"
+                else
+                    if fix.span.end > limit
+                        word @ "elsewhere"
+                    else
+                        slots @ slots.push(said.len())
+                        edits @ edits.push(fix)
+            said @ said.push(word)
+
+    order = order_of(edits)
+    keep = chosen(in_order(edits))
+    at: i64 @ 0
+
+    while at < order.len()
+        slot = slots[order[at]]
+        said[slot] @ word_of(keep[at])
+        at @ at + 1
+
+    return said
+
+function word_of(choice: Choice) -> str
+    return match choice
+        .write    => "written"
+        .withhold => "withheld"
+        .twin     => "twin"
 
 # Which of the ordered fixes to write. Fixes that cannot touch are split
 # into runs first, a run ending where the next fix starts at or past every
@@ -275,3 +326,20 @@ test "a span that ends before it starts is counted and never written"
     assert bad.text == "Abcdefghij"
     assert bad.malformed == 1
     assert bad.applied == 1
+
+# Panel 193: each fix's outcome is what `applied` does with it, in the
+# diagnostics' order, however `in_order` sorts them: the enclosing fix waits,
+# the inner one is written, its twin dropped, and a guess has none.
+test "a fix's first-round outcome is what applied does with it"
+    s = source.new_source(name: "t.hero", text: "abcdefghij")
+    wide: diag.Diagnostic @ fixing(start: 1, end: 8, text: "BCDEFGH")
+    wide.fixes @ wide.fixes.push(
+        diag.Fix(title: "g", replacement: "x", span: token.Span(start: 0, end: 1), certainty: .guess)
+    )
+    said = outcomes([wide, fixing(start: 3, end: 5, text: "DE"), fixing(start: 3, end: 5, text: "DE")], s)
+    assert said.len() == 4
+    assert said[0] == "withheld"
+    assert said[1] == ""
+    assert said[2] == "written"
+    assert said[3] == "twin"
+    assert over([wide, fixing(start: 3, end: 5, text: "DE"), fixing(start: 3, end: 5, text: "DE")]).text == "abcDEfghij"

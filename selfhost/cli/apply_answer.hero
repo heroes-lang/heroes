@@ -1,0 +1,125 @@
+# What `check --apply` hands back, and with `--json` the document that holds
+# it (design.md §4.17; panel 193's R4, provisional, author ratification
+# pending; defect 371). The program is the artifact either way, on stdout;
+# `--json` says how to print it, never what (`.claude/rules/cli-surface.md`):
+# `{"schema": 2, "kind": "applied"}`, the files read with their SHA-256 as
+# every answer names them, the root `"file"`, how many `"rounds"` wrote, the
+# certain fixes it left in another module as `"not_applied"`, and the program
+# as `"output"`, so the document agrees with `--apply` by construction.
+#
+# **`--json` was dropped in silence until defect 371**: `check --apply --json`
+# printed the program as text at exit 0, the same bytes as `--apply`, and a
+# reader that asked for JSON met a program it could not parse. The answer
+# says its kind, so a reader of the diagnostics document cannot take this one
+# for it, the crash panel 193's completeness critic measured on a consumer
+# that checked only the schema's number.
+
+use source
+use source_extent
+use cli/check_json
+use cli/argv
+use cli/io
+use cli/publish
+use cli/table as cli_table
+
+# What `check --apply` settled on: the text it hands back, how many rounds
+# wrote, the certain fixes in another module, `file:line` once each, and the
+# program as each round after the first read it again (`cli/check.hero`'s
+# `settle`), whose files the answer names with the first reading's.
+record Settled
+    text: str
+    rounds: i64
+    elsewhere: [str]
+    readings: [source.Source]
+
+# What `--apply` prints: the program, or with `--json` the document holding it.
+function answer(s: source.Source, settled: Settled, as_json: bool) -> str
+    if !as_json
+        return settled.text
+    readings: [source.Source] @ [s]
+
+    for one in settled.readings
+        readings @ readings.push(one)
+
+    others: [str] @ []
+
+    for one in settled.elsewhere
+        others @ others.push(check_json.quote(one))
+
+    return check_json.head_of(kind: "applied", readings: readings) + "  \"file\": " + check_json.quote(s.name) + ",\n  \"rounds\": " + settled.rounds.to_str() + ",\n  \"not_applied\": [" + others.join(", ") + "],\n  \"output\": " + check_json.quote(settled.text) + "\n}\n"
+
+# A file no stage speaks of, handed back as it is: no round wrote.
+function untouched(s: source.Source) -> Settled
+    none: [str] = []
+    unread: [source.Source] = []
+    return Settled(text: source_extent.user_text(s), rounds: 0, elsewhere: none, readings: unread)
+
+# What `--apply` hands back for a file no stage speaks of: the file as it is,
+# byte for byte, and with `--in-place` nothing, the file being its own repair,
+# or with `--json` the document either way. Until defect 141 nothing was
+# printed, so `check --apply` into a file emptied a clean one, and a file with
+# a hole got the hole's report, `check`'s own artifact and not this flag's,
+# which `--in-place` printed too.
+function hand_back_clean(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
+    as_json = argv.has(inv, spelling: "--json")
+
+    if !argv.has(inv, spelling: "--in-place") || as_json
+        io.print_artifact(text: answer(s, settled: untouched(s), as_json: as_json))
+    return .ok_exit
+
+# What `--apply` hands back once a stage spoke and its rounds settled: the
+# program on stdout, or with `--in-place` written over the file it came from,
+# and with `--json` the document on stdout either way. `told` is how many
+# diagnostics the stage that spoke gave.
+function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, told: i64) -> cli_table.Exit
+    as_json = argv.has(inv, spelling: "--json")
+
+    if !argv.has(inv, spelling: "--in-place")
+        io.print_artifact(text: answer(s, settled: settled, as_json: as_json))
+        return .ok_exit
+
+    # The write goes through s.name because that is the file the text came
+    # from; the settled text is the user's with the edits, deliberately
+    # excluding the library §1.11 appends. THE REPORT IS THE DIFFERENCE, not
+    # the diagnostic count (panel 071): a file can have diagnostics and no
+    # applicable repair, and "applied 1 fix" over an untouched file is the
+    # surface lying about itself. Whole or not at all, as `fmt --in-place`
+    # writes (defect 136): `write_file` here emptied the file first, and a full
+    # disk left it cut mid-token.
+    if settled.text != source_extent.user_text(s)
+        written = publish.rewrite(path: s.name, text: settled.text)
+
+        if written.is_err()
+            io.eprint(text: "error: " + publish.message_of(written))
+            return .failed_exit
+        io.eprint(text: "rewrote " + s.name)
+    else
+        io.eprint(text: s.name + " unchanged: no `certain` fix applies to its " + told.to_str() + " diagnostic(s)")
+
+    if as_json
+        io.print_artifact(text: answer(s, settled: settled, as_json: true))
+    return .ok_exit
+
+## Tests
+
+# Panel 193's R4: the document says its kind, names what it read, and holds
+# the program `--apply` writes, its rounds and what it left elsewhere.
+test "the applied answer holds the program, its rounds and what it did not write"
+    s = source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
+    unread: [source.Source] = []
+    settled = Settled(text: "abd\n", rounds: 2, elsewhere: ["geom.hero:3"], readings: unread)
+    assert answer(s, settled: settled, as_json: false) == "abd\n"
+    assert answer(s, settled: settled, as_json: true) == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"file\": \"t.hero\",\n  \"rounds\": 2,\n  \"not_applied\": [\"geom.hero:3\"],\n  \"output\": \"abd\\n\"\n}\n"
+    assert untouched(s).text == "abc"
+    assert untouched(s).rounds == 0
+
+# A file a later round read is named once, by the first reading to read it,
+# and the root by its bytes as first read, never by the text a round left.
+test "the applied answer names the files every round read, each once"
+    first = source.from_files([source.user_file(name: "m.hero", text: "abc")])
+    again = source.from_files(
+        [source.user_file(name: "m.hero", text: "abd"), source.user_file(name: "g.hero", text: "")]
+    )
+    settled = Settled(text: "abd", rounds: 1, elsewhere: ["g.hero:1"], readings: [again])
+    got = answer(first, settled: settled, as_json: true)
+    assert got == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"m.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"},\n    {\"file\": \"g.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"file\": \"m.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"g.hero:1\"],\n  \"output\": \"abd\"\n}\n"

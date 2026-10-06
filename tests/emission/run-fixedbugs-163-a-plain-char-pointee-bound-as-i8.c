@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-163-a-plain-char-pointee-bound-as-i8.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-163-a-plain-char-pointee-bound-as-i8.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -45,7 +47,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 51 "fixedbugs163aplaincharpointeeboundasi8.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -80,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 86 "fixedbugs163aplaincharpointeeboundasi8.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +98,7 @@ void h_fixedbugs163aplaincharpointeeboundasi8_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
-#line 100 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 102 "fixedbugs163aplaincharpointeeboundasi8.c"
     int8_t h0_v;
     int8_t t1;
     int8_t t2;
@@ -116,7 +118,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     return;
-#line 120 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 122 "fixedbugs163aplaincharpointeeboundasi8.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

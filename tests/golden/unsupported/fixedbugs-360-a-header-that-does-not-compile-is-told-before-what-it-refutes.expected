@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-360-refuted.h`, the header this group names, does not compile: clang refuses it at line 4: expected expression
+  at tests/golden/unsupported/fixedbugs-360-a-header-that-does-not-compile-is-told-before-what-it-refutes.hero:11:8
+     |
+  11 | extern "fixedbugs-360-refuted.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-360-refuted.h` line 4 reads `int unfinished = ;`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

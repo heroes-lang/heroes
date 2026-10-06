@@ -2,8 +2,11 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-151-unions.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-151-unions.h>
+#pragma push_macro("i")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -15,11 +18,11 @@ _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)
 _Static_assert(__builtin_classify_type(((SA *)0)->i) == 1 && sizeof(((SA *)0)->i) == sizeof(int32_t) && (_Generic(((SA *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA i");
 #line 12 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x) == sizeof(int32_t) && (_Generic(((SA *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA x");
-#line 19 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 22 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 
 #line 9 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13, "heroes-ffi-union SA kind i x");
-#line 23 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 26 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -94,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 101 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151onearmofananonymousunionbuiltandread_SA_eq(const SA *a, const SA *b);
@@ -112,7 +115,7 @@ void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void) {
-#line 116 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 119 "fixedbugs151onearmofananonymousunionbuiltandread.c"
     SA h0_s;
     int32_t t1;
     int32_t t2;
@@ -167,7 +170,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     return;
-#line 171 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 174 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151onearmofananonymousunionbuiltandread_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

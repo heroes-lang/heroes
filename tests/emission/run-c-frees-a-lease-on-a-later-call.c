@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <c-frees-a-lease-on-a-later-call.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <c-frees-a-lease-on-a-later-call.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -48,7 +50,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 52 "cfreesaleaseonalatercall.c"
+#line 54 "cfreesaleaseonalatercall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -83,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "cfreesaleaseonalatercall.c"
+#line 89 "cfreesaleaseonalatercall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -99,7 +101,7 @@ void h_cfreesaleaseonalatercall_main(void);
 
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
-#line 103 "cfreesaleaseonalatercall.c"
+#line 105 "cfreesaleaseonalatercall.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroStr t1;
@@ -114,11 +116,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t6 = h0_x;
-#line 118 "cfreesaleaseonalatercall.c"
+#line 120 "cfreesaleaseonalatercall.c"
     hero_str_incref(t1);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     h0_x = t1;
-#line 122 "cfreesaleaseonalatercall.c"
+#line 124 "cfreesaleaseonalatercall.c"
     hero_str_decref(t6);
 #line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t2 = h0_x;
@@ -140,7 +142,7 @@ bb0:
     (void)later_free();
 #line 17 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_held_release(&h1_c);
-#line 144 "cfreesaleaseonalatercall.c"
+#line 146 "cfreesaleaseonalatercall.c"
     hero_str_decref(h0_x);
     return;
 }

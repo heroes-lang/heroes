@@ -1,0 +1,5 @@
+In file included from build/tu-284/miss.c:1:
+/t/café/m.h:2:10: fatal error: 'gone.h' file not found
+    2 | #include "gone.h"
+      |          ^~~~~~~~
+1 error generated.

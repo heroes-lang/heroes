@@ -1,0 +1,5 @@
+In file included from build/tu-284/bad.c:1:
+/t/café/b.h:3:14: error: expected expression
+    3 | int broken = ;
+      |              ^
+1 error generated.

@@ -3,7 +3,9 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
 #include <pwd.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -13,11 +15,11 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(((struct passwd *)0)->pw_name, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((struct passwd *)0)->pw_name) == sizeof(char *), "heroes-ffi-field Passwd pw_name");
 #line 44 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 _Static_assert(_Generic(((struct passwd *)0)->pw_dir, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((struct passwd *)0)->pw_dir) == sizeof(char *), "heroes-ffi-field Passwd pw_dir");
-#line 17 "aheaderfieldthatisnotconst.c"
+#line 19 "aheaderfieldthatisnotconst.c"
 
 #line 42 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 _Static_assert(__builtin_classify_type(*(struct passwd *)0) != 13, "heroes-ffi-union Passwd pw_name pw_dir");
-#line 21 "aheaderfieldthatisnotconst.c"
+#line 23 "aheaderfieldthatisnotconst.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -88,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "aheaderfieldthatisnotconst.c"
+#line 94 "aheaderfieldthatisnotconst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_Passwd_eq(const struct passwd *a, const struct passwd *b);
@@ -106,7 +108,7 @@ void h_aheaderfieldthatisnotconst_main(void);
 
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 void h_aheaderfieldthatisnotconst_main(void) {
-#line 110 "aheaderfieldthatisnotconst.c"
+#line 112 "aheaderfieldthatisnotconst.c"
     struct passwd h0_empty;
     struct passwd h1_filled;
     const char * t1;
@@ -167,7 +169,7 @@ bb0:
     hero_print_end();
 #line 62 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     return;
-#line 171 "aheaderfieldthatisnotconst.c"
+#line 173 "aheaderfieldthatisnotconst.c"
 }
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_Passwd_eq(const struct passwd *a, const struct passwd *b) {
     hero_panic("h_aheaderfieldthatisnotconst_Passwd_eq: a partial record has no structural equality");

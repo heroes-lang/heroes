@@ -2,9 +2,11 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
+#include "heroes_guard_open.h"
 #include <string.h>
 #include <lease-tail-points-into-the-bytes.h>
-#include <heroes_runtime.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -49,7 +51,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_c4fd56d, "row-payload");
 
-#line 53 "leasetailpointsintothebytes.c"
+#line 55 "leasetailpointsintothebytes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -86,7 +88,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "leasetailpointsintothebytes.c"
+#line 92 "leasetailpointsintothebytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -103,7 +105,7 @@ void h_leasetailpointsintothebytes_main(void);
 
 #line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) {
-#line 107 "leasetailpointsintothebytes.c"
+#line 109 "leasetailpointsintothebytes.c"
     const char * h1_out;
     const char * t1;
     h1_out = *ph1_out;
@@ -113,14 +115,14 @@ bb0:
     t1 = h0_s;
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     (void)after_dash(hero_cstr_nonnull(t1), &h1_out);
-#line 117 "leasetailpointsintothebytes.c"
+#line 119 "leasetailpointsintothebytes.c"
     *ph1_out = h1_out;
     return;
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_main(void) {
-#line 124 "leasetailpointsintothebytes.c"
+#line 126 "leasetailpointsintothebytes.c"
     const char * h0_label;
     const char * h1_tail;
     HeroStr t1;
@@ -157,7 +159,7 @@ bb0:
     hero_held_release(&h0_label);
 #line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 161 "leasetailpointsintothebytes.c"
+#line 163 "leasetailpointsintothebytes.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -26,8 +26,8 @@ use cli/table as cli_table
 use cli/argv
 use cli/io
 use cli/check_json
-use cli/publish
 use cli/certain
+use cli/apply_answer
 use library_source
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
@@ -63,15 +63,16 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
         return stop_c.must()
 
     # `--apply`'s artifact is the program with every certain fix applied, and a
-    # file no stage speaks of has none to apply: it is handed back as it is,
-    # byte for byte. Until defect 141 nothing was printed, so `check --apply`
-    # into a file emptied a clean one, and a file with a hole got the hole's
-    # report, `check`'s own artifact and not this flag's, which `--in-place`
-    # printed too.
+    # file no stage speaks of has none to apply: it is handed back as it is
+    # (`cli/apply_answer.hero`, defects 141 and 371).
     if argv.has(inv, spelling: "--apply")
-        if !argv.has(inv, spelling: "--in-place")
-            io.print_artifact(text: source_extent.user_text(s))
-        return .ok_exit
+        return apply_answer.hand_back_clean(s, inv: inv)
+
+    # A clean program's answer is a document too (panel 193's R3), where it
+    # was no bytes at all, which no JSON reader takes.
+    if argv.has(inv, spelling: "--json")
+        none: [diag.Diagnostic] = []
+        io.eprint_raw(text: check_json.json(none, s))
 
     if argv.has(inv, spelling: "--dump-scopes")
         io.print_artifact(text: scopes.dump_scopes(out, s, parsed.decls))
@@ -117,35 +118,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
                 return ok(.failed_exit)
             .ok _ => _ = 0
 
-        repaired = settled.must()
-
-        if argv.has(inv, spelling: "--in-place")
-            # The write goes through s.name because that is the file
-            # the text came from; settle returns user_text with the
-            # edits, deliberately excluding the library §1.11 appends.
-            # THE REPORT IS THE DIFFERENCE, not the diagnostic count
-            # (panel 071): a file can have diagnostics and no
-            # applicable repair, and "applied 1 fix" over an untouched
-            # file is the surface lying about itself.
-            changed = repaired != source_extent.user_text(s)
-
-            # Whole or not at all, as `fmt --in-place` writes (defect 136):
-            # `write_file` here emptied the file first, and a full disk left
-            # it cut mid-token.
-            if changed
-                written = publish.rewrite(path: s.name, text: repaired)
-
-                if written.is_err()
-                    io.eprint(text: "error: " + publish.message_of(written))
-                    return ok(.failed_exit)
-                io.eprint(text: "rewrote " + s.name)
-            else
-                io.eprint(
-                    text: s.name + " unchanged: no `certain` fix applies to its " + kept.len().to_str() + " diagnostic(s)"
-                )
-            return ok(.ok_exit)
-        io.print_artifact(text: repaired)
-        return ok(.ok_exit)
+        return ok(apply_answer.hand_back(s, settled: settled.must(), inv: inv, told: kept.len()))
 
     if argv.has(inv, spelling: "--json")
         io.eprint_raw(text: check_json.json(kept, s))
@@ -191,13 +164,18 @@ function rich(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 # Each round reads the program again from disk, because a round can write a
 # `use` line the first reading never followed (`use "geom"` to `use geom`),
 # and a module a round cannot read fails the whole `--apply` (defect 236).
-function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation, stage: i64) -> str?
+# So a later round can meet a module the first never read, and its certain
+# fixes are said with the first round's, once each: until 2026-10-06 only
+# the first round's were, and `geom.hero`'s `fn` behind `use "geom"` was
+# neither written nor told (`surface-fixtures/applylater/`).
+#
+# What it settles on is the text, the rounds that wrote, those fixes in
+# another module, and each later reading, which `--apply --json` answers
+# (panel 193's R4 and R5).
+function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation, stage: i64) -> apply_answer.Settled?
     round = certain.applied(first, s)
-
-    if round.elsewhere.len() > 0
-        io.eprint(
-            text: "note: " + round.elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + round.elsewhere.join(", ")
-        )
+    elsewhere: [str] @ round.elsewhere
+    readings: [source.Source] @ []
     text: str @ round.text
     seen: [str] @ [source_extent.user_text(s)]
     malformed: i64 @ round.malformed
@@ -206,8 +184,13 @@ function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation
 
     while wrote > 0 && count < ROUNDS
         again = modules.load_text(path: s.name, root_text: text, library: library_source.text())?
+        readings @ readings.push(again)
         next = certain.applied(said_at(again, inv, stage: stage), again)
         malformed @ malformed + next.malformed
+
+        for at in next.elsewhere
+            if !certain.listed(names: elsewhere, name: at)
+                elsewhere @ elsewhere.push(at)
 
         if next.applied == 0 || next.text == text
             wrote @ 0
@@ -224,6 +207,11 @@ function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation
         wrote @ next.applied
         count @ count + 1
 
+    if elsewhere.len() > 0
+        io.eprint(
+            text: "note: " + elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + elsewhere.join(", ")
+        )
+
     if wrote > 0
         io.eprint(
             text: "note: certain fixes for " + s.name + " were still being found after " + ROUNDS.to_str() + " rounds; `check --apply` again writes the rest"
@@ -233,7 +221,11 @@ function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation
         io.eprint(
             text: "internal error: " + malformed.to_str() + " certain fix(es) had a span that ends before it starts, and were not applied"
         )
-    return ok(text)
+    rounds: i64 @ count
+
+    if round.applied == 0
+        rounds @ 0
+    return ok(apply_answer.Settled(text: text, rounds: rounds, elsewhere: elsewhere, readings: readings))
 
 # How many times `settle` asks one stage: far past any chain an author writes,
 # and short of a certain fix that reproduces itself, as `needs_qualifying`'s
@@ -350,10 +342,21 @@ test "a certain fix enclosing another is made again from the text the inner one 
 # The text `check --apply` writes for `text`, asked of `stage` as `run` asks
 # it, the library joined as the verb joins it.
 function settled_text(text: str, stage: i64) -> str
+    return settled_of(text: text, stage: stage).text
+
+function settled_of(text: str, stage: i64) -> apply_answer.Settled
     s = modules.load_text(path: "build/selftest-certain.hero", root_text: text, library: library_source.text()).must()
     hits: [argv.FlagHit] = [argv.FlagHit(spelling: "--apply", value: fail(code: "none", msg: "no value"))]
     inv = argv.Invocation(tag: .check_cmd, file: ok("build/selftest-certain.hero"), program_args: [], flags: hits)
     return settle(first: said_at(s, inv, stage: stage), s: s, inv: inv, stage: stage).must()
+
+# Panel 193's R4: `rounds` counts the rounds that wrote, so a chain the
+# checker reports one link at a time takes a round a link, and a program
+# with no certain fix to write takes none.
+test "the applied answer counts the rounds that wrote"
+    one = "function one() -> i64\n    return 1\n\nfunction main()\n"
+    assert settled_of(text: one + "    print(one().must().must().must())\n", stage: 4).rounds == 3
+    assert settled_of(text: one + "    print(one())\n", stage: 4).rounds == 0
 
 # Defects 130 and 131: the control arm is never left with nothing to say about
 # a program the parser could not read. It drops the thesis rules, so it reads
@@ -373,10 +376,29 @@ test "the json schema leads with its version and escapes its strings"
     parsed = parse.parse_source(s)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     got = check_json.json(out.diagnostics, s)
-    assert has_text(text: got, needle: "{\n  \"schema\": 1,\n  \"diagnostics\": [\n")
+    assert has_text(text: got, needle: "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n")
     assert has_text(text: got, needle: "\"code\": \"unused_binding\"")
     assert has_text(text: got, needle: "\"file\": \"t.hero\"")
     assert has_text(text: got, needle: "  ]\n}\n")
+
+# Panel 193's R8: the help says the schema the writer writes and the stream
+# it writes to, held to `check_json.SCHEMA` so the two cannot part: stderr
+# for the diagnostics, stdout for the program `--apply` prints (R4).
+test "the help names the answer's schema and its stream"
+    said: str @ ""
+
+    for c in cli_table.commands()
+        if c.name == "check"
+            for f in c.flags
+                if f.spelling == "--json"
+                    said @ f.what
+
+    assert has_text(text: said, needle: "schema " + check_json.SCHEMA.to_str())
+    assert has_text(text: said, needle: "stderr")
+    assert has_text(
+        text: said,
+        needle: "with --apply, print the program inside a JSON document of the same schema, on stdout"
+    )
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

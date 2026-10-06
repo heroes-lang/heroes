@@ -67,6 +67,7 @@ use cli/compiling
 use cli/libraries
 use cli/strings
 use cli/read_back
+use cli/kept
 use parse
 use resolve
 use checker
@@ -114,10 +115,10 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     a = Asking(t: t, dir: dir, headers: headers, s: s, decls: decls, c: c, u: u, words: probe.words)
 
     if !known.is_err()
-        kept = read_file(dir + "/screen-" + known.must() + ".txt")
+        screen = kept.read(dir + "/screen-" + known.must() + ".txt")
 
-        if !kept.is_err()
-            return answered(a, wanted: wanted, sum: known.must(), said: kept.must())
+        if !screen.is_err()
+            return answered(a, wanted: wanted, sum: known.must(), said: screen.must())
     process.mkdir_all(dir)?
     screen_c = pointee.unit_path(dir: dir, stem: "screen", text: screen_text)
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
@@ -146,7 +147,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         return fail(code: "failed", msg: "cannot record what the layout check read: " + pointee.failure_note(rows))
     listing = deps.pointer_text(rows.must())
     sum = listing.slice(from: 0, to: 16)
-    publish.write_whole(path: dir + "/screen-" + sum + ".txt", text: said.must(), keyed: true)?
+    kept.write(path: dir + "/screen-" + sum + ".txt", text: said.must())?
     verdict = answered(a, wanted: wanted, sum: sum, said: said.must())
     publish.write_whole(path: listed, text: listing, keyed: true)?
     return verdict
@@ -173,11 +174,11 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
         return ok()
     dump_text = layout_text.dump_unit(a.headers, wanted: dumped)
     kept_path = a.dir + "/clang-dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
-    kept = read_file(kept_path)
+    layouts = kept.read(kept_path)
     rows: str @ ""
 
-    if !kept.is_err()
-        rows @ layout_rows.wrapper_rows(kept.must()).join("\n") + "\n"
+    if !layouts.is_err()
+        rows @ layout_rows.wrapper_rows(layouts.must()).join("\n") + "\n"
     else
         made = dump(a, dump_text: dump_text)
 
@@ -189,7 +190,7 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
         rows @ layout_rows.wrapper_rows(made.must()).join("\n") + "\n"
 
         if made.must().len() <= KEPT_DUMP
-            publish.write_whole(path: kept_path, text: made.must(), keyed: true)?
+            kept.write(path: kept_path, text: made.must())?
     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
     return judged(a, sum: sum, text: text)
 
@@ -263,12 +264,12 @@ function judged(a: Asking, sum: str, text: str) -> ()?
     if text.len() == 0
         return ok()
     verdict = a.dir + "/verdict-" + sum + "-" + digest.digest(text) + ".txt"
-    kept = read_file(verdict)
+    known = kept.read(verdict)
 
-    if !kept.is_err()
-        if kept.must() == "ok\n"
+    if !known.is_err()
+        if known.must() == "ok\n"
             return ok()
-        return fail(code: "clang", msg: kept.must())
+        return fail(code: "clang", msg: known.must())
     check_c = pointee.unit_path(dir: a.dir, stem: "check", text: text)
     publish.write_whole(path: check_c, text: text, keyed: true)?
     err_path = publish.private_name(a.dir + "/check-stderr.txt")
@@ -293,7 +294,7 @@ function judged(a: Asking, sum: str, text: str) -> ()?
                 return fail(code: e.code, msg: e.msg)
             said @ e.msg
 
-    publish.write_whole(path: verdict, text: said, keyed: true)?
+    kept.write(path: verdict, text: said)?
 
     if checked.is_err()
         return fail(code: "clang", msg: said)

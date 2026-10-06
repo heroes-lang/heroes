@@ -3,7 +3,7 @@ kind: defect
 area: runtime
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 4d409818492dbf298e799c9e102e9515cc9931c0
 github: none
 ---
 
@@ -16,3 +16,7 @@ github: none
     **Panel 191 sat on its route**, 2026-10-04 (`docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md`), and adopted `c-dirwide`, provisional: the manifest compiled into the runtime's own object, a refusal to start where `GetACP()` is not 65001, and the directory door made wide. The `.res` this item's line names, carried by `link_flags()`, is refused there: four link lines `heroes` does not write would each have to name it. The landing owes R2 (a directory named with a lone surrogate, red under the route too), R3 (the cases, each red on `7f4c0cc5`'s runtime first; 239's two rewritten), R7's corrections, and the platform legs. **Three checks for the landing, on code that does not exist before it** (R8; unrun, so no item of their own yet): a program built before the landing launching one built after, which the critic infers receives the mojibake as valid UTF-8; `GetOEMCP` answering 65001 under the manifest while the console stays at 437 (the ffi-pragmatist's measurement), for a library converting through `CP_OEMCP`; and the resource object on Windows targets other than `x86_64-pc-windows-msvc`. Each is filed with its class if the landing measures it red.
 
     **2026-10-05, batch 11's legs** on `2dd5611c`: on the Windows box under clang 23.1.1 every case of this item is red in `base` (the runtime at `7c615049`) and green in `land`, the net's own tests 280, all passed, and R2's and the return doors' cases red in `cdw`, panel 191's route alone. The CI's Windows x86-64 leg at `61e085ae`, clang 20.1.8, fails W16 and W21: the case's own fixture, `clang -shared -fms-runtime-lib=dll lib238.c -o lib238.dll`, exits 1120 before `heroes build` is asked, and the case keeps no word of clang's, so what is unresolved is unrun. The same line exits 0 on the box. A row of this item, which stays open until the case passes on the CI's clang.
+
+    Repaired at `4d409818`, 2026-10-05 (lane cli12), its CI row, gated by the net's own tests on this Mac (283, all passed; the case runs on Windows alone); the net is owed at the batch's close. The CI run of `ca5fa51e` printed clang's words: under clang 20.1.8 and `link.exe` the fixture's DLL took `fclose` from the static `libucrt.lib` and left `__imp_fopen`, `__imp_fseek` and `__imp_ftell` unresolved, LNK1120, after LNK4098; clang's driver puts `-defaultlib:libcmt` on every link but clang-cl's, `-fms-runtime-lib=dll` or not (`MSVC.cpp`, read at `llvmorg-20.1.8` and on `main`). The fixture now names out the three runtimes Microsoft's LNK4098 page lists for `msvcrt.lib`. **Unrun**: the box's half, clang 23.1.1, the box offline since about 19:40; the CI's half, clang 20.1.8, is owed after the batch's push.
+
+    2026-10-05, the box's half run on the Windows box under clang 23.1.1, a fresh tree of `8800ce9c` in `/c/w/b12-cli12-8800ce9c-32882`, the compiler built from the seed and then from `selfhost/`: the net's own tests 283, all passed, W16/W21's fixture linking its DLL under the three `-nodefaultlib:` words. The CI's clang 20.1.8 half stays owed after the batch's push.

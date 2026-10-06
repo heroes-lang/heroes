@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: 8800ce9ccd02bb0fb477b8c113ae0e89f24c5e14
 github: none
 ---
 
@@ -12,3 +12,7 @@ github: none
     **Origin:** batch 11's coordinator, 2026-10-05, on the Windows box, running panel 190's R10 pair: the script's `[ -f p231/astar800.exe ]` found nothing, and the binary was `p231/astar800`.
 
     **Class: adjacent**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): found beside the work; nothing said is false, *wrote name* names the file written, and the binary is right, but on Windows a build whose path has no extension leaves a program the platform's own shells cannot start by that path. **Unrun**: whether `heroes run` and `heroes test`, which name their own binaries, ever take an author's path; what clang or MinGW's gcc do for the same `-o`, the precedent a repair would weigh.
+
+    Repaired at `e46b0adf`, 2026-10-05 (lane cli12), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The precedent, measured before choosing: clang 23.1.1 on the box writes `-o name` as `name` (lld-link's `-out:name`), and GCC's driver appends `.exe` to an `-o` whose last part holds no `.` for MinGW and Cygwin (`gcc.cc`'s `convert_filename`, read 2026-10-05); gcc's rule is taken, a device left as written. `heroes run -o` takes the author's path too and gets the same suffix. **Unrun**: the repair on the Windows box, offline since about 19:40; it is the push's Windows leg's.
+
+    Repaired at `8800ce9c` as well, 2026-10-05: on the box at `e87deed4` the compiler's own tests read 1242 and 2 failed, two expectations pinning `cannot write .../out` and `.../app` where the build now names `out.exe` and `app.exe`; they take the platform's suffix now. Run on the Windows box under clang 23.1.1, a fresh tree of `8800ce9c` in `/c/w/b12-cli12-8800ce9c-32882`, the compiler built from the seed and then from `selfhost/`: the compiler's own tests 1242, all passed; `build -o h359/name` wrote `name.exe` and said `wrote h359/name.exe`, and `cmd.exe` and PowerShell each started it by `h359\name` (42); `run -o h359/ran` left `ran.exe`; `-o h359/kept.bin` kept its suffix; `-o NUL` wrote nothing and made no `NUL.exe`; `-o h359\sub.d\inner` wrote `inner.exe`, which `cmd.exe` started.

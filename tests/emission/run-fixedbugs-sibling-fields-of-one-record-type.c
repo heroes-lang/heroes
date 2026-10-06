@@ -2,8 +2,13 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-sibling-fields-of-one-record-type.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-sibling-fields-of-one-record-type.h>
+#pragma push_macro("a")
+#pragma push_macro("b")
+#pragma push_macro("s")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -15,7 +20,7 @@ _Static_assert(_Generic(&((Inner *)0)->s, Slot * *: 1, default: 0) && sizeof(((I
 _Static_assert(_Generic(&((Pair *)0)->a, Inner *: 1, default: 0) && sizeof(((Pair *)0)->a) == sizeof(Inner), "heroes-ffi-field Pair a");
 #line 37 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 _Static_assert(_Generic(&((Pair *)0)->b, Inner *: 1, default: 0) && sizeof(((Pair *)0)->b) == sizeof(Inner), "heroes-ffi-field Pair b");
-#line 19 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 24 "fixedbugssiblingfieldsofonerecordtype.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -96,7 +101,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 105 "fixedbugssiblingfieldsofonerecordtype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b);
@@ -118,7 +123,7 @@ void h_fixedbugssiblingfieldsofonerecordtype_main(void);
 
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
-#line 122 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 127 "fixedbugssiblingfieldsofonerecordtype.c"
     Pair h0_p;
     int64_t t1;
     Pair t2;
@@ -221,7 +226,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 225 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 230 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

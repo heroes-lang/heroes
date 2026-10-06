@@ -1,0 +1,58 @@
+# The flags of `check` that ask questions no one answer can hold, refused
+# before anything is read (CLAUDE.md §10: the artifact on stdout, the
+# diagnostics on stderr, and a flag the author gave is never dropped in
+# silence; defect 371, 2026-10-06). `check --apply --json` printed the
+# program as text at exit 0; `--brief` and `--dump-scopes` beside `--apply`,
+# `--in-place` without it, and `--brief` beside `--json` were each dropped in
+# the same silence, measured on the base's compiler. `--json` with `--apply`
+# is answered now (`cli/apply_answer.hero`); each of the others is refused at
+# exit 2 with what was asked, as `build` refuses its two stops together
+# (`cli/verbs.hero`).
+
+use cli/argv
+
+# The refusal for this invocation's flags, or none where they agree.
+function refused(inv: argv.Invocation) -> str?
+    applies = argv.has(inv, spelling: "--apply")
+
+    if applies && argv.has(inv, spelling: "--brief")
+        return ok(
+            "`--brief` prints the diagnostics one to a line, and `--apply` prints the program instead of them: ask for one"
+        )
+
+    if applies && argv.has(inv, spelling: "--dump-scopes")
+        return ok(
+            "`--dump-scopes` prints the program's scopes, and `--apply` prints the program with its fixes written: ask for one artifact at a time"
+        )
+
+    if !applies && argv.has(inv, spelling: "--in-place")
+        return ok(
+            "`--in-place` rewrites the file with what `--apply` writes, and `--apply` was not given: `heroes check <file.hero> --apply --in-place`"
+        )
+
+    if argv.has(inv, spelling: "--json") && argv.has(inv, spelling: "--brief")
+        return ok("`--json` and `--brief` are two forms of the diagnostics: ask for one")
+    return fail(code: "none", msg: "the flags agree")
+
+## Tests
+
+function hit(spelling: str) -> argv.FlagHit
+    return argv.FlagHit(spelling: spelling, value: fail(code: "none", msg: "no value"))
+
+function asked(flags: [argv.FlagHit]) -> argv.Invocation
+    none: [str] = []
+    return argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: none, flags: flags)
+
+# Defect 371's shapes beside `--apply --json`, each refused; and the flags
+# that agree, `--apply --json` and `--json --dump-scopes` among them.
+test "check refuses the flags no one answer can hold, and lets the rest through (defect 371)"
+    assert !refused(asked([hit("--apply"), hit("--brief")])).is_err()
+    assert !refused(asked([hit("--apply"), hit("--dump-scopes")])).is_err()
+    assert !refused(asked([hit("--in-place")])).is_err()
+    assert !refused(asked([hit("--json"), hit("--brief")])).is_err()
+    assert refused(asked([hit("--apply"), hit("--json")])).is_err()
+    assert refused(asked([hit("--apply"), hit("--in-place"), hit("--json")])).is_err()
+    assert refused(asked([hit("--json"), hit("--dump-scopes")])).is_err()
+    assert refused(asked([hit("--apply"), hit("--permissive")])).is_err()
+    none: [argv.FlagHit] = []
+    assert refused(asked(none)).is_err()

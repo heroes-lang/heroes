@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-360-directive.h`, the header this group names, does not compile: clang refuses it at line 4: "this library is configured for another platform"
+  at tests/golden/unsupported/fixedbugs-360-a-header-whose-error-directive-fires.hero:7:8
+    |
+  7 | extern "fixedbugs-360-directive.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-360-directive.h` line 4 reads `#error "this library is configured for another platform"`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

@@ -1,0 +1,13 @@
+# fixedbugs, defect 360, lane cli12, 2026-10-05.
+#
+# Beside `fixedbugs-360-a-header-that-does-not-compile`: the header compiles
+# under clang's own defaults and is refused under the warnings this compiler
+# makes errors in every unit, which no group can turn off. Told as the
+# header's, and the note says the warning is one the build's flags make an
+# error.
+
+extern "fixedbugs-360-flags.h"  #~ ffi_header_refused
+    function thrice(x: i64) -> i64
+
+function main()
+    print(thrice(x: 14))

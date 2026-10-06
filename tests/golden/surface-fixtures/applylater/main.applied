@@ -1,0 +1,10 @@
+# A certain fix in a module only a later round of `check --apply` reads. The
+# first round writes `use geom` where this line quotes it; the second reads
+# `geom.hero` for the first time, and its `fn` takes a certain fix there,
+# which `--apply` never writes in another module and says it did not write.
+# Until 2026-10-06 only the first round's fixes in another module were said,
+# and this one was neither written nor told, at exit 0.
+use geom  #~ use_wants_a_name
+
+function main()
+    print(geom.area(side: 3))

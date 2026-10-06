@@ -28,6 +28,7 @@
 # nothing that hands a program back may print it.
 
 use token
+use char_column
 use module/names as module_names
 
 ## The two tables
@@ -72,6 +73,9 @@ record Source
     # the read (`module/reading.hero`) and told by `not_text.hero`; a file
     # holding one is never lexed (`lexer.lex_files`).
     faults: [Fault]
+    # The offset of every byte of `text` continuing a character, ascending:
+    # a column without a walk of its line (`char_column.at`, defect 372).
+    continuations: [i64]
 
 # A byte that is not part of a well-formed UTF-8 sequence: where the U+FFFD
 # that stands for it begins, and its value (panel 189, defect 227).
@@ -168,7 +172,9 @@ function from_files(inputs: [InputFile]) -> Source
 
     whole = pieces.join("")
     none: [Fault] = []
-    return Source(name: name, text: whole, line_starts: starts_of(whole), files: table, faults: none)
+    starts = starts_of(whole)
+    more = char_column.continuations_of(whole)
+    return Source(name: name, text: whole, line_starts: starts, files: table, faults: none, continuations: more)
 
 # The '\n' count of one segment — what `starts_of(text).len() - 1` answers
 # for a whole text, without building the array.
@@ -261,11 +267,12 @@ record Position
 # 1-based line and column in the whole text; **the column counts
 # characters**, not bytes — the consumer is the reader, and for a caret a
 # byte is not a column (the byte-counting version disagreed with its own
-# caret by three columns on one tabbed line, 2026-08-12).
+# caret by three columns on one tabbed line, 2026-08-12). `char_column` counts
+# it, a CRLF line's end at its carriage return (defect 373).
 function line_col(s: Source, offset: i64) -> Position
     line = floor_start(s.line_starts, offset)
     start = s.line_starts[line]
-    col = s.text.slice(from: start, to: offset).chars().len() + 1
+    col = char_column.at(s.text, continuations: s.continuations, start: start, offset: offset)
     return Position(line: line + 1, col: col)
 
 # The 1-based line in the whole text — the printer's question. `locate`
