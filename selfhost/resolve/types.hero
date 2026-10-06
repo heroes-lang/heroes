@@ -21,6 +21,7 @@ use resolved
 use resolve/vocab
 use widths
 use resolve/state
+use resolve/offered
 use resolve/errors
 use module/diagnostics
 use type_text
@@ -109,7 +110,7 @@ function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
             .test_decl => return
 
         return
-    candidates = type_candidates(r, decls)
+    candidates = type_candidates(@r, decls)
     near = state.near_names(@r, name, candidates)
     state.push_diagnostic(@r, errors.unknown_type(name, near, span))
 
@@ -154,13 +155,8 @@ function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls:
     found = resolved.top_in(r.out, module: module, name: type_name)
 
     if found.is_err()
-        names: [str] @ []
-
-        for candidate in resolved.names_in(r.out, module)
-            if is_type_decl(decls, resolved.top_in(r.out, module: module, name: candidate).must())
-                names @ names.push(candidate)
-
-        near = state.near_names(@r, type_name, names)
+        names = offered.kinded(@r.offered, r.out, module: module, decls: decls).types
+        near = state.near_names(@r, type_name, [names])
         state.push_diagnostic(
             @r,
             diagnostics.not_in_module(module: module, qualifier: wrote, name: type_name, near: near, span: span)
@@ -186,25 +182,23 @@ function is_type_decl(decls: [ast.Decl], at: i64) -> bool
 
 # Everything that could have been meant, nearest namespace first: the type
 # parameters in hand (position order), then the file's own types (names_in
-# is sorted — the ORDER mark's rule), then the primitives from the one
-# array that lists them.
-function type_candidates(r: state.Resolver, decls: [ast.Decl]) -> [str]
-    candidates: [str] @ []
+# is sorted — the ORDER mark's rule; gathered once, `resolve/offered.hero`),
+# then the primitives from the one array that lists them.
+function type_candidates(@r: state.Resolver, decls: [ast.Decl]) -> [[str]]
+    generics: [str] @ []
 
     for g in r.generics
-        candidates @ candidates.push(g.name)
+        generics @ generics.push(g.name)
 
-    for name in resolved.names_in(r.out, r.module)
-        if is_type_decl(decls, resolved.top_in(r.out, module: r.module, name: name).must())
-            candidates @ candidates.push(name)
+    primitives: [str] @ []
 
     for k in widths.int_kinds()
-        candidates @ candidates.push(widths.int_name(k))
+        primitives @ primitives.push(widths.int_name(k))
 
     for prim in ["f32", "f64", "bool", "str", "ptr", "cstr"]
-        candidates @ candidates.push(prim)
+        primitives @ primitives.push(prim)
 
-    return candidates
+    return [generics, offered.kinded(@r.offered, r.out, module: r.module, decls: decls).types, primitives]
 
 ## Tests
 

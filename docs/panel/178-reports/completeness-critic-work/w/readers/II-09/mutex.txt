@@ -1,0 +1,1 @@
+no. The program writes a placeholder of zeros field by field (there is no `zero` claim and no `rest: zero`, because all zeros is not a valid mutex on every platform), but pthread_mutex_init fills it before any lock or unlock.

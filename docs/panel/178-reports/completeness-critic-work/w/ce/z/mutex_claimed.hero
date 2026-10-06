@@ -1,0 +1,9 @@
+# Panel 178, compiler-engineer: Z1's claim written where it is false (Darwin).
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t partial zero
+        __sig: i64
+    function pthread_mutex_lock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ Mutex(rest: zero)
+    print(pthread_mutex_lock(@m))

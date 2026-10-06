@@ -1,0 +1,1 @@
+no. The program writes an all-zero placeholder only because a record has to be constructed before it can be passed as `@m`, and it goes through pthread_mutex_init before any lock or unlock. The record is deliberately not marked `zero`, so `rest: zero` is not used on it.

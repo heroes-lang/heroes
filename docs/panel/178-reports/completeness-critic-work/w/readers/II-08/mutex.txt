@@ -1,0 +1,1 @@
+no. The storage starts as zeros written out field by field (the record is deliberately not marked `zero`, because all zeros is not a valid mutex on every platform), and pthread_mutex_init always runs on it before any lock.

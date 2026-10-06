@@ -1,0 +1,1 @@
+no. The program does build a zero-filled pthread_mutex_t, because the spec requires every binding to be initialised, but that cell goes to pthread_mutex_init before lock or unlock ever see it.

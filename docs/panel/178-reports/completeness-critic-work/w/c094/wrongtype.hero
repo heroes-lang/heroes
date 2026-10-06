@@ -1,0 +1,15 @@
+# Critic, panel 178: the 094 prototype, a constant bound at the wrong record type.
+extern "cinit.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant PT_INIT: Pt
+
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t partial
+        __sig: i64
+    constant PTHREAD_COND_INITIALIZER: Mutex
+
+function main()
+    m: Mutex @ PTHREAD_COND_INITIALIZER
+    print(m.__sig)

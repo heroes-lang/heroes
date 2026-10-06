@@ -1,0 +1,1 @@
+no. The mutex value starts as zeros only because a record has to be built before it can be passed as `@m`. It always goes through pthread_mutex_init before lock or unlock.

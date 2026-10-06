@@ -1,0 +1,144 @@
+# What one module offers the did-you-mean, gathered once while its table of
+# declarations stands as it is (design.md §4.17; defect 385).
+#
+# Every name nothing answers is offered the names near it (`near_names`),
+# and the lists it is measured against were gathered again for each such
+# name: the module's names read off its table and sorted, the built-ins'
+# table built again, and for a type or a function each declaration's kind
+# copied out to ask what it is. So a module of `n` declarations holding `n`
+# names nothing answers paid `n` times the module: 0.92, 2.46 and 7.79
+# billion instructions for 200, 400 and 800 functions each taking a type
+# nobody declared. Here a module's lists are gathered once, held in the
+# resolver's state, and gathered again only once the table has taken a
+# write since: `NameRows.written` counts its writes, and a list gathered at
+# another count is never handed out.
+#
+# Each list is the one `resolve/names.hero`, `resolve/types.hero` and
+# `resolve/qualified.hero` gathered for every name, in its order. The
+# declarations a caller hands in are the resolver's one array, the same in
+# every call of one resolution (`resolve.resolve` makes the state and hands
+# that array to every declaration it resolves).
+
+use ast
+use source
+use resolved
+use inventory
+use parse
+
+record Offered
+    # The table's count of writes when these were gathered.
+    written: i64
+    # The module's names, sorted (`resolved.names_in`).
+    names: [str]
+    # Those names, then the built-ins: what a name read or written as a value
+    # is offered after the locals in scope.
+    values: [str]
+    # Whether the two lists below are gathered: they need the declarations,
+    # which the lookup of a written name does not hold.
+    kinded: bool
+    # The functions among `names`, then the built-ins: what the name after a
+    # dot is offered.
+    functions: [str]
+    # The records and variants among `names`, the types the module declares.
+    types: [str]
+
+# `module`'s names and values, gathered where `held` has none at the table's
+# count.
+function named(@held: {str: Offered}, out: resolved.Resolved, module: str) -> Offered
+    have = held[module]
+
+    if !have.is_err() && have.must().written == out.top.written
+        return have.must()
+    names = resolved.names_in(out, module)
+    values: [str] @ names
+
+    for b in inventory.table()
+        values @ values.push(b.name)
+
+    none: [str] = []
+    fresh = Offered(
+        written: out.top.written,
+        names: names,
+        values: values,
+        kinded: false,
+        functions: none,
+        types: none
+    )
+    held[module] @ fresh
+    return fresh
+
+# The same, with the functions and the types among the names.
+function kinded(@held: {str: Offered}, out: resolved.Resolved, module: str, decls: [ast.Decl]) -> Offered
+    one: Offered @ named(@held, out, module)
+
+    if one.kinded
+        return one
+    functions: [str] @ []
+    types: [str] @ []
+
+    for name in one.names
+        at = resolved.top_in(out, module: module, name: name).must()
+
+        is_function = match decls[at].kind
+            .function_decl                                             => true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
+        is_type = match decls[at].kind
+            .record_decl | .variant_decl                 => true
+            .constant_decl | .function_decl | .test_decl => false
+
+        if is_function
+            functions @ functions.push(name)
+
+        if is_type
+            types @ types.push(name)
+
+    for b in inventory.table()
+        functions @ functions.push(b.name)
+
+    one.kinded @ true
+    one.functions @ functions
+    one.types @ types
+    held[module] @ one
+    return one
+
+## Tests
+
+# The lists hold every name the table holds when they are asked for: one
+# written after they were gathered is in them the next time, in its sorted
+# place, and the built-ins stay after the module's own.
+test "a name declared after the lists were gathered is offered with them"
+    out: resolved.Resolved @ resolved.new_resolved()
+    resolved.declare_top(@out, module: "m", name: "beta", decl: 0)
+    held: {str: Offered} @ {}
+    first = named(@held, out, module: "m")
+    assert first.names == ["beta"]
+    assert first.values[0] == "beta"
+    assert first.values.len() == 1 + inventory.table().len()
+    assert named(@held, out, module: "m").written == first.written
+    resolved.declare_top(@out, module: "m", name: "alpha", decl: 1)
+    again = named(@held, out, module: "m")
+    assert again.names == ["alpha", "beta"]
+    assert again.values[0] == "alpha" && again.values[1] == "beta"
+    assert named(@held, out, module: "other").names.len() == 0
+
+# The functions and the types among a module's names are its declarations'
+# own kinds, each in the names' sorted order, the built-ins after the
+# functions; a constant is neither.
+test "the functions and the types are the declarations of those kinds"
+    text = "record Zone\n    x: i64\n\nvariant Mode\n    on\n    off\n\nconstant LIMIT: i64\n    3\n\nfunction walk() -> i64\n    return 1\n\nfunction apply() -> i64\n    return 2\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out: resolved.Resolved @ resolved.new_resolved()
+    at: i64 @ 0
+
+    for d in p.decls
+        resolved.declare_top(@out, module: "t", name: source.span_text(s, d.name), decl: at)
+        at @ at + 1
+
+    held: {str: Offered} @ {}
+    one = kinded(@held, out, module: "t", decls: p.decls)
+    assert one.names == ["LIMIT", "Mode", "Zone", "apply", "walk"]
+    assert one.types == ["Mode", "Zone"]
+    assert one.functions[0] == "apply" && one.functions[1] == "walk"
+    assert one.functions.len() == 2 + inventory.table().len()

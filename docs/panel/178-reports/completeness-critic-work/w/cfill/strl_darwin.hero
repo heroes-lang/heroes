@@ -1,0 +1,22 @@
+# Critic, panel 178: the third kind of array written by C itself, through the
+# field's lend (spec § 13: f.ptr() + counted_by), with no new form and no 091.
+extern "sys/un.h"
+    record SockaddrUn tag sockaddr_un partial
+        sun_family: u8
+        sun_path: i8[104]
+
+extern "string.h"
+    function strlcpy(dst: ptr counted_by size lent, src: cstr lent, size: u64) -> u64
+
+function blank() -> SockaddrUn
+    return SockaddrUn(sun_family: 1, sun_path: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+function main()
+    a: SockaddrUn @ blank()
+    path = "/tmp/hèroes-178-critic.sock"
+    n = strlcpy(dst: a.sun_path.ptr(), src: path.cstr(), size: 104)
+    if n >= 104
+        print("does not fit")
+        exit(code: 1)
+    print(n)
+    print(a.sun_path.validated_bytes().must())

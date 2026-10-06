@@ -1,0 +1,46 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+seed build 7 s
+x86_64
+== s/uname_S_linux.hero
+0
+Linux
+x86_64
+0
+true
+EXIT=0
+== s/sun_SL_ascii_linux.hero
+0
+0
+0
+0
+/tmp/heroes-178-s.sock
+0
+1
+EXIT=0
+== s/sun_SL_utf8_linux.hero
+panic: .must() on an error: does_not_fit: the value is outside the target's range
+EXIT=134
+== s/addrinfo_S.hero
+0
+EXIT=0
+== s/statvfs_S_linux.hero
+0
+4096
+255
+EXIT=0
+== s/mutex_S_linux.hero
+
+error[ffi_parameter_type]: `m` of `pthread_mutex_lock` is declared a different kind of thing from the header's `pthread_mutex_t *` — clang read the header, and the two do not convert
+  at s/mutex_S_linux.hero:6:5
+    |
+  6 |     function pthread_mutex_lock(@m: Mutex) -> i32
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a parameter is declared as what the header says. `pthread_mutex_t *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+
+error[ffi_parameter_type]: `m` of `pthread_mutex_unlock` is declared a different kind of thing from the header's `pthread_mutex_t *` — clang read the header, and the two do not convert
+  at s/mutex_S_linux.hero:7:5
+    |
+  7 |     function pthread_mutex_unlock(@m: Mutex) -> i32
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a parameter is declared as what the header says. `pthread_mutex_t *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+EXIT=1
