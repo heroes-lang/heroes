@@ -1,0 +1,20 @@
+# fixedbugs, defect 395, lane b13-unit, 2026-10-06: a count read at run time,
+# 16 for a field of 16 bytes, which C counts in `int`s. Before panel 194's R7
+# the compare before the call was in bytes and let it through, and C wrote 64
+# bytes; it is in the header's unit now, and the program aborts before C runs,
+# naming the field, the count and the header's type. `after` printed first
+# shows nothing was written past the field.
+extern "fixedbugs-395-units.h"
+    record Held tag held
+        buf: u8[16]
+        after: i64
+    function fill_ints(a: ptr counted_by n lent, n: u64) -> i64
+
+function at_run_time(k: u64) -> u64
+    return k * 4
+
+function main()
+    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(h.after)
+    print(fill_ints(a: h.buf.ptr(), n: at_run_time(k: 4)))
+    print(h.after)

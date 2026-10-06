@@ -360,8 +360,12 @@ function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
         .top t =>
             match decls[t.at].kind
                 # §4.13: a top-level function is a value, and its type is
-                # its signature.
-                .function_decl   => return signature_of(@c, a, r, s, decls, decl: t.at)
+                # its signature — unless a parameter is `@`, which no type
+                # carries (defect 398, `check/markers.hero`).
+                .function_decl =>
+                    if markers.refused_as_value(@c, s, decls, decl: t.at, span: span)
+                        return state.error_ty_of(c)
+                    return signature_of(@c, a, r, s, decls, decl: t.at)
                 .constant_decl k => return lower.lower_ty(@c, a, r, k.ty)
                 # A record name is a constructor, not a value on its own
                 # (§4.9): only meaningful as the callee of a call.
@@ -1330,6 +1334,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
 
             for arg in given
                 position = index + offset
+                markers.through_a_value(@c, a, arg)
 
                 # §4.9 through a VALUE (defect 026), and it is §4.9's rule
                 # rather than a second one. A position the type NAMED is a

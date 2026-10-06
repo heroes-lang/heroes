@@ -1,0 +1,12 @@
+# Defect 398 across a module (lane b13-unit, 2026-10-06): `helper.bump` named
+# as a value is refused where it stands, named as the author wrote it, and the
+# qualified call beside it is quiet. No `check/` case holds a second module,
+# so `suite_surface`'s row is this shape's golden.
+use helper
+
+function main()
+    f = helper.bump  #~ mutable_parameter_as_value
+    x: i64 @ 1
+    helper.bump(@x)
+    print(x)
+    _ = f

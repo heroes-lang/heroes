@@ -1,0 +1,42 @@
+# fixedbugs, defect 092, lane b13-unit, 2026-10-06 (found by panel 178's
+# ffi-pragmatist, 2026-09-24; the shapes are lane b12-ffi13's, for panel 194).
+#
+# SYMPTOM: `read(fd: 0, buf: @h, n: 4096)` into a 48-byte `struct addrinfo`:
+# `check` 0, then a stack overwrite at run time, 138 on Darwin, 135 and 139 on
+# the Linux legs, *WRITE of size 4096* under `--sanitize`.
+#
+# CAUSE: a record lent whole through `@` to a parameter the header spells
+# `void *` crosses in silence, since C converts any record's address to that,
+# and how far C reaches is ANOTHER argument nothing tied to the record.
+#
+# FIX: panel 194's R7, route C. The pointee check asks every record lent whole
+# with no `counted_by` whether the header takes it as `void *`, through
+# qualifiers and typedefs (defect 010's guard), and such a declaration is
+# refused on the parameter, naming the `counted_by` that admits it (the run
+# case `tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs`
+# is each of these declared so). The shapes: `void *`, `const void *`, a
+# typedef of `void *`, a record's field lent whole, a count C reads through a
+# pointer, and a signed count; the record lent to its own pointer type with no
+# count stays as it was, which is defect 396's question, not this one's.
+extern "fixedbugs-092-records.h"
+    record One tag one
+        a: i32
+    record Outer tag outer
+        inner: One
+        z: i32
+    function fill(@buf: One, n: u64) -> i64  #~ ffi_parameter_type
+    function peek(@buf: One, n: u64) -> i64  #~ ffi_parameter_type
+    function fill_lpvoid(@buf: One, n: u64) -> i64  #~ ffi_parameter_type
+    function fill_len(@buf: One, @n: u32) -> i64  #~ ffi_parameter_type
+    function fill_signed(@buf: One, n: i64) -> i64  #~ ffi_parameter_type
+
+function main()
+    o: One @ One(a: 0)
+    w: Outer @ Outer(inner: One(a: 0), z: 7)
+    n: u32 @ 4
+    print(fill(@o, n: 4))
+    print(peek(@o, n: 4))
+    print(fill_lpvoid(@o, n: 4))
+    print(fill(@w.inner, n: 4))
+    print(fill_len(@o, @n))
+    print(fill_signed(@o, n: 4))

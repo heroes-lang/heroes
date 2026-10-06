@@ -1,0 +1,22 @@
+# fixedbugs, defect 092's own reproducer (panel 178's ffi-pragmatist,
+# `docs/panel/178-reports/ffi-pragmatist-work/rec_overwrite.hero`), lane
+# b13-unit, 2026-10-06: `read(fd: 0, buf: @h, n: 4096)` into a 48-byte
+# `struct addrinfo` wrote 4048 bytes over the stack at `check` 0. The real
+# `read`, whose `buf` is `void *` on every leg that has `unistd.h`, refused
+# on the declaration since panel 194's R7; `@buf: Hints counted_by n` is the
+# binding that builds, held to the record's size before C runs, as the run
+# case `fixedbugs-092-a-record-lent-whole-with-its-count-runs` shows on the
+# case's own header. A leg with no `netdb.h` skips it.
+extern "netdb.h"
+    record Hints tag addrinfo partial
+        ai_family: i32
+        ai_socktype: i32
+
+extern "unistd.h"
+    function read(fd: i32, @buf: Hints, n: u64) -> i64  #~ ffi_parameter_type
+
+function main()
+    h: Hints @ Hints(ai_family: 0, ai_socktype: 1)
+    n = read(fd: 0, buf: @h, n: 4096)
+    print(n)
+    print(h.ai_family)

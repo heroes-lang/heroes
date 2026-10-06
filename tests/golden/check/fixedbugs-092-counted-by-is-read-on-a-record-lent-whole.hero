@@ -1,0 +1,29 @@
+# fixedbugs, defect 092, lane b13-unit, 2026-10-06: where `counted_by` may
+# stand since panel 194's R7, the declaration half. A group's record lent
+# whole through `@` takes it, and its count may be an integer C takes by
+# value or reads through an `@` cell (`getsockopt`'s length); the same
+# record by value lends nothing, a handle is a pointer already and lends no
+# bytes, and a count must still be an integer and a sibling. Before the
+# sitting the record was `counted_by_shape` too, so `read` into a record had
+# no checked spelling, and the undeclared one wrote over the stack at
+# `check` 0 (`tests/golden/unsupported/fixedbugs-092-read-into-a-record-names-its-count`).
+extern "fixedbugs-092-counted-by.h"
+    record One tag one
+        a: i32
+    record Op tag opaque
+    function by_value_count(@buf: One counted_by n, n: u64) -> i64
+    function cell_count(@buf: One counted_by n, @n: u32) -> i64
+    function not_lent(buf: One counted_by n, n: u64) -> i64  #~ counted_by_shape
+    function a_handle(@h: Op counted_by n, n: u64) -> i64  #~ counted_by_shape
+    function a_float(@buf: One counted_by n, @n: f64) -> i64  #~ counted_by_shape
+    function no_sibling(@buf: One counted_by m, n: u64) -> i64  #~ counted_by_shape
+
+function main()
+    o: One @ One(a: 0)
+    k: u32 @ 4
+    x: f64 @ 4.0
+    print(by_value_count(@o, n: 4))
+    print(cell_count(@o, @k))
+    print(not_lent(buf: o, n: 4))
+    print(a_float(@o, @x))
+    print(no_sibling(@o, n: 4))

@@ -169,6 +169,35 @@ function ufcs_on_mutable(name: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
+# A function with an `@` parameter, named where a VALUE stands (defect 398).
+# No function type carries an `@` — `(function(@i64) -> ())` is
+# `expected_type` at its `@`, measured — so the value would have a type it
+# does not have, and the build died on it in clang. No fix: the repair is a
+# different function, and which one is the author's.
+function mutable_parameter_as_value(name: str, param: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "mutable_parameter_as_value",
+        message: "`" + name + "` changes its argument `" + param + "` through `@`, and a function value cannot: no function type carries an `@` (§ 9), so `" + name + "` is only called by name, its `" + param + "` marked `@` at the call",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.8: the `@` is written at the call too, so a call that changes an argument never looks like one that reads it, and a value called `f(x)` would hide it. To hand the work around as a value, write a function without `@` that returns the new value — `function next(n: i64) -> i64` — and assign what it returns"
+    )
+    return d
+
+# An `@` at a call through a function VALUE (defect 398, the shape beside it):
+# such a value never changes an argument, since its type cannot say it does.
+function marker_through_a_value(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "marker_mismatch",
+        message: "a function value does not change this argument — the `@` says it does",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "no function type carries an `@` (§ 9), so a value is always called with plain arguments; a function that changes its argument is called by name, `f(@x)`"
+    )
+    return d
+
 ## Patterns
 
 function not_matchable(got: str, span: token.Span) -> diag.Diagnostic

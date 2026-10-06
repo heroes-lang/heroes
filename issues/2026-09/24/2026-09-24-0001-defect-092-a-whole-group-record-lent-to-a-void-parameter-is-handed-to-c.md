@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-09-24
-commit: none
+commit: f66ccb77fecaa219049b9aa2fb1dae3abeb688bf
 github: none
 ---
 
@@ -51,3 +51,5 @@ github: none
     Evidence for panel 194, 2026-10-06, lane ffi13 of batch 12: `docs/panel/194-evidence/092-routes.md`, with its programs and the prototypes' diff under `docs/panel/194-evidence/092/`. Two routes were built as prototypes and not landed, a count declared on the lent record with an undeclared lend to `void *` refused, and `x.ptr()` lending a whole record to a counted `ptr`; each was run on every shape beside the reproducer on this Mac and Linux arm64, with what it changes in the tracked programs (none of the 9 holding the 12 whole-record lends), what it costs in instructions, and what it leaves open: a count of records against the record's own pointer type, and a count C reads through a pointer. The item stays open for the sitting.
 
     **2026-10-06, panel 194** (`docs/panel/194-the-rest-is-zero-where-a-group-s-construction-says-so-and-a-lend-s-count-is-in-c-s-own-unit.md`), ratified by delegation the same day, R7: a lend's count is compared in C's own unit, elements of the header's pointee type and bytes for `void *`; an undeclared whole-record lend to `void *` is refused, naming the `counted_by` that admits it, and `counted_by` accepts a count read through an `@` cell; route B is refused; no interim. The landing, which builds route C, is batch 13's and repairs defect 395 with this item.
+
+    Repaired at `f66ccb77`, 2026-10-06 (lane b13-unit), gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the push's platform legs, this being at the C boundary. Panel 194's R7, route C, in one repair with defect 395: a group's record lent whole through `@` takes `counted_by`, its count may be an `@` cell C reads (`getsockopt`'s length), and the call is held to C's `sizeof` of the record in the unit the header's pointer counts, at build time for a constant and before C runs otherwise; an undeclared one the header takes as `void *` is refused on the parameter, naming the `counted_by`. Every shape of `docs/panel/194-evidence/092-routes.md` stops before C runs or is refused, but the two `today-typed-pointer-*`, a record lent undeclared to its own pointer type, which are defect 396's question; run on this Mac, Linux arm64 and x86-64, its C on the Windows box by hand (clang 23.1.1, `x86_64-pc-windows-msvc`).

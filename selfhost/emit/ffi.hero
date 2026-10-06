@@ -37,6 +37,7 @@ use emit/ffi_narrowed
 use emit/ffi_mutable
 use emit/ffi_lend
 use emit/ffi_extent
+use emit/ffi_unit
 use emit/ffi_asked
 use cli/pointee_ask
 use parse
@@ -263,6 +264,12 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !extent.is_err()
             found @ ffi_lookup.add_once(found, d: extent.must())
+
+        # A lend's parameter as the pointee check's own lines say it (panel
+        # 194's R7): a whole record to `void *` with no count, and a counted
+        # parameter whose unit the header leaves incomplete.
+        for lent in ffi_unit.lend_refusals(s, decls, tree, answered, line: line)
+            found @ ffi_lookup.add_once(found, d: lent)
 
     return found
 

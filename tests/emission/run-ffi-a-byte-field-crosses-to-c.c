@@ -241,7 +241,9 @@ bb0:
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t20 = INT64_C(8);
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap), "heroes-ffi-extent slot_sum p n 2521 2533 2538 2539 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2521 2533 2538 2539 8");
+#line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2521 2533 2538 2539 8 const void *");
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t21 = slot_sum(t19, t20);
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -253,7 +255,9 @@ bb0:
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t25 = INT64_C(4);
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)sizeof(h0_s.tag), "heroes-ffi-extent slot_sum p n 2710 2721 2726 2727 4");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)sizeof(h0_s.tag)), "heroes-ffi-extent slot_sum p n 2710 2721 2726 2727 4");
+#line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)(sizeof(h0_s.tag) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2710 2721 2726 2727 4 const void *");
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t26 = slot_sum(t24, t25);
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -265,7 +269,9 @@ bb0:
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t30 = INT64_C(8);
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap), "heroes-ffi-extent slot_fill p n 2821 2833 2838 2839 8");
+    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_fill p n 2821 2833 2838 2839 8");
+#line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 2821 2833 2838 2839 8 void *");
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     (void)slot_fill(t29, t30);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -273,7 +279,9 @@ bb0:
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t34 = INT64_C(8);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap), "heroes-ffi-extent slot_sum p n 2863 2875 2880 2881 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2863 2875 2880 2881 8");
+#line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2863 2875 2880 2881 8 const void *");
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t35 = slot_sum(t33, t34);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -292,15 +300,15 @@ bb0:
     t76 = h4_own4;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h4_own4 = t40;
-#line 296 "ffiabytefieldcrossestoc.c"
+#line 304 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t76);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t77 = h1_f0;
-#line 300 "ffiabytefieldcrossestoc.c"
+#line 308 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_retain(&t40);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h1_f0 = t40;
-#line 304 "ffiabytefieldcrossestoc.c"
+#line 312 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t77);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t41 = h1_f0;
@@ -376,15 +384,15 @@ bb1:
     t78 = h5_own5;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h5_own5 = t67;
-#line 380 "ffiabytefieldcrossestoc.c"
+#line 388 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t78);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t79 = h3_f1;
-#line 384 "ffiabytefieldcrossestoc.c"
+#line 392 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_retain(&t67);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h3_f1 = t67;
-#line 388 "ffiabytefieldcrossestoc.c"
+#line 396 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t79);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t68 = h3_f1;
@@ -402,7 +410,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 406 "ffiabytefieldcrossestoc.c"
+#line 414 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -414,16 +422,16 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 418 "ffiabytefieldcrossestoc.c"
+#line 426 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&h1_f0);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 421 "ffiabytefieldcrossestoc.c"
+#line 429 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&h3_f1);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 424 "ffiabytefieldcrossestoc.c"
+#line 432 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&h4_own4);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 427 "ffiabytefieldcrossestoc.c"
+#line 435 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&h5_own5);
     return;
 bb4:
@@ -431,7 +439,7 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 435 "ffiabytefieldcrossestoc.c"
+#line 443 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }

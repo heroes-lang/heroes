@@ -1,0 +1,56 @@
+# fixedbugs, defect 092, lane b13-unit, 2026-10-06: a record lent whole
+# through `@`, its count declared, and every count that fits — the binding the
+# refusal of `tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count`
+# names. Panel 194's R7 holds the count to the record's own size before C
+# runs, in the unit C counts in: bytes through `void *` and its typedef, and
+# through `const void *`; records through the record's own pointer and its
+# typedef. Each count is the most that fits — four bytes of `One`, sixteen of
+# a padded `Pad`, one `Pfd` — stated as a literal, read at run time, and read
+# through an `@` cell C reads, as `getsockopt` reads `*optlen`. C writes
+# exactly that much, and the field beside the lent one, `z`, still reads 7.
+extern "fixedbugs-092-records.h"
+    record One tag one
+        a: i32
+    record Pad tag pad
+        c: i8
+        d: i64
+    record Outer tag outer
+        inner: One
+        z: i32
+    record Pfd tag pfd
+        fd: i32
+        events: i16
+        revents: i16
+    function fill(@buf: One counted_by n, n: u64) -> i64
+    function fill_pad(@buf: Pad counted_by n, n: u64) -> i64
+    function fill_lpvoid(@buf: One counted_by n, n: u64) -> i64
+    function peek(@buf: One counted_by n, n: u64) -> i64
+    function fill_len(@buf: One counted_by n, @n: u32) -> i64
+    function poll_like(@fds: Pfd counted_by nfds, nfds: u64) -> i32
+    function poll_typedef(@fds: Pfd counted_by nfds, nfds: u64) -> i32
+    function copy_n(@dst: Pad counted_by n, @src: One counted_by n, n: u64) -> i64
+
+function at_run_time(k: u64) -> u64
+    return k
+
+function main()
+    o: One @ One(a: 0)
+    p: Pad @ Pad(c: 0, d: 0)
+    w: Outer @ Outer(inner: One(a: 0), z: 7)
+    q: Pfd @ Pfd(fd: 0, events: 1, revents: 0)
+    print(fill(@o, n: 4))
+    print(o.a)
+    print(fill_pad(@p, n: 16))
+    print(p.d)
+    print(fill(@w.inner, n: at_run_time(k: 4)))
+    print(w.z)
+    print(fill_lpvoid(@o, n: 4))
+    print(peek(@o, n: 4))
+    n: u32 @ 4
+    print(fill_len(@o, @n))
+    print(poll_like(@q, nfds: 1))
+    print(q.revents)
+    q.revents @ 0
+    print(poll_typedef(@q, nfds: at_run_time(k: 1)))
+    print(q.revents)
+    print(copy_n(@p, @o, n: 4))

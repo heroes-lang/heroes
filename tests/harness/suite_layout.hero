@@ -443,6 +443,15 @@ constant CEILING: i64
 # `check/group_fields.hero` holds the labels, `emit/layout_sites.hero` asks
 # C what a construction leaves out, and `emit/ffi_built.hero` tells it once
 # per construction.
+#
+# **One moved on 2026-10-06, lane b13-unit, for panel 194's R7 (defects 092
+# and 395).** `emit/ctype.hero` 395 -> **400** (measured 399): a lend's count
+# is compared in the unit C counts it in, the header's own type for the
+# parameter, which only the pointee check reads, so the emitter is handed it
+# the way it is handed a handle's `struct` tag — on `Names`, the one table every
+# emitter already holds. One field, its comment line, and the empty map the
+# constructor starts it from; the rest is in files with room
+# (`cli/header_types.hero`, `emit/lend_extent.hero`, `emit/lend_count.hero`).
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -454,7 +463,7 @@ constant DECIDED: [str]
         "selfhost/check/table.hero 389"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"
-        "selfhost/emit/ctype.hero 395"
+        "selfhost/emit/ctype.hero 400"
         "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"

@@ -1,0 +1,38 @@
+# Fixed defect 398, 2026-10-06, the shape beside its reproducer (lane
+# b13-unit). Symptom: `g = plain` over `function plain(n: i64)`, then
+# `g(@x)`, was `check` 0 and `run` 2, *internal error: compiling the generated
+# C failed*: the call handed C `&x` for an `int64_t`. Cause: a call through a
+# function VALUE never asked whether an argument's `@` stands where the type
+# marks one, and no function type marks one. Repair: an `@` before an argument
+# of a call through a value is `marker_mismatch`, told on the argument, with
+# the reason (`check/markers.hero`). The shapes: a local holding the value, a
+# parameter holding it, a record's field holding it; and the plain call beside
+# each, quiet.
+
+record Holder
+    f: (function(i64) -> ())
+
+function plain(n: i64)
+    print(n)
+
+function through_a_local()
+    g = plain
+    x: i64 @ 1
+    g(@x)  #~ marker_mismatch
+    g(x)
+
+function through_a_parameter(g: (function(i64) -> ()))
+    x: i64 @ 2
+    g(@x)  #~ marker_mismatch
+    g(x)
+
+function through_a_field()
+    h = Holder(f: plain)
+    x: i64 @ 3
+    h.f(@x)  #~ marker_mismatch
+    h.f(x)
+
+function main()
+    through_a_local()
+    through_a_parameter(g: plain)
+    through_a_field()

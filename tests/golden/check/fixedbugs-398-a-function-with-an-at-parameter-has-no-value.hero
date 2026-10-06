@@ -1,0 +1,107 @@
+# Fixed defect 398, 2026-10-06 (lane b13-unit; found by panel 194's
+# compiler-engineer beside its third item). Symptom: `function bump(@n: i64)`
+# taken as a value, `_ = bump`, was `check` 0 and then `run` 2, *internal
+# error: compiling the generated C failed*: clang refused to assign `void
+# (int64_t *)` to the value's `void (*)(int64_t)`. Cause: a function's value
+# type is its signature with every `@` dropped, because no function type
+# carries one (`(function(@i64) -> ())` is `expected_type` at the `@`), so the
+# value had a type it does not have and only clang noticed. Repair: spec § 9
+# decides it, since a function type has no `@`: a function with a marked
+# parameter is no value, told where its name stands as one
+# (`check/markers.hero`), and the call or binding it reaches says nothing more.
+# The shapes: discarded, bound and called, handed to a parameter of function
+# type, to a generic, kept in a record's field, an extern's, a `str`, a
+# record's, the second parameter marked, compared, a generic function, a C
+# callback.
+
+extern "stdlib.h"
+    function atexit(f: (function() -> ())) -> i32
+
+extern "math.h"
+    function frexp(x: f64, @e: i32) -> f64
+
+record Holder
+    f: (function(i64) -> ())
+
+record P
+    x: i64
+
+function bump(@n: i64)
+    n @ n + 1
+
+function add(@acc: i64, item: i64) -> i64
+    acc @ acc + item
+    return acc
+
+function grow(@s: str)
+    s @ s + "x"
+
+function move_p(@p: P)
+    p.x @ p.x + 1
+
+function put(k: i64, @into: [i64])
+    into @ into.push(k)
+
+function swap_in<A>(@x: A, y: A)
+    x @ y
+
+function quiet()
+    print(0)
+
+function apply(f: (function(i64) -> ()), v: i64)
+    f(v)
+
+function discarded()
+    _ = bump  #~ mutable_parameter_as_value
+    x: i64 @ 1
+    bump(@x)
+    print(x)
+
+function bound_and_called()
+    f = bump  #~ mutable_parameter_as_value
+    x: i64 @ 1
+    f(@x)
+    print(x)
+
+function handed_to_a_parameter()
+    apply(f: bump, v: 1)  #~ mutable_parameter_as_value
+
+function handed_to_a_generic()
+    xs: [i64] = [1, 2, 3]
+    print(xs.fold(0, add))  #~ mutable_parameter_as_value
+
+function kept_in_a_field()
+    h = Holder(f: bump)  #~ mutable_parameter_as_value
+    h.f(1)
+
+function an_extern()
+    _ = frexp  #~ mutable_parameter_as_value
+
+function a_str_and_a_record()
+    _ = grow  #~ mutable_parameter_as_value
+    _ = move_p  #~ mutable_parameter_as_value
+
+function the_second_parameter()
+    _ = put  #~ mutable_parameter_as_value
+
+function compared()
+    print(bump == quiet)  #~ mutable_parameter_as_value
+
+function a_generic_function()
+    _ = swap_in  #~ mutable_parameter_as_value
+
+function a_c_callback()
+    _ = atexit(f: bump)  #~ mutable_parameter_as_value
+
+function main()
+    discarded()
+    bound_and_called()
+    handed_to_a_parameter()
+    handed_to_a_generic()
+    kept_in_a_field()
+    an_extern()
+    a_str_and_a_record()
+    the_second_parameter()
+    compared()
+    a_generic_function()
+    a_c_callback()
