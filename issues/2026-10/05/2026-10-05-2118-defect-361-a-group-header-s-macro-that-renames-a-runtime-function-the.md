@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: 7c20be8f880d646160d9a08617de025657e34f57
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: blocking**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, and a false message, *internal error* for a macro of the author's header that the error's own note locates.
 
     **2026-10-05, lane b12-cli12, the shapes beside, measured** on that lane's compiler (`<scratchpad>/r361/`): two build at exit 0 and print wrong values, `#define INT64_C(c) 0` printing `0 0` for `42 1000000000000`, every integer literal being `INT64_C(n)`, and `#define hero_print_int(x) ((void)(x))` printing nothing; the item's own shape, the same as a plain macro, and the same from a header the group's header includes are `internal error` at exit 2; `#define HERO_RUNTIME_ABI 99` is exit 2 with the false *heroes_runtime.h is from another compiler*; `#define main other_main` fails the link at exit 2; `bool`, `int64_t` and `HeroStr` redefined build and run right on this Mac by luck; a runtime function the program never calls is harmless. So the item is a wrong value as well as a false message. The robust repair the lane measured on hand-built units under Apple clang 21, Debian clang 18.1.8 and 22.1.8: after the group's includes, the emitted unit restores every name its own code uses with `#pragma push_macro` and `pop_macro`, the names the program binds left unguarded (glibc's `#define st_mtime st_mtim.tv_sec` refuses a guard); in a helper beside `emit/c_text.hero`'s `includes`, used by every writer of a unit that includes the group's headers, `emit/unit`, `layout_text`, `layout_check`, `layout_screen`, `ffi_asked`, and `cli/header_types.hero`'s pointee units. Unrun: Windows, and the text's cost. A reader in `cli/` alone would tell the exit 2 rows and never see the two at exit 0.
+
+    Repaired at `7c20be8f`, 2026-10-06 (lane cli12), gated by its cases and the compiler's own tests; the net is owed at the batch's close, and its cases at the C boundary owe Linux arm64 and the Windows box. A unit's groups' includes stand between `runtime/heroes_guard_open.h` and `heroes_guard_close.h`, which push and pop 601 names: every word the runtime's two headers write, every name C11 gives the four standard headers read before the groups, and `main`; a name the program binds from its groups is pushed again before the close and keeps its header's meaning. The route first drafted, every identifier of the unit on one `_Pragma` line, cost the compiler's own build 32.3 billion instructions more and killed Apple clang 21 on its 59 MB test unit (37,030 names), so it was refused. Not held: a name the unit defines itself, which a macro rewrites at its definition and every use alike, so clang refuses rather than a meaning moving.
