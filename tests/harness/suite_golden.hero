@@ -204,6 +204,8 @@ constant NO_FLAGS: [str]
 # two, an excerpt writing an invisible and a bidirectional character by its
 # code. **11 on 2026-10-06**, as the suite asked at batch 13's merge of lane
 # front: defect 391's template literal and defect 399's repair that works.
+# **14 the same night**, at the merges of lanes tmpl407 and fixed405: defect
+# 407's template over lines, 405's nested fixed array, 408's `rest: zero`.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -212,7 +214,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 11,
+        least: 14,
         watched: true,
         silent_stdout: false,
         library_skip: false
