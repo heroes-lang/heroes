@@ -1,0 +1,87 @@
+# fixedbugs, defect 412, lane b13-zero401, 2026-10-06, found beside defect
+# 401.
+#
+# SYMPTOM: `p = Point(x: @n, y: 2)` with `n: i64 @ 1` was `check` 0, and
+# `run` exit 2, clang refusing the emitted `.f_x = &h0_n`; so a variant case
+# `.circle(r: @n)`, a group's record, `ok(@n)` and every construction beside
+# them. A name bound with `=` was told instead that it should be a cell.
+#
+# CAUSE: `@` at a call site repeats an `@` parameter, and a construction has
+# none: it keeps a copy of each value. The marker was checked against a
+# function's parameters only, and no stage gave it a meaning anywhere else.
+#
+# FIX: which call is a construction is what its callee names, so the name
+# stage refuses each `@` handed to one, `marker_mismatch`, the code a stray
+# `@` on a function's argument already has, quoting the argument, and the
+# value is read as the copy it is. A handle's construction is refused whole
+# by `handle_built`; a function's `@` is the checker's, in this defect's
+# other case.
+
+extern "fixedbugs-412.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+
+record Point
+    x: i64
+    y: i64
+
+record Box
+    p: Point
+    n: i64
+
+variant Shape
+    circle
+        r: i64
+    ring
+        r: i64
+        rest: i64
+
+function a_record() -> i64
+    n: i64 @ 1
+    p = Point(x: @n, y: 2)  #~ marker_mismatch
+    q = Point(x: 1, y: @n)  #~ marker_mismatch
+    return p.x + q.y
+
+function unlabelled_and_nested() -> i64
+    n: i64 @ 1
+    b = Box(p: Point(@n, 2), n: @n)  #~ marker_mismatch marker_mismatch
+    return b.n
+
+function a_field_and_a_name_bound_once() -> i64
+    q: Point @ Point(x: 1, y: 2)
+    p = Point(x: 3, y: 4)
+    b = Box(p: @p, n: @q.x)  #~ marker_mismatch marker_mismatch
+    return b.n
+
+function a_group_record() -> i32
+    n: i32 @ 1
+    zero: i32 @ 0
+    p = Pair(a: @n, b: 2)  #~ marker_mismatch
+    q = Pair(a: 1, rest: @zero)  #~ marker_mismatch
+    return p.a + q.a
+
+function a_variant_case() -> i64
+    n: i64 @ 1
+    zero: i64 @ 0
+    s: Shape = .circle(r: @n)  #~ marker_mismatch
+    t: Shape = .ring(r: 2, rest: @zero)  #~ marker_mismatch
+
+    for one in [s, t]
+        match one
+            .circle c => print(c.r)
+            .ring k   => print(k.r)
+
+    return n
+
+function the_constructors_of_a_fallible(fails: bool) -> i64?
+    n: i64 @ 1
+    why: str @ "no"
+
+    if fails
+        return fail(code: @why, msg: "m")  #~ marker_mismatch
+    return ok(@n)  #~ marker_mismatch
+
+function main()
+    print(a_record(), unlabelled_and_nested(), a_field_and_a_name_bound_once(), a_group_record(), a_variant_case())
+    print(the_constructors_of_a_fallible(fails: false).must())

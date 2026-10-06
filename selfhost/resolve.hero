@@ -173,3 +173,23 @@ test "a binding called zero beside the words hides no misuse of them"
         "extern \"p.h\"\n    record Pair tag pair\n        a: i32\n        b: i32\n\nfunction f() -> Pair\n    return Pair(a: 1, rest: zero)\n"
     )
     assert built.diagnostics.len() == 0
+
+# Defect 412: an `@` handed to a construction is told here, once, and the
+# argument read as the copy it is, so a name bound with `=` is not told to
+# become a cell; a function's `@` is the checker's, and nothing is told here.
+test "an @ handed to a construction is told at the name stage"
+    out = resolved_source(
+        "record P\n    x: i64\n\nfunction f() -> P\n    n = 1\n    return P(x: @n)\n"
+    )
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "marker_mismatch"
+    assert out.diagnostics[0].fixes[0].certainty == .guess
+    in_a_case = resolved_source(
+        "variant V\n    one\n        x: i64\n\nfunction f() -> V\n    n: i64 @ 1\n    return .one(x: @n)\n"
+    )
+    assert in_a_case.diagnostics.len() == 1
+    assert in_a_case.diagnostics[0].code == "marker_mismatch"
+    called = resolved_source(
+        "function g(x: i64) -> i64\n    return x\n\nfunction f() -> i64\n    n: i64 @ 1\n    return g(@n)\n"
+    )
+    assert called.diagnostics.len() == 0
