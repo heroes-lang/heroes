@@ -49,7 +49,7 @@ use parse/refused_literal
 use parse/brace_habit
 use parse/braced_lines
 use parse/unclosed
-use parse/laid_braces
+use laid_braces
 
 ## Fields and cases
 

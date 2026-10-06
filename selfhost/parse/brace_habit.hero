@@ -47,7 +47,7 @@ use word_place
 use state
 use line_above
 use brace_layout
-use parse/laid_braces
+use laid_braces
 use pairing
 use parse/line_end
 

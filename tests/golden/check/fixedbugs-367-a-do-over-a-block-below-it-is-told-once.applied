@@ -1,0 +1,79 @@
+# Fixed defect 367, 2026-10-06 (lane b12-parse12, found beside defect 303).
+# Symptom: C's do-while with its `{` on a line of its own, `do` over `{`,
+# its body, `}` and `while (n > 0)`, cost two messages that named neither,
+# `expected_expression` at the block, found as a map's entry, and
+# `missing_body` for the `while`; and with no braces at all, `do` over an
+# indented body, `unexpected_block` and the same `missing_body`. Cause: the
+# habit was read only where the `{` stood on the `do`'s own line (defects
+# 201 and 303): past a `do` alone, the braces the lexer laid out below it
+# began a statement of their own, and the `while` after them was a loop.
+# Repair: the name `do` alone on its line over a block, braces the lexer
+# laid out or an indented block, is C's do-while, told once at the block
+# for what it is (`parse/loop_habit.under_a_do`), the block read as a body
+# and the `while` below it as its tail, whose missing body is asked for no
+# more (`do_tail`). The shapes: braces on their own lines, the `}` on the
+# `while`'s line, the bare condition, a `;` after the tail, nested, a line
+# after, no braces at all; and a name `do` over no block, as before.
+
+function allman(n: i64)
+    do
+    {  #~ unexpected_block
+        print(n)
+    }
+    while (n > 0)
+
+function close_on_the_tail(n: i64)
+    do
+    {  #~ unexpected_block
+        print(n)
+    } while (n > 0)
+
+function bare_condition(n: i64)
+    do
+    {  #~ unexpected_block
+        print(n)
+    }
+    while n > 0
+
+function a_semicolon_after(n: i64)
+    do
+    {  #~ unexpected_block
+        print(n)
+    }
+    while (n > 0)  #~ unexpected_character
+
+function nested(n: i64)
+    if n > 0
+        do
+        {  #~ unexpected_block
+            print(n)
+        }
+        while (n > 0)
+
+function a_line_after(n: i64)
+    do
+    {  #~ unexpected_block
+        print(n)
+    }
+    while (n > 0)
+    print(2)
+
+function no_braces(n: i64)
+    do
+        #~v unexpected_block
+        print(n)
+    while (n > 0)
+
+function a_name_over_no_block()
+    do = 1
+    print(do)
+
+function main()
+    allman(1)
+    close_on_the_tail(1)
+    bare_condition(1)
+    a_semicolon_after(1)
+    nested(1)
+    a_line_after(1)
+    no_braces(1)
+    a_name_over_no_block()
