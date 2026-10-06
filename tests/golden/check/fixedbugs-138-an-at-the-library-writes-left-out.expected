@@ -1,1 +1,1 @@
-tests/golden/check/fixedbugs-138-an-at-the-library-writes-left-out.hero:8:46: error[contract_differs]: `hero_file_read` is declared here and in the Heroes library, and the two disagree about the marks on `status`: here no mark, in the library `@` — one C function has one contract
+tests/golden/check/fixedbugs-138-an-at-the-library-writes-left-out.hero:12:44: error[contract_differs]: `hero_file_read_str` is declared here and in the Heroes library, and the two disagree about the marks on `status`: here no mark, in the library `@` — one C function has one contract

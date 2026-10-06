@@ -1,0 +1,36 @@
+# Defect 245, panel 192's R1, 2026-10-05: the lease beside the lend. `.lease()`
+# copies a `str`'s bytes for C with a NUL after them, so C read the copy only
+# to the NUL the program's text held, as it read the lend: `strlen` answered
+# 1 for three bytes. The lease asks the bit the lend asks, and stops before it
+# copies anything, so no lease is live when it does.
+#
+# The NUL comes from a file, as in `fixedbugs-245-a-lend-of-a-str-holding-a-
+# nul-stops.hero`, with a path of its own.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+constant HELD: str
+    "build/heroes-golden-245-lease.bin"
+
+function held() -> str
+    handle = fopen(path: HELD.cstr(), mode: "wb".cstr())
+    assert handle != nullptr
+
+    for b in [97, 0, 98]
+        _ = fputc(c: b.to_i32().must(), stream: handle)
+
+    _ = fclose(stream: handle)
+    return read_file(HELD).must()
+
+function main()
+    s = held()
+    print("the program holds ", s.len(), " bytes")
+    c: cstr @ s.lease()
+    print("C reads ", strlen(s: c))
+    end_lease(@c)

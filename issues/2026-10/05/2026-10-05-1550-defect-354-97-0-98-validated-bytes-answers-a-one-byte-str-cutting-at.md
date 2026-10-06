@@ -3,7 +3,7 @@ kind: defect
 area: runtime
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: 8b3d0d67ede109f2162aab9e0bbc7b4a18639595
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 192's ffi-pragmatist, 2026-10-05 (its report, *a related defect to file separately*); filed by the synthesis's R12.
 
     **Class: blocking**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a wrong value under panel 192's R1, the bytes after the zero dropped in silence.
+
+    Repaired at `8b3d0d67`, 2026-10-05, gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the platform legs before it closes, a `runtime/` change (`.claude/rules/verification.md` § The batch).

@@ -1,0 +1,39 @@
+# Defect 354, 2026-10-05. `validated_bytes()` over a `[u8]` the program built
+# read the bytes to their first zero, as it reads a C field of bytes, so
+# `[97, 0, 98]` answered a `str` of one byte at exit 0 and the two after the
+# zero were dropped with no word. A `[u8]` is the program's own data, and
+# under panel 192's R1 a `str` holds a NUL: the array is read whole, every
+# byte judged as UTF-8, and the `str` that holds a zero carries the bit that
+# stops its lend (defect 245). A field of bytes still reads to its first zero
+# or whole (`ffi-a-char-field-becomes-text.hero`), since C need not
+# terminate one and what follows the zero there is not text.
+#
+# Each shape prints its length and its bytes; the last lends a `str` that
+# holds a zero to C, and stops.
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function bytes_of(s: str) -> str
+    out: str @ ""
+
+    for i in range(from: 0, to: s.len())
+        out @ out + " " + s[i].to_str()
+
+    return out
+
+function read(name: str, b: [u8])
+    match b.validated_bytes()
+        .ok s  => print(name, ": ", s.len(), " bytes:", bytes_of(s))
+        .err e => print(name, ": ", e.code)
+
+function main()
+    read(name: "a zero between two letters", b: [97, 0, 98])
+    read(name: "a zero alone", b: [0])
+    read(name: "a zero at the end", b: [97, 0])
+    read(name: "no zero", b: [97, 98])
+    read(name: "nothing", b: [])
+    read(name: "a byte that is not text after the zero", b: [97, 0, 255])
+    held: [u8] = [97, 0, 98]
+    s = held.validated_bytes().must()
+    print("C reads ", strlen(s: s.cstr()))

@@ -1,0 +1,153 @@
+# `\u{1b}`: a character a line cannot show (`raw_chars`), written in a string
+# by its code, which is the one spelling it has (panel 192's R5).
+#
+# - **It writes no other character.** One a string holds as itself, or
+#   writes by one of its five letter escapes, is refused here with that
+#   spelling, so each character keeps exactly one (design.md §4.3, §4.15).
+# - **It writes no NUL.** No escape writes one: a `str` may hold a NUL (panel
+#   192's R1), built from bytes as the program runs, and a literal's NUL is a
+#   byte no screen shows.
+# - **Its digits are spelled one way**: lowercase hexadecimal with no leading
+#   zero, as `raw_chars.escaped` writes them. `\u{1B}` and `\u{001b}` are the
+#   same character, and a second spelling of one character is what §4.15
+#   refuses, so each is refused with a `certain` fix to `\u{1b}`.
+#
+# A string's and an `f"…"` literal's text alone: a character literal is its
+# character's number, `27`, and has no escape by code (`escape_report`). In a
+# group head's string the escape decodes, and the head refuses the character
+# it writes, as it refuses `\t` there (`head_names`, `unshowable_name`).
+
+use token
+use diag
+use state
+use escape
+use escape_codes
+use escape_report
+use raw_chars
+use shown_char
+
+# Past the `\u{…}` whose backslash is at `backslash`, in the literal or the
+# piece of an `f"…"` literal that opened at `literal`: refused where it writes
+# no character a string refuses as itself or where its digits are not the one
+# spelling, and told as an escape the language does not have where its braces
+# hold no code.
+function step(@l: state.LexState, text: str, backslash: i64, literal: i64) -> i64
+    end = escape_codes.code_end(text, at: backslash + 1)
+    value = escape_codes.code_value(text, at: backslash + 1, end: end)
+    digits = end - backslash - 4
+
+    if value < 0 || digits < 1 || value >= 55296 && value <= 57343
+        return escape_report.report(@l, text, backslash: backslash, literal: literal, ctx: .in_str)
+    span = token.Span(start: backslash, end: end)
+    shown = text.slice(from: backslash, to: end)
+
+    if raw_chars.written_by_code(value)
+        if shown != raw_chars.escaped(value)
+            state.push_diagnostic(@l.diagnostics, respelled(shown: shown, value: value, span: span))
+        return end
+
+    if value == 0
+        state.push_diagnostic(@l.diagnostics, nul(shown: shown, span: span))
+        return end
+    state.push_diagnostic(
+        @l.diagnostics,
+        needless(shown: shown, value: value, span: span, in_piece: text[literal] != '"')
+    )
+    return end
+
+# `\u{1B}`, `\u{001b}`: the escape of a character it writes, spelled another
+# way than its one, refused with that one, certain: the same character, so
+# the program means what it meant.
+function respelled(shown: str, value: i64, span: token.Span) -> diag.Diagnostic
+    one = raw_chars.escaped(value)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "escape_spelling",
+        message: "`" + shown + "` is written `" + one + "`: an escape by code is spelled in lowercase hexadecimal with no leading zero, its one spelling",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write it as `" + one + "`", replacement: one, span: span, certainty: .certain)
+    )
+    return d
+
+# `\u{0}`: no escape writes a NUL. What says it names no invariant panel 192's
+# R1 denies, since a `str` may hold one: the literal cannot, and the bytes can.
+function nul(shown: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "nul_in_string",
+        message: "`" + shown + "` writes a NUL, and no escape writes one: a NUL is a byte no screen shows, so a `str` that must hold one is built from bytes as the program runs, a `[u8]` read by `validated_bytes()`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete it", replacement: "", span: span, certainty: .guess))
+    return d
+
+# `\u{41}`: the escape writing a character a string spells otherwise, refused
+# with that spelling. Its own letter escape is `certain`, the same character
+# in the one spelling the language gives it. The character itself is a
+# `guess` (panel 192's R5, `\u{e9}` to `é`): a writer who spelled it by code
+# may have meant a character no screen shows, a space no reader tells from
+# another, or a mark that joins the character beside it, and a `certain` fix
+# is written into the file unread.
+function needless(shown: str, value: i64, span: token.Span, in_piece: bool) -> diag.Diagnostic
+    own = own_escape(value, in_piece: in_piece)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "escape_not_needed", message: "", span: span)
+
+    if own.len() > 0
+        d.message @ "`" + shown + "` writes a character a string writes `" + own + "`, its one spelling: write that"
+
+        if own == "{{" || own == "}}"
+            d.message @ "`" + shown + "` writes a brace, which the text of an `f` literal writes `" + own + "`, its one spelling: write that"
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write it as `" + own + "`", replacement: own, span: span, certainty: .certain)
+        )
+        return d
+    itself = escape.encoded(value)
+
+    if shown_char.unseen(value)
+        d.message @ "`" + shown + "` writes " + shown_char.named(itself) + ", which a string holds as itself: `\\u{…}` writes only " + raw_chars.CLASS
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "write the character itself, which no screen shows", replacement: itself, span: span, certainty: .guess)
+        )
+        return d
+    d.message @ "`" + shown + "` writes `" + itself + "`, which a string holds as itself: write `" + itself + "`"
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the character itself: `" + itself + "`", replacement: itself, span: span, certainty: .guess)
+    )
+    return d
+
+# The escape that writes `value` in a string, or "": one of the five letter
+# escapes (`escape.letter_of`), or in the piece of an `f"…"` literal a doubled
+# brace.
+function own_escape(value: i64, in_piece: bool) -> str
+    if in_piece && value == 123
+        return "{{"
+
+    if in_piece && value == 125
+        return "}}"
+    return escape.letter_of(value)
+
+test "the escape by code writes only what a line cannot show, in one spelling"
+    assert own_escape(10, in_piece: false) == "\\n"
+    assert own_escape(92, in_piece: false) == "\\\\"
+    assert own_escape(65, in_piece: false) == ""
+    assert own_escape(123, in_piece: true) == "{{"
+    assert own_escape(123, in_piece: false) == ""
+    d = needless(shown: "\\u{41}", value: 65, span: token.Span(start: 0, end: 6), in_piece: false)
+    assert d.code == "escape_not_needed"
+    assert d.fixes[0].replacement == "A"
+    assert d.fixes[0].certainty == .guess
+    accented = needless(shown: "\\u{e9}", value: 233, span: token.Span(start: 0, end: 6), in_piece: false)
+    assert accented.fixes[0].certainty == .guess
+    brace = needless(shown: "\\u{7b}", value: 123, span: token.Span(start: 0, end: 6), in_piece: true)
+    assert brace.fixes[0].replacement == "{{"
+    assert brace.fixes[0].certainty == .certain
+    unseen = needless(shown: "\\u{200b}", value: 8203, span: token.Span(start: 0, end: 8), in_piece: false)
+    assert unseen.fixes[0].certainty == .guess
+    tab = needless(shown: "\\u{9}", value: 9, span: token.Span(start: 0, end: 5), in_piece: false)
+    assert tab.fixes[0].replacement == "\\t"
+    assert tab.fixes[0].certainty == .certain
+    upper = respelled(shown: "\\u{1B}", value: 27, span: token.Span(start: 0, end: 6))
+    assert upper.code == "escape_spelling"
+    assert upper.fixes[0].replacement == "\\u{1b}"
+    assert upper.fixes[0].certainty == .certain
+    assert nul(shown: "\\u{0}", span: token.Span(start: 0, end: 5)).code == "nul_in_string"

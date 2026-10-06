@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 4efb0a8e2e703662aa91b23a68f3a819e318c55e
 github: none
 ---
 
@@ -12,3 +12,9 @@ github: none
     **Origin:** the coordinator, 2026-10-04, beside defect 245.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a program that differs from what it shows, panel 066's trap for every byte but one; its repair widens a refusal, which CLAUDE.md § 4 sends to a sitting, the one defect 245 owes.
+
+    Repaired at `aa150c8c` (the escape by code, panel 192's R5, the spelling the refusal's fix writes) and at `462b4a2d` (the refusal, R2 to R4), 2026-10-05, gated by their cases and the compiler's own tests; the net is owed at the batch's close, and the seed's two generations with it.
+
+    Repaired at `3bcd21fa` too, 2026-10-05: the escape's walk through every tool that re-prints a program (six surface rows over `escape251/main.hero`, and `heroes probe`'s default reading it).
+
+    Repaired at `4efb0a8e` too, 2026-10-06: the refusal's cost on the compiler's own check within panel 192's R11, +1.43% instructions retired against the base, measured.

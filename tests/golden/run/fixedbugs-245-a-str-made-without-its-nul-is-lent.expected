@@ -1,0 +1,7 @@
+a slice before the NUL: the program holds 1, C reads 1
+a slice after the NUL: the program holds 1, C reads 1
+the first character: the program holds 1, C reads 1
+a join of one part: the program holds 1, C reads 1
+a number: the program holds 5, C reads 5
+the empty text: the program holds 0, C reads 0
+clean texts joined: the program holds 2, C reads 2

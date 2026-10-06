@@ -1,0 +1,30 @@
+# Defect 353, panel 192's R6, 2026-10-05. On Windows `args()` read the narrow
+# `argv`, which the C runtime builds by converting the wide command line, so
+# an argument holding a lone surrogate arrived as U+FFFD under the UTF-8 code
+# page (panel 191's runs), valid text naming another file, and the spec's
+# *one that is not UTF-8 aborts* was false there. The runtime reads the wide
+# arguments and carries each as WTF-8, as a listing carries a name (panel
+# 191's R2), so the existing check refuses it: `args_checked()` answers
+# `not_text` and `args()` stops, as on this Mac and Linux, where the
+# argument arrives as the same three bytes.
+#
+# The program runs itself (`.h`): once asking `args_checked()`, once asking
+# `args()` too, its panic's words discarded.
+
+extern "fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.h"
+    function run_self(words: i64) -> i64
+
+function main()
+    given = args_checked()
+
+    if given.len() == 0
+        print("the child asking args_checked() exited ", run_self(words: 1))
+        print("the child asking args() stopped: ", run_self(words: 2) != 0)
+        return
+
+    match given[0]
+        .ok word => print("args_checked() read the argument as text, ", word.len(), " bytes")
+        .err e   => print("args_checked() refused the argument: ", e.code)
+
+    if given.len() == 2
+        print("args() read ", args().len(), " arguments")

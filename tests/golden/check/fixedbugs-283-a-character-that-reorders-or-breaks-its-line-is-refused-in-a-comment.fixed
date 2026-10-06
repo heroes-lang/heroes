@@ -1,0 +1,14 @@
+# Defect 283, panel 192's R3, 2026-10-05: a comment refuses the bidirectional
+# controls, U+2028 and U+2029 written as themselves, as a string does: in a
+# `#` comment an override reverses the comment's own text as a screen draws
+# it, and the comment is read, and becomes documentation. Each is refused,
+# `invisible_character`, its `certain` fix its name, `<U+202E>`.
+
+#~v invisible_character
+# the check below is right<U+202E> for every user
+#~v invisible_character
+# one line<U+2028>or two
+#~v invisible_character
+## a doc comment <U+200F>marked
+function main()
+    print(1)

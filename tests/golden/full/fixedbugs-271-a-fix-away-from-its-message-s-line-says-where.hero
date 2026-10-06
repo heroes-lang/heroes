@@ -1,0 +1,13 @@
+# Defect 271, 2026-10-05, its message half: a fix that applies away from its
+# message's line said nothing of where. A `,` after every statement is one
+# message at the first since defect 178, carrying a certain deletion of each
+# comma; each later one stands on a line of its own, and an author fixing by
+# hand met the next comma only after the first. Each fix on another line now
+# names its place, as the message's own `at` line names one. Where
+# `check --json` places a fix is a tool surface, a sitting's (CLAUDE.md § 4),
+# and stays open.
+
+function statements()
+    x = 1,  #~ expected_end_of_line
+    y = 2,
+    print(x + y),

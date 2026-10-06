@@ -3,7 +3,7 @@ kind: defect
 area: golden
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 1697cec1304423d90cdc0607f8181d18bd7abcc4
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** the coordinator, 2026-10-04, reading panel 187's instrument at batch 8's gate.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be: an author fixing by hand meets the next comma only after the first, and a tool reading `--json` cannot apply a fix it cannot place.
+
+    Repaired at `1697cec1`, 2026-10-05, its message half: the rich form names a fix's place where it is not its message's line, gated by its case and the compiler's own tests; the net is owed at the batch's close. The JSON half stays open for a sitting: `check --json`'s fix carries no place, and its schema is a tool surface (CLAUDE.md § 4), so the item stays open.

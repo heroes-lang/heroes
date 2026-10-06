@@ -8,12 +8,20 @@
 # this language writes a character as itself, the escape's span takes its
 # digits, and the character itself, where it is a visible one, and `\\` are
 # both offered, neither applied (`escape_readings`).
+#
+# Corrected 2026-10-05, defect 251 (panel 192's R5): `\u{1F600}` is an
+# escape the language has since that sitting, and it writes a character a
+# string holds as itself, so it is `escape_not_needed`, its fix the
+# character, a guess; and each message here now says what a string writes by
+# its code, a control character, a bidirectional control, U+2028 or U+2029,
+# where it said a string has no escape by code, which sent the writer to a
+# raw byte.
 
 function by_hexadecimal()
     print("A\x41Z")  #~ unknown_escape
 
 function by_unicode()
-    print("caf\u00e9 and \u{1F600} and \U0001F600")  #~ unknown_escape unknown_escape unknown_escape
+    print("caf\u00e9 and \u{1F600} and \U0001F600")  #~ unknown_escape escape_not_needed unknown_escape
 
 function by_octal()
     print("a\0b \101")  #~ unknown_escape unknown_escape

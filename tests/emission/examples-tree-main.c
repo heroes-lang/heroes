@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -48,7 +50,7 @@ HERO_STR_STATIC(hero_str_876be, " * ");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_109fb3, "???");
 
-#line 52 "main.c"
+#line 54 "main.c"
 typedef struct h_node_Note {
     HeroStr f_text;
     int64_t f_line;
@@ -129,19 +131,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "main.c"
+#line 147 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_node_Note_retain(const h_node_Note *v);
@@ -245,7 +247,7 @@ HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at);
 
 #line 14 "examples/tree/main.hero"
 void h_main_main(void) {
-#line 249 "main.c"
+#line 251 "main.c"
     h_node_Tree h0_t = {0};
     int64_t h1_two;
     int64_t h2_three;
@@ -363,15 +365,15 @@ bb0:
     t62 = h12_own12;
 #line 15 "examples/tree/main.hero"
     h12_own12 = t1;
-#line 367 "main.c"
+#line 369 "main.c"
     h_node_Tree_release(&t62);
 #line 15 "examples/tree/main.hero"
     t63 = h0_t;
-#line 371 "main.c"
+#line 373 "main.c"
     h_node_Tree_retain(&t1);
 #line 15 "examples/tree/main.hero"
     h0_t = t1;
-#line 375 "main.c"
+#line 377 "main.c"
     h_node_Tree_release(&t63);
 #line 18 "examples/tree/main.hero"
     t2 = INT64_C(2);
@@ -381,7 +383,7 @@ bb0:
     t64 = h13_own13;
 #line 18 "examples/tree/main.hero"
     h13_own13 = t3;
-#line 385 "main.c"
+#line 387 "main.c"
     h_node_Node_release(&t64);
 #line 18 "examples/tree/main.hero"
     t4 = h_node_add_node(&h0_t, t3);
@@ -395,7 +397,7 @@ bb0:
     t65 = h14_own14;
 #line 19 "examples/tree/main.hero"
     h14_own14 = t6;
-#line 399 "main.c"
+#line 401 "main.c"
     h_node_Node_release(&t65);
 #line 19 "examples/tree/main.hero"
     t7 = h_node_add_node(&h0_t, t6);
@@ -409,7 +411,7 @@ bb0:
     t66 = h15_own15;
 #line 20 "examples/tree/main.hero"
     h15_own15 = t9;
-#line 413 "main.c"
+#line 415 "main.c"
     h_node_Node_release(&t66);
 #line 20 "examples/tree/main.hero"
     t10 = h_node_add_node(&h0_t, t9);
@@ -423,7 +425,7 @@ bb0:
     t67 = h16_own16;
 #line 21 "examples/tree/main.hero"
     h16_own16 = t12;
-#line 427 "main.c"
+#line 429 "main.c"
     h_node_Node_release(&t67);
 #line 21 "examples/tree/main.hero"
     t13 = h_node_add_node(&h0_t, t12);
@@ -439,7 +441,7 @@ bb0:
     t68 = h17_own17;
 #line 24 "examples/tree/main.hero"
     h17_own17 = t16;
-#line 443 "main.c"
+#line 445 "main.c"
     h_node_Node_release(&t68);
 #line 24 "examples/tree/main.hero"
     t17 = h_node_add_node(&h0_t, t16);
@@ -455,7 +457,7 @@ bb0:
     t69 = h18_own18;
 #line 25 "examples/tree/main.hero"
     h18_own18 = t20;
-#line 459 "main.c"
+#line 461 "main.c"
     h_node_Node_release(&t69);
 #line 25 "examples/tree/main.hero"
     t21 = h_node_add_node(&h0_t, t20);
@@ -469,7 +471,7 @@ bb0:
     t70 = h19_own19;
 #line 26 "examples/tree/main.hero"
     h19_own19 = t23;
-#line 473 "main.c"
+#line 475 "main.c"
     h_node_Node_release(&t70);
 #line 26 "examples/tree/main.hero"
     t24 = h_node_add_node(&h0_t, t23);
@@ -485,7 +487,7 @@ bb0:
     t71 = h20_own20;
 #line 27 "examples/tree/main.hero"
     h20_own20 = t27;
-#line 489 "main.c"
+#line 491 "main.c"
     h_node_Node_release(&t71);
 #line 27 "examples/tree/main.hero"
     t28 = h_node_add_node(&h0_t, t27);
@@ -501,7 +503,7 @@ bb0:
     t72 = h21_own21;
 #line 29 "examples/tree/main.hero"
     h21_own21 = t31;
-#line 505 "main.c"
+#line 507 "main.c"
     hero_str_decref(t72);
 #line 29 "examples/tree/main.hero"
     hero_print_str(t31);
@@ -543,15 +545,15 @@ bb0:
     t73 = h22_own22;
 #line 37 "examples/tree/main.hero"
     h22_own22 = t41;
-#line 547 "main.c"
+#line 549 "main.c"
     h_node_Tree_release(&t73);
 #line 37 "examples/tree/main.hero"
     t74 = h9_u;
-#line 551 "main.c"
+#line 553 "main.c"
     h_node_Tree_retain(&t41);
 #line 37 "examples/tree/main.hero"
     h9_u = t41;
-#line 555 "main.c"
+#line 557 "main.c"
     h_node_Tree_release(&t74);
 #line 38 "examples/tree/main.hero"
     t42 = INT64_C(2);
@@ -561,7 +563,7 @@ bb0:
     t75 = h23_own23;
 #line 38 "examples/tree/main.hero"
     h23_own23 = t43;
-#line 565 "main.c"
+#line 567 "main.c"
     h_node_Node_release(&t75);
 #line 38 "examples/tree/main.hero"
     h_node_add_node(&h9_u, t43);
@@ -571,15 +573,15 @@ bb0:
     t76 = h24_own24;
 #line 39 "examples/tree/main.hero"
     h24_own24 = t45;
-#line 575 "main.c"
+#line 577 "main.c"
     h_node_Tree_release(&t76);
 #line 39 "examples/tree/main.hero"
     t77 = h10_v;
-#line 579 "main.c"
+#line 581 "main.c"
     h_node_Tree_retain(&t45);
 #line 39 "examples/tree/main.hero"
     h10_v = t45;
-#line 583 "main.c"
+#line 585 "main.c"
     h_node_Tree_release(&t77);
 #line 40 "examples/tree/main.hero"
     t46 = INT64_C(2);
@@ -589,7 +591,7 @@ bb0:
     t78 = h25_own25;
 #line 40 "examples/tree/main.hero"
     h25_own25 = t47;
-#line 593 "main.c"
+#line 595 "main.c"
     h_node_Node_release(&t78);
 #line 40 "examples/tree/main.hero"
     h_node_add_node(&h10_v, t47);
@@ -613,15 +615,15 @@ bb0:
     t79 = h26_own26;
 #line 44 "examples/tree/main.hero"
     h26_own26 = t54;
-#line 617 "main.c"
+#line 619 "main.c"
     h_node_Node_release(&t79);
 #line 44 "examples/tree/main.hero"
     t80 = h11_absent;
-#line 621 "main.c"
+#line 623 "main.c"
     h_node_Node_retain(&t54);
 #line 44 "examples/tree/main.hero"
     h11_absent = t54;
-#line 625 "main.c"
+#line 627 "main.c"
     h_node_Node_release(&t80);
 #line 45 "examples/tree/main.hero"
     t55 = h11_absent;
@@ -631,7 +633,7 @@ bb0:
     t81 = h27_own27;
 #line 45 "examples/tree/main.hero"
     h27_own27 = t56;
-#line 635 "main.c"
+#line 637 "main.c"
     h_node_Node_release(&t81);
 #line 45 "examples/tree/main.hero"
     t57 = h_node_Node_eq(&t55, &t56);
@@ -649,7 +651,7 @@ bb0:
     t82 = h28_own28;
 #line 46 "examples/tree/main.hero"
     h28_own28 = t60;
-#line 653 "main.c"
+#line 655 "main.c"
     h_node_Node_release(&t82);
 #line 46 "examples/tree/main.hero"
     t61 = h_node_Node_eq(&t58, &t60);
@@ -657,74 +659,74 @@ bb0:
     hero_print_bool(t61);
 #line 46 "examples/tree/main.hero"
     hero_print_end();
-#line 661 "main.c"
+#line 663 "main.c"
     h_node_Tree_release(&h0_t);
 #line 46 "examples/tree/main.hero"
-#line 664 "main.c"
+#line 666 "main.c"
     h_node_Tree_release(&h9_u);
 #line 46 "examples/tree/main.hero"
-#line 667 "main.c"
+#line 669 "main.c"
     h_node_Tree_release(&h10_v);
 #line 46 "examples/tree/main.hero"
-#line 670 "main.c"
+#line 672 "main.c"
     h_node_Node_release(&h11_absent);
 #line 46 "examples/tree/main.hero"
-#line 673 "main.c"
+#line 675 "main.c"
     h_node_Tree_release(&h12_own12);
 #line 46 "examples/tree/main.hero"
-#line 676 "main.c"
+#line 678 "main.c"
     h_node_Node_release(&h13_own13);
 #line 46 "examples/tree/main.hero"
-#line 679 "main.c"
+#line 681 "main.c"
     h_node_Node_release(&h14_own14);
 #line 46 "examples/tree/main.hero"
-#line 682 "main.c"
+#line 684 "main.c"
     h_node_Node_release(&h15_own15);
 #line 46 "examples/tree/main.hero"
-#line 685 "main.c"
+#line 687 "main.c"
     h_node_Node_release(&h16_own16);
 #line 46 "examples/tree/main.hero"
-#line 688 "main.c"
+#line 690 "main.c"
     h_node_Node_release(&h17_own17);
 #line 46 "examples/tree/main.hero"
-#line 691 "main.c"
+#line 693 "main.c"
     h_node_Node_release(&h18_own18);
 #line 46 "examples/tree/main.hero"
-#line 694 "main.c"
+#line 696 "main.c"
     h_node_Node_release(&h19_own19);
 #line 46 "examples/tree/main.hero"
-#line 697 "main.c"
+#line 699 "main.c"
     h_node_Node_release(&h20_own20);
 #line 46 "examples/tree/main.hero"
-#line 700 "main.c"
+#line 702 "main.c"
     hero_str_decref(h21_own21);
 #line 46 "examples/tree/main.hero"
-#line 703 "main.c"
+#line 705 "main.c"
     h_node_Tree_release(&h22_own22);
 #line 46 "examples/tree/main.hero"
-#line 706 "main.c"
+#line 708 "main.c"
     h_node_Node_release(&h23_own23);
 #line 46 "examples/tree/main.hero"
-#line 709 "main.c"
+#line 711 "main.c"
     h_node_Tree_release(&h24_own24);
 #line 46 "examples/tree/main.hero"
-#line 712 "main.c"
+#line 714 "main.c"
     h_node_Node_release(&h25_own25);
 #line 46 "examples/tree/main.hero"
-#line 715 "main.c"
+#line 717 "main.c"
     h_node_Node_release(&h26_own26);
 #line 46 "examples/tree/main.hero"
-#line 718 "main.c"
+#line 720 "main.c"
     h_node_Node_release(&h27_own27);
 #line 46 "examples/tree/main.hero"
-#line 721 "main.c"
+#line 723 "main.c"
     h_node_Node_release(&h28_own28);
     return;
 }
 
 #line 56 "examples/tree/node.hero"
 h_node_Tree h_node_new_tree(void) {
-#line 728 "main.c"
+#line 730 "main.c"
     HeroArrayHeader * h0_nodes = {0};
     HeroArrayHeader * h1_own1 = {0};
     h_node_Tree h2_own2 = {0};
@@ -742,19 +744,19 @@ bb0:
     t4 = h1_own1;
 #line 57 "examples/tree/node.hero"
     h1_own1 = t1;
-#line 746 "main.c"
+#line 748 "main.c"
     hero_array_decref(t4);
 #line 57 "examples/tree/node.hero"
     t5 = h0_nodes;
-#line 750 "main.c"
+#line 752 "main.c"
     hero_array_incref(t1);
 #line 57 "examples/tree/node.hero"
     h0_nodes = t1;
-#line 754 "main.c"
+#line 756 "main.c"
     hero_array_decref(t5);
 #line 58 "examples/tree/node.hero"
     t2 = h0_nodes;
-#line 758 "main.c"
+#line 760 "main.c"
     hero_array_incref(t2);
 #line 58 "examples/tree/node.hero"
     t3 = (h_node_Tree){.f_nodes = t2};
@@ -762,26 +764,26 @@ bb0:
     t6 = h2_own2;
 #line 58 "examples/tree/node.hero"
     h2_own2 = t3;
-#line 766 "main.c"
+#line 768 "main.c"
     h_node_Tree_release(&t6);
 #line 58 "examples/tree/node.hero"
-#line 769 "main.c"
+#line 771 "main.c"
     h_node_Tree_retain(&t3);
 #line 58 "examples/tree/node.hero"
-#line 772 "main.c"
+#line 774 "main.c"
     hero_array_decref(h0_nodes);
 #line 58 "examples/tree/node.hero"
-#line 775 "main.c"
+#line 777 "main.c"
     hero_array_decref(h1_own1);
 #line 58 "examples/tree/node.hero"
-#line 778 "main.c"
+#line 780 "main.c"
     h_node_Tree_release(&h2_own2);
     return t3;
 }
 
 #line 60 "examples/tree/node.hero"
 int64_t h_node_add_node(h_node_Tree *ph0_t, h_node_Node h1_node) {
-#line 785 "main.c"
+#line 787 "main.c"
     h_node_Tree h0_t;
     HeroArrayHeader * h2_own2 = {0};
     h_node_Tree t1;
@@ -810,15 +812,15 @@ bb0:
     t10 = h2_own2;
 #line 61 "examples/tree/node.hero"
     h2_own2 = t4;
-#line 814 "main.c"
+#line 816 "main.c"
     hero_array_decref(t10);
 #line 61 "examples/tree/node.hero"
     t11 = h0_t.f_nodes;
-#line 818 "main.c"
+#line 820 "main.c"
     hero_array_incref(t4);
 #line 61 "examples/tree/node.hero"
     h0_t.f_nodes = t4;
-#line 822 "main.c"
+#line 824 "main.c"
     hero_array_decref(t11);
 #line 62 "examples/tree/node.hero"
     t5 = h0_t;
@@ -830,17 +832,17 @@ bb0:
     t8 = INT64_C(1);
 #line 62 "examples/tree/node.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 834 "main.c"
+#line 836 "main.c"
     *ph0_t = h0_t;
 #line 60 "examples/tree/node.hero"
-#line 837 "main.c"
+#line 839 "main.c"
     hero_array_decref(h2_own2);
     return t9;
 }
 
 #line 69 "examples/tree/node.hero"
 int64_t h_node_evaluate(h_node_Tree h0_t, int64_t h1_at) {
-#line 844 "main.c"
+#line 846 "main.c"
     h_node_Node h2_s0 = {0};
     int64_t h3_r0;
     h_node_Node_c_number h4_n;
@@ -909,11 +911,11 @@ bb0:
     t4 = *(h_node_Node const *)hero_array_at(t2, t3);
 #line 70 "examples/tree/node.hero"
     t48 = h2_s0;
-#line 913 "main.c"
+#line 915 "main.c"
     h_node_Node_retain(&t4);
 #line 70 "examples/tree/node.hero"
     h2_s0 = t4;
-#line 917 "main.c"
+#line 919 "main.c"
     h_node_Node_release(&t48);
 #line 70 "examples/tree/node.hero"
     t5 = h2_s0;
@@ -941,10 +943,10 @@ bb0:
 bb1:
 #line 70 "examples/tree/node.hero"
     t47 = h3_r0;
-#line 945 "main.c"
+#line 947 "main.c"
     h_node_Node_release(&h2_s0);
 #line 70 "examples/tree/node.hero"
-#line 948 "main.c"
+#line 950 "main.c"
     h_node_Node_c_annotated_release(&h8_a);
     return t47;
 bb2:
@@ -1052,11 +1054,11 @@ bb6:
     t41 = t40.as.c_annotated;
 #line 75 "examples/tree/node.hero"
     t49 = h8_a;
-#line 1056 "main.c"
+#line 1058 "main.c"
     h_node_Node_c_annotated_retain(&t41);
 #line 75 "examples/tree/node.hero"
     h8_a = t41;
-#line 1060 "main.c"
+#line 1062 "main.c"
     h_node_Node_c_annotated_release(&t49);
 #line 75 "examples/tree/node.hero"
     t42 = h0_t;
@@ -1078,12 +1080,12 @@ bb7:
     h3_r0 = t46;
 #line 70 "examples/tree/node.hero"
     goto bb1;
-#line 1082 "main.c"
+#line 1084 "main.c"
 }
 
 #line 79 "examples/tree/node.hero"
 int64_t h_node_depth(h_node_Tree h0_t, int64_t h1_at) {
-#line 1087 "main.c"
+#line 1089 "main.c"
     h_node_Node h2_s0 = {0};
     int64_t h3_r0;
     h_node_Node_c_add h4_a;
@@ -1155,11 +1157,11 @@ bb0:
     t4 = *(h_node_Node const *)hero_array_at(t2, t3);
 #line 80 "examples/tree/node.hero"
     t52 = h2_s0;
-#line 1159 "main.c"
+#line 1161 "main.c"
     h_node_Node_retain(&t4);
 #line 80 "examples/tree/node.hero"
     h2_s0 = t4;
-#line 1163 "main.c"
+#line 1165 "main.c"
     h_node_Node_release(&t52);
 #line 80 "examples/tree/node.hero"
     t5 = h2_s0;
@@ -1187,10 +1189,10 @@ bb0:
 bb1:
 #line 80 "examples/tree/node.hero"
     t51 = h3_r0;
-#line 1191 "main.c"
+#line 1193 "main.c"
     h_node_Node_release(&h2_s0);
 #line 80 "examples/tree/node.hero"
-#line 1194 "main.c"
+#line 1196 "main.c"
     h_node_Node_c_annotated_release(&h7_a);
     return t51;
 bb2:
@@ -1300,11 +1302,11 @@ bb6:
     t43 = t42.as.c_annotated;
 #line 85 "examples/tree/node.hero"
     t53 = h7_a;
-#line 1304 "main.c"
+#line 1306 "main.c"
     h_node_Node_c_annotated_retain(&t43);
 #line 85 "examples/tree/node.hero"
     h7_a = t43;
-#line 1308 "main.c"
+#line 1310 "main.c"
     h_node_Node_c_annotated_release(&t53);
 #line 85 "examples/tree/node.hero"
     t44 = INT64_C(1);
@@ -1330,12 +1332,12 @@ bb7:
     h3_r0 = t50;
 #line 80 "examples/tree/node.hero"
     goto bb1;
-#line 1334 "main.c"
+#line 1336 "main.c"
 }
 
 #line 88 "examples/tree/node.hero"
 int64_t h_node_deeper(int64_t h0_left, int64_t h1_right) {
-#line 1339 "main.c"
+#line 1341 "main.c"
     int64_t h2_ret0;
     int64_t t1;
     int64_t t2;
@@ -1379,12 +1381,12 @@ bb4:
     t6 = h2_ret0;
 #line 88 "examples/tree/node.hero"
     return t6;
-#line 1383 "main.c"
+#line 1385 "main.c"
 }
 
 #line 95 "examples/tree/node.hero"
 HeroStr h_node_render(h_node_Tree h0_t, int64_t h1_at) {
-#line 1388 "main.c"
+#line 1390 "main.c"
     h_node_Node h2_s0 = {0};
     HeroStr h3_r0 = {0};
     h_node_Node_c_number h4_n;
@@ -1505,11 +1507,11 @@ bb0:
     t4 = *(h_node_Node const *)hero_array_at(t2, t3);
 #line 96 "examples/tree/node.hero"
     t62 = h2_s0;
-#line 1509 "main.c"
+#line 1511 "main.c"
     h_node_Node_retain(&t4);
 #line 96 "examples/tree/node.hero"
     h2_s0 = t4;
-#line 1513 "main.c"
+#line 1515 "main.c"
     h_node_Node_release(&t62);
 #line 96 "examples/tree/node.hero"
     t5 = h2_s0;
@@ -1537,64 +1539,64 @@ bb0:
 bb1:
 #line 96 "examples/tree/node.hero"
     t61 = h3_r0;
-#line 1541 "main.c"
+#line 1543 "main.c"
     hero_str_incref(t61);
 #line 96 "examples/tree/node.hero"
-#line 1544 "main.c"
+#line 1546 "main.c"
     h_node_Node_release(&h2_s0);
 #line 96 "examples/tree/node.hero"
-#line 1547 "main.c"
+#line 1549 "main.c"
     hero_str_decref(h3_r0);
 #line 96 "examples/tree/node.hero"
-#line 1550 "main.c"
+#line 1552 "main.c"
     h_node_Node_c_annotated_release(&h8_a);
 #line 96 "examples/tree/node.hero"
-#line 1553 "main.c"
+#line 1555 "main.c"
     hero_str_decref(h9_own9);
 #line 96 "examples/tree/node.hero"
-#line 1556 "main.c"
+#line 1558 "main.c"
     hero_str_decref(h10_own10);
 #line 96 "examples/tree/node.hero"
-#line 1559 "main.c"
+#line 1561 "main.c"
     hero_str_decref(h11_own11);
 #line 96 "examples/tree/node.hero"
-#line 1562 "main.c"
+#line 1564 "main.c"
     hero_str_decref(h12_own12);
 #line 96 "examples/tree/node.hero"
-#line 1565 "main.c"
+#line 1567 "main.c"
     hero_str_decref(h13_own13);
 #line 96 "examples/tree/node.hero"
-#line 1568 "main.c"
+#line 1570 "main.c"
     hero_str_decref(h14_own14);
 #line 96 "examples/tree/node.hero"
-#line 1571 "main.c"
+#line 1573 "main.c"
     hero_str_decref(h15_own15);
 #line 96 "examples/tree/node.hero"
-#line 1574 "main.c"
+#line 1576 "main.c"
     hero_str_decref(h16_own16);
 #line 96 "examples/tree/node.hero"
-#line 1577 "main.c"
+#line 1579 "main.c"
     hero_str_decref(h17_own17);
 #line 96 "examples/tree/node.hero"
-#line 1580 "main.c"
+#line 1582 "main.c"
     hero_str_decref(h18_own18);
 #line 96 "examples/tree/node.hero"
-#line 1583 "main.c"
+#line 1585 "main.c"
     hero_str_decref(h19_own19);
 #line 96 "examples/tree/node.hero"
-#line 1586 "main.c"
+#line 1588 "main.c"
     hero_str_decref(h20_own20);
 #line 96 "examples/tree/node.hero"
-#line 1589 "main.c"
+#line 1591 "main.c"
     hero_str_decref(h21_own21);
 #line 96 "examples/tree/node.hero"
-#line 1592 "main.c"
+#line 1594 "main.c"
     hero_str_decref(h22_own22);
 #line 96 "examples/tree/node.hero"
-#line 1595 "main.c"
+#line 1597 "main.c"
     hero_str_decref(h23_own23);
 #line 96 "examples/tree/node.hero"
-#line 1598 "main.c"
+#line 1600 "main.c"
     hero_str_decref(h24_own24);
     return t61;
 bb2:
@@ -1614,15 +1616,15 @@ bb2:
     t63 = h9_own9;
 #line 97 "examples/tree/node.hero"
     h9_own9 = t11;
-#line 1618 "main.c"
+#line 1620 "main.c"
     hero_str_decref(t63);
 #line 96 "examples/tree/node.hero"
     t64 = h3_r0;
-#line 1622 "main.c"
+#line 1624 "main.c"
     hero_str_incref(t11);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t11;
-#line 1626 "main.c"
+#line 1628 "main.c"
     hero_str_decref(t64);
     goto bb1;
 bb3:
@@ -1646,7 +1648,7 @@ bb3:
     t65 = h10_own10;
 #line 98 "examples/tree/node.hero"
     h10_own10 = t18;
-#line 1650 "main.c"
+#line 1652 "main.c"
     hero_str_decref(t65);
 #line 98 "examples/tree/node.hero"
     t19 = hero_str_concat(t14, t18);
@@ -1654,7 +1656,7 @@ bb3:
     t66 = h11_own11;
 #line 98 "examples/tree/node.hero"
     h11_own11 = t19;
-#line 1658 "main.c"
+#line 1660 "main.c"
     hero_str_decref(t66);
 #line 98 "examples/tree/node.hero"
     t20 = HERO_STR_LIT(hero_str_87741);
@@ -1664,7 +1666,7 @@ bb3:
     t67 = h12_own12;
 #line 98 "examples/tree/node.hero"
     h12_own12 = t21;
-#line 1668 "main.c"
+#line 1670 "main.c"
     hero_str_decref(t67);
 #line 98 "examples/tree/node.hero"
     t22 = h0_t;
@@ -1678,7 +1680,7 @@ bb3:
     t68 = h13_own13;
 #line 98 "examples/tree/node.hero"
     h13_own13 = t25;
-#line 1682 "main.c"
+#line 1684 "main.c"
     hero_str_decref(t68);
 #line 98 "examples/tree/node.hero"
     t26 = hero_str_concat(t21, t25);
@@ -1686,7 +1688,7 @@ bb3:
     t69 = h14_own14;
 #line 98 "examples/tree/node.hero"
     h14_own14 = t26;
-#line 1690 "main.c"
+#line 1692 "main.c"
     hero_str_decref(t69);
 #line 98 "examples/tree/node.hero"
     t27 = HERO_STR_LIT(hero_str_29);
@@ -1696,15 +1698,15 @@ bb3:
     t70 = h15_own15;
 #line 98 "examples/tree/node.hero"
     h15_own15 = t28;
-#line 1700 "main.c"
+#line 1702 "main.c"
     hero_str_decref(t70);
 #line 96 "examples/tree/node.hero"
     t71 = h3_r0;
-#line 1704 "main.c"
+#line 1706 "main.c"
     hero_str_incref(t28);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t28;
-#line 1708 "main.c"
+#line 1710 "main.c"
     hero_str_decref(t71);
     goto bb1;
 bb4:
@@ -1728,7 +1730,7 @@ bb4:
     t72 = h16_own16;
 #line 99 "examples/tree/node.hero"
     h16_own16 = t35;
-#line 1732 "main.c"
+#line 1734 "main.c"
     hero_str_decref(t72);
 #line 99 "examples/tree/node.hero"
     t36 = hero_str_concat(t31, t35);
@@ -1736,7 +1738,7 @@ bb4:
     t73 = h17_own17;
 #line 99 "examples/tree/node.hero"
     h17_own17 = t36;
-#line 1740 "main.c"
+#line 1742 "main.c"
     hero_str_decref(t73);
 #line 99 "examples/tree/node.hero"
     t37 = HERO_STR_LIT(hero_str_876be);
@@ -1746,7 +1748,7 @@ bb4:
     t74 = h18_own18;
 #line 99 "examples/tree/node.hero"
     h18_own18 = t38;
-#line 1750 "main.c"
+#line 1752 "main.c"
     hero_str_decref(t74);
 #line 99 "examples/tree/node.hero"
     t39 = h0_t;
@@ -1760,7 +1762,7 @@ bb4:
     t75 = h19_own19;
 #line 99 "examples/tree/node.hero"
     h19_own19 = t42;
-#line 1764 "main.c"
+#line 1766 "main.c"
     hero_str_decref(t75);
 #line 99 "examples/tree/node.hero"
     t43 = hero_str_concat(t38, t42);
@@ -1768,7 +1770,7 @@ bb4:
     t76 = h20_own20;
 #line 99 "examples/tree/node.hero"
     h20_own20 = t43;
-#line 1772 "main.c"
+#line 1774 "main.c"
     hero_str_decref(t76);
 #line 99 "examples/tree/node.hero"
     t44 = HERO_STR_LIT(hero_str_29);
@@ -1778,15 +1780,15 @@ bb4:
     t77 = h21_own21;
 #line 99 "examples/tree/node.hero"
     h21_own21 = t45;
-#line 1782 "main.c"
+#line 1784 "main.c"
     hero_str_decref(t77);
 #line 96 "examples/tree/node.hero"
     t78 = h3_r0;
-#line 1786 "main.c"
+#line 1788 "main.c"
     hero_str_incref(t45);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t45;
-#line 1790 "main.c"
+#line 1792 "main.c"
     hero_str_decref(t78);
     goto bb1;
 bb5:
@@ -1810,7 +1812,7 @@ bb5:
     t79 = h22_own22;
 #line 100 "examples/tree/node.hero"
     h22_own22 = t52;
-#line 1814 "main.c"
+#line 1816 "main.c"
     hero_str_decref(t79);
 #line 100 "examples/tree/node.hero"
     t53 = hero_str_concat(t48, t52);
@@ -1818,15 +1820,15 @@ bb5:
     t80 = h23_own23;
 #line 100 "examples/tree/node.hero"
     h23_own23 = t53;
-#line 1822 "main.c"
+#line 1824 "main.c"
     hero_str_decref(t80);
 #line 96 "examples/tree/node.hero"
     t81 = h3_r0;
-#line 1826 "main.c"
+#line 1828 "main.c"
     hero_str_incref(t53);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t53;
-#line 1830 "main.c"
+#line 1832 "main.c"
     hero_str_decref(t81);
     goto bb1;
 bb6:
@@ -1836,11 +1838,11 @@ bb6:
     t55 = t54.as.c_annotated;
 #line 101 "examples/tree/node.hero"
     t82 = h8_a;
-#line 1840 "main.c"
+#line 1842 "main.c"
     h_node_Node_c_annotated_retain(&t55);
 #line 101 "examples/tree/node.hero"
     h8_a = t55;
-#line 1844 "main.c"
+#line 1846 "main.c"
     h_node_Node_c_annotated_release(&t82);
 #line 101 "examples/tree/node.hero"
     t56 = h0_t;
@@ -1854,15 +1856,15 @@ bb6:
     t83 = h24_own24;
 #line 101 "examples/tree/node.hero"
     h24_own24 = t59;
-#line 1858 "main.c"
+#line 1860 "main.c"
     hero_str_decref(t83);
 #line 96 "examples/tree/node.hero"
     t84 = h3_r0;
-#line 1862 "main.c"
+#line 1864 "main.c"
     hero_str_incref(t59);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t59;
-#line 1866 "main.c"
+#line 1868 "main.c"
     hero_str_decref(t84);
     goto bb1;
 bb7:
@@ -1870,11 +1872,11 @@ bb7:
     t60 = HERO_STR_LIT(hero_str_109fb3);
 #line 96 "examples/tree/node.hero"
     t85 = h3_r0;
-#line 1874 "main.c"
+#line 1876 "main.c"
     hero_str_incref(t60);
 #line 96 "examples/tree/node.hero"
     h3_r0 = t60;
-#line 1878 "main.c"
+#line 1880 "main.c"
     hero_str_decref(t85);
     goto bb1;
 }

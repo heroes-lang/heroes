@@ -1,0 +1,18 @@
+# Defect 251, panel 192's R5, 2026-10-05: `\u{…}` is a string's, and nowhere
+# else is it the escape it is there.
+#
+# - A character literal is its character's code, an integer, so it writes a
+#   control character as its number, `27`; `'\u{1b}'` is an escape it does
+#   not have, as before the escape existed.
+# - A group head's string names a header or a library, and no name holds a
+#   control character (panel 188): the escape decodes, and the head refuses
+#   the character it writes, one message, as it refuses `\t` there.
+
+extern "a\u{1b}b.h"  #~ unshowable_name
+    function f() -> i32
+
+extern "c.h" link "m\u{202e}"  #~ unshowable_name
+    function g() -> i32
+
+function character()
+    c: u8 = '\u{1b}'  #~ unknown_escape

@@ -1,0 +1,33 @@
+# Defect 245, panel 192's R1, 2026-10-05: one of the seven ways a `str`
+# made from one holding a NUL holds it too, so its bit is carried and its lend
+# stops, where C read fewer bytes than the program held at exit 0: a join whose part holds it, `join(["x", s], ",")`.
+# The other six are this case's siblings, `fixedbugs-245-a-*-carries-the-
+# nul`, and the shapes that do not carry it are `fixedbugs-245-a-str-made-
+# without-its-nul-is-lent`.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+constant HELD: str
+    "build/heroes-golden-245-join-part.bin"
+
+function held() -> str
+    handle = fopen(path: HELD.cstr(), mode: "wb".cstr())
+    assert handle != nullptr
+
+    for b in [97, 0, 98]
+        _ = fputc(c: b.to_i32().must(), stream: handle)
+
+    _ = fclose(stream: handle)
+    return read_file(HELD).must()
+
+function main()
+    s = held()
+    made = join(["x", s], ",")
+    print("the program holds ", made.len(), " bytes")
+    print("C reads ", strlen(s: made.cstr()))

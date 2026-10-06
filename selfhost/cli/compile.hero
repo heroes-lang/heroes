@@ -80,7 +80,7 @@ function level_from(inv: argv.Invocation, default_level: str) -> str?
 function search_key(headers_from: [str], library: [str]) -> str
     if headers_from.len() == 0 && library.len() == 0
         return ""
-    return "I" + headers_from.join(":") + "L" + library.join(":")
+    return "\u{1}I" + headers_from.join(":") + "\u{1}L" + library.join(":")
 
 # §4.17's rich form on stderr, and the diagnostics exit — build and
 # run take no diagnostic-shaping flags: check already answers every

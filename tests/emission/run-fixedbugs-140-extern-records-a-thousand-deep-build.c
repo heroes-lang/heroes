@@ -5,7 +5,7 @@
 #include <heroes_runtime.h>
 #include <fixedbugs-140-extern-records-a-thousand-deep-build.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -2034,8 +2034,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -2064,19 +2066,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2080 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2082 "fixedbugs140externrecordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140externrecordsathousanddeepbuild_G0_eq(const G0 *a, const G0 *b);
@@ -4109,7 +4111,7 @@ void h_fixedbugs140externrecordsathousanddeepbuild_main(void);
 
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void) {
-#line 4113 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4115 "fixedbugs140externrecordsathousanddeepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -4125,15 +4127,15 @@ bb0:
     t4 = h1_own1;
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h1_own1 = t1;
-#line 4129 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4131 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(t4);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t5 = h0_xs;
-#line 4133 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4135 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_incref(t1);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 4137 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4139 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(t5);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
@@ -4143,10 +4145,10 @@ bb0:
     hero_print_int(t3);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 4147 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4149 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(h0_xs);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
-#line 4150 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4152 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(h1_own1);
     return;
 }

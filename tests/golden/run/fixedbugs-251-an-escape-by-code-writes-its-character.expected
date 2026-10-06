@@ -1,0 +1,7 @@
+ESC, red, ESC: 27 91 51 49 109 120 27 91 48 109
+DEL and a C1 control: 127 194 133
+an override and its pop: 97 226 128 174 98 226 128 172
+the line separator: 226 128 168
+in an f literal: 27 91 55 109 123 27 125
+a constant: 27 91 48 109
+a pattern matches it

@@ -126,6 +126,18 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # it), escape_in_header_name (clangs read a `\` apart, and one of them opens
 # another header) and option_like_name (resting on no `pkg-config`, and on
 # Windows a `link` beginning `-` is lld-link's own option, panel 188 § 22.5).
+#
+# A THIRD CATEGORY, named by panel 192's R4 (ratified 2026-10-05): rules a
+# program with a meaning breaks, kept by --permissive all the same, because
+# they guard what the person READING the source sees rather than adding the
+# thesis. A raw control character, bidirectional control, U+2028 or U+2029
+# in a string or a comment (invisible_character, raw_tab, nul_in_string,
+# `raw_refusal`) prints its bytes and has a meaning, and a terminal acts on
+# it or a screen reorders the line around it; panel 066's
+# raw_carriage_return was the first of them. With them, the one spelling of
+# a character (escape_spelling, and escape_not_needed, which panel 008's
+# escapes kept from the first day and `code_escape` reaches too). None is in
+# the list below, so the control arm keeps refusing them.
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
