@@ -1,0 +1,8 @@
+extern "s092.h"
+    record One tag one
+        a: i32
+    function peek(@buf: One counted_by n, n: u64) -> i64
+
+function main()
+    o: One @ One(a: 0)
+    print(peek(@o, n: 4096))

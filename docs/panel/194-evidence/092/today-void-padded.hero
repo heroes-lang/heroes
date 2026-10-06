@@ -1,0 +1,10 @@
+extern "s092.h"
+    record Pad tag pad
+        c: i8
+        d: i64
+    function fill(@buf: Pad, n: u64) -> i64
+
+function main()
+    p: Pad @ Pad(c: 0, d: 0)
+    print(fill(@p, n: 64))
+    print(p.d)

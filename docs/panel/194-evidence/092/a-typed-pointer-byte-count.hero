@@ -1,0 +1,9 @@
+extern "s092.h"
+    record One tag one
+        a: i32
+    function fill_typed(@buf: One counted_by n, n: u64) -> i64
+
+function main()
+    o: One @ One(a: 0)
+    print(fill_typed(@o, n: 4096))
+    print(o.a)

@@ -1,0 +1,11 @@
+extern "s092.h"
+    record Pfd tag pfd
+        fd: i32
+        events: i16
+        revents: i16
+    function poll_like(@fds: Pfd counted_by nfds, nfds: u64) -> i32
+
+function main()
+    p: Pfd @ Pfd(fd: 0, events: 1, revents: 0)
+    print(poll_like(@p, nfds: 2))
+    print(p.revents)

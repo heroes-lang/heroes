@@ -1,0 +1,17 @@
+From <sys/un.h> and <sys/socket.h> on this machine:
+
+    struct sockaddr_un {
+        unsigned char sun_len;
+        sa_family_t   sun_family;    /* an unsigned 8-bit integer here */
+        char          sun_path[104];
+    };
+    #define AF_UNIX     1
+    #define SOCK_STREAM 1
+    int socket(int domain, int type, int protocol);
+
+`connect` takes a `const struct sockaddr *`, which a binding cannot name for
+this struct, so this directory holds a one-line C header, `shim.h`, beside the
+program, to bind instead:
+
+    #include <sys/un.h>
+    int connect_un(int fd, const struct sockaddr_un *addr, unsigned int len);
