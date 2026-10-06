@@ -1,0 +1,39 @@
+# Fixed defect 265's last rows, 2026-10-05 (lane b12-parse12; the rows lane
+# b11-parse left to the lane holding these files). Symptom: three reports
+# were appended past the marks `cursor.say` keeps (`report_marks`), C's loop
+# header in `parse/loop_habit.refuse`, a minus set apart in
+# `parse/list_line.set_apart` and a trailing comma in
+# `list_line.trailing_comma`, so `line_end.said_here` walked them as a tail
+# until the next report said: 8,000 lists of `[1` over `- 2]` took 9.53
+# billion instructions retired, 6.2 times the 2,000 lists' 1.53. Cause and
+# repair: the three say their report through `cursor.say`, marked as every
+# other parser site's; the 8,000 lists now retire 4.77 billion, 3.85 times the
+# 2,000's. Nothing said moves: each site below, told once, as before.
+
+function f(a: i64, b: i64) -> i64
+    return a + b
+
+function a_c_header()
+    for (i = 0; i < 3; i++)  #~ for_missing_in
+        print(i)
+
+function a_minus_in_a_list()
+    x = [1
+        - 2]  #~ spaced_minus_element
+    print(x)
+
+function a_minus_in_a_map_entry()
+    m = {1: 2
+        - 3: 4}  #~ spaced_minus_element
+    print(m)
+
+function a_minus_in_a_map_value()
+    m = {1: 2
+        - 3}  #~ spaced_minus_element
+    print(m)
+
+function a_trailing_comma()
+    print(f(1, 2))  #~ trailing_comma
+
+function main()
+    print(1)

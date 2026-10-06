@@ -47,3 +47,9 @@ function a_whole_entry()
 
 function main()
     print(1)
+
+# Moved 2026-10-05 with defect 310's repair (lane b12-parse12):
+# `inside_a_call`'s second reading names the call's `(` with the `{`, which
+# close above together, `})`, and deletes this line's two closers, `) )`,
+# where it named the `{` alone and the call's `)` went unsaid
+# (`parse/list_line.another_kind`).

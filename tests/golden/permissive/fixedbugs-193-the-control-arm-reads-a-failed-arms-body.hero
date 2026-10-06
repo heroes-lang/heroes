@@ -91,3 +91,8 @@ function broken_after_the_pipe(n: i64)
 
 function main()
     print(1)
+
+# Moved 2026-10-05 with defect 308's repair (lane b12-parse12):
+# `another_arrow` and `a_second_name`, whose `=>` stands further along the
+# line than the reader looked, are told where it stands, in the control arm as
+# in the normal one (`parse/broken_arm.arrow_along`).

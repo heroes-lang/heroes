@@ -15,6 +15,11 @@
 # is not repaired by parentheses, because inside them a line end before an
 # operator is refused too (panel 180 R3, `parse/line_end`), and a line end
 # right after `=`, `in`, `->` or `=>` has no expression on both sides of it.
+#
+# At the top of `selfhost/` since 2026-10-05 (defect 269), out of `parse/`:
+# it reads the tokens, the tree and the lexer's diagnostics after the parse,
+# and nothing of the parser, the seam the parser's budget lets a move pay
+# along (`tests/harness/suite_layout.hero`, `BUDGETS`).
 
 use token
 use diag

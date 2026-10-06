@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-350-a-resolvers-report-is-said-in-place.hero:15:10: error[constant_cycle]: `constant A` is defined in terms of itself through `B`, so it has no value
+tests/golden/check/fixedbugs-350-a-resolvers-report-is-said-in-place.hero:22:5: error[constant_body]: `constant C`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-350-a-resolvers-report-is-said-in-place.hero:25:16: error[unknown_name]: nothing named `missing` is in scope

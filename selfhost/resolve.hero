@@ -28,6 +28,7 @@ use parse
 use diag
 use resolved
 use resolve/state
+use resolve/unused_sweep
 use stable
 use resolve/top
 use resolve/decls as resolve_decls
@@ -65,7 +66,7 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
         index @ index + 1
 
     top.unused_uses(@r, s, uses)
-    state.report_unused(@r, s)
+    unused_sweep.report(@r, s)
 
     # A binding a plain literal holds in braces is told so (panel 184 R2),
     # once the sweep has said which are never read.

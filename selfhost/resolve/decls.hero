@@ -21,6 +21,7 @@ use resolve/vocab
 use inventory
 use parse
 use resolve/state
+use resolve/unused_sweep
 use resolve/types
 use resolve/errors
 use resolve/walk
@@ -154,7 +155,7 @@ function resolved_program(text: str) -> state.Resolver
         declaration(@r, p.tree, s, p.decls, j)
         j @ j + 1
 
-    state.report_unused(@r, s)
+    unused_sweep.report(@r, s)
     return r
 
 test "a generic is its own namespace, resolved by position"

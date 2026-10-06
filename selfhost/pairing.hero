@@ -1,7 +1,10 @@
 # How the parser pairs a bracket's opener with its closer, by the lexer's own
 # stack (design.md §4.17; defect 131's class; split out of `parse/unclosed`
 # on 2026-10-01, the recovery batches' C3, when the pairing came to read the
-# kinds of the openers it walks past).
+# kinds of the openers it walks past). At the top of `selfhost/` since
+# 2026-10-05 (defect 344), out of `parse/`: it reads the tokens, the cursor
+# and the lexer's offsets and nothing of the parser, the seam the parser's
+# budget lets a move pay along (`tests/harness/suite_layout.hero`, `BUDGETS`).
 #
 # The lexer keeps every opener on one stack and names the ones it found
 # never closed; the parser, reading the same tokens, must pair the same, or
@@ -12,11 +15,23 @@
 # a closer of another kind (`cursor.Cursor.closes`), it stops where the lexer
 # did. A leaf: it reads the tokens and nothing that reads the parser.
 #
+# **Every opener is paired in one walk where the parse's cursor is paired**
+# (`pair_all`, defect 344). The parser asks for an opener's closer several
+# times, once per element of a list among them, and a walk from the opener
+# to its closer, or to where the lexer named it open, cost the square of the
+# openers: 2,000 lines of `x = [1, 2` 47.6 billion instructions retired and
+# a clean list of 2,000 elements 7.3. One walk keeping the lexer's stack
+# pairs them all, each closer popping the last opener, a closer of another
+# kind at a named offset popping to its own, a named offset anything else
+# emptying the stack, as the walk from one opener does for that opener; the
+# test below holds the two to agree on every opener of every text it reads.
+#
 # | entry | called by |
 # |---|---|
 # | `paired_closer` | `parse/unclosed.never_closed`, `parse/unclosed.recover_past_pair` |
 # | `paired_by_kinds` | `paired_closer`, past a closer of another kind |
 # | `close_after` | `parse/unclosed.in_reach`, `parse/brace_habit.closer` |
+# | `pair_all` | `parse.parse_source`, `parse.parse_bounded`, `parse/readings.read_apart` |
 
 use token
 use cursor
@@ -39,6 +54,13 @@ use text_outline
 # popped them: an opener one of those closed has no closer the parser can
 # take.
 function paired_closer(c: cursor.Cursor, text: str, open: i64) -> i64
+    if c.pairs.len() == c.tokens.len() && opens(c.tokens[open].kind)
+        return c.pairs[open]
+    return walked_closer(c, text, open: open)
+
+# The walk from the opener at token `open` alone, `paired_closer`'s answer
+# for a cursor `pair_all` did not pair, a view or a test's.
+function walked_closer(c: cursor.Cursor, text: str, open: i64) -> i64
     depth: i64 @ 0
     i: i64 @ open
     bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
@@ -117,6 +139,91 @@ function paired_by_kinds(c: cursor.Cursor, text: str, open: i64) -> i64
 
     return -1
 
+## Every opener at once
+
+# Pairs every opener of the cursor's stream (`Cursor.pairs`), so that
+# `paired_closer` is a lookup. A cursor this did not pair, a view or a test's,
+# holds no table, and each opener is walked from.
+function pair_all(@c: cursor.Cursor, text: str)
+    c.pairs @ table(c, text)
+
+# The closer of every opener by token index, -1 for one none closes and for
+# every token that opens nothing: the lexer's stack kept over the stream once.
+# Where the author's text ends at `root_end`, no opener in it is closed past
+# it; at an offset where the lexer named the brackets still open, a closer of
+# another kind closes the innermost opener of its own kind, those above it
+# closed by none, and anything else there closes none of them; a literal that
+# never closed pops the openers whose closers it took. Each is the walk from
+# one opener (`walked_closer`, `paired_by_kinds`) asked of all at once.
+function table(c: cursor.Cursor, text: str) -> [i64]
+    pairs: [i64] @ []
+
+    for t in c.tokens
+        _ = t
+        pairs @ pairs.push(-1)
+
+    stack: [i64] @ []
+    next: i64 @ 0
+    bounded: bool @ c.root_end >= 0
+    i: i64 @ 0
+
+    while c.tokens[i].kind != .eof
+        k = c.tokens[i].kind
+        at = c.tokens[i].span.start
+        taken: bool @ false
+
+        if bounded && at >= c.root_end
+            stack @ []
+            bounded @ false
+
+        while next < c.closes.len() && c.closes[next] <= at
+            if c.closes[next] == at && token.is_closer(k)
+                own = innermost_of(c, stack: stack, opener: token.opener_of(k))
+
+                if own >= 0
+                    pairs[stack[own]] @ i
+                    stack @ stack.slice(from: 0, to: own)
+                else
+                    stack @ []
+                taken @ true
+            else
+                stack @ []
+            next @ next + 1
+
+        if taken
+            i @ i + 1
+            continue
+
+        if opens(k)
+            stack @ stack.push(i)
+        else if token.is_closer(k)
+            if stack.len() > 0
+                pairs[stack[stack.len() - 1]] @ i
+                stack @ stack.slice(from: 0, to: stack.len() - 1)
+        else if k == .error
+            gone = literals.closers_taken(text, c.tokens[i].span)
+
+            if gone >= stack.len()
+                stack @ []
+            else if gone > 0
+                stack @ stack.slice(from: 0, to: stack.len() - gone)
+        i @ i + 1
+
+    return pairs
+
+# The position in `stack`, the openers open by token index, of the innermost
+# `opener`, or -1.
+function innermost_of(c: cursor.Cursor, stack: [i64], opener: token.TokenKind) -> i64
+    at: i64 @ stack.len() - 1
+
+    while at >= 0 && c.tokens[stack[at]].kind != opener
+        at @ at - 1
+
+    return at
+
+function opens(kind: token.TokenKind) -> bool
+    return kind == .lparen || kind == .lbracket || kind == .lbrace
+
 # The index in `kinds`, the openers open in a pairing walk, of the innermost
 # `opener`, or -1.
 function innermost(kinds: [token.TokenKind], opener: token.TokenKind) -> i64
@@ -155,6 +262,46 @@ test "a closer of another kind closes the opener of its own kind, and the one ab
     # `x = [1, 2)`: no `(` is open, so its `)` closes the `[` as before.
     assert paired_closer(c, text, open: 12) == 16
 
+# Defect 344: the walk from each opener and the one walk over every opener
+# agree on every opener of texts that hold each event the walk meets: a
+# closer of another kind, one that closes the innermost written in the wrong
+# kind, an opener a declaration ended, a literal that never closed and took
+# the closers of its line, a body's braces, a hole, a stray closer, and the
+# author's text ending inside a bracket.
+test "every opener is paired by the one walk as by the walk from it"
+    texts = [
+        "f(a, [b, c)\nx = [1, 2)\n"
+        "f(a, [b, c)\n)\n"
+        "function a() {\n    g(1\n}\nfunction b()\n    f(a, [b, c)\n    x = [1, 2\nfunction c()\n    assert report(\") == \"lines: 0\"\n"
+        "x = f(\"abc)\nprint(1) )\n"
+        "function f()\n    x = [1, 2\n\nfunction main()\n    print(1) )\n"
+        "x = [[1, 2\nprint(x)\ny = 3 ))\n"
+        "k = f({1: 2\n    x) )\n"
+        "y = f\"{(a + [b)}\" ]\n"
+        "print(2]\n[0.5, 0.7)\n)\n"
+        "m = {1: (2, [3}\n"
+        "for (i = 0; i < f(3; i++\n    print(i)\n"
+        "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
+    ]
+
+    for text in texts
+        out = lexer.lex_one(text)
+
+        for root in [-1, text.len() / 2]
+            c: cursor.Cursor @ cursor.lexed_cursor(
+                tokens: out.tokens,
+                root_end: root,
+                closes: out.closes,
+                swaps: out.swaps
+            )
+            every = table(c, text)
+
+            for at in range(from: 0, to: c.tokens.len())
+                if opens(c.tokens[at].kind)
+                    assert every[at] == walked_closer(c, text, open: at)
+                else
+                    assert every[at] == -1
+
 # The premise `close_after`'s search rests on (defect 266): the lexer names
 # the brackets still open at offsets that ascend, each where it stands as it
 # reads on, at all four of its sites: a body's `}` with a bracket open in it
@@ -174,3 +321,18 @@ test "the lexer names the brackets still open at offsets that ascend, which clos
     assert close_after(c, at: -1) == out.closes[0]
     assert close_after(c, at: out.closes[1]) == out.closes[2]
     assert close_after(c, at: out.closes[3]) == -1
+
+# Defect 300: a function type's `)` left out before its `->` is written
+# there by the lexer, zero wide and told once, so the parameters' `(` pairs
+# with it and the `)` past the result with the bracket the type stands in.
+test "a function type's `)` left out before its `->` pairs its parameters' `(`"
+    text = "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
+    out = lexer.lex_one(text)
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "expected_function_type_params_close"
+    assert out.diagnostics[0].span.start == 28
+    c = cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
+    assert paired_closer(c, text, open: 7) == 9
+    assert c.tokens[9].span.start == 28 && c.tokens[9].span.end == 28
+    assert paired_closer(c, text, open: 5) == 12
+    assert paired_closer(c, text, open: 2) == 13

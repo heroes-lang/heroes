@@ -1,0 +1,68 @@
+# Fixed defect 301, 2026-10-05 (lane b12-parse12; found by lane b9-recovery
+# beside defect 194). Symptom: C's three-clause loop header written with no
+# parentheses, `for i = 0; i < 3; i++`, cost four messages where defect 194
+# tells the parenthesised one once: the lexer's `unexpected_character` at
+# each `;`, its `continuation_outside_brackets` at the `++` that ends the
+# line, and the parser's `for_missing_in`, *a loop over a condition is
+# `while`*, true of no part of the line. Cause: the lexer left to the loop's
+# report only a `;` in the `(` after a `for`, so a bare header's `;` was a
+# stray, and its `++` asked the body below to go on with it. Repair: a `;` on
+# a line that begins with `for` and holds no `in` before it is the header's,
+# taken with the rest of its line, every clause past it
+# (`closers.header_semicolon`), so the line asks nothing below it to go on;
+# and the loop's report reads that `;` as the header's
+# (`parse/loop_habit.c_header`), told once, at the loop variable, with the
+# loops that replace it and no fix. The shapes: the three clauses, none, two,
+# padded, nested, `+= 1` and `--` and `++i`, a `{` that ends the line, a C
+# type, the body's own mistake, and a `;` after a real iteration, told as
+# before.
+
+function three_clauses()
+    for i = 0; i < 3; i++  #~ for_missing_in
+        print(i)
+
+function forever()
+    for ;;  #~ for_missing_in
+        print(1)
+
+function two_clauses()
+    for i = 0; i < 3  #~ for_missing_in
+        print(i)
+
+function padded()
+    for  i = 0 ;  i < 3 ;  i++  #~ for_missing_in
+        print(i)
+
+function nested()
+    if true
+        for i = 0; i < 3; i++  #~ for_missing_in
+            print(i)
+
+function other_steps()
+    for i = 0; i < 3; i += 1  #~ for_missing_in
+        print(i)
+    for i = 3; i > 0; i--  #~ for_missing_in
+        print(i)
+    for i = 0; i < 3; ++i  #~ for_missing_in
+        print(i)
+
+function with_a_brace() {  #~ missing_body
+    for i = 0; i < 3; i++ {  #~ for_missing_in missing_body
+        print(i)
+    }
+}
+
+function with_a_c_type()
+    for int i = 0; i < 3; i++  #~ reserved_word for_missing_in
+        print(i)
+
+function the_bodys_own_mistake()
+    for i = 0; i < 3; i++  #~ for_missing_in
+        print(i +)  #~ expected_expression
+
+function after_an_iteration(xs: [i64])
+    for x in xs  #~ unexpected_character
+        print(x)
+
+function main()
+    print(1)

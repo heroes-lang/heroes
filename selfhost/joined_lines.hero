@@ -8,6 +8,11 @@
 # | `lines_of`, `line_at`, `inside_a_break`, `apart_line_start`, `opens_a_line_below`, `line_below_ends`, `cause_of` | `parse/apart` |
 #
 # Each question is a binary search, `text_outline.last_at_most` (a copy here until defect 205).
+#
+# At the top of `selfhost/` since 2026-10-05 (defect 304), out of `parse/`:
+# it reads the tokens and the lexer's breaks and nothing of the parser, the
+# seam the parser's budget lets a move pay along
+# (`tests/harness/suite_layout.hero`, `BUDGETS`).
 
 use token
 use lexer
@@ -179,3 +184,23 @@ function cause_of(line: Line, at: i64) -> token.Span
     if i < 0
         return line.causes[0]
     return line.causes[i]
+
+# Defect 375: an expression broken around its operator alone on a deeper
+# line is one joined line, its two breaks one refusal whose join writes the
+# statement on one line, certain where the operand cannot stand alone and a
+# guess where it can; at the statement's own margin each break keeps its own
+# refusal (defect 129).
+test "an expression broken around an operator alone on a deeper line is one joined line"
+    text = "k = n\n    -\n    1\n"
+    out = lexer.lex_one(text)
+    assert out.diagnostics.len() == 1
+    assert out.breaks.len() == 2
+    assert out.breaks[0].diagnostic == 0 && out.breaks[1].diagnostic == 0
+    fix = out.diagnostics[0].fixes[0]
+    assert fix.certainty == .certain
+    assert text.slice(from: 0, to: fix.span.start) + fix.replacement + text.slice(from: fix.span.end, to: text.len()) == "k = n - 1\n"
+    assert lines_of(out.tokens, lexed: out).len() == 1
+    called = lexer.lex_one("k = n\n    -\n    g(1)\n")
+    assert called.diagnostics.len() == 1
+    assert called.diagnostics[0].fixes[0].certainty == .guess
+    assert lexer.lex_one("k = n\n-\n1\n").diagnostics.len() == 2

@@ -1,0 +1,68 @@
+# Fixed defect 344, 2026-10-05 (lane b12-parse12; found by lane b11-parse
+# beside defect 266's repair). Symptom: N lines each leaving a list or a map
+# open cost the square of N: 2,000 lines of `x = [1, 2` took 47.6 billion
+# instructions retired, of `x = {1: 2` 24.3, of `x = f([1` 58.1, and a clean
+# list of 2,000 elements 7.3. Cause: the parser asked for an opener's closer
+# by walking from it to that closer or to where the lexer named it open, the
+# declaration's end for one never closed, once per opener and once per
+# element (`list_line.ended_at_a_binding`, `unclosed.never_closed`); and the
+# lexer grew its stack of open brackets through a field place, every opener
+# copying every one open below it (`state.emit`). Repair: every opener of the
+# parse's stream is paired in one walk that keeps the lexer's stack
+# (`pairing.pair_all`), held to the walk from each opener by a test over the
+# events either meets, and the lexer's stack grows in place. The same lines
+# now retire 0.76, 0.74 and 1.10 billion, the clean list 0.39, and 8,000 of
+# them 3.76 to 3.84 times 2,000's. Nothing said moves: the shapes below,
+# each told as before.
+
+function f(a: [i64]) -> i64
+    return 1
+
+function g(m: {i64: i64}) -> i64
+    return 1
+
+function a_list_left_open()
+    #~v unclosed_bracket
+    x = [1, 2
+    print(x)
+
+function a_map_left_open()
+    #~v unclosed_bracket
+    m = {1: 2
+    print(m)
+
+function a_list_left_open_in_a_call()
+    #~v unclosed_bracket unclosed_bracket
+    k = f([1
+    print(k)
+
+function an_index_left_open(xs: [i64])
+    #~v unclosed_bracket
+    y = xs[1
+    print(y)
+
+function a_closer_of_another_kind()
+    k = f([1, 2)  #~ unclosed_bracket
+    print(k)
+
+function a_binding_below_a_list()
+    x = [1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_long_list_closed()
+    xs = [
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+    ]
+    print(f(xs) + g({1: 2}))
+
+function main()
+    print(1)

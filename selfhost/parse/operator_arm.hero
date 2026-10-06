@@ -32,7 +32,6 @@ use token
 use ast
 use cursor
 use parse/arm_pattern
-use open_line
 use report_marks
 
 # An arm's patterns, none where an operator stood alone where they go; and
@@ -119,11 +118,11 @@ function pattern_after(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern
 # A binary operator (spec § 7), the propagating `?` and the `::` that names a
 # field: the tokens a line that holds an arm's `=>` may begin with and no
 # pattern may, the lexer's enumerated list of what only goes on with a line
-# (`open_line.can_only_go_on`) but `-`, which signs a pattern's literal and
+# (`token.can_only_go_on`) but `-`, which signs a pattern's literal and
 # is the pattern's own (`arm_line.spaced_sign`). This module kept its own
 # copy of that list until defect 202 paid for its lines with it.
 function leads_no_pattern(kind: token.TokenKind) -> bool
-    return open_line.can_only_go_on(kind) && kind != .minus
+    return token.can_only_go_on(kind) && kind != .minus
 
 test "an operator no pattern begins with is passed, and a pattern's own sign is not"
     assert leads_no_pattern(.pipe)

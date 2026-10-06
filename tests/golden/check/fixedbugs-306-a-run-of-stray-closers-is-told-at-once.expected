@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:17:11: error[expected_end_of_line]: expected the end of the line, found `))` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:21:11: error[expected_end_of_line]: expected the end of the line, found `) )` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:25:11: error[expected_end_of_line]: expected the end of the line, found `)]` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:29:11: error[expected_end_of_line]: expected the end of the line, found `)))` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:33:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:37:13: error[expected_end_of_line]: expected the end of the line, found `))` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:41:13: error[expected_end_of_line]: expected the end of the line, found `))` — an `if`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:44:30: error[expected_end_of_line]: expected the end of the line, found `))` — the `function` `after_a_signature`'s body goes on the lines below its head, one level deeper
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:49:15: error[expected_end_of_line]: expected the end of the line, found `))` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:53:11: error[expected_end_of_line]: expected the end of the line, found `}}` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:57:14: error[expected_end_of_line]: expected the end of the line, found `))` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-306-a-run-of-stray-closers-is-told-at-once.hero:60:11: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons

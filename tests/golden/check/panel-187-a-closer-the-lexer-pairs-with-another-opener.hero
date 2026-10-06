@@ -13,8 +13,15 @@
 # opener the lexer names is owed a `)` of its own. Three messages, one a
 # mistake, where the `)` moves and two are written.
 
-function f(g: (function(i64 -> i64)  #~ unclosed_bracket unclosed_bracket expected_function_type_params_close
+function f(g: (function(i64 -> i64)  #~ expected_function_type_params_close unclosed_bracket
     print(1)
 
 function main()
     print(1)
+
+# Moved 2026-10-05 with defect 300's repair (lane b12-parse12), the lexer's
+# half of 197's: read with the `)` past the result as the parameters', the
+# brackets the line opens are left one short, so that `)` was the next
+# bracket out's, and the lexer writes the parameters' `)` at the `->`, zero
+# wide, told there once, *its `)` is left out there* (`arrow_inside.hero`).
+# Two messages, two edits: that `)`, and the one the declaration's `(` owes.

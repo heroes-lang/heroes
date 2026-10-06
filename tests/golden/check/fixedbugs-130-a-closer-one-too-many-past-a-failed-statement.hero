@@ -24,3 +24,7 @@ function main()
     t = f(1 +) ) )  #~ expected_expression expected_end_of_line
     s = f(1 +) q  #~ expected_expression
     print(x)
+
+# Moved 2026-10-05 with defect 306's repair (lane b12-parse12): `t`'s two
+# closers past the failed call are one run of strays, told at once, `) )`,
+# where the first was told and the second only once it was deleted.

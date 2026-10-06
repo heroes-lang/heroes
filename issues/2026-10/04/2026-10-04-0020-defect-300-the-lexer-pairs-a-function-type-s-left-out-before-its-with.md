@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 097cd4331cd1b91ff3b22f6e22d6242f3bd68073
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b9-recovery, 2026-10-04, reproduced on its compiler (its final reply's *Found beside*; scratch `<scratchpad>/batch9/recovery/`); defect 197's lexer half, reported rather than forced, the parser's budget holding 8 lines.
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a second cause beside 197's (panel 187's R1: one item per cause), a true message asking more edits than the mistake needs.
+
+    Repaired at `097cd433`, 2026-10-05 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

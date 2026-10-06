@@ -1,0 +1,72 @@
+# Fixed defect 374, 2026-10-06 (lane b12-parse12, found beside defect 363).
+# Symptom: a correct chain of N constants, `constant C<i>: i64` over
+# `C<i+1>` down to a last `1`, cost more than its length to check: 1.01
+# billion instructions retired at 1,000 and 5.47 billion at 4,000 on the
+# base; and a function reading N other declarations, 25.73 billion at 8,000.
+# Cause: `resolve/cycles.walk` popped its path with a slice, a copy of the
+# whole path at every step of the depth-first walk, the square of a chain's
+# length; and `edges` asked each read whether its declaration's list held
+# it by a scan and pushed it through a copy of that list, the square of
+# what one body reads. Repair: the path is a stack and its height, its steps
+# written over as it grows again (`put_step`); an edge is asked once of a
+# set keyed by both ends and grown in place on its lent list (`add_edge`):
+# the chain retires 0.87 billion at 1,000, 3.06 at 4,000 and 11.88 at
+# 16,000, the reading function 18.37 at 8,000. Nothing said moves; the
+# shapes pin what the walk finds as it found it: a chain, a constant defined
+# as itself, a ring of three, a chain into a ring, a diamond, a function
+# reading what the constants read, and a cycle through a refused body,
+# which is that body's consequence.
+
+constant CHAIN1: i64
+    CHAIN2
+
+constant CHAIN2: i64
+    CHAIN3
+
+constant CHAIN3: i64
+    3
+
+constant SELF: i64  #~ constant_cycle
+    SELF
+
+constant RING1: i64  #~ constant_cycle
+    RING2
+
+constant RING2: i64
+    RING3
+
+constant RING3: i64
+    RING1
+
+constant INTO: i64
+    LOOP1
+
+constant LOOP1: i64  #~ constant_cycle
+    LOOP2
+
+constant LOOP2: i64
+    LOOP1
+
+constant TOP: i64
+    LEFT + RIGHT
+
+constant LEFT: i64
+    BOTTOM
+
+constant RIGHT: i64
+    BOTTOM
+
+constant BOTTOM: i64
+    1
+
+constant T: i64
+    depends()  #~ constant_body
+
+function depends() -> i64
+    return T
+
+function reader(x: i64) -> i64
+    return CHAIN1 + TOP + LEFT + RIGHT + BOTTOM + x
+
+function main()
+    print(reader(1))

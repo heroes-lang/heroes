@@ -1,0 +1,78 @@
+# Fixed defect 364, 2026-10-05 (lane b12-parse12, found beside defect 350).
+# Symptom: a correct program's locals cost the square of their number to
+# resolve: `function main()` with `x0 = 1` and N lines `x<i> = x<i-1> + 1`
+# retired 1.67 billion instructions at N = 2,000 and 11.69 billion at 8,000.
+# Cause: every lookup of a local scanned every open scope entry
+# (`resolve/state.lookup_local`), once per binding for the shadowing check
+# and once per name read; and every scope's close truncated the stack by a
+# slice, a copy of every entry below it. Repair: a name's latest binding is
+# found by name (`Scopes.at`), its entry checked open, and a close lowers
+# the stack's top, its entries written over by the bindings that follow:
+# 1.28 billion at 2,000 and 4.73 at 8,000, and a block after each binding,
+# 6.46 billion at 2,000 and 25.47 at 8,000, linear. What a name means, the
+# shapes below: a sibling block's binding gone at its close, its place in
+# the stack taken by another name, the same name bound again there, a
+# shadow of an outer local, of a parameter, a loop's variable reused by its
+# sibling, two patterns of one arm binding one name, and a name read deep
+# inside the blocks below its binding.
+
+variant Pair
+    left
+        v: i64
+    right
+        v: i64
+
+function gone(n: i64) -> i64
+    if n > 0
+        inner = n + 1
+        print(inner)
+    return inner  #~ unknown_name
+
+function taken(n: i64) -> i64
+    if n > 0
+        first = n
+        print(first)
+    second = n + 2
+    print(second)
+    return first  #~ unknown_name
+
+function again(n: i64) -> i64
+    if n > 0
+        x = n
+        print(x)
+    x = n * 2
+    return x
+
+function shadow(n: i64) -> i64
+    outer = n
+    if n > 0
+        outer = 3  #~ shadowed_binding
+    return outer
+
+function over_a_parameter(n: i64) -> i64
+    n = 4  #~ shadowed_binding
+    return n
+
+function loops(xs: [i64]) -> i64
+    total: i64 @ 0
+    for x in xs
+        total @ total + x
+    for x in xs
+        total @ total + x
+    return total
+
+function one_arm(p: Pair) -> i64
+    return match p
+        .left _ | .right _ => 1  #~ duplicate_pattern_binding unused_binding
+
+function deep(n: i64) -> i64
+    top = n
+    if n > 0
+        if n > 1
+            if n > 2
+                print(top)
+    return top
+
+function main()
+    print(gone(1) + taken(1) + again(1) + shadow(1) + over_a_parameter(1))
+    print(loops([1, 2]) + one_arm(.left(v: 1)) + deep(3))

@@ -1,0 +1,95 @@
+# Fixed defect 375, 2026-10-06 (lane b12-parse12, found beside defect 370).
+# Symptom: `k = n` over a deeper `-` over a deeper `1`, an expression
+# broken around its operator alone on its line, cost two messages,
+# `continuation_outside_brackets` at the operator's line end and
+# `unexpected_block` at its margin; with the operator at the statement's
+# own margin, the refusal of its head and of its end. Cause: each break was
+# told where it stood, the line above ended as a statement and the
+# operator's line laid out as a block of its own, or joined by a refusal of
+# its own, and its end refused again. Repair: operators alone on a line
+# laid out deeper than a statement that opens no block, whose next line is
+# their operand, deeper than the statement or a value that cannot stand
+# alone, break one expression in two places, told once at the operators
+# with the join of the three lines offered, certain where the operand
+# cannot stand alone, and read as that join, the margin and the line end
+# above them taken back (`alone_lines.join_around`). The shapes: the operand
+# at the operator's margin, deeper, a `*`, two operators, a comment after
+# the operator, a call for the operand, a name, two such breaks; and the
+# operator at the statement's own margin, each break told as defect 129
+# tells it, under a head that opens a block, and above a statement of its
+# own, as before.
+
+function repro(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+        1
+    return k
+
+function operand_deeper(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+            1
+    return k
+
+function a_star(n: i64) -> i64
+    k = n
+        *  #~ continuation_outside_brackets
+        2
+    return k
+
+function two_operators(n: i64) -> i64
+    k = n
+        - -  #~ continuation_outside_brackets
+        1
+    return k
+
+function a_comment_after(n: i64) -> i64
+    k = n
+        -  # minus  #~ continuation_outside_brackets
+        1
+    return k
+
+function a_call_for_the_operand(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+        g(1)
+    return k
+
+function a_name(n: i64, x: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+        x
+    return k
+
+function two_breaks(n: i64) -> i64
+    k = n
+        +  #~ continuation_outside_brackets
+        1
+        +  #~ continuation_outside_brackets
+        2
+    return k
+
+function at_the_statements_margin(n: i64) -> i64
+    k = n
+    -  #~ continuation_outside_brackets continuation_outside_brackets
+    1
+    return k
+
+function under_a_head(n: i64) -> i64
+    if n > 0
+        -  #~ continuation_outside_brackets
+        1
+    return n
+
+function above_a_statement(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+    return k
+
+function g(x: i64) -> i64
+    return x
+
+function main()
+    print(repro(1) + operand_deeper(1) + a_star(1) + two_operators(1) + a_comment_after(1))
+    print(a_call_for_the_operand(1) + a_name(1, x: 2) + two_breaks(1) + at_the_statements_margin(1))
+    print(under_a_head(1) + above_a_statement(1))

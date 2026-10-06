@@ -88,6 +88,8 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
     ended = c.pos > from && cursor.at_fresh_line(c)
 
     if ended || cursor.at(c, .dedent) || cursor.at(c, .eof) || cursor.eat(@c, .terminator)
+        if loop_habit.under_a_do(@c, text, from: from)
+            return .read
         return .nothing
     said = !cursor.at_reported_error(c) || refused_literal.here(c, text)
 
@@ -105,8 +107,8 @@ function close(@c: cursor.Cursor, text: str, from: i64, failed: bool) -> Below
         cursor.error(
             @c,
             code: "expected_end_of_line",
-            message: "expected the end of the line, found " + refused_literal.found(c, text) + " — " + loop_habit.past_a_statement(c, text, from: from),
-            span: cursor.current_span(c)
+            message: "expected the end of the line, found " + brace_habit.found_run(c, text: text, found: refused_literal.found(c, text)) + " — " + loop_habit.past_a_statement(c, text, from: from),
+            span: brace_habit.stray_run(c, text, at: c.pos)
         )
     brace_habit.skip_line(@c, text)
 

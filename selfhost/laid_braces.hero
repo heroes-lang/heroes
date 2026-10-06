@@ -12,7 +12,9 @@
 # case (`parse/member_lines`). Such a `{` is no opener, and is never closed
 # (`parse/unclosed`).
 #
-# A leaf: it reads the tokens and nothing that reads the parser.
+# A leaf: it reads the tokens and nothing that reads the parser. Out of
+# `parse/` on 2026-10-06 (defect 367), the seam the parser's budget lets a
+# move pay along, as `pairing` and `joined_lines` before it.
 #
 # | entry | called by |
 # |---|---|

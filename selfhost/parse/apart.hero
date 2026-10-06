@@ -53,7 +53,7 @@
 # | `weigh` | `parse.parse_source` and `parse.parse_bounded`, for a file whose lexer refused a break |
 #
 # The readings and their offsets are `parse/readings`, the line below a
-# bodiless head `parse/below_a_head`, the joined lines `parse/joined_lines`.
+# bodiless head `parse/below_a_head`, the joined lines `joined_lines`.
 
 use token
 use diag
@@ -64,7 +64,7 @@ use parse/decl
 use parse/which_arm
 use parse/readings
 use parse/below_a_head as below
-use parse/joined_lines as seams
+use joined_lines as seams
 use join_fix
 
 # One diagnostic of the joined reading in the order it is said, the held ones

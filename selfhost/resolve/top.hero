@@ -24,6 +24,7 @@ use resolved
 use inventory
 use parse
 use resolve/state
+use resolve/unused_sweep
 use resolve/decls as resolve_decls
 use resolve/errors
 use module/diagnostics
@@ -229,7 +230,7 @@ function resolved_file(text: str) -> state.Resolver
         index @ index + 1
 
     unused_uses(@r, s, p.uses)
-    state.report_unused(@r, s)
+    unused_sweep.report(@r, s)
     return r
 
 test "mutual recursion needs no forward declarations"
@@ -337,7 +338,7 @@ test "a path binds its last part, and the sweep key cannot be ambiguous"
     )
     collect(@r, s, p.decls, p.uses)
     unused_uses(@r, s, p.uses)
-    state.report_unused(@r, s)
+    unused_sweep.report(@r, s)
     unread: i64 @ 0
 
     for d in r.out.diagnostics

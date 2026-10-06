@@ -81,9 +81,14 @@ function the_enclosing_match_keeps_its_arms(n: i64, m: i64) -> i64
 
 function inside_a_bracket_opened_above(t: i64) -> i64
     y = f(
-        match t
-        _ => 1)  #~ missing_match_arms
+        match t  #~ missing_match_arms
+        _ => 1)
     return y
 
 function main()
     a_statement_match(0)
+
+# Moved 2026-10-05 with defect 269's repair (lane b12-parse12):
+# `inside_a_bracket_opened_above` is told at its `match`, which cannot stand
+# inside brackets, naming the `(` that holds it, where it was told its arms
+# missing at the line below (`parse/bracket_head`).

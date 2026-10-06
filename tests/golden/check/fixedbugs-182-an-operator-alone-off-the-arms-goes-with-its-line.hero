@@ -72,3 +72,8 @@ function at_the_match_margin(n: i64) -> str
 function main()
     print(plus_deeper(1) + minus_deeper(2) + star_deeper(3) + two_levels_deeper(4))
     print(before_the_first_arm(1) + a_comment_after_it(2) + in_a_nested_match(1) + at_the_match_margin(3))
+
+# Moved 2026-10-05 with defect 352's repair (lane b12-parse12):
+# `before_the_first_arm`'s `+`, written two levels in and laid out one, is
+# told the arm below at a shallower margin, the margin as written, where it
+# said the level the layout capped the jump at (`open_line.written_margin`).

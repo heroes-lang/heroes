@@ -3,6 +3,8 @@
 # By the spec's opening paragraph, the form carries a block, which needs an
 # INDENT, and inside brackets there is none: refused on one line too, exit 1.
 function main()
-    y = f(match t
-            .a => 1  #~ missing_match_arms expected_args_close
+    y = f(match t  #~ missing_match_arms
+            .a => 1
             .b => 2)
+# Moved 2026-10-05 with defect 269's repair (lane b12-parse12): the `match`
+# is told once, at its word, naming the `(`; the call no longer reads the arm.

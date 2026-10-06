@@ -1,0 +1,28 @@
+# Fixed defect 350, 2026-10-05 (lane b12-parse12; found by lane b11-parse
+# beside defects 267 and 343). Symptom: the resolver said its reports through
+# `r.out.diagnostics @ r.out.diagnostics.push(d)`, and `resolve/cycles` its
+# own through `out.diagnostics`, field places the in-place store never
+# reaches, so every report copied every one said before it: 2,000 constant
+# cycles took 4.74 billion instructions retired and 2,000 unknown names 7.39.
+# Cause and repair: the list is lent to `state.append_diagnostic`, whose
+# parameter is a bare place, as every parser site does since defect 146; the
+# same 2,000 cycles now retire 3.90 billion and the unknown names 6.55. The
+# three sites below are the resolver's and both of `cycles`'s; the checker's
+# is `fixedbugs-350-a-checkers-report-is-said-in-place`, and the lowering's,
+# a net no program reaches since the checker refuses the range first, has no
+# case. Nothing said moves.
+
+constant A: i64  #~ constant_cycle
+    B
+
+constant B: i64
+    A
+
+constant C: i64
+    len(args())  #~ constant_body
+
+function f(n: i64) -> i64
+    return n + missing  #~ unknown_name
+
+function main()
+    print(f(1))

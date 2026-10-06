@@ -21,4 +21,4 @@ tests/golden/check/fixedbugs-199-a-failed-heads-stray-closer-is-told.hero:56:13:
 tests/golden/check/fixedbugs-199-a-failed-heads-stray-closer-is-told.hero:56:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
 tests/golden/check/fixedbugs-199-a-failed-heads-stray-closer-is-told.hero:56:17: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
 tests/golden/check/fixedbugs-199-a-failed-heads-stray-closer-is-told.hero:61:13: error[expected_expression]: expected an expression, found `)` — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
-tests/golden/check/fixedbugs-199-a-failed-heads-stray-closer-is-told.hero:61:15: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-199-a-failed-heads-stray-closer-is-told.hero:61:15: error[expected_end_of_line]: expected the end of the line, found `) )` — one statement per line, no semicolons
