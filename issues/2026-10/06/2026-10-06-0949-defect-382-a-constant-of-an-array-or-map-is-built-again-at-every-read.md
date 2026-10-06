@@ -3,7 +3,7 @@ kind: defect
 area: ir
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 2aa00658d3aaf6a823149e2ce8d7f86982c37639
 github: none
 ---
 
@@ -16,3 +16,5 @@ github: none
     Its no-state route landed at `f7576a01`, 2026-10-06 (lane b12-ir12): an array literal is built in the one block `hero_array_new` sizes to it, each element copied in where it lies, where it was one copying push per element, n+1 blocks and n(n+1)/2 copies; the reproducer reads 4,598,758,203 instructions at -O0 where it read 56,849,933,897, its hoisted twin 117,634,662. The read still builds the array, so the item stays open: the two routes that stop that, a static block no count moves for a constant whose body is literals (`HERO_STR_STATIC`'s shape for an array) and a value built once per thread, written by hand in the reproducer's C at -O0 at 142,668,198 and 195,594,982 instructions, each need the runtime, and are with the coordinator for the panel's soundness lane. Of the 66 constants of an array or map in `selfhost/` and `tests/harness/`, every body is literals, 61 `[str]` and 5 `[i64]`, and 19 are read lexically inside a loop, one of them in `selfhost/` (`clang_told.hero`'s `LEVELS`).
 
     **2026-10-06, panel 195** (the soundness lane, `docs/panel/195-a-literal-constant-is-one-static-block-whose-count-is-never-written-and-a-sanitized-build-keeps-the-block-per-read.md`), ratified by delegation the same day: a constant whose one block holds only literals and array and case constructions is one `HERO_ARRAY_STATIC` block whose count is never written, `HERO_RUNTIME_ABI` 27 to 28; a sanitized build keeps the block per read, so ASan still names a release too many; the landing, with its cases on three platforms, is batch 13's, and this item closes on it.
+
+    Repaired at `2aa00658`, 2026-10-06 (lane b13-c382), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Panel 195's R1 and R2 both landed: a literal constant is `HERO_ARRAY_STATIC` blocks under `#if HERO_STATIC_CONSTANTS`, its build under `#else`, the switch 0 under AddressSanitizer, `HERO_RUNTIME_ABI` 28; `k` reads 148.1 million instructions at -O0 where it read 4,605.3 million, 1.27 times its hoisted twin. Its cases ran on Darwin, Linux arm64 and Windows before the commit, plain and under `--sanitize`; the 70,000-element constant ran on the three by hand at -O0 and -O2, and under `--sanitize` on Darwin, and is not among them, since `heroes fmt` retires 1.65 trillion instructions on it.

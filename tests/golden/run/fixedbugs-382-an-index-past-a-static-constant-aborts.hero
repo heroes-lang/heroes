@@ -1,0 +1,15 @@
+# Defect 382, 2026-10-06. An index past the end of a constant laid out as a
+# static block aborts at the read, as it did when the read built the array:
+# `hero_array_at` asks the block's length, which the static header carries
+# (panel 195's R1). The line before the abort prints; under `--sanitize` the
+# constant is built at every read (R2) and aborts the same way.
+
+constant K: [i64]
+    [1, 2, 3]
+
+function at(i: i64) -> i64
+    return K[i]
+
+function main()
+    print(at(i: 2))
+    print(at(i: 3))

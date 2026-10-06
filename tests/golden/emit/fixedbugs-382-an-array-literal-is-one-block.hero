@@ -6,6 +6,11 @@
 # `hero_array_push_owned` per element copying it in where it lies: the
 # constant of numbers, the constant of counted strings, and a literal in a
 # function's body.
+#
+# 2026-10-06, panel 195: each constant below is now also laid out, a static
+# block under `#if HERO_STATIC_CONSTANTS`, and the one-block build this case
+# was written for stands under its `#else`, which a build under
+# AddressSanitizer compiles; the literal in `main`'s body is built as before.
 
 constant DIGITS: [i64]
     [3, 1, 4]

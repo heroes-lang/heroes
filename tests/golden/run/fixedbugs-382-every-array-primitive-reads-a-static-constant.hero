@@ -1,0 +1,71 @@
+# Defect 382, 2026-10-06. A `constant` of an array was a function that built
+# the array again at every read. Since panel 195 a constant whose body is
+# literals is one static block clang lays out, its count -1 and never
+# written, and a read is the block's address; under `--sanitize` the same C
+# builds it at every read instead, so ASan still sees each read's block. Every
+# array primitive below reads such a constant, a one-element one among them,
+# and every write goes to a copy, which takes the static block's elements
+# first because its count is not 1: the constant is printed after each write
+# and has not moved. The three configurations print the same lines.
+
+constant DIGITS: [i64]
+    [3, 1, 4, 1, 5, 9, 2, 6]
+
+constant ONE: [i64]
+    [7]
+
+record Holder
+    xs: [i64]
+
+function twice(x: i64) -> i64
+    return x * 2
+
+function odd(x: i64) -> bool
+    return x % 2 == 1
+
+function big(x: i64) -> bool
+    return x > 8
+
+function add(acc: i64, item: i64) -> i64
+    return acc + item
+
+function grow(@xs: [i64])
+    xs @ xs.push(42)
+
+function handed() -> [i64]
+    return DIGITS
+
+function main()
+    total: i64 @ 0
+
+    for d in DIGITS
+        total @ total + d
+
+    print(total, " ", DIGITS.len(), " ", DIGITS[7], " ", ONE[0], " ", ONE.len())
+    print(DIGITS == [3, 1, 4, 1, 5, 9, 2, 6], " ", DIGITS == handed(), " ", ONE != DIGITS)
+    print(sort(DIGITS)[0], " ", sort(DIGITS)[7], " ", DIGITS[0])
+    print(DIGITS.slice(from: 2, to: 5).len(), " ", DIGITS.push(10).len(), " ", DIGITS.len())
+    print(DIGITS.map(twice)[5], " ", DIGITS.filter(odd).len(), " ", DIGITS.fold(0, add))
+    print(DIGITS.find(big).must(), " ", DIGITS.any(big), " ", DIGITS.all(odd))
+
+    # A write to a copy copies the block first; the constant stays.
+    xs: [i64] @ DIGITS
+    xs[0] @ 99
+    print(xs[0], " ", DIGITS[0])
+    xs @ xs.push(5)
+    grow(@xs)
+    print(xs.len(), " ", xs[9], " ", DIGITS.len())
+    ys: [i64] @ ONE
+    ys @ ys.push(8)
+    print(ys.len(), " ", ys[1], " ", ONE.len())
+
+    # Held by a record, by a heap array, and by a map as key and value.
+    h = Holder(xs: DIGITS)
+    both = [DIGITS, ONE, DIGITS]
+    print(h.xs[2], " ", both[2][4] + both.len(), " ", both[1] == ONE)
+    seen: {[i64]: i64} @ {}
+    seen[ONE] @ 1
+    seen[DIGITS] @ 2
+    named: {str: [i64]} @ {}
+    named["d"] @ DIGITS
+    print(seen[[7]].default(0), " ", seen[DIGITS].default(0), " ", named["d"].must()[1])

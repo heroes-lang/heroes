@@ -1,0 +1,31 @@
+# Defect 382, 2026-10-06. A constant map is built at every read, a computed
+# value or not, because a map's layout is the runtime's hash and a second
+# layout written by the compiler could disagree with it; panel 195 lays out
+# arrays of literals alone (R1). Below: a map of literals, one whose value
+# is computed, and one whose values are arrays, each read in a loop and
+# written through a copy that leaves the constant whole.
+
+constant BASE: i64
+    40
+
+constant AGES: {str: i64}
+    {"ziggy": 42, "mars": 7}
+
+constant COMPUTED: {str: i64}
+    {"ziggy": BASE + 2, "mars": 7}
+
+constant LISTS: {str: [i64]}
+    {"a": [1, 2], "b": []}
+
+function main()
+    total: i64 @ 0
+    at: i64 @ 0
+
+    while at < 100
+        total @ total + AGES["ziggy"].default(0) + COMPUTED["mars"].default(0) + LISTS["a"].must()[at % 2]
+        at @ at + 1
+
+    print(total, " ", COMPUTED["ziggy"].default(0), " ", AGES == COMPUTED, " ", sort(keys(LISTS)).join(","))
+    copy: {str: i64} @ COMPUTED
+    copy["ziggy"] @ 1
+    print(copy["ziggy"].default(0), " ", COMPUTED["ziggy"].default(0), " ", LISTS["b"].must().len())

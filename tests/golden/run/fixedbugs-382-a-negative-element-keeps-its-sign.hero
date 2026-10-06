@@ -1,0 +1,29 @@
+# Defect 382, 2026-10-06. A negative element of a constant is a literal of
+# its own, not a negation, so the constant is laid out (panel 195's R1), each
+# element spelled at its width: `INT64_MIN` by name, since the macro route
+# warns, and the narrow widths at their ends; under `--sanitize` it is built
+# at every read (R2).
+
+constant NEG: [i64]
+    [3, -1, 4, -9223372036854775808, 9223372036854775807]
+
+constant NARROW: [i8]
+    [-128, 127, -1]
+
+constant WIDER: [i16]
+    [-32768, 32767]
+
+constant WIDEST: [i32]
+    [-2147483648, 2147483647]
+
+function main()
+    total: i64 @ 0
+    at: i64 @ 0
+
+    while at < 3
+        total @ total + NEG[at]
+        at @ at + 1
+
+    print(total, " ", NEG[3], " ", NEG[4], " ", NEG[3] < NEG[1])
+    print(NARROW[0], " ", NARROW[1], " ", NARROW[2], " ", WIDER[0], " ", WIDER[1], " ", WIDEST[0], " ", WIDEST[1])
+    print(sort(NEG)[0], " ", sort(NARROW)[2])

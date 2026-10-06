@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 28, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -95,9 +95,19 @@ HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void);
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void);
 void h_fixedbugs382anarrayliteralisoneblock_main(void);
 
-#line 10 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#if HERO_STATIC_CONSTANTS
+#line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anarrayliteralisoneblock_DIGITS_4, int64_t, &hero_desc_int, 3, INT64_C(3), INT64_C(1), INT64_C(4));
+#line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void) {
-#line 101 "fixedbugs382anarrayliteralisoneblock.c"
+#line 104 "fixedbugs382anarrayliteralisoneblock.c"
+    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anarrayliteralisoneblock_DIGITS_4);
+}
+#else
+
+#line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void) {
+#line 111 "fixedbugs382anarrayliteralisoneblock.c"
     HeroArrayHeader * h0_own0 = {0};
     int64_t t1;
     int64_t t2;
@@ -106,38 +116,49 @@ HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void) {
     HeroArrayHeader * t5;
     goto bb0;
 bb0:
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t1 = INT64_C(3);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t2 = INT64_C(1);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t3 = INT64_C(4);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t4 = hero_array_new(&hero_desc_int, 3);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_push_owned(&t4, &t1);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_push_owned(&t4, &t2);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_push_owned(&t4, &t3);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t5 = h0_own0;
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     h0_own0 = t4;
-#line 128 "fixedbugs382anarrayliteralisoneblock.c"
+#line 138 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(t5);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 131 "fixedbugs382anarrayliteralisoneblock.c"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 141 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_incref(t4);
-#line 11 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 134 "fixedbugs382anarrayliteralisoneblock.c"
+#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 144 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(h0_own0);
     return t4;
 }
+#endif
 
-#line 13 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#if HERO_STATIC_CONSTANTS
+#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anarrayliteralisoneblock_WORDS_3, HeroStr, &hero_desc_str, 2, HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_eb4ac31));
+#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void) {
-#line 141 "fixedbugs382anarrayliteralisoneblock.c"
+#line 155 "fixedbugs382anarrayliteralisoneblock.c"
+    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anarrayliteralisoneblock_WORDS_3);
+}
+#else
+
+#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void) {
+#line 162 "fixedbugs382anarrayliteralisoneblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroStr t1;
     HeroStr t2;
@@ -145,34 +166,35 @@ HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void) {
     HeroArrayHeader * t4;
     goto bb0;
 bb0:
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t2 = HERO_STR_LIT(hero_str_eb4ac31);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t3 = hero_array_new(&hero_desc_str, 2);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_push_owned(&t3, &t1);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_push_owned(&t3, &t2);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t4 = h0_own0;
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     h0_own0 = t3;
-#line 163 "fixedbugs382anarrayliteralisoneblock.c"
+#line 184 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(t4);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 166 "fixedbugs382anarrayliteralisoneblock.c"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 187 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_incref(t3);
-#line 14 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 169 "fixedbugs382anarrayliteralisoneblock.c"
+#line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 190 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(h0_own0);
     return t3;
 }
+#endif
 
-#line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 21 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 void h_fixedbugs382anarrayliteralisoneblock_main(void) {
-#line 176 "fixedbugs382anarrayliteralisoneblock.c"
+#line 198 "fixedbugs382anarrayliteralisoneblock.c"
     HeroArrayHeader * h0_pair = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -198,80 +220,80 @@ void h_fixedbugs382anarrayliteralisoneblock_main(void) {
     HeroArrayHeader * t19;
     goto bb0;
 bb0:
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t1 = h_fixedbugs382anarrayliteralisoneblock_DIGITS();
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t16 = h1_own1;
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     h1_own1 = t1;
-#line 208 "fixedbugs382anarrayliteralisoneblock.c"
+#line 230 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(t16);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t2 = INT64_C(2);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t3 = *(int64_t const *)hero_array_at(t1, t2);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t4 = h_fixedbugs382anarrayliteralisoneblock_WORDS();
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t17 = h2_own2;
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     h2_own2 = t4;
-#line 220 "fixedbugs382anarrayliteralisoneblock.c"
-    hero_array_decref(t17);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t5 = INT64_C(1);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t6 = *(HeroStr const *)hero_array_at(t4, t5);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t7 = hero_str_len(t6);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t8 = hero_array_new(&hero_desc_int, 2);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    hero_array_push_owned(&t8, &t3);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    hero_array_push_owned(&t8, &t7);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t18 = h3_own3;
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    h3_own3 = t8;
-#line 238 "fixedbugs382anarrayliteralisoneblock.c"
-    hero_array_decref(t18);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t19 = h0_pair;
 #line 242 "fixedbugs382anarrayliteralisoneblock.c"
+    hero_array_decref(t17);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    t5 = INT64_C(1);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    t6 = *(HeroStr const *)hero_array_at(t4, t5);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    t7 = hero_str_len(t6);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    t8 = hero_array_new(&hero_desc_int, 2);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    hero_array_push_owned(&t8, &t3);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    hero_array_push_owned(&t8, &t7);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    t18 = h3_own3;
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    h3_own3 = t8;
+#line 260 "fixedbugs382anarrayliteralisoneblock.c"
+    hero_array_decref(t18);
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+    t19 = h0_pair;
+#line 264 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_incref(t8);
-#line 17 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     h0_pair = t8;
-#line 246 "fixedbugs382anarrayliteralisoneblock.c"
+#line 268 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(t19);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t9 = h0_pair;
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t10 = INT64_C(0);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t11 = *(int64_t const *)hero_array_at(t9, t10);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t12 = h0_pair;
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t13 = INT64_C(1);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t14 = *(int64_t const *)hero_array_at(t12, t13);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     if (__builtin_add_overflow(t11, t14, &t15)) hero_panic_overflow();
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_print_int(t15);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_print_end();
-#line 266 "fixedbugs382anarrayliteralisoneblock.c"
+#line 288 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(h0_pair);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 269 "fixedbugs382anarrayliteralisoneblock.c"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 291 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(h1_own1);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 272 "fixedbugs382anarrayliteralisoneblock.c"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 294 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(h2_own2);
-#line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-#line 275 "fixedbugs382anarrayliteralisoneblock.c"
+#line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
+#line 297 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(h3_own3);
     return;
 }
