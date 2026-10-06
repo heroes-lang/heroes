@@ -347,7 +347,8 @@ Anything beyond this document — sockets, maths, JSON, databases — comes from
 libraries. A group names its header, and `link` a library when the symbols need one. clang
 checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** and a **field** are declared at the header's own
-width and sign — `i32` where C says int, `u64` where it says `size_t` — and one that
+width and sign — `i32` where C says int, `i8` where it says char, `u64` where it
+says `size_t` — and one that
 disagrees is refused, except a parameter C converts exactly (`i16` against int)
 and what a `ptr` points at. A C out-parameter is an `@` parameter, and what it
 points at is held to the same width and sign — `@n: u64` where it says
@@ -367,11 +368,14 @@ unless the header writes it after the word struct, which `tag` gives:
 `record FileStat tag stat partial`. A
 field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
 array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`, as many
-elements as the type says. A bit-field is none of these: leave it to `partial`.
+elements as the type says. End a construction with `rest: zero` and every field
+sharing no byte with one it names is zero; only a group's record has it. A
+bit-field is none of these: leave it to `partial`.
 `record Font partial` names only some, and its size stays C's, not the field
 list's. A field in a C union, named or anonymous, shares its bytes with the
 union's other members: a record names one or more of each union, reads any, and
-is built naming exactly one, an anonymous struct's fields counting as one.
+is built naming exactly one, or none when it ends with `rest: zero`, an
+anonymous struct's fields counting as one.
 Comparing a `partial` record, or one holding a union's field that is not an
 integer, pointer or array of them as wide as the union, and using it as a map
 key are compile errors, for it and for any value holding it. One
