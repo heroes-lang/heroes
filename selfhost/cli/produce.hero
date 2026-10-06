@@ -356,7 +356,7 @@ function produced_code(made: Produced?) -> str
 
 # DEFECT 357's CASE: what a power cut left under `build/`, each kept text of a
 # program's checks zeroed at its length as the Windows box's crash left eleven
-# (one NUL is `surface-fixtures/notext357/nul.txt`, since no literal holds
+# (one NUL is `surface-fixtures/notext357/one-nul.txt`, since no literal holds
 # one), the records that name them left whole. Before the repair the pointee
 # check's verdict said `internal error` over NULs at exit 2, and the layout
 # check's screen built at exit 0 a construction leaving out a field; a unit's
@@ -372,7 +372,7 @@ test "kept texts a power cut zeroed are asked again, and the author's mistake is
     warned = "extern \"p.h\"\n    function six() -> i64\n\nfunction main()\n    print(six())\n"
     t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-zeroed").must()
     each: i64 @ 0
-    nul = read_file("tests/golden/surface-fixtures/notext357/nul.txt").must()
+    nul = read_file("tests/golden/surface-fixtures/notext357/one-nul.txt").must()
     none: [str] = []
     options = compile.Options(
         level: "-O0",
