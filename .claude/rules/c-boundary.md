@@ -47,10 +47,15 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has five members
-(panel 036, widened by panel 048, CL-008; the fifth by panel 166):
+is exit 1 with a diagnostic on the `.hero` line, and it has six members
+(panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
+defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
+blamed moves, the line between accepted and refused does not):
 
-- a result type the header refutes;
+- a result type the header refutes, and a record's constant whose header value
+  C will not build as that record, judged by the accessor's own declaration at
+  the constant's line, told `ffi_constant_type` with no new code (defect 094,
+  lane b12-ffi13, repaired at `41c5d1b4`, 2026-10-06);
 - a `constant` that is not one;
 - a name the header does not have;
 - a symbol the **linker** cannot find because the group named no `link`;
@@ -60,6 +65,12 @@ is exit 1 with a diagnostic on the `.hero` line, and it has five members
   qualifier error against the header's parameter is the verdict;
   `emit/ffi_lend.hero` reads it into `field_lend_written` on the lend. This is
   the one member that points at a **call** rather than at a declaration.
+- **a header a group names, or one it includes, that clang refuses on its
+  own**: added 2026-10-06 (defect 360, batch 12, repaired at `e0dc8780`). Told
+  `ffi_header_refused` at exit 1 on the group's string with clang's located
+  words, narrowed by the include stack as `ffi_missing_header` is; until then
+  it was *internal error: compiling the generated C failed* at exit 2, the
+  author's header blamed on the compiler.
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, so a symbol nobody
