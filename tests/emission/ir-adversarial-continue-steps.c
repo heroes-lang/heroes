@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -41,7 +43,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "adversarialcontinuesteps.c"
+#line 47 "adversarialcontinuesteps.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -62,19 +64,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 78 "adversarialcontinuesteps.c"
+#line 80 "adversarialcontinuesteps.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -90,7 +92,7 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs);
 
 #line 7 "tests/golden/ir/adversarial-continue-steps.hero"
 int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
-#line 94 "adversarialcontinuesteps.c"
+#line 96 "adversarialcontinuesteps.c"
     int64_t h1_count;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -128,11 +130,11 @@ bb0:
     t2 = h0_xs;
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t23 = h2_xs0;
-#line 132 "adversarialcontinuesteps.c"
+#line 134 "adversarialcontinuesteps.c"
     hero_array_incref(t2);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h2_xs0 = t2;
-#line 136 "adversarialcontinuesteps.c"
+#line 138 "adversarialcontinuesteps.c"
     hero_array_decref(t23);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t3 = INT64_C(0);
@@ -194,7 +196,7 @@ bb3:
 bb4:
 #line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t22 = h1_count;
-#line 198 "adversarialcontinuesteps.c"
+#line 200 "adversarialcontinuesteps.c"
     hero_array_decref(h2_xs0);
     return t22;
 bb5:
@@ -216,7 +218,7 @@ bb6:
 bb7:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb5;
-#line 220 "adversarialcontinuesteps.c"
+#line 222 "adversarialcontinuesteps.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

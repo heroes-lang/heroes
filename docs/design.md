@@ -989,7 +989,8 @@ lexer (the original text said "one line"; the measured cost is on record in pane
 `c == 40` — seven magic numbers in twenty lines, and writing `43` for `+` is an error no compiler
 can catch. This was judged the best benefit-to-cost modification in the entire review.
 
-**Escape sequences: six, split by context** (panel 008, `\r` added by panel 066). In a string:
+**Escape sequences: six, split by context** (panel 008, `\r` added by panel 066), **and a seventh
+in a string alone** (panel 192, below). In a string:
 `\n` `\t` `\r` `\\` `\"`. In a character literal: `\n` `\t` `\r` `\\` `\'`. A `'` needs no escape
 inside a string and a `"` needs none inside a character literal, so **each character has exactly one
 spelling** — §4.15's canonical-form rule survives into the literals. A character literal therefore
@@ -1009,13 +1010,34 @@ diagnostic**, with `\r` as its certain fix: the escape is what made the repair w
 **The freeze is not touched**: `\0`, `\xNN`, `\u{...}` and octal still need a panel, on the
 interior-NUL ground below, which `\r` — one fixed byte, 13 — cannot reach.
 
+**`\u{1b}` is the seventh, and it writes only what a string refuses written as itself** (panel 192's
+R2 and R5, ratified 2026-10-05; defects 251 and 283). A string and a comment refuse, raw, every
+control character but the line end (a comment keeps the tab, and a string's tab is `\t`), the
+twelve Bidi_Control and U+2028 and U+2029: three Unicode properties, each a fact about the code
+point, because a raw ESC drove the terminal of whoever printed the file, an override in a string
+drew the code after it as text inside it, and retyping what a screen shows lost each one, panel
+066's trap for every byte but the one it refused. The rest of Default_Ignorable stays legal raw,
+since real text spells with it: the joiners, the variation selectors, the tags. Such a refusal's
+`certain` fix needs a spelling inside the literal, as `\r` gave the carriage return, so a string
+writes one of these characters by its code, `\u{1b}`, **and nothing else by it**: lowercase hex
+with no leading zero, any other spelling refused with a `certain` fix to that one; a character a
+letter escape writes takes the letter (`\u{9}` is `\t`); one a string holds as itself takes the
+character, a `guess`; never 0 or a surrogate; not in a character literal, which is its character's
+number, nor in a group head's string, whose judge refuses the character. So each character keeps
+the one spelling of the paragraph above, at the cost the sitting names: a zero-width space has one
+legal spelling, the invisible one. A comment writes such a character by its name, `<U+202E>`, the
+form a diagnostic shows it in, and a character literal by its number, `27`.
+
 **The backslash is reserved**: any other character after it is a compile error whose diagnostic
 names the legal escapes and carries a `certain` fix. This half is the point. Without it,
 `print("a\nb")` compiles and prints four characters — a plausible model mistake that is *not* a
 compile error, which is the thesis inverted. Go, Rust and Zig all error on unknown escapes from day
 one; C's permissiveness is what Python has been unwinding since 2016. **The set is frozen**: `\0`,
 `\xNN`, `\u{...}` and octal escapes need a panel, because they can produce an interior NUL, which
-silently truncates every C call and voids §4.20's guarantee that `.cstr()` is free.
+silently truncates every C call and voids §4.20's guarantee that `.cstr()` is free. **Panel 192
+opened it for `\u{...}` alone, within its bounds above**, where it writes no NUL; `\0`, `\xNN` and
+octal stay frozen. Since that sitting the interior NUL itself has a guard at the boundary, §4.20's
+one bit, because a file read whole and a binding's own C each made one with no escape at all.
 
 **Known residual trap** (found in implementation, panel 008; widened by 066): `"C:\temp"` cannot be
 made loud — `\t` is legal, so the path silently becomes `C:<TAB>emp` — and since `\r` landed,
@@ -2635,6 +2657,16 @@ includes — so clang type-checks every runtime call.** Contents:
   `HeroStr` fabricated from a foreign pointer (`{sqlite3_column_text(…), n}`), which otherwise
   compiles with **zero warnings under `-Weverything`** and corrupts the bound library's heap with
   ASan silent.
+- **A `str` holds any UTF-8, U+0000 included, and the C boundary refuses a NUL** (panel 192's R1,
+  ratified 2026-10-05; defect 245). A file read whole, a `[u8]` read by `validated_bytes()` and a
+  binding's own C returning bytes with their length each make one, and the compiler and the net
+  hold one by design (a source holding a NUL, `git ls-files -z`). The free `.cstr()` stays free:
+  the low bit of the header's magic word says the block holds a NUL, set where the block is made
+  and carried by concatenation, repetition, a join and a slice that keeps the NUL, so the lend and
+  the lease ask one bit and abort naming the byte, as a null `cstr` aborts, where C would read a
+  shorter string than the program holds and a path cut at its NUL named **another file** (the
+  ffi-pragmatist's probes: 19 of 29 doors changed, made, read or ran what the program never named).
+  `read_file` and `write_file`, whose types promise a failure, take the `str` and answer one.
 - `hero_str_from_bytes` / `hero_str_from_cstr`, which make an owning copy of a borrowed C
   pointer. Without them **no `extern function` may return `str`** and §4.19's ladder is unwritable
   at step 3 — "read a result" — because every C library returns strings as borrowed pointers.
@@ -4021,7 +4053,12 @@ the same compiler with the thesis-bearing checks disabled (`_` on variants allow
 same-typed arguments, no mandatory type on `@` declarations, non-exhaustive `match`, unused
 variables tolerated). Same model, same spec size, same unfamiliarity, opposite design choices: the
 only comparison that isolates *design* from training-data familiarity. Without it there is no
-falsifiable claim.
+falsifiable claim. **A third category stays in the control arm** (panel 192's R4, ratified
+2026-10-05): a rule a program with a meaning breaks, kept because it guards what the person
+READING the source sees rather than adding the thesis, as panel 066's raw carriage return was the
+first. A raw control character, bidirectional control, U+2028 or U+2029 in a string or a comment,
+and the one spelling of a character by its code, are refused under `--permissive` as without it;
+`selfhost/diag.hero`'s `is_thesis_rule` says so beside its list.
 
 1. **Token counting.** With **two vendored BPE tokenisers** (Anthropic's legacy `claude.json` and
    `cl100k_base`), pinned by sha256 and read offline — no API key, no network. The **maximum over

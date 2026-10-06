@@ -32,39 +32,6 @@ function judged(spelled: str, span: token.Span, what: str) -> diag.Diagnostic?
         return cannot
     return thesis(spelled: spelled, value: value, span: span, what: what)
 
-# Which of a text's lexer diagnostics a group head tells instead (defect
-# 250): an escape the language does not have, inside the string naming an
-# `extern`'s header, where `judged` refuses the string whole, as
-# `parse/group_head` asks it. The value keeps an escape's `\`, and a header's
-# `\` is `escape_in_header_name`'s, so the lexer's `unknown_escape` there was
-# a second message for one mistake, and its certain fix, `\\d`, wrote a name
-# the head refuses next. A `link` or `package` name keeps the lexer's message,
-# whose fix the head accepts.
-function told_by_heads(diagnostics: [diag.Diagnostic], tokens: [token.Token], text: str) -> [bool]
-    headers: [token.Span] @ []
-    k: i64 @ 0
-
-    while k + 1 < tokens.len()
-        name = tokens[k + 1].span
-
-        if tokens[k].kind == .kw_extern && tokens[k + 1].kind == .str_lit && name.end <= text.len()
-            if !judged(spelled: text.slice(from: name.start, to: name.end), span: name, what: "header").is_err()
-                headers @ headers.push(name)
-        k @ k + 1
-
-    out: [bool] @ []
-
-    for d in diagnostics
-        told: bool @ false
-
-        for one in headers
-            if d.code == "unknown_escape" && d.span.start >= one.start && d.span.end <= one.end
-                told @ true
-
-        out @ out.push(told)
-
-    return out
-
 # What no tool can be handed as one name, each `unwritable_name`.
 function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> diag.Diagnostic?
     held = unwritable_byte(value)
@@ -357,27 +324,6 @@ function contains_byte(s: str, b: u8) -> bool
     return false
 
 ## Tests
-
-# Defect 250: an escape inside a header's name is the head's to tell, the
-# lexer's message left out; the same escape in a string no head judges as a
-# header keeps it. The tokens and the message are written as the lexer
-# gives them for `extern "a\db.h"` (`lexer.hero` holds the lexed case).
-test "an escape the language does not have inside a header's name is the head's to tell, and nowhere else"
-    text = "extern \"a\\db.h\""
-    extern_word = token.Token(kind: .kw_extern, span: token.Span(start: 0, end: 6))
-    name = token.Token(kind: .str_lit, span: token.Span(start: 7, end: 15))
-    escape_at = diag.new_diagnostic(
-        code: "unknown_escape",
-        message: "`\\d` is not an escape sequence",
-        span: token.Span(start: 9, end: 11)
-    )
-    other = diag.new_diagnostic(code: "unexpected_character", message: "m", span: token.Span(start: 9, end: 11))
-    assert told_by_heads([escape_at, other], tokens: [extern_word, name], text: text) == [true, false]
-
-    # The same string after another word, as `link`'s or a value's, is no
-    # header: the lexer's message stays.
-    word = token.Token(kind: .ident, span: token.Span(start: 0, end: 6))
-    assert told_by_heads([escape_at], tokens: [word, name], text: text) == [false]
 
 function said(spelled: str, what: str) -> str
     got = judged(spelled: spelled, span: token.Span(start: 0, end: spelled.len()), what: what)

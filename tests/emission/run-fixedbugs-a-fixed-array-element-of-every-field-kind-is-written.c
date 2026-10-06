@@ -5,7 +5,7 @@
 #include <fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -67,8 +67,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -99,19 +101,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_kinds_check(struct kinds a0) { (void)(kinds_check)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 117 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b);
@@ -129,7 +131,7 @@ void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void);
 
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void) {
-#line 133 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 135 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
     struct kinds h0_k;
     uint8_t t1;
     uint8_t t2;
@@ -255,7 +257,7 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
     return;
-#line 259 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 261 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

@@ -1,0 +1,2 @@
+the program holds 4 bytes
+!panic: `.cstr()` lends to C a str holding a NUL byte, at index 2 of its 4 bytes

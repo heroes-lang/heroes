@@ -1,0 +1,20 @@
+error[invisible_character]: this string holds the invisible character U+202E written as itself, which reorders the rest of its line as a screen draws it, so the line can read as another program: a string writes it by its code, as `\u{202e}`
+  at tests/golden/full/fixedbugs-291-an-excerpt-writes-a-bidirectional-character-by-its-code.hero:8:15
+    |
+  8 |     x: i64 @ "<U+202E>abc"  #~ invisible_character
+    |               ^^^^^^^^
+  fix (certain): write each by its code: `\u{202e}`
+
+error[invisible_character]: this string holds the invisible character U+2066 written as itself, which reorders the rest of its line as a screen draws it, so the line can read as another program: a string writes it by its code, as `\u{2066}`
+  at tests/golden/full/fixedbugs-291-an-excerpt-writes-a-bidirectional-character-by-its-code.hero:9:12
+    |
+  9 |     print("<U+2066>x<U+2069>")  #~ invisible_character invisible_character
+    |            ^^^^^^^^
+  fix (certain): write each by its code: `\u{2066}`
+
+error[invisible_character]: this string holds the invisible character U+2069 written as itself, which reorders the rest of its line as a screen draws it, so the line can read as another program: a string writes it by its code, as `\u{2069}`
+  at tests/golden/full/fixedbugs-291-an-excerpt-writes-a-bidirectional-character-by-its-code.hero:9:14
+    |
+  9 |     print("<U+2066>x<U+2069>")  #~ invisible_character invisible_character
+    |                     ^^^^^^^^
+  fix (certain): write each by its code: `\u{2069}`

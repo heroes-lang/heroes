@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -33,8 +33,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -45,7 +47,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_36b9b23a, "first multiple of 97 and 89: ");
 
-#line 49 "main.c"
+#line 51 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -71,19 +73,19 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_spawn(h_0fn_48ac9712 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
 #line 22 "examples/firsthit/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "main.c"
+#line 89 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -113,7 +115,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 24 "examples/firsthit/main.hero"
 int64_t h_main_BANDS(void) {
-#line 117 "main.c"
+#line 119 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -121,12 +123,12 @@ bb0:
     t1 = INT64_C(8);
 #line 25 "examples/firsthit/main.hero"
     return t1;
-#line 125 "main.c"
+#line 127 "main.c"
 }
 
 #line 27 "examples/firsthit/main.hero"
 int64_t h_main_PER_BAND(void) {
-#line 130 "main.c"
+#line 132 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -134,12 +136,12 @@ bb0:
     t1 = INT64_C(3000);
 #line 28 "examples/firsthit/main.hero"
     return t1;
-#line 138 "main.c"
+#line 140 "main.c"
 }
 
 #line 31 "examples/firsthit/main.hero"
 int64_t h_main_NOWHERE(void) {
-#line 143 "main.c"
+#line 145 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -147,12 +149,12 @@ bb0:
     t1 = INT64_C(999999999);
 #line 32 "examples/firsthit/main.hero"
     return t1;
-#line 151 "main.c"
+#line 153 "main.c"
 }
 
 #line 44 "examples/firsthit/main.hero"
 bool h_main_wanted(int64_t h0_n) {
-#line 156 "main.c"
+#line 158 "main.c"
     bool h1_b0;
     bool h2_b1;
     int64_t t1;
@@ -236,12 +238,12 @@ bb4:
     t15 = h1_b0;
 #line 45 "examples/firsthit/main.hero"
     return t15;
-#line 240 "main.c"
+#line 242 "main.c"
 }
 
 #line 47 "examples/firsthit/main.hero"
 int64_t h_main_first_in(int64_t h0_index) {
-#line 245 "main.c"
+#line 247 "main.c"
     hero_thread_guard("main.first_in");
     int64_t h1_at;
     int64_t h2_ret0;
@@ -339,7 +341,7 @@ bb7:
     t18 = h2_ret0;
 #line 47 "examples/firsthit/main.hero"
     return t18;
-#line 343 "main.c"
+#line 345 "main.c"
 }
 
 int64_t h_0cb_main_first_in(int64_t h0_index) {
@@ -349,7 +351,7 @@ int64_t h_0cb_main_first_in(int64_t h0_index) {
 
 #line 57 "examples/firsthit/main.hero"
 int64_t h_main_first_at_once(void) {
-#line 353 "main.c"
+#line 355 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_best;
@@ -400,15 +402,15 @@ bb0:
     t34 = h7_own7;
 #line 58 "examples/firsthit/main.hero"
     h7_own7 = t1;
-#line 404 "main.c"
+#line 406 "main.c"
     hero_array_decref(t34);
 #line 58 "examples/firsthit/main.hero"
     t35 = h0_handles;
-#line 408 "main.c"
+#line 410 "main.c"
     hero_array_incref(t1);
 #line 58 "examples/firsthit/main.hero"
     h0_handles = t1;
-#line 412 "main.c"
+#line 414 "main.c"
     hero_array_decref(t35);
 #line 59 "examples/firsthit/main.hero"
     t2 = INT64_C(0);
@@ -456,11 +458,11 @@ bb3:
     t15 = h0_handles;
 #line 67 "examples/firsthit/main.hero"
     t36 = h3_xs0;
-#line 460 "main.c"
+#line 462 "main.c"
     hero_array_incref(t15);
 #line 67 "examples/firsthit/main.hero"
     h3_xs0 = t15;
-#line 464 "main.c"
+#line 466 "main.c"
     hero_array_decref(t36);
 #line 67 "examples/firsthit/main.hero"
     t16 = INT64_C(0);
@@ -520,13 +522,13 @@ bb6:
 bb7:
 #line 73 "examples/firsthit/main.hero"
     t33 = h2_best;
-#line 524 "main.c"
+#line 526 "main.c"
     hero_array_decref(h0_handles);
 #line 73 "examples/firsthit/main.hero"
-#line 527 "main.c"
+#line 529 "main.c"
     hero_array_decref(h3_xs0);
 #line 73 "examples/firsthit/main.hero"
-#line 530 "main.c"
+#line 532 "main.c"
     hero_array_decref(h7_own7);
     return t33;
 bb8:
@@ -542,12 +544,12 @@ bb9:
 bb10:
 #line 71 "examples/firsthit/main.hero"
     goto bb8;
-#line 546 "main.c"
+#line 548 "main.c"
 }
 
 #line 75 "examples/firsthit/main.hero"
 int64_t h_main_first_alone(void) {
-#line 551 "main.c"
+#line 553 "main.c"
     int64_t h0_at;
     int64_t h1_ret0;
     int64_t t1;
@@ -632,12 +634,12 @@ bb7:
     t14 = h1_ret0;
 #line 75 "examples/firsthit/main.hero"
     return t14;
-#line 636 "main.c"
+#line 638 "main.c"
 }
 
 #line 85 "examples/firsthit/main.hero"
 void h_main_main(void) {
-#line 641 "main.c"
+#line 643 "main.c"
     HeroStr t1;
     int64_t t2;
     goto bb0;
@@ -654,7 +656,7 @@ bb0:
     hero_print_end();
 #line 86 "examples/firsthit/main.hero"
     return;
-#line 658 "main.c"
+#line 660 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

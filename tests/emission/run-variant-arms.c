@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -48,7 +50,7 @@ HERO_STR_STATIC(hero_str_4e13c0f6, "is nonzero");
 HERO_STR_STATIC(hero_str_1d01f4, "neg");
 HERO_STR_STATIC(hero_str_1d8d30, "pos");
 
-#line 52 "variantarms.c"
+#line 54 "variantarms.c"
 typedef struct h_variantarms_P {
     int64_t f_n;
     double f_f;
@@ -84,19 +86,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "variantarms.c"
+#line 102 "variantarms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_variantarms_P_eq(const h_variantarms_P *a, const h_variantarms_P *b);
@@ -119,7 +121,7 @@ void h_variantarms_main(void);
 
 #line 29 "tests/golden/run/variant-arms.hero"
 h_variantarms_Sign h_variantarms_classify(int64_t h0_n) {
-#line 123 "variantarms.c"
+#line 125 "variantarms.c"
     h_variantarms_Sign h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -185,12 +187,12 @@ bb6:
     t10 = h1_ret0;
 #line 29 "tests/golden/run/variant-arms.hero"
     return t10;
-#line 189 "variantarms.c"
+#line 191 "variantarms.c"
 }
 
 #line 36 "tests/golden/run/variant-arms.hero"
 HeroStr h_variantarms_word(h_variantarms_Sign h0_s) {
-#line 194 "variantarms.c"
+#line 196 "variantarms.c"
     h_variantarms_Sign h1_s0;
     HeroStr h2_r0 = {0};
     h_variantarms_Sign t1;
@@ -227,10 +229,10 @@ bb0:
 bb1:
 #line 37 "tests/golden/run/variant-arms.hero"
     t6 = h2_r0;
-#line 231 "variantarms.c"
+#line 233 "variantarms.c"
     hero_str_incref(t6);
 #line 37 "tests/golden/run/variant-arms.hero"
-#line 234 "variantarms.c"
+#line 236 "variantarms.c"
     hero_str_decref(h2_r0);
     return t6;
 bb2:
@@ -238,11 +240,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4e77a92d);
 #line 37 "tests/golden/run/variant-arms.hero"
     t7 = h2_r0;
-#line 242 "variantarms.c"
+#line 244 "variantarms.c"
     hero_str_incref(t4);
 #line 37 "tests/golden/run/variant-arms.hero"
     h2_r0 = t4;
-#line 246 "variantarms.c"
+#line 248 "variantarms.c"
     hero_str_decref(t7);
     goto bb1;
 bb3:
@@ -250,18 +252,18 @@ bb3:
     t5 = HERO_STR_LIT(hero_str_1073a930);
 #line 37 "tests/golden/run/variant-arms.hero"
     t8 = h2_r0;
-#line 254 "variantarms.c"
+#line 256 "variantarms.c"
     hero_str_incref(t5);
 #line 37 "tests/golden/run/variant-arms.hero"
     h2_r0 = t5;
-#line 258 "variantarms.c"
+#line 260 "variantarms.c"
     hero_str_decref(t8);
     goto bb1;
 }
 
 #line 41 "tests/golden/run/variant-arms.hero"
 HeroStr h_variantarms_verdict(h_variantarms_Sign h0_a) {
-#line 265 "variantarms.c"
+#line 267 "variantarms.c"
     h_variantarms_Sign h1_s0;
     HeroStr h2_r0 = {0};
     HeroStr h3_m = {0};
@@ -303,21 +305,21 @@ bb1:
     t6 = h2_r0;
 #line 42 "tests/golden/run/variant-arms.hero"
     t8 = h3_m;
-#line 307 "variantarms.c"
+#line 309 "variantarms.c"
     hero_str_incref(t6);
 #line 42 "tests/golden/run/variant-arms.hero"
     h3_m = t6;
-#line 311 "variantarms.c"
+#line 313 "variantarms.c"
     hero_str_decref(t8);
 #line 46 "tests/golden/run/variant-arms.hero"
     t7 = h3_m;
-#line 315 "variantarms.c"
+#line 317 "variantarms.c"
     hero_str_incref(t7);
 #line 46 "tests/golden/run/variant-arms.hero"
-#line 318 "variantarms.c"
+#line 320 "variantarms.c"
     hero_str_decref(h2_r0);
 #line 46 "tests/golden/run/variant-arms.hero"
-#line 321 "variantarms.c"
+#line 323 "variantarms.c"
     hero_str_decref(h3_m);
     return t7;
 bb2:
@@ -325,11 +327,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_5bde1154);
 #line 42 "tests/golden/run/variant-arms.hero"
     t9 = h2_r0;
-#line 329 "variantarms.c"
+#line 331 "variantarms.c"
     hero_str_incref(t4);
 #line 42 "tests/golden/run/variant-arms.hero"
     h2_r0 = t4;
-#line 333 "variantarms.c"
+#line 335 "variantarms.c"
     hero_str_decref(t9);
     goto bb1;
 bb3:
@@ -337,18 +339,18 @@ bb3:
     t5 = HERO_STR_LIT(hero_str_4e13c0f6);
 #line 42 "tests/golden/run/variant-arms.hero"
     t10 = h2_r0;
-#line 341 "variantarms.c"
+#line 343 "variantarms.c"
     hero_str_incref(t5);
 #line 42 "tests/golden/run/variant-arms.hero"
     h2_r0 = t5;
-#line 345 "variantarms.c"
+#line 347 "variantarms.c"
     hero_str_decref(t10);
     goto bb1;
 }
 
 #line 48 "tests/golden/run/variant-arms.hero"
 void h_variantarms_main(void) {
-#line 352 "variantarms.c"
+#line 354 "variantarms.c"
     h_variantarms_Sign h0_s;
     h_variantarms_Sign h1_s0;
     h_variantarms_P h2_x;
@@ -407,7 +409,7 @@ bb0:
     t35 = h4_own4;
 #line 49 "tests/golden/run/variant-arms.hero"
     h4_own4 = t3;
-#line 411 "variantarms.c"
+#line 413 "variantarms.c"
     hero_str_decref(t35);
 #line 49 "tests/golden/run/variant-arms.hero"
     hero_print_str(t3);
@@ -423,7 +425,7 @@ bb0:
     t36 = h5_own5;
 #line 50 "tests/golden/run/variant-arms.hero"
     h5_own5 = t6;
-#line 427 "variantarms.c"
+#line 429 "variantarms.c"
     hero_str_decref(t36);
 #line 50 "tests/golden/run/variant-arms.hero"
     hero_print_str(t6);
@@ -465,7 +467,7 @@ bb1:
     t37 = h6_own6;
 #line 60 "tests/golden/run/variant-arms.hero"
     h6_own6 = t16;
-#line 469 "variantarms.c"
+#line 471 "variantarms.c"
     hero_str_decref(t37);
 #line 60 "tests/golden/run/variant-arms.hero"
     hero_print_str(t16);
@@ -479,7 +481,7 @@ bb1:
     t38 = h7_own7;
 #line 61 "tests/golden/run/variant-arms.hero"
     h7_own7 = t18;
-#line 483 "variantarms.c"
+#line 485 "variantarms.c"
     hero_str_decref(t38);
 #line 61 "tests/golden/run/variant-arms.hero"
     hero_print_str(t18);
@@ -533,16 +535,16 @@ bb1:
     hero_print_f64(t34);
 #line 68 "tests/golden/run/variant-arms.hero"
     hero_print_end();
-#line 537 "variantarms.c"
+#line 539 "variantarms.c"
     hero_str_decref(h4_own4);
 #line 68 "tests/golden/run/variant-arms.hero"
-#line 540 "variantarms.c"
+#line 542 "variantarms.c"
     hero_str_decref(h5_own5);
 #line 68 "tests/golden/run/variant-arms.hero"
-#line 543 "variantarms.c"
+#line 545 "variantarms.c"
     hero_str_decref(h6_own6);
 #line 68 "tests/golden/run/variant-arms.hero"
-#line 546 "variantarms.c"
+#line 548 "variantarms.c"
     hero_str_decref(h7_own7);
     return;
 bb2:
@@ -574,7 +576,7 @@ bb4:
     hero_print_end();
 #line 58 "tests/golden/run/variant-arms.hero"
     goto bb1;
-#line 578 "variantarms.c"
+#line 580 "variantarms.c"
 }
 HERO_TU_LOCAL bool h_variantarms_P_eq(const h_variantarms_P *a, const h_variantarms_P *b) {
     if (!(a->f_n == b->f_n)) return false;

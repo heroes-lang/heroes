@@ -5,7 +5,7 @@
 #include <lease-c-keeps-the-pointer.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -34,8 +34,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -47,7 +49,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 HERO_STR_STATIC(hero_str_3390715c, "-payload");
 
-#line 51 "leaseckeepsthepointer.c"
+#line 53 "leaseckeepsthepointer.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -70,19 +72,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 12 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_leaseckeepsthepointer_stash_put(const char * a0) { (void)(stash_put)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "leaseckeepsthepointer.c"
+#line 88 "leaseckeepsthepointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +100,7 @@ void h_leaseckeepsthepointer_main(void);
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
-#line 102 "leaseckeepsthepointer.c"
+#line 104 "leaseckeepsthepointer.c"
     int64_t h0_at;
     const char * h1_label;
     HeroStr h2_own2 = {0};
@@ -153,7 +155,7 @@ bb2:
     t17 = h2_own2;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h2_own2 = t7;
-#line 157 "leaseckeepsthepointer.c"
+#line 159 "leaseckeepsthepointer.c"
     hero_str_decref(t17);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t8 = hero_str_concat(t5, t7);
@@ -161,7 +163,7 @@ bb2:
     t18 = h3_own3;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h3_own3 = t8;
-#line 165 "leaseckeepsthepointer.c"
+#line 167 "leaseckeepsthepointer.c"
     hero_str_decref(t18);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t9 = HERO_STR_LIT(hero_str_3390715c);
@@ -171,7 +173,7 @@ bb2:
     t19 = h4_own4;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h4_own4 = t10;
-#line 175 "leaseckeepsthepointer.c"
+#line 177 "leaseckeepsthepointer.c"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t11 = hero_str_held(t10);
@@ -202,13 +204,13 @@ bb2:
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb3:
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-#line 206 "leaseckeepsthepointer.c"
+#line 208 "leaseckeepsthepointer.c"
     hero_str_decref(h2_own2);
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-#line 209 "leaseckeepsthepointer.c"
+#line 211 "leaseckeepsthepointer.c"
     hero_str_decref(h3_own3);
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-#line 212 "leaseckeepsthepointer.c"
+#line 214 "leaseckeepsthepointer.c"
     hero_str_decref(h4_own4);
     return;
 }

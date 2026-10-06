@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-03
-commit: none
+commit: 5215222f6a5e8af628d445af3729681b6d41543d
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** batch 8's FFI lane, 2026-10-03 (its report's finding 8); the shape run by the coordinator, 2026-10-04.
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a witness owed (`.claude/rules/diagnostics-and-goldens.md`: every diagnostic annotated in the source that provokes it); no program moves.
+
+    Repaired at `5215222f`, 2026-10-05, gated by its case and the compiler's own tests; the net is owed at the batch's close. Its case's name is `fixedbugs-255-`, where the item said `fixedbugs-216-`, the number of the head's own rule.

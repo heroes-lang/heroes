@@ -1,0 +1,8 @@
+error[expected_end_of_line]: expected the end of the line, found `,` — one statement per line, and no `,` ends a statement's line
+  at tests/golden/full/fixedbugs-271-a-fix-away-from-its-message-s-line-says-where.hero:11:10
+     |
+  11 |     x = 1,  #~ expected_end_of_line
+     |          ^
+  fix (certain): delete the `,`
+  fix (certain): delete the `,` (at tests/golden/full/fixedbugs-271-a-fix-away-from-its-message-s-line-says-where.hero:12:10)
+  fix (certain): delete the `,` (at tests/golden/full/fixedbugs-271-a-fix-away-from-its-message-s-line-says-where.hero:13:17)

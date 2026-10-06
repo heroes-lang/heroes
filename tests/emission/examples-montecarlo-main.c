@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -33,8 +33,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -47,7 +49,7 @@ HERO_STR_STATIC(hero_str_5a3c82c4, "pi from ");
 HERO_STR_STATIC(hero_str_37603379, " darts on ");
 HERO_STR_STATIC(hero_str_4348212d, " threads: ");
 
-#line 51 "main.c"
+#line 53 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -73,19 +75,19 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_spawn(h_0fn_48ac9712 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
 #line 24 "examples/montecarlo/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "main.c"
+#line 91 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -114,7 +116,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 26 "examples/montecarlo/main.hero"
 int64_t h_main_THREADS(void) {
-#line 118 "main.c"
+#line 120 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -122,12 +124,12 @@ bb0:
     t1 = INT64_C(8);
 #line 27 "examples/montecarlo/main.hero"
     return t1;
-#line 126 "main.c"
+#line 128 "main.c"
 }
 
 #line 29 "examples/montecarlo/main.hero"
 int64_t h_main_DARTS(void) {
-#line 131 "main.c"
+#line 133 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -135,12 +137,12 @@ bb0:
     t1 = INT64_C(20000);
 #line 30 "examples/montecarlo/main.hero"
     return t1;
-#line 139 "main.c"
+#line 141 "main.c"
 }
 
 #line 33 "examples/montecarlo/main.hero"
 int64_t h_main_SIDE(void) {
-#line 144 "main.c"
+#line 146 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -148,12 +150,12 @@ bb0:
     t1 = INT64_C(46340);
 #line 34 "examples/montecarlo/main.hero"
     return t1;
-#line 152 "main.c"
+#line 154 "main.c"
 }
 
 #line 36 "examples/montecarlo/main.hero"
 int64_t h_main_next_of(int64_t h0_x) {
-#line 157 "main.c"
+#line 159 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -177,12 +179,12 @@ bb0:
     t5 = t3 % t4;
 #line 37 "examples/montecarlo/main.hero"
     return t5;
-#line 181 "main.c"
+#line 183 "main.c"
 }
 
 #line 41 "examples/montecarlo/main.hero"
 int64_t h_main_inside_for(int64_t h0_seed) {
-#line 186 "main.c"
+#line 188 "main.c"
     hero_thread_guard("main.inside_for");
     int64_t h1_hits;
     int64_t h2_x;
@@ -357,7 +359,7 @@ bb5:
 bb6:
 #line 53 "examples/montecarlo/main.hero"
     goto bb4;
-#line 361 "main.c"
+#line 363 "main.c"
 }
 
 int64_t h_0cb_main_inside_for(int64_t h0_seed) {
@@ -367,7 +369,7 @@ int64_t h_0cb_main_inside_for(int64_t h0_seed) {
 
 #line 58 "examples/montecarlo/main.hero"
 double h_main_estimate(void) {
-#line 371 "main.c"
+#line 373 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_i;
     int64_t h2_hits;
@@ -423,15 +425,15 @@ bb0:
     t40 = h6_own6;
 #line 59 "examples/montecarlo/main.hero"
     h6_own6 = t1;
-#line 427 "main.c"
+#line 429 "main.c"
     hero_array_decref(t40);
 #line 59 "examples/montecarlo/main.hero"
     t41 = h0_handles;
-#line 431 "main.c"
+#line 433 "main.c"
     hero_array_incref(t1);
 #line 59 "examples/montecarlo/main.hero"
     h0_handles = t1;
-#line 435 "main.c"
+#line 437 "main.c"
     hero_array_decref(t41);
 #line 60 "examples/montecarlo/main.hero"
     t2 = INT64_C(0);
@@ -479,11 +481,11 @@ bb3:
     t15 = h0_handles;
 #line 68 "examples/montecarlo/main.hero"
     t42 = h3_xs0;
-#line 483 "main.c"
+#line 485 "main.c"
     hero_array_incref(t15);
 #line 68 "examples/montecarlo/main.hero"
     h3_xs0 = t15;
-#line 487 "main.c"
+#line 489 "main.c"
     hero_array_decref(t42);
 #line 68 "examples/montecarlo/main.hero"
     t16 = INT64_C(0);
@@ -557,20 +559,20 @@ bb7:
     t38 = hero_int_to_f64(t37);
 #line 71 "examples/montecarlo/main.hero"
     t39 = t34 / t38;
-#line 561 "main.c"
+#line 563 "main.c"
     hero_array_decref(h0_handles);
 #line 71 "examples/montecarlo/main.hero"
-#line 564 "main.c"
+#line 566 "main.c"
     hero_array_decref(h3_xs0);
 #line 71 "examples/montecarlo/main.hero"
-#line 567 "main.c"
+#line 569 "main.c"
     hero_array_decref(h6_own6);
     return t39;
 }
 
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) {
-#line 574 "main.c"
+#line 576 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -613,7 +615,7 @@ bb0:
     hero_print_end();
 #line 74 "examples/montecarlo/main.hero"
     return;
-#line 617 "main.c"
+#line 619 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

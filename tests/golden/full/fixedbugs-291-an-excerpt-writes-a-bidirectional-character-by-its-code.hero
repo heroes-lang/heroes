@@ -1,0 +1,9 @@
+# Defect 291, 2026-10-05: U+202E written as itself on a line a message quoted
+# reached the terminal in the excerpt, and drew the quoted line in another
+# order than the one the compiler read. The override is refused written as
+# itself since defect 283, and that refusal's own excerpt writes it by its
+# code, `<U+202E>`, the caret padded by that width; an isolate likewise.
+
+function main()
+    x: i64 @ "‮abc"  #~ invisible_character
+    print("⁦x⁩")  #~ invisible_character invisible_character

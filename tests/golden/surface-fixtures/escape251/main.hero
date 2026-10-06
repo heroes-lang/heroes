@@ -1,0 +1,27 @@
+# Defect 251's form for the tools that re-print a program (panel 192's R5,
+# 2026-10-05): `\u{1b}` in a string and in the text of an `f` literal,
+# beside a hole and a doubled brace, in a constant's body and in a `match`
+# pattern, with a comment at each place one stands. `fmt` prints this file as
+# it is, each dump reads the literal as the lexer does, `heroes mutate` scores
+# it, and `heroes probe` holds every variant of it under both judges.
+
+constant RESET: str
+    "\u{1b}[0m"
+
+# The value between two escapes.
+function coloured(n: i64) -> str
+    # before the literal
+    return f"\u{1b}[3{n}m{{\u{202e}}}"  # after it
+
+function main()
+    x = 1
+    print(coloured(n: x))  # a call
+
+    match RESET
+        "\u{1b}[0m" => print("reset")
+        _           => print("other")
+
+    print(
+        # inside the parentheses
+        "\u{7f}" + RESET
+    )

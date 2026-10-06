@@ -5,7 +5,7 @@
 #include <fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -36,8 +36,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -48,7 +50,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6023594d, "failed add: ");
 
-#line 52 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+#line 54 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -75,19 +77,19 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatransferthatfaile
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_node_add(node * a0, node * a1, int32_t a2) { (void)(node_add)(a0, a1, a2); }
 #line 9 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_node_put(node * a0) { (void)(node_put)(a0); }
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+#line 93 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_Node_eq(node * const *a, node * const *b);
@@ -105,7 +107,7 @@ void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
 void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void) {
-#line 109 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+#line 111 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
     node * h0_parent;
     node * h1_child;
     int64_t t1;
@@ -188,7 +190,7 @@ bb0:
     }
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     return;
-#line 192 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+#line 194 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

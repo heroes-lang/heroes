@@ -1,0 +1,7 @@
+a zero between two letters: 3 bytes: 97 0 98
+a zero alone: 1 bytes: 0
+a zero at the end: 2 bytes: 97 0
+no zero: 2 bytes: 97 98
+nothing: 0 bytes:
+a byte that is not text after the zero: not_text
+!panic: `.cstr()` lends to C a str holding a NUL byte, at index 1 of its 3 bytes

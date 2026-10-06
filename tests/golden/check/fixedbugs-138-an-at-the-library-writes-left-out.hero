@@ -3,9 +3,13 @@
 # writes `@status`, stopped `check` with `internal error` at the library's
 # line 112, exit 2.
 # Cause: the same caret on the later declaration of the pair, the library's.
+#
+# Corrected 2026-10-05, defect 245 (panel 192's R1): the library binds
+# `hero_file_read_str(path: str, @status: i64)` in `hero_file_read`'s place,
+# and the `@` it writes on `status` is the one left out.
 
 extern "hero_os.h"
-    function hero_file_read(path: cstr lent, status: i64) -> str  #~ contract_differs
+    function hero_file_read_str(path: str, status: i64) -> str  #~ contract_differs
 
 function main()
     print("hello")

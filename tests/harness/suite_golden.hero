@@ -194,6 +194,9 @@ constant NO_FLAGS: [str]
 # or a fix that changed moved no golden: 0 of 466 `check/` expectations held an
 # `at` line, counted at `703af779`, and defect 244's excerpt was pinned in its
 # message alone. **5 cases on 2026-10-04**, the count, and so the floor.
+# **8 on 2026-10-05**, as the suite asked: defect 338's case and defect 291's
+# two, an excerpt writing an invisible and a bidirectional character by its
+# code.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -202,7 +205,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 5,
+        least: 8,
         watched: true,
         silent_stdout: false,
         library_skip: false
@@ -220,7 +223,10 @@ function shape_full() -> Shape
 # surface rows ask its exit code and its silence (`suite_surface.hero`,
 # `permissive drops them`), never its words, so a control-arm row could not be
 # pinned, and Part 11's control arm could say anything else with every golden
-# green. **4 cases on 2026-10-04**, the count, and so the floor.
+# green. **4 cases on 2026-10-04**, the count, and so the floor. **6 on
+# 2026-10-05**, as the suite asked: defect 193's control-arm case and defect
+# 251's, which pins that the control arm keeps refusing a character a reader
+# cannot see (panel 192's R4).
 function shape_permissive() -> Shape
     return Shape(
         name: "permissive",
@@ -229,7 +235,7 @@ function shape_permissive() -> Shape
         flags: ["--brief", "--permissive"],
         on_stderr: true,
         want_code: 1,
-        least: 4,
+        least: 6,
         watched: true,
         silent_stdout: false,
         library_skip: false

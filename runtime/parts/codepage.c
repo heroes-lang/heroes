@@ -30,6 +30,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <wchar.h>
+#include <corecrt_startup.h>
 
 /* The XML, byte for byte panel 189's `utf8.manifest`, 368 bytes. In
  * `.rsrc$02`, the section a resource's bytes live in; `used` keeps a variable
@@ -208,6 +209,48 @@ static char *hero_win_bytes(const wchar_t *wide, int64_t *length) {
     *length = hero_win_name_bytes(wide, out, room);
     return out;
 }
+
+/* THE ARGUMENTS ARE READ WIDE, AND CARRIED AS A LISTING CARRIES A NAME (panel
+ * 192's R6, defect 353). `main`'s narrow `argv` is the C runtime's conversion
+ * of the wide command line, and under the UTF-8 code page it turned a
+ * surrogate standing alone into U+FFFD: `x<D800>y` reached `args()` as valid
+ * text naming another file (panel 191's runs), and the spec's *one that is not
+ * UTF-8 aborts* was false here alone. So the C runtime is asked for the wide
+ * arguments, parsed by its own rules from the same command line, so the count
+ * and the splitting are the narrow `argv`'s, and each is written as
+ * `hero_win_name_bytes` writes a name: UTF-8, and a lone surrogate as the
+ * three bytes its value takes (WTF-8), which are not UTF-8. Then the checks
+ * every platform already makes answer as they answer on this Mac and Linux:
+ * `args()` aborts, `args_checked()` answers `not_text`, the shown read names
+ * the bytes. Kept for the process's life, as `main`'s `argv` is, so outside
+ * the scratch count (`hero_malloc_raw`). Where the C runtime cannot answer,
+ * the program does not start, as `hero_codepage_require_utf8` refuses, rather
+ * than read the narrow arguments in silence. */
+static void hero_args_read_wide(int *argc, char ***argv) {
+    if (_configure_wide_argv(_crt_argv_unexpanded_arguments) != 0 || __wargv == NULL || __argc < 0) {
+        fprintf(stderr, "error: this program's arguments could not be read as Windows holds "
+                        "them, wide, so a name in them might be read as another. Nothing was "
+                        "run.\n");
+        exit(2);
+    }
+    int count = __argc;
+    char **out = hero_malloc_raw(((size_t)count + 1) * sizeof *out);
+    for (int i = 0; i < count; i += 1) {
+        size_t units = wcslen(__wargv[i]);
+        if (units > (SIZE_MAX - 5) / 3) hero_panic("an argument longer than memory");
+        size_t room = 3 * units + 5;
+        out[i] = hero_malloc_raw(room);
+        if (hero_win_name_bytes(__wargv[i], out[i], room) < 0) hero_panic("an argument longer than its room");
+    }
+    out[count] = NULL;
+    *argc = count;
+    *argv = out;
+}
 #else
 static void hero_codepage_require_utf8(void) {}
+/* POSIX hands `main` the arguments as the bytes they are. */
+static void hero_args_read_wide(int *argc, char ***argv) {
+    (void)argc;
+    (void)argv;
+}
 #endif

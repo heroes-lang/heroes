@@ -181,7 +181,7 @@ function interpolated(text: str, from: i64, to: i64) -> str
             else
                 i @ i + 2
         else if b == '\\'
-            i @ i + 2
+            i @ escape.end_of(text, at: i)
         else
             i @ i + 1
 
