@@ -108,6 +108,30 @@ function an_arm_below(text: str, at: i64) -> bool
     alone = past_operators(text, at: at)
     return holds_an_arrow(text, from: at) || alone >= 0 && arrow_below(text, from: alone)
 
+# Does the line with words at `at`, past the lines below it that hold
+# operators alone, begin what no operator goes on into: an arm, a word that
+# begins afresh, a statement of its own, or nothing, the text's end? Then
+# operators alone on the line above it are strays (`sign_above.stray`,
+# defects 369 and 370).
+function nothing_joins_below(text: str, at: i64) -> bool
+    if holds_an_arrow(text, from: at)
+        return true
+    alone = past_operators(text, at: at)
+
+    if alone < 0
+        first = keywords.keyword(word_at(text, at: at))
+        return !first.is_err() && starts_afresh(first.must()) || stands_alone(text, from: at)
+    i: i64 @ past_the_line(text, from: alone)
+
+    while i < text.len() && text[i] == '\n'
+        i @ past_blanks(text, from: i + 1)
+
+        if i < text.len() && text[i] != '\n' && text[i] != '#'
+            return nothing_joins_below(text, at: i)
+        i @ past_the_line(text, from: i)
+
+    return i >= text.len()
+
 # Past the operators from `at`, each one that can only go on with a line
 # above (`token.can_only_go_on`), and the spaces between and after them; -1
 # where `at` holds none. `- -` is two, `->` and `=>` are none.

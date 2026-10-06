@@ -41,11 +41,18 @@
 # stood, and no join is offered across a comment, which it would carry into
 # the arm.
 #
-# **Operators alone are a run** (defect 369): `- -` on one line above an
-# arm went on as a block of its own, `unexpected_block` beside its refusal,
-# since only a line one operator held was asked. Operators alone on a line
-# above an arm are a stray, told once and left out with their margin
-# (`stray`), the whole line deleted, certain: no pattern begins with two.
+# **Operators alone are a run, and an arm is not the only line below them**
+# (defects 369 and 370). `- -` on one line went on as a block of its own,
+# `unexpected_block` beside its refusal, since only a line one operator held
+# was asked; and operators alone above a statement, `k = n` over a deeper
+# `-` over `return k`, were joined or ended for the parser to read as a sign
+# with no operand, each line two messages or three. Operators alone on a
+# line, above an arm or above what no operator goes on into, a word that
+# begins afresh, a statement of its own or the text's end
+# (`next_line.nothing_joins_below`), are a stray, told once and left out
+# with their margin (`stray`). Above a statement the deletion is a `guess`:
+# the operand may be what was left out, and a certain deletion would write a
+# program meaning less than the one meant.
 
 use token
 use state
@@ -56,10 +63,10 @@ use word_place
 use next_line
 
 # Whether the line that ends with the token at `at`, which no `\` asked to
-# go on, holds operators alone above an arm, the next line with words at
-# `l.pos` or past more such lines: a stray (defects 351 and 369).
+# go on, holds operators alone above an arm or above what no operator goes
+# on into, the next line with words at `l.pos`: a stray (defect 370).
 function stray(l: state.LexState, text: str, at: i64) -> bool
-    return l.backslash < 0 && alone_from(l, at: at) >= 0 && next_line.an_arm_below(text, at: l.pos)
+    return l.backslash < 0 && alone_from(l, at: at) >= 0 && next_line.nothing_joins_below(text, at: l.pos)
 
 # The first of the operators alone on the line that ends with the token at
 # `at`, or -1: walked back over the tokens no statement begins with, and the
@@ -81,9 +88,9 @@ function alone_from(l: state.LexState, at: i64) -> i64
     return first
 
 # The refusal `d` of the stray line that ends with the token at `at`, above
-# the arm whose first byte is `l.pos`, said with its fixes, and the stream
+# the line whose first byte is `l.pos`, said with its fixes, and the stream
 # the parser is handed: whether it is the join, false where the operators'
-# line is left out with its margin and the arm's line is the caller's to lay
+# line is left out with its margin and the next line is the caller's to lay
 # out. A break is recorded only over a join (`state.Break`): its `after` is
 # the first word of the line joined below it, and a line laid out on its own
 # is none (`joined_lines` and `line_above` read the breaks as joins).
@@ -94,7 +101,14 @@ function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bo
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
     readings = first == at && two_readings(text, operator: operator, below: l.pos)
     told: diag.Diagnostic @ d
-    told.fixes @ fixes(text, run: run, readings: readings, below: l.pos, commented: commented)
+    told.fixes @ fixes(
+        text,
+        run: run,
+        readings: readings,
+        arm: next_line.an_arm_below(text, at: l.pos),
+        below: l.pos,
+        commented: commented
+    )
 
     if readings
         signed_below(@l, text, at: at)
@@ -112,10 +126,15 @@ function two_readings(text: str, operator: token.Token, below: i64) -> bool
     return operator.kind == .minus && signs_a_literal(text, at: below)
 
 # The join and the deletion of the operators at `run` where the arm has two
-# `readings`, both guesses; the deletion alone, certain, anywhere else.
-function fixes(text: str, run: token.Span, readings: bool, below: i64, commented: bool) -> [diag.Fix]
+# `readings`, both guesses; the deletion alone, certain, over any other arm,
+# and a guess over a line that is no arm, whose operand may be what was left
+# out (defect 370).
+function fixes(text: str, run: token.Span, readings: bool, arm: bool, below: i64, commented: bool) -> [diag.Fix]
     out: [diag.Fix] @ []
     certainty: diag.Certainty @ .certain
+
+    if !arm
+        certainty @ .guess
 
     if readings
         certainty @ .guess
@@ -303,7 +322,7 @@ function spaces_alone(text: str, from: i64, to: i64) -> bool
 # The fixes over an arm, as before defect 369, one operator its own run.
 function arm_fixes(text: str, operator: token.Token, below: i64, commented: bool) -> [diag.Fix]
     readings = two_readings(text, operator: operator, below: below)
-    return fixes(text, run: operator.span, readings: readings, below: below, commented: commented)
+    return fixes(text, run: operator.span, readings: readings, arm: true, below: below, commented: commented)
 
 test "a literal a minus signs is an integer or a character, and nothing else"
     for text in ["1 => x", "'a' => x", "0x1f => x", "1_000 => x", "7"]
@@ -383,13 +402,17 @@ test "over an integer the join and the deletion are both guesses; over anything 
     assert deeper.slice(from: 0, to: moved.span.start) + moved.replacement + deeper.slice(from: moved.span.end, to: deeper.len()) == "    0 => 5\n    -1 => 10\n"
     assert crlf.slice(from: 0, to: ended[0].span.start) + ended[0].replacement + crlf.slice(from: ended[0].span.end, to: crlf.len()) == "    -1 => 10\r\n"
 
-# Defect 369: a run's deletion takes its whole line, certain over an arm,
-# where no pattern begins with two operators.
-test "operators alone are deleted as one run over an arm"
+# Defects 369 and 370: a run's deletion takes its whole line, certain over an
+# arm, where no pattern begins with two operators, and a guess over a line
+# that is no arm, whose operand may be what was left out.
+test "operators alone are deleted as one run, a guess above what is no arm"
     run = token.Span(start: 4, end: 7)
     text = "    - -\n    1 => 10\n"
-    over_an_arm = fixes(text, run: run, readings: false, below: 12, commented: false)
+    over_an_arm = fixes(text, run: run, readings: false, arm: true, below: 12, commented: false)
     assert over_an_arm.len() == 1
     assert over_an_arm[0].title == "delete the `- -`"
     assert over_an_arm[0].certainty == .certain
     assert text.slice(from: 0, to: over_an_arm[0].span.start) + text.slice(from: over_an_arm[0].span.end, to: text.len()) == "    1 => 10\n"
+    statement = "    - -\n    return k\n"
+    over_a_statement = fixes(statement, run: run, readings: false, arm: false, below: 12, commented: false)
+    assert over_a_statement[0].certainty == .guess

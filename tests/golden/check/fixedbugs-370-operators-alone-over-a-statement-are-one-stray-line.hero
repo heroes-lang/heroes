@@ -1,0 +1,78 @@
+# Fixed defect 370, 2026-10-06 (lane b12-parse12, found beside defect 351).
+# Symptom: `k = n` over a deeper `-` and a deeper `-` again cost three
+# messages for two stray lines, `continuation_outside_brackets`,
+# `unexpected_block` and `expected_expression`; one such line cost two.
+# Cause: operators alone on a line were a stray only above an arm (defects
+# 159, 165, 351): above a statement the first line was joined to the next
+# as an operand, its margin read as a block, and the last ended for the
+# parser to read as a sign with no operand. Repair: operators alone on a
+# line, above an arm or above what no operator goes on into, a word that
+# begins afresh, a statement of its own or the text's end, past more such
+# lines (`next_line.nothing_joins_below`), are a stray, told once, its
+# deletion a guess, since the operand may be what was left out, and left
+# out of the stream with its margin (`sign_above.stray`). The shapes: two
+# lines, one, two at one margin, two operators, two on one line, under a
+# call, three lines, a comment after, a call below; and an operand on the
+# operator's line, as before.
+
+function repro(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+            -  #~ continuation_outside_brackets
+    return k
+
+function one_line(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+    return k
+
+function one_margin(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+        -  #~ continuation_outside_brackets
+    return k
+
+function two_operators(n: i64) -> i64
+    k = n
+        +  #~ continuation_outside_brackets
+            *  #~ continuation_outside_brackets
+    return k
+
+function two_on_one_line(n: i64) -> i64
+    k = n
+        - -  #~ continuation_outside_brackets
+    return k
+
+function under_a_call(n: i64)
+    print(n)
+        -  #~ continuation_outside_brackets
+            -  #~ continuation_outside_brackets
+
+function three_lines(n: i64) -> i64
+    k = n
+        -  #~ continuation_outside_brackets
+            -  #~ continuation_outside_brackets
+                -  #~ continuation_outside_brackets
+    return k
+
+function a_comment_after(n: i64) -> i64
+    k = n
+        -  # stray  #~ continuation_outside_brackets
+    return k
+
+function a_call_below(n: i64) -> i64
+    k = n
+        *  #~ continuation_outside_brackets
+    print(k)
+    return k
+
+function an_operand_on_its_line(n: i64) -> i64
+    k = n
+        - 1  #~ unexpected_block
+    return k
+
+function main()
+    print(repro(1) + one_line(1) + one_margin(1) + two_operators(1))
+    print(two_on_one_line(1) + three_lines(1) + a_comment_after(1) + a_call_below(1))
+    print(an_operand_on_its_line(1))
+    under_a_call(1)
