@@ -2155,22 +2155,29 @@ exists, and CI asserts that applying it makes the program compile).
 **What `check --json` answers, and what a tool may write** (panel 193, provisional, author
 ratification pending; the specification holds none of it). Every answer is a JSON document opening
 `"schema": 2` and its `"kind"`: `"diagnostics"`, which `check --json` writes to stderr, a clean
-program's holding `"diagnostics": []`. Every answer names under `"read"` each file it read with the
-SHA-256 of its bytes, `null` for a file holding a byte that is not UTF-8, which is never lexed and
-takes no fix. Every fix says where it applies, in the text as checked: its `file`, always; `line`
-and `col`, `end_line` and `end_col`, lines from 1 split at `\n` alone and columns from 1 in
-characters, the unit of the diagnostic's own, a `\r\n`'s line feed at its carriage return's column;
-`byte_start` and `byte_end`, from 0 in that file's own bytes as stored, the end excluded, an
-insertion's end its start; and `text`, the bytes it replaces. A fix whose span is not one, or
-crosses from one file into another, carries no place. A `certain` fix says what `check --apply`'s
-first round does with it, `"first_round"`: `written`; `withheld`, touching one written and made
-again from the text that one leaves; `twin`, one written, again; `elsewhere`, another module's,
-which `--apply` never writes; or `malformed`. A `guess` carries none, and its place is for showing.
-**A tool writes the certain fixes marked `written` and nothing else, at their bytes, and asks again
-after any answer that wrote one, until an answer writes none**: that reaches what `check --apply`
-writes when it is itself run until it changes nothing (one `check --apply` stops at the stage that
-spoke first). The `text` and the digests guard the bytes a fix names and the files read, not the
-program: a module edited since can make a written fix wrong, which the next check tells.
+program's holding `"diagnostics": []`; or `"applied"`, which `check --apply --json` writes to
+stdout, beside `--in-place` too, holding as `"output"` the program `--apply` prints or writes, byte
+for byte, the root as `"file"`, how many rounds wrote as `"rounds"`, and as `"not_applied"` the
+certain fixes in another module, which it never writes, each `file:line` once. Every answer names
+under `"read"` each file it read, every round's, once, with the SHA-256 of its bytes as first read,
+so the root's before any round wrote, and `null` for a file holding a byte that is not UTF-8, which
+is never lexed and takes no fix. Every fix says where it applies, in the text as checked: its
+`file`, always; `line` and `col`, `end_line` and `end_col`, lines from 1 split at `\n` alone and
+columns from 1 in characters, the unit of the diagnostic's own, a `\r\n`'s line feed at its
+carriage return's column; `byte_start` and `byte_end`, from 0 in that file's own bytes as stored,
+the end excluded, an insertion's end its start; and `text`, the bytes it replaces. A fix whose span
+is not one, or crosses from one file into another, carries no place. A `certain` fix says what
+`check --apply`'s first round does with it, `"first_round"`: `written`; `withheld`, touching one
+written and made again from the text that one leaves; `twin`, one written, again; `elsewhere`,
+another module's, which `--apply` never writes; or `malformed`. A `guess` carries none, and its
+place is for showing. **A tool writes the certain fixes marked `written` and nothing else, at their
+bytes, and asks again after any answer that wrote one, until an answer writes none**: that reaches
+what `check --apply` writes when it is itself run until it changes nothing (one `check --apply`
+stops at the stage that spoke first). The `text` and the digests guard the bytes a fix names and
+the files read, not the program: a module edited since can make a written fix wrong, which the next
+check tells. A flag no one answer can hold is refused at exit 2 rather than dropped, as each was
+until defect 371: `--brief` or `--dump-scopes` with `--apply`, `--in-place` without it, and
+`--brief` with `--json`.
 
 **Implementation cost: zero theory.** The type checker already knows all of this at the moment it
 detects the error — which function, which signature, which record, which line. Today it throws that

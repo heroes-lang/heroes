@@ -95,17 +95,29 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 # is not UTF-8 is held as the compiler shows it, so it is named with a null
 # digest: no fix is placed in a file that was never lexed (`lexer.lex_files`).
 function head(kind: str, s: source.Source) -> str
+    return head_of(kind: kind, readings: [s])
+
+# The same over every reading an answer rests on, since each round of
+# `check --apply` reads the program again and can read a module the first
+# never did (`cli/check.hero`'s `settle`): each file named once, as the first
+# reading to read it held it, so the root is named by its bytes on disk and
+# never by the text a round left.
+function head_of(kind: str, readings: [source.Source]) -> str
     read: [str] @ []
-    index: i64 @ 0
+    named: [str] @ []
 
-    for entry in s.files
-        if !entry.is_library
-            digest: str @ "null"
+    for s in readings
+        index: i64 @ 0
 
-            if !faulted(s, index: index)
-                digest @ "\"" + sha256.of(source_extent.text_of(s, index)) + "\""
-            read @ read.push("    {\"file\": " + quote(entry.name) + ", \"sha256\": " + digest + "}")
-        index @ index + 1
+        for entry in s.files
+            if !entry.is_library && !certain.listed(names: named, name: entry.name)
+                digest: str @ "null"
+
+                if !faulted(s, index: index)
+                    digest @ "\"" + sha256.of(source_extent.text_of(s, index)) + "\""
+                read @ read.push("    {\"file\": " + quote(entry.name) + ", \"sha256\": " + digest + "}")
+                named @ named.push(entry.name)
+            index @ index + 1
 
     return "{\n  \"schema\": " + SCHEMA.to_str() + ",\n  \"kind\": \"" + kind + "\",\n  \"read\": [\n" + read.join(",\n") + "\n  ],\n"
 
