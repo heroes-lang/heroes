@@ -1,0 +1,51 @@
+# Defect 408, 2026-10-06 (lane b13-front, found beside defect 399; filed by
+# the coordinator). Symptom: a fixed array outside a group, built into a
+# group record's field, was told *the array is written out where the record
+# is built, `R(field: [a, b, …])`*, and never `rest: zero`, which panel
+# 194's R1 landed in the same round to end such a construction: for this
+# Mac's `struct utsname`, five `char[256]`, 1,280 elements written where two
+# words do. Cause: the note was written before R1, and it named no
+# record, the sweep not knowing where the value goes. Repair: the sweep
+# finds the construction a binding, a constant, a parameter or a function's
+# result is built into (`check/ffi_sweep.hero`), and the note names its
+# record, the fields it fills and its line, the field's own length, and
+# `rest: zero` where the record can end with it; where a field is called
+# `rest` it says the words cannot end it, and it offers no `[T]`, a C
+# struct holding the value. A value built into no construction is told
+# both readings, `rest: zero` in the first. This program written as the
+# notes say checks clean and prints `78903105103` (measured on this Mac).
+
+extern "fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.h"
+    record Tag
+        name: i8[4]
+        id: i32
+    record Uts
+        sysname: i8[8]
+        nodename: i8[8]
+        machine: i8[8]
+    record Odd
+        head: i8[4]
+        rest: i32
+
+constant ZEROS: i8[4]  #~ fixed_outside_a_group
+    [0, 0, 0, 0]
+
+function tagged(bytes: i8[4]) -> Tag  #~ fixed_outside_a_group
+    return Tag(name: bytes, id: 1)
+
+function four() -> i8[4]  #~ fixed_outside_a_group
+    return [1, 2, 3, 4]
+
+function main()
+    zero: i8[4] = [0, 0, 0, 0]  #~ fixed_outside_a_group
+    blank: i8[8] = [0, 0, 0, 0, 0, 0, 0, 0]  #~ fixed_outside_a_group
+    head: i8[4] = [1, 2, 3, 4]  #~ fixed_outside_a_group
+    long: i8[6] = [1, 2, 3, 4, 5, 6]  #~ fixed_outside_a_group
+    alone: i8[4] = [5, 6, 7, 8]  #~ fixed_outside_a_group
+    a = Tag(name: zero, id: 7)
+    b = Tag(name: ZEROS, id: 8)
+    c = Tag(name: four(), id: 9)
+    u = Uts(sysname: blank, nodename: blank, machine: blank)
+    o = Odd(head: head, rest: 3)
+    l = Tag(name: long, id: 10)  #~ type_mismatch
+    print(a.id, b.id, c.id, u.machine[0], o.rest, l.id, alone[0], tagged(ZEROS).id)

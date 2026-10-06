@@ -28,6 +28,7 @@ use check/table
 use check/state
 use check/lower
 use check/lend_extent
+use check/fixed_repairs
 use ffi_errors
 
 ## The vocabulary — can a C header spell this at all?
@@ -242,7 +243,9 @@ function header_owned(decls: [ast.Decl], decl: i64) -> bool
         .record_decl rec                                             => !rec.header.is_err()
         .constant_decl | .function_decl | .variant_decl | .test_decl => false
 
-# A fixed array where no header owns the layout (panel 062).
+# A fixed array where no header owns the layout (panel 062): an ordinary
+# record's field, told as every other position is (`check/fixed_repairs.hero`).
+# A field's value is read through the record, so no construction is named.
 function fixed_outside_group(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span)
     is_fixed = match table.get(c.out.types, ty)
         .fixed                                                    => true
@@ -252,8 +255,8 @@ function fixed_outside_group(@c: state.Checker, s: source.Source, decls: [ast.De
 
     if !is_fixed
         return
-    shown = state.show(c, s, decls, ty)
-    state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
+    none: ffi_errors.BuiltInto? = fail(code: "none", msg: "a field is built into no group record")
+    fixed_repairs.told(@c, s, decls, ty: ty, span: span, into: none)
 
 ## The position — may it stand here?
 
