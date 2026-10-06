@@ -1,0 +1,144 @@
+# Operators alone on a line, as the lexer refuses the line's end (design.md
+# §4.15, §4.17; defects 369, 370 and 375): a stray, above an arm or above
+# what no operator goes on into, its deletion offered and the line left out
+# (`sign_above`); or an expression broken around its operator, `k = n` over
+# a deeper `-` over its operand `1`, whose two breaks are one mistake, told
+# once and joined (`join_around`, defect 375). Until 2026-10-06 the second
+# was the refusal of the operator's line end beside `unexpected_block` for
+# its margin, two messages for one expression broken in two places. At the
+# statement's own margin the operator's head is refused where it stands,
+# and each break keeps its message and its join (defect 129).
+#
+# | entry | called by |
+# |---|---|
+# | `alone`, `offer` | `open_line.refuse_the_end` |
+
+use token
+use state
+use diag
+use keywords
+use join_fix
+use next_line
+use line_opens
+use sign_above
+
+# Whether the line that ends with the token at `at`, which no `\` asked to
+# go on, holds operators alone: an expression broken around them, its
+# operand below (`broken_from`), or a stray (`sign_above.stray`); the next
+# line with words at `l.pos`, its margin `spaces`.
+function alone(l: state.LexState, text: str, at: i64, spaces: i64) -> bool
+    return l.backslash < 0 && (broken_from(l, text, at: at, spaces: spaces) >= 0 || sign_above.stray(l, text, at: at))
+
+# The refusal `d` of that line, said with its fixes, and whether the next
+# line is joined to it.
+function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64, spaces: i64) -> bool
+    first = broken_from(l, text, at: at, spaces: spaces)
+
+    if first < 0
+        return sign_above.offer(@l, d, text, at: at)
+    return join_around(@l, d, text, first: first, at: at)
+
+# The first of the operators alone on the line that ends with the token at
+# `at`, where they break an expression whose operand is the next line, or
+# -1: their line laid out deeper than a statement that opens no block, at a
+# plain margin.
+function broken_from(l: state.LexState, text: str, at: i64, spaces: i64) -> i64
+    i: i64 @ at
+
+    while i >= 0 && token.can_only_go_on(l.tokens[i].kind)
+        i @ i - 1
+
+    first = i + 1
+
+    if first > at || i < 0 || l.tokens[i].kind != .indent || !sign_above.plain_margin(l, text, at: first)
+        return -1
+
+    if line_opens.opens_a_block(l.tokens.slice(from: 0, to: i)) || !operand_below(text, at: l.pos, spaces: spaces, margin: sign_above.level_above(l, text, at: first) * 4)
+        return -1
+    return first
+
+# Whether the line with words at `at`, its margin `spaces`, is the operand
+# of operators alone above it: no arm, no binding, no more operators alone,
+# no word that begins afresh, and a value that stands alone only deeper than
+# the statement, at `margin`, where a call is the operand of the line above.
+function operand_below(text: str, at: i64, spaces: i64, margin: i64) -> bool
+    if at >= text.len() || next_line.holds_an_arrow(text, from: at) || next_line.holds_a_binding(text, from: at) || next_line.past_operators(text, at: at) >= 0
+        return false
+    first = keywords.keyword(next_line.word_at(text, at: at))
+
+    if !first.is_err() && next_line.starts_afresh(first.must())
+        return false
+    return spaces > margin || !next_line.stands_alone(text, from: at)
+
+# The two breaks around the operators from `first` to `at` told once, at
+# them, the join of the three lines offered, certain where the operand
+# cannot stand alone, as the refusal of a line end gives its own join and
+# `line_joins` weighs across the statement, and the stream the join writes:
+# the operators' margin and the line end planted above them taken back, and
+# both breaks recorded.
+function join_around(@l: state.LexState, d: diag.Diagnostic, text: str, first: i64, at: i64) -> bool
+    run = token.Span(start: l.tokens[first].span.start, end: l.tokens[at].span.end)
+    written = text.slice(from: run.start, to: run.end)
+    told: diag.Diagnostic @ d
+    told.message @ "a line outside brackets ends its statement, and `" + written + "` alone on its line can neither end one nor begin one: it goes on with the line above and with the line below; write the statement on one line, or break it inside parentheses"
+    told.span @ run
+    empty: [diag.Fix] = []
+    told.fixes @ empty
+    head = rejoined(@l, text, first: first)
+    above: i64 @ head - 1
+
+    while above >= 0 && l.tokens[above].kind == .comment
+        above @ above - 1
+
+    # One operator, and no comment it would carry into the statement.
+    if first == at && above == head - 1 && l.tokens.len() == head + 1 && l.held.len() == 0
+        certainty: diag.Certainty @ .certain
+
+        if next_line.stands_alone(text, from: l.pos)
+            certainty @ .guess
+        told.fixes @ told.fixes.push(
+            join_fix.made(glue: " " + written + " ", from: l.tokens[above].span.end, to: l.pos, certainty: certainty)
+        )
+    state.push_diagnostic(@l.diagnostics, told)
+    said = l.diagnostics.len() - 1
+    state.push_break(@l.breaks, diagnostic: said, after: head, head: true)
+    state.push_break(@l.breaks, diagnostic: said, after: l.tokens.len(), head: false)
+    return true
+
+# The operators from `first` on, their line laid out deeper, joined to the
+# statement above: its margin taken back with the reports it said, and the
+# line end planted above it, the comments between kept. The index the first
+# operator stands at now.
+function rejoined(@l: state.LexState, text: str, first: i64) -> i64
+    from = sign_above.taken_back(@l, text, at: first)
+    term: i64 @ from - 1
+
+    while term >= 0 && l.tokens[term].kind == .comment
+        term @ term - 1
+
+    if term < 0 || l.tokens[term].kind != .terminator
+        term @ from
+    kept: [token.Token] @ l.tokens.slice(from: 0, to: term)
+
+    for t in l.tokens.slice(from: term + 1, to: from)
+        kept @ kept.push(t)
+
+    head = kept.len()
+
+    for t in l.tokens.slice(from: first, to: l.tokens.len())
+        kept @ kept.push(t)
+
+    l.tokens @ kept
+    return head
+
+## Tests
+
+test "a line below operators alone is their operand unless it begins a statement of its own"
+    assert operand_below("1\n", at: 0, spaces: 8, margin: 4)
+    assert operand_below("x\n", at: 0, spaces: 4, margin: 4)
+    assert operand_below("g(1)\n", at: 0, spaces: 8, margin: 4)
+    assert !operand_below("g(1)\n", at: 0, spaces: 4, margin: 4)
+    assert !operand_below("return k\n", at: 0, spaces: 8, margin: 4)
+    assert !operand_below("y = 1\n", at: 0, spaces: 8, margin: 4)
+    assert !operand_below("1 => 2\n", at: 0, spaces: 8, margin: 4)
+    assert !operand_below("-\n", at: 0, spaces: 8, margin: 4)

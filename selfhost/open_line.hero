@@ -55,6 +55,7 @@ use line_above
 use backslash
 use join_fix
 use sign_above
+use alone_lines
 use word_place
 
 ## At the line end
@@ -238,14 +239,14 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     # written one line down.
     split = fresh || binding || line_above.ends_with_a_separator(l.tokens, at: at, spaces: spaces, margin: margin) || left.kind == .kw_else && (first.is_err() || first.must() != .kw_if)
 
-    if split && left.kind != .fat_arrow && !sign_above.stray(l, text, at: at)
+    if split && left.kind != .fat_arrow && !alone_lines.alone(l, text, at: at, spaces: spaces)
         ended(@l)
         plant(@l)
         return false
 
     # Read apart, the line ends here (`LexState.apart`); read as bodies, a line
     # below at this margin is read one level deeper.
-    if l.apart && !sign_above.stray(l, text, at: at)
+    if l.apart && !alone_lines.alone(l, text, at: at, spaces: spaces)
         plant(@l)
         l.deeper @ l.bodies && spaces == margin
         return false
@@ -259,13 +260,12 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
     d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
 
-    # Operators alone on their line above an arm, or above what no operator
-    # goes on into: their deletion, and their join only where the join
-    # writes a pattern (`sign_above`), which says the refusal; left out with
-    # their margin, the next line is laid out on its own, as the deletion
-    # writes it, and is no break (`refused`, with no `\` asking).
-    if sign_above.stray(l, text, at: at)
-        return sign_above.offer(@l, d, text, at: at)
+    # Operators alone on their line, a stray above an arm or a statement, or
+    # an expression broken around them over its operand (`alone_lines`):
+    # told once, the stream as the deletion or the join writes it, and no
+    # break where the line is left out (`refused`, with no `\` asking).
+    if alone_lines.alone(l, text, at: at, spaces: spaces)
+        return alone_lines.offer(@l, d, text, at: at, spaces: spaces)
 
     # Joining the lines is the program the parser reads. It is `certain` where
     # the next line cannot stand alone, so the join is the only repair; a
