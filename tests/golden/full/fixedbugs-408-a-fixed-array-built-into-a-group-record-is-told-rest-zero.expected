@@ -3,56 +3,56 @@ error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as 
      |
   30 | constant ZEROS: i8[4]  #~ fixed_outside_a_group
      |                 ^^^^^
-  note: `Tag`'s field `name` is built from it at line 46: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Tag`'s field `name` is built from it at line 46: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:33:24
      |
   33 | function tagged(bytes: i8[4]) -> Tag  #~ fixed_outside_a_group
      |                        ^^^^^
-  note: `Tag`'s field `name` is built from it at line 34: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Tag`'s field `name` is built from it at line 34: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:36:20
      |
   36 | function four() -> i8[4]  #~ fixed_outside_a_group
      |                    ^^^^^
-  note: `Tag`'s field `name` is built from it at line 47: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Tag`'s field `name` is built from it at line 47: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:40:11
      |
   40 |     zero: i8[4] = [0, 0, 0, 0]  #~ fixed_outside_a_group
      |           ^^^^^
-  note: `Tag`'s field `name` is built from it at line 45: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Tag`'s field `name` is built from it at line 45: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[8]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:41:12
      |
   41 |     blank: i8[8] = [0, 0, 0, 0, 0, 0, 0, 0]  #~ fixed_outside_a_group
      |            ^^^^^
-  note: `Uts`'s fields `sysname`, `nodename` and `machine` are built from it at line 48: write the elements there instead, `sysname: [a, b, …]`, as many as `i8[8]` says, or, where they are zero, leave those fields out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Uts`'s fields `sysname`, `nodename` and `machine` are built from it at line 48: write the elements there instead, `sysname: [a, b, …]`, as many as `i8[8]` says, or, where they are zero, leave those fields out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:42:11
      |
   42 |     head: i8[4] = [1, 2, 3, 4]  #~ fixed_outside_a_group
      |           ^^^^^
-  note: `Odd`'s field `head` is built from it at line 49: write the elements there instead, `head: [a, b, …]`, as many as `i8[4]` says, and `rest: zero` cannot end that construction, `Odd` having a field called `rest`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Odd`'s field `head` is built from it at line 49: write the elements there instead, `head: [a, b, …]`, as many as `i8[4]` says, and `rest: zero` cannot end that construction, `Odd` having a field called `rest`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[6]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:43:11
      |
   43 |     long: i8[6] = [1, 2, 3, 4, 5, 6]  #~ fixed_outside_a_group
      |           ^^^^^
-  note: `Tag`'s field `name` is built from it at line 50: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: `Tag`'s field `name` is built from it at line 50: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
 
 error[fixed_outside_a_group]: `i8[4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
   at tests/golden/full/fixedbugs-408-a-fixed-array-built-into-a-group-record-is-told-rest-zero.hero:44:12
      |
   44 |     alone: i8[4] = [5, 6, 7, 8]  #~ fixed_outside_a_group
      |            ^^^^^
-  note: where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[4]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant or parameter holds a fixed array, and `[i8]` is not one
+  note: where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[4]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one
   note: where no C struct holds it, use `[i8]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds
 
 error[type_mismatch]: expected `i8[4]`, found `i8[6]`
