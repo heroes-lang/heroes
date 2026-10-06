@@ -1,0 +1,58 @@
+# Defect 407, 2026-10-06: the shapes beside a template over lines, where its
+# reading would take lines no template holds. Over lines, a template is read
+# only where its lines are no program's: no line in it opens a declaration at
+# column 0, no `#` in it begins a comment and no `"` a string its line does
+# not close, and the line it closes on goes on as JavaScript reads one, each
+# backtick after its close opening a template that closes on that line. So a
+# stray backtick, and one never closed before the file's end, stay the one
+# message each was before the repair, and a template on a line below one is
+# told as its own. A backtick in a comment or in a string opens nothing:
+# `x` here, and `"a`b"` below.
+
+function quoted_before()
+    s = "a`b"
+    print(s)
+    print(`c`)  #~ unexpected_character
+
+function above_a_template()
+    #~v unexpected_character
+    x = 1 `
+    print(`y`)  #~ unexpected_character
+    print(x)
+
+function above_a_comment()
+    #~v unexpected_character
+    x = 1 `
+    # the `x` above
+    print(x)
+
+function above_a_string()
+    #~v unexpected_character
+    x = 1 `
+    s = "`"
+    print(s)
+    print(x)
+
+function above_a_declaration()
+    #~v unexpected_character
+    x = 1 `
+    print(x)
+
+function below_it()
+    y = 2 `  #~ unexpected_character
+    print(y)
+
+function main()
+    quoted_before()
+    above_a_template()
+    above_a_comment()
+    above_a_string()
+    above_a_declaration()
+    below_it()
+    never_closed()
+
+# Never closed before the file's end: no template takes the file's rest.
+function never_closed()
+    #~v unexpected_character
+    s = `never closed
+    print(s)
