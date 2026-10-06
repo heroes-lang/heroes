@@ -67,7 +67,7 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
     if !inventory.index_of(text).is_err()
         state.push_diagnostic(@r, errors.no_mutable_globals(name: text, what: "built-in", span: span))
         return
-    candidates = names.value_candidates(r)
+    candidates = names.value_candidates(@r)
     near = state.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_name(text, near, span))
 

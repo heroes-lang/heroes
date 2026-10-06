@@ -22,21 +22,40 @@ use bytes
 # letters are already right, so it is the one repair that can be handed over
 # as certain even when three other names are one edit away. `point` for
 # `Point` is also one edit from `print`.
+#
 function nearest(name: str, candidates: [str]) -> [str]
-    for c in candidates
-        if c != name && same_ignoring_case(a: name, b: c)
-            return [c]
+    return nearest_in(name, lists: [candidates])
 
+# The same, of candidates held as lists read one after another, so a caller
+# hands on a list gathered once instead of copying it into one of its own
+# for every name (defect 385).
+#
+# One walk of the candidates answers both questions: the first case twin met
+# is the one a walk for twins alone would have met first, and returned at
+# once; before it, the near ones gathered are the first ones in order. Each
+# candidate's length is asked first, and only there: a case twin has the
+# name's length, and one further apart in length than the budget is further
+# apart in edits (`within`), so a scope of names nothing near in length
+# costs a comparison of two numbers each.
+function nearest_in(name: str, lists: [[str]]) -> [str]
+    size = name.len()
     allowed: i64 @ 2
 
     if name.chars().len() < 4
         allowed @ 1
     near: [str] @ []
+    band: [i64] @ []
 
-    for candidate in candidates
-        if candidate != name && !already_listed(near, candidate) && near.len() < 3
-            if within(a: name, b: candidate, most: allowed)
-                near @ near.push(candidate)
+    for candidates in lists
+        for candidate in candidates
+            long = candidate.len()
+
+            if long - size <= allowed && size - long <= allowed && candidate != name
+                if long == size && same_ignoring_case(a: name, b: candidate)
+                    return [candidate]
+
+                if near.len() < 3 && !already_listed(near, candidate) && within(@band, a: name, b: candidate, most: allowed)
+                    near @ near.push(candidate)
 
     return near
 
@@ -208,8 +227,8 @@ function min3(a: i64, b: i64, c: i64) -> i64
 # Whether `distance(a: a, b: b)` is `most` or less, read from a band of the
 # table rather than all of it: the did-you-mean asks it of every name in
 # scope for each name nothing answers, in every reading of a program, and a
-# rename's trials read the program sixteen times more (defect 372). It is
-# the same answer, for three facts about the table:
+# rename's trials read the program sixteen times more (defects 372, 385). It
+# is the same answer, for three facts about the table:
 #
 # - the cell `i` bytes into `a` and `j` into `b` holds at least `|i - j|`,
 #   so two names further apart in length than `most` are further apart, and
@@ -220,31 +239,40 @@ function min3(a: i64, b: i64, c: i64) -> i64
 # - a cell is at least the least of the row above it, so once a row holds
 #   nothing under the cap, no later row does.
 #
-# Row `i`'s band is `band[d]` for column `i + d - most`: the cell above-left
-# is the row before's `d`, the one above its `d + 1`, the one left this
-# row's `d - 1`.
-function within(a: str, b: str, most: i64) -> bool
+# Row `i`'s band is `band[d]` for column `i + d - most`, and it is written
+# over row `i - 1` in place: the cell at `d` reads the row before's `d`
+# (above-left) and `d + 1` (above), which the walk along the row has not
+# written yet, and this row's `d - 1` (left) from `left`. `band` is the
+# caller's, lent so that one array serves every pair it asks about; it is
+# grown here to the band's width where it is shorter, and what it held is
+# never read.
+function within(@band: [i64], a: str, b: str, most: i64) -> bool
     if most < 0 || a.len() - b.len() > most || b.len() - a.len() > most
         return false
     over = most + 1
     width = 2 * most + 1
-    band: [i64] @ []
+    long = b.len()
+
+    while band.len() < width
+        band @ band.push(over)
+
     d: i64 @ 0
 
     while d < width
         j = d - most
         cell: i64 @ over
 
-        if j >= 0 && j <= b.len()
+        if j >= 0 && j <= long
             cell @ j
-        band @ band.push(cell)
+        band[d] @ cell
         d @ d + 1
 
     i: i64 @ 1
 
     while i <= a.len()
-        next: [i64] @ []
+        here = a[i - 1]
         least: i64 @ over
+        left: i64 @ over
         d @ 0
 
         while d < width
@@ -252,29 +280,33 @@ function within(a: str, b: str, most: i64) -> bool
             cell: i64 @ over
 
             if j == 0
-                cell @ min3(a: i, b: over, c: over)
-            else if j > 0 && j <= b.len()
-                cost: i64 @ 1
+                cell @ i
+            else if j > 0 && j <= long
+                cell @ band[d]
 
-                if a[i - 1] == b[j - 1]
-                    cost @ 0
-                cell @ min3(a: band[d] + cost, b: over, c: over)
+                if here != b[j - 1]
+                    cell @ cell + 1
 
-                if d + 1 < width
-                    cell @ min3(a: cell, b: band[d + 1] + 1, c: over)
+                if d + 1 < width && band[d + 1] + 1 < cell
+                    cell @ band[d + 1] + 1
 
-                if d > 0
-                    cell @ min3(a: cell, b: next[d - 1] + 1, c: over)
-            next @ next.push(cell)
-            least @ min3(a: least, b: cell, c: over)
+                if left + 1 < cell
+                    cell @ left + 1
+
+            if cell > over
+                cell @ over
+            band[d] @ cell
+            left @ cell
+
+            if cell < least
+                least @ cell
             d @ d + 1
 
         if least > most
             return false
-        band @ next
         i @ i + 1
 
-    return band[b.len() - a.len() + most] <= most
+    return band[long - a.len() + most] <= most
 
 ## Tests
 
@@ -358,13 +390,17 @@ test "a band of the table answers what the whole table answers"
         "point"
     ]
 
+    # One band lent to every pair, as `nearest` lends it: what a pair before
+    # left in it is never read.
+    band: [i64] @ []
+
     for set in [words, names]
         for a in set
             for b in set
                 most: i64 @ -1
 
                 while most <= 3
-                    assert within(a: a, b: b, most: most) == (distance(a: a, b: b) <= most)
+                    assert within(@band, a: a, b: b, most: most) == (distance(a: a, b: b) <= most)
                     most @ most + 1
 
 # Every word of at most `longest` letters drawn from `letters`.
@@ -387,3 +423,61 @@ function words_of(letters: [str], longest: i64) -> [str]
         size @ size + 1
 
     return out
+
+# Defect 385: one walk of lists read one after another answers what the
+# rule answered before defects 372 and 385, two walks of one list and the
+# whole table, for every word of up to four bytes over `a`, `b` and `A` (a
+# case twin and the cap of three met everywhere) and for names a program
+# writes, each list whole and cut in two around an empty one.
+test "one walk of lists answers what two walks of one list answered"
+    words = words_of(letters: ["a", "b", "A"], longest: 4)
+    names: [str] = [
+        "print"
+        "pirnt"
+        "Print"
+        "paint"
+        "point"
+        "Point"
+        "len"
+        "lenn"
+        "lens"
+        "total"
+        "totl"
+        "totale"
+        "Total"
+        "read_file"
+        "to_i64"
+        "to_i32"
+        "to_u64"
+    ]
+
+    for set in [words, names]
+        cut = set.len() / 2
+        empty: [str] = []
+        split: [[str]] = [set.slice(from: 0, to: cut), empty, set.slice(from: cut, to: set.len())]
+
+        for name in set
+            assert nearest_in(name, lists: [set]) == walked_nearest(name, candidates: set)
+            assert nearest_in(name, lists: split) == walked_nearest(name, candidates: set)
+
+        assert nearest_in("zzzz", lists: split) == walked_nearest("zzzz", candidates: set)
+
+# The rule as it stood before defects 372 and 385: a walk for a case twin,
+# then a walk for the near ones by the whole table.
+function walked_nearest(name: str, candidates: [str]) -> [str]
+    for c in candidates
+        if c != name && same_ignoring_case(a: name, b: c)
+            return [c]
+
+    allowed: i64 @ 2
+
+    if name.chars().len() < 4
+        allowed @ 1
+    near: [str] @ []
+
+    for candidate in candidates
+        if candidate != name && !already_listed(near, candidate) && near.len() < 3
+            if distance(a: name, b: candidate) <= allowed
+                near @ near.push(candidate)
+
+    return near
