@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <handle-a-helper-that-ends-its-parameter-is-the-runtime-s.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <handle-a-helper-that-ends-its-parameter-is-the-runtime-s.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 55 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 57 "handleahelperthatendsitsparameteristheruntimes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,7 +92,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 96 "handleahelperthatendsitsparameteristheruntimes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_Node_eq(node * const *a, node * const *b);
@@ -109,7 +111,7 @@ void h_handleahelperthatendsitsparameteristheruntimes_main(void);
 
 #line 15 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_finish(node * *ph0_n) {
-#line 113 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 115 "handleahelperthatendsitsparameteristheruntimes.c"
     node * h0_n;
     node * t1;
     h0_n = *ph0_n;
@@ -129,14 +131,14 @@ bb0:
     if (hero_handle_ended(t1, hero_life_0_0) && h0_n == t1) h0_n = hero_handle_dead();
 #line 16 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     }
-#line 133 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 135 "handleahelperthatendsitsparameteristheruntimes.c"
     *ph0_n = h0_n;
     return;
 }
 
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_main(void) {
-#line 140 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 142 "handleahelperthatendsitsparameteristheruntimes.c"
     node * h0_a;
     node * h1_b;
     int64_t t1;
@@ -219,7 +221,7 @@ bb0:
     }
 #line 25 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
     return;
-#line 223 "handleahelperthatendsitsparameteristheruntimes.c"
+#line 225 "handleahelperthatendsitsparameteristheruntimes.c"
 }
 HERO_TU_LOCAL bool h_handleahelperthatendsitsparameteristheruntimes_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -2,8 +2,12 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <ffi-a-construction.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <ffi-a-construction.h>
+#pragma push_macro("f")
+#pragma push_macro("i")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -13,7 +17,7 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((UT *)0)->i) == 1 && sizeof(((UT *)0)->i) == sizeof(int32_t) && (_Generic(((UT *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UT i");
 #line 13 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 _Static_assert(_Generic(&((UT *)0)->f, float *: 1, default: 0) && sizeof(((UT *)0)->f) == sizeof(float), "heroes-ffi-field UT f");
-#line 17 "ffiaconstructionnamesonememberofauniontype.c"
+#line 21 "ffiaconstructionnamesonememberofauniontype.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -85,7 +89,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "ffiaconstructionnamesonememberofauniontype.c"
+#line 93 "ffiaconstructionnamesonememberofauniontype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b);
@@ -103,7 +107,7 @@ void h_ffiaconstructionnamesonememberofauniontype_main(void);
 
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 void h_ffiaconstructionnamesonememberofauniontype_main(void) {
-#line 107 "ffiaconstructionnamesonememberofauniontype.c"
+#line 111 "ffiaconstructionnamesonememberofauniontype.c"
     UT h0_u;
     float t1;
     UT t2;
@@ -137,7 +141,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     return;
-#line 141 "ffiaconstructionnamesonememberofauniontype.c"
+#line 145 "ffiaconstructionnamesonememberofauniontype.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;

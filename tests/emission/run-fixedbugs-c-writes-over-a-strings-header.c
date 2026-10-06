@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-c-writes-over-a-strings-header.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-c-writes-over-a-strings-header.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -47,7 +49,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 51 "fixedbugscwritesoverastringsheader.c"
+#line 53 "fixedbugscwritesoverastringsheader.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -82,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugscwritesoverastringsheader.c"
+#line 88 "fixedbugscwritesoverastringsheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +100,7 @@ void h_fixedbugscwritesoverastringsheader_main(void);
 
 #line 24 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 void h_fixedbugscwritesoverastringsheader_main(void) {
-#line 102 "fixedbugscwritesoverastringsheader.c"
+#line 104 "fixedbugscwritesoverastringsheader.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr t1;
@@ -121,15 +123,15 @@ bb0:
     t7 = h1_own1;
 #line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h1_own1 = t3;
-#line 125 "fixedbugscwritesoverastringsheader.c"
+#line 127 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(t7);
 #line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t8 = h0_word;
-#line 129 "fixedbugscwritesoverastringsheader.c"
+#line 131 "fixedbugscwritesoverastringsheader.c"
     hero_str_incref(t3);
 #line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h0_word = t3;
-#line 133 "fixedbugscwritesoverastringsheader.c"
+#line 135 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(t8);
 #line 26 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t4 = h0_word;
@@ -143,10 +145,10 @@ bb0:
     hero_print_str(t6);
 #line 27 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_end();
-#line 147 "fixedbugscwritesoverastringsheader.c"
+#line 149 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(h0_word);
 #line 27 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-#line 150 "fixedbugscwritesoverastringsheader.c"
+#line 152 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(h1_own1);
     return;
 }

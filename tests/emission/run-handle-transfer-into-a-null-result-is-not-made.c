@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <handle-transfer-into-a-null-result-is-not-made.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <handle-transfer-into-a-null-result-is-not-made.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -11,7 +13,7 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 
 #line 8 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 _Static_assert(__builtin_classify_type(*(mem * *)0) != 13, "heroes-ffi-union Mem ");
-#line 15 "handletransferintoanullresultisnotmade.c"
+#line 17 "handletransferintoanullresultisnotmade.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -98,7 +100,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "handletransferintoanullresultisnotmade.c"
+#line 104 "handletransferintoanullresultisnotmade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b);
@@ -116,7 +118,7 @@ void h_handletransferintoanullresultisnotmade_main(void);
 
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 void h_handletransferintoanullresultisnotmade_main(void) {
-#line 120 "handletransferintoanullresultisnotmade.c"
+#line 122 "handletransferintoanullresultisnotmade.c"
     mem * h0_p;
     mem * h1_q;
     mem * h2_r;
@@ -313,7 +315,7 @@ bb5:
 bb6:
 #line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     goto bb4;
-#line 317 "handletransferintoanullresultisnotmade.c"
+#line 319 "handletransferintoanullresultisnotmade.c"
 }
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);

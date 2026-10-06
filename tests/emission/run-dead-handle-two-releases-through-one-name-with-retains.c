@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <dead-handle-two-releases-through-one-name-with-retains.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <dead-handle-two-releases-through-one-name-with-retains.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -53,7 +55,7 @@ HERO_STR_STATIC(hero_str_6d95b666, "ob_up_ref(a: cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 HERO_STR_STATIC(hero_str_2507a7e5, "two releases through one name, and both were owed");
 
-#line 57 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 59 "deadhandletworeleasesthroughonenamewithretains.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -92,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 98 "deadhandletworeleasesthroughonenamewithretains.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandletworeleasesthroughonenamewithretains_X509_eq(ob * const *a, ob * const *b);
@@ -110,7 +112,7 @@ void h_deadhandletworeleasesthroughonenamewithretains_main(void);
 
 #line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 void h_deadhandletworeleasesthroughonenamewithretains_main(void) {
-#line 114 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 116 "deadhandletworeleasesthroughonenamewithretains.c"
     ob * h0_cert;
     ob * t1;
     HeroStr t2;
@@ -226,7 +228,7 @@ bb1:
 #line 25 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 bb2:
 #line 20 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-#line 230 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 232 "deadhandletworeleasesthroughonenamewithretains.c"
     hero_panic_assert_sides(t2, hero_int_to_str(t4), hero_int_to_str(t5));
     hero_unreachable();
 }

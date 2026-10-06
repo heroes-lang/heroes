@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <handle-a-discarded-reference-is-still-owed.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <handle-a-discarded-reference-is-still-owed.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -52,7 +54,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 56 "handleadiscardedreferenceisstillowed.c"
+#line 58 "handleadiscardedreferenceisstillowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -91,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "handleadiscardedreferenceisstillowed.c"
+#line 97 "handleadiscardedreferenceisstillowed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b);
@@ -109,7 +111,7 @@ void h_handleadiscardedreferenceisstillowed_main(void);
 
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 void h_handleadiscardedreferenceisstillowed_main(void) {
-#line 113 "handleadiscardedreferenceisstillowed.c"
+#line 115 "handleadiscardedreferenceisstillowed.c"
     ob * h0_a;
     ob * t1;
     ob * t2;
@@ -189,7 +191,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     return;
-#line 193 "handleadiscardedreferenceisstillowed.c"
+#line 195 "handleadiscardedreferenceisstillowed.c"
 }
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

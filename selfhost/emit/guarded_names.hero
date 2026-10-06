@@ -1,0 +1,137 @@
+# The names a generated unit keeps across its groups' headers (defect 361,
+# 2026-10-06): the list `runtime/heroes_guard_open.h` saves and
+# `runtime/heroes_guard_close.h` gives back, held here so the unit can push
+# again just before the close every one of them its program binds, which
+# then keeps the header's meaning (`emit/macro_guard.hero`). Sorted by bytes,
+# as many to a line as fit.
+#
+# It is three sets, each read from what the unit includes before the groups:
+# every word `heroes_runtime.h` and `hero_os.h` write, a runtime macro's
+# expansion included (`HERO_STR_LIT` writes `HeroStr` and the member `b`);
+# every name C11 gives the four standard headers read there, <stdbool.h>,
+# <stddef.h> and <stdint.h> through the runtime and <math.h> as a seed
+# (7.18, 7.19, 7.20, 7.12); and `main`. `macro_guard`'s tests hold the two
+# runtime files to this list, every runtime word to it, and the headers read
+# before the groups to those four and the runtime's own two, so a word or a
+# header the runtime gains is a red test naming it.
+
+constant NAMES: [str]
+    [
+        "FP_FAST_FMA FP_FAST_FMAF FP_FAST_FMAL FP_ILOGB0 FP_ILOGBNAN"
+        "FP_INFINITE FP_NAN FP_NORMAL FP_SUBNORMAL FP_ZERO HEROES_RUNTIME_H"
+        "HERO_DIR_DIRECTORIES HERO_DIR_FILES HERO_FS_ABSENT HERO_FS_DIRECTORY"
+        "HERO_FS_FILE HERO_FS_LINK HERO_FS_OTHER HERO_FS_PATH_MAX"
+        "HERO_FS_UNKNOWN HERO_HELD_MAGIC HERO_OS_BAD_NAME HERO_OS_FAILED"
+        "HERO_OS_H HERO_OS_NOT_FOUND HERO_OS_NOT_TEXT HERO_OS_OK"
+        "HERO_OS_UNSUPPORTED HERO_RUNTIME_ABI HERO_STAGE_ATTRIBUTES"
+        "HERO_STAGE_CREATE HERO_STAGE_DONE HERO_STAGE_FLAGS HERO_STAGE_FLUSH"
+        "HERO_STAGE_MODE HERO_STAGE_OWNER HERO_STAGE_WRITE HERO_STR_LIT"
+        "HERO_STR_MAGIC HERO_STR_MAGIC_NUL HERO_STR_NOT_TEXT HERO_STR_NULL"
+        "HERO_STR_OK HERO_STR_STATIC HUGE_VAL HUGE_VALF HUGE_VALL"
+        "HeroArrayHeader HeroDesc HeroFailure HeroHeldHeader HeroMapHeader"
+        "HeroRefcount HeroStr HeroStrHeader INFINITY INT16_C INT16_MAX"
+        "INT16_MIN INT32_C INT32_MAX INT32_MIN INT64_C INT64_MAX INT64_MIN"
+        "INT8_C INT8_MAX INT8_MIN INTMAX_C INTMAX_MAX INTMAX_MIN INTPTR_MAX"
+        "INTPTR_MIN INT_FAST16_MAX INT_FAST16_MIN INT_FAST32_MAX INT_FAST32_MIN"
+        "INT_FAST64_MAX INT_FAST64_MIN INT_FAST8_MAX INT_FAST8_MIN"
+        "INT_LEAST16_MAX INT_LEAST16_MIN INT_LEAST32_MAX INT_LEAST32_MIN"
+        "INT_LEAST64_MAX INT_LEAST64_MIN INT_LEAST8_MAX INT_LEAST8_MIN"
+        "MATH_ERREXCEPT MATH_ERRNO NAN NULL PTRDIFF_MAX PTRDIFF_MIN"
+        "SIG_ATOMIC_MAX SIG_ATOMIC_MIN SIZE_MAX UINT16_C UINT16_MAX UINT32_C"
+        "UINT32_MAX UINT64_C UINT64_MAX UINT8_C UINT8_MAX UINTMAX_C UINTMAX_MAX"
+        "UINTPTR_MAX UINT_FAST16_MAX UINT_FAST32_MAX UINT_FAST64_MAX"
+        "UINT_FAST8_MAX UINT_LEAST16_MAX UINT_LEAST32_MAX UINT_LEAST64_MAX"
+        "UINT_LEAST8_MAX WCHAR_MAX WCHAR_MIN WINT_MAX WINT_MIN a acos acosf"
+        "acosh acoshf acoshl acosl arg argc argv asin asinf asinh asinhf asinhl"
+        "asinl atan atan2 atan2f atan2l atanf atanh atanhf atanhl atanl b body"
+        "bool by bytes cap cbrt cbrtf cbrtl ceil ceilf ceill char code const"
+        "copy copysign copysignf copysignl cos cosf cosh coshf coshl cosl"
+        "define double double_t drop dst elem endif ends_here entries eq erf"
+        "erfc erfcf erfcl erff erfl err_path existing exp exp2 exp2f exp2l expf"
+        "expl expm1 expm1f expm1l extern f fabs fabsf fabsl false fdim fdimf"
+        "fdiml float float_t floor floorf floorl fma fmaf fmal fmax fmaxf fmaxl"
+        "fmin fminf fminl fmod fmodf fmodl fpclassify frexp frexpf frexpl from"
+        "h handle hash hero_args_at hero_args_count hero_args_raw hero_args_set"
+        "hero_args_shown hero_array_at hero_array_at_mut hero_array_decref"
+        "hero_array_eq hero_array_incref hero_array_len hero_array_new"
+        "hero_array_push hero_array_push_owned hero_array_set hero_array_slice"
+        "hero_array_sort hero_array_unshare hero_bool_to_str hero_cstr_nonnull"
+        "hero_desc_array hero_desc_bool hero_desc_f32 hero_desc_f64"
+        "hero_desc_failure hero_desc_func hero_desc_i16 hero_desc_i32"
+        "hero_desc_i8 hero_desc_int hero_desc_map hero_desc_str hero_desc_u16"
+        "hero_desc_u32 hero_desc_u64 hero_desc_u8 hero_dir_at hero_dir_at_shown"
+        "hero_dir_release hero_dir_remove_tree hero_dir_scan hero_env_shown"
+        "hero_exe_path_shown hero_exit hero_f32_to_f64 hero_f32_to_str"
+        "hero_f64_fits_int hero_f64_to_f32 hero_f64_to_int hero_f64_to_str"
+        "hero_failure_does_not_fit hero_failure_eq hero_failure_hash"
+        "hero_failure_missing_key hero_failure_not_text hero_failure_release"
+        "hero_failure_retain hero_file_read hero_file_read_shown"
+        "hero_file_read_str hero_file_stage hero_file_unstage hero_file_write"
+        "hero_file_write_str hero_fs_deny_delete hero_fs_exists hero_fs_flagged"
+        "hero_fs_is_directory hero_fs_kind hero_fs_landing hero_fs_link"
+        "hero_fs_links hero_fs_mkdir_all hero_fs_mode hero_fs_newer_than"
+        "hero_fs_remove hero_fs_rename hero_fs_replace hero_fs_set_flag"
+        "hero_fs_set_mode hero_fs_symlink hero_fs_why hero_fs_writable"
+        "hero_handle_acquired hero_handle_alive hero_handle_dead"
+        "hero_handle_ended hero_handle_ending hero_handle_eq hero_handle_kept"
+        "hero_handle_lent hero_handle_retained hero_handle_transferring"
+        "hero_held_release hero_int_to_f32 hero_int_to_f64 hero_int_to_str"
+        "hero_map_decref hero_map_eq hero_map_find hero_map_incref"
+        "hero_map_keys hero_map_len hero_map_new hero_map_put hero_map_set"
+        "hero_os_pid hero_panic hero_panic_assert hero_panic_assert_sides"
+        "hero_panic_must hero_panic_overflow hero_print_bool hero_print_end"
+        "hero_print_f32 hero_print_f64 hero_print_int hero_print_str"
+        "hero_print_uint hero_run_arg hero_run_discard_path hero_run_exe_suffix"
+        "hero_run_go hero_run_limit hero_run_limit_writes hero_run_reset"
+        "hero_run_serial hero_run_signal hero_run_why hero_runtime_check_leaks"
+        "hero_runtime_live hero_str_byte hero_str_chars hero_str_cmp"
+        "hero_str_concat hero_str_cstr hero_str_decref hero_str_empty"
+        "hero_str_eq hero_str_from_bytes hero_str_from_cstr hero_str_held"
+        "hero_str_identity hero_str_incref hero_str_join hero_str_len"
+        "hero_str_lend hero_str_repeat hero_str_slice hero_str_try_from_array"
+        "hero_str_try_from_bytes hero_str_try_from_cstr hero_test_index"
+        "hero_thread_guard hero_thread_join hero_thread_limit hero_thread_spawn"
+        "hero_thread_spawn_sized hero_uint_to_str hero_unreachable"
+        "hero_utf8_valid hero_word_bits hero_write_err hypot hypotf hypotl i if"
+        "ifndef ilogb ilogbf ilogbl in_path include index int int16_t int32_t"
+        "int64_t int8_t int_fast16_t int_fast32_t int_fast64_t int_fast8_t"
+        "int_least16_t int_least32_t int_least64_t int_least8_t intmax_t into"
+        "intptr_t isfinite isgreater isgreaterequal isinf isless islessequal"
+        "islessgreater isnan isnormal isunordered key keys ldexp ldexpf ldexpl"
+        "left len lgamma lgammaf lgammal life like llrint llrintf llrintl"
+        "llround llroundf llroundl log log10 log10f log10l log1p log1pf log1pl"
+        "log2 log2f log2l logb logbf logbl logf logl lrint lrintf lrintl lround"
+        "lroundf lroundl m magic main marks math_errhandling max_align_t mode"
+        "modf modff modfl msg n name nan nanf nanl nearbyint nearbyintf"
+        "nearbyintl nextafter nextafterf nextafterl nexttoward nexttowardf"
+        "nexttowardl offsetof out_path p parts path pays pow powf powl program"
+        "ptr ptrdiff_t recursive refcount reference releasers remainder"
+        "remainderf remainderl remquo remquof remquol right rint rintf rintl"
+        "root round roundf roundl s scalbln scalblnf scalblnl scalbn scalbnf"
+        "scalbnl seconds sep signbit sin sinf sinh sinhf sinhl sinl size size_t"
+        "sizeof slot sqrt sqrtf sqrtl src staged states static status stdbool"
+        "stddef stdint struct tan tanf tanh tanhf tanhl tanl target text tgamma"
+        "tgammaf tgammal to true trunc truncf truncl typedef uint16_t uint32_t"
+        "uint64_t uint8_t uint_fast16_t uint_fast32_t uint_fast64_t"
+        "uint_fast8_t uint_least16_t uint_least32_t uint_least64_t"
+        "uint_least8_t uintmax_t uintptr_t v val vals value void want wchar_t"
+        "what where why word"
+    ]
+
+# The names, one each.
+function names() -> [str]
+    out: [str] @ []
+    lines = NAMES
+
+    for line in lines
+        start: i64 @ 0
+        i: i64 @ 0
+
+        while i <= line.len()
+            if i == line.len() || line[i] == 32
+                if i > start
+                    out @ out.push(line.slice(from: start, to: i))
+                start @ i + 1
+            i @ i + 1
+
+    return out

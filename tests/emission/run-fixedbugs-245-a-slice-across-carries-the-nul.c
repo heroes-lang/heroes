@@ -2,9 +2,11 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
+#include <heroes_runtime.h>
+#include "heroes_guard_open.h"
 #include <stdio.h>
 #include <string.h>
-#include <heroes_runtime.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -64,7 +66,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 68 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 70 "fixedbugs245asliceacrosscarriesthenul.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -113,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 119 "fixedbugs245asliceacrosscarriesthenul.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -140,20 +142,20 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 
 #line 16 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
 HeroStr h_fixedbugs245asliceacrosscarriesthenul_HELD(void) {
-#line 144 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 146 "fixedbugs245asliceacrosscarriesthenul.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t1 = HERO_STR_LIT(hero_str_76a716a3);
-#line 150 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 152 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 19 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
 HeroStr h_fixedbugs245asliceacrosscarriesthenul_held(void) {
-#line 157 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 159 "fixedbugs245asliceacrosscarriesthenul.c"
     void * h0_handle;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -227,7 +229,7 @@ bb0:
     t49 = h6_own6;
 #line 20 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h6_own6 = t1;
-#line 231 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 233 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t49);
 #line 20 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t2 = hero_str_lend(t1);
@@ -275,15 +277,15 @@ bb1:
     t50 = h7_own7;
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h7_own7 = t13;
-#line 279 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 281 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_array_decref(t50);
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t51 = h1_xs0;
-#line 283 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 285 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_array_incref(t13);
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h1_xs0 = t13;
-#line 287 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 289 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_array_decref(t51);
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t14 = INT64_C(0);
@@ -294,7 +296,7 @@ bb1:
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
 bb2:
 #line 21 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 298 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 300 "fixedbugs245asliceacrosscarriesthenul.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -336,15 +338,15 @@ bb4:
     t52 = h8_own8;
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h8_own8 = t23;
-#line 340 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 342 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_e1f4933_release(&t52);
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t53 = h4_f0;
-#line 344 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 346 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_e1f4933_retain(&t23);
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h4_f0 = t23;
-#line 348 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 350 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_e1f4933_release(&t53);
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t24 = h4_f0;
@@ -380,7 +382,7 @@ bb6:
     t54 = h9_own9;
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h9_own9 = t39;
-#line 384 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 386 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t54);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t40 = h_library_read_file(t39);
@@ -388,15 +390,15 @@ bb6:
     t55 = h10_own10;
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h10_own10 = t40;
-#line 392 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 394 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t55);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t56 = h5_f1;
-#line 396 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 398 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_retain(&t40);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h5_f1 = t40;
-#line 400 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 402 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t56);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t41 = h5_f1;
@@ -426,7 +428,7 @@ bb8:
     t28 = h4_f0;
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t29 = t28.as.err;
-#line 430 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 432 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -434,31 +436,31 @@ bb9:
     t47 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t48 = t47.as.ok;
-#line 438 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 440 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t48);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 441 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 443 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_array_decref(h1_xs0);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 444 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 446 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_e1f4933_release(&h4_f0);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 447 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 449 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h5_f1);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 450 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 452 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h6_own6);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 453 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 455 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_array_decref(h7_own7);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 456 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 458 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_e1f4933_release(&h8_own8);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 459 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 461 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h9_own9);
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 462 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 464 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h10_own10);
     return t48;
 bb10:
@@ -466,14 +468,14 @@ bb10:
     t45 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t46 = t45.as.err;
-#line 470 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 472 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
 
 #line 29 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
 void h_fixedbugs245asliceacrosscarriesthenul_main(void) {
-#line 477 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 479 "fixedbugs245asliceacrosscarriesthenul.c"
     HeroStr h0_s = {0};
     HeroStr h1_made = {0};
     HeroStr h2_own2 = {0};
@@ -503,15 +505,15 @@ bb0:
     t14 = h2_own2;
 #line 30 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h2_own2 = t1;
-#line 507 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 509 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t14);
 #line 30 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t15 = h0_s;
-#line 511 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 513 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t1);
 #line 30 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h0_s = t1;
-#line 515 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 517 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t15);
 #line 31 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t2 = h0_s;
@@ -525,15 +527,15 @@ bb0:
     t16 = h3_own3;
 #line 31 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h3_own3 = t5;
-#line 529 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 531 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t16);
 #line 31 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t17 = h1_made;
-#line 533 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 535 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t5);
 #line 31 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h1_made = t5;
-#line 537 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 539 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t17);
 #line 32 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t6 = HERO_STR_LIT(hero_str_41d10789);
@@ -565,47 +567,47 @@ bb0:
     hero_print_uint(t13);
 #line 33 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     hero_print_end();
-#line 569 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 571 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h0_s);
 #line 33 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 572 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 574 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h1_made);
 #line 33 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 575 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 577 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h2_own2);
 #line 33 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-#line 578 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 580 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h3_own3);
     return;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 585 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 587 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 591 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 593 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 597 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 599 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 603 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 605 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 609 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 611 "fixedbugs245asliceacrosscarriesthenul.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     h_0opt_f87774a h3_ret0 = {0};
@@ -682,15 +684,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 686 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 688 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 690 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 692 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 694 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 696 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -714,7 +716,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 718 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 720 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -722,7 +724,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 726 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 728 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -748,10 +750,10 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 752 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 754 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t12);
 #line 175 "<heroes library>"
-#line 755 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 757 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -759,7 +761,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 763 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 765 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -793,13 +795,13 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 797 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 799 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t43);
 #line 177 "<heroes library>"
-#line 800 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 802 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t18);
 #line 177 "<heroes library>"
-#line 803 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 805 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -807,7 +809,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 811 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 813 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -831,13 +833,13 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 835 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 837 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t45);
 #line 183 "<heroes library>"
-#line 838 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 840 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t33);
 #line 183 "<heroes library>"
-#line 841 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 843 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -845,7 +847,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 849 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 851 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -865,7 +867,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 869 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 871 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -875,13 +877,13 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 879 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 881 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(t48);
 #line 182 "<heroes library>"
-#line 882 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 884 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t26);
 #line 182 "<heroes library>"
-#line 885 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 887 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -889,7 +891,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 893 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 895 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -903,40 +905,40 @@ bb12:
 bb13:
 #line 167 "<heroes library>"
     t38 = h3_ret0;
-#line 907 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 909 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_retain(&t38);
 #line 167 "<heroes library>"
-#line 910 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 912 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h2_text);
 #line 167 "<heroes library>"
-#line 913 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 915 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h4_own4);
 #line 167 "<heroes library>"
-#line 916 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 918 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 167 "<heroes library>"
-#line 919 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 921 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 167 "<heroes library>"
-#line 922 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 924 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h7_own7);
 #line 167 "<heroes library>"
-#line 925 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 927 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h8_own8);
 #line 167 "<heroes library>"
-#line 928 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 930 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h9_own9);
 #line 167 "<heroes library>"
-#line 931 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 933 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h10_own10);
 #line 167 "<heroes library>"
-#line 934 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 936 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h11_own11);
 #line 167 "<heroes library>"
-#line 937 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 939 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_decref(h12_own12);
 #line 167 "<heroes library>"
-#line 940 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 942 "fixedbugs245asliceacrosscarriesthenul.c"
     h_0opt_f87774a_release(&h13_own13);
     return t38;
 }

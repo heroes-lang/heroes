@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <handle-end-only-on-success-keeps-the-connection-owed.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <handle-end-only-on-success-keeps-the-connection-owed.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_32f019d1, "first close: ");
 HERO_STR_STATIC(hero_str_449e1190, " second close: ");
 
-#line 55 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 57 "handleendonlyonsuccesskeepstheconnectionowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 94 "handleendonlyonsuccesskeepstheconnectionowed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleendonlyonsuccesskeepstheconnectionowed_Db_eq(db * const *a, db * const *b);
@@ -106,7 +108,7 @@ void h_handleendonlyonsuccesskeepstheconnectionowed_main(void);
 
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
 void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) {
-#line 110 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 112 "handleendonlyonsuccesskeepstheconnectionowed.c"
     db * h0_d;
     int32_t h1_first;
     int32_t h2_second;
@@ -202,7 +204,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     return;
-#line 206 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 208 "handleendonlyonsuccesskeepstheconnectionowed.c"
 }
 HERO_TU_LOCAL bool h_handleendonlyonsuccesskeepstheconnectionowed_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

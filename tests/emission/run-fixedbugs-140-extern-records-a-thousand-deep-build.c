@@ -3,7 +3,10 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
 #include <fixedbugs-140-extern-records-a-thousand-deep-build.h>
+#pragma push_macro("v")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -2009,7 +2012,7 @@ _Static_assert(_Generic(&((G997 *)0)->inner, G996 *: 1, default: 0) && sizeof(((
 _Static_assert(_Generic(&((G998 *)0)->inner, G997 *: 1, default: 0) && sizeof(((G998 *)0)->inner) == sizeof(G997), "heroes-ffi-field G998 inner");
 #line 2021 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((G999 *)0)->inner) == sizeof(G998), "heroes-ffi-field G999 inner");
-#line 2013 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2016 "fixedbugs140externrecordsathousanddeepbuild.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -2078,7 +2081,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2082 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2085 "fixedbugs140externrecordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140externrecordsathousanddeepbuild_G0_eq(const G0 *a, const G0 *b);
@@ -4111,7 +4114,7 @@ void h_fixedbugs140externrecordsathousanddeepbuild_main(void);
 
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void) {
-#line 4115 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4118 "fixedbugs140externrecordsathousanddeepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -4127,15 +4130,15 @@ bb0:
     t4 = h1_own1;
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h1_own1 = t1;
-#line 4131 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4134 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(t4);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t5 = h0_xs;
-#line 4135 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4138 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_incref(t1);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 4139 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4142 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(t5);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
@@ -4145,10 +4148,10 @@ bb0:
     hero_print_int(t3);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 4149 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4152 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(h0_xs);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
-#line 4152 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4155 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(h1_own1);
     return;
 }

@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-a-tag-that-needs-struct.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-a-tag-that-needs-struct.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 55 "fixedbugsatagthatneedsstruct.c"
+#line 57 "fixedbugsatagthatneedsstruct.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -96,7 +98,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "fixedbugsatagthatneedsstruct.c"
+#line 102 "fixedbugsatagthatneedsstruct.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b);
@@ -116,7 +118,7 @@ void h_fixedbugsatagthatneedsstruct_main(void);
 
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 void h_fixedbugsatagthatneedsstruct_main(void) {
-#line 120 "fixedbugsatagthatneedsstruct.c"
+#line 122 "fixedbugsatagthatneedsstruct.c"
     struct probe * h0_p;
     struct gauge * h1_g;
     int64_t t1;
@@ -196,7 +198,7 @@ bb0:
     }
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
-#line 200 "fixedbugsatagthatneedsstruct.c"
+#line 202 "fixedbugsatagthatneedsstruct.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
     return hero_handle_eq(*a, *b);

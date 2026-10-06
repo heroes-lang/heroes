@@ -1,0 +1,315 @@
+# A group's header never redefines a name the unit's own C takes from its own
+# headers (design.md §4.19; CLAUDE.md §7; defect 361, 2026-10-06). A unit
+# includes the runtime, <math.h> and `hero_os.h`, then the headers its
+# program's groups name, then every line the compiler wrote, so a macro one
+# of those headers defined, or a header it includes, rewrote that C: on this
+# Mac, `#define hero_print_int(x) nothing` was *internal error* at exit 2,
+# `HERO_RUNTIME_ABI 99` a false *heroes_runtime.h is from another compiler*,
+# `main other_main` a link with no `main`, and `INT64_C(c) 0` a program
+# printing 0 where it said 42, at exit 0.
+#
+# **The groups' includes stand between `runtime/heroes_guard_open.h` and
+# `runtime/heroes_guard_close.h`**, which save and give back every name in
+# `emit/guarded_names.hero`: every word the runtime's two headers write, every
+# name C11 gives the four standard headers read before the groups, and
+# `main`. A name the program's groups write (`bound_names`), a function,
+# constant, record, field or releaser of theirs, is pushed again just before
+# the close when the list holds it, so the close gives back the header's own
+# definition: `LIMIT` bound from a macro keeps the header's value, and so would
+# a binding of `sqrt` from a header that makes it a macro. A program that binds
+# no header but the compiler's own (`emit/externs.hero`'s `is_own`) has no
+# guard at all, and a unit's text grows by its two includes.
+#
+# **What it does not hold, and why**: a name the unit defines itself, a
+# mangled function, field, local or label, which a header's macro would
+# rewrite at its definition and every use alike, so the unit fails to compile
+# rather than mean something else; and a name C reserves for the
+# implementation, which a system header may define on purpose. Measured
+# before it was chosen: reading every identifier of the unit instead, the
+# route this defect's first draft took, cost the compiler's own build 32.3
+# billion instructions more (824.0 to 856.3) and its test unit, 59 MB with
+# 37,030 names on one `_Pragma` line, killed Apple clang 21 (`Illegal
+# instruction: 4`). The probe units (`emit/layout_*`, `ffi_asked`,
+# `cli/header_types`) include the groups alone and ask about the header's own
+# names, so they are not guarded.
+
+use ast
+use token
+use source
+use parse
+use emit/guarded_names
+use emit/externs as emit_externs
+
+# The line before the groups' includes, and the line after them.
+constant OPEN_LINE: str
+    "#include \"heroes_guard_open.h\""
+
+constant CLOSE_LINE: str
+    "#include \"heroes_guard_close.h\""
+
+# The groups' include lines as the unit writes them: between the two guard
+# includes, each name of the list the program binds pushed again before the
+# close; nothing where there are none.
+function around(lines: [str], bound: {str: bool}) -> [str]
+    if lines.len() == 0
+        return lines
+    out: [str] @ [OPEN_LINE]
+
+    for line in lines
+        out @ out.push(line)
+
+    for name in guarded_names.names()
+        if !bound[name].is_err()
+            out @ out.push("#pragma push_macro(\"" + name + "\")")
+
+    return out.push(CLOSE_LINE)
+
+# Every C name the program's groups take from a header between the guards:
+# a function's or constant's own name, a record's, its C tag and its fields,
+# and each releaser a mark names, on the result or a parameter. Not a
+# parameter's name nor a type, which are the unit's own words: `bool` in a
+# signature is the language's, and pushing it again would hand the unit a
+# group's `#define bool`. A binding of the compiler's own headers, the
+# library's of `hero_os.h` among them, is no group's: its names keep the
+# runtime's meaning, whatever a group defines.
+function bound_names(s: source.Source, decls: [ast.Decl]) -> {str: bool}
+    out: {str: bool} @ {}
+
+    for decl in decls
+        header = header_of(decl)
+
+        if !header.is_err() && !emit_externs.is_own(emit_externs.unquoted(s, span: header.must()))
+            spans: [token.Span] @ [decl.name]
+
+            match decl.kind
+                .function_decl fd =>
+                    for mark in [fd.value.owned_result, fd.value.acquires_result, fd.value.retains_result]
+                        if !mark.is_err()
+                            spans @ spans.push(mark.must())
+
+                    for param in fd.value.params
+                        for mark in [param.owned, param.acquires, param.transfers, param.retains]
+                            if !mark.is_err()
+                                spans @ spans.push(mark.must())
+                .record_decl rec =>
+                    if !rec.tag.is_err()
+                        spans @ spans.push(rec.tag.must())
+
+                    for field in rec.fields
+                        spans @ spans.push(field.name)
+                .constant_decl | .variant_decl | .test_decl => _ = 0
+
+            for span in spans
+                words_into(@out, text: source.span_text(s, span))
+
+    return out
+
+# Every identifier of `text` into `out`: a releaser set's names, one each.
+function words_into(@out: {str: bool}, text: str)
+    i: i64 @ 0
+
+    while i < text.len()
+        if starts_word(text[i])
+            start = i
+
+            while i < text.len() && in_word(text[i])
+                i @ i + 1
+
+            out[text.slice(from: start, to: i)] @ true
+            continue
+        i @ i + 1
+
+# The header a declaration's group named, or none.
+function header_of(decl: ast.Decl) -> token.Span?
+    match decl.kind
+        .function_decl fd          => return fd.value.header
+        .constant_decl k           => return k.header
+        .record_decl rec           => return rec.header
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no header")
+
+    return fail(code: "none", msg: "no header")
+
+function starts_word(b: u8) -> bool
+    return b == 95 || b >= 65 && b <= 90 || b >= 97 && b <= 122
+
+function in_word(b: u8) -> bool
+    return starts_word(b) || b >= 48 && b <= 57
+
+## Tests
+
+# The groups' includes alone are guarded, a bound name the list holds is
+# pushed again before the close, and none are nothing.
+test "the groups' includes stand between the guard's two, a bound name of the list pushed again"
+    none: [str] = []
+    bound: {str: bool} @ {}
+    assert around(none, bound: bound).len() == 0
+    bound["INT64_C"] @ true
+    bound["LIMIT"] @ true
+    assert around(["#include <a.h>"], bound: bound) == [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
+
+# The two runtime files save and give back this list, in its order, and no
+# other name: a line added to one and not here is named.
+test "the runtime's guard files hold the list, the open saving and the close giving back"
+    listed = guarded_names.names()
+    assert pragmas(text: read_file("runtime/heroes_guard_open.h").must(), word: "push_macro") == listed
+    assert pragmas(text: read_file("runtime/heroes_guard_close.h").must(), word: "pop_macro") == listed
+
+# Every word the runtime's headers write is in the list, so a runtime macro's
+# expansion is guarded too; a word the runtime gains is named here.
+test "the list holds every word the runtime's headers write"
+    listed: {str: bool} @ {}
+
+    for name in guarded_names.names()
+        listed[name] @ true
+
+    missing: [str] @ []
+
+    for path in ["runtime/heroes_runtime.h", "runtime/hero_os.h"]
+        for word in sort(keys(used(read_file(path).must())))
+            if listed[word].is_err()
+                missing @ missing.push(word)
+
+    assert missing.join(" ") == ""
+
+# The premise the list's C11 half rests on: the standard headers a unit reads
+# before its groups are <stdbool.h>, <stddef.h> and <stdint.h>, through the
+# runtime, and <math.h> as a seed. A header added to either is named here,
+# and its names are owed to the list and the two runtime files.
+test "the headers read before the groups are the four the list names and the runtime's own"
+    assert includes_of(read_file("runtime/heroes_runtime.h").must()) == ["<stdbool.h>", "<stddef.h>", "<stdint.h>"]
+    assert includes_of(read_file("runtime/hero_os.h").must()) == ["\"heroes_runtime.h\""]
+    assert emit_externs.SEEDS == ["math.h", "hero_os.h"]
+
+# What a group writes is the header's: the function, the constant, the
+# record and its fields, and a releaser a mark names.
+test "the names a program's groups write are left to their header"
+    text = "extern \"x.h\"\n    function twice(x: i64) -> i64\n    function make() -> cstr owned x_free\n    constant LIMIT: i64\n    record Pair\n        left: i64\n        right: i64\n\nfunction main()\n    print(twice(x: LIMIT))\n"
+    s = source.new_source(name: "t.hero", text: text)
+    parsed = parse.parse_source(s)
+    got = bound_names(s, parsed.decls)
+
+    for name in ["twice", "make", "x_free", "LIMIT", "Pair", "left", "right"]
+        assert !got[name].is_err()
+
+    for name in ["main", "print", "x", "i64", "cstr", "function"]
+        assert got[name].is_err()
+
+    # The library's bindings of the runtime's own headers are no group's.
+    library = source.with_library(
+        name: "t.hero",
+        user: "function main()\n    print(1)\n",
+        library: "extern \"hero_os.h\"\n    constant HERO_OS_OK: i64\n"
+    )
+    assert bound_names(library, parse.parse_source(library).decls)["HERO_OS_OK"].is_err()
+
+# The names of a guard file's `#pragma <word>("...")` lines, in order.
+function pragmas(text: str, word: str) -> [str]
+    out: [str] @ []
+    prefix = "#pragma " + word + "(\""
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i <= text.len()
+        if i == text.len() || text[i] == 10
+            line = text.slice(from: start, to: i)
+
+            if line.len() > prefix.len() + 2 && holds_at(text: line, at: 0, word: prefix)
+                out @ out.push(line.slice(from: prefix.len(), to: line.len() - 2))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# The targets of a header's `#include` lines, as written, in order.
+function includes_of(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i <= text.len()
+        if i == text.len() || text[i] == 10
+            line = text.slice(from: start, to: i)
+            at: i64 @ 0
+
+            while at < line.len() && line[at] == 32
+                at @ at + 1
+
+            if holds_at(text: line, at: at, word: "#include ")
+                out @ out.push(line.slice(from: at + 9, to: line.len()))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# Whether `text` holds `word` at `at`, byte for byte, with no slice that could
+# split a character where `at` falls inside one: a header's comment holds
+# `é` and an em dash.
+function holds_at(text: str, at: i64, word: str) -> bool
+    if at + word.len() > text.len()
+        return false
+    k: i64 @ 0
+
+    while k < word.len()
+        if text[at + k] != word[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# Every identifier of the C in `text`, once each: a string or character
+# literal and a comment passed over, a number's letters too, and what C
+# reserves for the implementation, and `defined`, left out.
+function used(text: str) -> {str: bool}
+    out: {str: bool} @ {}
+    n = text.len()
+    i: i64 @ 0
+
+    while i < n
+        b = text[i]
+
+        if b == 34 || b == 39
+            i @ i + 1
+
+            while i < n && text[i] != b
+                if text[i] == 92
+                    i @ i + 1
+                i @ i + 1
+
+            i @ i + 1
+            continue
+
+        if b == 47 && i + 1 < n && text[i + 1] == 42
+            i @ i + 2
+
+            while i + 1 < n && !(text[i] == 42 && text[i + 1] == 47)
+                i @ i + 1
+
+            i @ i + 2
+            continue
+
+        if b == 47 && i + 1 < n && text[i + 1] == 47
+            while i < n && text[i] != 10
+                i @ i + 1
+
+            continue
+
+        if starts_word(b)
+            start = i
+
+            while i < n && in_word(text[i])
+                i @ i + 1
+
+            word = text.slice(from: start, to: i)
+
+            if !(text[start] == 95 && word.len() > 1 && (text[start + 1] == 95 || text[start + 1] >= 65 && text[start + 1] <= 90)) && word != "defined"
+                out[word] @ true
+            continue
+
+        if b >= 48 && b <= 57
+            while i < n && (in_word(text[i]) || text[i] == 46)
+                i @ i + 1
+
+            continue
+        i @ i + 1
+
+    return out

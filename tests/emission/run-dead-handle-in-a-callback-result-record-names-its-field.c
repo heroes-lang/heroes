@@ -2,8 +2,12 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <dead-handle-in-a-callback-result-record-names-its-field.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <dead-handle-in-a-callback-result-record-names-its-field.h>
+#pragma push_macro("a")
+#pragma push_macro("b")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -13,11 +17,11 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(&((struct pair *)0)->a, node * *: 1, default: 0) && sizeof(((struct pair *)0)->a) == sizeof(node *), "heroes-ffi-field Pair a");
 #line 13 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(_Generic(&((struct pair *)0)->b, node * *: 1, default: 0) && sizeof(((struct pair *)0)->b) == sizeof(node *), "heroes-ffi-field Pair b");
-#line 17 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 21 "deadhandleinacallbackresultrecordnamesitsfield.c"
 
 #line 11 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 21 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 25 "deadhandleinacallbackresultrecordnamesitsfield.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -108,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 112 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 116 "deadhandleinacallbackresultrecordnamesitsfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b);
@@ -140,7 +144,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
-#line 144 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 148 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give");
     struct pair h1_p;
     h_0opt_e201354 h2_f0 = {0};
@@ -189,15 +193,15 @@ bb0:
     t19 = h3_own3;
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h3_own3 = t6;
-#line 193 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 197 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(&t19);
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t20 = h2_f0;
-#line 197 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 201 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_retain(&t6);
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h2_f0 = t6;
-#line 201 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 205 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(&t20);
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t7 = h2_f0;
@@ -213,10 +217,10 @@ bb0:
 bb1:
 #line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t18 = h1_p;
-#line 217 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 221 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(&h2_f0);
 #line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-#line 220 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 224 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(&h3_own3);
     return t18;
 bb2:
@@ -234,7 +238,7 @@ bb3:
     t11 = h2_f0;
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t12 = t11.as.err;
-#line 238 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 242 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb4:
@@ -260,7 +264,7 @@ bb4:
 bb5:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     goto bb1;
-#line 264 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 268 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -272,7 +276,7 @@ struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0
 
 #line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 void h_deadhandleinacallbackresultrecordnamesitsfield_main(void) {
-#line 276 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 280 "deadhandleinacallbackresultrecordnamesitsfield.c"
     HeroStr t1;
     h_0fn_22e3cba1 t2;
     int64_t t3;
@@ -292,7 +296,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     return;
-#line 296 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 300 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

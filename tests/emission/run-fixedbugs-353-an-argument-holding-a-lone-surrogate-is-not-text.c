@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -57,7 +59,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 61 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 63 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -92,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 98 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -130,7 +132,7 @@ HeroArrayHeader * h_library_args_checked(void);
 
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
 void h_fixedbugs353anargumentholdingalonesurrogateisnottext_main(void) {
-#line 134 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 136 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     HeroArrayHeader * h0_given = {0};
     h_0opt_f87774a h1_s0 = {0};
     HeroStr h2_word = {0};
@@ -188,15 +190,15 @@ bb0:
     t38 = h4_own4;
 #line 18 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     h4_own4 = t1;
-#line 192 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 194 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t38);
 #line 18 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t39 = h0_given;
-#line 196 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 198 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t1);
 #line 18 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     h0_given = t1;
-#line 200 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 202 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t39);
 #line 20 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t2 = h0_given;
@@ -218,11 +220,11 @@ bb1:
     t16 = *(h_0opt_f87774a const *)hero_array_at(t14, t15);
 #line 25 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t40 = h1_s0;
-#line 222 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 224 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_retain(&t16);
 #line 25 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     h1_s0 = t16;
-#line 226 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 228 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&t40);
 #line 25 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t17 = h1_s0;
@@ -294,11 +296,11 @@ bb5:
     t20 = t19.as.ok;
 #line 26 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t41 = h2_word;
-#line 298 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 300 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t20);
 #line 26 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     h2_word = t20;
-#line 302 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 304 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(t41);
 #line 26 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t21 = HERO_STR_LIT(hero_str_5bb5a3c9);
@@ -326,11 +328,11 @@ bb6:
     t26 = t25.as.err;
 #line 27 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t42 = h3_e;
-#line 330 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 332 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_failure_retain(&t26);
 #line 27 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     h3_e = t26;
-#line 334 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 336 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_failure_release(&t42);
 #line 27 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t27 = HERO_STR_LIT(hero_str_5c4cb2fb);
@@ -360,7 +362,7 @@ bb8:
     t43 = h5_own5;
 #line 30 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     h5_own5 = t35;
-#line 364 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 366 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t43);
 #line 30 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
     t36 = hero_array_len(t35);
@@ -383,35 +385,35 @@ bb9:
 #line 30 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
 bb10:
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
-#line 387 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 389 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h0_given);
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
-#line 390 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 392 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&h1_s0);
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
-#line 393 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 395 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(h2_word);
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
-#line 396 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 398 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_failure_release(&h3_e);
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
-#line 399 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 401 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h4_own4);
 #line 17 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
-#line 402 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 404 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h5_own5);
     return;
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 409 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 411 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     return HERO_STR_OK;
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 415 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 417 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     int64_t h1_status;
     HeroStr h2_text = {0};
     h_0opt_f87774a h3_ret0 = {0};
@@ -466,15 +468,15 @@ bb1:
     t19 = h4_own4;
 #line 157 "<heroes library>"
     h4_own4 = t9;
-#line 470 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 472 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t20 = h2_text;
-#line 474 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 476 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t9);
 #line 157 "<heroes library>"
     h2_text = t9;
-#line 478 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 480 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(t20);
 #line 158 "<heroes library>"
     t10 = h1_status;
@@ -490,10 +492,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 155 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 494 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 496 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t4);
 #line 155 "<heroes library>"
-#line 497 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 499 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t5);
 #line 155 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -501,7 +503,7 @@ bb2:
     t21 = h5_own5;
 #line 155 "<heroes library>"
     h5_own5 = t6;
-#line 505 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 507 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&t21);
 #line 155 "<heroes library>"
     h3_ret0 = t6;
@@ -517,10 +519,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 160 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 521 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 523 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t15);
 #line 160 "<heroes library>"
-#line 524 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 526 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t16);
 #line 160 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -528,7 +530,7 @@ bb4:
     t22 = h6_own6;
 #line 160 "<heroes library>"
     h6_own6 = t17;
-#line 532 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 534 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&t22);
 #line 160 "<heroes library>"
     h3_ret0 = t17;
@@ -538,7 +540,7 @@ bb4:
 bb5:
 #line 159 "<heroes library>"
     t13 = h2_text;
-#line 542 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 544 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_incref(t13);
 #line 159 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -546,7 +548,7 @@ bb5:
     t23 = h7_own7;
 #line 159 "<heroes library>"
     h7_own7 = t14;
-#line 550 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 552 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&t23);
 #line 159 "<heroes library>"
     h3_ret0 = t14;
@@ -560,29 +562,29 @@ bb6:
 bb7:
 #line 153 "<heroes library>"
     t18 = h3_ret0;
-#line 564 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 566 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_retain(&t18);
 #line 153 "<heroes library>"
-#line 567 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 569 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(h2_text);
 #line 153 "<heroes library>"
-#line 570 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 572 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(h4_own4);
 #line 153 "<heroes library>"
-#line 573 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 575 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 153 "<heroes library>"
-#line 576 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 578 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 153 "<heroes library>"
-#line 579 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 581 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&h7_own7);
     return t18;
 }
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 586 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 588 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -609,15 +611,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 613 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 615 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 617 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 619 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 621 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 623 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -645,7 +647,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 649 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 651 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -663,23 +665,23 @@ bb2:
 bb3:
 #line 202 "<heroes library>"
     t13 = h0_out;
-#line 667 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 669 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t13);
 #line 202 "<heroes library>"
-#line 670 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 672 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h0_out);
 #line 202 "<heroes library>"
-#line 673 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 675 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h2_own2);
 #line 202 "<heroes library>"
-#line 676 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 678 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_str_decref(h3_own3);
     return t13;
 }
 
 #line 216 "<heroes library>"
 HeroArrayHeader * h_library_args_checked(void) {
-#line 683 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 685 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -707,15 +709,15 @@ bb0:
     t15 = h2_own2;
 #line 217 "<heroes library>"
     h2_own2 = t1;
-#line 711 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 713 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t15);
 #line 217 "<heroes library>"
     t16 = h0_out;
-#line 715 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 717 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t1);
 #line 217 "<heroes library>"
     h0_out = t1;
-#line 719 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 721 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(t16);
 #line 218 "<heroes library>"
     t2 = INT64_C(0);
@@ -745,7 +747,7 @@ bb2:
     t17 = h3_own3;
 #line 220 "<heroes library>"
     h3_own3 = t9;
-#line 749 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 751 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&t17);
 #line 220 "<heroes library>"
     hero_array_push_owned(&h0_out, &t9);
@@ -763,16 +765,16 @@ bb2:
 bb3:
 #line 222 "<heroes library>"
     t14 = h0_out;
-#line 767 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 769 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t14);
 #line 222 "<heroes library>"
-#line 770 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 772 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h0_out);
 #line 222 "<heroes library>"
-#line 773 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 775 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_decref(h2_own2);
 #line 222 "<heroes library>"
-#line 776 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 778 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     h_0opt_f87774a_release(&h3_own3);
     return t14;
 }
