@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-398-an-at-through-a-function-value-marks-nothing.hero:21:8: error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-398-an-at-through-a-function-value-marks-nothing.hero:26:8: error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-398-an-at-through-a-function-value-marks-nothing.hero:32:10: error[marker_mismatch]: a function value does not change this argument — the `@` says it does
