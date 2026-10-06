@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: f66ccb77fecaa219049b9aa2fb1dae3abeb688bf
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 194's compiler-engineer and ffi-pragmatist, 2026-10-06, each beside defect 092; reproduced by the completeness critic's second pass and by the coordinator on the frozen tree; panel 166's ergonomist had named it as an unrun guess.
 
     **Class: blocking**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a memory fault at exit 0 in a program the spec admits, § 13's own field lend; panel 194's route C, the count in C's own unit, repairs it with 092.
+
+    Repaired at `f66ccb77`, 2026-10-06 (lane b13-unit), gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the push's platform legs, this being at the C boundary. Panel 194's R7, route C, in one repair with defect 092: the pointee check reads each counted parameter's own type from the header, and a field lend's count is compared with `sizeof(field) / sizeof(*(P)0)`, both sizes C's; a pointee the header leaves incomplete refuses the `counted_by` on the parameter. Both `field-unit/` cases are refused at build on this Mac, Linux arm64 and x86-64; the unit's C on the Windows box by hand reads `wchar_t` as 2 bytes and refuses a count of 16 over 16.
