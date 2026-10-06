@@ -22,6 +22,7 @@ extern "hero_os.h"
     function hero_fs_writable(path: cstr lent) -> i64
     function hero_file_stage(staged: cstr lent, text: str, like: cstr lent) -> i64
     function hero_fs_replace(staged: cstr lent, path: cstr lent) -> i64
+    function hero_fs_flush(path: cstr lent) -> i64
     function hero_file_unstage(staged: cstr lent) -> i64
     function hero_fs_mode(path: cstr lent) -> i64
     function hero_fs_set_mode(path: cstr lent, mode: i64) -> i64
@@ -149,6 +150,14 @@ function stage(staged: str, text: str, like: str) -> ()?
 function replace(staged: str, path: str) -> ()?
     if hero_fs_replace(staged: staged.cstr(), path: path.cstr()) != HERO_OS_OK
         return fail(code: "not_replaced", msg: process.because())
+    return ok()
+
+# A file another process wrote, flushed to the device before it is renamed
+# into place (defect 357's object row; `runtime/parts/replace.c`'s
+# `hero_fs_flush`). The failure's message is the reason alone.
+function flush(path: str) -> ()?
+    if hero_fs_flush(path: path.cstr()) != HERO_OS_OK
+        return fail(code: "not_flushed", msg: process.because())
     return ok()
 
 # A staged file that could not take its place, removed even where it carries
