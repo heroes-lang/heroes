@@ -202,7 +202,8 @@ constant NO_FLAGS: [str]
 # message alone. **5 cases on 2026-10-04**, the count, and so the floor.
 # **8 on 2026-10-05**, as the suite asked: defect 338's case and defect 291's
 # two, an excerpt writing an invisible and a bidirectional character by its
-# code.
+# code. **11 on 2026-10-06**, as the suite asked at batch 13's merge of lane
+# front: defect 391's template literal and defect 399's repair that works.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -211,7 +212,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 8,
+        least: 11,
         watched: true,
         silent_stdout: false,
         library_skip: false
