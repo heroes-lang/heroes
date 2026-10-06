@@ -177,4 +177,4 @@ test "one expression for the by-value shapes, statements for the containers"
     )
     array(@w, c, names, f, ty: arr, run: ir.Run(start: 0, length: 1), target: ok("t6"))
     got = writer.finish(w)
-    assert got == "    t5 = (h_t_Point){.f_x = t1};\n    t6 = hero_array_new(&hero_desc_int, 1);\n    { HeroArrayHeader *grown = hero_array_push(t6, &t1);\n      hero_array_decref(t6); t6 = grown; }\n"
+    assert got == "    t5 = (h_t_Point){.f_x = t1};\n    t6 = hero_array_new(&hero_desc_int, 1);\n    hero_array_push_owned(&t6, &t1);\n"

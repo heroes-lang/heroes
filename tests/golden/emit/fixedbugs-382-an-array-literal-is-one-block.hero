@@ -1,0 +1,18 @@
+# Defect 382, 2026-10-06. An array literal was built by one copying
+# `hero_array_push` per element, each handing back a new block: n+1 blocks for
+# n elements and n(n+1)/2 element copies, paid again at every read of a
+# `constant`, which is a function that builds its value. The C below builds
+# each literal in the block `hero_array_new` sizes to it, one
+# `hero_array_push_owned` per element copying it in where it lies: the
+# constant of numbers, the constant of counted strings, and a literal in a
+# function's body.
+
+constant DIGITS: [i64]
+    [3, 1, 4]
+
+constant WORDS: [str]
+    ["ziggy", "mars"]
+
+function main()
+    pair = [DIGITS[2], WORDS[1].len()]
+    print(pair[0] + pair[1])
