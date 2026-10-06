@@ -105,6 +105,7 @@ use suite_surface
 use suite_units
 use suite_warnings
 use suite_run
+use suite_unseen
 
 # The prefix of this run's scratch directory; the process id follows it
 # (main, below), so that no two runs alive at once share a directory.
@@ -461,6 +462,20 @@ function main()
             print("harness: the runtime invariants could not run" + why(got))
             exit(2)
         print("  runtime: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The documents hold no character their reader cannot see (defect 356,
+    # panel 192's R12). Reads files and runs no compiler, like `records`, and
+    # beside it rather than in it: what it judges is a document's characters,
+    # not a record's shape.
+    if only == "" || only == "unseen"
+        got = suite_unseen.run_all(scratch)
+
+        if got.is_err()
+            print("harness: the unseen check could not run" + why(got))
+            exit(2)
+        print("  unseen: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

@@ -52,9 +52,21 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
 
         if fix.certainty == .certain
             tag @ "certain"
-        rows @ rows.push("  fix (" + tag + "): " + fix.title + "\n")
+        rows @ rows.push("  fix (" + tag + "): " + fix.title + elsewhere(s, d: d, fix: fix) + "\n")
 
     return shown_char.visible(rows.join(""))
+
+# Where a fix applies, when that is not its message's own line: ` (at
+# t.hero:14:10)`, the place in the form the message's own `at` line gives
+# one (defect 271). A run of one mistake told once carries every repair of
+# it (defect 178's commas, `separator_runs`), and each later one stands on a
+# line of its own: an author fixing by hand met the next only after the first.
+# A fix on the message's line says nothing more, since the excerpt shows it.
+function elsewhere(s: source.Source, d: diag.Diagnostic, fix: diag.Fix) -> str
+    if source.line_of(s, fix.span.start) == source.line_of(s, d.span.start)
+        return ""
+    found = source.locate(s, fix.span.start)
+    return " (at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ")"
 
 # Every diagnostic, in source order, separated by a blank line.
 function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
@@ -143,6 +155,22 @@ test "the rich form: caret on the span, notes and tagged fixes below"
     # An unsupported row keeps its own first word.
     u = diag.new_unsupported(code: "map_key", message: "a `{f64: T}` map key is not emitted yet", span: at)
     assert diag.render_line(u, s) == "t.hero:2:12: unsupported[map_key]: a `{f64: T}` map key is not emitted yet"
+
+# Defect 271: a fix away from its message's line names its place, and one
+# on the line names none, as before.
+test "a fix that applies on another line says where, and one on the message's line does not"
+    text = "function main()\n    x = 1,\n    y = 2,\n"
+    s = source.new_source(name: "t.hero", text: text)
+    first = token.Span(start: 25, end: 26)
+    second = token.Span(start: 36, end: 37)
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "expected_end_of_line", message: "m", span: first)
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the `,`", replacement: "", span: first, certainty: .certain))
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the `,`", replacement: "", span: second, certainty: .certain))
+    got = render(d, s)
+    assert diag_has(
+        text: got,
+        needle: "  fix (certain): delete the `,`\n  fix (certain): delete the `,` (at t.hero:3:10)\n"
+    )
 
 test "the caret counts characters, and a multi-line span is clamped to one"
     text = "function main()\n    print(\"ààà\")\n"

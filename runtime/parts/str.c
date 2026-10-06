@@ -35,6 +35,31 @@ static HeroStrHeader *hero_str_hdr(HeroStr s) {
                                      sizeof(HeroStrHeader));
 }
 
+/* **Whether a str holds a NUL is one bit of its block, kept from its making**
+ * (panel 192's R1, defect 245). A `str` holds any UTF-8, U+0000 included: a
+ * file read whole, a binding's own C returning bytes with their length, the
+ * compiler's read of a source and the harness's `git ls-files -z` listing all
+ * hold one by design, and `print` and `write_file` write every byte. What C
+ * cannot be handed is such a str as a C string, since C reads one only to its
+ * first NUL, so the lend and the lease ask this bit and stop.
+ *
+ * The bit is the low bit of the header's existing magic word,
+ * `HERO_STR_MAGIC_NUL`, so the layout does not move and the lend pays one load
+ * and one test, flat in the string's length (about 5 instructions, the
+ * ffi-pragmatist's measurement; a scan at every lend was 0.44 a byte). A block
+ * this runtime allocates is marked by its constructor, which knows: the copy
+ * from bytes asks them once with `memchr`; concatenation, repetition and a join
+ * carry their inputs' bits; a slice keeps the bit only when its own bytes still
+ * hold the NUL. A static block (a literal, the empty string) has it computed by
+ * clang in `HERO_STR_STATIC`. So the bit is set exactly when the bytes hold a
+ * zero, and `fixedbugs-245-*` under `tests/golden/run/` pins each constructor. */
+static bool hero_str_holds_nul(HeroStr s) {
+    return (hero_str_hdr(s)->magic & UINT64_C(1)) != 0;
+}
+static void hero_str_mark_nul(HeroStr r) {
+    hero_str_hdr(r)->magic = HERO_STR_MAGIC_NUL;
+}
+
 /* Every reader goes through this: a NULL ptr is an unassigned or moved-out
  * slot, and reading one is a compiler bug, not an empty string. */
 static void hero_str_require(HeroStr s) {
@@ -74,7 +99,7 @@ static HeroStr hero_str_alloc(int64_t len) {
  * the three causes as causes, worst first; panel 173 R1 is the standard. */
 static HeroStrHeader *hero_str_hdr_checked(HeroStr s) {
     HeroStrHeader *h = hero_str_hdr(s);
-    if (h->magic != HERO_STR_MAGIC) {
+    if ((h->magic | UINT64_C(1)) != HERO_STR_MAGIC_NUL) {
         hero_panic("a str's block has lost its mark: the bytes just before its text "
                    "were overwritten, or the block was freed, or it never was a string "
                    "block. Three things do this: C writing or freeing memory this program "
@@ -155,6 +180,7 @@ HeroStr hero_str_repeat(HeroStr s, uint64_t n) {
     HeroStr r = hero_str_alloc(len);
     char *w = (char *)(void *)(uintptr_t)r.ptr;
     for (uint64_t i = 0; i < n; i++) memcpy(w + (int64_t)i * s.len, s.ptr, (size_t)s.len);
+    if (hero_str_holds_nul(s)) hero_str_mark_nul(r);
     return r;
 }
 
@@ -166,6 +192,7 @@ HeroStr hero_str_concat(HeroStr a, HeroStr b) {
     char *w = (char *)(void *)(uintptr_t)r.ptr;
     memcpy(w, a.ptr, (size_t)a.len);
     memcpy(w + a.len, b.ptr, (size_t)b.len);
+    if (hero_str_holds_nul(a) || hero_str_holds_nul(b)) hero_str_mark_nul(r);
     return r;
 }
 
@@ -224,6 +251,7 @@ HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) {
     if (to == from) return hero_str_empty();
     HeroStr r = hero_str_alloc(to - from);
     memcpy((char *)(void *)(uintptr_t)r.ptr, s.ptr + from, (size_t)(to - from));
+    if (hero_str_holds_nul(s) && memchr(r.ptr, 0, (size_t)(to - from)) != NULL) hero_str_mark_nul(r);
     return r;
 }
 
@@ -303,8 +331,10 @@ HeroStr hero_str_from_bytes(const char *p, int64_t len) {
     if (len < 0) hero_panic("hero_str_from_bytes: negative length from C");
     if (!hero_utf8_valid(p, len)) hero_panic("hero_str_from_bytes: not well-formed UTF-8");
     if (len == 0) return hero_str_empty();
+    bool holds_nul = memchr(p, 0, (size_t)len) != NULL;
     HeroStr r = hero_str_alloc(len);
     memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);
+    if (holds_nul) hero_str_mark_nul(r);
     return r;
 }
 
@@ -370,14 +400,10 @@ HeroStr hero_str_try_from_cstr(const char *p, int64_t *status) {
    nothing. `read_file` answers `not_text` on bad UTF-8 and so does this; a
    sitting that invented a different answer would have been spending tokens on a
    contradiction. */
-HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
-    if (p == NULL) {
-        *status = HERO_STR_NULL;
-        return hero_str_empty();
-    }
-    if (cap < 0) hero_panic("hero_str_try_from_bytes: negative capacity");
-    const void *zero = memchr(p, 0, (size_t)cap);
-    int64_t len = (zero == NULL) ? cap : (int64_t)((const char *)zero - p);
+/* The one walk both readers of a run of bytes share: `len` bytes judged as
+ * UTF-8, then copied, the block marked when they hold a NUL. */
+static HeroStr hero_str_try_from_run(const char *p, int64_t len, bool may_hold_nul,
+                                     int64_t *status) {
     if (!hero_utf8_valid(p, len)) {
         *status = HERO_STR_NOT_TEXT;
         return hero_str_empty();
@@ -386,14 +412,35 @@ HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
     if (len == 0) return hero_str_empty();
     HeroStr r = hero_str_alloc(len);
     memcpy((char *)(void *)(uintptr_t)r.ptr, p, (size_t)len);
+    if (may_hold_nul && memchr(p, 0, (size_t)len) != NULL) hero_str_mark_nul(r);
     return r;
 }
 
-/* **The same, over a `[u8]` this language owns** (panel 162). It exists rather
-   than the emitter composing `hero_array_at` with the function above, for one
-   measured reason: `hero_array_at` ABORTS out of range, so the composition needs
-   a length guard at every call site and an empty array is exactly the shape that
-   trips it. One function, one guard, written once.
+HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status) {
+    if (p == NULL) {
+        *status = HERO_STR_NULL;
+        return hero_str_empty();
+    }
+    if (cap < 0) hero_panic("hero_str_try_from_bytes: negative capacity");
+    const void *zero = memchr(p, 0, (size_t)cap);
+    int64_t len = (zero == NULL) ? cap : (int64_t)((const char *)zero - p);
+    return hero_str_try_from_run(p, len, false, status);
+}
+
+/* **Over a `[u8]` this language owns, the WHOLE array** (panel 162; defect
+   354, 2026-10-05). It exists rather than the emitter composing
+   `hero_array_at` with a reader of bytes, for one measured reason:
+   `hero_array_at` ABORTS out of range, so the composition needs a length guard
+   at every call site and an empty array is exactly the shape that trips it.
+   One function, one guard, written once.
+
+   **It does not stop at a zero, where the field's reader above does.** A C
+   field is C's, and C need not terminate it, so what follows its first zero
+   is not text. A `[u8]` is the program's own data, every byte of it put there
+   on purpose, and under panel 192's R1 a `str` holds a NUL: until defect 354,
+   `[97, 0, 98]` answered a `str` of one byte at exit 0, and a byte that is not
+   text after the zero was never judged. So every byte is judged and copied,
+   and a zero among them marks the block, so the lend stops it.
 
    The element width is not checked here and that is the checker's job, not
    this one's: `check/lending.hero`'s `byte_run` asks the VALUE's element width
@@ -408,7 +455,7 @@ HeroStr hero_str_try_from_array(const HeroArrayHeader *a, int64_t *status) {
         *status = HERO_STR_OK;
         return hero_str_empty();
     }
-    return hero_str_try_from_bytes((const char *)hero_array_at(a, 0), n, status);
+    return hero_str_try_from_run((const char *)hero_array_at(a, 0), n, true, status);
 }
 
 /* **A `cstr` on its way INTO C, checked** (panel 053; CLAUDE.md §12's robustness
@@ -436,6 +483,40 @@ const char *hero_str_cstr(HeroStr s) {
     return s.ptr; /* the NUL is already there: §4.20's zero-copy .cstr() */
 }
 
+/* **The lend a program writes, `.cstr()`** (panel 192's R1, defect 245). The
+ * same zero-copy pointer `hero_str_cstr` above answers, refused where the
+ * str's block says it holds a NUL: C would read a shorter string than the
+ * program holds, and a path cut at its NUL names ANOTHER file (the
+ * ffi-pragmatist's probes: on the base, 19 of 29 doors changed, made, read or
+ * ran what the program never named). An abort, as for a null `cstr`
+ * (`hero_cstr_nonnull`) and for `hero_run_arg`'s word: the door is a binding,
+ * and a value C cannot be handed is named rather than handed over cut. The
+ * two doors whose types promise a failure, `read_file` and `write_file`, take
+ * the `str` itself and answer one (`hero_file_read_str`, `parts/os.c`).
+ *
+ * `hero_str_cstr` stays the runtime's own lend: its callers pass the length
+ * beside the pointer (`hero_file_write`, the replace doors), so a NUL is data
+ * there and refusing it would make `write_file` fail a correct program.
+ *
+ * The byte is found only on the way to the abort, for the message; its index
+ * is the one `s[i]` reads. */
+static _Noreturn void hero_str_refuse_nul(HeroStr s, const char *what) {
+    const char *zero = memchr(s.ptr, 0, (size_t)s.len);
+    char message[320];
+    snprintf(message, sizeof message,
+             "%s a str holding a NUL byte, at index %lld of its %lld bytes: C reads a "
+             "string only to its first NUL, so it would read a shorter string than the "
+             "program holds",
+             what, (long long)(zero == NULL ? -1 : zero - s.ptr), (long long)s.len);
+    hero_panic(message);
+}
+
+const char *hero_str_lend(HeroStr s) {
+    hero_str_require(s);
+    if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.cstr()` lends to C");
+    return s.ptr;
+}
+
 /* -- the held buffer: §4.19's fourth case, panel 124 -------------------------
  *
  * `s.lease()` answers a COPY of the bytes that the program owns and frees, so C
@@ -452,6 +533,7 @@ const char *hero_str_cstr(HeroStr s) {
  * class and panel 124 R3 refuses it before it can be written. */
 const char *hero_str_held(HeroStr s) {
     hero_str_require(s);
+    if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.lease()` copies for C");
     HeroHeldHeader *h = hero_alloc_held(sizeof(HeroHeldHeader) + (size_t)s.len + 1);
     h->magic = HERO_HELD_MAGIC;
     h->len = s.len;

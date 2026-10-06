@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -45,7 +47,7 @@ HERO_STR_STATIC(hero_str_1b7183, "hi ");
 HERO_STR_STATIC(hero_str_2d678ad8, "good day ");
 HERO_STR_STATIC(hero_str_39ff1ae6, "Ziggy");
 
-#line 49 "strings.c"
+#line 51 "strings.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -66,19 +68,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "strings.c"
+#line 84 "strings.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +97,7 @@ void h_strings_main(void);
 
 #line 7 "tests/golden/emit/strings.hero"
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
-#line 99 "strings.c"
+#line 101 "strings.c"
     HeroStr h2_prefix = {0};
     HeroStr h3_own3 = {0};
     HeroStr t1;
@@ -113,11 +115,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183);
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
-#line 117 "strings.c"
+#line 119 "strings.c"
     hero_str_incref(t1);
 #line 8 "tests/golden/emit/strings.hero"
     h2_prefix = t1;
-#line 121 "strings.c"
+#line 123 "strings.c"
     hero_str_decref(t7);
 #line 10 "tests/golden/emit/strings.hero"
     t2 = h1_formal;
@@ -135,16 +137,16 @@ bb1:
     t8 = h3_own3;
 #line 12 "tests/golden/emit/strings.hero"
     h3_own3 = t6;
-#line 139 "strings.c"
+#line 141 "strings.c"
     hero_str_decref(t8);
 #line 12 "tests/golden/emit/strings.hero"
-#line 142 "strings.c"
+#line 144 "strings.c"
     hero_str_incref(t6);
 #line 12 "tests/golden/emit/strings.hero"
-#line 145 "strings.c"
+#line 147 "strings.c"
     hero_str_decref(h2_prefix);
 #line 12 "tests/golden/emit/strings.hero"
-#line 148 "strings.c"
+#line 150 "strings.c"
     hero_str_decref(h3_own3);
     return t6;
 bb2:
@@ -152,11 +154,11 @@ bb2:
     t3 = HERO_STR_LIT(hero_str_2d678ad8);
 #line 11 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
-#line 156 "strings.c"
+#line 158 "strings.c"
     hero_str_incref(t3);
 #line 11 "tests/golden/emit/strings.hero"
     h2_prefix = t3;
-#line 160 "strings.c"
+#line 162 "strings.c"
     hero_str_decref(t9);
     goto bb1;
 bb3:
@@ -165,7 +167,7 @@ bb3:
 
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
-#line 169 "strings.c"
+#line 171 "strings.c"
     HeroStr h0_own0 = {0};
     HeroStr t1;
     bool t2;
@@ -183,13 +185,13 @@ bb0:
     t4 = h0_own0;
 #line 15 "tests/golden/emit/strings.hero"
     h0_own0 = t3;
-#line 187 "strings.c"
+#line 189 "strings.c"
     hero_str_decref(t4);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_str(t3);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_end();
-#line 193 "strings.c"
+#line 195 "strings.c"
     hero_str_decref(h0_own0);
     return;
 }

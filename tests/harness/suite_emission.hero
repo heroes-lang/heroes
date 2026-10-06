@@ -144,8 +144,13 @@ constant ENTRIES: [str]
 # emit 7 · fixedbugs 38 · ir 23 · run 203, and 55 example programs: the seven
 # cases of the checker's half, the seventeen of the runtime's and the eight of
 # defect 097, counted in one tree.
+#
+# **408 on 2026-10-05**, printed by this suite at defect 245's repair (panel
+# 192's R1), whose thirteen `run/fixedbugs-245-*` cases took the count more
+# than 25% past 326: emit 7 · fixedbugs 38 · ir 25 · run 283, and 55 example
+# programs, by the commands above. The slack had reached 69 in ten days.
 constant LEAST: i64
-    326
+    408
 
 # One program and the bytes it was blessed to emit.
 record Program

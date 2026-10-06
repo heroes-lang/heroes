@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -41,7 +43,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 47 "fixedbugs170variantsandoptions100deepbuild.c"
 typedef enum h_fixedbugs170variantsandoptions100deepbuild_R0_tag {
     h_fixedbugs170variantsandoptions100deepbuild_R0_tag_a = 0,
     h_fixedbugs170variantsandoptions100deepbuild_R0_tag_b = 1,
@@ -2217,19 +2219,19 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2233 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 2235 "fixedbugs170variantsandoptions100deepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs170variantsandoptions100deepbuild_R0_c_a_eq(const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *a, const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *b);
@@ -5058,7 +5060,7 @@ void h_fixedbugs170variantsandoptions100deepbuild_main(void);
 
 #line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
 void h_fixedbugs170variantsandoptions100deepbuild_main(void) {
-#line 5062 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5064 "fixedbugs170variantsandoptions100deepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -5077,15 +5079,15 @@ bb0:
     t7 = h1_own1;
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h1_own1 = t1;
-#line 5081 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5083 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t7);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t8 = h0_xs;
-#line 5085 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5087 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_incref(t1);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h0_xs = t1;
-#line 5089 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5091 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t8);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t2 = h0_xs;
@@ -5105,10 +5107,10 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5109 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5111 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(h0_xs);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
-#line 5112 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5114 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(h1_own1);
     return;
 }

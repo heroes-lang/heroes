@@ -313,7 +313,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
                     if !target.is_err()
                         writer.line(
                             @w,
-                            text: "    " + target.must() + " = hero_str_cstr(" + mangle.value(ca.operand) + ");"
+                            text: "    " + target.must() + " = hero_str_lend(" + mangle.value(ca.operand) + ");"
                         )
                 # The bytes are the program's now; the cast says so to C.
 

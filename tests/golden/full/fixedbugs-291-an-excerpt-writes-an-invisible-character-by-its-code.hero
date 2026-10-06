@@ -1,0 +1,13 @@
+# Defect 291, 2026-10-05: an excerpt wrote a character a terminal shows as
+# nothing as itself, so a no-break space, a zero-width space or a byte order
+# mark on the line a message quoted showed the reader nothing to find, where
+# defect 244 wrote a control character by its code. Each is written by its
+# code now, `<U+00A0>`, in the excerpt and wherever a message quotes it, the
+# caret padded by that width; a visible character above ASCII is shown as
+# itself. Each line is a type error a string's text stands on.
+
+function main()
+    a: i64 @ "a b​c"  #~ type_mismatch
+    b: i64 @ "﻿d"  #~ type_mismatch
+    c: i64 @ "café €"  #~ type_mismatch
+    print(a + b + c)

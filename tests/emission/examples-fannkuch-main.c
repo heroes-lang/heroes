@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -44,7 +46,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_515417d6, "Pfannkuchen(");
 HERO_STR_STATIC(hero_str_586ee4a, ") = ");
 
-#line 48 "main.c"
+#line 50 "main.c"
 typedef struct h_main_Fannkuch {
     int64_t f_checksum;
     int64_t f_max_flips;
@@ -86,19 +88,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "main.c"
+#line 104 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Fannkuch_eq(const h_main_Fannkuch *a, const h_main_Fannkuch *b);
@@ -131,7 +133,7 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers);
 
 #line 73 "examples/fannkuch/main.hero"
 int64_t h_main_flips(HeroArrayHeader * h0_order) {
-#line 135 "main.c"
+#line 137 "main.c"
     HeroArrayHeader * h1_work = {0};
     int64_t h2_done;
     int64_t h3_low;
@@ -177,11 +179,11 @@ bb0:
     t1 = h0_order;
 #line 74 "examples/fannkuch/main.hero"
     t34 = h1_work;
-#line 181 "main.c"
+#line 183 "main.c"
     hero_array_incref(t1);
 #line 74 "examples/fannkuch/main.hero"
     h1_work = t1;
-#line 185 "main.c"
+#line 187 "main.c"
     hero_array_decref(t34);
 #line 75 "examples/fannkuch/main.hero"
     t2 = INT64_C(0);
@@ -223,7 +225,7 @@ bb2:
 bb3:
 #line 90 "examples/fannkuch/main.hero"
     t33 = h2_done;
-#line 227 "main.c"
+#line 229 "main.c"
     hero_array_decref(h1_work);
     return t33;
 bb4:
@@ -291,12 +293,12 @@ bb6:
     h2_done = t32;
 #line 88 "examples/fannkuch/main.hero"
     goto bb1;
-#line 295 "main.c"
+#line 297 "main.c"
 }
 
 #line 94 "examples/fannkuch/main.hero"
 h_main_Walk h_main_start(int64_t h0_n) {
-#line 300 "main.c"
+#line 302 "main.c"
     HeroArrayHeader * h1_order = {0};
     HeroArrayHeader * h2_left = {0};
     int64_t h3_i;
@@ -332,15 +334,15 @@ bb0:
     t21 = h4_own4;
 #line 95 "examples/fannkuch/main.hero"
     h4_own4 = t1;
-#line 336 "main.c"
+#line 338 "main.c"
     hero_array_decref(t21);
 #line 95 "examples/fannkuch/main.hero"
     t22 = h1_order;
-#line 340 "main.c"
+#line 342 "main.c"
     hero_array_incref(t1);
 #line 95 "examples/fannkuch/main.hero"
     h1_order = t1;
-#line 344 "main.c"
+#line 346 "main.c"
     hero_array_decref(t22);
 #line 96 "examples/fannkuch/main.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
@@ -348,15 +350,15 @@ bb0:
     t23 = h5_own5;
 #line 96 "examples/fannkuch/main.hero"
     h5_own5 = t2;
-#line 352 "main.c"
+#line 354 "main.c"
     hero_array_decref(t23);
 #line 96 "examples/fannkuch/main.hero"
     t24 = h2_left;
-#line 356 "main.c"
+#line 358 "main.c"
     hero_array_incref(t2);
 #line 96 "examples/fannkuch/main.hero"
     h2_left = t2;
-#line 360 "main.c"
+#line 362 "main.c"
     hero_array_decref(t24);
 #line 97 "examples/fannkuch/main.hero"
     t3 = INT64_C(0);
@@ -404,10 +406,10 @@ bb3:
     t18 = h0_n;
 #line 104 "examples/fannkuch/main.hero"
     t19 = false;
-#line 408 "main.c"
+#line 410 "main.c"
     hero_array_incref(t16);
 #line 104 "examples/fannkuch/main.hero"
-#line 411 "main.c"
+#line 413 "main.c"
     hero_array_incref(t17);
 #line 104 "examples/fannkuch/main.hero"
     t20 = (h_main_Walk){.f_order = t16, .f_left = t17, .f_at = t18, .f_ended = t19};
@@ -415,32 +417,32 @@ bb3:
     t25 = h6_own6;
 #line 104 "examples/fannkuch/main.hero"
     h6_own6 = t20;
-#line 419 "main.c"
+#line 421 "main.c"
     h_main_Walk_release(&t25);
 #line 104 "examples/fannkuch/main.hero"
-#line 422 "main.c"
+#line 424 "main.c"
     h_main_Walk_retain(&t20);
 #line 104 "examples/fannkuch/main.hero"
-#line 425 "main.c"
+#line 427 "main.c"
     hero_array_decref(h1_order);
 #line 104 "examples/fannkuch/main.hero"
-#line 428 "main.c"
+#line 430 "main.c"
     hero_array_decref(h2_left);
 #line 104 "examples/fannkuch/main.hero"
-#line 431 "main.c"
+#line 433 "main.c"
     hero_array_decref(h4_own4);
 #line 104 "examples/fannkuch/main.hero"
-#line 434 "main.c"
+#line 436 "main.c"
     hero_array_decref(h5_own5);
 #line 104 "examples/fannkuch/main.hero"
-#line 437 "main.c"
+#line 439 "main.c"
     h_main_Walk_release(&h6_own6);
     return t20;
 }
 
 #line 109 "examples/fannkuch/main.hero"
 void h_main_reset(h_main_Walk *ph0_w) {
-#line 444 "main.c"
+#line 446 "main.c"
     h_main_Walk h0_w;
     h_main_Walk t1;
     int64_t t2;
@@ -501,14 +503,14 @@ bb2:
     goto bb1;
 #line 112 "examples/fannkuch/main.hero"
 bb3:
-#line 505 "main.c"
+#line 507 "main.c"
     *ph0_w = h0_w;
     return;
 }
 
 #line 118 "examples/fannkuch/main.hero"
 void h_main_advance(h_main_Walk *ph0_w) {
-#line 512 "main.c"
+#line 514 "main.c"
     h_main_Walk h0_w;
     int64_t h1_head;
     int64_t h2_i;
@@ -731,14 +733,14 @@ bb12:
     goto bb10;
 #line 135 "examples/fannkuch/main.hero"
 bb13:
-#line 735 "main.c"
+#line 737 "main.c"
     *ph0_w = h0_w;
     return;
 }
 
 #line 140 "examples/fannkuch/main.hero"
 h_main_Fannkuch h_main_fannkuch(int64_t h0_n) {
-#line 742 "main.c"
+#line 744 "main.c"
     h_main_Walk h1_w = {0};
     int64_t h2_checksum;
     int64_t h3_max_flips;
@@ -790,15 +792,15 @@ bb0:
     t34 = h6_own6;
 #line 141 "examples/fannkuch/main.hero"
     h6_own6 = t2;
-#line 794 "main.c"
+#line 796 "main.c"
     h_main_Walk_release(&t34);
 #line 141 "examples/fannkuch/main.hero"
     t35 = h1_w;
-#line 798 "main.c"
+#line 800 "main.c"
     h_main_Walk_retain(&t2);
 #line 141 "examples/fannkuch/main.hero"
     h1_w = t2;
-#line 802 "main.c"
+#line 804 "main.c"
     h_main_Walk_release(&t35);
 #line 142 "examples/fannkuch/main.hero"
     t3 = INT64_C(0);
@@ -854,10 +856,10 @@ bb3:
     t32 = h4_visited;
 #line 160 "examples/fannkuch/main.hero"
     t33 = (h_main_Fannkuch){.f_checksum = t30, .f_max_flips = t31, .f_visited = t32};
-#line 858 "main.c"
+#line 860 "main.c"
     h_main_Walk_release(&h1_w);
 #line 160 "examples/fannkuch/main.hero"
-#line 861 "main.c"
+#line 863 "main.c"
     h_main_Walk_release(&h6_own6);
     return t33;
 bb4:
@@ -927,12 +929,12 @@ bb9:
     h2_checksum = t26;
 #line 156 "examples/fannkuch/main.hero"
     goto bb7;
-#line 931 "main.c"
+#line 933 "main.c"
 }
 
 #line 163 "examples/fannkuch/main.hero"
 int64_t h_main_factorial(int64_t h0_n) {
-#line 936 "main.c"
+#line 938 "main.c"
     int64_t h1_out;
     int64_t h2_i;
     int64_t t1;
@@ -995,12 +997,12 @@ bb3:
     t12 = h1_out;
 #line 171 "examples/fannkuch/main.hero"
     return t12;
-#line 999 "main.c"
+#line 1001 "main.c"
 }
 
 #line 175 "examples/fannkuch/main.hero"
 void h_main_main(void) {
-#line 1004 "main.c"
+#line 1006 "main.c"
     int64_t h0_n;
     h_main_Fannkuch h1_said;
     int64_t t1;
@@ -1055,12 +1057,12 @@ bb0:
     hero_print_end();
 #line 179 "examples/fannkuch/main.hero"
     return;
-#line 1059 "main.c"
+#line 1061 "main.c"
 }
 
 #line 267 "examples/fannkuch/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) {
-#line 1064 "main.c"
+#line 1066 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -1095,25 +1097,25 @@ bb0:
     t19 = h5_own5;
 #line 268 "examples/fannkuch/main.hero"
     h5_own5 = t1;
-#line 1099 "main.c"
+#line 1101 "main.c"
     hero_array_decref(t19);
 #line 268 "examples/fannkuch/main.hero"
     t20 = h1_out;
-#line 1103 "main.c"
+#line 1105 "main.c"
     hero_array_incref(t1);
 #line 268 "examples/fannkuch/main.hero"
     h1_out = t1;
-#line 1107 "main.c"
+#line 1109 "main.c"
     hero_array_decref(t20);
 #line 270 "examples/fannkuch/main.hero"
     t2 = h0_numbers;
 #line 270 "examples/fannkuch/main.hero"
     t21 = h2_xs0;
-#line 1113 "main.c"
+#line 1115 "main.c"
     hero_array_incref(t2);
 #line 270 "examples/fannkuch/main.hero"
     h2_xs0 = t2;
-#line 1117 "main.c"
+#line 1119 "main.c"
     hero_array_decref(t21);
 #line 270 "examples/fannkuch/main.hero"
     t3 = INT64_C(0);
@@ -1151,7 +1153,7 @@ bb2:
     t22 = h6_own6;
 #line 271 "examples/fannkuch/main.hero"
     h6_own6 = t13;
-#line 1155 "main.c"
+#line 1157 "main.c"
     hero_str_decref(t22);
 #line 271 "examples/fannkuch/main.hero"
     hero_array_push_owned(&h1_out, &t13);
@@ -1173,19 +1175,19 @@ bb3:
 bb4:
 #line 273 "examples/fannkuch/main.hero"
     t18 = h1_out;
-#line 1177 "main.c"
+#line 1179 "main.c"
     hero_array_incref(t18);
 #line 273 "examples/fannkuch/main.hero"
-#line 1180 "main.c"
+#line 1182 "main.c"
     hero_array_decref(h1_out);
 #line 273 "examples/fannkuch/main.hero"
-#line 1183 "main.c"
+#line 1185 "main.c"
     hero_array_decref(h2_xs0);
 #line 273 "examples/fannkuch/main.hero"
-#line 1186 "main.c"
+#line 1188 "main.c"
     hero_array_decref(h5_own5);
 #line 273 "examples/fannkuch/main.hero"
-#line 1189 "main.c"
+#line 1191 "main.c"
     hero_str_decref(h6_own6);
     return t18;
 }

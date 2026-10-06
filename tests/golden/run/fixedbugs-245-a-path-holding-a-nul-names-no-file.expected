@@ -1,0 +1,4 @@
+the path holds 36 bytes
+read: read_failed: could not read a path holding a NUL byte, which names no file
+write: write_failed: could not write a path holding a NUL byte, which names no file
+the victim holds: the victim's text

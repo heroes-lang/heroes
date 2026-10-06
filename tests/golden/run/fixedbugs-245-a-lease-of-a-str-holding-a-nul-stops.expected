@@ -1,0 +1,2 @@
+the program holds 3 bytes
+!panic: `.lease()` copies for C a str holding a NUL byte, at index 1 of its 3 bytes

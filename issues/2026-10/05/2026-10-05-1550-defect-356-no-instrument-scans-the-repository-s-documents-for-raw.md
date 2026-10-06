@@ -3,7 +3,7 @@ kind: defect
 area: records
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: fe3f788e4404b724d879a5e3d50d7e93a26ce3fd
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 192's historian and critic, 2026-10-05; filed by the synthesis's R12.
 
     **Class: improvement**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): hardening of the records; no program is wrong for it.
+
+    Repaired at `fe3f788e`, 2026-10-05, gated by its suite, the records suite and the net's own tests; the full net is owed at the batch's close. The suite is `unseen`, a name `.claude/rules/verification.md`'s map does not hold yet.

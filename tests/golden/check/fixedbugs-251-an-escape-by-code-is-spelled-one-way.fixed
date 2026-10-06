@@ -1,0 +1,27 @@
+# Defect 251, panel 192's R5, 2026-10-05: the escape by code has one
+# spelling, lowercase hexadecimal with no leading zero, so ESC is `\u{1b}`
+# and nothing else. As the compiler-engineer built it, ESC checked in ten
+# spellings, two cases and five digit counts, and `fmt` kept each as written
+# (the critic's run): ten spellings of one character, which design.md §4.15
+# refuses. Each other spelling is refused, `escape_spelling`, with a
+# `certain` fix to the one, which writes the same character; seven digits
+# are a spelling too.
+
+function upper()
+    print("\u{1b}[0m")  #~ escape_spelling
+
+function leading_zeros()
+    print("\u{1b}\u{1b}\u{1b}")  #~ escape_spelling escape_spelling escape_spelling
+
+function more_than_six_digits()
+    print("\u{1b}")  #~ escape_spelling
+
+function an_override_in_capitals()
+    print("a\u{202e}b")  #~ escape_spelling
+
+function in_an_f_literal()
+    x = 1
+    print(f"\u{1b}[{x}m")  #~ escape_spelling
+
+function the_one_spelling()
+    print("\u{1b}[0m\u{202e}\u{7f}")

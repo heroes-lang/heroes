@@ -1,0 +1,24 @@
+# Defect 251, panel 192's R5, 2026-10-05: an escape another language writes
+# ESC with is not an escape here, and `unknown_escape` points it at the one
+# that is, `\u{1b}`, where it said a string has no escape by code and so sent
+# the writer to a raw byte, the trap the refusal now closes. Its fix stays a
+# `guess`: `"bin\x86"` is a Windows path as often as a C1 control. A tab by
+# its code points at `\t`, a guess for the same reason.
+
+function c_and_python()
+    print("\x1b[0m")  #~ unknown_escape
+
+function octal()
+    print("\033[0m")  #~ unknown_escape
+
+function gcc_and_the_shell()
+    print("\e[0m")  #~ unknown_escape
+
+function four_digits()
+    print("\u001b[0m")  #~ unknown_escape
+
+function a_tab_by_its_code()
+    print("a\x09b")  #~ unknown_escape
+
+function a_path()
+    print("bin\x86")  #~ unknown_escape

@@ -1,0 +1,117 @@
+# The characters a line of source cannot show as themselves (panel 192's R2;
+# defects 251 and 283), and the one spelling a string writes each of them in.
+#
+# Three Unicode properties, each a fact about the code point and none a
+# judgement about which text needs what (`shown_char.unshowable`): a control
+# character (General Category Cc: C0 but the tab and the line feed, DEL, C1),
+# which no screen shows and a terminal acts on; one of the twelve
+# bidirectional controls (Bidi_Control), which reorder how the line around
+# them is shown, Trojan Source's shape; and the line and paragraph separators
+# U+2028 and U+2029, where an editor may break the line.
+#
+# The rest of Unicode's Default_Ignorable_Code_Point is not among them: it
+# holds what text spells with, the joiners of Persian, Indic and emoji text
+# (U+200C, U+200D), the variation selectors (`❤️` is U+2764 U+FE0F) and the
+# tags of a subdivision's flag. A group head's name refuses them all
+# (`head_names`, panel 188), since no name holds one.
+#
+# A string writes one of these characters by its code, `\u{1b}`
+# (`code_escape`, panel 192's R5), lowercase hexadecimal with no leading zero,
+# its one spelling; a NUL by no escape at all, and a carriage return by its
+# own, `\r`.
+
+use token
+use diag
+use state
+use escape
+use shown_char
+
+## The characters
+
+# The class by its name, as a message says it: what `\u{…}` writes and,
+# since panel 192's R2, what a string refuses written as itself.
+constant CLASS: str
+    "a control character, a bidirectional control, U+2028 or U+2029"
+
+# Whether `code` is a control character, which no screen shows and a terminal
+# acts on, rather than one that changes how its line is shown.
+function control(code: i64) -> bool
+    return code < 32 || code >= 127 && code < 160
+
+# Whether `\u{…}` writes `code` in a string: a character a line cannot show,
+# but the NUL, which no escape writes, and the carriage return, which `\r`
+# writes.
+function written_by_code(code: i64) -> bool
+    return shown_char.unshowable(code) && code != 0 && code != 13
+
+## The spelling
+
+# `\u{1b}`: the escape that writes `code`, its digits in lowercase hexadecimal
+# and none of them a leading zero, the one spelling `code_escape` accepts.
+function escaped(code: i64) -> str
+    return "\\u{" + lower_hex(code) + "}"
+
+function lower_hex(code: i64) -> str
+    digits = "0123456789abcdef"
+    out: [str] @ []
+    shift: i64 @ 20
+
+    while shift >= 0
+        d = code >> shift & 15
+
+        if out.len() > 0 || d > 0 || shift == 0
+            out @ out.push(digits.slice(from: d, to: d + 1))
+        shift @ shift - 4
+
+    return out.join("")
+
+## The raw carriage return, moved here from `literals` (panel 192)
+
+# A raw carriage return inside a literal — refused, with `\r` as the repair
+# (panel 066, the coherence condition).
+#
+# The escape is what makes this diagnostic possible: before it, byte 13 had NO
+# spelling, so refusing the raw byte would have left the character unwritable.
+# Now there is exactly one spelling, and the second — invisible — one is what
+# §4.15 forbids everywhere else in the language.
+#
+# Measured on the compiler before this landed: a raw CR pasted mid-literal
+# compiled at exit 0, survived `heroes fmt` byte-for-byte, and rendered
+# identically to the same literal without it, so retyping what the screen shows
+# changed the program's bytes and still compiled.
+function raw_carriage_return(@l: state.LexState, at: i64, ctx: escape.Quoted)
+    span = token.Span(start: at, end: at + 1)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "raw_carriage_return",
+        message: "a carriage return written as itself inside " + escape.ctx_word(ctx) + " — it is invisible on screen, so the next reader deletes it by retyping the line",
+        span: span
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "write it as `\\r`", replacement: "\\r", span: span, certainty: .certain))
+    state.push_diagnostic(@l.diagnostics, d)
+
+## Tests
+
+test "the three properties, and what text spells with left alone"
+    for code in [0, 1, 27, 127, 128, 133, 159, 1564, 8206, 8207, 8234, 8238, 8294, 8297, 8232, 8233]
+        assert shown_char.unshowable(code)
+
+    # The tab and the line feed, a visible character, a no-break space, and
+    # the joiners, a variation selector and a tag, which text spells with.
+    for code in [9, 10, 32, 65, 126, 160, 233, 8203, 8204, 8205, 65039, 917601, 12288]
+        assert !shown_char.unshowable(code)
+
+    assert written_by_code(27)
+    assert written_by_code(8238)
+    assert !written_by_code(0)
+    assert !written_by_code(13)
+    assert !written_by_code(10)
+    assert !written_by_code(9)
+    assert control(27)
+    assert !control(8238)
+
+test "a refused character's one spelling"
+    assert escaped(27) == "\\u{1b}"
+    assert escaped(8238) == "\\u{202e}"
+    assert escaped(1) == "\\u{1}"
+    assert escaped(127) == "\\u{7f}"
+    assert escaped(1114111) == "\\u{10ffff}"

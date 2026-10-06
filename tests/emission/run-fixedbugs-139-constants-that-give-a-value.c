@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -41,7 +43,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "fixedbugs139constantsthatgiveavalue.c"
+#line 47 "fixedbugs139constantsthatgiveavalue.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -62,19 +64,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 78 "fixedbugs139constantsthatgiveavalue.c"
+#line 80 "fixedbugs139constantsthatgiveavalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,7 +95,7 @@ void h_fixedbugs139constantsthatgiveavalue_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_MATCH(void) {
-#line 97 "fixedbugs139constantsthatgiveavalue.c"
+#line 99 "fixedbugs139constantsthatgiveavalue.c"
     int64_t h0_s0;
     int64_t h1_r0;
     int64_t t1;
@@ -143,12 +145,12 @@ bb4:
     h1_r0 = t6;
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 147 "fixedbugs139constantsthatgiveavalue.c"
+#line 149 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_IF(void) {
-#line 152 "fixedbugs139constantsthatgiveavalue.c"
+#line 154 "fixedbugs139constantsthatgiveavalue.c"
     int64_t h0_r0;
     bool t1;
     int64_t t2;
@@ -182,12 +184,12 @@ bb3:
     h0_r0 = t3;
 #line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 186 "fixedbugs139constantsthatgiveavalue.c"
+#line 188 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH(void) {
-#line 191 "fixedbugs139constantsthatgiveavalue.c"
+#line 193 "fixedbugs139constantsthatgiveavalue.c"
     int64_t h0_s0;
     int64_t t1;
     int64_t t2;
@@ -226,12 +228,12 @@ bb3:
 bb4:
 #line 23 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 230 "fixedbugs139constantsthatgiveavalue.c"
+#line 232 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 void h_fixedbugs139constantsthatgiveavalue_main(void) {
-#line 235 "fixedbugs139constantsthatgiveavalue.c"
+#line 237 "fixedbugs139constantsthatgiveavalue.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -257,7 +259,7 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     return;
-#line 261 "fixedbugs139constantsthatgiveavalue.c"
+#line 263 "fixedbugs139constantsthatgiveavalue.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

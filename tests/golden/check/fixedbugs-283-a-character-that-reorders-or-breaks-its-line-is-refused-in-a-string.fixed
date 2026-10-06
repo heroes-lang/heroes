@@ -1,0 +1,28 @@
+# Defect 283, panel 192's R2, 2026-10-05. A bidirectional control, U+2028 or
+# U+2029 written as itself inside a string compiled at exit 0, so a line
+# could show one order and mean another: a right-to-left override reverses
+# the code after its string as a screen draws the line, Trojan Source's
+# shape, and two right-to-left marks around `>` draw `a > b` as `a < b`
+# (GNU FriBidi, the sitting's run). Each of the twelve Bidi_Control and the
+# two separators is refused now, `invisible_character`, its `certain` fix
+# writing it by its code; in the text of an `f` literal too.
+
+function stretched(name: str, is_admin: bool) -> bool
+    return name == "user\u{202e} " || is_admin  #~ invisible_character
+
+function marks()
+    print("a \u{200f}>\u{200f} b")  #~ invisible_character invisible_character
+    print("x\u{200e}y\u{61c}")  #~ invisible_character invisible_character
+
+function embeddings_and_isolates()
+    print("\u{202a}a\u{202c} \u{2066}b\u{2069}")  #~ invisible_character invisible_character invisible_character invisible_character
+
+function a_run()
+    print("a\u{202e}\u{202c}b")  #~ invisible_character
+
+function separators()
+    print("one\u{2028}two\u{2029}three")  #~ invisible_character invisible_character
+
+function in_an_f_literal()
+    x = 1
+    print(f"\u{202e}{x}")  #~ invisible_character

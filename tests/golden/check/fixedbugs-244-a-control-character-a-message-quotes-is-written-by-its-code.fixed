@@ -7,6 +7,11 @@
 # tab is written by its code now, `<U+001B>`, in both forms, the caret padded
 # under it by that width. The string below holds a backslash before an ESC
 # byte, which `unknown_escape` quotes; this file holds that byte on purpose.
+#
+# Corrected 2026-10-05, defect 251 (panel 192's R2): the ESC is refused now
+# where it stands, once the backslash before it is written `\\`, so `check
+# --apply` writes it by its code, `\u{1b}`, after that fix, and the fixed
+# program prints the bytes this one meant.
 
 function main()
-    print("a\\b")  #~ unknown_escape
+    print("a\\\u{1b}b")  #~ unknown_escape

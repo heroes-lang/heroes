@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -44,7 +46,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_0, "");
 
-#line 48 "adversarialstrselfassign.c"
+#line 50 "adversarialstrselfassign.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -65,19 +67,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "adversarialstrselfassign.c"
+#line 83 "adversarialstrselfassign.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,7 +95,7 @@ void h_adversarialstrselfassign_main(void);
 
 #line 12 "tests/golden/run/adversarial-str-self-assign.hero"
 void h_adversarialstrselfassign_main(void) {
-#line 97 "adversarialstrselfassign.c"
+#line 99 "adversarialstrselfassign.c"
     HeroStr h0_s = {0};
     HeroStr h1_out = {0};
     int64_t h2_i;
@@ -143,21 +145,21 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 13 "tests/golden/run/adversarial-str-self-assign.hero"
     t28 = h0_s;
-#line 147 "adversarialstrselfassign.c"
+#line 149 "adversarialstrselfassign.c"
     hero_str_incref(t1);
 #line 13 "tests/golden/run/adversarial-str-self-assign.hero"
     h0_s = t1;
-#line 151 "adversarialstrselfassign.c"
+#line 153 "adversarialstrselfassign.c"
     hero_str_decref(t28);
 #line 14 "tests/golden/run/adversarial-str-self-assign.hero"
     t2 = h0_s;
 #line 14 "tests/golden/run/adversarial-str-self-assign.hero"
     t29 = h0_s;
-#line 157 "adversarialstrselfassign.c"
+#line 159 "adversarialstrselfassign.c"
     hero_str_incref(t2);
 #line 14 "tests/golden/run/adversarial-str-self-assign.hero"
     h0_s = t2;
-#line 161 "adversarialstrselfassign.c"
+#line 163 "adversarialstrselfassign.c"
     hero_str_decref(t29);
 #line 15 "tests/golden/run/adversarial-str-self-assign.hero"
     t3 = h0_s;
@@ -175,15 +177,15 @@ bb0:
     t30 = h3_own3;
 #line 16 "tests/golden/run/adversarial-str-self-assign.hero"
     h3_own3 = t6;
-#line 179 "adversarialstrselfassign.c"
+#line 181 "adversarialstrselfassign.c"
     hero_str_decref(t30);
 #line 16 "tests/golden/run/adversarial-str-self-assign.hero"
     t31 = h0_s;
-#line 183 "adversarialstrselfassign.c"
+#line 185 "adversarialstrselfassign.c"
     hero_str_incref(t6);
 #line 16 "tests/golden/run/adversarial-str-self-assign.hero"
     h0_s = t6;
-#line 187 "adversarialstrselfassign.c"
+#line 189 "adversarialstrselfassign.c"
     hero_str_decref(t31);
 #line 17 "tests/golden/run/adversarial-str-self-assign.hero"
     t7 = h0_s;
@@ -195,11 +197,11 @@ bb0:
     t8 = HERO_STR_LIT(hero_str_0);
 #line 18 "tests/golden/run/adversarial-str-self-assign.hero"
     t32 = h1_out;
-#line 199 "adversarialstrselfassign.c"
+#line 201 "adversarialstrselfassign.c"
     hero_str_incref(t8);
 #line 18 "tests/golden/run/adversarial-str-self-assign.hero"
     h1_out = t8;
-#line 203 "adversarialstrselfassign.c"
+#line 205 "adversarialstrselfassign.c"
     hero_str_decref(t32);
 #line 19 "tests/golden/run/adversarial-str-self-assign.hero"
     t9 = INT64_C(0);
@@ -237,7 +239,7 @@ bb2:
     t33 = h4_own4;
 #line 22 "tests/golden/run/adversarial-str-self-assign.hero"
     h4_own4 = t17;
-#line 241 "adversarialstrselfassign.c"
+#line 243 "adversarialstrselfassign.c"
     hero_str_decref(t33);
 #line 22 "tests/golden/run/adversarial-str-self-assign.hero"
     t18 = hero_str_concat(t13, t17);
@@ -245,15 +247,15 @@ bb2:
     t34 = h5_own5;
 #line 22 "tests/golden/run/adversarial-str-self-assign.hero"
     h5_own5 = t18;
-#line 249 "adversarialstrselfassign.c"
+#line 251 "adversarialstrselfassign.c"
     hero_str_decref(t34);
 #line 22 "tests/golden/run/adversarial-str-self-assign.hero"
     t35 = h1_out;
-#line 253 "adversarialstrselfassign.c"
+#line 255 "adversarialstrselfassign.c"
     hero_str_incref(t18);
 #line 22 "tests/golden/run/adversarial-str-self-assign.hero"
     h1_out = t18;
-#line 257 "adversarialstrselfassign.c"
+#line 259 "adversarialstrselfassign.c"
     hero_str_decref(t35);
 #line 23 "tests/golden/run/adversarial-str-self-assign.hero"
     t19 = h2_i;
@@ -287,28 +289,28 @@ bb3:
     t36 = h6_own6;
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
     h6_own6 = t27;
-#line 291 "adversarialstrselfassign.c"
+#line 293 "adversarialstrselfassign.c"
     hero_str_decref(t36);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
     hero_print_str(t27);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
     hero_print_end();
-#line 297 "adversarialstrselfassign.c"
+#line 299 "adversarialstrselfassign.c"
     hero_str_decref(h0_s);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-#line 300 "adversarialstrselfassign.c"
+#line 302 "adversarialstrselfassign.c"
     hero_str_decref(h1_out);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-#line 303 "adversarialstrselfassign.c"
+#line 305 "adversarialstrselfassign.c"
     hero_str_decref(h3_own3);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-#line 306 "adversarialstrselfassign.c"
+#line 308 "adversarialstrselfassign.c"
     hero_str_decref(h4_own4);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-#line 309 "adversarialstrselfassign.c"
+#line 311 "adversarialstrselfassign.c"
     hero_str_decref(h5_own5);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-#line 312 "adversarialstrselfassign.c"
+#line 314 "adversarialstrselfassign.c"
     hero_str_decref(h6_own6);
     return;
 }

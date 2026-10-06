@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -46,7 +48,7 @@ HERO_STR_STATIC(hero_str_56e1b672, "blue dot");
 HERO_STR_STATIC(hero_str_77dba954, "red line");
 HERO_STR_STATIC(hero_str_769134a3, "blue line");
 
-#line 50 "nestedmatch.c"
+#line 52 "nestedmatch.c"
 typedef enum h_nestedmatch_Shape_tag {
     h_nestedmatch_Shape_tag_dot = 0,
     h_nestedmatch_Shape_tag_line = 1,
@@ -92,19 +94,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "nestedmatch.c"
+#line 110 "nestedmatch.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b);
@@ -126,7 +128,7 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
 
 #line 21 "tests/golden/ir/nested-match.hero"
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) {
-#line 130 "nestedmatch.c"
+#line 132 "nestedmatch.c"
     h_nestedmatch_Shape h2_s0;
     HeroStr h3_r0 = {0};
     h_nestedmatch_Colour h4_s1;
@@ -179,16 +181,16 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/nested-match.hero"
     t16 = h3_r0;
-#line 183 "nestedmatch.c"
+#line 185 "nestedmatch.c"
     hero_str_incref(t16);
 #line 22 "tests/golden/ir/nested-match.hero"
-#line 186 "nestedmatch.c"
+#line 188 "nestedmatch.c"
     hero_str_decref(h3_r0);
 #line 22 "tests/golden/ir/nested-match.hero"
-#line 189 "nestedmatch.c"
+#line 191 "nestedmatch.c"
     hero_str_decref(h5_r1);
 #line 22 "tests/golden/ir/nested-match.hero"
-#line 192 "nestedmatch.c"
+#line 194 "nestedmatch.c"
     hero_str_decref(h7_r2);
     return t16;
 bb2:
@@ -236,11 +238,11 @@ bb4:
     t9 = h5_r1;
 #line 22 "tests/golden/ir/nested-match.hero"
     t17 = h3_r0;
-#line 240 "nestedmatch.c"
+#line 242 "nestedmatch.c"
     hero_str_incref(t9);
 #line 22 "tests/golden/ir/nested-match.hero"
     h3_r0 = t9;
-#line 244 "nestedmatch.c"
+#line 246 "nestedmatch.c"
     hero_str_decref(t17);
     goto bb1;
 bb5:
@@ -248,11 +250,11 @@ bb5:
     t7 = HERO_STR_LIT(hero_str_127e9def);
 #line 24 "tests/golden/ir/nested-match.hero"
     t18 = h5_r1;
-#line 252 "nestedmatch.c"
+#line 254 "nestedmatch.c"
     hero_str_incref(t7);
 #line 24 "tests/golden/ir/nested-match.hero"
     h5_r1 = t7;
-#line 256 "nestedmatch.c"
+#line 258 "nestedmatch.c"
     hero_str_decref(t18);
     goto bb4;
 bb6:
@@ -260,11 +262,11 @@ bb6:
     t8 = HERO_STR_LIT(hero_str_56e1b672);
 #line 24 "tests/golden/ir/nested-match.hero"
     t19 = h5_r1;
-#line 264 "nestedmatch.c"
+#line 266 "nestedmatch.c"
     hero_str_incref(t8);
 #line 24 "tests/golden/ir/nested-match.hero"
     h5_r1 = t8;
-#line 268 "nestedmatch.c"
+#line 270 "nestedmatch.c"
     hero_str_decref(t19);
     goto bb4;
 bb7:
@@ -272,11 +274,11 @@ bb7:
     t15 = h7_r2;
 #line 22 "tests/golden/ir/nested-match.hero"
     t20 = h3_r0;
-#line 276 "nestedmatch.c"
+#line 278 "nestedmatch.c"
     hero_str_incref(t15);
 #line 22 "tests/golden/ir/nested-match.hero"
     h3_r0 = t15;
-#line 280 "nestedmatch.c"
+#line 282 "nestedmatch.c"
     hero_str_decref(t20);
     goto bb1;
 bb8:
@@ -284,11 +286,11 @@ bb8:
     t13 = HERO_STR_LIT(hero_str_77dba954);
 #line 28 "tests/golden/ir/nested-match.hero"
     t21 = h7_r2;
-#line 288 "nestedmatch.c"
+#line 290 "nestedmatch.c"
     hero_str_incref(t13);
 #line 28 "tests/golden/ir/nested-match.hero"
     h7_r2 = t13;
-#line 292 "nestedmatch.c"
+#line 294 "nestedmatch.c"
     hero_str_decref(t21);
     goto bb7;
 bb9:
@@ -296,11 +298,11 @@ bb9:
     t14 = HERO_STR_LIT(hero_str_769134a3);
 #line 28 "tests/golden/ir/nested-match.hero"
     t22 = h7_r2;
-#line 300 "nestedmatch.c"
+#line 302 "nestedmatch.c"
     hero_str_incref(t14);
 #line 28 "tests/golden/ir/nested-match.hero"
     h7_r2 = t14;
-#line 304 "nestedmatch.c"
+#line 306 "nestedmatch.c"
     hero_str_decref(t22);
     goto bb7;
 }

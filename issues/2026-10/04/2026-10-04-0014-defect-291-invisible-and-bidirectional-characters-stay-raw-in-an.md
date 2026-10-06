@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 8df5f335ac5f52ef8ac0250cbbbc9f994df0c573
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b9-notext, 2026-10-04, reproduced on its compiler (`<scratchpad>/batch9/notext/report.md`, *Found beside* 2).
 
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a true message whose line a terminal shows in another order; the ruling 283 owes decides whether these characters reach an excerpt at all.
+
+    Repaired at `8df5f335`, 2026-10-05, gated by its cases and the compiler's own tests; the net is owed at the batch's close.

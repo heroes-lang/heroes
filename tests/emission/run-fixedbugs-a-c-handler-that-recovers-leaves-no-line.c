@@ -5,7 +5,7 @@
 #include <fixedbugs-a-c-handler-that-recovers-leaves-no-line.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -34,8 +34,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -47,7 +49,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_46d0b2be, "recovered: ");
 
-#line 51 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 53 "fixedbugsachandlerthatrecoversleavesnoline.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -68,19 +70,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 86 "fixedbugsachandlerthatrecoversleavesnoline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +98,7 @@ void h_fixedbugsachandlerthatrecoversleavesnoline_main(void);
 
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) {
-#line 100 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 102 "fixedbugsachandlerthatrecoversleavesnoline.c"
     HeroStr h0_word = {0};
     __attribute__((unused)) const char * h1_held;
     HeroStr h2_own2 = {0};
@@ -123,15 +125,15 @@ bb0:
     t10 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h2_own2 = t3;
-#line 127 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 129 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(t10);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t11 = h0_word;
-#line 131 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 133 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_incref(t3);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h0_word = t3;
-#line 135 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 137 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(t11);
 #line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t4 = h0_word;
@@ -155,10 +157,10 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_held_release(&h1_held);
-#line 159 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 161 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(h0_word);
 #line 30 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-#line 162 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 164 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(h2_own2);
     return;
 }

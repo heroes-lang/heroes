@@ -1,0 +1,11 @@
+# Defect 355, panel 192's R7, 2026-10-05. The runtime wrote a `.must()`'s
+# message to stderr by `%s`, so a message holding ESC `[2J` cleared the
+# screen of whoever read it, and one holding a NUL, which a `str` may hold
+# (panel 192's R1), was cut there. The printer writes each text by its length
+# and each character a line cannot show by its code, `<U+001B>`, the form a
+# diagnostic writes it in.
+
+function main()
+    b: [u8] = [97, 0, 98]
+    r: str? = fail(code: "e", msg: "m \u{1b}[2J here " + b.validated_bytes().must())
+    print(r.must())
