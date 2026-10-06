@@ -104,6 +104,11 @@ record Checked
     # checker's one predicate, and where the checker did not say *leaves*,
     # nothing is sealed and clang still refuses a value read from nothing.
     ends: {i64: bool}
+    # Each construction of a group's record ending with `rest: zero` (panel
+    # 194), keyed by its span END as `instantiations` is, for the reason
+    # written there; `emit/extern_union.hero` reads it, so `build` does not
+    # ask whether the fields it leaves out share a byte with one it names.
+    rested: {i64: bool}
 
 # The type of a local, by its index. The hole report reads it to print
 # what is in scope.
@@ -194,6 +199,7 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     freers: {str: token.Span} = {}
     diagnostics: [diag.Diagnostic] = []
     ends: {i64: bool} = {}
+    rested: {i64: bool} = {}
     out = Checked(
         types: types,
         local_types: local_types,
@@ -206,7 +212,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         counted: counted,
         freers: freers,
         diagnostics: diagnostics,
-        ends: ends
+        ends: ends,
+        rested: rested
     )
     locals_by_span: {i64: i64} @ {}
     k: i64 @ 0

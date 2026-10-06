@@ -77,10 +77,11 @@ record Used
     sites: [Site]
 
 # One construction: the record, the declared indices of the fields it
-# names in the order written, and where it was written.
+# names in the order written, `rest: zero` at its end (panel 194), and where.
 record Site
     decl: i64
     given: [i64]
+    rest: bool
     span: token.Span
 
 # One assertion per extern record the program constructs or compares.
@@ -223,7 +224,9 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                         match co.shape
                             .record_shape r =>
                                 if group_record(decls, decl: r.decl)
-                                    sites @ sites.push(Site(decl: r.decl, given: r.given, span: inst.span))
+                                    sites @ sites.push(
+                                        Site(decl: r.decl, given: r.given, rest: !c.rested[inst.span.end].is_err(), span: inst.span)
+                                    )
                             .map_shape => reach(out: @operated, seen: @seen, c, decls, ty: inst.ty)
                             .case_shape | .array_shape | .ok_shape | .fail_shape | .err_shape => continue
                     .binary b =>

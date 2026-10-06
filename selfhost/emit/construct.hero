@@ -21,6 +21,7 @@ use emit/aggregate
 use emit/container
 use emit/fallible
 use emit/storageless
+use emit/zeroed
 use emit/writer
 use token
 use check/table
@@ -45,7 +46,11 @@ function argument_names(f: containers.Function, run: ir.Run) -> [str]
 # gives it nowhere else to live: the value has no temporary, and the
 # only legal place for the elements is inside the enclosing
 # initialiser.
-function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, shape: ir.Shape, run: ir.Run, target: str?)
+#
+# A group's record whose construction ends with `rest: zero` is the one
+# exception, written as statements rather than a literal: every byte zero,
+# then each field it names (`emit/zeroed.hero`, panel 194).
+function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, shape: ir.Shape, run: ir.Run, target: str?, span: token.Span)
     if target.is_err()
         return
     rendered: [str] @ []
@@ -60,6 +65,23 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
                 else
                     rendered @ rendered.push(inner.must())
             .inout_arg io => rendered @ rendered.push("&" + aggregate.place(c, s, decls, f, at: io.place))
+
+    match shape
+        .record_shape rs =>
+            if zeroed.asked(c, end: span.end)
+                zeroed.write(
+                    @w,
+                    c,
+                    names,
+                    s,
+                    decls,
+                    decl: rs.decl,
+                    given: rs.given,
+                    arguments: rendered,
+                    target: target.must()
+                )
+                return
+        .case_shape | .array_shape | .map_shape | .ok_shape | .fail_shape | .err_shape => _ = 0
 
     literal: str? @ fail(code: "none", msg: "not an aggregate")
 
@@ -173,7 +195,8 @@ test "one expression for the by-value shapes, statements for the containers"
         f,
         shape: .record_shape(decl: 0, given: [0]),
         run: ir.Run(start: 0, length: 1),
-        target: ok("t5")
+        target: ok("t5"),
+        span: token.Span(start: 0, end: 1)
     )
     array(@w, c, names, f, ty: arr, run: ir.Run(start: 0, length: 1), target: ok("t6"))
     got = writer.finish(w)

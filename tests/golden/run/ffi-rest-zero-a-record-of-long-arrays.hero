@@ -1,0 +1,35 @@
+# Panel 194 R1 (M-buildable-structs), lane b13-bs, 2026-10-06: a construction
+# of a group's record may end with `rest: zero`, and every field sharing no
+# byte with one it names is zero (spec § 13). Until that sitting a record
+# holding `char name[256]` was built writing all 256 elements: Darwin's
+# `utsname` took 1,280 zeros, 4,006 tokens of program (its ffi-pragmatist).
+#
+# The arrays are counted byte by byte by C through the program's own lend,
+# after `dirty` filled the frame with 0xAA; naming no field at all is the whole
+# record at zero. The broken construction keeps its comment above the words.
+
+extern "ffi-rest-zero.h"
+    record Big tag big
+        name: i8[256]
+        n: i32
+        tail: i8[100]
+    function dirty()
+    function big_arrays(@b: Big) -> i64
+
+function one_named() -> Big
+    return Big(
+        n: 7,
+        # both arrays are left to the words
+        rest: zero
+    )
+
+function none_named() -> Big
+    return Big(rest: zero)
+
+function main()
+    dirty()
+    a: Big @ one_named()
+    print(a.n, " ", big_arrays(@a))
+    dirty()
+    b: Big @ none_named()
+    print(b.n, " ", big_arrays(@b))

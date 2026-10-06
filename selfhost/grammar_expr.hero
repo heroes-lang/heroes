@@ -94,6 +94,7 @@ use parse/heads
 use parse/orphans
 use parse/argument_marker
 use parse/at_prefix
+use parse/rest_words
 use expr_render
 use expr_kinds
 use dot_words
@@ -306,8 +307,12 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         else if k == .lparen
             start = a.exprs[base].span
             arguments = call_args(@c, @a, text)
+            listed = rest_words.split(@c, @a, text, given: arguments)
             span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-            base @ ast.push_expr(@a.exprs, ast.Expr(kind: .call(callee: base, args: arguments), span: span))
+            base @ ast.push_expr(
+                @a.exprs,
+                ast.Expr(kind: .call(callee: base, args: listed.args, rest: listed.rest), span: span)
+            )
         else if k == .lbracket
             bracket = c.pos
             _ = cursor.bump(@c)
@@ -343,8 +348,12 @@ function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
 
     if cursor.at(c, .lparen)
         arguments = call_args(@c, @a, text)
+        listed = rest_words.split(@c, @a, text, given: arguments)
         span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
-        return ast.push_expr(@a.exprs, ast.Expr(kind: .method(receiver: base, name: name, args: arguments), span: span))
+        return ast.push_expr(
+            @a.exprs,
+            ast.Expr(kind: .method(receiver: base, name: name, args: listed.args, rest: listed.rest), span: span)
+        )
     return ast.push_expr(
         @a.exprs,
         ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end))

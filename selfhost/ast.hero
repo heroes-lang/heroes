@@ -157,12 +157,17 @@ variant ExprKind
     call
         callee: i64
         args: [Arg]
+        # `rest: zero` ending the list (panel 194, § 13), never an argument:
+        # its index in `Ast.rests`, or -1. An index, because a `T?` here
+        # would be the largest payload and grow every `Expr` by 48 bytes.
+        rest: i64
     # `x.f(y)` — UFCS, sugar for `f(x, y)` erased in the frontend (§4.11, Part
     # 5). Kept here because errors must speak in the syntax written.
     method
         receiver: i64
         name: token.Span
         args: [Arg]
+        rest: i64
     # `.plus`, `.num(v: 12)` — a variant case, its type coming from context
     # (§4.5's ⇐ mode). Named `variant_case` because `case` is a FOREIGN word:
     # the registry that exists to catch a model reaching for `switch`/`case`
@@ -529,12 +534,15 @@ record Ast
     exprs: [Expr]
     stmts: [Stmt]
     types: [TypeNode]
+    # Each `rest: zero` the parser took off a call's list, for the printers.
+    rests: [Arg]
 
 function new_ast() -> Ast
     exprs: [Expr] = []
     stmts: [Stmt] = []
     types: [TypeNode] = []
-    return Ast(exprs: exprs, stmts: stmts, types: types)
+    rests: [Arg] = []
+    return Ast(exprs: exprs, stmts: stmts, types: types, rests: rests)
 
 function push_type(@types: [TypeNode], node: TypeNode) -> i64
     types @ types.push(node)
@@ -550,56 +558,6 @@ function push_stmt(@stmts: [Stmt], node: Stmt) -> i64
     stmts @ stmts.push(node)
     return stmts.len() - 1
 
-## What the tree is for: reading it back
-
-# The depth of an expression, following the arena by index. It exists to prove
-# the point of this file: a tree that links by index is walked by an ordinary
-# recursive function, and the VALUE semantics never enter it — nothing is
-# copied but an `i64`.
-function depth(a: Ast, at: i64) -> i64
-    node = a.exprs[at]
-
-    # **Every case is named, and that is the point rather than the cost.** `_`
-    # is forbidden on a variant (§4.7), so a walk that cares about five shapes
-    # still says what it does with the other sixteen — and the day a
-    # twenty-second `ExprKind` arrives, this function stops compiling instead
-    # of quietly answering 1. The bootstrap has the same walk with a `_`, and
-    # the same walk is where the Rust lexer's `nullptr` defect came from.
-    return match node.kind
-        .unary u => 1 + depth(a, u.operand)
-        .binary b => 1 + max_of(a: depth(a, b.left), b: depth(a, b.right))
-        .field f => 1 + depth(a, f.base)
-        .field_name f => 1 + depth(a, f.base)
-        .index i => 1 + max_of(a: depth(a, i.base), b: depth(a, i.index))
-        .try_expr t => 1 + depth(a, t.value)
-        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => 1
-        .interp ip => 1 + holes_depth(a, ip.holes)
-        .null_ptr | .name | .hole | .error => 1
-        # The compound shapes a depth this simple does not descend into: they
-        # carry lists, and a list walk is the parser's own job rather than
-        # this measurement's.
-
-        .call | .method | .variant_case        => 1
-        .array | .map | .if_expr | .match_expr => 1
-
-# The deepest hole, or nothing: an interpolated literal is one node whose
-# children are its holes.
-function holes_depth(a: Ast, holes: [i64]) -> i64
-    deepest: i64 @ 0
-
-    for h in holes
-        d = depth(a, h)
-
-        if d > deepest
-            deepest @ d
-
-    return deepest
-
-function max_of(a: i64, b: i64) -> i64
-    if a > b
-        return a
-    return b
-
 test "the arena hands back indices and the tree links by them"
     a: Ast @ new_ast()
     zero = token.Span(start: 0, end: 1)
@@ -610,19 +568,6 @@ test "the arena hands back indices and the tree links by them"
     assert right == 1
     assert sum == 2
     assert a.exprs.len() == 3
-
-test "a walk over the arena is an ordinary recursive function"
-    a: Ast @ new_ast()
-    zero = token.Span(start: 0, end: 1)
-    x = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
-    y = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
-    sum = push_expr(@a.exprs, Expr(kind: .binary(op: .add, left: x, right: y), span: zero))
-    neg = push_expr(@a.exprs, Expr(kind: .unary(op: .neg, operand: sum), span: zero))
-    tried = push_expr(@a.exprs, Expr(kind: .try_expr(value: neg), span: zero))
-    assert depth(a, x) == 1
-    assert depth(a, sum) == 2
-    assert depth(a, neg) == 3
-    assert depth(a, tried) == 4
 
 test "a statement's payload carries a record that carries an array"
     a: Ast @ new_ast()
