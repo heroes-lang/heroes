@@ -35,7 +35,7 @@ use not_text
 use file_start
 use refused_runs
 use heads_told
-use raw_refusal
+use comment_refusal
 
 ## The output
 
@@ -242,9 +242,8 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
         line = l.pos
         scan.line_body(@l, text)
 
-        # A comment the line made, held to what a comment may hold (panel
-        # 192's R3), after the line, which a `#` or `//` comment ends.
-        raw_refusal.comments(@l, text, from: line)
+        # What the line's comment holds that a reader cannot see (panel 192).
+        comment_refusal.refuse_in_line(@l.diagnostics, tokens: l.tokens, held: l.held, text: text, from: line)
 
     # An indentation run the file's end ends is told as every run is.
     indent_runs.finish(@l, text)

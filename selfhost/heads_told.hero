@@ -21,14 +21,25 @@ use diag
 use keywords
 use head_names
 
+# Which of `diagnostics` a head tells instead, one flag each. A text with
+# nothing said of it, every clean file, is answered at once, and a token is
+# asked its kind before it is read as a head's word (panel 192's R11).
 function told_by_heads(diagnostics: [diag.Diagnostic], tokens: [token.Token], text: str) -> [bool]
+    out: [bool] @ []
+
+    if diagnostics.len() == 0
+        return out
     headers: [token.Span] @ []
     names: [token.Span] @ []
     k: i64 @ 0
 
     while k + 1 < tokens.len()
+        kind = tokens[k].kind
         name = tokens[k + 1].span
-        what = head_word(tokens, at: k, text: text)
+        what: str @ ""
+
+        if kind == .kw_extern || kind == .ident && k >= 2
+            what @ head_word(tokens, at: k, text: text)
 
         if what.len() > 0 && tokens[k + 1].kind == .str_lit && name.end <= text.len()
             if !head_names.judged(spelled: text.slice(from: name.start, to: name.end), span: name, what: what).is_err()
@@ -37,8 +48,6 @@ function told_by_heads(diagnostics: [diag.Diagnostic], tokens: [token.Token], te
                 if what == "header"
                     headers @ headers.push(name)
         k @ k + 1
-
-    out: [bool] @ []
 
     for d in diagnostics
         told = d.code == "unknown_escape" && inside(d.span, spans: headers) || raw(d.code) && inside(d.span, spans: names)
