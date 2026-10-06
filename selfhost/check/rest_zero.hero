@@ -1,0 +1,119 @@
+# Which call may end with `rest: zero` (panel 194; spec § 13): a
+# construction of a group's `record`, every field it does not name zero.
+# The parser took the words off the argument list (`parse/rest_words.hero`),
+# so the construction reaches `check/walk.hero` naming some of its fields,
+# which is panel 186's partial construction: its labels are checked there
+# (`check/group_fields.hero`), C writes the zeros through the designated
+# initialiser (`emit/aggregate.hero`), and `build` stops asking whether a
+# field left out shares a byte with one named (`emit/layout_sites.hero`).
+# Two fields named in one union are still refused there.
+#
+# Any other call is told here, once, at the words:
+#
+# - a Heroes record names every field, always (§4.9): `rest_outside_a_group`;
+# - a group's record with a field called `rest`: the words would hide it,
+#   `rest_is_a_field`;
+# - a handle, a function, a built-in, a value called, UFCS:
+#   `rest_not_a_construction`.
+#
+# A flat scan of the arena, run from `checker.hero` after the bodies, as
+# `ffi_sweep` is: it reads what the resolver said each callee is, and no type.
+
+use token
+use ast
+use source
+use diag
+use resolved
+use check/state
+use handles
+
+function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    # Nothing to judge, and no walk, where no call ends with the words.
+    if a.rests.len() == 0
+        return
+    at: i64 @ -1
+
+    for node in a.exprs
+        at @ at + 1
+
+        match node.kind
+            .call cl =>
+                if cl.rest >= 0
+                    told(@c, a, s, decls, words: a.rests[cl.rest], callee: r.uses[cl.callee], end: node.span.end)
+            .method m =>
+                if m.rest >= 0
+                    callee: resolved.Ref @ .unresolved
+
+                    # `geom.Pt(x: 1, rest: zero)`: the resolver filed what a
+                    # qualified name means at the method node itself. Any
+                    # other `x.f(...)` is a call, and `.unresolved` says so.
+                    if r.uses[m.receiver] == .module
+                        callee @ r.uses[at]
+                    told(@c, a, s, decls, words: a.rests[m.rest], callee: callee, end: node.span.end)
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit  => continue
+            .null_ptr | .name | .hole | .unary | .binary | .field | .field_name => continue
+            .index | .variant_case | .array | .map | .try_expr | .if_expr       => continue
+            .match_expr | .error                                                => continue
+
+# The words at the end of a call to `callee`, refused unless it builds a
+# group's record that has no field called `rest`.
+function told(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], words: ast.Arg, callee: resolved.Ref, end: i64)
+    span = token.Span(start: words.name.must().start, end: a.exprs[words.value].span.end)
+
+    match callee
+        .top t =>
+            match decls[t.at].kind
+                .record_decl rec =>
+                    name = source.span_text(s, decls[t.at].name)
+
+                    # A handle is made by C and never built (§ 13).
+                    if handles.is_handle(decls[t.at])
+                        state.push_diagnostic(@c, not_a_construction(span))
+                        return
+
+                    if rec.header.is_err()
+                        state.push_diagnostic(@c, outside_a_group(name, span: span))
+                        return
+
+                    for f in rec.fields
+                        if source.span_text(s, f.name) == "rest"
+                            state.push_diagnostic(@c, a_field(name, span: span))
+                            return
+
+                    c.out.rested[end] @ true
+                .constant_decl | .function_decl | .variant_decl | .test_decl => state.push_diagnostic(
+                    @c,
+                    not_a_construction(span)
+                )
+        # Never a quiet `.unresolved`: a callee that is no name, `f()(x)`,
+        # resolves to it too, and the words would be dropped unsaid.
+        .unresolved | .local | .builtin | .module => state.push_diagnostic(@c, not_a_construction(span))
+
+function outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_outside_a_group",
+        message: "`" + name + "` is a Heroes `record`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
+        span: span
+    )
+    d.notes @ d.notes.push("name each field of `" + name + "` with its value")
+    return d
+
+function a_field(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_is_a_field",
+        message: "`" + name + "` has a field called `rest`, so `rest: zero` at the end of its construction would read as that field: the words cannot end this construction",
+        span: span
+    )
+    d.notes @ d.notes.push("name every field of `" + name + "`, `rest` among them, with its value")
+    return d
+
+function not_a_construction(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_not_a_construction",
+        message: "`rest: zero` ends a construction of a group's `record`, every field it does not name zero, and this call builds none: the words are never an argument",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "pass each argument by its own name, and give a binding called `zero` another name where it is one"
+    )
+    return d

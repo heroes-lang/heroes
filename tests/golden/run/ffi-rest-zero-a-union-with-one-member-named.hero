@@ -1,0 +1,38 @@
+# Panel 194 R1 (M-buildable-structs), lane b13-bs, 2026-10-06: a construction
+# ending with `rest: zero` names at most one member of each union (spec § 13),
+# and every field sharing no byte with the one it names is zero. The union's
+# other member shares its bytes, so nothing is said of it: the narrow arm
+# named leaves the wide one unread here.
+#
+# Two named is still `build`'s `ffi_union_field` (panel 186, pinned under
+# `tests/golden/unsupported/`).
+
+extern "ffi-rest-zero.h"
+    record SA
+        kind: i32
+        c: i8
+        d: f64
+        x: i32
+    record UD
+        c: i8
+        d: f64
+    function dirty()
+    function sa_x(@s: SA) -> i64
+
+function wide() -> SA
+    return SA(kind: 2, d: 2.5, rest: zero)
+
+function narrow() -> SA
+    return SA(kind: 3, c: 7, rest: zero)
+
+function a_union_type() -> UD
+    return UD(d: 1.5, rest: zero)
+
+function main()
+    dirty()
+    w: SA @ wide()
+    print(w.kind, " ", w.d, " ", sa_x(@w))
+    dirty()
+    n: SA @ narrow()
+    print(n.kind, " ", n.c, " ", sa_x(@n))
+    print(a_union_type().d)

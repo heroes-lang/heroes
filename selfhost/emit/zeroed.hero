@@ -1,0 +1,133 @@
+# A construction of a group's `record` that ends with `rest: zero`, as C
+# (panel 194 R1; spec § 13; design.md §4.19): every byte of the record zero,
+# then each field it names.
+#
+# **Why not the designated initialiser every other construction is**
+# (`emit/aggregate.hero`). C11 §6.7.9p10 gives a member an initialiser leaves
+# out the value a static one has, and for a union that is its FIRST member
+# and its padding: the bytes a wider member holds past the first are no
+# member's and no padding's, and nothing in C makes them zero. clang zeroes
+# them under every initialiser shape on the three legs panel 194 measured,
+# and GCC 15 stopped doing so under `{0}` (the sitting's historian), so a
+# union none of whose members is named would be zero by one compiler's
+# present habit. The sitting ruled it zero by **a whole-object zero the
+# emitted C itself performs**: `memset` writes every byte, and a store into a
+# member afterwards writes that member's (§6.2.6.1p6 and p7 leave padding and
+# a union's other members unspecified, bytes § 13 does not promise). So
+# every field sharing no byte with one the construction names is zero by
+# C's own rule, a member of a union nobody named, one a `partial` record
+# leaves to C and a whole nested record included:
+#
+#     t3 = (SA){0};                          the temporary, written whole
+#     __builtin_memset(&t3, 0, sizeof t3);   every byte zero, C's own
+#     t3.kind = t1;                          a field the construction names
+#     __builtin_memcpy(t3.name, (__typeof__(t3.name)){t4, t5}, sizeof t3.name);
+#
+# The first line is the definition `wholes` (`tests/harness/suite_wholes.hero`)
+# asks to precede any write into a part, and `{0}` is C11's zero of every
+# struct and union, where `{}` is C23's (panel 194's ffi-pragmatist: six
+# errors under `-std=c11 -pedantic-errors`). An array field is copied from a
+# compound literal of the member's own type, since C assigns no array; every
+# other field is assigned, so clang still checks its type and its width. The
+# stores never land in a bare cell (panel 178's veto 2): the cell is zero
+# before the first of them.
+
+use ast
+use source
+use check/table
+use check/state
+use emit/mangle
+use emit/ctype
+use emit/aggregate
+use emit/writer
+use parse
+use resolve
+use checker
+
+# Whether the construction ending at `end` said `rest: zero`: the checker's
+# record, keyed by the call's span end (`check/rest_zero.hero`).
+function asked(c: state.Checked, end: i64) -> bool
+    return !c.rested[end].is_err()
+
+# The construction's statements into `target`, or the compiler's own loud
+# failure where the lowering handed it something no record holds.
+function write(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str)
+    written = lines(c, names, s, decls, decl: decl, given: given, arguments: arguments, target: target)
+
+    if written.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* not a group record */")
+        return
+
+    for line in written.must()
+        writer.line(@w, text: "    " + line)
+
+function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str) -> [str]?
+    name = ctype.of(names, decl: decl)
+    fields: [ast.Field] @ []
+
+    match decls[decl].kind
+        .record_decl rec =>
+            if rec.header.is_err()
+                return fail(code: "none", msg: "`rest: zero` ends only a construction of a group's record")
+            fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
+
+    if given.len() != arguments.len()
+        return fail(code: "none", msg: "a construction names a field for every argument, and this one does not")
+    out: [str] @ [target + " = (" + name + "){0};", "__builtin_memset(&" + target + ", 0, sizeof " + target + ");"]
+    k: i64 @ 0
+
+    for at in given
+        if at < 0 || at >= fields.len()
+            return fail(code: "none", msg: "a construction names a field the record does not have")
+        member = mangle.field_of(foreign: true, name: source.span_text(s, fields[at].name))
+        place = target + "." + member
+
+        if is_fixed(c, ty: fields[at].ty)
+            out @ out.push(
+                "__builtin_memcpy(" + place + ", (__typeof__(" + place + "))" + arguments[k] + ", sizeof " + place + ");"
+            )
+        else
+            out @ out.push(
+                place + " = " + aggregate.written_as(c, value: arguments[k], ty: fields[at].ty, foreign: true, holder: name, member: member) + ";"
+            )
+        k @ k + 1
+
+    return ok(out)
+
+# Whether a field's written type is a fixed array, which C cannot assign.
+function is_fixed(c: state.Checked, ty: i64) -> bool
+    written = state.written_type(c, ty)
+
+    if written.is_err()
+        return false
+
+    return match table.get(c.types, written.must())
+        .fixed                                                    => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .map | .fallible | .function_ty | .named         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+## Tests
+
+test "every byte zero first, then the fields named, an array through its own type"
+    text = "extern \"z.h\"\n    record Pair tag pair\n        n: i32\n        name: i8[4]\n        far: i64\n\nfunction main()\n    p = Pair(n: 1, name: [1, 2, 3, 4], rest: zero)\n    print(p.n)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    got = lines(c, names, s, parsed.decls, decl: 0, given: [0, 1], arguments: ["t1", "{t2, t3, t4, t5}"], target: "t6")
+    assert got.must() == ["t6 = (struct pair){0};", "__builtin_memset(&t6, 0, sizeof t6);", "t6.n = t1;", "__builtin_memcpy(t6.name, (__typeof__(t6.name)){t2, t3, t4, t5}, sizeof t6.name);"]
+
+    # Naming nothing is the whole record at zero, two lines and no store.
+    assert lines(c, names, s, parsed.decls, decl: 0, given: [], arguments: [], target: "t7").must().len() == 2
+
+    # A field the record does not have, or an argument short, is the
+    # lowering's fault and refused rather than written as another program.
+    assert lines(c, names, s, parsed.decls, decl: 0, given: [5], arguments: ["t1"], target: "t8").is_err()
+    assert lines(c, names, s, parsed.decls, decl: 0, given: [0, 1], arguments: ["t1"], target: "t8").is_err()
+
+    # The checker recorded the words at the construction's end, and nowhere else.
+    assert c.rested.len() == 1

@@ -1,0 +1,33 @@
+# Panel 194 R1 (M-buildable-structs), lane b13-bs, 2026-10-06: `rest: zero`
+# ends a construction of a group's `record` (spec § 13) and is never an
+# argument, so every other call ending with the words is told at them, once.
+#
+# - a Heroes record names every field, always (design.md §4.9): told
+#   `rest_outside_a_group` beside `missing_fields`, which stands unchanged;
+# - a function, a function through UFCS and a value called build nothing:
+#   `rest_not_a_construction`;
+# - a group's record with a field called `rest` would have the words hide it:
+#   `rest_is_a_field`.
+
+extern "rest-zero-elsewhere.h"
+    record Withrest tag withrest
+        rest: i32
+        n: i32
+
+record Point
+    x: i64
+    y: i64
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function pick() -> (function(a: i64, b: i64) -> i64)
+    return add
+
+function main()
+    p = Point(x: 1, rest: zero)  #~ missing_fields rest_outside_a_group
+    q = add(a: 1, b: 2, rest: zero)  #~ rest_not_a_construction
+    r = 1.add(b: 2, rest: zero)  #~ rest_not_a_construction
+    s = pick()(a: 1, b: 2, rest: zero)  #~ rest_not_a_construction
+    w = Withrest(n: 1, rest: zero)  #~ rest_is_a_field
+    print(p.x + q + r + s, " ", w.n)

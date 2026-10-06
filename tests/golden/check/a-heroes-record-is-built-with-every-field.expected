@@ -1,0 +1,2 @@
+tests/golden/check/a-heroes-record-is-built-with-every-field.hero:19:9: error[missing_fields]: `Point` is built with every field, named: x:, y: — all of them, always
+tests/golden/check/a-heroes-record-is-built-with-every-field.hero:20:16: error[missing_fields]: `Shape.circle` is built with every field, named: r:, cx: — all of them, always

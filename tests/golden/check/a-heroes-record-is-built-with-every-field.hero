@@ -1,0 +1,23 @@
+# design.md §4.9: a Heroes record is built naming every field, always, and so
+# is a case of a Heroes variant; `missing_fields` (`check/walk.hero`'s
+# `check_named_fields`) says so. No golden pinned it until panel 194,
+# 2026-10-06, which judged `rest: zero`, the words that let a construction of
+# a group's record leave fields out: this is the guard such a form must not
+# weaken. A group's record leaving a field out is `build`'s refusal since
+# panel 186, and its goldens are under `tests/golden/unsupported/`.
+
+record Point
+    x: i64
+    y: i64
+
+variant Shape
+    circle
+        r: i64
+        cx: i64
+
+function main()
+    p = Point(x: 1)  #~ missing_fields
+    s: Shape = .circle(r: 2)  #~ missing_fields
+
+    match s
+        .circle c => print(p.x + c.r)
