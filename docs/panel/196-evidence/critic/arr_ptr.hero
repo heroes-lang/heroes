@@ -1,0 +1,7 @@
+# Probe: can a `[u8]` be lent through `.ptr()`?
+extern "unistd.h"
+    function gethostname(name: ptr counted_by namelen lent, namelen: u64) -> i32
+
+function main()
+    buf: [u8] @ [0, 0, 0, 0]
+    print(gethostname(name: buf.ptr(), namelen: 4))

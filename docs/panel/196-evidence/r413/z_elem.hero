@@ -1,0 +1,15 @@
+# zlib's stream lent through `@` as an ELEMENT of an array: each call copies it into a temporary.
+extern "zlib.h" link "z"
+    record ZStream tag z_stream_s partial
+        avail_in: u32
+        avail_out: u32
+    function zlibVersion() -> cstr
+    function deflateInit_(@s: ZStream, level: i32, version: cstr lent, stream_size: i32) -> i32
+    function deflateReset(@s: ZStream) -> i32
+    function deflateEnd(@s: ZStream) -> i32
+
+function main()
+    zs: [ZStream] @ [ZStream(rest: zero)]
+    print(deflateInit_(@zs[0], level: -1, version: zlibVersion(), stream_size: 112))
+    print(deflateReset(@zs[0]))
+    print(deflateEnd(@zs[0]))

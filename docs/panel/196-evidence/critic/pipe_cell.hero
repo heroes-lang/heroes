@@ -1,0 +1,12 @@
+# Probe: pipe(int [2]) bound with a one-cell `@fds: i32`; the header writes the array's extent, 2, and C writes two ints.
+extern "pipe_box.h"
+    record PBox tag pbox
+        fd: i32
+        after: i32
+    function pipe(@fds: i32) -> i32
+
+function main()
+    b: PBox @ PBox(fd: 0, after: 7)
+    print(pipe(@b.fd))
+    print(b.fd)
+    print(b.after)

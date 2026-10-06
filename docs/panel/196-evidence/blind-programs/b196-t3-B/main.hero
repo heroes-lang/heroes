@@ -1,0 +1,16 @@
+extern "hostbuf.h"
+    record HostBuf tag hostbuf
+        name: i8[256]
+    function gethostname(name: ptr counted_by namelen lent, namelen: u64) -> i32
+
+function main()
+    buf: HostBuf @ HostBuf(rest: zero)
+    rc = gethostname(buf.name.ptr(), 256)
+    if rc != 0
+        print("gethostname failed")
+        exit(code: 1)
+    match buf.name.validated_bytes()
+        .ok host => print(host)
+        .err e =>
+            print(e.code)
+            exit(code: 1)

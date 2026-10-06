@@ -1,0 +1,23 @@
+# Probe: EVP_DigestFinal_ex's OUT count `unsigned int *s` named by `counted_by`, the program setting it to 32 before the call; no hand-written function.
+extern "evp_box.h" package "libcrypto"
+    record Digest32 tag digest32
+        b: u8[32]
+    record MdCtx tag evp_md_ctx_st
+    function EVP_MD_CTX_new() -> MdCtx acquires EVP_MD_CTX_free
+    function EVP_MD_CTX_free(c: MdCtx consumes)
+    function EVP_sha256() -> ptr
+    function EVP_DigestInit(c: MdCtx, t: ptr) -> i32
+    function EVP_DigestUpdate(c: MdCtx, d: cstr lent, n: u64) -> i32
+    function EVP_DigestFinal_ex(c: MdCtx, md: ptr counted_by s lent, @s: u32) -> i32
+
+function main()
+    c = EVP_MD_CTX_new()
+    d: Digest32 @ Digest32(rest: zero)
+    s: u32 @ 32
+    print(EVP_DigestInit(c, t: EVP_sha256()))
+    print(EVP_DigestUpdate(c, d: "abc".cstr(), n: 3))
+    print(EVP_DigestFinal_ex(c, md: d.b.ptr(), @s))
+    print(s)
+    print(d.b[0])
+    print(d.b[31])
+    EVP_MD_CTX_free(c)

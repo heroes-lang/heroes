@@ -1,0 +1,8 @@
+362a363
+> An `@` parameter is ONE element.
+397c398,400
+< naming the sibling that gives the extent, and one past the field is refused.
+---
+> naming the sibling that gives the extent or, where C's extent is fixed, a
+> constant or a number (`md: ptr counted_by 32 lent`), and one past the field is
+> refused.
