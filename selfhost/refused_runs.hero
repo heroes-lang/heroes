@@ -164,9 +164,10 @@ function gathered(d: diag.Diagnostic) -> bool
 
 # How many characters a refusal counted rather than told stands for, so the
 # note's count stays one of characters: one for the scanner's own, and a
-# stretch's every character but the spaces a run is told through. Counted
-# by the bytes that begin a character, never by a slice, so no span can stop
-# the count by splitting one.
+# stretch's every character but the spaces a run is told through and the
+# line ends a template over lines holds (defect 407), which are the
+# language's. Counted by the bytes that begin a character, never by a
+# slice, so no span can stop the count by splitting one.
 function characters(d: diag.Diagnostic, text: str) -> i64
     n: i64 @ 0
     at: i64 @ d.span.start
@@ -174,7 +175,7 @@ function characters(d: diag.Diagnostic, text: str) -> i64
     while at >= 0 && at < d.span.end && at < text.len()
         b = text[at]
 
-        if b != ' ' && (b < 128 || b >= 192)
+        if b != ' ' && b != '\n' && b != '\r' && (b < 128 || b >= 192)
             n @ n + 1
         at @ at + 1
 
@@ -245,6 +246,10 @@ test "a stretch counted rather than told stands for its characters, its spaces a
     )
     assert gathered(template)
     assert characters(template, text: text) == 4
+
+    # A template over lines counts its characters, not its line ends.
+    over = diag.new_diagnostic(code: "unexpected_character", message: "m", span: token.Span(start: 0, end: 6))
+    assert characters(over, text: "`a\r\nb`\n") == 4
 
 test "past eight refused characters the rest are counted on the last told, and a refusal with a fix is never gathered"
     said: [diag.Diagnostic] @ []
