@@ -171,7 +171,10 @@ function shape_emit() -> Shape
 # `fixedbugs-163-` case, took the directory from 100 past 84 by more than a
 # quarter, and the suite asked for 118. It is the tree's count, the same on
 # every platform: a case a machine skips for a library it lacks is judged
-# by the third below, never by this floor.
+# by the third below, never by this floor. **150 at batch 12's round,
+# 2026-10-06**: lane cli12's cases for defects 337 and 360 and lane ffi13's
+# six `fixedbugs-094-` cases took the directory past 118 by more than a
+# quarter, and the suite asked for 150 on this Mac and on Linux arm64 alike.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -180,7 +183,7 @@ function shape_unsupported() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 118,
+        least: 150,
         watched: true,
         silent_stdout: true,
         library_skip: true
