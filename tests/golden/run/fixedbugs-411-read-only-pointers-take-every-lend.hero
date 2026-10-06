@@ -1,0 +1,37 @@
+# FIXED DEFECT 411, found by panel 196's completeness critic 2026-10-06 and
+# repaired the same day in lane b13-w411: the half that must stay open.
+#
+# The repair refuses a `cstr` handed to a pointer whose bytes are not `const`,
+# asked of the header in the pointee check (`emit/ffi_mutable.hero`). This case
+# holds the other side of that question: every way a header spells a pointer
+# to `const` bytes, through a typedef, an array parameter, a `const` or atomic
+# pointer and `void`, takes a `.cstr()` of a `str` the program shares, a lease
+# and a literal, and the copy made before the calls is what it was. The
+# `const unsigned char *` family is held by `selfhost/cli/pointee.hero`'s own
+# test: clang warns `-Wpointer-sign` on every such binding today, and this
+# directory is held to no warning at all.
+
+extern "fixedbugs-411-read-only-pointers.h"
+    function r_char(p: cstr lent) -> i32
+    function r_void(p: cstr lent) -> i32
+    function r_typedef(p: cstr lent) -> i32
+    function r_const_pointer(p: cstr lent) -> i32
+    function r_volatile(p: cstr lent) -> i32
+    function r_array(p: cstr lent) -> i32
+    function r_atomic(p: cstr lent) -> i32
+
+function main()
+    s = "abc".repeat(1)
+    t = s
+    print(r_char(p: s.cstr()))
+    print(r_void(p: s.cstr()))
+    print(r_typedef(p: s.cstr()))
+    print(r_const_pointer(p: s.cstr()))
+    print(r_volatile(p: s.cstr()))
+    print(r_array(p: s.cstr()))
+    print(r_atomic(p: s.cstr()))
+    x: cstr @ s.lease()
+    print(r_void(p: x))
+    end_lease(@x)
+    print(r_void(p: "z".cstr()))
+    print(t)
