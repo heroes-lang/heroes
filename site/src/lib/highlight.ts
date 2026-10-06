@@ -78,15 +78,34 @@ const isIdentChar = (ch: string) => isAlnum(ch) || ch === '_';
 const isHex = (ch: string) => isDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 
 /**
+ * Where the escape whose backslash stands at `at` ends: after `\u{`, its hex
+ * digits and the `}` that closes them (panel 192's R5, the escape by code), or
+ * after the one character every other escape takes. Until defect 376
+ * (2026-10-06) a backslash consumed one character whatever followed it, so in
+ * a string with holes `\u{1b}` was read as `\u` and a hole opening at its `{`,
+ * and a correct program was coloured wrong. A `\u{` left open ends where its
+ * digits do, which is as far as the compiler reads it before refusing it.
+ */
+function escapeEnd(source: string, at: number): number {
+  if (source[at + 1] === 'u' && source[at + 2] === '{') {
+    let end = at + 3;
+    while (end < source.length && isHex(source[end])) end += 1;
+    if (source[end] === '}') end += 1;
+    return end;
+  }
+  return at + 2;
+}
+
+/**
  * Where a plain string or character literal starting at `start` ends: after
  * its closing quote, or at the end of the line, which is as far as one can run
- * (`literals.hero`). A backslash consumes what follows it.
+ * (`literals.hero`). A backslash consumes its escape (`escapeEnd`).
  */
 function literalEnd(source: string, start: number): number {
   const quote = source[start];
   let end = start + 1;
   while (end < source.length && source[end] !== '\n' && source[end] !== quote) {
-    end += source[end] === '\\' ? 2 : 1;
+    end = source[end] === '\\' ? escapeEnd(source, end) : end + 1;
   }
   if (end < source.length && source[end] === quote) end += 1;
   return Math.min(end, source.length);
@@ -106,7 +125,7 @@ function pieceEnd(source: string, start: number): { end: number; opensHole: bool
   while (end < source.length && source[end] !== '\n') {
     const ch = source[end];
     if (ch === '\\') {
-      end += 2;
+      end = escapeEnd(source, end);
       continue;
     }
     if (ch === '"') return { end: end + 1, opensHole: false };
