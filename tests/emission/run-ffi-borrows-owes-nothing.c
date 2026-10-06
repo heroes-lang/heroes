@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <ffi-borrows-owes-nothing.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <ffi-borrows-owes-nothing.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_2f69e1a4, "the borrowed one was not given back");
 
-#line 55 "ffiborrowsowesnothing.c"
+#line 57 "ffiborrowsowesnothing.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,7 +92,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "ffiborrowsowesnothing.c"
+#line 96 "ffiborrowsowesnothing.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b);
@@ -108,7 +110,7 @@ void h_ffiborrowsowesnothing_main(void);
 
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 void h_ffiborrowsowesnothing_main(void) {
-#line 112 "ffiborrowsowesnothing.c"
+#line 114 "ffiborrowsowesnothing.c"
     Slot * h0_mine;
     Slot * h1_theirs;
     int64_t t1;
@@ -177,7 +179,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     return;
-#line 181 "ffiborrowsowesnothing.c"
+#line 183 "ffiborrowsowesnothing.c"
 }
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

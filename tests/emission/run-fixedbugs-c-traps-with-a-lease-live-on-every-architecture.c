@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-c-traps-with-a-lease-live-on-every-architecture.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-c-traps-with-a-lease-live-on-every-architecture.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -48,7 +50,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 52 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 54 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -83,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 89 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -99,7 +101,7 @@ void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void) {
-#line 103 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 105 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     HeroStr h0_word = {0};
     const char * h1_held;
     HeroStr h2_own2 = {0};
@@ -124,15 +126,15 @@ bb0:
     t8 = h2_own2;
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h2_own2 = t3;
-#line 128 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 130 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(t8);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t9 = h0_word;
-#line 132 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 134 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_incref(t3);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h0_word = t3;
-#line 136 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 138 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(t9);
 #line 16 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t4 = h0_word;
@@ -152,10 +154,10 @@ bb0:
     hero_print_str(t7);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_print_end();
-#line 156 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 158 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(h0_word);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
-#line 159 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 161 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(h2_own2);
     return;
 }

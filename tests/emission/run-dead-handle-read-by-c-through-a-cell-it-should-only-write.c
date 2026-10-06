@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <dead-handle-read-by-c-through-a-cell-it-should-only-write.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <dead-handle-read-by-c-through-a-cell-it-should-only-write.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -53,7 +55,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1cd7fd75, "ob_up_ref_cell(a: @cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 
-#line 57 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 59 "deadhandlereadbycthroughacellitshouldonlywrite.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -92,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 98 "deadhandlereadbycthroughacellitshouldonlywrite.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadbycthroughacellitshouldonlywrite_X509_eq(ob * const *a, ob * const *b);
@@ -110,7 +112,7 @@ void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void);
 
 #line 20 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void) {
-#line 114 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 116 "deadhandlereadbycthroughacellitshouldonlywrite.c"
     ob * h0_cert;
     ob * t1;
     int64_t t2;
@@ -203,7 +205,7 @@ bb4:
 #line 26 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 bb5:
 #line 25 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
-#line 207 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 209 "deadhandlereadbycthroughacellitshouldonlywrite.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

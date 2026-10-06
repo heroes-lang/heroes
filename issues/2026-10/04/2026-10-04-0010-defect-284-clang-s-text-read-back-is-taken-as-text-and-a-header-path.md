@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: 49231969ad2b25a9e761bc168f7c835bd00dac41
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 189's critic, second pass (§ Q6, *unmeasured by every seat*); filed by the sitting's R12.
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a measurement owed on Linux; no program measured wrong.
+
+    Repaired at `49231969`, 2026-10-05 (lane cli12), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The measurement, run in the Linux arm64 image on the trunk's compiler of `ca5fa51e` with Debian clang 22.1.8, a group's header under `/t/caf<0xE9>/` reached through `CPATH`: clang prints the path with the byte as it is, and the build forwards the header's `#warning` with the byte written by its value at exit 0, tells a missing include it holds as `ffi_missing_header` and an extern it refutes as `ffi_return_type`, each at exit 1. No reader changed; clang's words are committed as bytes and a compiler test reads them as the build does.

@@ -1,0 +1,12 @@
+# fixedbugs, defect 360, lane cli12, 2026-10-05.
+#
+# Beside `fixedbugs-360-a-header-that-does-not-compile`: the group's header
+# compiles, and a header it includes does not. clang's error names the second
+# header, which no group names; the include stack above it names the group's,
+# and the diagnostic is told on that group with the include clang followed.
+
+extern "fixedbugs-360-outer.h"  #~ ffi_header_refused
+    function four() -> i64
+
+function main()
+    print(four())

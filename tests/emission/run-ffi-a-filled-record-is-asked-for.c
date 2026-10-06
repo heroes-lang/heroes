@@ -2,8 +2,12 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <ffi-a-filled-record-is-asked-for.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <ffi-a-filled-record-is-asked-for.h>
+#pragma push_macro("name")
+#pragma push_macro("slot")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -13,7 +17,7 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct slot) - __builtin_offsetof(struct slot, name) != 0, "heroes-ffi-flex Slot name");
 #line 36 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 _Static_assert(_Generic(&((struct slot *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot name");
-#line 17 "ffiafilledrecordisaskedfor.c"
+#line 21 "ffiafilledrecordisaskedfor.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -93,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "ffiafilledrecordisaskedfor.c"
+#line 101 "ffiafilledrecordisaskedfor.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_Slot_eq(const struct slot *a, const struct slot *b);
@@ -116,7 +120,7 @@ void h_ffiafilledrecordisaskedfor_main(void);
 
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 struct slot h_ffiafilledrecordisaskedfor_blank(void) {
-#line 120 "ffiafilledrecordisaskedfor.c"
+#line 124 "ffiafilledrecordisaskedfor.c"
     int8_t t1;
     int8_t t2;
     int8_t t3;
@@ -148,12 +152,12 @@ bb0:
     t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}};
 #line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     return t10;
-#line 152 "ffiafilledrecordisaskedfor.c"
+#line 156 "ffiafilledrecordisaskedfor.c"
 }
 
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 void h_ffiafilledrecordisaskedfor_main(void) {
-#line 157 "ffiafilledrecordisaskedfor.c"
+#line 161 "ffiafilledrecordisaskedfor.c"
     struct slot h0_s;
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_f87774a h2_f1 = {0};
@@ -196,15 +200,15 @@ bb0:
     t23 = h3_own3;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h3_own3 = t3;
-#line 200 "ffiafilledrecordisaskedfor.c"
+#line 204 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&t23);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t24 = h1_f0;
-#line 204 "ffiafilledrecordisaskedfor.c"
+#line 208 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_retain(&t3);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h1_f0 = t3;
-#line 208 "ffiafilledrecordisaskedfor.c"
+#line 212 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&t24);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t4 = h1_f0;
@@ -242,15 +246,15 @@ bb1:
     t25 = h4_own4;
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h4_own4 = t14;
-#line 246 "ffiafilledrecordisaskedfor.c"
+#line 250 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&t25);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t26 = h2_f1;
-#line 250 "ffiafilledrecordisaskedfor.c"
+#line 254 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_retain(&t14);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h2_f1 = t14;
-#line 254 "ffiafilledrecordisaskedfor.c"
+#line 258 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&t26);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t15 = h2_f1;
@@ -268,7 +272,7 @@ bb2:
     t8 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t9 = t8.as.err;
-#line 272 "ffiafilledrecordisaskedfor.c"
+#line 276 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -280,16 +284,16 @@ bb3:
     hero_print_str(t22);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     hero_print_end();
-#line 284 "ffiafilledrecordisaskedfor.c"
+#line 288 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&h1_f0);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-#line 287 "ffiafilledrecordisaskedfor.c"
+#line 291 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&h2_f1);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-#line 290 "ffiafilledrecordisaskedfor.c"
+#line 294 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&h3_own3);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-#line 293 "ffiafilledrecordisaskedfor.c"
+#line 297 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&h4_own4);
     return;
 bb4:
@@ -297,7 +301,7 @@ bb4:
     t19 = h2_f1;
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t20 = t19.as.err;
-#line 301 "ffiafilledrecordisaskedfor.c"
+#line 305 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t20);
     hero_unreachable();
 }

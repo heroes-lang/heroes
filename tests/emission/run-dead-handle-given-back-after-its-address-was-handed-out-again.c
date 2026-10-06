@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <dead-handle-given-back-after-its-address-was-handed-out-again.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <dead-handle-given-back-after-its-address-was-handed-out-again.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6ff69f68, "the new node reads ");
 HERO_STR_STATIC(hero_str_360321cf, "the stale one was given back, and nothing said");
 
-#line 55 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 57 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 94 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_Node_eq(node * const *a, node * const *b);
@@ -107,7 +109,7 @@ void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void);
 
 #line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_closed(node * *ph0_n) {
-#line 111 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 113 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
     node * h0_n;
     node * t1;
     h0_n = *ph0_n;
@@ -127,14 +129,14 @@ bb0:
     if (hero_handle_ended(t1, hero_life_0_0) && h0_n == t1) h0_n = hero_handle_dead();
 #line 21 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     }
-#line 131 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 133 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
     *ph0_n = h0_n;
     return;
 }
 
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void) {
-#line 138 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 140 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
     node * h0_a;
     node * h1_b;
     node * t1;
@@ -211,7 +213,7 @@ bb0:
     }
 #line 30 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     return;
-#line 215 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 217 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

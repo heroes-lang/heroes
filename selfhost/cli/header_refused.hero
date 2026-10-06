@@ -1,0 +1,417 @@
+# A bound header clang refuses on its own, told as the author's (design.md
+# §4.19, §4.17; CLAUDE.md §7's named exception; defect 360, 2026-10-05). The
+# program's unit includes every group's header before a line of its own, so
+# where the FIRST error clang reports lies in one of them, or in a file one of
+# them includes, the header did not compile as this program's unit reads it,
+# before any declaration of the group was checked against it. That reached the
+# author as `internal error: compiling the generated C failed` at exit 2, the
+# compiler blamed for a file the author chose to bind: measured on this Mac
+# with a header holding `int broken = ;`, and on the Windows box for defect
+# 337's fixture, whose `#line` clang 23.1.1 refuses.
+#
+# **The narrowing is the include stack**, as `emit/header_reach.hero` reads it
+# for a missing header: the error's file and the files that reached it, and
+# the group whose header is the innermost of them is the one told. It stays
+# the compiler's, exit 2 as before, where:
+# - clang's first error is in no header a group names or reaches: the
+#   generated C, the unit's own lines, a header only the runtime includes;
+# - it is a missing header, `'x.h' file not found`, which is
+#   `ffi_missing_header`'s (`emit/ffi_build.hero`), told there or not at all;
+# - a file of its stack, or a file one of its notes names, is the runtime's or
+#   the build's: a group naming `hero_os.h`, as this compiler's own source
+#   does, or a header a macro of the runtime broke, is the runtime's to answer
+#   for.
+#
+# **Only the first error is read.** clang reads on past an error, and what it
+# says after one, about a header it could not read whole or about the
+# program's declarations checked against it, is no verdict: so a header that
+# does not compile is told alone, and the declarations are checked once it
+# does (the case `fixedbugs-360-a-header-that-does-not-compile-is-told-before-
+# what-it-refutes`).
+#
+# What is told carries clang's words without its paths, which differ by
+# platform: the header as the group spells it, the line, clang's message, the
+# line as clang quoted it, the includes clang followed, the notes clang
+# attached, and, where clang names `-Werror`, that the warning is one this
+# compiler's flags make an error in every unit (`cli/flags.hero`).
+
+use source
+use ast
+use diag
+use token
+use emit/clang_place
+use emit/clang_name
+use emit/ffi_lookup
+use emit/externs as emit_externs
+use cli/strings
+use cli/read_back
+use emit/ffi_build
+use parse
+use resolve
+use checker
+
+# The group a file of the stack is the header of: the header's string on the
+# group's `extern` line, which the diagnostic points at, and the header as the
+# group wrote it.
+record Group
+    span: token.Span
+    header: str
+
+# clang's first error, read: its row in the text, its place, and its message.
+record First
+    row: i64
+    place: clang_place.Place
+    message: str
+
+constant ERROR: str
+    ": error: "
+
+constant FATAL: str
+    ": fatal error: "
+
+constant NOTE: str
+    ": note: "
+
+constant NOT_FOUND: str
+    "' file not found"
+
+constant AS_ERROR: str
+    "[-Werror"
+
+# The diagnostic for a header clang refused, or none where clang's first error
+# is not this class. `runtime` and `build` are the directories whose files are
+# the compiler's, as clang was given them.
+function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    rows = ffi_lookup.lines(text: stderr)
+    found = first_error(rows)
+
+    if found.is_err()
+        return none
+    first = found.must()
+
+    if !clang_place.offset_of(text: first.message, needle: NOT_FOUND).is_err()
+        return none
+    steps = clang_place.stack(stderr: stderr, line: rows[first.row])
+    at: i64 @ steps.len() - 1
+    group: Group? @ fail(code: "none", msg: "no group's header is in the stack")
+
+    # The unit clang compiled heads the stack and is the build's, so the
+    # search never names a group after it.
+    while at >= 0 && group.is_err()
+        if !compilers(path: steps[at].path, runtime: runtime, build: build)
+            group @ group_of(s, decls, path: steps[at].path)
+
+        if group.is_err()
+            at @ at - 1
+
+    if group.is_err()
+        return none
+    hop: i64 @ at
+
+    while hop < steps.len()
+        if compilers(path: steps[hop].path, runtime: runtime, build: build)
+            return none
+        hop @ hop + 1
+
+    notes = attached(rows, after: first.row)
+
+    for note in notes
+        if compilers(path: note.path, runtime: runtime, build: build)
+            return none
+
+    return [told(rows, first: first, steps: steps, at: at, group: group.must(), notes: notes)]
+
+# The first row clang wrote as an error with a place, `path:row:col: error:`
+# or `fatal error:`. A row its excerpt quotes begins with a space, and a
+# warning or a note before it is passed over.
+function first_error(rows: [str]) -> First?
+    index: i64 @ 0
+
+    for row in rows
+        line = clang_place.without_return(row)
+        severity = severity_of(line)
+
+        if line.len() > 0 && line[0] != ' ' && (severity == ERROR || severity == FATAL)
+            place = clang_place.place(line)
+
+            if !place.is_err()
+                at = clang_place.offset_of(text: line, needle: severity).must()
+                return ok(
+                    First(row: index, place: place.must(), message: line.slice(from: at + severity.len(), to: line.len()))
+                )
+        index @ index + 1
+
+    return fail(code: "none", msg: "clang reported no error with a place")
+
+# The severity a diagnostic line is written with: the first of clang's
+# markers on it, so a message that quotes another is still its own.
+function severity_of(line: str) -> str
+    first: i64 @ line.len()
+    which: str @ ""
+
+    for marker in [FATAL, ERROR, ": warning: ", NOTE]
+        at = clang_place.offset_of(text: line, needle: marker)
+
+        if !at.is_err() && at.must() < first
+            first @ at.must()
+            which @ marker
+
+    return which
+
+# A note clang attached to the error: where it points and what it says.
+record Attached
+    path: str
+    row: i64
+    text: str
+
+# The notes clang wrote under the error, up to the next diagnostic that is
+# not a note, the next include stack, or clang's count of what it reported.
+function attached(rows: [str], after: i64) -> [Attached]
+    out: [Attached] @ []
+    index: i64 @ after + 1
+
+    while index < rows.len()
+        line = clang_place.without_return(rows[index])
+
+        if line.len() > 0 && line[0] != ' '
+            if severity_of(line) != NOTE
+                return out
+            place = clang_place.place(line)
+
+            if !place.is_err()
+                at = clang_place.offset_of(text: line, needle: NOTE).must()
+                out @ out.push(
+                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()))
+                )
+        index @ index + 1
+
+    return out
+
+# Whether a file clang names is the compiler's: under the runtime's directory
+# or the build's, as clang was given them, either separator read as `/`.
+function compilers(path: str, runtime: str, build: str) -> bool
+    return beneath(path: path, dir: runtime) || beneath(path: path, dir: build)
+
+function beneath(path: str, dir: str) -> bool
+    p = plain(path)
+    d = plain(dir)
+
+    if d.len() == 0
+        return false
+    return strings.starts_with(text: p, prefix: d + "/")
+
+# A path slashed, without a leading `./`, which clang writes where it was
+# given the directory `.`.
+function plain(path: str) -> str
+    p = clang_place.slashed(path)
+
+    if strings.starts_with(text: p, prefix: "./")
+        return p.slice(from: 2, to: p.len())
+    return p
+
+# The group whose header is the file at `path`, spelled every way clang's
+# path allows, longest first.
+function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
+    for spelled in clang_place.spellings(path)
+        for decl in decls
+            named: token.Span? @ fail(code: "none", msg: "no header")
+
+            match decl.kind
+                .function_decl fd          => named @ fd.value.header
+                .constant_decl k           => named @ k.header
+                .record_decl rec           => named @ rec.header
+                .variant_decl | .test_decl => continue
+
+            if named.is_err()
+                continue
+            header = emit_externs.unquoted(s, span: named.must())
+
+            if clang_name.printed_as(printed: spelled, value: header)
+                return ok(Group(span: named.must(), header: header))
+
+    return fail(code: "none", msg: "no group's header is this file")
+
+# The diagnostic, on the group's string: the file clang refused, as the group
+# would name it, its line and clang's message, then what clang quoted and
+# attached, the includes it followed, and what a `-Werror` means here.
+function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, group: Group, notes: [Attached]) -> diag.Diagnostic
+    directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
+    refused_file: str @ group.header
+    head: str @ "`" + group.header + "`, the header this group names, does not compile: clang refuses it"
+
+    if at < steps.len() - 1
+        refused_file @ clang_place.shown(path: first.place.path, directory: directory)
+        head @ "`" + group.header + "`, the header this group names, does not compile: clang refuses `" + refused_file + "`, which it includes,"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: head + " at line " + first.place.row.to_str() + ": " + first.message,
+        span: group.span
+    )
+    quoted = excerpt(rows, after: first.row)
+
+    if !quoted.is_err()
+        d.notes @ d.notes.push(
+            "`" + refused_file + "` line " + first.place.row.to_str() + " reads `" + quoted.must() + "`"
+        )
+
+    if at < steps.len() - 1
+        hops: [str] @ []
+        hop: i64 @ at
+
+        while hop < steps.len() - 1
+            hops @ hops.push(
+                "`" + clang_place.shown(path: steps[hop].path, directory: directory) + "` line " + steps[hop].row.to_str() + " includes `" + clang_place.shown(path: steps[hop + 1].path, directory: directory) + "`"
+            )
+            hop @ hop + 1
+
+        d.notes @ d.notes.push("the includes clang followed: " + hops.join(", then "))
+
+    for note in notes
+        d.notes @ d.notes.push(
+            "clang adds, at `" + clang_place.shown(path: note.path, directory: directory) + "` line " + note.row.to_str() + ": " + note.text
+        )
+
+    if !clang_place.offset_of(text: first.message, needle: AS_ERROR).is_err()
+        d.notes @ d.notes.push(
+            "clang's `-Werror` says the warning is one this compiler makes an error in every unit it compiles, the headers each includes among them, and no warning is turned off for a header"
+        )
+    d.notes @ d.notes.push(
+        "a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C"
+    )
+    return d
+
+# The line clang quoted under the error, `  3 | int broken = ;`, as written
+# after its gutter; none where the row under the error is not that.
+function excerpt(rows: [str], after: i64) -> str?
+    if after + 1 >= rows.len()
+        return fail(code: "none", msg: "no row under the error")
+    line = clang_place.without_return(rows[after + 1])
+    index: i64 @ 0
+
+    while index < line.len() && line[index] == ' '
+        index @ index + 1
+
+    digits: i64 @ index
+
+    while index < line.len() && line[index] >= '0' && line[index] <= '9'
+        index @ index + 1
+
+    if index == digits || !clang_place.same_bytes(text: line, from: index, part: " | ")
+        return fail(code: "none", msg: "not clang's excerpt")
+    return ok(line.slice(from: index + 3, to: line.len()))
+
+## Tests
+
+# A program of three groups, read as the build reads it.
+function program() -> source.Source
+    return source.new_source(name: "t.hero", text: TEXT)
+
+constant TEXT: str
+    "extern \"fine.h\"\n    function six() -> i64\n\nextern \"bad.h\"\n    function twice(x: i64) -> i64\n\nextern \"lib/outer.h\"\n    function four() -> i64\n\nfunction main()\n    print(twice(x: six() + four()))\n"
+
+function decls_of() -> [ast.Decl]
+    parsed = parse.parse(TEXT)
+    s = program()
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    return parsed.decls
+
+# clang's words as this Mac's Apple clang 21 wrote them for the cases of
+# `tests/golden/unsupported/fixedbugs-360-*`, and the Windows box's form of
+# the first, its separator a backslash and its lines ended `\r\n`.
+test "a header clang refuses on its own is told on its group's string, in clang's words without its paths (defect 360)"
+    s = program()
+    decls = decls_of()
+    mac = "In file included from build/tu-1/t.c:7:\n./bad.h:3:14: error: expected expression\n    3 | int broken = ;\n      |              ^\n1 error generated.\n"
+    said = refused(stderr: mac, s: s, decls: decls, runtime: "runtime", build: "build")
+    assert said.len() == 1
+    assert said[0].code == "ffi_header_refused"
+    assert source.span_text(s, said[0].span) == "\"bad.h\""
+    assert said[0].message == "`bad.h`, the header this group names, does not compile: clang refuses it at line 3: expected expression"
+    assert said[0].notes[0] == "`bad.h` line 3 reads `int broken = ;`"
+    assert said[0].notes.len() == 2
+    windows = "In file included from build\\tu-1\\t.c:7:\r\ntests/golden/run\\bad.h:3:14: error: expected expression\r\n    3 | int broken = ;\r\n"
+    assert refused(stderr: windows, s: s, decls: decls, runtime: "runtime", build: "build")[0].message == said[0].message
+
+    # Through the group's header, every include clang followed named.
+    through = "In file included from build/tu-1/t.c:8:\nIn file included from d/lib/outer.h:2:\nd/lib/inner.h:3:20: error: expected expression\n    3 | int inner_broken = ;\n"
+    inner = refused(stderr: through, s: s, decls: decls, runtime: "runtime", build: "build")
+    assert source.span_text(s, inner[0].span) == "\"lib/outer.h\""
+    assert inner[0].message == "`lib/outer.h`, the header this group names, does not compile: clang refuses `lib/inner.h`, which it includes, at line 3: expected expression"
+    assert inner[0].notes[1] == "the includes clang followed: `lib/outer.h` line 2 includes `lib/inner.h`"
+
+    # A warning before it is passed over; a `-Werror` is said; clang's note is
+    # carried, shown as the group's directory would name its file.
+    warned = "In file included from build/tu-1/t.c:7:\n./bad.h:2:2: warning: \"careful\" [-W#warnings]\n./bad.h:5:48: error: implicit conversion loses integer precision: 'long long' to 'int' [-Werror,-Wshorten-64-to-32]\n./bad.h:4:9: note: expanded from macro 'NARROW'\n1 warning and 1 error generated.\n"
+    flagged = refused(stderr: warned, s: s, decls: decls, runtime: "runtime", build: "build")
+    assert flagged[0].message == "`bad.h`, the header this group names, does not compile: clang refuses it at line 5: implicit conversion loses integer precision: 'long long' to 'int' [-Werror,-Wshorten-64-to-32]"
+    assert flagged[0].notes[0] == "clang adds, at `bad.h` line 4: expanded from macro 'NARROW'"
+    assert has(flagged[0].notes, needle: "clang's `-Werror` says the warning is one this compiler makes an error")
+
+test "a refusal that is not a bound header's own stays the compiler's (defect 360)"
+    s = program()
+    decls = decls_of()
+    none: [str] = [
+        # The generated C, and a first error there before one in a header.
+        "build/tu-1/t.c:9:1: error: use of undeclared identifier 'h_x'\n"
+        "build/tu-1/t.c:9:1: error: use of undeclared identifier 'h_x'\nIn file included from build/tu-1/t.c:7:\n./bad.h:3:14: error: expected expression\n"
+        # A missing header, which is `ffi_missing_header`'s.
+        "In file included from build/tu-1/t.c:7:\n./bad.h:2:10: fatal error: 'gone.h' file not found\n"
+        # The runtime's own header, a header no group reaches, and a group's
+        # error a note of the runtime's explains.
+        "In file included from build/tu-1/t.c:4:\nruntime/hero_os.h:4:1: error: expected expression\n"
+        "In file included from build/tu-1/t.c:9:\n./other.h:1:1: error: expected expression\n"
+        "In file included from build/tu-1/t.c:7:\n./bad.h:3:1: error: expected expression\nruntime/heroes_runtime.h:10:9: note: expanded from macro 'HERO_X'\n"
+        # A place written only inside clang's quotation of a line.
+        "    3 | ./bad.h:3:14: error: expected expression\n"
+        "clang: error: no input files\n"
+    ]
+
+    for text in none
+        assert refused(stderr: text, s: s, decls: decls, runtime: "runtime", build: "build").len() == 0
+
+    # A group binding the runtime's own header, as this compiler's source does.
+    bound = source.new_source(
+        name: "r.hero",
+        text: "extern \"hero_os.h\"\n    function hero_os_pid() -> i64\n\nfunction main()\n    print(hero_os_pid())\n"
+    )
+    parsed = parse.parse(bound.text)
+    in_runtime = "In file included from build/tu-1/r.c:4:\n/abs/runtime/hero_os.h:4:1: error: expected expression\n"
+    assert refused(stderr: in_runtime, s: bound, decls: parsed.decls, runtime: "/abs/runtime", build: "build").len() == 0
+
+# DEFECT 284's measurement, held: a group's header found under a directory
+# whose name holds the byte 0xE9, which only Linux makes, reached through
+# `CPATH` since a `.hero` file and argv are UTF-8. Debian clang 22.1.8 in the
+# Linux arm64 image printed the path with the byte as it is, and its words are
+# committed as it wrote them (`surface-fixtures/notext284/`). Read back as the
+# build reads them, the byte written by its value, the missing include and the
+# header clang refuses are each told on the program's own group, the path as
+# clang gave it in the message's notes; measured on the trunk's compiler in the
+# image the same day, the missing include at exit 1, a header's `#warning`
+# forwarded with the path so written at exit 0, and an extern the header
+# refutes told at exit 1.
+test "clang's words naming a header under a directory that is not UTF-8 are read back and told on the group (defect 284)"
+    text = "extern \"m.h\"\n    function six() -> i64\n\nextern \"b.h\"\n    function twice(x: i64) -> i64\n\nfunction main()\n    print(twice(x: six()))\n"
+    s = source.new_source(name: "u.hero", text: text)
+    parsed = parse.parse(text)
+    fixtures = "tests/golden/surface-fixtures/notext284/"
+    missing = read_back.words(fixtures + "missing-under-latin1-directory.txt").must()
+    line = ffi_lookup.lines(text: missing)[1]
+    assert line == "/t/caf<0xE9>/m.h:2:10: fatal error: 'gone.h' file not found"
+    lacked = ffi_build.missing_header(s, parsed.decls, line: line, stderr: missing).must()
+    assert lacked.code == "ffi_missing_header"
+    assert lacked.message == "`gone.h` is not on this machine's include path, and `m.h`, the header this group names, includes it at line 2"
+    refused_words = read_back.words(fixtures + "refused-under-latin1-directory.txt").must()
+    said = refused(stderr: refused_words, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    assert source.span_text(s, said[0].span) == "\"b.h\""
+    assert said[0].message == "`b.h`, the header this group names, does not compile: clang refuses it at line 3: expected expression"
+    assert said[0].notes[0] == "`b.h` line 3 reads `int broken = ;`"
+
+function has(notes: [str], needle: str) -> bool
+    for note in notes
+        if !clang_place.offset_of(text: note, needle: needle).is_err()
+            return true
+
+    return false

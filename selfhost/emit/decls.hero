@@ -41,6 +41,7 @@ use emit/extern_union
 use emit/extern_assert
 use emit/writer
 use emit/c_text
+use emit/macro_guard
 use parse
 use resolve
 use checker
@@ -75,9 +76,28 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # NEVER QUOTED — panel 036 measured what the quoted form costs: a
     # decoy sqlite3.h beside the generated unit is read with zero
     # diagnostics under -Weverything, and no _Static_assert can be
-    # written against a header this compiler does not own.
-    for line in c_text.includes(emit_externs.headers(p, s, decls))
+    # written against a header this compiler does not own. The compiler's
+    # own first; the groups' between the two lines that keep their macros
+    # off every name this unit's own code uses (defect 361).
+    own: [str] @ []
+    groups: [str] @ []
+
+    for header in emit_externs.headers(p, s, decls)
+        if emit_externs.is_own(header)
+            own @ own.push(header)
+        else
+            groups @ groups.push(header)
+
+    for line in c_text.includes(own)
         writer.line(@w, text: line)
+
+    # The bound names only where there are groups: they are read from every
+    # declaration, and a unit with no group, most of the compiler's own, has
+    # none to keep (measured: asked of every unit, 18.7 billion instructions
+    # more on the compiler's own `--emit-c`).
+    if groups.len() > 0
+        for line in macro_guard.around(c_text.includes(groups), bound: macro_guard.bound_names(s, decls))
+            writer.line(@w, text: line)
 
     writer.line(@w, text: "")
     writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 27, \"heroes_runtime.h is from another compiler\");")

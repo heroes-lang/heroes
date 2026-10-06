@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <handle-success-value-at-the-width-of-the-result.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <handle-success-value-at-the-width-of-the-result.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -52,7 +54,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3294dee, "released: ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 56 "handlesuccessvalueatthewidthoftheresult.c"
+#line 58 "handlesuccessvalueatthewidthoftheresult.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -91,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "handlesuccessvalueatthewidthoftheresult.c"
+#line 97 "handlesuccessvalueatthewidthoftheresult.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b);
@@ -109,7 +111,7 @@ void h_handlesuccessvalueatthewidthoftheresult_main(void);
 
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 void h_handlesuccessvalueatthewidthoftheresult_main(void) {
-#line 113 "handlesuccessvalueatthewidthoftheresult.c"
+#line 115 "handlesuccessvalueatthewidthoftheresult.c"
     ob * h0_a;
     ob * h1_b;
     uint64_t h2_total;
@@ -212,7 +214,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     return;
-#line 216 "handlesuccessvalueatthewidthoftheresult.c"
+#line 218 "handlesuccessvalueatthewidthoftheresult.c"
 }
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

@@ -1,0 +1,7 @@
+# Reads `geom.hero` by its bare name from the start, so `check` tells that
+# module's `fn` where it stands; `--apply` leaves this file as it is, the
+# certain fix being in another module.
+use geom
+
+function main()
+    print(geom.area(side: 2))

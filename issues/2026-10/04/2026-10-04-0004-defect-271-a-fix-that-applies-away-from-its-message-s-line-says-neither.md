@@ -3,7 +3,7 @@ kind: defect
 area: golden
 milestone: none
 filed: 2026-10-04
-commit: 1697cec1304423d90cdc0607f8181d18bd7abcc4
+commit: 155603c703c7f738afb1cddd88f7e63efb1e0497
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it could be: an author fixing by hand meets the next comma only after the first, and a tool reading `--json` cannot apply a fix it cannot place.
 
     Repaired at `1697cec1`, 2026-10-05, its message half: the rich form names a fix's place where it is not its message's line, gated by its case and the compiler's own tests; the net is owed at the batch's close. The JSON half stays open for a sitting: `check --json`'s fix carries no place, and its schema is a tool surface (CLAUDE.md § 4), so the item stays open.
+
+    Repaired at `155603c7`, 2026-10-06 (lane cli12), its JSON half, gated by its cases and the compiler's own tests; the net is owed at the batch's close. Panel 193's resolution, provisional: every fix of `check --json` carries its place (`file`, `line`, `col`, `end_line`, `end_col`, `byte_start`, `byte_end`, `text`), a certain one its `first_round`, every answer `"schema": 2` and its `"kind"`, a clean one a document, and the files read with their SHA-256; the terms in design.md §4.17, the help, `llms.txt` and both errors pages held to the writer's schema. Writing only the `written` fixes and asking again equals `check --apply` on 399 of 399 roots and 143 of 143 made CRLF.

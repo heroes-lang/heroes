@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <handle-a-reference-through-an-out-cell.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <handle-a-reference-through-an-out-cell.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -53,7 +55,7 @@ HERO_STR_STATIC(hero_str_f60994f, "rc: ");
 HERO_STR_STATIC(hero_str_11f05721, " refs: ");
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 57 "handleareferencethroughanoutcell.c"
+#line 59 "handleareferencethroughanoutcell.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -92,7 +94,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "handleareferencethroughanoutcell.c"
+#line 98 "handleareferencethroughanoutcell.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleareferencethroughanoutcell_Ob_eq(ob * const *a, ob * const *b);
@@ -110,7 +112,7 @@ void h_handleareferencethroughanoutcell_main(void);
 
 #line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
 void h_handleareferencethroughanoutcell_main(void) {
-#line 114 "handleareferencethroughanoutcell.c"
+#line 116 "handleareferencethroughanoutcell.c"
     ob * h0_a;
     ob * h1_b;
     int32_t h2_rc;
@@ -212,7 +214,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     return;
-#line 216 "handleareferencethroughanoutcell.c"
+#line 218 "handleareferencethroughanoutcell.c"
 }
 HERO_TU_LOCAL bool h_handleareferencethroughanoutcell_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

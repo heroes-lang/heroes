@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <abort-handle-borrows-that-gives-away.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <abort-handle-borrows-that-gives-away.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -48,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 52 "aborthandleborrowsthatgivesaway.c"
+#line 54 "aborthandleborrowsthatgivesaway.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -87,7 +89,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "aborthandleborrowsthatgivesaway.c"
+#line 93 "aborthandleborrowsthatgivesaway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b);
@@ -105,7 +107,7 @@ void h_aborthandleborrowsthatgivesaway_main(void);
 
 #line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
 void h_aborthandleborrowsthatgivesaway_main(void) {
-#line 109 "aborthandleborrowsthatgivesaway.c"
+#line 111 "aborthandleborrowsthatgivesaway.c"
     Slot * h0_a;
     int64_t t1;
     Slot * t2;
@@ -148,7 +150,7 @@ bb0:
     }
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     return;
-#line 152 "aborthandleborrowsthatgivesaway.c"
+#line 154 "aborthandleborrowsthatgivesaway.c"
 }
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

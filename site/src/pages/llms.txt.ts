@@ -6,14 +6,14 @@
  * moved to 6144 and the real count to 5369: nothing in the build read it, so
  * nothing went red. The marketing seat found it on 2026-09-09, on the one file
  * whose reader is the audience the language is for. The prose stays a plain
- * text file, `site/src/llms.txt`, and the three numbers in it are placeholders
+ * text file, `site/src/llms.txt`, and the four numbers in it are placeholders
  * the build fills from the suite that pins them, the same way `{{version}}`
  * and `{{realTokens}}` are filled in the HTML fragments. A placeholder the
  * build does not know is a build error, never a brace shipped to a reader.
  */
 import type { APIRoute } from 'astro';
 import { readText } from '../lib/repo.ts';
-import { ceilingK, specReal } from '../lib/claims.ts';
+import { ceilingK, specReal, jsonSchema } from '../lib/claims.ts';
 
 const SOURCE = 'site/src/llms.txt';
 
@@ -23,6 +23,7 @@ function filled(): string {
     ceilingK: ceilingK(),
     realTokens: String(real.tokens),
     realModel: real.model,
+    jsonSchema: String(jsonSchema()),
   };
   const text = readText(SOURCE).replace(/\{\{(\w+)\}\}/g, (whole, name: string) => {
     const value = values[name];

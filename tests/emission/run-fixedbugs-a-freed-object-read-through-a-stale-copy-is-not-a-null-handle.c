@@ -2,8 +2,11 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h>
+#pragma push_macro("value")
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -11,7 +14,7 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 
 #line 32 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 _Static_assert(__builtin_classify_type(*(outer * *)0) != 13, "heroes-ffi-union Outer ");
-#line 15 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 18 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -94,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 101 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b);
@@ -112,7 +115,7 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void);
 
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
-#line 116 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 119 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
     outer * h0_a;
     outer * h1_kept;
     outer * t1;
@@ -198,7 +201,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     return;
-#line 202 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 205 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

@@ -57,5 +57,10 @@ output and twenty principles printed by `heroes this`.
 - There is no installer yet, so the compiler is built from source with one
   clang command. The current compiler is written in Heroes; the earlier
   compiler is archived and no longer builds.
-- `heroes check --json` emits schema 1 with stable snake_case error codes,
-  source locations, notes and suggested fixes.
+- `heroes check --json` writes schema {{jsonSchema}} to stderr, with stable
+  snake_case error codes, source locations, notes and suggested fixes, each
+  fix with the place it applies, and every answer names the files it read and
+  their SHA-256. `heroes check --apply` writes the certain fixes into the
+  program; with `--json` it prints that program inside a document of the
+  same schema on stdout, with how many rounds wrote and the certain fixes it
+  left in other modules.

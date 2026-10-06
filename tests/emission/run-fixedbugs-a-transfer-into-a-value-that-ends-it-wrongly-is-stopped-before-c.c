@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -53,7 +55,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 57 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 59 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -94,7 +96,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 100 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b);
@@ -114,7 +116,7 @@ void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
 void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) {
-#line 118 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 120 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
     st * h0_s;
     wr * h1_w;
     st * t1;
@@ -185,7 +187,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     return;
-#line 189 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 191 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b) {
     return hero_handle_eq(*a, *b);

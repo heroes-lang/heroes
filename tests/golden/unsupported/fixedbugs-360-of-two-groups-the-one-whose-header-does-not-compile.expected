@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-360-broken.h`, the header this group names, does not compile: clang refuses it at line 5: expected expression
+  at tests/golden/unsupported/fixedbugs-360-of-two-groups-the-one-whose-header-does-not-compile.hero:10:8
+     |
+  10 | extern "fixedbugs-360-broken.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-360-broken.h` line 5 reads `int broken = ;`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

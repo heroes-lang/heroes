@@ -26,3 +26,7 @@ tests/golden/check/fixedbugs-135-l2-*.hero -text
 # lane recovery-b7, 2026-10-02), with what `check --apply` writes of it.
 tests/golden/check/fixedbugs-135-crlf-*.hero -text
 tests/golden/check/fixedbugs-135-crlf-*.applied -text
+
+# A message at a CRLF line end told where an LF line end is (defect 373,
+# lane cli12, 2026-10-06): its bytes are its CRLF line ends.
+tests/golden/check/fixedbugs-373-*.hero -text

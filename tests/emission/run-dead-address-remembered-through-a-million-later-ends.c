@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <dead-address-remembered-through-a-million-later-ends.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <dead-address-remembered-through-a-million-later-ends.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 55 "deadaddressrememberedthroughamillionlaterends.c"
+#line 57 "deadaddressrememberedthroughamillionlaterends.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -88,7 +90,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "deadaddressrememberedthroughamillionlaterends.c"
+#line 94 "deadaddressrememberedthroughamillionlaterends.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b);
@@ -106,7 +108,7 @@ void h_deadaddressrememberedthroughamillionlaterends_main(void);
 
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 void h_deadaddressrememberedthroughamillionlaterends_main(void) {
-#line 110 "deadaddressrememberedthroughamillionlaterends.c"
+#line 112 "deadaddressrememberedthroughamillionlaterends.c"
     big * h0_target;
     big * h1_keep;
     int64_t h2_i;
@@ -230,7 +232,7 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     return;
-#line 234 "deadaddressrememberedthroughamillionlaterends.c"
+#line 236 "deadaddressrememberedthroughamillionlaterends.c"
 }
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);

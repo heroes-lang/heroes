@@ -73,6 +73,7 @@ use cli/pointee_ask
 use cli/pointee_wants
 use cli/strings
 use cli/read_back
+use cli/kept
 use parse
 use resolve
 use checker
@@ -138,19 +139,19 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # `build/pointee-*` was cleared. It carries the record's digest as well,
     # since the check unit compiles the same headers the dump read.
     if !known.is_err()
-        kept_json = read_file(dump_of(dir: dir, sum: known.must()))
+        kept_json = kept.read(dump_of(dir: dir, sum: known.must()))
 
         if !kept_json.is_err()
             types = header_types.types_of(kept_json.must(), wanted)
             answered @ header_types.answered(wanted, types)
-            kept = read_file(
+            verdict = kept.read(
                 verdict_path(dir: dir, sum: known.must(), check_text: header_types.check_unit(headers, wanted, types))
             )
 
-            if !kept.is_err()
-                if kept.must() == "ok\n"
+            if !verdict.is_err()
+                if verdict.must() == "ok\n"
                     return ok()
-                return fail(code: "clang", msg: kept.must())
+                return fail(code: "clang", msg: verdict.must())
     process.mkdir_all(dir)?
 
     # Both units are published under the digest of their own text and
@@ -224,8 +225,8 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # The record last, after the two files it names by its digest: a
     # reader that finds it finds the answer and the verdict of the headers
     # it lists, whichever build published them.
-    publish.write_whole(path: dump_of(dir: dir, sum: sum), text: json.must(), keyed: true)?
-    publish.write_whole(path: verdict_path(dir: dir, sum: sum, check_text: check_text), text: said, keyed: true)?
+    kept.write(path: dump_of(dir: dir, sum: sum), text: json.must())?
+    kept.write(path: verdict_path(dir: dir, sum: sum, check_text: check_text), text: said)?
     publish.write_whole(path: listed, text: listing, keyed: true)?
 
     if checked.is_err()

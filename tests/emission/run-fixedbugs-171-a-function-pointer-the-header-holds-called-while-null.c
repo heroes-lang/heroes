@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -47,7 +49,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 
-#line 51 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
+#line 53 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -82,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
+#line 88 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +100,7 @@ void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void);
 
 #line 24 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
 void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void) {
-#line 102 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
+#line 104 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
     HeroStr t1;
     int32_t t2;
     int32_t t3;
@@ -120,7 +122,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
     return;
-#line 124 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
+#line 126 "fixedbugs171afunctionpointertheheaderholdscalledwhilenull.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
