@@ -108,7 +108,7 @@ argument, and for how long may C use it?**
   library's two bindings held as string literals in
   `selfhost/library_source.hero` included.
 
-## The resolution — provisional, author ratification pending
+## The resolution — ratified by the author (below)
 
 The most robust and complete route at every disagreement (CLAUDE.md § 4,
 CL-040); what conservative would have been is below the list.
@@ -211,7 +211,11 @@ sentences priced by `--refresh` at the landing.
 
 ## Author's verdict
 
-**PENDING**: put to the author with the recommendation to ratify (the
-ratification issue,
-`issues/2026-10/06/2026-10-06-2341-panel-196-ratify-amend-or-overturn-r1-to-r9-an-argument-reaches-c-as.md`).
-The resolution above is provisional until the author reads it (CLAUDE.md § 4).
+**RATIFIED, 2026-10-06**, R1 to R9 as written above, the author answering
+through the question widget minutes after 23:45 by the clock read when it was
+put (the next reading, 00:09, came after the disk was freed), choosing
+*ratify* over the conservative alternative and over *I want to read it
+first*, on the coordinator's summary of the nine points; recorded as a
+reading (CLAUDE.md § 4). The ratification issue is
+`issues/2026-10/06/2026-10-06-2341-panel-196-ratify-amend-or-overturn-r1-to-r9-an-argument-reaches-c-as.md`.
+The author may overturn it (CLAUDE.md § 4).
