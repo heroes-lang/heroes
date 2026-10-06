@@ -58,7 +58,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | touched | the suites that judge it |
 |---|---|
 | `selfhost/**` | `canonical` `layout` `order` `records`, **plus the compiler's own tests** |
-| `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**` and `seed/heroes.c`) | **`emission`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
+| `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
 | `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, plus everything `selfhost/**` already gets, and the run by hand below before a push |
 | `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
@@ -70,11 +70,20 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
 | `tests/golden/surface-fixtures/**` | `annotations` `fixes` **`probe`** |
 | `examples/**` | `canonical` `corpus` `emission` `warnings` |
-| `spec/heroes-spec.md` | `spec` `special` **`grammar`** |
+| `spec/heroes-spec.md` | `spec` `special` **`grammar`** `unseen` |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
-| `docs/**`, `issues/**`, `CLAUDE.md`, `.claude/**` | `records` |
+| `docs/**`, `issues/**`, `CLAUDE.md`, `.claude/**` | `records` `unseen` |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
+
+**`emit` and `unseen` were missing until 2026-10-06**, both found at batch 12's
+close. `tests/golden/emit/` holds emissions kept by hand that an emitter change
+moves: the batch's trial gate at `bead6e45` read `emit` 7 and 1 on
+`ffi-lent-emits-nothing`, moved by defect 361's guard includes, which its lane
+had not run because the `selfhost/emit/**` row named `emission` alone. And
+`tests/harness/suite_unseen.hero` (defect 356, panel 192's R12) reads every
+file `shell.project_files` names, so an invisible character written into a
+document, an issue or the spec is its verdict and no other suite's.
 
 **The site's build was missing from this map until 2026-09-28**, and it cost a
 deploy. `heroes probe` became the command's thirteenth verb at M-agreed-retention
