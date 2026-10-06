@@ -1,0 +1,19 @@
+# fixedbugs, defect 092, lane b13-unit, 2026-10-06: a count C reads through
+# a pointer, `getsockopt`'s `optlen`, is an `@` cell, and panel 194's R7
+# compares the value it holds on the way in with the record lent whole. 4096
+# bytes for a record of four: the program aborts before C runs, naming the
+# record's parameter, the count and the unit, and `a`, printed first, shows
+# nothing was written. Before that sitting `counted_by` refused an `@`
+# sibling, so this binding had no checked spelling at all, and without the
+# mark it wrote 4092 bytes over the stack at `check` 0.
+extern "fixedbugs-092-records.h"
+    record One tag one
+        a: i32
+    function fill_len(@buf: One counted_by n, @n: u32) -> i64
+
+function main()
+    o: One @ One(a: 0)
+    n: u32 @ 4096
+    print(o.a)
+    print(fill_len(@o, @n))
+    print(o.a)

@@ -1,0 +1,62 @@
+error[record_lend_extent]: `n` states 4096, outside the record lent whole to `buf` of `fill` — `buf` is declared `counted_by n`, and the header's `void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:40:23
+     |
+  40 |     print(fill(@o, n: 4096))  #~ record_lend_extent
+     |                       ^^^^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `n` states 17, outside the record lent whole to `buf` of `fill_pad` — `buf` is declared `counted_by n`, and the header's `void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:41:27
+     |
+  41 |     print(fill_pad(@p, n: 17))  #~ record_lend_extent
+     |                           ^^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `n` states 8, outside the record lent whole to `buf` of `fill` — `buf` is declared `counted_by n`, and the header's `void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:42:29
+     |
+  42 |     print(fill(@w.inner, n: 8))  #~ record_lend_extent
+     |                             ^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `nfds` states 2, outside the record lent whole to `fds` of `poll_like` — `fds` is declared `counted_by nfds`, and the header's `struct pfd *` counts it in what it points at: C read both sizes from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:43:31
+     |
+  43 |     print(poll_like(@q, nfds: 2))  #~ record_lend_extent
+     |                               ^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `nfds` states 2, outside the record lent whole to `fds` of `poll_typedef` — `fds` is declared `counted_by nfds`, and the header's `LPPFD` counts it in what it points at: C read both sizes from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:44:34
+     |
+  44 |     print(poll_typedef(@q, nfds: 2))  #~ record_lend_extent
+     |                                  ^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `n` states 4096, outside the record lent whole to `buf` of `peek` — `buf` is declared `counted_by n`, and the header's `const void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:45:23
+     |
+  45 |     print(peek(@o, n: 4096))  #~ record_lend_extent
+     |                       ^^^^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `n` states 8, outside the record lent whole to `buf` of `fill` — `buf` is declared `counted_by n`, and the header's `void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:46:27
+     |
+  46 |     print(fill(@xs[0], n: 8))  #~ record_lend_extent
+     |                           ^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `n` states 0 - 1, outside the record lent whole to `buf` of `fill_signed` — `buf` is declared `counted_by n`, and the header's `void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:47:30
+     |
+  47 |     print(fill_signed(@o, n: 0 - 1))  #~ record_lend_extent
+     |                              ^^^^^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit
+
+error[record_lend_extent]: `n` states 8, outside the record lent whole to `src` of `copy_n` — `src` is declared `counted_by n`, and the header's `const void *` counts it in bytes: C read the record's own size from the header
+  at tests/golden/unsupported/fixedbugs-092-a-count-past-a-record-lent-whole-is-refused.hero:48:29
+     |
+  48 |     print(copy_n(@p, @o, n: 8))  #~ record_lend_extent
+     |                             ^
+  note: a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit

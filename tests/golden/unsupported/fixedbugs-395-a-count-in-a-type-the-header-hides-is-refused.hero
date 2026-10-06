@@ -1,0 +1,24 @@
+# fixedbugs, defect 395's shape beside it, lane b13-unit, 2026-10-06.
+#
+# A counted parameter whose header type points at a struct the header leaves
+# incomplete: C counts `n` in a type only C's own source can size, so no
+# count can be held to the field lent. Before panel 194's R7 the count was
+# compared in bytes and these built at exit 0; route C's unit is
+# `sizeof(*(P)0)`, which clang refuses for such a P, and the pointee check
+# asks it before any unit compiles, so the refusal lands on the parameter,
+# `ffi_parameter_type`, never as clang's error in the generated C. Three
+# spellings: the struct, a typedef of it (clang names it `OP`, aka the
+# struct), and a typedef of its pointer (clang names the struct).
+extern "fixedbugs-395-opaque.h"
+    record Held tag held
+        buf: u8[16]
+        after: i64
+    function count_plain(o: ptr counted_by n lent, n: u64) -> i64  #~ ffi_parameter_type
+    function count_named(o: ptr counted_by n lent, n: u64) -> i64  #~ ffi_parameter_type
+    function count_hidden(o: ptr counted_by n lent, n: u64) -> i64  #~ ffi_parameter_type
+
+function main()
+    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(count_plain(o: h.buf.ptr(), n: 1))
+    print(count_named(o: h.buf.ptr(), n: 1))
+    print(count_hidden(o: h.buf.ptr(), n: 1))

@@ -1,0 +1,2 @@
+0
+!panic: `fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in bytes

@@ -4,7 +4,9 @@
 # header and keeps the answers; this file only decides what is asked, from
 # the declaration in hand. Split out of that file on 2026-09-30, when defect
 # 134's publishing passed it over §11's 300 lines, along the seam its own
-# two headings drew: what is asked, and the check itself.
+# two headings drew: what is asked, and the check itself. Since panel 194's
+# R7 it also asks what a LEND needs (`lend_ask`): the unit of every counted
+# parameter, and the pointee of every record lent whole with no count.
 
 use ast
 use source
@@ -49,9 +51,55 @@ function pointees(p: containers.Program, c: state.Checked, s: source.Source, dec
                 out @ out.push(
                     pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: opaque.must(), file: found.file, line: found.line, depth: true)
                 )
+            lent = lend_ask(c, slot, decls, f: f, index: index)
+
+            if !lent.is_err()
+                out @ out.push(
+                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: lent.must(), file: found.file, line: found.line, depth: false)
+                )
             index @ index + 1
 
     return out
+
+# What a LEND asks of the header at this parameter (panel 194's R7, defects
+# 092 and 395), or absent. A parameter declared `counted_by` asks the UNIT
+# its count is in, whatever it is declared as — a `ptr` a field is lent to,
+# or a group's record lent whole through `@` — because the count is C's and
+# C counts in what its pointer points at. A group's record lent whole through
+# `@` with no count asks whether the header takes it as `void *`, where any
+# record crosses in silence and nothing bounds what C reaches. A handle is a
+# pointer already, and its depth is `opaque_out`'s question.
+function lend_ask(c: state.Checked, slot: containers.Slot, decls: [ast.Decl], f: containers.Function, index: i64) -> str?
+    match decls[f.decl].kind
+        .function_decl fd =>
+            if index < fd.value.params.len() && !fd.value.params[index].counted_by.is_err()
+                return ok(pointee_ask.UNIT)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
+
+    if !whole_record(c, slot, decls)
+        return fail(code: "none", msg: "neither counted nor a record lent whole")
+    return ok(pointee_ask.WHOLE)
+
+# An `@` parameter whose type is a group's record and not a handle: the
+# program's own cell, lent whole, its address handed to C.
+function whole_record(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) -> bool
+    mutable = match slot.kind
+        .param_slot ps                               => ps.mutable
+        .local_slot | .synthetic_slot | .return_slot => false
+
+    if !mutable
+        return false
+
+    match table.get(c.types, slot.ty)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .function_ty         => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
 
 # The C spelling of a numeric `@` parameter's declared type, or absent for
 # any other kind of slot.
@@ -142,3 +190,22 @@ test "a numeric @ parameter is asked its width, an opaque one its depth, and eac
     # are numeric and ask for width; `stream: ptr` and `x: f64` are not `@` and ask
     # nothing.
     assert named == ["getline.line@0:ptr:2:depth", "getline.n@1:int32_t:2:width", "frexp.e@1:int32_t:3:width"]
+
+# Panel 194's R7: a counted parameter asks its unit, a `ptr` and a record lent
+# whole alike; a record lent whole with no count asks whether C takes it as
+# `void *`; a handle asks only its depth, and a record by value nothing.
+test "a lend asks the unit of a counted parameter, and a record lent whole with no count asks its pointee"
+    text = "extern \"s.h\"\n    record One tag one\n        a: i32\n    record Op tag opaque\n    function fill(p: ptr counted_by n lent, n: u64) -> i64\n    function read_into(@buf: One counted_by n, n: u64) -> i64\n    function plain(@buf: One, n: u64) -> i64\n    function eat(@h: Op)\n    function show(o: One) -> i64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    named: [str] @ []
+
+    for one in pointees(low.program, c, s, parsed.decls)
+        if one.file == "t.hero"
+            named @ named.push(one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared)
+
+    assert sort(named) == ["eat.h@0:handle", "fill.p@0:unit", "plain.buf@0:whole", "read_into.buf@0:unit"]

@@ -52,10 +52,13 @@ record Whole
     # (defect 229).
     kinds: [i64]
 
-function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> Whole
+# `lend_units` is what the round's pointee check read of each counted
+# parameter (`emit.emit_told`'s, panel 194's R7).
+function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}, lend_units: {str: str}) -> Whole
     names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+    names.lend_units @ lend_units
     by_decl: {i64: i64} @ {}
     index: i64 @ 0
 
