@@ -1,0 +1,213 @@
+# What the pointee check says about a LEND's parameter, read back onto the
+# author's declaration (design.md §4.19, §1.12; panel 194's R7, ratified by
+# delegation 2026-10-06; defects 092 and 395).
+#
+# A lend hands C the program's own bytes, a field through `f.ptr()` or a
+# group's record whole through `@`, and C reaches as far as a count it is told
+# in ANOTHER argument. Two things only the header knows decide whether that
+# count can be held to what is lent, and `cli/header_types.hero` asks both in
+# the check unit, `#line`d at the extern's declaration:
+#
+# - a whole record lent with no `counted_by` to a `void *`, where C converts
+#   any record's address in silence and nothing bounds what it reaches — the
+#   reproducer is `read(fd: 0, buf: @h, n: 4096)` into a 48-byte `addrinfo`,
+#   a stack overwrite at `check` 0. It fails as a marker line, read below
+#   into `ffi_parameter_type` naming the `counted_by` that admits the lend;
+# - the UNIT of a counted parameter, what its pointer points at, which C
+#   counts in: `sizeof(*(P)0)` for the header's own type P. One it leaves
+#   incomplete cannot be sized, by this compiler or by the program, so clang
+#   refuses the `sizeof` naming the TYPE, and the parameter is found from it
+#   through what the asker recorded (`pointee_ask.Answered.pointee`).
+#
+# Where the unit is known, the comparison itself is `emit/lend_extent.hero`'s,
+# in the main unit, before the call.
+
+use token
+use ast
+use source
+use diag
+use emit/ffi_lookup
+use emit/ffi_pointee
+use cli/pointee_ask
+use parse
+use resolve
+use checker
+
+# The contract between `cli/header_types.hero`, which writes these, and the
+# readers below: one string each, one home (CLAUDE.md §11). Neither is a
+# prefix of the other or of `ffi_pointee`'s markers.
+constant WHOLE_MARKER: str
+    "heroes-ffi-whole-void "
+
+constant UNIT_MARKER: str
+    "heroes-ffi-unit "
+
+# Every diagnostic a check unit's line says about a lend's parameter.
+function lend_refusals(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answered: [pointee_ask.Answered], line: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    whole = whole_void(s, decls, tree, line: line)
+
+    if !whole.is_err()
+        out @ out.push(whole.must())
+
+    for one in unit_unsized(s, decls, tree, answered, line: line)
+        out @ out.push(one)
+
+    return out
+
+# `heroes-ffi-whole-void <name> <param> <header type…>` failed.
+function whole_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: WHOLE_MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not a whole-record assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 3
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    name = parts[0]
+    param = parts[1]
+    header_type = ffi_pointee.trim_quote(tail_from(parts, at: 2))
+    at = parameter_at(s, decls, tree, name: name, param: param)?
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + param + "` of `" + name + "` lends a whole record to C, and the header takes it as `" + header_type + "` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing",
+        span: at
+    )
+    d.notes @ d.notes.push(
+        "§4.19: name the parameter that carries the count, `@" + param + ": <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is"
+    )
+    return ok(d)
+
+# `invalid application of 'sizeof' to an incomplete type 'X'` at a counted
+# parameter's unit line: the parameter is every counted one whose pointee,
+# through every typedef, is X — or the `aka` clang adds after a typedef's name.
+function unit_unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answered: [pointee_ask.Answered], line: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    named = ffi_lookup.after(text: line, marker: "incomplete type '")
+
+    if named.is_err()
+        return out
+    first = ffi_lookup.up_to_quote(named.must())
+    aka: str @ ""
+    plain = ffi_lookup.after(text: named.must(), marker: "(aka '")
+
+    if !plain.is_err()
+        aka @ ffi_lookup.up_to_quote(plain.must())
+
+    for one in answered
+        if one.asked.declared != pointee_ask.UNIT || one.pointee.len() == 0
+            continue
+
+        if one.pointee != first && one.pointee != aka
+            continue
+        at = parameter_at(s, decls, tree, name: one.asked.name, param: one.asked.param)
+
+        if at.is_err()
+            continue
+        d: diag.Diagnostic @ diag.new_diagnostic(
+            code: "ffi_parameter_type",
+            message: "`" + one.asked.param + "` of `" + one.asked.name + "` is declared `counted_by`, and the header's `" + one.header_type + "` points at `" + one.pointee + "`, which it leaves incomplete — C counts in a type only C can size, so no count can be held to what is lent",
+            span: at.must()
+        )
+        d.notes @ d.notes.push(
+            "§4.19: a counted parameter is lent the program's own bytes, a field or a record, and C counts them in what its pointer points at; where the header keeps that type opaque, declare `" + one.asked.param + "` without `counted_by` and hand it a pointer C gave you"
+        )
+        out @ out.push(d)
+
+    return out
+
+# The parameter's name in the author's declaration, or the declaration's own
+# span where the name is not found.
+function parameter_at(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, param: str) -> token.Span?
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    spans = ffi_pointee.parameter_spans(s, decls, tree, name: name, param: param)
+
+    if spans.is_err()
+        return ok(found.must().span)
+    return ok(spans.must().name)
+
+# A marker's words from `at` on, joined back: the header's type may be
+# several words (`struct pfd *`).
+function tail_from(parts: [str], at: i64) -> str
+    tail: [str] @ []
+    index: i64 @ at
+
+    while index < parts.len()
+        tail @ tail.push(parts[index])
+        index @ index + 1
+
+    return tail.join(" ")
+
+## Tests
+
+test "a whole record lent to a void pointer with no count is read onto its parameter, naming counted_by"
+    text = "extern \"s.h\"\n    record One tag one\n        a: i32\n    function fill(@buf: One, n: u64) -> i64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    _ = checker.check(parsed.tree, out, s, parsed.decls)
+    line = "t.hero:4:5: error: static assertion failed due to requirement '!__builtin_types_compatible_p(void, void)': heroes-ffi-whole-void fill buf void *"
+    found = lend_refusals(s, parsed.decls, parsed.tree, [], line: line)
+    assert found.len() == 1
+    assert found[0].code == "ffi_parameter_type"
+    assert source.span_text(s, found[0].span) == "buf"
+    assert found[0].message == "`buf` of `fill` lends a whole record to C, and the header takes it as `void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing"
+    assert ffi_lookup.has(text: found[0].notes[0], needle: "counted_by <count>")
+    assert found[0].fixes.len() == 0
+
+    # Another marker's line, and the unit's, are not this one.
+    assert lend_refusals(s, parsed.decls, parsed.tree, [], line: "t.hero:4:5: error: static assertion failed: heroes-ffi-pointee-void fill buf int32_t void").len() == 0
+
+test "an incomplete unit is found from the type clang names, through a typedef's aka, and only for a counted parameter"
+    text = "extern \"s.h\"\n    function fill(p: ptr counted_by n lent, n: u64) -> i64\n    function take(@out: i64) -> i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    _ = checker.check(parsed.tree, out, s, parsed.decls)
+    counted = pointee_ask.Pointee(
+        name: "fill",
+        param: "p",
+        index: 0,
+        declared: pointee_ask.UNIT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    width = pointee_ask.Pointee(
+        name: "take",
+        param: "out",
+        index: 0,
+        declared: "int64_t",
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    answered: [pointee_ask.Answered] = [
+        pointee_ask.Answered(asked: counted, header_type: "OP *", pointee: "struct opaque")
+        pointee_ask.Answered(asked: width, header_type: "struct opaque", pointee: "")
+    ]
+    plain = unit_unsized(
+        s,
+        parsed.decls,
+        parsed.tree,
+        answered,
+        line: "t.hero:2:22: error: invalid application of 'sizeof' to an incomplete type 'struct opaque'"
+    )
+    assert plain.len() == 1
+    assert source.span_text(s, plain[0].span) == "p"
+    assert plain[0].message == "`p` of `fill` is declared `counted_by`, and the header's `OP *` points at `struct opaque`, which it leaves incomplete — C counts in a type only C can size, so no count can be held to what is lent"
+    aka = unit_unsized(
+        s,
+        parsed.decls,
+        parsed.tree,
+        answered,
+        line: "t.hero:2:22: error: invalid application of 'sizeof' to an incomplete type 'OP' (aka 'struct opaque')"
+    )
+    assert aka.len() == 1
+    assert unit_unsized(s, parsed.decls, parsed.tree, answered, line: "t.hero:2:22: error: invalid application of 'sizeof' to an incomplete type 'struct other'").len() == 0

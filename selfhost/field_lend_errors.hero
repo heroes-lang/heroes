@@ -132,6 +132,24 @@ function field_lend_extent(lend: str, callee: str, parameter: str, count: str, s
     )
     return d
 
+# The same extent where C counts in a unit WIDER than a byte (panel 194's R7,
+# defect 395): `fill_ints(int *a, n)` over a field of 16 bytes holds four, so
+# `n: 16` writes 64 bytes. C compared the count with the field's size divided
+# by the size of what the header's pointer points at, and both sizes are C's.
+# No `Fix`: the length in elements is C's arithmetic on a size this compiler
+# does not know, and a guess that is wrong by a factor would write past the
+# field all the same.
+function field_lend_unit(lend: str, callee: str, parameter: str, count: str, stated: str, length: i64, header_type: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_extent",
+        message: "`" + lend + "` lends a field of " + length.to_str() + " bytes, and `" + count + "` states " + stated + " — `" + parameter + "` of `" + callee + "` is declared `counted_by " + count + "`, and the header's `" + header_type + "` counts it in what it points at, so C reaches past the field: C read both sizes from the header",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "C reads and writes `" + count + "` of what `" + header_type + "` points at, never `" + count + "` bytes, so a count above the field's " + length.to_str() + " bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field"
+    )
+    return d
+
 # A `ptr` lend C would write through, rooted at a name the program may not
 # write (panel 166, 2026-09-19; defect 065; design.md §4.4, §4.19).
 #

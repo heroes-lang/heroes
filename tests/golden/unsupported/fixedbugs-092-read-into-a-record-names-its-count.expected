@@ -1,0 +1,6 @@
+error[ffi_parameter_type]: `buf` of `read` lends a whole record to C, and the header takes it as `void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/fixedbugs-092-read-into-a-record-names-its-count.hero:16:29
+     |
+  16 |     function read(fd: i32, @buf: Hints, n: u64) -> i64  #~ ffi_parameter_type
+     |                             ^^^
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is

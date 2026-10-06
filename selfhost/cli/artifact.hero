@@ -64,6 +64,7 @@ use cli/compile
 use cli/toolchain
 use cli/pointee
 use cli/pointee_ask
+use cli/header_types
 use cli/compiling
 use cli/publish
 
@@ -100,11 +101,14 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     #
     # `emit_maybe` with the learned tags is exactly what `assemble.fused`
     # compiles, so the bytes written are the bytes clang accepted. With no
-    # tagged handle the map is empty and the text is untouched.
+    # tagged handle the map is empty and the text is untouched. A counted
+    # parameter's unit is the pointee check's answer above, and rides the
+    # same way (panel 194's R7).
     text: str @ art.c
+    units = header_types.lend_units(answered)
 
-    if struct_tags.len() > 0
-        text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags).c
+    if struct_tags.len() > 0 || units.len() > 0
+        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags, lend_units: units).c
 
     if options.output.is_err()
         io.print_artifact(text: text)

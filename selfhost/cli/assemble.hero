@@ -31,6 +31,7 @@ use cli/units
 use cli/link
 use cli/pointee
 use cli/pointee_ask
+use cli/header_types
 use cli/layout
 use cli/compiling
 use emit
@@ -96,9 +97,14 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     if laid.is_err()
         return Round(verdict: laid, refusals: messages_of(laid), binary: "")
 
+    # The unit each counted parameter's count is compared in, read from the
+    # header by the check above (panel 194's R7): every unit is emitted with
+    # it, so the comparison is in what C counts and never in bytes alone.
+    counted = header_types.lend_units(answered)
+
     if site.is_tests
-        return fused(t, options, art, s, site, struct_tags: struct_tags, told: @told)
-    return per_module(t, options, art, s, site, struct_tags: struct_tags, told: @told)
+        return fused(t, options, art, s, site, struct_tags: struct_tags, lend_units: counted, told: @told)
+    return per_module(t, options, art, s, site, struct_tags: struct_tags, lend_units: counted, told: @told)
 
 # What every probe of this build compiles the program's headers under
 # (`cli/compiling`): the level, the sanitizers, the `--include`
@@ -119,7 +125,7 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
 # A test binary keeps the fused unit: `heroes test` compiles once and runs per
 # block, and the fused path is the artifact path the blessed emissions pin. The
 # text is the pipeline's own on the first round; a round that carries a learned
-# tag emits again, because the tag's spelling is in the text.
+# tag, or a counted parameter's unit, emits again, because both are in the text.
 #
 # **It is compiled as a translation unit and linked as one** (defect 134): it
 # was written in place under a directory keyed on the SOURCE, `build/<hash>/`,
@@ -127,12 +133,12 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
 # another build's clang read it, and its object and binary were staged under
 # one name each. Through `units.tu_object` the text names its own directory
 # and the object is cached like every other, a warm `heroes test` included.
-function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, @told: {str: bool}) -> Round
+function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, @told: {str: bool}) -> Round
     none: [str] = []
     text: str @ art.c
 
-    if struct_tags.len() > 0
-        text @ emit.emit_maybe(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags).c
+    if struct_tags.len() > 0 || lend_units.len() > 0
+        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags, lend_units: lend_units).c
     memo: {str: str} @ {}
     made = units.tu_object(
         t,
@@ -159,7 +165,7 @@ function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 # One .c per module (panel 093): each TU compiled to its own cached object,
 # every dirty TU before any verdict (R5), one link over all of them re-run
 # every build.
-function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, @told: {str: bool}) -> Round
+function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, @told: {str: bool}) -> Round
     root = module_names.module_of(s.name)
     objects: [str] @ [site.object]
     stopped: ()? @ ok()
@@ -170,7 +176,14 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # so 157 modules used to buy 157 identical answers — and the arena walk
     # and the content hashing behind them is what made the per-module
     # self-build take longer than the fused one.
-    whole = members.whole_of(art.program, c: art.checked, s: s, decls: art.decls, struct_tags: struct_tags)
+    whole = members.whole_of(
+        art.program,
+        c: art.checked,
+        s: s,
+        decls: art.decls,
+        struct_tags: struct_tags,
+        lend_units: lend_units
+    )
 
     # One build's answers about files on disk. Every TU asks whether the
     # headers it read still say the same thing, and 157 of them share

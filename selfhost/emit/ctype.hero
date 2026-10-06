@@ -90,6 +90,8 @@ record Names
     # the type: int64_t (*f)(int64_t). One typedef keeps the
     # <type> <name> rule everywhere else.
     funcs: {i64: str}
+    # A counted parameter's header type by `<C name> <position>` (`emit/lend_extent`).
+    lend_units: {str: str}
 
 # What separates a name the EMITTER invents from a name an author could
 # write: a leading digit.
@@ -178,6 +180,7 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
 
     empty_options: {i64: str} = {}
     empty_funcs: {i64: str} = {}
+    no_units: {str: str} = {}
     return Names(
         aggregates: aggregates,
         satellites: satellites,
@@ -186,7 +189,8 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
         handle_decls: handle_decls,
         options: empty_options,
         cases: cases,
-        funcs: empty_funcs
+        funcs: empty_funcs,
+        lend_units: no_units
     )
 
 # Assigns a C name to every T? the program interned. Walked over the

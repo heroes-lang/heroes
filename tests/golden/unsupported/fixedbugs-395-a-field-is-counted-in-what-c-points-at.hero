@@ -1,0 +1,61 @@
+# fixedbugs, defect 395, lane b13-unit, 2026-10-06 (found by panel 194's
+# compiler-engineer and ffi-pragmatist, each beside defect 092).
+#
+# SYMPTOM: a `u8[16]` field lent through `h.buf.ptr()` to `fill_ints(int *a,
+# n)`, declared `a: ptr counted_by n lent`, with `n: 16`: `check` 0, `build` 0,
+# `run` 0 with the next field overwritten, 4702111234474983745. `mbstowcs`
+# over the same field with `n: 16` wrote 64 bytes and aborted.
+#
+# CAUSE: the extent was compared in bytes, `n <= sizeof(field)`, and C counts
+# in what its pointer points at: four bytes to an `int`, four or two to a
+# `wchar_t`, eight to a `struct pfd`.
+#
+# FIX: panel 194's R7, route C. The pointee check reads each counted
+# parameter's own type from the header (`cli/header_types.hero`), and the
+# emitter compares `n <= sizeof(field) / sizeof(*(P)0)`, both sizes C's on
+# the leg that builds. A constant past it is refused here, on the number,
+# naming the header's type; a byte's unit keeps the byte's message and its
+# guess. The shapes: `int`, a unit two bytes wide and its floor, `int` and its
+# floor, a read through `const int *` from a `=` binding, a record's unit, the
+# same through a typedef of the pointer, a pointer to an array, two lends
+# counted by one count, a header constant, `wchar_t` (`mbstowcs`'s unit, read
+# through the case's own header, since the system's declaration of `mbstowcs`
+# is spelled differently on each leg); and a byte's unit past
+# the field, through `char *` and through a typedef of `void *`. The counts
+# that fit are `tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs`.
+extern "fixedbugs-395-units.h"
+    constant HELD_BYTES: u64
+    record Held tag held
+        buf: u8[16]
+        after: i64
+    record Ten tag ten
+        buf: u8[10]
+        after: i64
+    function fill_ints(a: ptr counted_by n lent, n: u64) -> i64
+    function read_ints(a: ptr counted_by n lent, n: u64) -> i64
+    function fill_shorts(a: ptr counted_by n lent, n: u64) -> i64
+    function poll_like(fds: ptr counted_by nfds lent, nfds: u64) -> i32
+    function poll_typedef(fds: ptr counted_by nfds lent, nfds: u64) -> i32
+    function fill_rows(rows: ptr counted_by n lent, n: u64) -> i64
+    function copy_n(dst: ptr counted_by n lent, src: ptr counted_by n lent, n: u64) -> i64
+    function fill_bytes(buf: ptr counted_by n lent, n: u64) -> i64
+    function fill_lpvoid(buf: ptr counted_by n lent, n: u64) -> i64
+    function fill_wide(dst: ptr counted_by n lent, n: u64) -> i64
+
+function main()
+    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    t: Ten @ Ten(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(fill_ints(a: h.buf.ptr(), n: 16))  #~ field_lend_extent
+    print(fill_shorts(a: t.buf.ptr(), n: 6))  #~ field_lend_extent
+    print(fill_ints(a: t.buf.ptr(), n: 3))  #~ field_lend_extent
+    r = Held(buf: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], after: 7)
+    print(read_ints(a: r.buf.ptr(), n: 5))  #~ field_lend_extent
+    print(poll_like(fds: h.buf.ptr(), nfds: 3))  #~ field_lend_extent
+    print(poll_typedef(fds: h.buf.ptr(), nfds: 3))  #~ field_lend_extent
+    print(fill_rows(rows: h.buf.ptr(), n: 2))  #~ field_lend_extent
+    print(copy_n(dst: h.buf.ptr(), src: t.buf.ptr(), n: 16))  #~ field_lend_extent
+    print(fill_ints(a: h.buf.ptr(), n: HELD_BYTES))  #~ field_lend_extent
+    print(fill_wide(dst: h.buf.ptr(), n: 16))  #~ field_lend_extent
+    print(fill_bytes(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
+    print(fill_lpvoid(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
+    print(h.after)

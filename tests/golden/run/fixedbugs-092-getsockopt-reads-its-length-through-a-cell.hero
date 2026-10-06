@@ -1,0 +1,26 @@
+# fixedbugs, defect 092, lane b13-unit, 2026-10-06: the real `getsockopt`
+# (`SO_LINGER` into `struct linger`), the program panel 194's ffi-pragmatist
+# measured route A making impossible to bind: its `optval` is `void *` and
+# its length a `socklen_t *` C reads and writes back. Since that sitting's R7
+# the record is lent whole with `@value: Linger counted_by len`, the count an
+# `@` cell, and the call is held to the record's size, in bytes, before C
+# runs; C writes the option and the length back. A leg with no
+# `sys/socket.h` skips it.
+extern "sys/socket.h"
+    constant AF_UNIX: i64
+    constant SOCK_STREAM: i64
+    constant SOL_SOCKET: i64
+    constant SO_LINGER: i64
+    record Linger tag linger
+        l_onoff: i32
+        l_linger: i32
+    function socket(domain: i32, kind: i32, protocol: i32) -> i32
+    function getsockopt(fd: i32, level: i32, name: i32, @value: Linger counted_by len, @len: u32) -> i32
+
+function main()
+    fd = socket(domain: AF_UNIX.to_i32().must(), kind: SOCK_STREAM.to_i32().must(), protocol: 0)
+    l: Linger @ Linger(l_onoff: 7, l_linger: 7)
+    n: u32 @ 8
+    print(getsockopt(fd: fd, level: SOL_SOCKET.to_i32().must(), name: SO_LINGER.to_i32().must(), value: @l, len: @n))
+    print(l.l_onoff)
+    print(n)

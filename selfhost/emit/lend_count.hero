@@ -1,0 +1,235 @@
+# The COUNT a lend crosses with, as C text (design.md §4.19, §1.12; panel
+# 166's route C; panel 194's R7). `emit/lend_extent.hero` writes the checks
+# before the call, and this answers the questions they ask of the count and of
+# the signature: which sibling a `counted_by` names, whether the count is a
+# constant C can fold, its C spelling, its sign, and where the call stands.
+# Split out of that file on 2026-10-06 when the whole record's lend and the
+# unit took it past §11's 300 lines, along the seam its two halves already
+# had: what is checked, and what the count is.
+#
+# WHAT COUNTS AS CONSTANT: a literal, a group `constant`, and arithmetic over
+# those. A name read at run time is not, and neither is an `@` cell C reads:
+# those are compared at the call. A Heroes `constant` lowers to a call of its
+# accessor and is not folded here either: a route nobody priced, recorded
+# rather than assumed.
+
+use ast
+use token
+use source
+use check/state
+use check/table
+use ir
+use ir/containers
+use emit/aggregate
+use emit/literal
+use emit/mangle
+use widths
+
+# For each parameter of the extern, the position of the sibling its
+# `counted_by` names, or -1: the pointer at position k is counted by the
+# integer at position `counted[k]`.
+function counted_siblings(s: source.Source, decls: [ast.Decl], decl: i64) -> [i64]
+    out: [i64] @ []
+
+    match decls[decl].kind
+        .function_decl fd =>
+            for param in fd.value.params
+                at: i64 @ 0 - 1
+
+                if !param.counted_by.is_err()
+                    wanted = source.span_text(s, param.counted_by.must())
+                    i: i64 @ 0
+
+                    for other in fd.value.params
+                        if source.span_text(s, other.name) == wanted
+                            at @ i
+                        i @ i + 1
+                out @ out.push(at)
+        .constant_decl | .record_decl | .variant_decl | .test_decl =>
+            _ = 0
+
+    return out
+
+function param_names(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
+    out: [str] @ []
+
+    match decls[decl].kind
+        .function_decl fd =>
+            for param in fd.value.params
+                out @ out.push(source.span_text(s, param.name))
+        .constant_decl | .record_decl | .variant_decl | .test_decl =>
+            _ = 0
+
+    return out
+
+# A count as the call hands it over: its C text, the Heroes type it has, and
+# where the author wrote it, which an `@` cell does not carry — C reads the
+# cell's value through the pointer, and that value is what is compared.
+record Count
+    text: str
+    ty: i64
+    value: i64
+
+# The count at an argument: a value's temporary, or the cell an `@` names,
+# read as the place it is. `value` is the IR value, -1 for a cell.
+function count_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, arg: ir.Arg) -> Count
+    match arg
+        .value_arg v => return Count(text: mangle.value(v.value), ty: containers.value_type(f, v.value), value: v.value)
+        .inout_arg io => return Count(
+            text: aggregate.place(c, s, decls, f, at: io.place),
+            ty: place_type(c, s, decls, f, at: io.place),
+            value: 0 - 1
+        )
+
+    return Count(text: "", ty: 0, value: 0 - 1)
+
+# The Heroes type of a place: its root slot's, through each field step. A
+# place reaching a count has no index step, since the lowering copies an
+# element into a cell of its own before an `@` hands it over.
+function place_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> i64
+    ty: i64 @ f.slots[at.root].ty
+
+    for step in containers.steps_of(f, at.path)
+        match step
+            .field_step fs =>
+                found = aggregate.field(c, s, decls, owner: ty, index: fs.at)
+
+                if found.is_err()
+                    return ty
+                ty @ found.must().ty
+            .index_step => return ty
+
+    return ty
+
+# Where the call whose arguments are `run` stands: the place a message about
+# it names, when what it lends carries no span of its own.
+function call_span(f: containers.Function, run: ir.Run) -> token.Span?
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .call cl =>
+                    if cl.arguments == run
+                        return ok(inst.span)
+                .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast     => continue
+                .construct | .index | .map_get | .len_of | .tag_of | .payload | .func_ref   => continue
+                .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => continue
+
+    return fail(code: "none", msg: "no call takes these arguments")
+
+# The instruction that produced a value.
+function producer(f: containers.Function, value: i64) -> ir.Inst?
+    for blk in f.blocks
+        for inst in blk.insts
+            if !inst.dest.is_err() && inst.dest.must() == value
+                return ok(inst)
+
+    return fail(code: "none", msg: "no producer")
+
+# The C text of a value the emitter can prove constant: a literal in the width
+# the checker gave it, a group constant by its C name, and arithmetic over
+# those. Anything else is not written, which is the honest answer rather than
+# the loud one: the assertion is a check the compiler ADDS where it can, and
+# where it cannot the comparison at the call stands.
+function constant_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
+    inst = producer(f, value: value)?
+
+    match inst.op
+        .lit l =>
+            match l.value
+                .int_const =>
+                    kind = int_kind(c, f, value: value)
+                    none: [str] = []
+                    return ok(literal.constant_text(l.value, kind, none))
+                .float_const | .bool_const | .str_const | .null_ptr => return fail(code: "none", msg: "not an integer")
+        .call cl =>
+            match cl.callee
+                .heroes_fn h =>
+                    match decls[h.decl].kind
+                        .constant_decl k =>
+                            if !k.header.is_err()
+                                return ok(source.span_text(s, decls[h.decl].name))
+                            return fail(code: "none", msg: "a Heroes constant is not folded here")
+                        .function_decl | .record_decl | .variant_decl | .test_decl => return fail(
+                            code: "none",
+                            msg: "a call"
+                        )
+                .extern_fn | .builtin_fn | .indirect => return fail(code: "none", msg: "a call")
+        .binary b =>
+            op = c_operator(b.op)?
+            left = constant_text(c, s, decls, f, value: b.left)?
+            right = constant_text(c, s, decls, f, value: b.right)?
+            return ok("(" + left + " " + op + " " + right + ")")
+        .load | .store | .push_owned | .unary | .cast | .construct | .field | .index => return fail(
+            code: "none",
+            msg: "not a constant"
+        )
+        .map_get | .len_of | .tag_of | .payload | .func_ref | .copy_out | .abort_op => return fail(
+            code: "none",
+            msg: "not a constant"
+        )
+        .incref | .decref | .decref_slot | .hole | .missing => return fail(code: "none", msg: "not a constant")
+
+    return fail(code: "none", msg: "unreached")
+
+# The arithmetic C shares with Heroes, spelled the same. A comparison answers a
+# `bool` and is not an extent.
+function c_operator(op: ir.BinaryOp) -> str?
+    return match op
+        .add                              => ok("+")
+        .sub                              => ok("-")
+        .mul                              => ok("*")
+        .div                              => ok("/")
+        .rem                              => ok("%")
+        .bit_and                          => ok("&")
+        .bit_or                           => ok("|")
+        .bit_xor                          => ok("^")
+        .shl                              => ok("<<")
+        .shr                              => ok(">>")
+        .eq | .ne | .lt | .le | .gt | .ge => fail(code: "none", msg: "a comparison is not an extent")
+
+function int_kind(c: state.Checked, f: containers.Function, value: i64) -> widths.IntKind?
+    match table.get(c.types, containers.value_type(f, value))
+        .int_ty ik                                                 => return ok(ik.kind)
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return fail(code: "none", msg: "not an integer")
+        .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not an integer")
+        .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not an integer")
+
+    return fail(code: "none", msg: "unreached")
+
+function signed_int(c: state.Checked, ty: i64) -> bool
+    match table.get(c.types, ty)
+        .int_ty ik =>
+            return match ik.kind
+                .i8 | .i16 | .i32 | .i64 => true
+                .u8 | .u16 | .u32 | .u64 => false
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named => return false
+        .case_ty | .failure | .generic | .error                    => return false
+
+    return false
+
+# The length of the fixed array a lend hands over — the Heroes-side number, for
+# the message; every comparison is against C's `sizeof`.
+function fixed_length(c: state.Checked, f: containers.Function, value: i64) -> i64?
+    match table.get(c.types, containers.value_type(f, value))
+        .fixed x                                                  => return ok(x.length)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a fixed array")
+        .array | .map | .fallible | .function_ty | .named         => return fail(code: "none", msg: "not a fixed array")
+        .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a fixed array")
+
+    return fail(code: "none", msg: "unreached")
+
+# The C spelling of a message: this compiler's own text, so the only characters
+# it can hold are the ones a path and a name can, and a quote or a backslash in
+# a file name is escaped rather than assumed away.
+function quoted(text: str) -> str
+    parts: [str] @ ["\""]
+
+    for ch in text.chars()
+        if ch == "\"" || ch == "\\"
+            parts @ parts.push("\\" + ch)
+        else
+            parts @ parts.push(ch)
+
+    parts @ parts.push("\"")
+    return parts.join("")

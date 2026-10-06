@@ -1,330 +1,207 @@
-# The extent a lend crosses with, asserted in C where the call states it as a
-# constant (design.md §4.19, §1.12; panel 166's route C in its C-emitted form,
-# ratified 2026-09-19; defect 063).
+# The count a lend crosses with, held before the call to what is lent, in the
+# unit C counts it in (design.md §4.19, §1.12; panel 166's route C, ratified
+# 2026-09-19; panel 194's R7, ratified by delegation 2026-10-06; defects 063,
+# 092 and 395).
 #
-# THE CHECK IS C'S, AND SO IS THE NUMBER. Before an extern call whose argument
-# is a lend at a `counted_by` parameter, with an extent the call states as a
-# compile-time constant, the emitter writes
+# WHAT IS LENT. A field of a binding, `f.ptr()` to a `ptr` declared
+# `counted_by n`; or a group's record whole, `@h` to an `@` parameter declared
+# `counted_by n`. Either way C is handed an address and reaches as far as `n`
+# says, and `n` is another argument.
 #
-#     _Static_assert(0 <= (int64_t)(INT64_C(64)) && (int64_t)(INT64_C(64)) <= (int64_t)sizeof(h0_s.name),
-#                    "heroes-ffi-extent sl_fill p n 812 824 830 832 8");
+# THE UNIT IS C'S, AND SO IS EVERY NUMBER. C counts in what its pointer points
+# at — `read` in bytes through `void *`, `poll` in `struct pollfd`s,
+# `mbstowcs` in `wchar_t`s — so `n` of them fit in a lent object of S bytes
+# when `n <= S / sizeof(*(P)0)`, P the header's own type for the parameter,
+# which only the pointee check reads (`cli/header_types.hero`) and
+# `emit/ctype.Names.lend_units` carries here. `sizeof` of the object is C's
+# too, which is what makes it right on a `partial` record whose size Heroes
+# does not know. Under `-std=gnu11`, the dialect `cli/flags.hero` names,
+# `sizeof` of `void` is one, so a `void *` counts bytes, panel 194's ruling in
+# C's own arithmetic. Until that sitting the comparison was in bytes for every
+# pointer, and `fill_ints(int *a, n)` over a 16-byte field took `n: 16`,
+# overwrote the next field and exited 0 (defect 395).
 #
-# `sizeof` of the FIELD, in the emitted C, against the real header. That is what
-# makes it right where a Heroes-side check is wrong twice over (panel 166's
-# critic): a `partial` record's size is C's and not the field list's, and a
-# group `constant` — a macro, `SL_NAME_LEN` — lowers to a CALL of its accessor,
-# so a check that wanted a literal would refuse the careful reader and accept
-# the careless one. Here the macro's NAME is written into the assertion and C
-# compares its own value. Zero runtime cost, and the call's own line is
-# byte-identical to before. `emit/ffi_extent.hero` reads the marker back into
-# `field_lend_extent`, on the number the author wrote.
+# WHERE THE COUNT IS A CONSTANT — a literal, a group `constant`, arithmetic
+# over those (`emit/lend_count.hero`) — the check is a `_Static_assert` and
+# costs nothing at run time; its marker carries what `emit/ffi_extent.hero`
+# needs to put the refusal on the number the author wrote. Two assertions per
+# lend, of which C itself picks the one that can fail: the unit of one byte,
+# whose message says bytes and offers the field's length, and every wider
+# unit, whose message names the header's type. A count read at run time, or
+# read through an `@` cell C writes back (`getsockopt`'s length), is one
+# compare before the call and a named abort.
 #
-# WHAT COUNTS AS CONSTANT: a literal, a group `constant`, and arithmetic over
-# those. A name read at run time is not, and no assertion is written — the
-# sitting adopted the C99 `[static N]` discipline, *the declaration without the
-# inference*, and a variable extent is the shape it leaves to the author. A
-# Heroes `constant` lowers to a call of its accessor and is not folded here
-# either: a route nobody priced, recorded rather than assumed.
+# AND WHERE NOTHING READ THE UNIT the build stops, loud: an assertion that
+# always fails, which no reader claims, so it is exit 2 and the compiler's
+# fault. The pointee check asks every counted parameter, so that line is
+# reached only where the check could not run, and there the build's own
+# compile has already told the author why (a header that does not
+# preprocess, a name the header spells as a macro).
 #
-# WHY IN THE BODY AND NOT AT FILE SCOPE. The field is named through the place
-# the lend renders — `h0_s.name`, `h0_o.inner.nsap` — which is a local, and
-# `sizeof` an lvalue of a complete, non-variable type is an integer constant
-# expression in C11 wherever it stands. A `_Static_assert` is a declaration with
-# no initialiser, so the prologue's rule about `goto` never reaches it.
+# WHY IN THE BODY AND NOT AT FILE SCOPE. The object is named through the place
+# it is lent from — `h0_s.name`, `h0_o.inner` — which is a local, and `sizeof`
+# an lvalue of a complete, non-variable type is an integer constant expression
+# in C11 wherever it stands. A `_Static_assert` is a declaration with no
+# initialiser, so the prologue's rule about `goto` never reaches it.
 
 use ast
+use token
 use source
 use check/state
-use check/table
 use ir
 use ir/containers
 use emit/writer
-use emit/mangle
 use emit/ctype
+use emit/aggregate
 use emit/field_lend
-use emit/literal
-use widths
+use emit/lend_count
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader: one
-# string, one home (CLAUDE.md §11).
+# string each, one home (CLAUDE.md §11). None is a prefix of another.
 constant MARKER: str
     "heroes-ffi-extent "
 
-# One assertion per lend at a counted parameter with a constant extent, written
-# before the call that carries them.
+constant UNIT_MARKER: str
+    "heroes-ffi-extent-unit "
+
+constant RECORD_MARKER: str
+    "heroes-ffi-extent-record "
+
+constant UNASKED_MARKER: str
+    "heroes-ffi-extent-unasked "
+
+# What a counted argument lends: the C lvalue of the object, the bytes of it
+# Heroes knows (a field's length; 0 for a record, whose size is C's alone),
+# whether it is a record lent whole, and the span a message about it names.
+record Lent
+    place: str
+    length: i64
+    whole: bool
+    span: token.Span
+
+# The checks before one extern call, one per lend at a counted parameter.
 function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64)
-    counted = counted_siblings(s, decls, decl: decl)
+    counted = lend_count.counted_siblings(s, decls, decl: decl)
     given = containers.args_of(f, run)
     index: i64 @ 0
 
     for arg in given
-        match arg
-            .value_arg v =>
-                lent = field_lend.lend_of(f, value: v.value)
+        if index < counted.len() && counted[index] >= 0 && counted[index] < given.len()
+            lent = lent_by(c, s, decls, f, arg: arg, run: run)
 
-                if !lent.is_err() && index < counted.len() && counted[index] >= 0 && counted[index] < given.len()
-                    one = assertion(
-                        c,
-                        names,
-                        s,
-                        decls,
-                        f,
-                        lend: lent.must(),
-                        extent: given[counted[index]],
-                        decl: decl,
-                        pointer: index,
-                        count: counted[index]
-                    )
-
-                    if !one.is_err()
-                        writer.line(@w, text: "    " + one.must())
-                    else
-                        guard = runtime_guard(
-                            c,
-                            s,
-                            decls,
-                            f,
-                            lend: lent.must(),
-                            extent: given[counted[index]],
-                            decl: decl,
-                            count: counted[index]
-                        )
-
-                        if !guard.is_err()
-                            writer.line(@w, text: "    " + guard.must())
-            .inout_arg =>
-                _ = 0
-
+            if !lent.is_err()
+                for text in checks(c, names, s, decls, f, lent: lent.must(), count: given[counted[index]], decl: decl, pointer: index, at: counted[index])
+                    writer.line(@w, text: "    " + text)
         index @ index + 1
 
-# For each parameter of the extern, the position of the sibling its
-# `counted_by` names, or -1: the pointer at position k is counted by the
-# integer at position `counted[k]`.
-function counted_siblings(s: source.Source, decls: [ast.Decl], decl: i64) -> [i64]
-    out: [i64] @ []
+# What an argument lends, if it lends anything a count can be held to: the
+# field a `ptr()` takes the address of, or the record an `@` names. A `ptr`
+# value that is not a lend — `nullptr`, an address C gave — is the program's
+# word and nothing here can measure it.
+function lent_by(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, arg: ir.Arg, run: ir.Run) -> Lent?
+    match arg
+        .value_arg v =>
+            lend = field_lend.lend_of(f, value: v.value)?
+            place = field_lend.lent_place(c, s, decls, f, value: lend.operand)?
+            length = lend_count.fixed_length(c, f, value: lend.operand)?
+            return ok(Lent(place: place, length: length, whole: false, span: lend.span))
+        .inout_arg io =>
+            at = lend_count.call_span(f, run: run)?
+            return ok(Lent(place: aggregate.place(c, s, decls, f, at: io.place), length: 0, whole: true, span: at))
 
-    match decls[decl].kind
-        .function_decl fd =>
-            for param in fd.value.params
-                at: i64 @ 0 - 1
+    return fail(code: "none", msg: "unreached")
 
-                if !param.counted_by.is_err()
-                    wanted = source.span_text(s, param.counted_by.must())
-                    i: i64 @ 0
+# The lines for one lend: two assertions where the count is a constant, one
+# compare where it is not, and the loud line where no unit was read.
+function checks(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, lent: Lent, count: ir.Arg, decl: i64, pointer: i64, at: i64) -> [str]
+    params = lend_count.param_names(s, decls, decl: decl)
+    callee = source.span_text(s, decls[decl].name)
 
-                    for other in fd.value.params
-                        if source.span_text(s, other.name) == wanted
-                            at @ i
-                        i @ i + 1
-                out @ out.push(at)
-        .constant_decl | .record_decl | .variant_decl | .test_decl =>
-            _ = 0
+    if pointer >= params.len() || at >= params.len()
+        return []
+    header = names.lend_units[callee + " " + pointer.to_str()]
 
-    return out
+    if header.is_err()
+        return [
+            "_Static_assert(0, \"" + UNASKED_MARKER + callee + " " + params[pointer] + ": the pointee check read no unit for this counted parameter\");"
+        ]
+    unit = "sizeof(*(" + header.must() + ")0)"
+    n = lend_count.count_of(c, s, decls, f, arg: count)
+    spelled = ctype.c_type(names, c: c, ty: n.ty)
+    folded = constant_count(c, s, decls, f, n: n)
 
-# The assertion for one lend, or absent where the extent is not a constant the
-# emitter can spell.
-function assertion(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, lend: field_lend.Lend, extent: ir.Arg, decl: i64, pointer: i64, count: i64) -> str?
-    extent_value = match extent
-        .value_arg e => e.value
-        .inout_arg   => 0 - 1
+    if !folded.is_err() && !spelled.is_err()
+        stated = lend_count.producer(f, value: n.value)
 
-    if extent_value < 0
-        return fail(code: "none", msg: "an @ argument carries no count in")
-    text = constant_text(c, s, decls, f, value: extent_value)?
-    place = field_lend.lent_place(c, s, decls, f, value: lend.operand)?
-    length = fixed_length(c, f, value: lend.operand)?
-    ty = containers.value_type(f, extent_value)
-    spelled = ctype.c_type(names, c: c, ty: ty)?
-    stated = producer(f, value: extent_value)?
-    guard: str @ ""
+        if !stated.is_err()
+            return asserted(
+                c,
+                lent: lent,
+                n: n,
+                text: folded.must(),
+                spelled: spelled.must(),
+                unit: unit,
+                marker_tail: callee + " " + params[pointer] + " " + params[at],
+                stated: stated.must().span,
+                header: header.must()
+            )
+    return [
+        compared(c, s, lent: lent, n: n, unit: unit, callee: callee, pointer: params[pointer], count: params[at], header: header.must())
+    ]
 
-    if signed_int(c, ty)
-        guard @ "0 <= (" + spelled + ")(" + text + ") && "
-    params = param_names(s, decls, decl: decl)
+# The constant text of a count, or absent: a cell is never one.
+function constant_count(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, n: lend_count.Count) -> str?
+    if n.value < 0
+        return fail(code: "none", msg: "an @ cell is read at the call")
+    return lend_count.constant_text(c, s, decls, f, value: n.value)
 
-    if pointer >= params.len() || count >= params.len()
-        return fail(code: "none", msg: "a position past the signature")
-    marker = MARKER + source.span_text(s, decls[decl].name) + " " + params[pointer] + " " + params[count] + " " + lend.span.start.to_str() + " " + lend.span.end.to_str() + " " + stated.span.start.to_str() + " " + stated.span.end.to_str() + " " + length.to_str()
-    return ok(
-        "_Static_assert(" + guard + "(" + spelled + ")(" + text + ") <= (" + spelled + ")sizeof(" + place + "), \"" + marker + "\");"
-    )
-
-# **THE HALF NO ASSERTION CAN REACH: an extent read at run time.** One compare
-# before the call, against the same `sizeof` the assertion uses, and a named
-# abort if the number is past the field.
-#
-# WHY IT IS HERE RATHER THAN LEFT TO THE PROGRAM. Panel 166 adopted route C's
-# C-emitted form, whose check is *only where the extent is a compile-time
-# constant* — and the compiler-engineer's own condition for approving the route
-# was that *a variable extent must be refused, not admitted; admitting it
-# silently is the defect wearing a mark*. Measured on the day this landed:
-# `sum_n(p: s.name.ptr(), n: k)` with `k` a parameter read 4096 bytes of the
-# stack at exit 0 with the mark in place, and so did `to_u64(64).must()`, which
-# is a constant no folding here can see. design.md §1.12 makes no-corruption a
-# goal of the LANGUAGE and CLAUDE.md § Precedence puts it above speed, so the
-# compare lands rather than the hole.
-#
-# WHAT IT COSTS, and a seat priced it before it was written: the ffi-pragmatist
-# measured one compare at **1% over 200 million lends**, `-O2`, `noinline`
-# callee, `volatile` extent so the loop is not folded, ratio clean. The shape is
-# `guard_arguments`' null-`cstr` panic one boundary over.
-#
-# WHAT CONSERVATIVE WOULD HAVE BEEN: refusing a non-constant extent at check
-# time, which is the engineer's condition read literally. It refuses
-# `wrap(s: Sl, k: i64)` — a count computed by the program and correct — so it
-# trades a corruption for an over-refusal, and §4.19's completeness clause is
-# the other half of the same §1.12 this discharges.
-function runtime_guard(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, lend: field_lend.Lend, extent: ir.Arg, decl: i64, count: i64) -> str?
-    extent_value = match extent
-        .value_arg e => e.value
-        .inout_arg   => 0 - 1
-
-    if extent_value < 0
-        return fail(code: "none", msg: "an @ argument carries no count in")
-    place = field_lend.lent_place(c, s, decls, f, value: lend.operand)?
-    length = fixed_length(c, f, value: lend.operand)?
-    ty = containers.value_type(f, extent_value)
-    params = param_names(s, decls, decl: decl)
-
-    if count >= params.len()
-        return fail(code: "none", msg: "a position past the signature")
-    at = source.source_line(s, lend.span.start)
-    said = at.file + ":" + at.line.to_str() + ": `" + source.span_text(s, decls[decl].name) + "` was given an extent past the " + length.to_str() + " bytes of the field lent to it, read from `" + params[count] + "` at run time"
+# The two assertions, of which C picks the one that can fail: the first holds
+# for every unit wider than a byte, the second for a byte.
+function asserted(c: state.Checked, lent: Lent, n: lend_count.Count, text: str, spelled: str, unit: str, marker_tail: str, stated: token.Span, header: str) -> [str]
     low: str @ ""
 
-    if signed_int(c, ty)
-        low @ mangle.value(extent_value) + " < 0 || "
-    return ok(
-        "if (" + low + "(uint64_t)(" + mangle.value(extent_value) + ") > (uint64_t)sizeof(" + place + ")) hero_panic(" + quoted(said) + ");"
-    )
+    if lend_count.signed_int(c, n.ty)
+        low @ "0 <= (" + spelled + ")(" + text + ") && "
+    fits_bytes = low + "(" + spelled + ")(" + text + ") <= (" + spelled + ")sizeof(" + lent.place + ")"
+    fits_units = low + "(" + spelled + ")(" + text + ") <= (" + spelled + ")(sizeof(" + lent.place + ") / " + unit + ")"
+    at_count = stated.start.to_str() + " " + stated.end.to_str()
 
-# The C spelling of a message: this compiler's own text, so the only characters
-# it can hold are the ones a path and a name can, and a quote or a backslash in
-# a file name is escaped rather than assumed away.
-function quoted(text: str) -> str
-    parts: [str] @ ["\""]
+    if lent.whole
+        return [
+            "_Static_assert(" + unit + " != 1 || (" + fits_bytes + "), \"" + RECORD_MARKER + marker_tail + " " + at_count + " bytes " + header + "\");"
+            "_Static_assert(" + unit + " == 1 || (" + fits_units + "), \"" + RECORD_MARKER + marker_tail + " " + at_count + " unit " + header + "\");"
+        ]
+    at_lend = lent.span.start.to_str() + " " + lent.span.end.to_str()
+    tail = marker_tail + " " + at_lend + " " + at_count + " " + lent.length.to_str()
+    return [
+        "_Static_assert(" + unit + " != 1 || (" + fits_bytes + "), \"" + MARKER + tail + "\");"
+        "_Static_assert(" + unit + " == 1 || (" + fits_units + "), \"" + UNIT_MARKER + tail + " " + header + "\");"
+    ]
 
-    for ch in text.chars()
-        if ch == "\"" || ch == "\\"
-            parts @ parts.push("\\" + ch)
-        else
-            parts @ parts.push(ch)
+# **THE HALF NO ASSERTION CAN REACH: a count read at run time**, or through an
+# `@` cell. One compare before the call, in the unit, and a named abort if the
+# count is past what is lent; C picks the sentence by the unit's size.
+#
+# WHY IT IS HERE RATHER THAN LEFT TO THE PROGRAM. Panel 166's compiler-engineer
+# approved its route on the condition that *a variable extent must be refused,
+# not admitted; admitting it silently is the defect wearing a mark*, and
+# refusing every count a program computes would refuse correct programs, which
+# §4.19's completeness clause forbids. Its cost, priced before it was written:
+# one compare, about 2 instructions a call at `-O2` (lane b12-ffi13's
+# measurement for panel 194), the shape `guard_arguments`' null-`cstr` panic
+# takes one boundary over.
+function compared(c: state.Checked, s: source.Source, lent: Lent, n: lend_count.Count, unit: str, callee: str, pointer: str, count: str, header: str) -> str
+    where = source.source_line(s, lent.span.start)
+    at = where.file + ":" + where.line.to_str() + ": `" + callee + "` was given "
+    from = "read from `" + count + "` at run time"
+    bytes: str @ at + "an extent past the " + lent.length.to_str() + " bytes of the field lent to it, " + from
+    units: str @ bytes + " and counted in what the header's `" + header + "` points at"
 
-    parts @ parts.push("\"")
-    return parts.join("")
+    if lent.whole
+        bytes @ at + "a count past the record lent whole to `" + pointer + "`, " + from + " and counted in bytes"
+        units @ at + "a count past the record lent whole to `" + pointer + "`, " + from + " and counted in what the header's `" + header + "` points at"
+    low: str @ ""
 
-function param_names(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
-    out: [str] @ []
-
-    match decls[decl].kind
-        .function_decl fd =>
-            for param in fd.value.params
-                out @ out.push(source.span_text(s, param.name))
-        .constant_decl | .record_decl | .variant_decl | .test_decl =>
-            _ = 0
-
-    return out
-
-# The instruction that produced a value.
-function producer(f: containers.Function, value: i64) -> ir.Inst?
-    for blk in f.blocks
-        for inst in blk.insts
-            if !inst.dest.is_err() && inst.dest.must() == value
-                return ok(inst)
-
-    return fail(code: "none", msg: "no producer")
-
-# The C text of a value the emitter can prove constant: a literal in the width
-# the checker gave it, a group constant by its C name, and arithmetic over
-# those. Anything else is not written, which is the honest answer rather than
-# the loud one: the assertion is a check the compiler ADDS where it can, and
-# where it cannot the program's word stands, as the resolution says.
-function constant_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
-    inst = producer(f, value: value)?
-
-    match inst.op
-        .lit l =>
-            match l.value
-                .int_const =>
-                    kind = int_kind(c, f, value: value)
-                    none: [str] = []
-                    return ok(literal.constant_text(l.value, kind, none))
-                .float_const | .bool_const | .str_const | .null_ptr => return fail(code: "none", msg: "not an integer")
-        .call cl =>
-            match cl.callee
-                .heroes_fn h =>
-                    match decls[h.decl].kind
-                        .constant_decl k =>
-                            if !k.header.is_err()
-                                return ok(source.span_text(s, decls[h.decl].name))
-                            return fail(code: "none", msg: "a Heroes constant is not folded here")
-                        .function_decl | .record_decl | .variant_decl | .test_decl => return fail(
-                            code: "none",
-                            msg: "a call"
-                        )
-                .extern_fn | .builtin_fn | .indirect => return fail(code: "none", msg: "a call")
-        .binary b =>
-            op = c_operator(b.op)?
-            left = constant_text(c, s, decls, f, value: b.left)?
-            right = constant_text(c, s, decls, f, value: b.right)?
-            return ok("(" + left + " " + op + " " + right + ")")
-        .load | .store | .push_owned | .unary | .cast | .construct | .field | .index => return fail(
-            code: "none",
-            msg: "not a constant"
-        )
-        .map_get | .len_of | .tag_of | .payload | .func_ref | .copy_out | .abort_op => return fail(
-            code: "none",
-            msg: "not a constant"
-        )
-        .incref | .decref | .decref_slot | .hole | .missing => return fail(code: "none", msg: "not a constant")
-
-    return fail(code: "none", msg: "unreached")
-
-# The arithmetic C shares with Heroes, spelled the same. A comparison answers a
-# `bool` and is not an extent.
-function c_operator(op: ir.BinaryOp) -> str?
-    return match op
-        .add                              => ok("+")
-        .sub                              => ok("-")
-        .mul                              => ok("*")
-        .div                              => ok("/")
-        .rem                              => ok("%")
-        .bit_and                          => ok("&")
-        .bit_or                           => ok("|")
-        .bit_xor                          => ok("^")
-        .shl                              => ok("<<")
-        .shr                              => ok(">>")
-        .eq | .ne | .lt | .le | .gt | .ge => fail(code: "none", msg: "a comparison is not an extent")
-
-function int_kind(c: state.Checked, f: containers.Function, value: i64) -> widths.IntKind?
-    match table.get(c.types, containers.value_type(f, value))
-        .int_ty ik                                                 => return ok(ik.kind)
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return fail(code: "none", msg: "not an integer")
-        .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not an integer")
-        .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not an integer")
-
-    return fail(code: "none", msg: "unreached")
-
-function signed_int(c: state.Checked, ty: i64) -> bool
-    match table.get(c.types, ty)
-        .int_ty ik =>
-            return match ik.kind
-                .i8 | .i16 | .i32 | .i64 => true
-                .u8 | .u16 | .u32 | .u64 => false
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
-        .array | .fixed | .map | .fallible | .function_ty | .named => return false
-        .case_ty | .failure | .generic | .error                    => return false
-
-    return false
-
-# The length of the fixed array a lend hands over — the Heroes-side number, for
-# the message; the assertion itself compares against C's `sizeof`.
-function fixed_length(c: state.Checked, f: containers.Function, value: i64) -> i64?
-    match table.get(c.types, containers.value_type(f, value))
-        .fixed x                                                  => return ok(x.length)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a fixed array")
-        .array | .map | .fallible | .function_ty | .named         => return fail(code: "none", msg: "not a fixed array")
-        .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a fixed array")
-
-    return fail(code: "none", msg: "unreached")
+    if lend_count.signed_int(c, n.ty)
+        low @ n.text + " < 0 || "
+    return "if (" + low + "(uint64_t)(" + n.text + ") > (uint64_t)(sizeof(" + lent.place + ") / " + unit + ")) hero_panic(" + unit + " == 1 ? " + lend_count.quoted(bytes) + " : " + lend_count.quoted(units) + ");"

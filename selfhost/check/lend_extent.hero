@@ -21,8 +21,16 @@
 # turns into one C assertion where the extent is a constant
 # (`emit/lend_extent.hero`). Three things are judged about the mark, each a fact
 # about the declaration in hand and never about the world: the marked parameter
-# is a `ptr`, the name is a sibling, and the sibling is an integer C takes by
-# value.
+# is a `ptr` or a group's record lent whole through `@`, the name is a sibling,
+# and the sibling is an integer C takes by value or reads through an `@` cell.
+#
+# THE RECORD AND THE CELL SINCE PANEL 194's R7 (defect 092). `read(fd: 0, buf:
+# @h, n: 4096)` into a 48-byte `addrinfo` wrote 4048 bytes over the stack at
+# `check` 0, because a record lent whole had no word to tie it to its count; it
+# takes `counted_by` now, and an undeclared one the header takes as `void *` is
+# refused at the build (`emit/ffi_unit.hero`). A count C reads through a
+# pointer, `getsockopt`'s `socklen_t *optlen`, is an `@` cell: the call is
+# compared with the value it holds on the way in, which is what C reads.
 #
 # AND THE SECOND MARK IS `lent`, SINCE PANEL 171: `function strlen(s: cstr
 # lent) -> u64`, the declaration's word for *this call keeps nothing of what
@@ -45,6 +53,7 @@
 use ast
 use token
 use source
+use handles
 use check/state
 use check/table
 use check/lower
@@ -55,7 +64,7 @@ use resolve
 ## The declaration
 
 # Every `counted_by` in an extern signature, judged where it is written.
-function declared_extents(@c: state.Checker, s: source.Source, f: ast.FunctionDecl, declared_name: token.Span)
+function declared_extents(@c: state.Checker, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span)
     function_name = source.span_text(s, declared_name)
 
     for param in f.params
@@ -66,15 +75,15 @@ function declared_extents(@c: state.Checker, s: source.Source, f: ast.FunctionDe
         sibling_name = source.span_text(s, mark)
         why: str @ ""
 
-        if !is_ptr(c, param.ty)
-            why @ "`counted_by` says how far C reads or writes through a `ptr`, and `" + param_name + "` is not one"
+        if !is_ptr(c, param.ty) && !lent_whole(c, decls, param)
+            why @ "`counted_by` says how far C reads or writes through a `ptr`, or through a group's record lent whole with `@`, and `" + param_name + "` is neither"
         sibling = sibling_named(f, s, owner: param.name, name: sibling_name)
 
         if why == "" && sibling.is_err()
             why @ "`" + sibling_name + "` names no other parameter of `" + function_name + "` — the extent is a sibling in the same signature, the one C reads the count from"
 
-        if why == "" && !integer_by_value(c, sibling.must())
-            why @ "`" + sibling_name + "` is not an integer C takes by value, so it cannot say how far C reads — an extent is `i32`, `u64`, or another width the header spells"
+        if why == "" && !integer_count(c, sibling.must())
+            why @ "`" + sibling_name + "` is not an integer C takes by value or reads through an `@` cell, so it cannot say how far C reads — an extent is `i32`, `u64`, or another width the header spells"
 
         if why != ""
             state.push_diagnostic(
@@ -135,12 +144,29 @@ function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl
                 ffi_errors.lent_shape(parameter: param_name, function_name: source.span_text(s, declared_name), why: why, span: param.name)
             )
 
-# An integer the header takes by value: not `@`, and an `int_ty`. A float, a
-# `bool` and a pointer are refused as extents; so is `@n`, which is C's
-# out-parameter and holds no count on the way in.
-function integer_by_value(c: state.Checker, param: ast.Param) -> bool
-    if param.mutable
+# A group's record lent whole: an `@` parameter whose type is a record of a
+# group and not a handle, which is a pointer already and lends nothing.
+function lent_whole(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> bool
+    written = state.written_type(c.out, param.ty)
+
+    if !param.mutable || written.is_err()
         return false
+
+    match table.get(c.out.types, written.must())
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .function_ty         => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
+
+# An integer: one the header takes by value, or an `@` cell C reads the count
+# from (panel 194's R7), the way `getsockopt` reads `*optlen`. A float, a
+# `bool` and a pointer are refused as extents.
+function integer_count(c: state.Checker, param: ast.Param) -> bool
     written = state.written_type(c.out, param.ty)
 
     if written.is_err()
@@ -176,7 +202,7 @@ function shape_refusals(text: str) -> i64
         match decl.kind
             .function_decl fd =>
                 if fd.value.is_extern
-                    declared_extents(@c, s, f: fd.value, declared_name: decl.name)
+                    declared_extents(@c, s, p.decls, f: fd.value, declared_name: decl.name)
             .constant_decl | .record_decl | .variant_decl | .test_decl =>
                 _ = 0
 
@@ -194,6 +220,15 @@ test "the three shapes of a wrong mark are refused, and the right one is quiet"
     assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by m, n: i64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0))\n") == 1
     assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, n: f64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0.0))\n") == 1
 
-test "a mark naming its own parameter, or an `@` sibling, names no extent"
+test "a mark naming its own parameter names no extent, and an `@` cell is a count C reads"
     assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by p, n: i64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0))\n") == 1
-    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: i64) -> i64\n\nfunction main()\n    k: i64 @ 0\n    print(f(p: nullptr, @k))\n") == 1
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: i64) -> i64\n\nfunction main()\n    k: i64 @ 0\n    print(f(p: nullptr, @k))\n") == 0
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: f64) -> i64\n\nfunction main()\n    k: f64 @ 0.0\n    print(f(p: nullptr, @k))\n") == 1
+
+# Panel 194's R7: a group's record lent whole through `@` takes the mark; the
+# same record by value lends nothing, and a handle is a pointer already.
+test "a record lent whole takes counted_by, by value and as a handle it does not"
+    one = "extern \"s.h\"\n    record One tag one\n        a: i32\n    record Op tag opaque\n"
+    assert shape_refusals(one + "    function f(@b: One counted_by n, n: u64) -> i64\n\nfunction main()\n    print(1)\n") == 0
+    assert shape_refusals(one + "    function f(b: One counted_by n, n: u64) -> i64\n\nfunction main()\n    print(1)\n") == 1
+    assert shape_refusals(one + "    function f(@h: Op counted_by n, n: u64) -> i64\n\nfunction main()\n    print(1)\n") == 1

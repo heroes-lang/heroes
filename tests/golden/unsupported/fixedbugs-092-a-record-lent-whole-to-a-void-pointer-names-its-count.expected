@@ -1,0 +1,34 @@
+error[ffi_parameter_type]: `buf` of `fill` lends a whole record to C, and the header takes it as `void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count.hero:27:20
+     |
+  27 |     function fill(@buf: One, n: u64) -> i64  #~ ffi_parameter_type
+     |                    ^^^
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is
+
+error[ffi_parameter_type]: `buf` of `peek` lends a whole record to C, and the header takes it as `const void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count.hero:28:20
+     |
+  28 |     function peek(@buf: One, n: u64) -> i64  #~ ffi_parameter_type
+     |                    ^^^
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is
+
+error[ffi_parameter_type]: `buf` of `fill_lpvoid` lends a whole record to C, and the header takes it as `LPVOID` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count.hero:29:27
+     |
+  29 |     function fill_lpvoid(@buf: One, n: u64) -> i64  #~ ffi_parameter_type
+     |                           ^^^
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is
+
+error[ffi_parameter_type]: `buf` of `fill_len` lends a whole record to C, and the header takes it as `void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count.hero:30:24
+     |
+  30 |     function fill_len(@buf: One, @n: u32) -> i64  #~ ffi_parameter_type
+     |                        ^^^
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is
+
+error[ffi_parameter_type]: `buf` of `fill_signed` lends a whole record to C, and the header takes it as `void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count.hero:31:27
+     |
+  31 |     function fill_signed(@buf: One, n: i64) -> i64  #~ ffi_parameter_type
+     |                           ^^^
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is
