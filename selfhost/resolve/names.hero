@@ -21,6 +21,7 @@ use source
 use inventory
 use resolved
 use resolve/state
+use resolve/offered
 use resolve/errors
 use resolve/qualified
 use module/diagnostics
@@ -110,7 +111,7 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     if !elsewhere.is_err()
         state.push_diagnostic(@r, elsewhere.must())
         return
-    candidates = read_candidates(r)
+    candidates = read_candidates(@r)
     near = state.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_name(text, near, span))
 
@@ -121,13 +122,8 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 # is certain; without them it was two edits from `run`, which took the
 # certain rename and was refused anew (defect 135, lane recovery-b3). A write
 # is not a read: `True @ 1` is offered no literal (`writes.hero`).
-function read_candidates(r: state.Resolver) -> [str]
-    candidates: [str] @ value_candidates(r)
-
-    for literal in LITERALS
-        candidates @ candidates.push(literal)
-
-    return candidates
+function read_candidates(@r: state.Resolver) -> [[str]]
+    return value_candidates(@r).push(LITERALS)
 
 constant LITERALS: [str]
     ["true", "false", "nullptr"]
@@ -191,41 +187,21 @@ function method_name(@r: state.Resolver, s: source.Source, decls: [ast.Decl], at
     if !elsewhere.is_err()
         state.push_diagnostic(@r, elsewhere.must())
         return
-    candidates = function_candidates(r, decls)
+    candidates = function_candidates(@r, decls)
     near = state.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_function(text, near, span: called))
 
 # Innermost first: the locals in scope, then the file's own declarations,
 # then the built-ins. The order is the did-you-mean's ranking (§4.16:
-# deterministic, capped where printed).
-function value_candidates(r: state.Resolver) -> [str]
-    candidates: [str] @ state.visible_locals(r)
+# deterministic, capped where printed). The module's part is gathered once
+# and handed on as it was gathered, never copied into a list of its own for
+# each name (`resolve/offered.hero`, defect 385).
+function value_candidates(@r: state.Resolver) -> [[str]]
+    return [state.visible_locals(r), offered.named(@r.offered, r.out, module: r.module).values]
 
-    for name in resolved.names_in(r.out, r.module)
-        candidates @ candidates.push(name)
-
-    for b in inventory.table()
-        candidates @ candidates.push(b.name)
-
-    return candidates
-
-function function_candidates(r: state.Resolver, decls: [ast.Decl]) -> [str]
-    candidates: [str] @ []
-
-    for name in resolved.names_in(r.out, r.module)
-        found = resolved.top_in(r.out, module: r.module, name: name)
-
-        is_function = match decls[found.must()].kind
-            .function_decl                                             => true
-            .constant_decl | .record_decl | .variant_decl | .test_decl => false
-
-        if is_function
-            candidates @ candidates.push(name)
-
-    for b in inventory.table()
-        candidates @ candidates.push(b.name)
-
-    return candidates
+# The file's own functions, then the built-ins.
+function function_candidates(@r: state.Resolver, decls: [ast.Decl]) -> [[str]]
+    return [offered.kinded(@r.offered, r.out, module: r.module, decls: decls).functions]
 
 ## Tests
 

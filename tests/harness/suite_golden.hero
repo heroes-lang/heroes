@@ -129,6 +129,9 @@ function shape_ir() -> Shape
         library_skip: false
     )
 
+# **`emit` 6 -> 8 in lane b12-ir12, 2026-10-06**: defect 382's
+# `fixedbugs-382-an-array-literal-is-one-block` took the directory to 8 cases,
+# past its floor of 6 by more than a quarter, and the suite asked for 8.
 function shape_emit() -> Shape
     return Shape(
         name: "emit",
@@ -137,7 +140,7 @@ function shape_emit() -> Shape
         flags: ["--emit-c"],
         on_stderr: false,
         want_code: 0,
-        least: 6,
+        least: 8,
         watched: true,
         silent_stdout: false,
         library_skip: false
@@ -168,7 +171,10 @@ function shape_emit() -> Shape
 # `fixedbugs-163-` case, took the directory from 100 past 84 by more than a
 # quarter, and the suite asked for 118. It is the tree's count, the same on
 # every platform: a case a machine skips for a library it lacks is judged
-# by the third below, never by this floor.
+# by the third below, never by this floor. **150 at batch 12's round,
+# 2026-10-06**: lane cli12's cases for defects 337 and 360 and lane ffi13's
+# six `fixedbugs-094-` cases took the directory past 118 by more than a
+# quarter, and the suite asked for 150 on this Mac and on Linux arm64 alike.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -177,7 +183,7 @@ function shape_unsupported() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 118,
+        least: 150,
         watched: true,
         silent_stdout: true,
         library_skip: true

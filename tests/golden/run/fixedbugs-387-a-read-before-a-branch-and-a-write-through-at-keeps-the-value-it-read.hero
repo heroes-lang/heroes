@@ -1,0 +1,67 @@
+# Defect 387, 2026-10-06. `total(out, half(4).must() + bump(@out))` loads
+# `out` for `total`, branches at the `.must()`, and writes `out` through `@` in
+# the block the branch opens, where `total` then reads what it loaded. The
+# load borrowed the array, and the ownership pass asked only inside one block
+# whether a borrowed value is read after a write to its root, so the push
+# inside `bump` freed the array under it: the program printed 3004 where it
+# means 1004, and `--sanitize` reported `heap-use-after-free`. Each function
+# below opens the blocks with one of the five operators that branch inside a
+# value, `.must()`, `.default()`, `?`, `&&` and `||`, over an array nothing
+# else holds; each prints the length of the array as it was loaded, 1, in its
+# thousands.
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail(code: "odd", msg: "odd")
+
+function bump(@xs: [i64]) -> i64
+    xs @ xs.push(100)
+    return xs.len()
+
+function bumped(@xs: [i64]) -> bool
+    xs @ xs.push(100)
+    return true
+
+function total(xs: [i64], n: i64) -> i64
+    return xs.len() * 1000 + n
+
+function sure(xs: [i64], b: bool) -> i64
+    if b
+        return xs.len() * 1000 + 1
+    return xs.len() * 1000
+
+function through_must() -> i64
+    out: [i64] @ []
+    out @ out.push(5)
+    return total(out, half(4).must() + bump(@out))
+
+function through_default() -> i64
+    out: [i64] @ []
+    out @ out.push(5)
+    return total(out, half(3).default(2) + bump(@out))
+
+function through_question() -> i64?
+    out: [i64] @ []
+    out @ out.push(5)
+    return ok(total(out, half(4)? + bump(@out)))
+
+function through_and() -> i64
+    out: [i64] @ []
+    out @ out.push(5)
+    return sure(out, out.len() > 0 && bumped(@out))
+
+function through_or() -> i64
+    out: [i64] @ []
+    out @ out.push(5)
+    return sure(out, out.len() > 5 || bumped(@out))
+
+function main()
+    out: [i64] @ []
+    out @ out.push(5)
+    print(total(out, half(4).must() + bump(@out)))
+    print(through_must())
+    print(through_default())
+    print(through_question().must())
+    print(through_and())
+    print(through_or())

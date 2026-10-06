@@ -1,0 +1,52 @@
+# Defect 387, 2026-10-06: a value BORROWED from a load. A field (`b.xs`), an
+# element (`g[0]`) and a string field (`c.name`) are copied bitwise out of the
+# header the load names, so the load must keep that header alive wherever one
+# of them is read after a write to its root, though the load itself is last
+# read by the field. `total(b.xs, bump(@b.xs))` freed the array under the
+# field in ONE block, no branch at all, and printed 3002 where it means 1002;
+# the same with a `.must()` between is the reading across blocks. Each value
+# here is one nothing else holds, and each line prints what was read before
+# the write.
+
+record Bag
+    xs: [i64]
+    name: str
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail(code: "odd", msg: "odd")
+
+function bump(@xs: [i64]) -> i64
+    xs @ xs.push(100)
+    return xs.len()
+
+function total(xs: [i64], n: i64) -> i64
+    return xs.len() * 1000 + n
+
+function rename(@s: str) -> i64
+    s @ s + "!"
+    return s.len()
+
+function said(s: str, n: i64) -> str
+    return s + to_str(n)
+
+function main()
+    b: Bag @ Bag(xs: [], name: "")
+    held: [i64] @ []
+    held @ held.push(5)
+    b.xs @ held
+    held @ []
+    print(total(b.xs, bump(@b.xs)))
+    print(total(b.xs, half(4).must() + bump(@b.xs)))
+    c: Bag @ Bag(xs: [], name: "")
+    c.name @ "ab" + "cd"
+    print(said(c.name, rename(@c.name)))
+    print(said(c.name, half(4).must() + rename(@c.name)))
+    g: [[i64]] @ []
+    row: [i64] @ []
+    row @ row.push(7)
+    g @ g.push(row)
+    row @ []
+    print(total(g[0], bump(@g[0])))
+    print(total(g[0], half(4).must() + bump(@g[0])))

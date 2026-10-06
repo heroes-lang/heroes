@@ -299,21 +299,19 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t4 = hero_array_new(&h_fixedbugsafieldstoredbehindanindex_Cell_desc, 1);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t3);
-#line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t3);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t85 = h5_own5;
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h5_own5 = t4;
-#line 310 "fixedbugsafieldstoredbehindanindex.c"
+#line 308 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(t85);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t5 = HERO_STR_LIT(hero_str_61);
-#line 314 "fixedbugsafieldstoredbehindanindex.c"
+#line 312 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_incref(t4);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 317 "fixedbugsafieldstoredbehindanindex.c"
+#line 315 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_incref(t5);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t6 = (h_fixedbugsafieldstoredbehindanindex_Row){.f_cells = t4, .f_label = t5};
@@ -321,33 +319,31 @@ bb0:
     t86 = h6_own6;
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h6_own6 = t6;
-#line 325 "fixedbugsafieldstoredbehindanindex.c"
+#line 323 "fixedbugsafieldstoredbehindanindex.c"
     h_fixedbugsafieldstoredbehindanindex_Row_release(&t86);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t7 = hero_array_new(&h_fixedbugsafieldstoredbehindanindex_Row_desc, 1);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    { HeroArrayHeader *grown = hero_array_push(t7, &t6);
-#line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-      hero_array_decref(t7); t7 = grown; }
+    hero_array_push_owned(&t7, &t6);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t87 = h7_own7;
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h7_own7 = t7;
-#line 337 "fixedbugsafieldstoredbehindanindex.c"
+#line 333 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(t87);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t88 = h0_rows;
-#line 341 "fixedbugsafieldstoredbehindanindex.c"
+#line 337 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_incref(t7);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h0_rows = t7;
-#line 345 "fixedbugsafieldstoredbehindanindex.c"
+#line 341 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(t88);
 #line 37 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t8 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t9 = HERO_STR_LIT(hero_str_62);
-#line 351 "fixedbugsafieldstoredbehindanindex.c"
+#line 347 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_incref(t9);
 #line 37 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
@@ -381,10 +377,10 @@ bb0:
     t89 = h8_own8;
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h8_own8 = t17;
-#line 385 "fixedbugsafieldstoredbehindanindex.c"
+#line 381 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_decref(t89);
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 388 "fixedbugsafieldstoredbehindanindex.c"
+#line 384 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_incref(t17);
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
@@ -408,10 +404,10 @@ bb0:
     t90 = h9_own9;
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h9_own9 = t22;
-#line 412 "fixedbugsafieldstoredbehindanindex.c"
+#line 408 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_decref(t90);
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 415 "fixedbugsafieldstoredbehindanindex.c"
+#line 411 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_incref(t22);
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
@@ -425,11 +421,11 @@ bb0:
     t23 = h0_rows;
 #line 46 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t91 = h1_kept;
-#line 429 "fixedbugsafieldstoredbehindanindex.c"
+#line 425 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_incref(t23);
 #line 46 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h1_kept = t23;
-#line 433 "fixedbugsafieldstoredbehindanindex.c"
+#line 429 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(t91);
 #line 47 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t24 = INT64_C(0);
@@ -492,7 +488,7 @@ bb1:
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb2:
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 496 "fixedbugsafieldstoredbehindanindex.c"
+#line 492 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_sides(t27, hero_int_to_str(t34), hero_int_to_str(t35));
     hero_unreachable();
 bb3:
@@ -504,7 +500,7 @@ bb3:
     t49 = INT64_C(7);
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t50 = HERO_STR_LIT(hero_str_7a);
-#line 508 "fixedbugsafieldstoredbehindanindex.c"
+#line 504 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_incref(t50);
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t51 = (h_fixedbugsafieldstoredbehindanindex_Cell){.f_n = t49, .f_tag = t50};
@@ -512,10 +508,10 @@ bb3:
     t92 = h10_own10;
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h10_own10 = t51;
-#line 516 "fixedbugsafieldstoredbehindanindex.c"
+#line 512 "fixedbugsafieldstoredbehindanindex.c"
     h_fixedbugsafieldstoredbehindanindex_Cell_release(&t92);
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 519 "fixedbugsafieldstoredbehindanindex.c"
+#line 515 "fixedbugsafieldstoredbehindanindex.c"
     h_fixedbugsafieldstoredbehindanindex_Cell_retain(&t51);
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
@@ -527,15 +523,15 @@ bb3:
     t93 = h11_own11;
 #line 53 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h11_own11 = t52;
-#line 531 "fixedbugsafieldstoredbehindanindex.c"
+#line 527 "fixedbugsafieldstoredbehindanindex.c"
     hero_map_decref(t93);
 #line 53 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t94 = h2_m;
-#line 535 "fixedbugsafieldstoredbehindanindex.c"
+#line 531 "fixedbugsafieldstoredbehindanindex.c"
     hero_map_incref(t52);
 #line 53 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h2_m = t52;
-#line 539 "fixedbugsafieldstoredbehindanindex.c"
+#line 535 "fixedbugsafieldstoredbehindanindex.c"
     hero_map_decref(t94);
 #line 54 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t53 = HERO_STR_LIT(hero_str_6b);
@@ -605,15 +601,15 @@ bb3:
     t95 = h12_own12;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h12_own12 = t75;
-#line 609 "fixedbugsafieldstoredbehindanindex.c"
+#line 605 "fixedbugsafieldstoredbehindanindex.c"
     h_0opt_e201354_release(&t95);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t96 = h3_f0;
-#line 613 "fixedbugsafieldstoredbehindanindex.c"
+#line 609 "fixedbugsafieldstoredbehindanindex.c"
     h_0opt_e201354_retain(&t75);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     h3_f0 = t75;
-#line 617 "fixedbugsafieldstoredbehindanindex.c"
+#line 613 "fixedbugsafieldstoredbehindanindex.c"
     h_0opt_e201354_release(&t96);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t76 = h3_f0;
@@ -628,7 +624,7 @@ bb3:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb4:
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 632 "fixedbugsafieldstoredbehindanindex.c"
+#line 628 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_sides(t37, hero_int_to_str(t44), hero_int_to_str(t45));
     hero_unreachable();
 bb5:
@@ -646,43 +642,43 @@ bb5:
     hero_print_int(t83);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_print_end();
-#line 650 "fixedbugsafieldstoredbehindanindex.c"
+#line 646 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(h0_rows);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 653 "fixedbugsafieldstoredbehindanindex.c"
+#line 649 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(h1_kept);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 656 "fixedbugsafieldstoredbehindanindex.c"
+#line 652 "fixedbugsafieldstoredbehindanindex.c"
     hero_map_decref(h2_m);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 659 "fixedbugsafieldstoredbehindanindex.c"
+#line 655 "fixedbugsafieldstoredbehindanindex.c"
     h_0opt_e201354_release(&h3_f0);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 662 "fixedbugsafieldstoredbehindanindex.c"
+#line 658 "fixedbugsafieldstoredbehindanindex.c"
     h_fixedbugsafieldstoredbehindanindex_Cell_release(&h4_own4);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 665 "fixedbugsafieldstoredbehindanindex.c"
+#line 661 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(h5_own5);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 668 "fixedbugsafieldstoredbehindanindex.c"
+#line 664 "fixedbugsafieldstoredbehindanindex.c"
     h_fixedbugsafieldstoredbehindanindex_Row_release(&h6_own6);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 671 "fixedbugsafieldstoredbehindanindex.c"
+#line 667 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_decref(h7_own7);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 674 "fixedbugsafieldstoredbehindanindex.c"
+#line 670 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_decref(h8_own8);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 677 "fixedbugsafieldstoredbehindanindex.c"
+#line 673 "fixedbugsafieldstoredbehindanindex.c"
     hero_str_decref(h9_own9);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 680 "fixedbugsafieldstoredbehindanindex.c"
+#line 676 "fixedbugsafieldstoredbehindanindex.c"
     h_fixedbugsafieldstoredbehindanindex_Cell_release(&h10_own10);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 683 "fixedbugsafieldstoredbehindanindex.c"
+#line 679 "fixedbugsafieldstoredbehindanindex.c"
     hero_map_decref(h11_own11);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-#line 686 "fixedbugsafieldstoredbehindanindex.c"
+#line 682 "fixedbugsafieldstoredbehindanindex.c"
     h_0opt_e201354_release(&h12_own12);
     return;
 bb6:
@@ -690,7 +686,7 @@ bb6:
     t80 = h3_f0;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t81 = t80.as.err;
-#line 694 "fixedbugsafieldstoredbehindanindex.c"
+#line 690 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_must(t81);
     hero_unreachable();
 }

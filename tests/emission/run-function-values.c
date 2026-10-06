@@ -306,26 +306,22 @@ bb0:
 #line 59 "tests/golden/run/function-values.hero"
     t19 = hero_array_new(&hero_desc_func, 2);
 #line 59 "tests/golden/run/function-values.hero"
-    { HeroArrayHeader *grown = hero_array_push(t19, &t17);
+    hero_array_push_owned(&t19, &t17);
 #line 59 "tests/golden/run/function-values.hero"
-      hero_array_decref(t19); t19 = grown; }
-#line 59 "tests/golden/run/function-values.hero"
-    { HeroArrayHeader *grown = hero_array_push(t19, &t18);
-#line 59 "tests/golden/run/function-values.hero"
-      hero_array_decref(t19); t19 = grown; }
+    hero_array_push_owned(&t19, &t18);
 #line 59 "tests/golden/run/function-values.hero"
     t44 = h3_own3;
 #line 59 "tests/golden/run/function-values.hero"
     h3_own3 = t19;
-#line 321 "functionvalues.c"
+#line 317 "functionvalues.c"
     hero_array_decref(t44);
 #line 59 "tests/golden/run/function-values.hero"
     t45 = h1_ops;
-#line 325 "functionvalues.c"
+#line 321 "functionvalues.c"
     hero_array_incref(t19);
 #line 59 "tests/golden/run/function-values.hero"
     h1_ops = t19;
-#line 329 "functionvalues.c"
+#line 325 "functionvalues.c"
     hero_array_decref(t45);
 #line 60 "tests/golden/run/function-values.hero"
     t20 = h1_ops;
@@ -397,10 +393,10 @@ bb0:
     hero_print_bool(t43);
 #line 64 "tests/golden/run/function-values.hero"
     hero_print_end();
-#line 401 "functionvalues.c"
+#line 397 "functionvalues.c"
     hero_array_decref(h1_ops);
 #line 64 "tests/golden/run/function-values.hero"
-#line 404 "functionvalues.c"
+#line 400 "functionvalues.c"
     hero_array_decref(h3_own3);
     return;
 }

@@ -126,30 +126,24 @@ bb0:
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t4 = hero_array_new(&hero_desc_int, 3);
 #line 6 "tests/golden/run/abort-array-slice.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t1);
+    hero_array_push_owned(&t4, &t1);
 #line 6 "tests/golden/run/abort-array-slice.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t2);
 #line 6 "tests/golden/run/abort-array-slice.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t2);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-      hero_array_decref(t4); t4 = grown; }
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t3);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t3);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t15 = h1_own1;
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h1_own1 = t4;
-#line 145 "abortarrayslice.c"
+#line 139 "abortarrayslice.c"
     hero_array_decref(t15);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t16 = h0_xs;
-#line 149 "abortarrayslice.c"
+#line 143 "abortarrayslice.c"
     hero_array_incref(t4);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h0_xs = t4;
-#line 153 "abortarrayslice.c"
+#line 147 "abortarrayslice.c"
     hero_array_decref(t16);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t5 = h0_xs;
@@ -163,7 +157,7 @@ bb0:
     t17 = h2_own2;
 #line 7 "tests/golden/run/abort-array-slice.hero"
     h2_own2 = t8;
-#line 167 "abortarrayslice.c"
+#line 161 "abortarrayslice.c"
     hero_array_decref(t17);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t9 = hero_array_len(t8);
@@ -183,7 +177,7 @@ bb0:
     t18 = h3_own3;
 #line 8 "tests/golden/run/abort-array-slice.hero"
     h3_own3 = t13;
-#line 187 "abortarrayslice.c"
+#line 181 "abortarrayslice.c"
     hero_array_decref(t18);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t14 = hero_array_len(t13);
@@ -191,16 +185,16 @@ bb0:
     hero_print_int(t14);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     hero_print_end();
-#line 195 "abortarrayslice.c"
+#line 189 "abortarrayslice.c"
     hero_array_decref(h0_xs);
 #line 8 "tests/golden/run/abort-array-slice.hero"
-#line 198 "abortarrayslice.c"
+#line 192 "abortarrayslice.c"
     hero_array_decref(h1_own1);
 #line 8 "tests/golden/run/abort-array-slice.hero"
-#line 201 "abortarrayslice.c"
+#line 195 "abortarrayslice.c"
     hero_array_decref(h2_own2);
 #line 8 "tests/golden/run/abort-array-slice.hero"
-#line 204 "abortarrayslice.c"
+#line 198 "abortarrayslice.c"
     hero_array_decref(h3_own3);
     return;
 }

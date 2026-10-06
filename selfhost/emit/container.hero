@@ -38,12 +38,22 @@ use resolve
 use checker
 use token
 
-# t4 = hero_array_new(&hero_desc_int, 3); plus one push per element.
-# Built by pushing rather than writing the elements directly, because
-# push is where the element's copy runs — and that copy is what takes
-# the array's own reference to a counted element. Each push hands back
-# a NEW array and the previous one is released: n+1 blocks, n freed —
-# §4.10's declared bill in its smallest form.
+# t4 = hero_array_new(&hero_desc_int, 3); plus one push per element, into
+# the array in place. Built by pushing rather than writing the elements
+# directly, because the push is where the element's copy runs, and that
+# copy is what takes the array's own reference to a counted element.
+#
+# **One block, sized to the literal, since defect 382** (2026-10-06). The
+# pushes were `hero_array_push`, which hands back a NEW array: n+1 blocks for
+# n elements, n of them freed, and n(n+1)/2 element copies. A `constant` of an
+# array is built at every read, so `K[at % 32]` a million times retired 56.9
+# billion instructions. `hero_array_push_owned` is the place store's growth
+# (`ir/place_store.hero`): on an array whose count is 1 and whose capacity
+# has room it copies the element in where it lies. The array here was made
+# one line above with capacity n, and nothing else holds it, so each of the n
+# pushes is one copy and the block is never replaced: 4.6 billion
+# instructions for the same million reads. The runtime still asks the count
+# and the room at each push rather than this line assuming them.
 function build_array(c: state.Checked, names: ctype.Names, result: i64, arguments: [str], into: str) -> [str]?
     element: i64 @ 0 - 1
 
@@ -66,8 +76,7 @@ function build_array(c: state.Checked, names: ctype.Names, result: i64, argument
     lines: [str] @ [into + " = hero_array_new(" + desc.must() + ", " + hint.to_str() + ");"]
 
     for value in arguments
-        lines @ lines.push("{ HeroArrayHeader *grown = hero_array_push(" + into + ", &" + value + ");")
-        lines @ lines.push("  hero_array_decref(" + into + "); " + into + " = grown; }")
+        lines @ lines.push("hero_array_push_owned(&" + into + ", &" + value + ");")
 
     return ok(lines)
 
@@ -323,14 +332,11 @@ function ready(text: str) -> Setup
     names = ctype.new_names(s, p.decls)
     return Setup(c: c, s: s, decls: p.decls, names: names)
 
-test "an array literal is new plus push/decref pairs, a read is a cast"
+test "an array literal is one block and a push in place per element, a read is a cast"
     got = ready("function main()\n    xs = [1, 2]\n    print(xs[0])\n")
     arr = table.lookup(got.c.types, .array(element: table.int_ty_id(got.c.types))).must()
     lines = build_array(got.c, got.names, result: arr, arguments: ["t1", "t2"], into: "t3")
-    assert lines.must().len() == 5
-    assert lines.must()[0] == "t3 = hero_array_new(&hero_desc_int, 2);"
-    assert lines.must()[1] == "{ HeroArrayHeader *grown = hero_array_push(t3, &t1);"
-    assert lines.must()[2] == "  hero_array_decref(t3); t3 = grown; }"
+    assert lines.must() == ["t3 = hero_array_new(&hero_desc_int, 2);", "hero_array_push_owned(&t3, &t1);", "hero_array_push_owned(&t3, &t2);"]
     f = containers.Function(
         name: "t",
         decl: 0,

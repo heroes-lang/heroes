@@ -1960,30 +1960,24 @@ bb0:
 #line 144 "examples/diff/main.hero"
     t4 = hero_array_new(&hero_desc_str, 3);
 #line 144 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t1);
+    hero_array_push_owned(&t4, &t1);
 #line 144 "examples/diff/main.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t2);
 #line 144 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t2);
-#line 144 "examples/diff/main.hero"
-      hero_array_decref(t4); t4 = grown; }
-#line 144 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t4, &t3);
-#line 144 "examples/diff/main.hero"
-      hero_array_decref(t4); t4 = grown; }
+    hero_array_push_owned(&t4, &t3);
 #line 144 "examples/diff/main.hero"
     t59 = h3_own3;
 #line 144 "examples/diff/main.hero"
     h3_own3 = t4;
-#line 1979 "main.c"
+#line 1973 "main.c"
     hero_array_decref(t59);
 #line 144 "examples/diff/main.hero"
     t60 = h0_before;
-#line 1983 "main.c"
+#line 1977 "main.c"
     hero_array_incref(t4);
 #line 144 "examples/diff/main.hero"
     h0_before = t4;
-#line 1987 "main.c"
+#line 1981 "main.c"
     hero_array_decref(t60);
 #line 145 "examples/diff/main.hero"
     t5 = HERO_STR_LIT(hero_str_1b8159e6);
@@ -1994,30 +1988,24 @@ bb0:
 #line 145 "examples/diff/main.hero"
     t8 = hero_array_new(&hero_desc_str, 3);
 #line 145 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t5);
+    hero_array_push_owned(&t8, &t5);
 #line 145 "examples/diff/main.hero"
-      hero_array_decref(t8); t8 = grown; }
+    hero_array_push_owned(&t8, &t6);
 #line 145 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t6);
-#line 145 "examples/diff/main.hero"
-      hero_array_decref(t8); t8 = grown; }
-#line 145 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t7);
-#line 145 "examples/diff/main.hero"
-      hero_array_decref(t8); t8 = grown; }
+    hero_array_push_owned(&t8, &t7);
 #line 145 "examples/diff/main.hero"
     t61 = h4_own4;
 #line 145 "examples/diff/main.hero"
     h4_own4 = t8;
-#line 2013 "main.c"
+#line 2001 "main.c"
     hero_array_decref(t61);
 #line 145 "examples/diff/main.hero"
     t62 = h1_after;
-#line 2017 "main.c"
+#line 2005 "main.c"
     hero_array_incref(t8);
 #line 145 "examples/diff/main.hero"
     h1_after = t8;
-#line 2021 "main.c"
+#line 2009 "main.c"
     hero_array_decref(t62);
 #line 147 "examples/diff/main.hero"
     t9 = h0_before;
@@ -2029,7 +2017,7 @@ bb0:
     t63 = h5_own5;
 #line 147 "examples/diff/main.hero"
     h5_own5 = t11;
-#line 2033 "main.c"
+#line 2021 "main.c"
     hero_str_decref(t63);
 #line 147 "examples/diff/main.hero"
     hero_print_str(t11);
@@ -2054,22 +2042,16 @@ bb0:
 #line 152 "examples/diff/main.hero"
     t18 = hero_array_new(&hero_desc_str, 3);
 #line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t18, &t15);
+    hero_array_push_owned(&t18, &t15);
 #line 152 "examples/diff/main.hero"
-      hero_array_decref(t18); t18 = grown; }
+    hero_array_push_owned(&t18, &t16);
 #line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t18, &t16);
-#line 152 "examples/diff/main.hero"
-      hero_array_decref(t18); t18 = grown; }
-#line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t18, &t17);
-#line 152 "examples/diff/main.hero"
-      hero_array_decref(t18); t18 = grown; }
+    hero_array_push_owned(&t18, &t17);
 #line 152 "examples/diff/main.hero"
     t64 = h6_own6;
 #line 152 "examples/diff/main.hero"
     h6_own6 = t18;
-#line 2073 "main.c"
+#line 2055 "main.c"
     hero_array_decref(t64);
 #line 152 "examples/diff/main.hero"
     t19 = HERO_STR_LIT(hero_str_61);
@@ -2082,26 +2064,18 @@ bb0:
 #line 152 "examples/diff/main.hero"
     t23 = hero_array_new(&hero_desc_str, 4);
 #line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t19);
+    hero_array_push_owned(&t23, &t19);
 #line 152 "examples/diff/main.hero"
-      hero_array_decref(t23); t23 = grown; }
+    hero_array_push_owned(&t23, &t20);
 #line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t20);
+    hero_array_push_owned(&t23, &t21);
 #line 152 "examples/diff/main.hero"
-      hero_array_decref(t23); t23 = grown; }
-#line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t21);
-#line 152 "examples/diff/main.hero"
-      hero_array_decref(t23); t23 = grown; }
-#line 152 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t22);
-#line 152 "examples/diff/main.hero"
-      hero_array_decref(t23); t23 = grown; }
+    hero_array_push_owned(&t23, &t22);
 #line 152 "examples/diff/main.hero"
     t65 = h7_own7;
 #line 152 "examples/diff/main.hero"
     h7_own7 = t23;
-#line 2105 "main.c"
+#line 2079 "main.c"
     hero_array_decref(t65);
 #line 152 "examples/diff/main.hero"
     t24 = h_main_rendered(t18, t23);
@@ -2109,7 +2083,7 @@ bb0:
     t66 = h8_own8;
 #line 152 "examples/diff/main.hero"
     h8_own8 = t24;
-#line 2113 "main.c"
+#line 2087 "main.c"
     hero_str_decref(t66);
 #line 152 "examples/diff/main.hero"
     hero_print_str(t24);
@@ -2124,22 +2098,16 @@ bb0:
 #line 153 "examples/diff/main.hero"
     t28 = hero_array_new(&hero_desc_str, 3);
 #line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t28, &t25);
+    hero_array_push_owned(&t28, &t25);
 #line 153 "examples/diff/main.hero"
-      hero_array_decref(t28); t28 = grown; }
+    hero_array_push_owned(&t28, &t26);
 #line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t28, &t26);
-#line 153 "examples/diff/main.hero"
-      hero_array_decref(t28); t28 = grown; }
-#line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t28, &t27);
-#line 153 "examples/diff/main.hero"
-      hero_array_decref(t28); t28 = grown; }
+    hero_array_push_owned(&t28, &t27);
 #line 153 "examples/diff/main.hero"
     t67 = h9_own9;
 #line 153 "examples/diff/main.hero"
     h9_own9 = t28;
-#line 2143 "main.c"
+#line 2111 "main.c"
     hero_array_decref(t67);
 #line 153 "examples/diff/main.hero"
     t29 = HERO_STR_LIT(hero_str_61);
@@ -2152,26 +2120,18 @@ bb0:
 #line 153 "examples/diff/main.hero"
     t33 = hero_array_new(&hero_desc_str, 4);
 #line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t33, &t29);
+    hero_array_push_owned(&t33, &t29);
 #line 153 "examples/diff/main.hero"
-      hero_array_decref(t33); t33 = grown; }
+    hero_array_push_owned(&t33, &t30);
 #line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t33, &t30);
+    hero_array_push_owned(&t33, &t31);
 #line 153 "examples/diff/main.hero"
-      hero_array_decref(t33); t33 = grown; }
-#line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t33, &t31);
-#line 153 "examples/diff/main.hero"
-      hero_array_decref(t33); t33 = grown; }
-#line 153 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t33, &t32);
-#line 153 "examples/diff/main.hero"
-      hero_array_decref(t33); t33 = grown; }
+    hero_array_push_owned(&t33, &t32);
 #line 153 "examples/diff/main.hero"
     t68 = h10_own10;
 #line 153 "examples/diff/main.hero"
     h10_own10 = t33;
-#line 2175 "main.c"
+#line 2135 "main.c"
     hero_array_decref(t68);
 #line 153 "examples/diff/main.hero"
     t34 = HERO_STR_LIT(hero_str_3432c8e1);
@@ -2190,22 +2150,16 @@ bb0:
 #line 154 "examples/diff/main.hero"
     t39 = hero_array_new(&hero_desc_str, 3);
 #line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t39, &t36);
+    hero_array_push_owned(&t39, &t36);
 #line 154 "examples/diff/main.hero"
-      hero_array_decref(t39); t39 = grown; }
+    hero_array_push_owned(&t39, &t37);
 #line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t39, &t37);
-#line 154 "examples/diff/main.hero"
-      hero_array_decref(t39); t39 = grown; }
-#line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t39, &t38);
-#line 154 "examples/diff/main.hero"
-      hero_array_decref(t39); t39 = grown; }
+    hero_array_push_owned(&t39, &t38);
 #line 154 "examples/diff/main.hero"
     t69 = h11_own11;
 #line 154 "examples/diff/main.hero"
     h11_own11 = t39;
-#line 2209 "main.c"
+#line 2163 "main.c"
     hero_array_decref(t69);
 #line 154 "examples/diff/main.hero"
     t40 = HERO_STR_LIT(hero_str_61);
@@ -2218,26 +2172,18 @@ bb0:
 #line 154 "examples/diff/main.hero"
     t44 = hero_array_new(&hero_desc_str, 4);
 #line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t44, &t40);
+    hero_array_push_owned(&t44, &t40);
 #line 154 "examples/diff/main.hero"
-      hero_array_decref(t44); t44 = grown; }
+    hero_array_push_owned(&t44, &t41);
 #line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t44, &t41);
+    hero_array_push_owned(&t44, &t42);
 #line 154 "examples/diff/main.hero"
-      hero_array_decref(t44); t44 = grown; }
-#line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t44, &t42);
-#line 154 "examples/diff/main.hero"
-      hero_array_decref(t44); t44 = grown; }
-#line 154 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t44, &t43);
-#line 154 "examples/diff/main.hero"
-      hero_array_decref(t44); t44 = grown; }
+    hero_array_push_owned(&t44, &t43);
 #line 154 "examples/diff/main.hero"
     t70 = h12_own12;
 #line 154 "examples/diff/main.hero"
     h12_own12 = t44;
-#line 2241 "main.c"
+#line 2187 "main.c"
     hero_array_decref(t70);
 #line 154 "examples/diff/main.hero"
     t45 = HERO_STR_LIT(hero_str_3b14ab12);
@@ -2253,15 +2199,15 @@ bb0:
     t71 = h13_own13;
 #line 156 "examples/diff/main.hero"
     h13_own13 = t47;
-#line 2257 "main.c"
+#line 2203 "main.c"
     hero_array_decref(t71);
 #line 156 "examples/diff/main.hero"
     t72 = h2_empty;
-#line 2261 "main.c"
+#line 2207 "main.c"
     hero_array_incref(t47);
 #line 156 "examples/diff/main.hero"
     h2_empty = t47;
-#line 2265 "main.c"
+#line 2211 "main.c"
     hero_array_decref(t72);
 #line 157 "examples/diff/main.hero"
     t48 = h2_empty;
@@ -2270,14 +2216,12 @@ bb0:
 #line 157 "examples/diff/main.hero"
     t50 = hero_array_new(&hero_desc_str, 1);
 #line 157 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t50, &t49);
-#line 157 "examples/diff/main.hero"
-      hero_array_decref(t50); t50 = grown; }
+    hero_array_push_owned(&t50, &t49);
 #line 157 "examples/diff/main.hero"
     t73 = h14_own14;
 #line 157 "examples/diff/main.hero"
     h14_own14 = t50;
-#line 2281 "main.c"
+#line 2225 "main.c"
     hero_array_decref(t73);
 #line 157 "examples/diff/main.hero"
     t51 = h_main_rendered(t48, t50);
@@ -2285,7 +2229,7 @@ bb0:
     t74 = h15_own15;
 #line 157 "examples/diff/main.hero"
     h15_own15 = t51;
-#line 2289 "main.c"
+#line 2233 "main.c"
     hero_str_decref(t74);
 #line 157 "examples/diff/main.hero"
     hero_print_str(t51);
@@ -2296,14 +2240,12 @@ bb0:
 #line 158 "examples/diff/main.hero"
     t53 = hero_array_new(&hero_desc_str, 1);
 #line 158 "examples/diff/main.hero"
-    { HeroArrayHeader *grown = hero_array_push(t53, &t52);
-#line 158 "examples/diff/main.hero"
-      hero_array_decref(t53); t53 = grown; }
+    hero_array_push_owned(&t53, &t52);
 #line 158 "examples/diff/main.hero"
     t75 = h16_own16;
 #line 158 "examples/diff/main.hero"
     h16_own16 = t53;
-#line 2307 "main.c"
+#line 2249 "main.c"
     hero_array_decref(t75);
 #line 158 "examples/diff/main.hero"
     t54 = h2_empty;
@@ -2313,7 +2255,7 @@ bb0:
     t76 = h17_own17;
 #line 158 "examples/diff/main.hero"
     h17_own17 = t55;
-#line 2317 "main.c"
+#line 2259 "main.c"
     hero_str_decref(t76);
 #line 158 "examples/diff/main.hero"
     hero_print_str(t55);
@@ -2329,58 +2271,58 @@ bb0:
     hero_print_int(t58);
 #line 159 "examples/diff/main.hero"
     hero_print_end();
-#line 2333 "main.c"
+#line 2275 "main.c"
     hero_array_decref(h0_before);
 #line 159 "examples/diff/main.hero"
-#line 2336 "main.c"
+#line 2278 "main.c"
     hero_array_decref(h1_after);
 #line 159 "examples/diff/main.hero"
-#line 2339 "main.c"
+#line 2281 "main.c"
     hero_array_decref(h2_empty);
 #line 159 "examples/diff/main.hero"
-#line 2342 "main.c"
+#line 2284 "main.c"
     hero_array_decref(h3_own3);
 #line 159 "examples/diff/main.hero"
-#line 2345 "main.c"
+#line 2287 "main.c"
     hero_array_decref(h4_own4);
 #line 159 "examples/diff/main.hero"
-#line 2348 "main.c"
+#line 2290 "main.c"
     hero_str_decref(h5_own5);
 #line 159 "examples/diff/main.hero"
-#line 2351 "main.c"
+#line 2293 "main.c"
     hero_array_decref(h6_own6);
 #line 159 "examples/diff/main.hero"
-#line 2354 "main.c"
+#line 2296 "main.c"
     hero_array_decref(h7_own7);
 #line 159 "examples/diff/main.hero"
-#line 2357 "main.c"
+#line 2299 "main.c"
     hero_str_decref(h8_own8);
 #line 159 "examples/diff/main.hero"
-#line 2360 "main.c"
+#line 2302 "main.c"
     hero_array_decref(h9_own9);
 #line 159 "examples/diff/main.hero"
-#line 2363 "main.c"
+#line 2305 "main.c"
     hero_array_decref(h10_own10);
 #line 159 "examples/diff/main.hero"
-#line 2366 "main.c"
+#line 2308 "main.c"
     hero_array_decref(h11_own11);
 #line 159 "examples/diff/main.hero"
-#line 2369 "main.c"
+#line 2311 "main.c"
     hero_array_decref(h12_own12);
 #line 159 "examples/diff/main.hero"
-#line 2372 "main.c"
+#line 2314 "main.c"
     hero_array_decref(h13_own13);
 #line 159 "examples/diff/main.hero"
-#line 2375 "main.c"
+#line 2317 "main.c"
     hero_array_decref(h14_own14);
 #line 159 "examples/diff/main.hero"
-#line 2378 "main.c"
+#line 2320 "main.c"
     hero_str_decref(h15_own15);
 #line 159 "examples/diff/main.hero"
-#line 2381 "main.c"
+#line 2323 "main.c"
     hero_array_decref(h16_own16);
 #line 159 "examples/diff/main.hero"
-#line 2384 "main.c"
+#line 2326 "main.c"
     hero_str_decref(h17_own17);
     return;
 }

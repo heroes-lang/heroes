@@ -1,0 +1,85 @@
+# Defect 381, 2026-10-06: the shapes around the place store's own, each with a
+# pushed value that branches. A push inside a `match` arm and inside a `for`
+# body; a generic function's push, which the place store sees once per
+# instance after monomorphisation; elements that are counted (`str`) and
+# elements that are arrays themselves; and the array read inside its own
+# pushed value, which is computed before the array grows, so it sees the
+# length before the push in both shapes. The output is the values, which
+# growing in place must not change.
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail(code: "odd", msg: "odd")
+
+function in_an_arm(n: i64) -> [i64]
+    out: [i64] @ []
+
+    for at in range(from: 0, to: n)
+        match half(at)
+            .ok h  => out @ out.push(half(h * 2).must())
+            .err e => out @ out.push(e.msg.len().to_i64().default(0) * 10)
+
+    return out
+
+function in_a_loop(grid: [[i64]]) -> [i64]
+    out: [i64] @ []
+
+    for row in grid
+        for x in row
+            out @ out.push(half(x).default(0 - x))
+
+    return out
+
+function all_of<T>(xs: [T?]) -> [T]
+    out: [T] @ []
+
+    for x in xs
+        out @ out.push(x.must())
+
+    return out
+
+function words(n: i64) -> [str]
+    out: [str] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(f"w{half(at).default(9)}")
+
+    return out
+
+function rows(n: i64) -> [[i64]]
+    out: [[i64]] @ []
+
+    for at in range(from: 0, to: n)
+        row: [i64]? = ok([at, at + 1])
+        out @ out.push(row.must())
+
+    return out
+
+function lengths_before(n: i64) -> [i64]
+    out: [i64] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(out.len() * 100 + half(at * 2).must())
+
+    return out
+
+function shown(xs: [i64]) -> str
+    parts: [str] @ []
+
+    for x in xs
+        parts @ parts.push(x.to_str())
+
+    return parts.join(",")
+
+function main()
+    print(shown(in_an_arm(4)))
+    print(shown(in_a_loop([[2, 3], [4], []])))
+    given: [i64?] = [ok(5), ok(6)]
+    print(shown(all_of(given)))
+    named: [str?] = [ok("a"), ok("b")]
+    print(all_of(named).join("+"))
+    print(words(4).join(" "))
+    grid = rows(3)
+    print(grid.len(), " ", shown(grid[2]))
+    print(shown(lengths_before(4)))

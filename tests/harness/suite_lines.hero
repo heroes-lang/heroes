@@ -64,7 +64,9 @@ constant LIBRARY_FILE: str
 # `floors.check`; **235 on 2026-10-02**, at the round's gate of lanes
 # recovery-b8, land186 and h158, lane land186's twelve run cases for panel
 # 186 taking the directory from 223 past 181 by more than a quarter, and the
-# suite asking 235. The second use below is the SKIP floor and keeps this number
+# suite asking 235; **308 on 2026-10-06**, at batch 12's round, lane ffi13's
+# eight run cases for defect 094 and lane ir12's for 381 and 387 taking it
+# past 235 by more than its slack. The second use below is the SKIP floor and keeps this number
 # deliberately: what it asks is *did this machine emit as many as the tree
 # holds*, so both sides of that comparison have to be the same tree.
 #
@@ -81,7 +83,7 @@ constant LIBRARY_FILE: str
 # counted, the suite red when the skips reach a third of the tree; every other
 # failure to emit is a failure.
 constant LEAST: i64
-    235
+    308
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

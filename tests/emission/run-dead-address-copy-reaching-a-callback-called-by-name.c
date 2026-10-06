@@ -193,22 +193,20 @@ bb0:
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t3 = hero_array_new(&h_deadaddresscopyreachingacallbackcalledbyname_Node_desc, 1);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    { HeroArrayHeader *grown = hero_array_push(t3, &t2);
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-      hero_array_decref(t3); t3 = grown; }
+    hero_array_push_owned(&t3, &t2);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t13 = h2_own2;
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h2_own2 = t3;
-#line 204 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 202 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(t13);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t14 = h1_keep;
-#line 208 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 206 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_incref(t3);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h1_keep = t3;
-#line 212 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 210 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(t14);
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t4 = h0_mine;
@@ -252,10 +250,10 @@ bb0:
     hero_print_int(t12);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_print_end();
-#line 256 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 254 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(h1_keep);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-#line 259 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 257 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(h2_own2);
     return;
 }
