@@ -1,0 +1,80 @@
+# Fixed defect 365, 2026-10-06 (lane b12-parse12, found beside defect 301).
+# Symptom: `while i < 3; i++` over a body cost two messages for one habit,
+# `unexpected_character` at the `;` and `continuation_outside_brackets` at
+# the `++` that ends the line, neither saying where the step goes. Cause:
+# C's clauses were the lexer's to take only after `for` (defects 194 and
+# 301), so after `while` the `;` was a stray, its message the bare one, and
+# the step past it a line left open. Repair: a `;` in a `while`'s `(`, or on
+# a line a `while` begins where it does not end the line, is told once, a
+# `while` holding its condition alone and a step going last in its body,
+# and the clauses past it are taken with it to the `while`'s `)`, a comment
+# or the line's end (`loop_headers.in_a_while`), the parser passing them
+# (`parse/loop_habit.passed_clauses`); a `{` that ends the line is left to
+# the braces' reading. The shapes: bare, in parentheses, `+= 1`, `--`, a
+# Heroes step, three clauses in parentheses, a brace past the step, the body
+# on the head's line, nested; and a `;` that ends the line, as before.
+
+function bare(n: i64)
+    i: i64 @ 0
+    while i < n; i++  #~ unexpected_character
+        print(i)
+
+function in_parentheses(n: i64)
+    i: i64 @ 0
+    while (i < n; i++)  #~ unexpected_character
+        print(i)
+
+function plus_equals(n: i64)
+    i: i64 @ 0
+    while i < n; i += 1  #~ unexpected_character
+        print(i)
+
+function minus_minus(n: i64)
+    i: i64 @ n
+    while i > 0; i--  #~ unexpected_character
+        print(i)
+
+function a_heroes_step(n: i64)
+    i: i64 @ 0
+    while i < n; i @ i + 1  #~ unexpected_character
+        print(i)
+
+function three_clauses(n: i64)
+    i: i64 @ 0
+    while (i = 0; i < n; i++)  #~ unexpected_character
+        print(i)
+
+function a_brace(n: i64)
+    i: i64 @ 0
+    while i < n; i++ {  #~ unexpected_character missing_body
+        print(i)
+    }
+
+function the_body_on_the_heads_line(n: i64)
+    i: i64 @ 0
+    while i < n; i++; print(i)  #~ unexpected_character
+    #~v missing_body
+    print(n)
+
+function nested(n: i64)
+    i: i64 @ 0
+    if n > 0
+        while i < n; i++  #~ unexpected_character
+            print(i)
+
+function ending_its_line(n: i64)
+    i: i64 @ 0
+    while i < n;  #~ unexpected_character
+        print(i)
+
+function main()
+    bare(1)
+    in_parentheses(1)
+    plus_equals(1)
+    minus_minus(1)
+    a_heroes_step(1)
+    three_clauses(1)
+    a_brace(1)
+    the_body_on_the_heads_line(1)
+    nested(1)
+    ending_its_line(1)

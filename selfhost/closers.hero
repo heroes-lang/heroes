@@ -24,13 +24,11 @@
 # |---|---|
 # | `before`, `opener_of` | `scan.finish` |
 # | `never_closed` | `close_to_its_kind`, `layout.close_brackets` |
-# | `header_semicolon` | `scan.punct`, a `;` of C's `for` header, in its `(` or bare |
+# | `past_literal` | `loop_headers`, `bracket_reach` |
 
 use token
 use diag
 use state
-use separator_runs
-use word_place
 
 # Before the token `kind` at `start` is emitted: a closer of another kind
 # than the innermost closes the opener of its own kind where one is open
@@ -146,120 +144,6 @@ function past_literal(text: str, from: i64) -> i64
 
     return i
 
-# The index in `l.open_brackets` of the `(` right after a `for`, C's
-# three-clause header `for (i = 0; i < n; i++)`, whose `;` are its own and
-# no strays of the program's, or -1: the parser tells the header once, at
-# that `(` (`parse/loop_habit.refuse`, defect 194), where each `;` cost a
-# message. The innermost open above the innermost hole whose line has `for`
-# the word before it: a bracket the header holds stands in it, a call or a
-# list left open there, `for (i = 0; i < f(3; i++` (defect 366), and one in
-# a hole opened inside it is the hole's, `for (f"{a; b}")` (defect 312). An
-# `in` past it makes it an iteration written in parentheses, `for (x in
-# xs)`, and no C header.
-function for_header(l: state.LexState, text: str) -> i64
-    floor: i64 @ 0
-
-    if l.holes.len() > 0
-        floor @ l.holes[l.holes.len() - 1]
-    k: i64 @ l.open_brackets.len() - 1
-
-    while k >= floor
-        open = l.open_brackets[k].start
-
-        if text[open] == '(' && word_place.word_ending(text, at: word_place.significant_before(text, at: open, floor: 0) + 1) == "for"
-            i: i64 @ l.tokens.len() - 1
-
-            while i > 0 && l.tokens[i].span.start > open
-                if l.tokens[i].kind == .kw_in
-                    return -1
-                i @ i - 1
-
-            return k
-        k @ k - 1
-
-    return -1
-
-# A `;` of C's `for` header at `at`, left to the parser's one report of it:
-# one in the header's `(` a token of its own (defect 194), and so is one in
-# a bracket the header holds where the header holds two at most, C's three
-# clauses, the bracket's `)` left out (defect 366): past two, it is the
-# bracket's own, `f(1; 2)`, told as a stray. And one of a header written
-# bare, `for i = 0; i < 3; i++`, with the rest of its line, every clause
-# past it, which no line of the language holds (defect 301): its `++` then
-# asks no line below to go on, and the body below is read as one. True
-# where the `;` was taken so.
-function header_semicolon(@l: state.LexState, text: str, at: i64) -> bool
-    header = for_header(l, text)
-
-    if header >= 0 && (header == l.open_brackets.len() - 1 || semicolons(text, from: l.open_brackets[header].start, at: at) <= 2)
-        state.error_token_at(@l, at)
-        return true
-
-    if l.open_brackets.len() > 0 || l.holes.len() > 0 || !begun_by_for(l, text, at: at)
-        return false
-    l.pos @ header_end(text, from: l.pos)
-    state.error_token_at(@l, at)
-    return true
-
-# How many `;` stand from the header's `(` at `from` to the end of the line
-# that holds the offset `at`, strings and comments left out.
-function semicolons(text: str, from: i64, at: i64) -> i64
-    count: i64 @ 0
-    i: i64 @ from
-
-    while i < text.len() && (i < at || text[i] != '\n')
-        b = text[i]
-
-        if b == '"' || b == '\''
-            i @ past_literal(text, from: i)
-        else if b == '#'
-            while i < text.len() && text[i] != '\n'
-                i @ i + 1
-        else
-            if b == ';'
-                count @ count + 1
-            i @ i + 1
-
-    return count
-
-# Whether the line of offset `at` begins with `for` and holds no `in` before
-# it, the iteration's own word, which C's header never writes.
-function begun_by_for(l: state.LexState, text: str, at: i64) -> bool
-    start: i64 @ at
-    first: i64 @ -1
-    i: i64 @ l.tokens.len() - 1
-
-    while start > 0 && text[start - 1] != '\n'
-        start @ start - 1
-
-    while i >= 0 && l.tokens[i].span.start >= start
-        if l.tokens[i].kind == .kw_in
-            return false
-
-        if l.tokens[i].kind != .comment && !token.is_line_end(l.tokens[i].kind)
-            first @ i
-        i @ i - 1
-
-    return first >= 0 && l.tokens[first].kind == .kw_for
-
-# Past the rest of a line's code from `from`, its strings whole, before a
-# comment, the line's end, or a `{` that ends the line, a body's, which the
-# brace layout reads; the spaces before any of them left out.
-function header_end(text: str, from: i64) -> i64
-    i: i64 @ from
-    last: i64 @ from
-
-    while i < text.len() && text[i] != '\n' && text[i] != '\r' && text[i] != '#' && !(text[i] == '{' && separator_runs.ends_its_line(text, at: i + 1))
-        if text[i] == '"' || text[i] == '\''
-            i @ past_literal(text, from: i)
-            last @ i
-        else
-            if text[i] != ' ' && text[i] != '\t'
-                last @ i + 1
-            i @ i + 1
-
-    return last
-
 # The byte of the opener the closer `kind` closes.
 function opener_of(kind: token.TokenKind) -> u8
     if kind == .rparen
@@ -337,12 +221,3 @@ test "a closer of another kind closes the opener of its own kind below, and name
     close_to_its_kind(@hole, "(f\"${[x)}\"", .rparen, start: 7)
     assert hole.open_brackets.len() == 2
     assert hole.diagnostics.len() == 0
-
-# Defect 366: a `;` in a bracket C's header holds is the header's while the
-# header holds two at most, its lines to the `;`'s own counted, strings left
-# out; past two it is the bracket's own, `f(1; 2)`.
-test "a header holds two semicolons, its brackets' among them"
-    assert semicolons("for (i = 0; i < f(3; i++\n", from: 4, at: 19) == 2
-    assert semicolons("for (i = f(1; 2); i < 3; i++)\n", from: 4, at: 12) == 3
-    assert semicolons("for (i = 0;\n     i < 3; i++)\n", from: 4, at: 22) == 2
-    assert semicolons("for (s = \";\"; s < 3)\n", from: 4, at: 12) == 1

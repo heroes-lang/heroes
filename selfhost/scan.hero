@@ -30,6 +30,7 @@ use open_line
 use backslash
 use brace_layout
 use closers
+use loop_headers
 use arrow_inside
 use bracket_reach
 use lost_quote
@@ -286,7 +287,7 @@ function punct(@l: state.LexState, text: str)
 
     # One of C's `for (i = 0; i < n; i++)`, or of the header written bare, is
     # that header's, which the parser tells once (defects 194 and 301).
-    if ch == ";" && closers.header_semicolon(@l, text, at: start)
+    if ch == ";" && loop_headers.header_semicolon(@l, text, at: start)
         return
 
     # C's `;` that ends its line outside brackets is a habit told once a run,
