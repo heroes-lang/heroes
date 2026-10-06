@@ -1,0 +1,20 @@
+error[ffi_parameter_type]: `o` of `count_plain` is declared `counted_by`, and the header's `struct opaque *` points at `struct opaque`, which it leaves incomplete — C counts in a type only C can size, so no count can be held to what is lent
+  at tests/golden/unsupported/fixedbugs-395-a-count-in-a-type-the-header-hides-is-refused.hero:16:26
+     |
+  16 |     function count_plain(o: ptr counted_by n lent, n: u64) -> i64  #~ ffi_parameter_type
+     |                          ^
+  note: §4.19: a counted parameter is lent the program's own bytes, a field or a record, and C counts them in what its pointer points at; where the header keeps that type opaque, declare `o` without `counted_by` and hand it a pointer C gave you
+
+error[ffi_parameter_type]: `o` of `count_hidden` is declared `counted_by`, and the header's `LPOPAQUE` points at `struct opaque`, which it leaves incomplete — C counts in a type only C can size, so no count can be held to what is lent
+  at tests/golden/unsupported/fixedbugs-395-a-count-in-a-type-the-header-hides-is-refused.hero:18:27
+     |
+  18 |     function count_hidden(o: ptr counted_by n lent, n: u64) -> i64  #~ ffi_parameter_type
+     |                           ^
+  note: §4.19: a counted parameter is lent the program's own bytes, a field or a record, and C counts them in what its pointer points at; where the header keeps that type opaque, declare `o` without `counted_by` and hand it a pointer C gave you
+
+error[ffi_parameter_type]: `o` of `count_named` is declared `counted_by`, and the header's `OP *` points at `OP`, which it leaves incomplete — C counts in a type only C can size, so no count can be held to what is lent
+  at tests/golden/unsupported/fixedbugs-395-a-count-in-a-type-the-header-hides-is-refused.hero:17:26
+     |
+  17 |     function count_named(o: ptr counted_by n lent, n: u64) -> i64  #~ ffi_parameter_type
+     |                          ^
+  note: §4.19: a counted parameter is lent the program's own bytes, a field or a record, and C counts them in what its pointer points at; where the header keeps that type opaque, declare `o` without `counted_by` and hand it a pointer C gave you

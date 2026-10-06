@@ -5,6 +5,11 @@
 # reads the units (`cli/header_types.hero`) can both name it without either
 # importing the other — Heroes refuses module cycles, and the seam between
 # asking and reading is the one worth keeping.
+#
+# `declared` is a C type for a width ask, `ptr` or `handle` for a depth ask,
+# and one of the two words below for the asks a LEND makes (panel 194's R7,
+# defects 092 and 395): what unit C counts a `counted_by` parameter in, and
+# whether a whole record lent with `@` and no count reaches a `void *`.
 record Pointee
     name: str
     param: str
@@ -14,6 +19,16 @@ record Pointee
     line: i64
     depth: bool
 
+# A parameter declared `counted_by`: the header's type for it, whose pointee
+# is the unit its count is compared in (`emit/lend_extent.hero`).
+constant UNIT: str
+    "unit"
+
+# A group's record lent whole through `@` with no `counted_by`: refused where
+# the header takes it as `void *`, since nothing then bounds what C reaches.
+constant WHOLE: str
+    "whole"
+
 # The same ask once the header has answered: what its parameter points at,
 # as the header's own type text (`size_t`, `void`, `struct opaque`). Built by
 # `cli/header_types.hero` from the dump and handed to `emit/ffi.hero`'s
@@ -21,6 +36,12 @@ record Pointee
 # parameter — clang says `incomplete type 'struct opaque'` and nothing else
 # (defect 010, 2026-09-04) — so the reader has to find the parameter from
 # the type, and only the asker knows which parameter was asked about which.
+#
+# For a lend's two asks it is the parameter's own type, whole (`int *`,
+# `LPVOID`), since a pointer the header spells through a typedef has no `*`
+# to cut at; `pointee` is what it points at read through every typedef, which
+# is the name clang gives an incomplete one, and empty for every other ask.
 record Answered
     asked: Pointee
     header_type: str
+    pointee: str

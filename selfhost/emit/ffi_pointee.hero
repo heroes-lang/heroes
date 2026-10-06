@@ -387,8 +387,8 @@ test "an incomplete pointee is found from the type clang names, through what the
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     _ = checker.check(parsed.tree, out, s, parsed.decls)
     answered: [pointee_ask.Answered] = [
-        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "fill", param: "out", index: 0, declared: "int64_t", file: "t.hero", line: 2, depth: false), header_type: "struct opaque")
-        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "other", param: "n", index: 0, declared: "int32_t", file: "t.hero", line: 3, depth: false), header_type: "int")
+        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "fill", param: "out", index: 0, declared: "int64_t", file: "t.hero", line: 2, depth: false), header_type: "struct opaque", pointee: "")
+        pointee_ask.Answered(asked: pointee_ask.Pointee(name: "other", param: "n", index: 0, declared: "int32_t", file: "t.hero", line: 3, depth: false), header_type: "int", pointee: "")
     ]
     line = "t.hero:2:5: error: invalid application of 'sizeof' to an incomplete type 'struct opaque'"
     found = pointee_unsized(s, parsed.decls, parsed.tree, answered, line: line)

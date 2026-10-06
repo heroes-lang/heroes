@@ -1,0 +1,2 @@
+7
+!panic: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at

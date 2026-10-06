@@ -213,6 +213,11 @@ function emit_for(target: emit_decls.BuildTarget, p: containers.Program, c: stat
 # one, the handle tags clang refused with *must use 'struct' tag*
 # (`cli/produce.hero`, defect 037); `emit/ctype.hero` is where it is read.
 function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool, struct_tags: {str: bool}) -> Emitted
+    none: {str: str} = {}
+    return emit_told(target, p, c, s, decls, version, text, struct_tags, none)
+
+# The same with what a round's pointee check read of each counted parameter (panel 194's R7).
+function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool, struct_tags: {str: bool}, lend_units: {str: str}) -> Emitted
     refused = gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
 
     if refused.len() > 0
@@ -246,6 +251,7 @@ function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: st
     names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+    names.lend_units @ lend_units
 
     # Every type's flags, found once for the loops over the arena below
     # (defect 229): a type is no longer walked again for each of them.

@@ -7,6 +7,12 @@
 # value — not `@`, which is C's out-parameter and carries no count in. One code
 # for the three, `counted_by_shape`, because the class is one: the mark's shape.
 #
+# **Corrected 2026-10-06, panel 194's R7 (lane b13-unit, defect 092):** an `@`
+# sibling is a count C reads through a pointer, `getsockopt`'s `optlen`, and is
+# admitted; the call is compared with the value the cell holds on the way in.
+# `out_parameter` below is quiet since, and the first two messages name the
+# record lent whole and the cell beside the `ptr` and the value.
+#
 # AND A LEND MUST LAND ON A MARKED PARAMETER. Absence is a refusal, never
 # silence: a check that applies only where somebody wrote the mark would leave
 # defect 063 standing wherever nobody did (panel 166's compiler-engineer's
@@ -19,7 +25,7 @@ extern "ffi-counted-by-shape.h"
     function not_a_pointer(p: i64 counted_by n, n: i64) -> i64  #~ counted_by_shape
     function no_such_sibling(p: ptr counted_by m, n: i64) -> i64  #~ counted_by_shape
     function not_an_integer(p: ptr counted_by n, n: f64) -> i64  #~ counted_by_shape
-    function out_parameter(p: ptr counted_by n, @n: i64) -> i64  #~ counted_by_shape
+    function out_parameter(p: ptr counted_by n, @n: i64) -> i64
     function slot_sum(p: ptr, n: i64) -> i64
     function slot_count(p: ptr counted_by n lent, n: i64) -> i64
 

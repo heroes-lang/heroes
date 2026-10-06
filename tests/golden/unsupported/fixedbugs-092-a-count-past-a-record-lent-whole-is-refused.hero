@@ -1,0 +1,48 @@
+# fixedbugs, defect 092, lane b13-unit, 2026-10-06: a record lent whole
+# through `@` to a parameter declared `counted_by`, and a count the call
+# states as a constant past it. Since panel 194's R7 the emitter asserts,
+# before the call, `n <= sizeof(record) / sizeof(*(P)0)`, P the header's own
+# type for the parameter: bytes through `void *`, records through the
+# record's own pointer, both sizes C's. A constant past it is refused here on
+# the number, `record_lend_extent`. The shapes: `void *` and 4096 (the
+# reproducer's count), a padded record one byte past, a record's field lent
+# whole, the record's own type and two of them, the same through a typedef of
+# the pointer, `const void *`, an array's element, a negative count, and the
+# smaller of two records copied with one count. The counts that fit are
+# `tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs`.
+extern "fixedbugs-092-records.h"
+    record One tag one
+        a: i32
+    record Pad tag pad
+        c: i8
+        d: i64
+    record Outer tag outer
+        inner: One
+        z: i32
+    record Pfd tag pfd
+        fd: i32
+        events: i16
+        revents: i16
+    function fill(@buf: One counted_by n, n: u64) -> i64
+    function fill_pad(@buf: Pad counted_by n, n: u64) -> i64
+    function peek(@buf: One counted_by n, n: u64) -> i64
+    function fill_signed(@buf: One counted_by n, n: i64) -> i64
+    function poll_like(@fds: Pfd counted_by nfds, nfds: u64) -> i32
+    function poll_typedef(@fds: Pfd counted_by nfds, nfds: u64) -> i32
+    function copy_n(@dst: Pad counted_by n, @src: One counted_by n, n: u64) -> i64
+
+function main()
+    o: One @ One(a: 0)
+    p: Pad @ Pad(c: 0, d: 0)
+    w: Outer @ Outer(inner: One(a: 0), z: 7)
+    q: Pfd @ Pfd(fd: 0, events: 1, revents: 0)
+    xs: [One] @ [One(a: 1), One(a: 2)]
+    print(fill(@o, n: 4096))  #~ record_lend_extent
+    print(fill_pad(@p, n: 17))  #~ record_lend_extent
+    print(fill(@w.inner, n: 8))  #~ record_lend_extent
+    print(poll_like(@q, nfds: 2))  #~ record_lend_extent
+    print(poll_typedef(@q, nfds: 2))  #~ record_lend_extent
+    print(peek(@o, n: 4096))  #~ record_lend_extent
+    print(fill(@xs[0], n: 8))  #~ record_lend_extent
+    print(fill_signed(@o, n: 0 - 1))  #~ record_lend_extent
+    print(copy_n(@p, @o, n: 8))  #~ record_lend_extent

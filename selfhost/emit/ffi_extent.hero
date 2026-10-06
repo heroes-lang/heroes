@@ -1,6 +1,7 @@
-# An extent the call states above the field's own length, read back from the
+# An extent the call states above what it lends, read back from the
 # assertion `emit/lend_extent.hero` wrote (design.md §4.19, §1.12; panel 166's
-# route C; defect 063).
+# route C; defect 063; panel 194's R7, defects 092 and 395, the unit C counts
+# in and the record lent whole).
 #
 # The assertion is `#line`d at the call, and its message carries everything
 # this reader needs — the extern's name, the pointer's and the count's
@@ -13,24 +14,38 @@ use token
 use source
 use diag
 use emit/ffi_lookup
+use emit/lend_extent
 use field_lend_errors
 
 constant MARKER: str
     "heroes-ffi-extent "
 
-# `heroes-ffi-extent <name> <ptr param> <count param> <lend start> <lend end>
-# <extent start> <extent end> <length>` failed: C's `sizeof` of the field is
-# below the extent the call states.
+# Whichever of the three a failed line is: a field in bytes, a field in a
+# wider unit, a record lent whole.
 function overstated_extent(s: source.Source, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
+    record_rest = ffi_lookup.after(text: line, marker: lend_extent.RECORD_MARKER)
+
+    if !record_rest.is_err()
+        return overstated_record(s, rest: record_rest.must())
+    unit_rest = ffi_lookup.after(text: line, marker: lend_extent.UNIT_MARKER)
+
+    if !unit_rest.is_err()
+        return overstated_field(s, rest: unit_rest.must(), unit: true)
     rest = ffi_lookup.after(text: line, marker: MARKER)
 
     if rest.is_err()
         return fail(code: "none", msg: "not an extent assertion")
-    parts = ffi_lookup.words(text: rest.must())
+    return overstated_field(s, rest: rest.must(), unit: false)
 
-    if parts.len() < 8
+# `<name> <ptr param> <count param> <lend start> <lend end> <extent start>
+# <extent end> <length>`, and the header's type after it in a wider unit:
+# C's `sizeof` of the field, in that unit, is below the extent the call states.
+function overstated_field(s: source.Source, rest: str, unit: bool) -> diag.Diagnostic?
+    parts = ffi_lookup.words(text: rest)
+
+    if parts.len() < 8 || unit && parts.len() < 9
         return fail(code: "none", msg: "the marker's tail is not ours")
     lend_start = ffi_lookup.number(parts[3])
     lend_end = ffi_lookup.number(parts[4])
@@ -42,9 +57,57 @@ function overstated_extent(s: source.Source, line: str) -> diag.Diagnostic?
         return fail(code: "none", msg: "a position is not numeric")
     lend = token.Span(start: lend_start.must(), end: lend_end.must())
     extent = token.Span(start: extent_start.must(), end: extent_end.must())
+
+    if unit
+        return ok(
+            field_lend_errors.field_lend_unit(lend: source.span_text(s, lend), callee: parts[0], parameter: parts[1], count: parts[2], stated: source.span_text(s, extent), length: length.must(), header_type: trim_quote(tail_from(parts, at: 8)), span: extent)
+        )
     return ok(
         field_lend_errors.field_lend_extent(lend: source.span_text(s, lend), callee: parts[0], parameter: parts[1], count: parts[2], stated: source.span_text(s, extent), length: length.must(), span: extent)
     )
+
+# `<name> <ptr param> <count param> <extent start> <extent end> <bytes|unit>
+# <header type…>`: a group's record lent whole through `@`, and a count C's
+# `sizeof` of it, in the unit the header's pointer counts, cannot hold. It
+# lands on the number; the record has no span in the call's IR, and the
+# parameter it was lent to names it.
+function overstated_record(s: source.Source, rest: str) -> diag.Diagnostic?
+    parts = ffi_lookup.words(text: rest)
+
+    if parts.len() < 7
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    extent_start = ffi_lookup.number(parts[3])
+    extent_end = ffi_lookup.number(parts[4])
+
+    if extent_start.is_err() || extent_end.is_err()
+        return fail(code: "none", msg: "a position is not numeric")
+    extent = token.Span(start: extent_start.must(), end: extent_end.must())
+    header_type = trim_quote(tail_from(parts, at: 6))
+    counted_in: str @ "in what it points at: C read both sizes from the header"
+
+    if parts[5] == "bytes"
+        counted_in @ "in bytes: C read the record's own size from the header"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "record_lend_extent",
+        message: "`" + parts[2] + "` states " + source.span_text(s, extent) + ", outside the record lent whole to `" + parts[1] + "` of `" + parts[0] + "` — `" + parts[1] + "` is declared `counted_by " + parts[2] + "`, and the header's `" + header_type + "` counts it " + counted_in,
+        span: extent
+    )
+    d.notes @ d.notes.push(
+        "a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit"
+    )
+    return ok(d)
+
+# A marker's words from `at` on, joined back: a header's type may be several
+# words (`struct pfd *`).
+function tail_from(parts: [str], at: i64) -> str
+    tail: [str] @ []
+    index: i64 @ at
+
+    while index < parts.len()
+        tail @ tail.push(parts[index])
+        index @ index + 1
+
+    return tail.join(" ")
 
 # clang ends the line with the message's closing quote on some platforms and
 # not on others; a length never ends in one.

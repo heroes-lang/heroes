@@ -143,9 +143,10 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 
         if !kept_json.is_err()
             types = header_types.types_of(kept_json.must(), wanted)
-            answered @ header_types.answered(wanted, types)
+            sugar = header_types.sugar_of(kept_json.must(), wanted)
+            answered @ header_types.answered(wanted, types: types, sugar: sugar)
             verdict = kept.read(
-                verdict_path(dir: dir, sum: known.must(), check_text: header_types.check_unit(headers, wanted, types))
+                verdict_path(dir: dir, sum: known.must(), check_text: header_types.check_unit(headers, wanted, types: types, sugar: sugar))
             )
 
             if !verdict.is_err()
@@ -201,8 +202,9 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     listing = deps.pointer_text(rows.must())
     sum = listing.slice(from: 0, to: 16)
     types = header_types.types_of(json.must(), wanted)
-    answered @ header_types.answered(wanted, types)
-    check_text = header_types.check_unit(headers, wanted, types)
+    sugar = header_types.sugar_of(json.must(), wanted)
+    answered @ header_types.answered(wanted, types: types, sugar: sugar)
+    check_text = header_types.check_unit(headers, wanted, types: types, sugar: sugar)
     check_c = unit_path(dir: dir, stem: "check", text: check_text)
     publish.write_whole(path: check_c, text: check_text, keyed: true)?
     check_err = publish.private_name(dir + "/check-stderr.txt")
