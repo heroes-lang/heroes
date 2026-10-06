@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b12-cli12, 2026-10-06 (its final report, *adjacent or improvement*); reproduced and filed by the coordinator at 09:49.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a cost found beside the work, no value wrong; the specification states no cost for a constant, so no sentence of it is false, and defect 372 was classed the same for a cost of the same kind. A constant's body holds only literals and other constants (the author's option a of 2026-08-12), so building it once cannot change what a program computes.
+
+    **2026-10-06, panel 195** (the soundness lane, `docs/panel/195-a-literal-constant-is-one-static-block-whose-count-is-never-written-and-a-sanitized-build-keeps-the-block-per-read.md`), ratified by delegation the same day: a constant whose one block holds only literals and array and case constructions is one `HERO_ARRAY_STATIC` block whose count is never written, `HERO_RUNTIME_ABI` 27 to 28; a sanitized build keeps the block per read, so ASan still names a release too many; the landing, with its cases on three platforms, is batch 13's, and this item closes on it.
