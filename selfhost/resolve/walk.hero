@@ -51,6 +51,7 @@ use resolve/names
 use resolve/writes
 use resolve/binding as resolve_binding
 use resolve/plain_literal
+use resolve/rest_zero
 
 ## Statements
 
@@ -142,19 +143,24 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
         .index i =>
             expr(@r, a, s, decls, i.base)
             expr(@r, a, s, decls, i.index)
+        # `rest: zero` ending a call is no argument and reads no name: a
+        # misuse is told at the words (`resolve/rest_zero`, defect 401).
         .call c =>
             expr(@r, a, s, decls, c.callee)
             arguments(@r, a, s, decls, c.args)
+            rest_zero.at_call(@r, a, s, decls, at: id, rest: c.rest)
         .method m =>
             # A module in receiver position is not a value, so it is
             # decided before the receiver is resolved as one (panel 031 Q2).
             if qualified.qualified(@r, a, s, decls, at: id, receiver: m.receiver, called: m.name)
                 arguments(@r, a, s, decls, m.args)
+                rest_zero.at_call(@r, a, s, decls, at: id, rest: m.rest)
                 return
             expr(@r, a, s, decls, m.receiver)
             arguments(@r, a, s, decls, m.args)
+            rest_zero.at_call(@r, a, s, decls, at: id, rest: m.rest)
             names.method_name(@r, s, decls, at: id, called: m.name)
-        .variant_case v => arguments(@r, a, s, decls, v.args)
+        .variant_case v => arguments(@r, a, s, decls, rest_zero.apart(@r, a, s, name: v.name, given: v.args))
         .array elements =>
             for element in elements.elements
                 expr(@r, a, s, decls, element)

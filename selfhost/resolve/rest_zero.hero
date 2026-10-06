@@ -1,0 +1,258 @@
+# `rest: zero` read where names are read (panel 194 R1, spec § 13; defect
+# 401). The words end a construction of a group's `record`, every field it
+# does not name zero, and they are the words wherever they are written: a
+# binding called `zero` changes neither what they mean nor which mistake is
+# told first.
+#
+# - **The words are never a read.** The parser takes them off a call's list
+#   (`parse/rest_words.hero`); a variant case keeps its list whole, so the
+#   walk sets them apart here (`apart`) and never resolves their `zero`. A
+#   binding called `zero` that nothing else reads is `unused_binding`, its
+#   own mistake, and says so with a note naming the words (`unused_notes`);
+#   the rename to `_` a loop variable or a payload is offered becomes a
+#   guess, since whoever wrote it may have meant the words to read it.
+# - **Their misuse is told at this stage**, where the walk meets them
+#   (`at_call`, `apart`), beside `unused_binding` and never behind it. Which
+#   call the words may end is a question of what its callee names, which
+#   this stage answers, and of no type. Asked at `check`, it would wait
+#   behind every mistake this stage tells, a binding called `zero` among
+#   them, read nowhere because the words read no name: the one binding most
+#   likely beside the words would hide them. Each misuse is told once, at
+#   the words:
+#   - a Heroes record names every field, always (§4.9), and so does a case
+#     of a variant: `rest_outside_a_group`;
+#   - a group's record with a field called `rest`, which the words would
+#     hide: `rest_is_a_field`;
+#   - a function, a built-in, a value called, UFCS: `rest_not_a_construction`.
+#
+#   A handle is not told here: it is never built, and its construction is
+#   refused whole, words and all, by `check/handle_built.hero` (defect 397).
+#
+# `check/rest_zero.hero` asks `reading` of the same calls and marks each
+# construction the words end, so which call may end with them is written once.
+
+use token
+use ast
+use source
+use diag
+use resolved
+use handles
+use resolve/state
+use resolve/plain_literal
+use parse/rest_words
+
+# What the words ending a call find there.
+variant Reading
+    # A construction of a group's `record` with no field called `rest`.
+    builds
+    # A handle's construction, refused whole at `check` (defect 397).
+    handle
+    # Anything else, told at the words.
+    refused
+        told: diag.Diagnostic
+
+# The words ending a call or a method, and what its callee names.
+record Ended
+    words: token.Span
+    callee: resolved.Ref
+
+## Where the walk meets the words
+
+# A call or a method the walk has just resolved, its `rest` index or -1:
+# where it ends with the words, a misuse is told at them. The walk resolved
+# its callee a moment before, so what the callee names is filed already.
+function at_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64, rest: i64)
+    if rest < 0
+        return
+    e = ended(a, r.out.uses, at)
+
+    if e.is_err()
+        return
+    seen(@r, words: e.must().words)
+
+    match reading(s, decls, e.must())
+        .refused f        => state.push_diagnostic(@r, f.told)
+        .builds | .handle => return
+
+# A variant case's arguments with the words set apart and refused, so that
+# the walk never reads their `zero` as a name. A list without them is handed
+# back as it came, since every case built in the program passes here.
+function apart(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Span, given: [ast.Arg]) -> [ast.Arg]
+    found: bool @ false
+
+    for arg in given
+        if rest_words.is_words(a, s.text, arg: arg)
+            found @ true
+
+    if !found
+        return given
+    kept: [ast.Arg] @ []
+
+    for arg in given
+        if rest_words.is_words(a, s.text, arg: arg)
+            words = words_span(a, words: arg)
+            seen(@r, words: words)
+            state.push_diagnostic(@r, a_case("." + source.span_text(s, name), span: words))
+        else
+            kept @ kept.push(arg)
+
+    return kept
+
+# The local called `zero` in scope where the words stand, if one is, keeps
+# the first words it could be taken to be read by, for its note: the
+# resolver's `zero_words`, keyed by the local's index, which `noted` reads.
+function seen(@r: state.Resolver, words: token.Span)
+    local = state.lookup_local(r, "zero")
+
+    if local.is_err() || !r.zero_words[local.must()].is_err()
+        return
+    r.zero_words[local.must()] @ words
+
+function words_span(a: ast.Ast, words: ast.Arg) -> token.Span
+    return token.Span(start: words.name.must().start, end: a.exprs[words.value].span.end)
+
+## Which call the words may end
+
+# The words the node at `at` ends with, where it is a call or a method that
+# does, and what its callee names. A qualified name's meaning is filed at the
+# method node itself (`geom.Pt(x: 1, rest: zero)`); any other `x.f(...)` is
+# a call, `.unresolved`, and is told: so is a callee that is no name,
+# `f()(x)`, which resolves to it too. Never a quiet `.unresolved`.
+function ended(a: ast.Ast, uses: [resolved.Ref], at: i64) -> Ended?
+    match a.exprs[at].kind
+        .call cl =>
+            if cl.rest >= 0
+                return ok(Ended(words: words_span(a, words: a.rests[cl.rest]), callee: uses[cl.callee]))
+        .method m =>
+            if m.rest >= 0
+                callee: resolved.Ref @ .unresolved
+
+                if uses[m.receiver] == .module
+                    callee @ uses[at]
+                return ok(Ended(words: words_span(a, words: a.rests[m.rest]), callee: callee))
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit     => return none_ended()
+        .null_ptr | .name | .hole | .unary | .binary | .field | .field_name    => return none_ended()
+        .index | .variant_case | .array | .map | .try_expr | .if_expr | .error => return none_ended()
+        .match_expr                                                            => return none_ended()
+
+    return none_ended()
+
+function none_ended() -> Ended?
+    return fail(code: "none", msg: "no call ending with `rest: zero` stands here")
+
+# What the words ending a call to `e.callee` find: a construction of a
+# group's `record` with no field called `rest`, a handle's, or a mistake.
+function reading(s: source.Source, decls: [ast.Decl], e: Ended) -> Reading
+    match e.callee
+        .top t =>
+            match decls[t.at].kind
+                .record_decl rec =>
+                    name = source.span_text(s, decls[t.at].name)
+
+                    if handles.is_handle(decls[t.at])
+                        return .handle
+                    has_rest = has_rest_field(s, fields: rec.fields)
+
+                    if rec.header.is_err()
+                        return .refused(told: outside_a_group(name, has_rest: has_rest, span: e.words))
+
+                    if has_rest
+                        return .refused(told: a_field(name, span: e.words))
+                    return .builds
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return .refused(
+                    told: not_a_construction(e.words)
+                )
+        .unresolved | .local | .builtin | .module => return .refused(told: not_a_construction(e.words))
+
+function has_rest_field(s: source.Source, fields: [ast.Field]) -> bool
+    for f in fields
+        if source.span_text(s, f.name) == "rest"
+            return true
+
+    return false
+
+## A binding called `zero`
+
+# After the unused sweep: each `unused_binding` of a local called `zero`
+# whose scope holds the words says they are not its read, and a certain
+# rename to `_` becomes a guess, the words perhaps meant to read it.
+function unused_notes(@r: state.Resolver, s: source.Source)
+    amended: [diag.Diagnostic] @ []
+
+    for d in r.out.diagnostics
+        amended @ amended.push(noted(r, s, d))
+
+    r.out.diagnostics @ amended
+
+function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.Diagnostic
+    if d.code != "unused_binding"
+        return d
+    at = plain_literal.local_at(r.out, span: d.span)
+
+    if at < 0
+        return d
+    words = r.zero_words[at]
+
+    if words.is_err()
+        return d
+    out: diag.Diagnostic @ d
+    out.notes @ out.notes.push(
+        "`rest: zero` at " + source.elsewhere(s, here: d.span.start, there: words.must().start) + " is not a read of this binding: the words end a construction of a group's `record`, every field it does not name zero, and read no name"
+    )
+    fixes: [diag.Fix] @ []
+
+    for f in d.fixes
+        fixes @ fixes.push(diag.Fix(title: f.title, replacement: f.replacement, span: f.span, certainty: .guess))
+
+    out.fixes @ fixes
+    return out
+
+## What each misuse is told
+
+function outside_a_group(name: str, has_rest: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_outside_a_group",
+        message: "`" + name + "` is a Heroes `record`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
+        span: span
+    )
+
+    if has_rest
+        d.notes @ d.notes.push(
+            "name each field of `" + name + "` with its value, and write the value of its field `rest` as anything but the bare name `zero`: `rest: zero` is always the words, never that field"
+        )
+        return d
+    d.notes @ d.notes.push("name each field of `" + name + "` with its value")
+    return d
+
+function a_case(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_outside_a_group",
+        message: "`" + name + "` builds a case of a Heroes `variant`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "name each field of `" + name + "` with its value, and write the value of a field called `rest` as anything but the bare name `zero`: `rest: zero` is always the words, never that field"
+    )
+    return d
+
+function a_field(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_is_a_field",
+        message: "`" + name + "` has a field called `rest`, so `rest: zero` at the end of its construction would read as that field: the words cannot end this construction",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "name every field of `" + name + "`, `rest` among them, with its value, and write `rest`'s as anything but the bare name `zero`: `rest: zero` is always the words, never that field"
+    )
+    return d
+
+function not_a_construction(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "rest_not_a_construction",
+        message: "`rest: zero` ends a construction of a group's `record`, every field it does not name zero, and this call builds none: the words are never an argument",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "pass each argument by its own name, and give a binding called `zero` another name where it is one"
+    )
+    return d

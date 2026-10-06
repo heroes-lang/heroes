@@ -34,6 +34,7 @@ use resolve/top
 use resolve/decls as resolve_decls
 use resolve/cycles
 use resolve/plain_literal
+use resolve/rest_zero
 
 function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
     r: state.Resolver @ state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
@@ -69,8 +70,10 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
     unused_sweep.report(@r, s)
 
     # A binding a plain literal holds in braces is told so (panel 184 R2),
-    # once the sweep has said which are never read.
+    # once the sweep has said which are never read; and so is a binding
+    # called `zero` where the words stand, which they never read.
     plain_literal.unused_notes(@r, s)
+    rest_zero.unused_notes(@r, s)
 
     # Last, because it reads `uses` and `uses` is only complete once every
     # body has been walked: a definitional cycle is a fact about the
@@ -144,3 +147,29 @@ test "a hole suspends the unused rule from a flat scan, not the walk"
     # `x` is never read, and the hole in the same module keeps the sweep
     # quiet about it (§4.16: the suppression is file-wide).
     assert out.diagnostics.len() == 0
+
+# Defect 401: the words read no name, so a binding called `zero` beside them
+# is read nowhere and told so, its note naming them; and their misuse is told
+# at this stage, beside it, where `check` would never have been reached.
+test "a binding called zero beside the words hides no misuse of them"
+    out = resolved_source(
+        "function add(a: i64) -> i64\n    return a\n\nfunction f() -> i64\n    zero = 0\n    return add(a: 1, rest: zero)\n"
+    )
+    assert out.diagnostics.len() == 2
+    assert out.diagnostics[0].code == "unused_binding"
+    assert out.diagnostics[0].notes.len() == 1
+    assert out.diagnostics[1].code == "rest_not_a_construction"
+
+    # A variant case keeps its list whole, and the words in it are no name.
+    in_a_case = resolved_source(
+        "variant Shape\n    ring\n        r: i64\n        rest: i64\n\nfunction f() -> Shape\n    zero = 0\n    return .ring(r: 1, rest: zero)\n"
+    )
+    assert in_a_case.diagnostics.len() == 2
+    assert in_a_case.diagnostics[0].code == "unused_binding"
+    assert in_a_case.diagnostics[1].code == "rest_outside_a_group"
+
+    # A group's record built as the words say: nothing to tell.
+    built = resolved_source(
+        "extern \"p.h\"\n    record Pair tag pair\n        a: i32\n        b: i32\n\nfunction f() -> Pair\n    return Pair(a: 1, rest: zero)\n"
+    )
+    assert built.diagnostics.len() == 0

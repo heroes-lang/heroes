@@ -166,8 +166,9 @@ record Resolver
     # `use` lines that were READ, keyed as module_uses is. What is left
     # over is what the unused rule reports.
     module_reads: name_rows.NameSets
-    # What plain literals hold in braces, for the unused rule's note (R2).
+    # For notes on unused bindings: braced names (R2), `rest: zero` met (401).
     braced: [braced_names.Braced]
+    zero_words: {i64: token.Span}
     # What each module offers the did-you-mean, gathered once (defect 385).
     offered: {str: offered.Offered}
 
@@ -210,6 +211,7 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
         module: "",
         module_reads: name_rows.new_name_sets(),
         braced: [],
+        zero_words: {},
         offered: held
     )
 
