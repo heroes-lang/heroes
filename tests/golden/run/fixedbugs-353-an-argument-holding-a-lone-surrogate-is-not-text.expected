@@ -1,0 +1,4 @@
+args_checked() refused the argument: not_text
+the child asking args_checked() exited 0
+args_checked() refused the argument: not_text
+the child asking args() stopped: true

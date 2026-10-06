@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -41,7 +43,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 45 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 47 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
 typedef enum h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_tag {
     h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_tag_a = 0,
     h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_tag_b = 1,
@@ -16062,19 +16064,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 16078 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 16080 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_c_a_eq(const h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_c_a *a, const h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_c_a *b);
@@ -24104,7 +24106,7 @@ void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void);
 
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) {
-#line 24108 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24110 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroMapHeader * h1_m = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -24130,15 +24132,15 @@ bb0:
     t10 = h2_own2;
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h2_own2 = t1;
-#line 24134 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24136 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(t10);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t11 = h0_xs;
-#line 24138 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24140 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_incref(t1);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 24142 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24144 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(t11);
 #line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t2 = h0_xs;
@@ -24164,15 +24166,15 @@ bb0:
     t12 = h3_own3;
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h3_own3 = t7;
-#line 24168 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24170 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(t12);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t13 = h1_m;
-#line 24172 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24174 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_incref(t7);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h1_m = t7;
-#line 24176 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24178 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(t13);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t8 = h1_m;
@@ -24182,16 +24184,16 @@ bb0:
     hero_print_int(t9);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_print_end();
-#line 24186 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24188 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(h0_xs);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-#line 24189 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24191 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(h1_m);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-#line 24192 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24194 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(h2_own2);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-#line 24195 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24197 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(h3_own3);
     return;
 }

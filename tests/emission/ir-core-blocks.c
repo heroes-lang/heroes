@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 26, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -31,8 +31,10 @@ _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_F
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
 _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
-_Static_assert(HERO_RET_STR(hero_file_read(0, 0)), "heroes-ffi-return hero_file_read str");
-_Static_assert(HERO_RET_INT(hero_file_write(0, (HeroStr){0})), "heroes-ffi-return hero_file_write i64");
+_Static_assert(HERO_RET_INT(HERO_OS_BAD_NAME), "heroes-ffi-return HERO_OS_BAD_NAME i64");
+_Static_assert(__builtin_constant_p(HERO_OS_BAD_NAME), "heroes-ffi-const HERO_OS_BAD_NAME");
+_Static_assert(HERO_RET_STR(hero_file_read_str((HeroStr){0}, 0)), "heroes-ffi-return hero_file_read_str str");
+_Static_assert(HERO_RET_INT(hero_file_write_str((HeroStr){0}, (HeroStr){0})), "heroes-ffi-return hero_file_write_str i64");
 _Static_assert(HERO_RET_INT(hero_args_count()), "heroes-ffi-return hero_args_count i64");
 _Static_assert(HERO_RET_STR(hero_args_at((int64_t)0)), "heroes-ffi-return hero_args_at str");
 _Static_assert(HERO_RET_CSTR(hero_args_raw((int64_t)0)), "heroes-ffi-return hero_args_raw cstr");
@@ -45,7 +47,7 @@ HERO_STR_STATIC(hero_str_1073a930, "zero");
 HERO_STR_STATIC(hero_str_1d4996, "one");
 HERO_STR_STATIC(hero_str_eb4aa2b, "many");
 
-#line 49 "coreblocks.c"
+#line 51 "coreblocks.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -66,19 +68,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 112 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read(const char * a0, int64_t * a1) { (void)(hero_file_read)(a0, (void *)a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write(const char * a0, HeroStr a1) { (void)(hero_file_write)(a0, a1); }
-#line 115 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
+#line 114 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 #line 117 "<heroes library>"
+__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
+#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 123 "<heroes library>"
+#line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "coreblocks.c"
+#line 84 "coreblocks.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +97,7 @@ HeroStr h_coreblocks_named(int64_t h0_n);
 
 #line 5 "tests/golden/ir/core-blocks.hero"
 int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor) {
-#line 99 "coreblocks.c"
+#line 101 "coreblocks.c"
     int64_t h2_i;
     int64_t h3_v;
     int64_t h4_ret0;
@@ -229,12 +231,12 @@ bb10:
     t24 = h4_ret0;
 #line 5 "tests/golden/ir/core-blocks.hero"
     return t24;
-#line 233 "coreblocks.c"
+#line 235 "coreblocks.c"
 }
 
 #line 21 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
-#line 238 "coreblocks.c"
+#line 240 "coreblocks.c"
     int64_t h1_s0;
     HeroStr h2_r0 = {0};
     int64_t t1;
@@ -269,10 +271,10 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
-#line 273 "coreblocks.c"
+#line 275 "coreblocks.c"
     hero_str_incref(t11);
 #line 22 "tests/golden/ir/core-blocks.hero"
-#line 276 "coreblocks.c"
+#line 278 "coreblocks.c"
     hero_str_decref(h2_r0);
     return t11;
 bb2:
@@ -280,11 +282,11 @@ bb2:
     t8 = HERO_STR_LIT(hero_str_1073a930);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
-#line 284 "coreblocks.c"
+#line 286 "coreblocks.c"
     hero_str_incref(t8);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
-#line 288 "coreblocks.c"
+#line 290 "coreblocks.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
@@ -302,11 +304,11 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_1d4996);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
-#line 306 "coreblocks.c"
+#line 308 "coreblocks.c"
     hero_str_incref(t9);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
-#line 310 "coreblocks.c"
+#line 312 "coreblocks.c"
     hero_str_decref(t13);
     goto bb1;
 bb5:
@@ -316,11 +318,11 @@ bb6:
     t10 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
-#line 320 "coreblocks.c"
+#line 322 "coreblocks.c"
     hero_str_incref(t10);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
-#line 324 "coreblocks.c"
+#line 326 "coreblocks.c"
     hero_str_decref(t14);
     goto bb1;
 }

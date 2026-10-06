@@ -1,0 +1,22 @@
+# Defect 251, panel 192's R3, 2026-10-05: a comment refuses what a string
+# refuses written as itself but the tab, which a comment holds. Controls in a
+# comment reach the terminal of anyone who reads the file (Zig refuses them),
+# so each is refused, `invisible_character`, its `certain` fix its name,
+# `<U+001B>`, the form a diagnostic shows it in: a comment's text changes and
+# the program cannot. A carriage return before a line feed ends the line, and
+# a lone one is refused; a doc comment is a comment, and so is another
+# language's `//`, told for its `//` and for what it holds.
+
+# a tab	is held
+#~v invisible_character invisible_character
+# an escape <U+001B>[2J and a bell <U+0007>
+#~v invisible_character
+# a lone carriage return <U+000D> in the middle
+#~v invisible_character invisible_character
+# a NUL <U+0000> and a DEL <U+007F>
+
+#~v invisible_character
+## a doc comment holding <U+001B>
+function main()
+    print(1)
+    # <U+001B>[0m  #~ unexpected_character invisible_character

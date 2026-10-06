@@ -1,0 +1,34 @@
+# Defect 251, panel 192's R2, 2026-10-05. A control character written as
+# itself inside a string compiled at exit 0, survived `fmt` byte for byte,
+# reached the terminal of whoever printed the file and was lost when the
+# line was retyped from what a screen shows, panel 066's trap for the
+# carriage return, which was refused alone. Each control character but the
+# line end is refused now (`invisible_character`), its `certain` fix writing
+# it by its code, `\u{1b}`: in a string, in the text of an `f` literal and
+# in a test's title; a run of them is one message. A tab is `raw_tab`, its
+# fix `\t`; in a character literal a control character is its number.
+
+function an_escape()
+    print("\u{1b}[31mred")  #~ invisible_character
+
+function a_run()
+    print("a\u{1b}\u{7}\u{7f}b")  #~ invisible_character
+
+function a_c1_control()
+    print("a\u{85}b")  #~ invisible_character
+
+function in_an_f_literal()
+    x = 1
+    print(f"\u{1b}[{x}m")  #~ invisible_character
+
+function a_tab()
+    print("a\tb\t\tc")  #~ raw_tab raw_tab
+
+function characters()
+    e: u8 = 27  #~ invisible_character
+    t: u8 = '\t'  #~ raw_tab
+    d: u8 = 127  #~ invisible_character
+    print(e + t + d)
+
+test "a title holding \u{1b}[2J"  #~ invisible_character
+    assert true

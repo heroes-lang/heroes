@@ -29,9 +29,10 @@ function named(ch: str) -> str
     return "`" + ch + "` (" + u_plus(code) + ")"
 
 # A text as a diagnostic writes it to a terminal (defect 244): each control
-# character but a line end and a tab, C0's, DEL and C1's, by its code between
-# angle brackets, `<U+001B>`, the form `cli/shell_split.shown` gives
-# pkg-config's answer (defect 237). Written raw, a source line's bytes reached
+# character but a line end and a tab, C0's, DEL and C1's, and since defect 291
+# each character `unseen` names, by its code between angle brackets,
+# `<U+001B>`, the form `cli/shell_split.shown` gives pkg-config's answer
+# (defect 237). Written raw, a source line's bytes reached
 # the terminal that shows the message: an ESC began a sequence that coloured
 # or cleared it, a lone carriage return sent the cursor back over the line, and
 # a file in UTF-16 filled it with NULs. A line end stays, since a message
@@ -61,14 +62,19 @@ function written(ch: str) -> str
     return "<" + u_plus(code_point(ch)) + ">"
 
 # A character `visible` writes by its code: below 0x20 but a line end and a
-# tab, 0x7f, and 0x80 to 0x9f.
+# tab, 0x7f, and 0x80 to 0x9f; and since defect 291 every character `unseen`
+# names, a terminal showing it as nothing or reordering the line around it:
+# U+202E in an excerpt drew the line the message quoted in another order, and
+# a no-break space or a byte order mark looked like nothing at all.
 function is_control(ch: str) -> bool
     code = code_point(ch)
-    return code < 32 && code != 10 && code != 9 || code >= 127 && code < 160
+    return code < 32 && code != 10 && code != 9 || code >= 127 && code < 160 || code >= 160 && unseen(code)
 
 # Whether any byte of `text` begins such a character, asked of the bytes, so
 # that a text holding none, every line of nearly every program, is handed back
-# as it is. C1's characters are 0xC2 0x80 to 0xC2 0x9F in UTF-8.
+# as it is. C1's characters are 0xC2 0x80 to 0xC2 0x9F in UTF-8; a character
+# `unseen` names is led by one of the bytes `unseen_lead` names, and is decoded
+# only there.
 function holds_control(text: str) -> bool
     at: i64 @ 0
 
@@ -80,9 +86,35 @@ function holds_control(text: str) -> bool
 
         if b == 194 && at + 1 < text.len() && text[at + 1] >= 128 && text[at + 1] < 160
             return true
+
+        if b >= 194 && unseen_lead(b) && unseen(code_point(text.slice(from: at, to: at + lead_width(b, left: text.len() - at))))
+            return true
         at @ at + 1
 
     return false
+
+# Whether `b` leads the UTF-8 of a character in `UNSEEN`: 0xC2 (U+00A0,
+# U+00AD), 0xCD (U+034F), 0xD8 (U+061C), 0xE1 (U+115F to U+180E), 0xE2
+# (U+2000 to U+206F), 0xE3 (U+3000, U+3164), 0xEF (U+FE00 to U+FFFB), 0xF0
+# (U+1D173 to U+1D17A) and 0xF3 (the tags and U+E0100 on). A fact about the
+# table below, held to it by its test.
+function unseen_lead(b: u8) -> bool
+    return b == 194 || b == 205 || b == 216 || b == 225 || b == 226 || b == 227 || b == 239 || b == 240 || b == 243
+
+# How many bytes the character led by `b` takes, no more than the `left`
+# there are: a `str` is well-formed UTF-8 (spec § 3), so the slice is that one
+# character.
+function lead_width(b: u8, left: i64) -> i64
+    bytes: i64 @ 2
+
+    if b >= 240
+        bytes @ 4
+    else if b >= 224
+        bytes @ 3
+
+    if bytes > left
+        return left
+    return bytes
 
 # The characters above ASCII a terminal shows as nothing, or that change how
 # it shows what follows, so writing one between backquotes shows the reader an
@@ -251,6 +283,48 @@ function default_ignorable(code: i64) -> bool
 
     return false
 
+# Unicode's Bidi_Control, as ranges, first and last included: ALM, LRM and
+# RLM, the embeddings and overrides LRE to RLO, and the isolates LRI to PDI.
+# Every one is Default_Ignorable too (`DEFAULT_IGNORABLE`, below); panel 192.
+constant BIDI_CONTROL: [i64]
+    [
+        1564
+        1564
+        8206
+        8207
+        8234
+        8238
+        8294
+        8297
+    ]
+
+# Named once a call, as `unseen`'s table is (defect 282).
+function bidi_control(code: i64) -> bool
+    ranges = BIDI_CONTROL
+    at: i64 @ 0
+
+    while at + 1 < ranges.len()
+        if code >= ranges[at] && code <= ranges[at + 1]
+            return true
+        at @ at + 2
+
+    return false
+
+# Whether a line cannot show `code` as itself: a control character but the
+# tab and the line feed, a bidirectional control, U+2028 or U+2029. What the
+# lexer refuses written as itself (`raw_chars`, panel 192), and what `visible`
+# writes by its code, so no message, dump or excerpt sends one to a screen.
+function unshowable(code: i64) -> bool
+    if code < 32
+        return code != 9 && code != 10
+
+    if code < 127
+        return false
+
+    if code < 160
+        return true
+    return bidi_control(code) || code == 8232 || code == 8233
+
 ## Tests
 
 test "a visible ASCII character is itself, as the message always showed it"
@@ -287,14 +361,49 @@ test "a control character is written by its code, a line end and a tab are kept,
     assert visible("c1 " + of([194, 155]) + "31m") == "c1 <U+009B>31m"
     assert visible("bell" + of([7])) == "bell<U+0007>"
     assert visible("two\nlines\tand a tab") == "two\nlines\tand a tab"
-    nbsp = of([194, 160])
-    assert visible("café, € and " + nbsp) == "café, € and " + nbsp
     assert width(esc) == 8
     assert width("\t") == 1
     assert width("é") == 1
     assert !holds_control("plain")
     assert holds_control(of([194, 133]))
-    assert !holds_control(nbsp)
+
+# Defect 291: a character a terminal shows as nothing, or that reorders the
+# line around it, is written by its code too, so an excerpt shows the line in
+# the order it is read; until that day a no-break space stayed raw here, and
+# so did U+202E. Text a terminal shows as it is stays as it is.
+test "an invisible or bidirectional character is written by its code, and a visible one above ASCII is itself (defect 291)"
+    rlo = of([226, 128, 174])
+    assert visible("x = \"" + rlo + "abc\"") == "x = \"<U+202E>abc\""
+    assert visible("a" + of([194, 160]) + "b" + of([239, 187, 191]) + "c") == "a<U+00A0>b<U+FEFF>c"
+    assert visible("x" + of([226, 128, 168]) + "y" + of([216, 156])) == "x<U+2028>y<U+061C>"
+    assert visible("a" + of([226, 128, 139]) + "b") == "a<U+200B>b"
+    assert visible("café, € and 😀 漢") == "café, € and 😀 漢"
+    assert holds_control(rlo)
+    assert holds_control(of([243, 160, 128, 129]))
+    assert !holds_control("an em dash, — and € and ✓")
+    assert width(rlo) == 8
+
+    # Every range of the table is led by a byte `unseen_lead` names.
+    ranges = UNSEEN
+    at: i64 @ 0
+
+    while at + 1 < ranges.len()
+        assert holds_control(utf8_of(ranges[at]))
+        assert holds_control(utf8_of(ranges[at + 1]))
+        at @ at + 2
+
+# The UTF-8 of `code`, for the test above: two to four bytes.
+function utf8_of(code: i64) -> str
+    if code < 2048
+        return of([to_u8(192 + (code >> 6)).must(), to_u8(128 + (code & 63)).must()])
+
+    if code < 65536
+        return of(
+            [to_u8(224 + (code >> 12)).must(), to_u8(128 + (code >> 6 & 63)).must(), to_u8(128 + (code & 63)).must()]
+        )
+    return of(
+        [to_u8(240 + (code >> 18)).must(), to_u8(128 + (code >> 12 & 63)).must(), to_u8(128 + (code >> 6 & 63)).must(), to_u8(128 + (code & 63)).must()]
+    )
 
 test "the code is read from every length of UTF-8"
     assert code_point("A") == 65

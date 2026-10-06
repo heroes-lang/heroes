@@ -1,0 +1,32 @@
+# Defect 251, panel 192's R5, 2026-10-05. A character a line cannot show had
+# no spelling a reader sees: ESC in a string was a raw byte, invisible on
+# screen, or a run-time `[u8]` (the blind arms, 5 of 5 each), and a raw byte
+# is now refused (`fixedbugs-251-*` under `tests/golden/check/`). `\u{1b}`
+# writes it by its code, lowercase hexadecimal with no leading zero, in a
+# string and in the text of an `f"…"` literal, whose holes and doubled braces
+# it never takes for its own; in a constant's body and in a `match` pattern,
+# where no run-time route can stand. Each text prints as its bytes.
+
+constant RESET: str
+    "\u{1b}[0m"
+
+function bytes_of(s: str) -> str
+    out: str @ ""
+
+    for i in range(from: 0, to: s.len())
+        out @ out + " " + s[i].to_str()
+
+    return out
+
+function main()
+    print("ESC, red, ESC:", bytes_of("\u{1b}[31mx\u{1b}[0m"))
+    print("DEL and a C1 control:", bytes_of("\u{7f}\u{85}"))
+    print("an override and its pop:", bytes_of("a\u{202e}b\u{202c}"))
+    print("the line separator:", bytes_of("\u{2028}"))
+    x = 7
+    print("in an f literal:", bytes_of(f"\u{1b}[{x}m{{\u{1b}}}"))
+    print("a constant:", bytes_of(RESET))
+
+    match RESET
+        "\u{1b}[0m" => print("a pattern matches it")
+        _           => print("no pattern matched")

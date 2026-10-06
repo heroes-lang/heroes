@@ -9,9 +9,15 @@
 # the program, so the caret landed in it. The library's declaration is now
 # the one every other declaration of its C symbol is held to, so the caret is
 # always the author's, and the message names the library by what it is.
+#
+# Corrected 2026-10-05, defect 245 (panel 192's R1): the library no longer
+# binds `hero_file_read`, and no declaration of it writes `lent`, so the mark
+# it writes that the author leaves out is now the `@` on `status` of
+# `hero_str_try_from_cstr`, its other function that writes one beside
+# `hero_file_read_str` (`fixedbugs-138-an-at-the-library-writes-left-out`).
 
-extern "hero_os.h"
-    function hero_file_read(path: cstr, @status: i64) -> str  #~ contract_differs
+extern "heroes_runtime.h"
+    function hero_str_try_from_cstr(p: cstr, status: i64) -> str  #~ contract_differs
 
 function main()
     print("hello")

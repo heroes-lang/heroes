@@ -1,0 +1,24 @@
+# Defect 283, panel 192's R2, 2026-10-05: what a string refuses written as
+# itself is three Unicode properties, the controls, Bidi_Control and the two
+# separators, and not the rest of Default_Ignorable, which real text spells
+# with: the joiner of an emoji sequence, Persian's non-joiner, the variation
+# selector of an emoji's presentation, the tags of a subdivision's flag. No
+# compiler of the five the sitting ran refuses them, and panel 188's list
+# would have. A zero-width space and a no-break space stay legal too, the
+# residual the sitting names. Each text prints as its bytes.
+
+function bytes_of(s: str) -> str
+    out: str @ ""
+
+    for i in range(from: 0, to: s.len())
+        out @ out + " " + s[i].to_str()
+
+    return out
+
+function main()
+    print("a joiner:", bytes_of("👨‍💻"))
+    print("a non-joiner:", bytes_of("می‌خ"))
+    print("a variation selector:", bytes_of("⚠️"))
+    print("a flag's tags:", bytes_of("🏴󠁧󠁢󠁿"))
+    print("a zero-width space:", bytes_of("a​b"))
+    print("a no-break space:", bytes_of("a b"))

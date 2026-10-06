@@ -1,0 +1,36 @@
+# Defect 245, panel 192's R1, 2026-10-05. A `str` holds any UTF-8, a NUL
+# included, and `.cstr()` lent one to C as it was, so C read a shorter string
+# than the program held: `strlen` answered 1 for the three bytes below, at
+# exit 0. A `str` now carries one bit saying it holds a NUL, set where its
+# bytes are made, and the lend asks that bit and stops, naming the byte.
+#
+# The NUL comes from a file, the door the defect names: C writes the bytes
+# `61 00 62` and `read_file` hands them back whole, three bytes. `build/` for
+# the path, for `edges-file-args-exit.hero`'s reason.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+constant HELD: str
+    "build/heroes-golden-245-lend.bin"
+
+# The three bytes `a`, NUL, `b`, written by C and read back as a `str`.
+function held() -> str
+    handle = fopen(path: HELD.cstr(), mode: "wb".cstr())
+    assert handle != nullptr
+
+    for b in [97, 0, 98]
+        _ = fputc(c: b.to_i32().must(), stream: handle)
+
+    _ = fclose(stream: handle)
+    return read_file(HELD).must()
+
+function main()
+    s = held()
+    print("the program holds ", s.len(), " bytes")
+    print("C reads ", strlen(s: s.cstr()))
