@@ -129,18 +129,14 @@ bb0:
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t3 = hero_array_new(&hero_desc_int, 2);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
-    { HeroArrayHeader *grown = hero_array_push(t3, &t1);
+    hero_array_push_owned(&t3, &t1);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
-      hero_array_decref(t3); t3 = grown; }
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    { HeroArrayHeader *grown = hero_array_push(t3, &t2);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-      hero_array_decref(t3); t3 = grown; }
+    hero_array_push_owned(&t3, &t2);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t6 = h0_own0;
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     h0_own0 = t3;
-#line 144 "sugarufcs.c"
+#line 140 "sugarufcs.c"
     hero_array_decref(t6);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t4 = hero_array_len(t3);
@@ -150,7 +146,7 @@ bb0:
     hero_print_int(t5);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     hero_print_end();
-#line 154 "sugarufcs.c"
+#line 150 "sugarufcs.c"
     hero_array_decref(h0_own0);
     return;
 }

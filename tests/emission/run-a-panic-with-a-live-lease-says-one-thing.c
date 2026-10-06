@@ -153,30 +153,24 @@ bb0:
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t8 = hero_array_new(&hero_desc_int, 3);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t5);
+    hero_array_push_owned(&t8, &t5);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-      hero_array_decref(t8); t8 = grown; }
+    hero_array_push_owned(&t8, &t6);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t6);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-      hero_array_decref(t8); t8 = grown; }
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t7);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-      hero_array_decref(t8); t8 = grown; }
+    hero_array_push_owned(&t8, &t7);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t14 = h3_own3;
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h3_own3 = t8;
-#line 172 "apanicwithaliveleasesaysonething.c"
+#line 166 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t14);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t15 = h2_a;
-#line 176 "apanicwithaliveleasesaysonething.c"
+#line 170 "apanicwithaliveleasesaysonething.c"
     hero_array_incref(t8);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h2_a = t8;
-#line 180 "apanicwithaliveleasesaysonething.c"
+#line 174 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t15);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t9 = h2_a;
@@ -190,7 +184,7 @@ bb0:
     t16 = h4_own4;
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h4_own4 = t12;
-#line 194 "apanicwithaliveleasesaysonething.c"
+#line 188 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t16);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_str(t12);
@@ -198,16 +192,16 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_held_release(&h1_c);
-#line 202 "apanicwithaliveleasesaysonething.c"
+#line 196 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(h0_x);
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-#line 205 "apanicwithaliveleasesaysonething.c"
+#line 199 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(h2_a);
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-#line 208 "apanicwithaliveleasesaysonething.c"
+#line 202 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(h3_own3);
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-#line 211 "apanicwithaliveleasesaysonething.c"
+#line 205 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(h4_own4);
     return;
 }

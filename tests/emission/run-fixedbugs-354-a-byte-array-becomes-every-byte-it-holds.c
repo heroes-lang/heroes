@@ -558,22 +558,16 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t5 = hero_array_new(&hero_desc_u8, 3);
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t5, &t2);
+    hero_array_push_owned(&t5, &t2);
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t5); t5 = grown; }
+    hero_array_push_owned(&t5, &t3);
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t5, &t3);
-#line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t5); t5 = grown; }
-#line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t5, &t4);
-#line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t5); t5 = grown; }
+    hero_array_push_owned(&t5, &t4);
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t42 = h3_own3;
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h3_own3 = t5;
-#line 577 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 571 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t42);
 #line 31 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h_fixedbugs354abytearraybecomeseverybyteitholds_read(t1, t5);
@@ -584,14 +578,12 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t8 = hero_array_new(&hero_desc_u8, 1);
 #line 32 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t8, &t7);
-#line 32 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t8); t8 = grown; }
+    hero_array_push_owned(&t8, &t7);
 #line 32 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t43 = h4_own4;
 #line 32 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h4_own4 = t8;
-#line 595 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 587 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t43);
 #line 32 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h_fixedbugs354abytearraybecomeseverybyteitholds_read(t6, t8);
@@ -604,18 +596,14 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t12 = hero_array_new(&hero_desc_u8, 2);
 #line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t12, &t10);
+    hero_array_push_owned(&t12, &t10);
 #line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t12); t12 = grown; }
-#line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t12, &t11);
-#line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t12); t12 = grown; }
+    hero_array_push_owned(&t12, &t11);
 #line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t44 = h5_own5;
 #line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h5_own5 = t12;
-#line 619 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 607 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t44);
 #line 33 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h_fixedbugs354abytearraybecomeseverybyteitholds_read(t9, t12);
@@ -628,18 +616,14 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t16 = hero_array_new(&hero_desc_u8, 2);
 #line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t16, &t14);
+    hero_array_push_owned(&t16, &t14);
 #line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t16); t16 = grown; }
-#line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t16, &t15);
-#line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t16); t16 = grown; }
+    hero_array_push_owned(&t16, &t15);
 #line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t45 = h6_own6;
 #line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h6_own6 = t16;
-#line 643 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 627 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t45);
 #line 34 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h_fixedbugs354abytearraybecomeseverybyteitholds_read(t13, t16);
@@ -651,7 +635,7 @@ bb0:
     t46 = h7_own7;
 #line 35 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h7_own7 = t18;
-#line 655 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 639 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t46);
 #line 35 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h_fixedbugs354abytearraybecomeseverybyteitholds_read(t17, t18);
@@ -666,22 +650,16 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t23 = hero_array_new(&hero_desc_u8, 3);
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t20);
+    hero_array_push_owned(&t23, &t20);
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t23); t23 = grown; }
+    hero_array_push_owned(&t23, &t21);
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t21);
-#line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t23); t23 = grown; }
-#line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t23, &t22);
-#line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t23); t23 = grown; }
+    hero_array_push_owned(&t23, &t22);
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t47 = h8_own8;
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h8_own8 = t23;
-#line 685 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 663 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t47);
 #line 36 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h_fixedbugs354abytearraybecomeseverybyteitholds_read(t19, t23);
@@ -694,30 +672,24 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t27 = hero_array_new(&hero_desc_u8, 3);
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t27, &t24);
+    hero_array_push_owned(&t27, &t24);
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t27); t27 = grown; }
+    hero_array_push_owned(&t27, &t25);
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t27, &t25);
-#line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t27); t27 = grown; }
-#line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    { HeroArrayHeader *grown = hero_array_push(t27, &t26);
-#line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-      hero_array_decref(t27); t27 = grown; }
+    hero_array_push_owned(&t27, &t26);
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t48 = h9_own9;
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h9_own9 = t27;
-#line 713 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 685 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t48);
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t49 = h0_held;
-#line 717 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 689 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_incref(t27);
 #line 37 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h0_held = t27;
-#line 721 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 693 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t49);
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t28 = h0_held;
@@ -743,15 +715,15 @@ bb0:
     t50 = h10_own10;
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h10_own10 = t29;
-#line 747 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 719 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     h_0opt_f87774a_release(&t50);
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t51 = h1_f0;
-#line 751 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 723 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     h_0opt_f87774a_retain(&t29);
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h1_f0 = t29;
-#line 755 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 727 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     h_0opt_f87774a_release(&t51);
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t30 = h1_f0;
@@ -771,11 +743,11 @@ bb1:
     t37 = t36.as.ok;
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t52 = h2_s;
-#line 775 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 747 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_str_incref(t37);
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     h2_s = t37;
-#line 779 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 751 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_str_decref(t52);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t38 = HERO_STR_LIT(hero_str_521d74b5);
@@ -791,37 +763,37 @@ bb1:
     hero_print_uint(t41);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     hero_print_end();
-#line 795 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 767 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h0_held);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 798 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 770 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     h_0opt_f87774a_release(&h1_f0);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 801 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 773 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_str_decref(h2_s);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 804 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 776 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h3_own3);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 807 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 779 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h4_own4);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 810 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 782 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h5_own5);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 813 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 785 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h6_own6);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 816 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 788 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h7_own7);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 819 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 791 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h8_own8);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 822 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 794 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h9_own9);
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-#line 825 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 797 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     h_0opt_f87774a_release(&h10_own10);
     return;
 bb2:
@@ -829,14 +801,14 @@ bb2:
     t34 = h1_f0;
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t35 = t34.as.err;
-#line 833 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 805 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_panic_must(t35);
     hero_unreachable();
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 840 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 812 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -860,15 +832,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 864 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 836 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 868 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 840 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 872 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 844 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -906,13 +878,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 910 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 882 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 913 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 885 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 916 "fixedbugs354abytearraybecomeseverybyteitholds.c"
+#line 888 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_decref(h4_own4);
     return t12;
 }
