@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 9be5f8b3c8d23575dc4b87d85208ca3d730d76d0
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-bs, 2026-10-06 (its report, *found beside* 1), met while landing panel 194; reproduced by the coordinator on the trunk's compiler.
 
     **Class: blocking**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused, with a false message: the header does declare `struct opaque`. Into batch 13.
+
+    Repaired at `9be5f8b3`, 2026-10-06 (lane b13-run400), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
