@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-412-an-at-argument-to-a-function-without-one.hero:19:14: error[marker_mismatch]: `f` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-412-an-at-argument-to-a-function-without-one.hero:20:17: error[marker_mismatch]: `f` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-412-an-at-argument-to-a-function-without-one.hero:21:21: error[marker_mismatch]: `add` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-412-an-at-argument-to-a-function-without-one.hero:22:19: error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-412-an-at-argument-to-a-function-without-one.hero:23:12: error[marker_mismatch]: `print` does not change this argument — the `@` says it does
