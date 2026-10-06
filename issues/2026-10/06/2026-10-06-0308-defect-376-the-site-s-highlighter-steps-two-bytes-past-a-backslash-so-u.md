@@ -3,7 +3,7 @@ kind: defect
 area: site
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 1dacca63aa12d024be3cf06134235b64ff65a672
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b12-str192, 2026-10-06, found beside panel 192's landing (its report's *found beside*); filed by the coordinator at 03:08.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a correct program coloured wrong on a published page, a tool that re-prints the language not taught the new form.
+
+    Repaired at `1dacca63`, 2026-10-06 (the coordinator's lane b12-hook), gated by its case run by hand red then green and the site's build; the net is owed at the batch's close.
