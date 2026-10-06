@@ -54,6 +54,16 @@ commit, line for line by `diff`, the suites in 11 minutes against the
 sequential 24 to 27 of 2026-10-02, on a busy Mac. Independent invocations
 inside any container run the same way, `xargs -P 4`, each into its own file.
 
+**A leg on a slow machine starts as soon as its input exists, and this Mac
+never waits idle on it** (author instruction 2026-10-06, meant as: *you must
+learn to parallelise a lot, above all when things run on Windows, on those slow
+machines*). The Windows box and the containers run beside everything else: a
+pre-leg on a round's code before its last lanes land is allowed and finds a
+platform's failure early, and the final leg runs on the closing commit all the
+same. Measured the day it was given: batch 12's Windows pre-leg ran while its
+lanes were still landing, and its first run read 437 failures from `._*`
+entries (below), found and repaired before the closing gate.
+
 **Two moments since 2026-09-29, by author instruction** (*Windows and arm Linux
 before the push*; CL-079): **Linux x86-64 runs when a batch closes**, from this
 Mac, in the container below, since it is CI's own architecture and the leg
@@ -84,7 +94,11 @@ the machine-free work meanwhile (CL-049).
 Committed work reaches it with `git push win main:main`. Uncommitted work goes
 by `COPYFILE_DISABLE=1 tar --no-xattrs`, because macOS's tar otherwise writes
 `._name` AppleDouble entries that the harness globs as programs: 172 of them on
-2026-09-03, and seven false failures.
+2026-09-03, and seven false failures. **And `--no-mac-metadata` beside it since
+2026-10-06**: batch 12's first Windows pre-leg, its archive made without
+these flags, read 437 failures in `order` from `._*` entries; with
+`COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs` the rerun read 27 of 29
+suites green, the two left the batch's own.
 
 The build line there is `seed/README.md`'s, which adds a stack flag and states
 why. **The CI leg builds both** that line and the plain one, and asserts the

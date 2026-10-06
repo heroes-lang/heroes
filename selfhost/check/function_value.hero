@@ -1,0 +1,259 @@
+# A top-level function's name standing as a VALUE (spec § 9: *top-level
+# functions are values*; design.md §4.12, §4.13; defects 398 and 402).
+#
+# Its type is its written signature, `signature_of`, which the walk also asks
+# for a direct call's callee. Two kinds of function have no such type:
+#
+# - one with an `@` parameter, which no function type carries
+#   (`check/markers.hero`, defect 398), refused wherever its name stands;
+# - a GENERIC one, whose signature holds type parameters, which no value
+#   carries to C (defect 402). § 9 says where a type parameter takes its type:
+#   *from the arguments, else from the type the context asks for*. A value has
+#   no arguments, so the context is all there is. Where the position asks for
+#   a type (an annotation, a non-generic function's parameter, a record's
+#   field, a declared result through `return`, `ok(…)`, a built-in's checked
+#   argument, an array literal's later element), the value is the INSTANCE
+#   that type names: its type parameters bound by `check/generics.hero`'s
+#   `bind_missing`, the walk a call's context already takes, and recorded in
+#   `instantiations` at the name as a call's are at the call, so that
+#   `ir/mono.hero` makes the copy and `emit/func_ref.hero` names it. Where the
+#   position asks for none (a discard, an unannotated binding, `print`, either
+#   side of `==`, or a generic callee's argument, under panel 105's flat rule)
+#   the name is refused, `cannot_infer`, naming every type parameter left
+#   unbound and the two ways to bind one. A context the value cannot be is
+#   `type_mismatch`, the generic signature shown with its own letters.
+#
+# Until 2026-10-06 the name synthesised its signature, letters and all. `_ =
+# ident` checked at exit 0 and the build stopped at exit 2 in the verifier, *an
+# instruction still has a type parameter in it*; the same name inside a
+# generic function checked clean, because its first letter and the enclosing
+# function's intern to one id, and the program panicked at run time on the
+# template monomorphisation had deleted; and every position that named a type
+# refused it, quoting *a type parameter* where no reader wrote one.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use value_errors
+use check/table
+use check/state
+use check/lower
+use check/render
+use check/labels
+use check/markers
+use check/freer as freer
+use check/generics as check_generics
+
+# A declaration's type, from its written signature (§4.13: a top-level
+# function is a value). Moved here from `check/walk.hero`, unchanged, with
+# defect 402: the walk was past its decided ceiling, and this file reads it.
+function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64) -> i64
+    match decls[decl].kind
+        .function_decl fd =>
+            lowered: [i64] @ []
+
+            for p in fd.value.params
+                # §4.19: a marked `@` cell is a `str?` on this side of the
+                # boundary too, for the same reason the result is — the
+                # `cstr` in the declaration is what clang checks against the
+                # header, and by the time the program can touch the cell the
+                # bytes are copied and the original freed.
+                lowered @ lowered.push(
+                    freer.handed_back_param(@c.out.types, p, declared: lower.lower_ty(@c, a, r, p.ty))
+                )
+
+            declared_result = lower.lower_ty(@c, a, r, fd.value.result)
+
+            # §4.19: a marked `cstr` reaches the program as a `str?`, never as
+            # the `cstr` the header declares — by then the compiler has copied
+            # it and freed the original (`selfhost/ir/owned_release.hero`).
+            result = freer.handed_back(@c.out.types, fd.value, declared: declared_result)
+            return table.intern_function(
+                @c.out.types,
+                lowered,
+                labels.declared_labels(s, fd.value.params, lowered),
+                result: result
+            )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+# Whether this expression names a GENERIC top-level function: a bare name, or
+# one a module qualifies (`helper.ident`), which the resolver answers alike.
+function generic_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    named = match a.exprs[id].kind
+        .name                                                                          => true
+        .field f                                                                       => r.uses[f.base] == .module
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field_name | .index | .call | .method              => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
+
+    if !named
+        return false
+
+    match r.uses[id]
+        .top t                                    => return letters_of(s, decls, decl: t.at).len() > 0
+        .local | .module | .builtin | .unresolved => return false
+
+    return false
+
+# The type parameters a function declares, as written; none for anything else.
+function letters_of(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
+    out: [str] @ []
+
+    match decls[decl].kind
+        .function_decl fd =>
+            for g in fd.value.generics
+                out @ out.push(source.span_text(s, g))
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return out
+
+    return out
+
+# ⇒: a function's name where the position asks for no type. A generic one is
+# refused here, since nothing says what its type parameters are; the error
+# type it leaves makes the binding or the call it reaches say nothing more.
+function synthesised(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, span: token.Span) -> i64
+    if markers.refused_as_value(@c, s, decls, decl: decl, span: span)
+        return state.error_ty_of(c)
+    letters = letters_of(s, decls, decl: decl)
+    signature = signature_of(@c, a, r, s, decls, decl: decl)
+
+    if letters.len() > 0
+        shown = render.render_ty(c.out.types, s, decls, signature, letters)
+        state.push_diagnostic(
+            @c,
+            unbound(name: source.span_text(s, span), letters: letters, signature: shown, span: span)
+        )
+        return state.error_ty_of(c)
+    return signature
+
+# ⇐: the instance the expected type names, every type parameter bound from it
+# alone, as a call's context binds what its arguments left (panel 105), and
+# recorded at the name for monomorphisation. Asked only where `generic_at`
+# holds. A context that binds every letter to an instance it does not fit is
+# one `type_mismatch` showing that instance, as a call's shows its substituted
+# result; one that leaves a letter unbound shows the signature with its own
+# letters; a poisoned one is a mistake told already.
+function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, expected: i64) -> i64
+    span = a.exprs[id].span
+    decl: i64 @ 0
+
+    match r.uses[id]
+        .top t                                    => decl @ t.at
+        .local | .module | .builtin | .unresolved => return state.error_ty_of(c)
+
+    if markers.refused_as_value(@c, s, decls, decl: decl, span: span)
+        return state.error_ty_of(c)
+    letters = letters_of(s, decls, decl: decl)
+    signature = signature_of(@c, a, r, s, decls, decl: decl)
+    bindings: [i64?] @ []
+
+    for _ in letters
+        bindings @ bindings.push(fail(code: "unbound", msg: "no context named it yet"))
+
+    check_generics.bind_missing(c, @bindings, param: signature, got: expected)
+
+    if table.poisoned(c.out.types, expected)
+        return state.error_ty_of(c)
+    bound: [i64] @ []
+
+    for b in bindings
+        if !b.is_err()
+            bound @ bound.push(b.must())
+
+    shown: str @ render.render_ty(c.out.types, s, decls, signature, letters)
+
+    if bound.len() == letters.len()
+        got = instance_type(@c, s, decls, decl: decl, signature: signature, bindings: bindings)
+
+        if table.fits(@c.out.types, wanted: expected, got: got)
+            c.out.instantiations[span.end] @ bound
+            return got
+        shown @ state.show(c, s, decls, got)
+    state.push_diagnostic(
+        @c,
+        value_errors.mismatch(expected: state.show(c, s, decls, expected), got: shown, span: span)
+    )
+    return state.error_ty_of(c)
+
+# The instance's type: the signature's parameters and result with every type
+# parameter replaced, the parameters named where two now share a type, as a
+# function declared at those types names them (`labels.declared_labels`):
+# `first<A, B>(x: A, y: B)` at `i64, i64` is `(function(x: i64, y: i64) -> i64)`.
+function instance_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, signature: i64, bindings: [i64?]) -> i64
+    match table.get(c.out.types, signature)
+        .function_ty f =>
+            params: [i64] @ []
+
+            for p in table.params_of(c.out.types, f.params)
+                params @ params.push(check_generics.substitute(@c, p, bindings))
+
+            result = check_generics.substitute(@c, f.result, bindings)
+
+            match decls[decl].kind
+                .function_decl fd => return table.intern_function(
+                    @c.out.types,
+                    params,
+                    labels.declared_labels(s, fd.value.params, params),
+                    result: result
+                )
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return state.error_ty_of(c)
+        .array | .fixed | .map | .fallible | .named               => return state.error_ty_of(c)
+        .case_ty | .failure | .generic | .error                   => return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+# Nothing binds a generic function used as a value: a call's `cannot_infer`
+# (`contextless_errors.type_parameter_needs_context`) said of a value, every
+# letter in one message, since one name is one mistake. The fix is a `guess`
+# with nothing to apply, as the call's is: which type is the author's.
+function unbound(name: str, letters: [str], signature: str, span: token.Span) -> diag.Diagnostic
+    listed = spoken(letters)
+    are: str @ "is"
+    they: str @ "it"
+
+    if letters.len() > 1
+        are @ "are"
+        they @ "they"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "nothing here says what " + listed + " of `" + name + "` " + are + ": a generic function used as a value takes its types from the type the context asks for, and this position asks for none",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "give it its type first, `f: " + signature + " = " + name + "` with a type written for " + listed + ", or hand it to a non-generic function's parameter, a record's field or a `return` whose declared type says what " + they + " " + are, replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+# `A`, `A` and `B`, `A`, `B` and `C`: the letters as a sentence names them.
+function spoken(letters: [str]) -> str
+    quoted: [str] @ []
+
+    for l in letters
+        quoted @ quoted.push("`" + l + "`")
+
+    if quoted.len() < 2
+        return quoted.join("")
+    return quoted.slice(from: 0, to: quoted.len() - 1).join(", ") + " and " + quoted[quoted.len() - 1]
+
+## Tests
+
+test "the letters are named as a sentence names them"
+    one: [str] = ["A"]
+    two: [str] = ["A", "B"]
+    three: [str] = ["A", "B", "C"]
+    assert spoken(one) == "`A`"
+    assert spoken(two) == "`A` and `B`"
+    assert spoken(three) == "`A`, `B` and `C`"
+
+test "an unbound value names every letter once, and offers the two ways to bind one"
+    two: [str] = ["A", "B"]
+    d = unbound(name: "first", letters: two, signature: "(function(A, B) -> A)", span: token.Span(start: 0, end: 5))
+    assert d.code == "cannot_infer"
+    assert d.message == "nothing here says what `A` and `B` of `first` are: a generic function used as a value takes its types from the type the context asks for, and this position asks for none"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .guess
+    assert d.fixes[0].title == "give it its type first, `f: (function(A, B) -> A) = first` with a type written for `A` and `B`, or hand it to a non-generic function's parameter, a record's field or a `return` whose declared type says what they are"

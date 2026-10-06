@@ -214,11 +214,19 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !tag_u.is_err()
             found @ ffi_lookup.add_once(found, d: tag_u.must())
-        tag_k = ffi_tag.tag_of_another_kind(s, decls, line: line)
+        tag_k = ffi_tag.tag_of_another_kind(s, decls, line: line, types: asked.types)
 
         if !tag_k.is_err()
             found @ ffi_lookup.add_once(found, d: tag_k.must())
-        unknown_n = ffi_declared.unknown_name(s, tree, decls, line: line, stderr: text, macros: asked.macros)
+        unknown_n = ffi_declared.unknown_name(
+            s,
+            tree,
+            decls,
+            line: line,
+            stderr: text,
+            macros: asked.macros,
+            types: asked.types
+        )
 
         if !unknown_n.is_err()
             found @ ffi_lookup.add_once(found, d: unknown_n.must())

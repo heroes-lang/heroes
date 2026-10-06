@@ -1,0 +1,14 @@
+# Defect 407, 2026-10-06: the whole form of a template written over lines,
+# told once, its caret at the backtick that opens it on the line it opens on
+# (a span that crosses lines takes one caret), its first line quoted and its
+# lines counted, and the literal that writes it on one line offered as a
+# guess, never applied by `--apply`, each line break written `\n`.
+
+function main()
+    id = 7
+    #~v unexpected_character
+    print(`
+        SELECT name
+        FROM users
+        WHERE id = ${id}
+    `)

@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 2cd795f662a37bd12540653f9d65927f6719d041
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 194's completeness critic, its second pass, 2026-10-06.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a true refusal whose note points to a dead end, a message less exact than it could be. Into batch 13.
+
+    Repaired at `2cd795f6`, 2026-10-06 (lane b13-front), gated by its cases and the compiler's own tests; the net is owed at the batch's close.

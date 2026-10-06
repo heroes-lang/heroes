@@ -74,6 +74,8 @@ use cli/pointee_wants
 use cli/strings
 use cli/read_back
 use cli/kept
+use emit/ffi_lookup
+use emit/ffi_mutable
 use parse
 use resolve
 use checker
@@ -507,3 +509,61 @@ test "the pointee check judges a parameter under the build's level and sanitizer
     )
     assert check(t, low.program, c, s, parsed.decls, answered: @sanitised, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err(
     )
+
+# **A `cstr` is refused where the header's pointer points at bytes it may
+# write, and taken where they are `const`, whatever words clang has for the
+# call** (defect 411). Every spelling below, both directions, is judged by
+# this check on the real clang: `unsigned char *` and its kin were accepted at
+# exit 0 while C wrote the program's shared bytes, because clang tells them as
+# `-Wpointer-sign`, and their `const` twins must stay accepted though clang
+# warns the same way about them. A golden cannot hold the `const` half while
+# that warning stands, so this test holds it.
+test "the pointee check refuses a cstr to bytes C may write and takes one to const bytes (defect 411)"
+    header = "#include <stdint.h>\ntypedef unsigned char *w_bytes;\ntypedef const unsigned char *r_bytes;\nint32_t w_uchar(unsigned char *p);\nint32_t w_schar(signed char *p);\nint32_t w_u8(uint8_t *p);\nint32_t w_typedef(w_bytes p);\nint32_t w_array(unsigned char p[32]);\nint32_t w_restrict(unsigned char *restrict p);\nint32_t w_char(char *const p);\nint32_t w_void(void *p);\nint32_t r_uchar(const unsigned char *p);\nint32_t r_schar(const signed char *p);\nint32_t r_u8(const uint8_t *p);\nint32_t r_typedef(r_bytes p);\nint32_t r_array(const unsigned char p[32]);\nint32_t r_void(const void *p);\nint32_t r_char(const char *p);\n"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    headers_at = "build/selftest-pointee-read-include"
+    assert !process.mkdir_all(headers_at).is_err()
+    assert !write_file(path: headers_at + "/rw.h", text: header).is_err()
+    none: [str] = []
+    writes = ["w_uchar", "w_schar", "w_u8", "w_typedef", "w_array", "w_restrict", "w_char", "w_void"]
+    reads = ["r_uchar", "r_schar", "r_u8", "r_typedef", "r_array", "r_void", "r_char"]
+
+    for names in [writes, reads]
+        lines: [str] @ ["extern \"rw.h\""]
+
+        for name in names
+            lines @ lines.push("    function " + name + "(p: cstr lent) -> i32")
+
+        text = lines.join("\n") + "\n\nfunction main()\n    print(1)\n"
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+        c = checker.check(parsed.tree, out, s, parsed.decls)
+        assert c.diagnostics.len() == 0
+        low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+        t.build @ "build/selftest-pointee-read-" + names[0]
+        assert !process.remove_tree(t.build).is_err()
+        answers: [pointee_ask.Answered] @ []
+        under = compiling.Compiling(
+            level: "-O0",
+            sanitize: false,
+            search_include: [headers_at],
+            package_flags: none,
+            runtime: t.runtime,
+            source_dir: ""
+        )
+        asked = check(
+            t,
+            low.program,
+            c,
+            s,
+            parsed.decls,
+            answered: @answers,
+            probe: probing(t, low.program, s, parsed.decls, under: under)
+        )
+        assert asked.is_err() == (names[0] == "w_uchar")
+
+        # Each writable parameter is its own failure, carrying the marker the
+        # reader turns into `ffi_writable_parameter`.
+        for name in names
+            assert ffi_lookup.has(text: failure_text(asked), needle: ffi_mutable.WRITABLE_MARKER + name + " p ") == (names[0] == "w_uchar")

@@ -24,8 +24,10 @@ use cli/deep_types
 # then clang's words are printed as `internal error` and `refused` says what
 # could not be done. Only clang's own words are read for it: a path the author
 # wrote after `-o` could spell a marker, and a publish that failed there is not
-# the header disagreeing with anybody.
-function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, refused: str) -> ()?
+# the header disagreeing with anybody. `asked` is the header's answer where the
+# rounds asked it already, under these very `struct_tags`
+# (`cli/tag_spelling.hero`, defect 400), so it is not asked twice.
+function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, refused: str) -> ()?
     message = failure_message(failed) + deep_types.note(failure_code(failed), art.decls, art.checked, s)
 
     if failure_code(failed) != "clang"
@@ -36,10 +38,16 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     if told_header(message, art, s, t)
         return fail(code: "diagnostics", msg: "a header this program binds does not compile")
 
-    # Asked only now, of a round clang refused (defect 152).
-    asked = header_ask.ask(t, art, s, under: under, struct_tags: struct_tags)
+    # Asked only now, of a round clang refused (defect 152), unless the rounds
+    # asked it already.
+    answer: ffi_asked.Asked @ ffi_asked.nothing()
 
-    if blamed(message, art, s, answered, struct_tags: struct_tags, asked: asked)
+    if asked.is_err()
+        answer @ header_ask.ask(t, art, s, under: under, struct_tags: struct_tags)
+    else
+        answer @ asked.must()
+
+    if blamed(message, art, s, answered, struct_tags: struct_tags, asked: answer)
         return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
 
     # A unit clang refused carries its own path inside the message

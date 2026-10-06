@@ -1,0 +1,83 @@
+# Fixed defect 402, 2026-10-06 (lane b13-gen402): the legal half. Spec § 9: a
+# type parameter takes its type from the arguments, else from the type the
+# context asks for, and a generic function used as a value has no arguments, so
+# the type its position asks for names the instance it is. Before the repair
+# every line below was refused `type_mismatch`, *found `(function(a type
+# parameter) -> a type parameter)`*, except the value inside `outer`, which
+# checked clean because its letter and the enclosing one intern alike, and then
+# panicked at run time, exit 134, on a template monomorphisation had deleted.
+# The shapes: an annotated binding, a non-generic function's parameter, a
+# declared result, a record's field, an annotated array and the second element
+# of an unannotated one, a `push`, a mutation, the branches of an `if`, `ok(…)`,
+# two letters bound to one type (the instance names its two `i64` parameters
+# as the declaration does) and to two, an instance shared with a direct call,
+# a concrete context inside a generic function, and the value inside a generic
+# function whose own parameter binds it, at two types.
+
+record Holder
+    f: (function(i64) -> i64)
+
+function ident<A>(x: A) -> A
+    return x
+
+function twice(x: i64) -> i64
+    return x * 2
+
+function first<A, B>(x: A, y: B) -> A
+    kept: [B] = [y]
+    assert kept.len() == 1
+    return x
+
+function apply(f: (function(i64) -> i64), v: i64) -> i64
+    return f(v)
+
+function shout() -> (function(str) -> str)
+    return ident
+
+function wrapped(f: (function(i64) -> i64)?) -> i64
+    match f
+        .ok g  => return g(8)
+        .err e => return e.code.len()
+
+function counted<B>(x: B) -> B
+    f: (function(i64) -> i64) = ident
+    print(f(16))
+    return x
+
+function outer<B>(x: B) -> B
+    f: (function(B) -> B) = ident
+    return f(x)
+
+function main()
+    f: (function(i64) -> i64) = ident
+    print(f(1))
+    print(apply(f: ident, v: 2))
+    g = shout()
+    print(g("three"))
+    h = Holder(f: ident)
+    print(h.f(4))
+    fs: [(function(i64) -> i64)] = [ident, twice]
+    print(fs[0](5) + fs[1](5))
+    mixed = [twice, ident]
+    print(mixed[1](6))
+    grown: [(function(i64) -> i64)] @ []
+    grown @ grown.push(ident)
+    print(grown[0](7))
+    cell: (function(i64) -> i64) @ twice
+    cell @ ident
+    print(cell(9))
+
+    chosen: (function(i64) -> i64) = if args().len() > 99
+        twice
+    else
+        ident
+    print(chosen(10))
+    print(wrapped(ok(ident)))
+    pair: (function(x: i64, y: i64) -> i64) = first
+    print(pair(x: 11, y: 0))
+    other: (function(str, i64) -> str) = first
+    print(other("twelve", 0))
+    print(ident(13))
+    print(counted("seventeen"))
+    print(outer(14))
+    print(outer("fifteen"))

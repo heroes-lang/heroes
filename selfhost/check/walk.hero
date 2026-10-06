@@ -61,6 +61,7 @@ use check/group_fields
 use check/handle_built
 use handles
 use check/markers
+use check/function_value
 use check/generics as check_generics
 use check/discard
 use value_errors
@@ -359,13 +360,10 @@ function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
         .local l => return c.out.local_types[l.at]
         .top t =>
             match decls[t.at].kind
-                # §4.13: a top-level function is a value, and its type is
-                # its signature — unless a parameter is `@`, which no type
-                # carries (defect 398, `check/markers.hero`).
-                .function_decl =>
-                    if markers.refused_as_value(@c, s, decls, decl: t.at, span: span)
-                        return state.error_ty_of(c)
-                    return signature_of(@c, a, r, s, decls, decl: t.at)
+                # §4.13: a top-level function is a value, its type its
+                # signature, but for an `@` or a generic one where nothing
+                # binds it (defects 398, 402: `check/function_value.hero`).
+                .function_decl   => return function_value.synthesised(@c, a, r, s, decls, decl: t.at, span: span)
                 .constant_decl k => return lower.lower_ty(@c, a, r, k.ty)
                 # A record name is a constructor, not a value on its own
                 # (§4.9): only meaningful as the callee of a call.
@@ -475,6 +473,12 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             got = table.f64_ty(c.out.types)
             mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
             _ = state.record_expr(@c, at: id, ty: got)
+        return
+
+    # A generic function's name is the instance this position's type names
+    # (defect 402, `check/function_value.hero`).
+    if function_value.generic_at(a, r, s, decls, id)
+        _ = state.record_expr(@c, at: id, ty: function_value.instance(@c, a, r, s, decls, id: id, expected: expected))
         return
 
     match a.exprs[id].kind
@@ -1154,38 +1158,8 @@ function listed(xs: [i64], x: i64) -> bool
 
 ## Calls — the dispatch, and the one place generics are inferred
 
-# A declaration's type, from its written signature (§4.13: a top-level
-# function is a value).
-function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64) -> i64
-    match decls[decl].kind
-        .function_decl fd =>
-            lowered: [i64] @ []
-
-            for p in fd.value.params
-                # §4.19: a marked `@` cell is a `str?` on this side of the
-                # boundary too, for the same reason the result is — the
-                # `cstr` in the declaration is what clang checks against the
-                # header, and by the time the program can touch the cell the
-                # bytes are copied and the original freed.
-                lowered @ lowered.push(
-                    freer.handed_back_param(@c.out.types, p, declared: lower.lower_ty(@c, a, r, p.ty))
-                )
-
-            declared_result = lower.lower_ty(@c, a, r, fd.value.result)
-
-            # §4.19: a marked `cstr` reaches the program as a `str?`, never as
-            # the `cstr` the header declares — by then the compiler has copied
-            # it and freed the original (`selfhost/ir/owned_release.hero`).
-            result = freer.handed_back(@c.out.types, fd.value, declared: declared_result)
-            return table.intern_function(
-                @c.out.types,
-                lowered,
-                labels.declared_labels(s, fd.value.params, lowered),
-                result: result
-            )
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
-
-    return state.error_ty_of(c)
+# A declaration's type is `function_value.signature_of` (§4.13), moved out of
+# this file with defect 402.
 
 # Four things arrive looking identical in the tree, and the callee's
 # RESOLUTION tells them apart — which is why the resolver runs first.
@@ -1231,7 +1205,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     # The callee is a value in its own right (§4.13), so it
                     # gets its signature recorded even when called directly
                     # — the lowering reads expr_types, not the tree.
-                    signature = signature_of(@c, a, r, s, decls, decl: t.at)
+                    signature = function_value.signature_of(@c, a, r, s, decls, decl: t.at)
                     _ = state.record_expr(@c, at: callee, ty: signature)
                     consuming.refuse_borrowed(@c, a, r, s, decl: decls[t.at], given: given)
                     return ok(

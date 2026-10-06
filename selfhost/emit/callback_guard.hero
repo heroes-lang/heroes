@@ -72,8 +72,9 @@ function guarded(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> 
                 match one.op
                     # A function VALUE names its target without calling it,
                     # which is exactly the instruction an address leaves
-                    # through. A generic function cannot be one: the checker
-                    # refuses it, so a target here is always ordinary.
+                    # through. A generic one names an instance (defect 402),
+                    # and the set holds declarations, so every instance of
+                    # it is guarded: the safe direction, as above.
                     .func_ref fr =>
                         match fr.callee
                             .heroes_fn hf                        => out[hf.decl] @ true

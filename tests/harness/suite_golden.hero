@@ -202,9 +202,10 @@ constant NO_FLAGS: [str]
 # message alone. **5 cases on 2026-10-04**, the count, and so the floor.
 # **8 on 2026-10-05**, as the suite asked: defect 338's case and defect 291's
 # two, an excerpt writing an invisible and a bidirectional character by its
-# code. **11 on 2026-10-06**, as the suite asked: defect 401's case, the note
-# a binding called `zero` beside the words is told, and defect 412's, an `@`
-# handed to a construction (the tree held 9 before them).
+# code. **11 on 2026-10-06**, as the suite asked at batch 13's merge of lane
+# front: defect 391's template literal and defect 399's repair that works.
+# **14 the same night**, at the merges of lanes tmpl407 and fixed405: defect
+# 407's template over lines, 405's nested fixed array, 408's `rest: zero`.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -213,7 +214,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 11,
+        least: 14,
         watched: true,
         silent_stdout: false,
         library_skip: false
@@ -234,7 +235,8 @@ function shape_full() -> Shape
 # green. **4 cases on 2026-10-04**, the count, and so the floor. **6 on
 # 2026-10-05**, as the suite asked: defect 193's control-arm case and defect
 # 251's, which pins that the control arm keeps refusing a character a reader
-# cannot see (panel 192's R4).
+# cannot see (panel 192's R4). **8 on 2026-10-06**, as the suite asked at
+# batch 13's merge: defect 391's and defect 407's control-arm cases.
 function shape_permissive() -> Shape
     return Shape(
         name: "permissive",
@@ -243,7 +245,7 @@ function shape_permissive() -> Shape
         flags: ["--brief", "--permissive"],
         on_stderr: true,
         want_code: 1,
-        least: 6,
+        least: 8,
         watched: true,
         silent_stdout: false,
         library_skip: false

@@ -302,7 +302,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
         # language does not. `emit/func_ref.hero` holds it, and says why
         # naming a function is a question about the declaration.
 
-        .func_ref fr => func_ref.emit(@w, p, s, decls, callee: fr.callee, target: target)
+        .func_ref fr => func_ref.emit(@w, p, f, c, s, decls, callee: fr.callee, at: inst.span.end, target: target)
         # s.cstr() is FREE (§4.20's highest-return decision): every
         # Heroes string is NUL-terminated, so handing C the byte pointer
         # is a field read — the borrow is safe for the duration of the

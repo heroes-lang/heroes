@@ -5,6 +5,13 @@
 # it puts the inner array's diagnostic first. A port that sorts offenders by
 # span alone swaps the pair (the compiler-engineer's prediction to score at
 # M-selfhost-port).
+#
+# **The pair is told once since defect 405** (2026-10-06): the inner `i64[2]`
+# is written inside the outer and is one mistake with it, so the sweep tells
+# the outer `i64[2][3]` alone, whose `[T]` is the whole type's. The tie this
+# case was written for no longer arises; what it pins now is that one
+# message before `fixed_array_length` on the same line. The `ORDER:` key
+# stands in `selfhost/check/ffi_sweep.hero`, the order the sweep pushes in.
 function main()
-    x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]    #~ fixed_outside_a_group fixed_outside_a_group fixed_array_length
-    print(len(x))    #~ bad_operand
+    x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]  #~ fixed_outside_a_group fixed_array_length
+    print(len(x))  #~ bad_operand
