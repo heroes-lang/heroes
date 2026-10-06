@@ -706,22 +706,16 @@ bb0:
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t12 = hero_array_new(&hero_desc_int, 3);
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    { HeroArrayHeader *grown = hero_array_push(t12, &t9);
+    hero_array_push_owned(&t12, &t9);
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-      hero_array_decref(t12); t12 = grown; }
+    hero_array_push_owned(&t12, &t10);
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    { HeroArrayHeader *grown = hero_array_push(t12, &t10);
-#line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-      hero_array_decref(t12); t12 = grown; }
-#line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    { HeroArrayHeader *grown = hero_array_push(t12, &t11);
-#line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-      hero_array_decref(t12); t12 = grown; }
+    hero_array_push_owned(&t12, &t11);
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t31 = h0_own0;
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     h0_own0 = t12;
-#line 725 "fixedbugs142everyrepairthenotenames.c"
+#line 719 "fixedbugs142everyrepairthenotenames.c"
     hero_array_decref(t31);
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t13 = INT64_C(3);
@@ -736,14 +730,12 @@ bb0:
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t16 = hero_array_new(&hero_desc_int, 1);
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    { HeroArrayHeader *grown = hero_array_push(t16, &t15);
-#line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-      hero_array_decref(t16); t16 = grown; }
+    hero_array_push_owned(&t16, &t15);
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t32 = h1_own1;
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     h1_own1 = t16;
-#line 747 "fixedbugs142everyrepairthenotenames.c"
+#line 739 "fixedbugs142everyrepairthenotenames.c"
     hero_array_decref(t32);
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t17 = INT64_C(3);
@@ -801,17 +793,17 @@ bb0:
     hero_print_int(t30);
 #line 88 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_print_end();
-#line 805 "fixedbugs142everyrepairthenotenames.c"
+#line 797 "fixedbugs142everyrepairthenotenames.c"
     hero_array_decref(h0_own0);
 #line 88 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-#line 808 "fixedbugs142everyrepairthenotenames.c"
+#line 800 "fixedbugs142everyrepairthenotenames.c"
     hero_array_decref(h1_own1);
     return;
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 815 "fixedbugs142everyrepairthenotenames.c"
+#line 807 "fixedbugs142everyrepairthenotenames.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -821,7 +813,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 825 "fixedbugs142everyrepairthenotenames.c"
+#line 817 "fixedbugs142everyrepairthenotenames.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs142everyrepairthenotenames_Color_eq(const h_fixedbugs142everyrepairthenotenames_Color *a, const h_fixedbugs142everyrepairthenotenames_Color *b) {
     if (a->tag != b->tag) return false;

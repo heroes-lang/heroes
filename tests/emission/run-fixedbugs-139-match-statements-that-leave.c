@@ -1728,22 +1728,16 @@ bb0:
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t54 = hero_array_new(&hero_desc_int, 3);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    { HeroArrayHeader *grown = hero_array_push(t54, &t51);
+    hero_array_push_owned(&t54, &t51);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-      hero_array_decref(t54); t54 = grown; }
+    hero_array_push_owned(&t54, &t52);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    { HeroArrayHeader *grown = hero_array_push(t54, &t52);
-#line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-      hero_array_decref(t54); t54 = grown; }
-#line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    { HeroArrayHeader *grown = hero_array_push(t54, &t53);
-#line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-      hero_array_decref(t54); t54 = grown; }
+    hero_array_push_owned(&t54, &t53);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t75 = h0_own0;
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h0_own0 = t54;
-#line 1747 "fixedbugs139matchstatementsthatleave.c"
+#line 1741 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t75);
 #line 176 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t55 = h_fixedbugs139matchstatementsthatleave_in_a_for(t54);
@@ -1760,22 +1754,16 @@ bb0:
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t59 = hero_array_new(&hero_desc_int, 3);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    { HeroArrayHeader *grown = hero_array_push(t59, &t56);
+    hero_array_push_owned(&t59, &t56);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-      hero_array_decref(t59); t59 = grown; }
+    hero_array_push_owned(&t59, &t57);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    { HeroArrayHeader *grown = hero_array_push(t59, &t57);
-#line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-      hero_array_decref(t59); t59 = grown; }
-#line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    { HeroArrayHeader *grown = hero_array_push(t59, &t58);
-#line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-      hero_array_decref(t59); t59 = grown; }
+    hero_array_push_owned(&t59, &t58);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t76 = h1_own1;
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     h1_own1 = t59;
-#line 1779 "fixedbugs139matchstatementsthatleave.c"
+#line 1767 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(t76);
 #line 177 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t60 = h_fixedbugs139matchstatementsthatleave_in_a_for(t59);
@@ -1839,10 +1827,10 @@ bb0:
     hero_print_int(t74);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     hero_print_end();
-#line 1843 "fixedbugs139matchstatementsthatleave.c"
+#line 1831 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h0_own0);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-#line 1846 "fixedbugs139matchstatementsthatleave.c"
+#line 1834 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h1_own1);
     return;
 }

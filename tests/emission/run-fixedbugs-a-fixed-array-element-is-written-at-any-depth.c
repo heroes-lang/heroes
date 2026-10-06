@@ -541,36 +541,32 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t110 = hero_array_new(&h_fixedbugsafixedarrayelementiswrittenatanydepth_Nums_desc, 2);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    { HeroArrayHeader *grown = hero_array_push(t110, &t103);
+    hero_array_push_owned(&t110, &t103);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-      hero_array_decref(t110); t110 = grown; }
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    { HeroArrayHeader *grown = hero_array_push(t110, &t109);
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-      hero_array_decref(t110); t110 = grown; }
+    hero_array_push_owned(&t110, &t109);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t136 = h6_own6;
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h6_own6 = t110;
-#line 556 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 552 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t136);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t137 = h3_xs;
-#line 560 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 556 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t110);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h3_xs = t110;
-#line 564 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 560 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t137);
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t111 = h3_xs;
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t138 = h4_ys;
-#line 570 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 566 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t111);
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h4_ys = t111;
-#line 574 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 570 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t138);
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t112 = INT64_C(1);
@@ -628,23 +624,23 @@ bb0:
     hero_print_int(t134);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
-#line 632 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 628 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h3_xs);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-#line 635 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 631 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h4_ys);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-#line 638 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 634 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h5_own5);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-#line 641 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 637 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h6_own6);
     return;
 }
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 648 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 644 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -671,15 +667,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 675 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 671 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 679 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 675 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 683 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 679 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -707,7 +703,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 711 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 707 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -725,16 +721,16 @@ bb2:
 bb3:
 #line 202 "<heroes library>"
     t13 = h0_out;
-#line 729 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 725 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t13);
 #line 202 "<heroes library>"
-#line 732 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 728 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h0_out);
 #line 202 "<heroes library>"
-#line 735 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 731 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(h2_own2);
 #line 202 "<heroes library>"
-#line 738 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 734 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_str_decref(h3_own3);
     return t13;
 }

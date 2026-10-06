@@ -394,28 +394,24 @@ bb0:
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t40 = hero_array_new(&h_fixedbugsahandlecomparesasanaddress_Chunk_desc, 1);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-    { HeroArrayHeader *grown = hero_array_push(t40, &t39);
-#line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-      hero_array_decref(t40); t40 = grown; }
+    hero_array_push_owned(&t40, &t39);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t60 = h9_own9;
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h9_own9 = t40;
-#line 405 "fixedbugsahandlecomparesasanaddress.c"
+#line 403 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t60);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t41 = h1_b;
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t42 = hero_array_new(&h_fixedbugsahandlecomparesasanaddress_Chunk_desc, 1);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-    { HeroArrayHeader *grown = hero_array_push(t42, &t41);
-#line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-      hero_array_decref(t42); t42 = grown; }
+    hero_array_push_owned(&t42, &t41);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t61 = h10_own10;
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h10_own10 = t42;
-#line 419 "fixedbugsahandlecomparesasanaddress.c"
+#line 415 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t61);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t43 = hero_array_eq(t40, t42);
@@ -428,28 +424,24 @@ bb0:
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t45 = hero_array_new(&h_fixedbugsahandlecomparesasanaddress_Chunk_desc, 1);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-    { HeroArrayHeader *grown = hero_array_push(t45, &t44);
-#line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-      hero_array_decref(t45); t45 = grown; }
+    hero_array_push_owned(&t45, &t44);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t62 = h11_own11;
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h11_own11 = t45;
-#line 439 "fixedbugsahandlecomparesasanaddress.c"
+#line 433 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t62);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t46 = h0_a;
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t47 = hero_array_new(&h_fixedbugsahandlecomparesasanaddress_Chunk_desc, 1);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-    { HeroArrayHeader *grown = hero_array_push(t47, &t46);
-#line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-      hero_array_decref(t47); t47 = grown; }
+    hero_array_push_owned(&t47, &t46);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t63 = h12_own12;
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h12_own12 = t47;
-#line 453 "fixedbugsahandlecomparesasanaddress.c"
+#line 445 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t63);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t48 = hero_array_eq(t45, t47);
@@ -465,15 +457,15 @@ bb0:
     t64 = h13_own13;
 #line 84 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h13_own13 = t50;
-#line 469 "fixedbugsahandlecomparesasanaddress.c"
+#line 461 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t64);
 #line 84 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t65 = h3_oa;
-#line 473 "fixedbugsahandlecomparesasanaddress.c"
+#line 465 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_retain(&t50);
 #line 84 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h3_oa = t50;
-#line 477 "fixedbugsahandlecomparesasanaddress.c"
+#line 469 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t65);
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t51 = h1_b;
@@ -483,15 +475,15 @@ bb0:
     t66 = h14_own14;
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h14_own14 = t52;
-#line 487 "fixedbugsahandlecomparesasanaddress.c"
+#line 479 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t66);
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t67 = h4_ob;
-#line 491 "fixedbugsahandlecomparesasanaddress.c"
+#line 483 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_retain(&t52);
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h4_ob = t52;
-#line 495 "fixedbugsahandlecomparesasanaddress.c"
+#line 487 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t67);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t53 = h3_oa;
@@ -503,40 +495,40 @@ bb0:
     hero_print_bool(t55);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     hero_print_end();
-#line 507 "fixedbugsahandlecomparesasanaddress.c"
+#line 499 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&h3_oa);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 510 "fixedbugsahandlecomparesasanaddress.c"
+#line 502 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&h4_ob);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 513 "fixedbugsahandlecomparesasanaddress.c"
+#line 505 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&h5_own5);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 516 "fixedbugsahandlecomparesasanaddress.c"
+#line 508 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&h6_own6);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 519 "fixedbugsahandlecomparesasanaddress.c"
+#line 511 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&h7_own7);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 522 "fixedbugsahandlecomparesasanaddress.c"
+#line 514 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&h8_own8);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 525 "fixedbugsahandlecomparesasanaddress.c"
+#line 517 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(h9_own9);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 528 "fixedbugsahandlecomparesasanaddress.c"
+#line 520 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(h10_own10);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 531 "fixedbugsahandlecomparesasanaddress.c"
+#line 523 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(h11_own11);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 534 "fixedbugsahandlecomparesasanaddress.c"
+#line 526 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(h12_own12);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 537 "fixedbugsahandlecomparesasanaddress.c"
+#line 529 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&h13_own13);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-#line 540 "fixedbugsahandlecomparesasanaddress.c"
+#line 532 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&h14_own14);
     return;
 }

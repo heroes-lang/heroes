@@ -8,12 +8,21 @@
 # reasons. First, ir_lower is at its frozen ceiling and this decision
 # deserves its own module. Second — the real one — on the IR the safety
 # argument is a fact about the value in hand (CLAUDE.md §11): the rewrite
-# fires only when `load p` and `store p` sit in ONE block with no write to
-# p's root between them, so anything that could mutate p while the pushed
-# value is computed (`f(@p)` in an argument, a block re-entering p) simply
-# breaks the pattern and keeps the classic shape. Reads between the two
-# are safe unrewritten AND rewritten: the value is computed before the
-# grow either way, so it sees the pre-push array in both shapes.
+# fires only where nothing can write p's root on any path from `load p` to
+# `store p` (`ir/between.hero`), so anything that could mutate p while the
+# pushed value is computed (`f(@p)` in an argument, a store into p) keeps
+# the classic shape. Reads between the two are safe unrewritten AND
+# rewritten: the value is computed before the grow either way, so it sees
+# the pre-push array in both shapes.
+#
+# **The two need not share a block** (defect 381, 2026-10-06). Until then
+# the rewrite asked for ONE block, which stood in for the reason above:
+# `.must()`, `.default()`, `?`, `&&` and `||` in the pushed value branch,
+# so the load sat in the block before the branch, and spec § 10's *grows in
+# place when `xs` is a plain name* was false there: 40,000 such pushes
+# retired 48.1 billion instructions where the same value named on the line
+# above retired 45 million. A branch to an abort or a short circuit writes
+# nothing, and the walk over the blocks between is what says so.
 #
 # Why the pass runs BEFORE the ownership pass: rule 5 gives a call's
 # result a synthetic owning slot, so after own every accumulator push
@@ -33,7 +42,8 @@ use token
 use ir
 use ir/containers
 use ir/uses
-use ir/survival
+use ir/graph
+use ir/between
 use inventory
 use check/state
 use check/table
@@ -49,10 +59,49 @@ function run(@p: containers.Program)
 function rewrite(f: containers.Function) -> containers.Function
     worked: containers.Function @ f
     reads = counts(worked)
+    where = definitions(worked)
+    into = graph.jumps_into(worked.blocks)
+
+    # Keyed by VALUE, which names one instruction in the whole function: the
+    # load and the call a rewrite deletes by their results, and the store it
+    # turns into `push_owned` by the result it stores, read by it alone.
+    drop: {i64: bool} @ {}
+    grow: {i64: i64} @ {}
     bi: i64 @ 0
 
+    for blk in worked.blocks
+        si: i64 @ 0
+
+        for one in blk.insts
+            match one.op
+                .store st =>
+                    found = pattern(
+                        worked,
+                        where: where,
+                        reads: reads,
+                        into: into,
+                        block: bi,
+                        store_at: si,
+                        place: st.place,
+                        value: st.value
+                    )
+
+                    if !found.is_err()
+                        drop[found.must().receiver] @ true
+                        drop[st.value] @ true
+                        grow[st.value] @ found.must().pushed
+                .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => si @ si
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => si @ si
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => si @ si
+
+            si @ si + 1
+
+        bi @ bi + 1
+
+    bi @ 0
+
     while bi < worked.blocks.len()
-        worked.blocks[bi].insts @ block_rewrite(worked, insts: worked.blocks[bi].insts, reads: reads)
+        worked.blocks[bi].insts @ kept(worked.blocks[bi].insts, drop: drop, grow: grow)
         bi @ bi + 1
 
     return worked
@@ -74,73 +123,79 @@ function counts(f: containers.Function) -> {i64: i64}
 
     return reads
 
-function block_rewrite(f: containers.Function, insts: [ir.Inst], reads: {i64: i64}) -> [ir.Inst]
-    defs: {i64: i64} @ {}
-    at: i64 @ 0
+# Where each value is defined: its block, and its position there.
+record Def
+    block: i64
+    at: i64
+
+function definitions(f: containers.Function) -> {i64: Def}
+    where: {i64: Def} @ {}
+    bi: i64 @ 0
+
+    for blk in f.blocks
+        at: i64 @ 0
+
+        for one in blk.insts
+            match one.dest
+                .ok d => where[d] @ Def(block: bi, at: at)
+                .err  => at @ at
+
+            at @ at + 1
+
+        bi @ bi + 1
+
+    return where
+
+# One block's instructions with the rewrites applied: the dropped loads and
+# calls left out, each rewritten store a `push_owned` of the pushed value.
+function kept(insts: [ir.Inst], drop: {i64: bool}, grow: {i64: i64}) -> [ir.Inst]
+    out: [ir.Inst] @ []
 
     for one in insts
-        match one.dest
-            .ok d => defs[d] @ at
-            .err  => defs @ defs
+        if !one.dest.is_err() && drop[one.dest.must()].default(false)
+            continue
+        rewritten: ir.Inst @ one
 
-        at @ at + 1
-
-    drop: {i64: bool} @ {}
-    grow: {i64: ir.OpKind} @ {}
-    si: i64 @ 0
-
-    for one in insts
         match one.op
             .store st =>
-                found = pattern(f, insts, defs: defs, reads: reads, store_at: si, place: st.place, value: st.value)
+                pushed = grow[st.value]
 
-                if !found.is_err()
-                    pair = found.must()
-                    drop[pair.load_at] @ true
-                    drop[pair.call_at] @ true
-                    grow[si] @ .push_owned(place: st.place, value: pair.pushed)
-            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => si @ si
-            .field | .index | .map_get | .len_of | .tag_of | .payload                               => si @ si
-            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => si @ si
+                if !pushed.is_err()
+                    rewritten @ ir.Inst(
+                        dest: one.dest,
+                        op: .push_owned(place: st.place, value: pushed.must()),
+                        ty: one.ty,
+                        span: one.span
+                    )
+            .lit | .load | .push_owned | .unary | .binary | .cast | .call | .construct              => rewritten @ rewritten
+            .field | .index | .map_get | .len_of | .tag_of | .payload                               => rewritten @ rewritten
+            .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => rewritten @ rewritten
 
-        si @ si + 1
-
-    out: [ir.Inst] @ []
-    oi: i64 @ 0
-
-    for one in insts
-        if drop[oi].default(false)
-            oi @ oi + 1
-            continue
-        rewritten = grow[oi]
-
-        if rewritten.is_err()
-            out @ out.push(one)
-        else
-            out @ out.push(ir.Inst(dest: one.dest, op: rewritten.must(), ty: one.ty, span: one.span))
-        oi @ oi + 1
+        out @ out.push(rewritten)
 
     return out
 
 record Match
-    load_at: i64
-    call_at: i64
+    receiver: i64
     pushed: i64
 
-# The whole recognition, as facts about THIS block: the stored value is a
-# push call read once; its receiver is a load of the SAME bare place read
-# once; both sit before the store in this block; nothing between the load
-# and the store writes the root.
-function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, reads: {i64: i64}, store_at: i64, place: ir.Place, value: i64) -> Match?
+# The whole recognition, as facts about THIS function: the stored value is a
+# push call read once, in the store's own block and before it; its receiver
+# is a load of the SAME bare place read once, anywhere before it; nothing on
+# any path from the load to the store writes the root.
+function pattern(f: containers.Function, where: {i64: Def}, reads: {i64: i64}, into: graph.Edges, block: i64, store_at: i64, place: ir.Place, value: i64) -> Match?
     if place.path.length != 0
         return fail(code: "not_bare", msg: "the place has a path")
-    call_at = defs[value]?
+    call = where[value]?
+
+    if call.block != block || call.at >= store_at
+        return fail(code: "order", msg: "the push is not before its store in its block")
 
     if reads[value].default(0) != 1
         return fail(code: "shared", msg: "the pushed result has another reader")
     given: [ir.Arg] @ []
 
-    match insts[call_at].op
+    match f.blocks[block].insts[call.at].op
         .call cl =>
             match cl.callee
                 .builtin_fn bt =>
@@ -172,12 +227,12 @@ function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, rea
         .value_arg v => pushed @ v.value
         .inout_arg   => return fail(code: "not_push", msg: "an inout element")
 
-    load_at = defs[receiver]?
+    load = where[receiver]?
 
     if reads[receiver].default(0) != 1
         return fail(code: "shared", msg: "the receiver has another reader")
 
-    match insts[load_at].op
+    match f.blocks[load.block].insts[load.at].op
         .load ld =>
             if ld.place.root != place.root || ld.place.path.length != 0
                 return fail(code: "other_place", msg: "the load reads another place")
@@ -194,64 +249,13 @@ function pattern(f: containers.Function, insts: [ir.Inst], defs: {i64: i64}, rea
             msg: "the receiver is not a load"
         )
 
-    if load_at >= call_at || call_at >= store_at
-        return fail(code: "order", msg: "the pattern is not in load-call-store order")
-    between: i64 @ load_at + 1
+    if load.block == block && load.at >= call.at
+        return fail(code: "order", msg: "the load is not before the push")
 
-    while between < store_at
-        if between != call_at
-            if writes_root(f, insts[between].op, root: place.root)
-                return fail(code: "written", msg: "the root is written while the value is computed")
-        between @ between + 1
+    if between.written(f, into, root: place.root, from_block: load.block, from_at: load.at, to_block: block, to_at: store_at)
+        return fail(code: "written", msg: "the root may be written while the value is computed")
 
-    return ok(Match(load_at: load_at, call_at: call_at, pushed: pushed))
-
-# Does this load's value outlive a write to its own root — an `@` call
-# on the slot, a push_owned, a store? Classic lowering never asked: rule
-# 5's synthetic slots kept every accumulator at refcount 2 by accident,
-# so the header under a borrowed load could not die. The place store
-# makes the count honest, which is exactly when the load needs a
-# reference of its own (ir_own gives it one; place-store-c5 case 5 is
-# the program that dies without this). Since defect 230 the ownership
-# pass asks `survival.survivors` of a whole block at once, where this walk
-# per load cost the block's length squared; this reading stays as the
-# oracle `ir/own.hero`'s test holds that one to.
-function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.Term, load_at: i64, root: i64, value: i64) -> bool
-    written: bool @ false
-    at: i64 @ load_at + 1
-
-    while at < insts.len()
-        if written
-            for v in uses.operands(f, insts[at].op)
-                if v == value
-                    return true
-        else
-            if writes_root(f, insts[at].op, root: root)
-                written @ true
-        at @ at + 1
-
-    if written
-        for v in uses.terminator_operands(term)
-            if v == value
-                return true
-    return false
-
-# Could this operation change what the root slot holds? `@` arguments
-# and stores are the only writers the IR has; copy_out is kept out of
-# caution — it writes a caller's place through a parameter. What an
-# operation writes is read in one place, `survival.roots_written`, since
-# defect 230, so this pattern and the ownership pass ask the same table.
-function writes_root(f: containers.Function, op: ir.OpKind, root: i64) -> bool
-    written = survival.roots_written(f, op)
-
-    if written.every
-        return true
-
-    for one in written.roots
-        if one == root
-            return true
-
-    return false
+    return ok(Match(receiver: receiver, pushed: pushed))
 
 # The verifier's half (panel 088 R4 condition 4), called from ir_verify:
 # a push_owned whose path is not empty, or whose place is not an array,
@@ -324,6 +328,39 @@ test "a write to the root between load and store keeps the classic shape"
     f.blocks[0].insts @ grown
     done = rewrite(f)
     assert op_names(done) == ["lit", "load", "store", "call", "store"]
+
+test "defect 381: a branch between the load and the push still grows in place, a write on the way does not"
+    # The accumulator split where `.must()` splits it: the load and a branch
+    # in bb0, the push and its store in bb1, an abort's block in bb2.
+    f: containers.Function @ accumulator()
+    whole = f.blocks[0].insts
+    head: [ir.Inst] = [whole[0], whole[1]]
+    tail: [ir.Inst] = [whole[2], whole[3]]
+    f.blocks @ [
+        containers.Block(preds: [], insts: head, term: .branch(cond: 0, then_to: 1, else_to: 2), note: "test")
+        containers.Block(preds: [0], insts: tail, term: .return_term(value: fail(code: "none", msg: "bare")), note: "test")
+        containers.Block(preds: [0], insts: [], term: .unreachable, note: "test")
+    ]
+    assert op_names(rewrite(f)) == ["lit", "push_owned"]
+
+    # A store into the root in the block between keeps the classic shape: the
+    # receiver was read before it, and growing the place would push onto what
+    # the store wrote.
+    g: containers.Function @ f
+    g.blocks[0].term @ .jump(to: 3)
+    g.blocks[2].preds @ [3]
+    g.blocks @ g.blocks.push(
+        containers.Block(preds: [0], insts: [inst(dest: fail(code: "none", msg: "void"), op: .store(place: bare(0), value: 0), ty: 0)], term: .branch(cond: 0, then_to: 1, else_to: 2), note: "test")
+    )
+    g.blocks[1].preds @ [3]
+    assert op_names(rewrite(g)) == ["lit", "load", "call", "store", "store"]
+
+    # The push and its store must share a block: a store whose value was
+    # pushed in another block is left as it is.
+    h: containers.Function @ f
+    h.blocks[0].insts @ [whole[0], whole[1], whole[2]]
+    h.blocks[1].insts @ [whole[3]]
+    assert op_names(rewrite(h)) == ["lit", "load", "call", "store"]
 
 function bare(root: i64) -> ir.Place
     return ir.Place(root: root, path: ir.Run(start: 0, length: 0))

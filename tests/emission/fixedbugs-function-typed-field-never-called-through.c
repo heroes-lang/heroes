@@ -277,17 +277,15 @@ bb0:
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t9 = hero_array_new(&h_functiontypedfieldnevercalledthrough_Direct_desc, 1);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    { HeroArrayHeader *grown = hero_array_push(t9, &t8);
-#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-      hero_array_decref(t9); t9 = grown; }
+    hero_array_push_owned(&t9, &t8);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t20 = h5_own5;
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h5_own5 = t9;
-#line 288 "functiontypedfieldnevercalledthrough.c"
+#line 286 "functiontypedfieldnevercalledthrough.c"
     hero_array_decref(t20);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-#line 291 "functiontypedfieldnevercalledthrough.c"
+#line 289 "functiontypedfieldnevercalledthrough.c"
     hero_array_incref(t9);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t10 = (h_functiontypedfieldnevercalledthrough_Held){.f_all = t9};
@@ -295,15 +293,15 @@ bb0:
     t21 = h6_own6;
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h6_own6 = t10;
-#line 299 "functiontypedfieldnevercalledthrough.c"
+#line 297 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Held_release(&t21);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t22 = h2_held;
-#line 303 "functiontypedfieldnevercalledthrough.c"
+#line 301 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Held_retain(&t10);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h2_held = t10;
-#line 307 "functiontypedfieldnevercalledthrough.c"
+#line 305 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Held_release(&t22);
 #line 64 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t11 = h_functiontypedfieldnevercalledthrough_shout;
@@ -321,19 +319,19 @@ bb0:
     hero_print_str(t17);
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_print_end();
-#line 325 "functiontypedfieldnevercalledthrough.c"
+#line 323 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Outer_release(&h1_outer);
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-#line 328 "functiontypedfieldnevercalledthrough.c"
+#line 326 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Held_release(&h2_held);
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-#line 331 "functiontypedfieldnevercalledthrough.c"
+#line 329 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Outer_release(&h4_own4);
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-#line 334 "functiontypedfieldnevercalledthrough.c"
+#line 332 "functiontypedfieldnevercalledthrough.c"
     hero_array_decref(h5_own5);
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-#line 337 "functiontypedfieldnevercalledthrough.c"
+#line 335 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Held_release(&h6_own6);
     return;
 }
