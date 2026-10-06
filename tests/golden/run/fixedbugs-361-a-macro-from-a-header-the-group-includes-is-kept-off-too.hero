@@ -1,0 +1,19 @@
+# fixedbugs, defect 361's shapes beside, 2026-10-06.
+#
+# SYMPTOM: the macros of a header the bound one includes reached the C this
+# compiler writes as the bound header's own did: an object-like
+# `hero_print_int`, `bool`, `true` and `HeroStr`, none of them a name the
+# program binds.
+#
+# FIX: the guard reads the names the unit's own code uses, not the header's
+# text, so it holds whichever header defines the macro
+# (`emit/macro_guard.hero`).
+
+extern "fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.h"
+    function thrice(x: i64) -> i64
+
+function main()
+    print(thrice(x: 14))
+    flag: bool @ thrice(x: 1) > 2
+    print(flag)
+    print("text")

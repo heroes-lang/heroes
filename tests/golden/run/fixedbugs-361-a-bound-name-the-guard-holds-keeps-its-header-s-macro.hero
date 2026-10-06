@@ -1,0 +1,12 @@
+# fixedbugs, defect 361's other side, 2026-10-06.
+#
+# A name the guard keeps for the unit's own C, `sqrt` of <math.h>, bound by
+# the program from a header that makes it a macro: the binding is the
+# header's, so the macro stands and `sqrt(x: 4.0)` is 8.0, as the header
+# says. A guard that gave every listed name back would have taken the root.
+
+extern "fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.h"
+    function sqrt(x: f64) -> f64
+
+function main()
+    print(sqrt(x: 4.0))

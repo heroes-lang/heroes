@@ -1,0 +1,21 @@
+# fixedbugs, defect 361, 2026-10-06.
+#
+# SYMPTOM: a bound header defining `hero_print_int`, `INT64_C`,
+# `HERO_RUNTIME_ABI` or `main` as a macro rewrote the C this compiler writes
+# after the include: *internal error* at exit 2, a false *heroes_runtime.h is
+# from another compiler*, a link with no `main`, or, for `INT64_C`, a program
+# printing 0 where it says 42, at exit 0.
+#
+# FIX: the unit keeps every name its own code uses, but those the program
+# binds, with `push_macro` and `pop_macro` around the groups' includes
+# (`emit/macro_guard.hero`). `LIMIT`, a macro the program binds, keeps the
+# header's value.
+
+extern "fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.h"
+    function twice(x: i64) -> i64
+    constant LIMIT: i64
+
+function main()
+    print(twice(x: 21))
+    print(1000000000000)
+    print(LIMIT)

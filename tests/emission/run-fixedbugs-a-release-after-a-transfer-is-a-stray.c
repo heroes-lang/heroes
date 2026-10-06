@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-a-release-after-a-transfer-is-a-stray.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-a-release-after-a-transfer-is-a-stray.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -52,7 +54,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_45627840, "handed over");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 56 "fixedbugsareleaseafteratransferisastray.c"
+#line 58 "fixedbugsareleaseafteratransferisastray.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -91,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugsareleaseafteratransferisastray.c"
+#line 97 "fixedbugsareleaseafteratransferisastray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Ob_eq(ob * const *a, ob * const *b);
@@ -111,7 +113,7 @@ void h_fixedbugsareleaseafteratransferisastray_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 void h_fixedbugsareleaseafteratransferisastray_main(void) {
-#line 115 "fixedbugsareleaseafteratransferisastray.c"
+#line 117 "fixedbugsareleaseafteratransferisastray.c"
     ob * h0_a;
     wr * h1_w;
     ob * t1;
@@ -197,7 +199,7 @@ bb0:
     hero_print_end();
 #line 34 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     return;
-#line 201 "fixedbugsareleaseafteratransferisastray.c"
+#line 203 "fixedbugsareleaseafteratransferisastray.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

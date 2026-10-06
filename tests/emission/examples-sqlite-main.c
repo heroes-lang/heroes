@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <sqlite3.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <sqlite3.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -64,7 +66,7 @@ HERO_STR_STATIC(hero_str_4a7e2e7, "select count(*) from note");
 HERO_STR_STATIC(hero_str_31daf47e, "longest: ");
 HERO_STR_STATIC(hero_str_4ea48131, "select max(length(body)) from note");
 
-#line 68 "main.c"
+#line 70 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -111,7 +113,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "main.c"
+#line 117 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b);
@@ -135,19 +137,19 @@ void h_main_main(void);
 
 #line 32 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_OK(void) {
-#line 139 "main.c"
+#line 141 "main.c"
     return SQLITE_OK;
 }
 
 #line 33 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_ROW(void) {
-#line 145 "main.c"
+#line 147 "main.c"
     return SQLITE_ROW;
 }
 
 #line 76 "examples/sqlite/main.hero"
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
-#line 151 "main.c"
+#line 153 "main.c"
     sqlite3 * t1;
     HeroStr t2;
     const char * t3;
@@ -175,12 +177,12 @@ bb0:
     t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6);
 #line 77 "examples/sqlite/main.hero"
     return t7;
-#line 179 "main.c"
+#line 181 "main.c"
 }
 
 #line 80 "examples/sqlite/main.hero"
 int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
-#line 184 "main.c"
+#line 186 "main.c"
     sqlite3_stmt * h2_statement;
     __attribute__((unused)) const char * h3_tail;
     int64_t h4_rc;
@@ -330,12 +332,12 @@ bb7:
     t27 = h6_ret0;
 #line 80 "examples/sqlite/main.hero"
     return t27;
-#line 334 "main.c"
+#line 336 "main.c"
 }
 
 #line 100 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 339 "main.c"
+#line 341 "main.c"
     sqlite3 * h0_db;
     sqlite3 * t1;
     HeroStr t2;
@@ -468,7 +470,7 @@ bb3:
 bb4:
 #line 113 "examples/sqlite/main.hero"
     return;
-#line 472 "main.c"
+#line 474 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
     return hero_handle_eq(*a, *b);

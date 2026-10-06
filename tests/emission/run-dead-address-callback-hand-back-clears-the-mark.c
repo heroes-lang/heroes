@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <dead-address-callback-hand-back-clears-the-mark.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <dead-address-callback-hand-back-clears-the-mark.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_678ad40c, "visited ");
 
-#line 55 "deadaddresscallbackhandbackclearsthemark.c"
+#line 57 "deadaddresscallbackhandbackclearsthemark.c"
 typedef int64_t (*h_0fn_41481456)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -91,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "deadaddresscallbackhandbackclearsthemark.c"
+#line 97 "deadaddresscallbackhandbackclearsthemark.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscallbackhandbackclearsthemark_Node_eq(node * const *a, node * const *b);
@@ -117,7 +119,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 int64_t h_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
-#line 121 "deadaddresscallbackhandbackclearsthemark.c"
+#line 123 "deadaddresscallbackhandbackclearsthemark.c"
     hero_thread_guard("deadaddresscallbackhandbackclearsthemark.seen");
     node * t1;
     int64_t t2;
@@ -131,7 +133,7 @@ bb0:
     t2 = node_value(t1);
 #line 18 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return t2;
-#line 135 "deadaddresscallbackhandbackclearsthemark.c"
+#line 137 "deadaddresscallbackhandbackclearsthemark.c"
 }
 
 int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
@@ -142,7 +144,7 @@ int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
 
 #line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 void h_deadaddresscallbackhandbackclearsthemark_main(void) {
-#line 146 "deadaddresscallbackhandbackclearsthemark.c"
+#line 148 "deadaddresscallbackhandbackclearsthemark.c"
     node * h0_mine;
     node * t1;
     node * t2;
@@ -185,7 +187,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return;
-#line 189 "deadaddresscallbackhandbackclearsthemark.c"
+#line 191 "deadaddresscallbackhandbackclearsthemark.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscallbackhandbackclearsthemark_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

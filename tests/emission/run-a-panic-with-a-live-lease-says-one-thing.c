@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <a-panic-with-a-live-lease-says-one-thing.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <a-panic-with-a-live-lease-says-one-thing.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -47,7 +49,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 51 "apanicwithaliveleasesaysonething.c"
+#line 53 "apanicwithaliveleasesaysonething.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -82,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "apanicwithaliveleasesaysonething.c"
+#line 88 "apanicwithaliveleasesaysonething.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +100,7 @@ void h_apanicwithaliveleasesaysonething_main(void);
 
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 void h_apanicwithaliveleasesaysonething_main(void) {
-#line 102 "apanicwithaliveleasesaysonething.c"
+#line 104 "apanicwithaliveleasesaysonething.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroArrayHeader * h2_a = {0};
@@ -126,11 +128,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t13 = h0_x;
-#line 130 "apanicwithaliveleasesaysonething.c"
+#line 132 "apanicwithaliveleasesaysonething.c"
     hero_str_incref(t1);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h0_x = t1;
-#line 134 "apanicwithaliveleasesaysonething.c"
+#line 136 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t13);
 #line 12 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t2 = h0_x;
@@ -166,15 +168,15 @@ bb0:
     t14 = h3_own3;
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h3_own3 = t8;
-#line 170 "apanicwithaliveleasesaysonething.c"
+#line 172 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t14);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t15 = h2_a;
-#line 174 "apanicwithaliveleasesaysonething.c"
+#line 176 "apanicwithaliveleasesaysonething.c"
     hero_array_incref(t8);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h2_a = t8;
-#line 178 "apanicwithaliveleasesaysonething.c"
+#line 180 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t15);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t9 = h2_a;
@@ -188,7 +190,7 @@ bb0:
     t16 = h4_own4;
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h4_own4 = t12;
-#line 192 "apanicwithaliveleasesaysonething.c"
+#line 194 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t16);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_str(t12);
@@ -196,16 +198,16 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_held_release(&h1_c);
-#line 200 "apanicwithaliveleasesaysonething.c"
+#line 202 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(h0_x);
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-#line 203 "apanicwithaliveleasesaysonething.c"
+#line 205 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(h2_a);
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-#line 206 "apanicwithaliveleasesaysonething.c"
+#line 208 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(h3_own3);
 #line 16 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-#line 209 "apanicwithaliveleasesaysonething.c"
+#line 211 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(h4_own4);
     return;
 }

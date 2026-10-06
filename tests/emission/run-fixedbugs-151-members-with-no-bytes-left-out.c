@@ -2,8 +2,10 @@
 #include "heroes_runtime.h"
 #include <math.h>
 #include <hero_os.h>
-#include <fixedbugs-151-unions.h>
 #include <heroes_runtime.h>
+#include "heroes_guard_open.h"
+#include <fixedbugs-151-unions.h>
+#include "heroes_guard_close.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -11,7 +13,7 @@ _Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compile
 
 #line 25 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 _Static_assert(__builtin_classify_type(((ZE *)0)->x) == 1 && sizeof(((ZE *)0)->x) == sizeof(int32_t) && (_Generic(((ZE *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZE x");
-#line 15 "fixedbugs151memberswithnobytesleftout.c"
+#line 17 "fixedbugs151memberswithnobytesleftout.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -82,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugs151memberswithnobytesleftout.c"
+#line 88 "fixedbugs151memberswithnobytesleftout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_ZE_eq(const ZE *a, const ZE *b);
@@ -100,7 +102,7 @@ void h_fixedbugs151memberswithnobytesleftout_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 void h_fixedbugs151memberswithnobytesleftout_main(void) {
-#line 104 "fixedbugs151memberswithnobytesleftout.c"
+#line 106 "fixedbugs151memberswithnobytesleftout.c"
     ZE t1;
     int32_t t2;
     goto bb0;
@@ -115,7 +117,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     return;
-#line 119 "fixedbugs151memberswithnobytesleftout.c"
+#line 121 "fixedbugs151memberswithnobytesleftout.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_ZE_eq(const ZE *a, const ZE *b) {
     if (!(a->x == b->x)) return false;
