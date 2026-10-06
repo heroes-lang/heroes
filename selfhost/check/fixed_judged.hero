@@ -1,0 +1,284 @@
+# What the walk told of a value judged against a fixed array type the sweep
+# then refused, withdrawn where the refusal's own repair takes the value
+# (defect 423; design.md §4.17, §4.19).
+#
+# The walk types every body before `check/ffi_sweep.hero` runs, so in
+# `xs: i64[2] = []` the `[]` was judged against `i64[2]`, `type_mismatch`,
+# and the sweep then refused `i64[2]` itself: two messages for one mistake,
+# the second gone once the first is repaired, since the `[i64]` the refusal
+# offers takes `[]`, `[1, 2, 3]` or any `[i64]`. The walk cannot know the
+# type will be refused, a group's field holding the same type legally, so
+# the judgement is withdrawn here, where the refusal is known.
+#
+# ONLY WHERE THE VALUE FITS THE `[T]`. A `str` where `i64[2]` was written
+# is a second mistake and keeps its message, and so does an element the
+# literal got wrong; a value judged against a group record's field is never
+# reached, the field being no node the sweep refused.
+#
+# The values judged against a written type, by where the type stands: a
+# binding's or a cell's value and every later store to it, a constant's last
+# line, a `return` in a function whose result it is, and an argument at a
+# call of a function whose parameter it is; then, through an array or a map
+# literal, each element against what the type holds, and through an `if`
+# or a `match`, each branch's value. A value reached another way, `ok(...)`
+# or a call's result, keeps what the walk told.
+
+use token
+use ast
+use diag
+use source
+use resolved
+use check/table
+use check/state
+use check/fixed_repairs
+
+# One value, and the type the walk judged it against.
+record Judged
+    at: i64
+    ty: i64
+
+# `refused` holds the type nodes the sweep refused, each refusal being of
+# the whole node it heads.
+function withdraw(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], refused: {i64: bool})
+    values: [Judged] @ []
+
+    for stmt in a.stmts
+        match stmt.kind
+            .bind b =>
+                if !b.ty.is_err()
+                    values @ judged(c, a, refused, values, node: b.ty.must(), value: b.value)
+            .declare d => values @ judged(c, a, refused, values, node: d.ty, value: d.value)
+            .mutate m  => values @ judged(c, a, refused, values, node: stored_at(r, place: m.place), value: m.value)
+            .return_stmt ret =>
+                if !ret.value.is_err()
+                    values @ judged(c, a, refused, values, node: result_at(decls, stmt.span), value: ret.value.must())
+            .break_stmt | .continue_stmt | .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => continue
+
+    for decl in decls
+        match decl.kind
+            .constant_decl k =>
+                if !k.body.is_err()
+                    values @ judged(c, a, refused, values, node: k.ty, value: last_value(a, k.body.must()))
+            .function_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    values @ arguments(c, a, r, s, decls, refused, values)
+
+    if values.len() == 0
+        return
+    kept: [diag.Diagnostic] @ []
+
+    for d in c.out.diagnostics
+        if !withdrawn(@c, a, values, d)
+            kept @ kept.push(d)
+
+    c.out.diagnostics @ kept
+
+# The type node a store's place was declared with, where the place is a
+# local named plainly; or -1.
+function stored_at(r: resolved.Resolved, place: i64) -> i64
+    match r.uses[place]
+        .local l                                => return r.locals[l.at].ty.default(-1)
+        .unresolved | .top | .builtin | .module => return -1
+
+    return -1
+
+# A block's value, its last line where that line is a value; or -1.
+function last_value(a: ast.Ast, body: ast.Block) -> i64
+    if body.stmts.len() == 0
+        return -1
+    return stmt_value(a, body.stmts[body.stmts.len() - 1])
+
+function stmt_value(a: ast.Ast, stmt: i64) -> i64
+    match a.stmts[stmt].kind
+        .expr_stmt e                                                             => return e.value
+        .bind | .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => return -1
+        .assert_stmt | .while_stmt | .for_in | .error                            => return -1
+
+    return -1
+
+# The result type node of the function whose body holds `span`, or -1: a
+# function's span runs to its body's end, and functions do not nest.
+function result_at(decls: [ast.Decl], span: token.Span) -> i64
+    for decl in decls
+        match decl.kind
+            .function_decl f =>
+                if decl.span.start <= span.start && span.end <= decl.span.end
+                    return f.value.result
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return -1
+
+# The arguments at every call of a declared function, each against its
+# parameter's type node, matched by label, or by position where none is
+# written.
+function arguments(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], refused: {i64: bool}, values: [Judged]) -> [Judged]
+    out: [Judged] @ values
+    at: i64 @ -1
+
+    for node in a.exprs
+        at @ at + 1
+        callee: resolved.Ref @ .unresolved
+        given: [ast.Arg] @ []
+
+        match node.kind
+            .call cl =>
+                callee @ r.uses[cl.callee]
+                given @ cl.args
+            .method m =>
+                # `geom.take([])`: the resolver filed the qualified name at
+                # the method node (`check/rest_zero.hero`).
+                if r.uses[m.receiver] == .module
+                    callee @ r.uses[at]
+                    given @ m.args
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit  => continue
+            .null_ptr | .name | .hole | .unary | .binary | .field | .field_name => continue
+            .index | .variant_case | .array | .map | .try_expr | .if_expr       => continue
+            .match_expr | .error                                                => continue
+
+        params: [ast.Param] @ []
+
+        match callee
+            .top t =>
+                match decls[t.at].kind
+                    .function_decl f                                           => params @ f.value.params
+                    .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+            .unresolved | .local | .builtin | .module => continue
+
+        position: i64 @ 0
+
+        for arg in given
+            node_of: i64 @ -1
+
+            if arg.name.is_err() && position < params.len()
+                node_of @ params[position].ty
+
+            if !arg.name.is_err()
+                for p in params
+                    if source.span_text(s, p.name) == source.span_text(s, arg.name.must())
+                        node_of @ p.ty
+
+            out @ judged(c, a, refused, out, node: node_of, value: arg.value)
+            position @ position + 1
+
+    return out
+
+# `values` with `value` added, and every element it holds through an array
+# or a map literal, where `node` heads a type the sweep refused within.
+function judged(c: state.Checker, a: ast.Ast, refused: {i64: bool}, values: [Judged], node: i64, value: i64) -> [Judged]
+    if node < 0 || value < 0 || !refused_within(a, refused, node)
+        return values
+    ty = c.out.written_types[node]
+
+    if ty.is_err()
+        return values
+    out: [Judged] @ values
+    through(c, a, @out, Judged(at: value, ty: ty.must()))
+    return out
+
+function through(c: state.Checker, a: ast.Ast, @out: [Judged], one: Judged)
+    out @ out.push(one)
+
+    match a.exprs[one.at].kind
+        .array items =>
+            element: i64 @ -1
+
+            match table.get(c.out.types, one.ty)
+                .fixed x                                                  => element @ x.element
+                .array x                                                  => element @ x.element
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .map | .fallible | .function_ty | .named | .case_ty       => return
+                .failure | .generic | .error                              => return
+
+            for item in items.elements
+                through(c, a, @out, Judged(at: item, ty: element))
+        .map entries =>
+            match table.get(c.out.types, one.ty)
+                .map m =>
+                    for entry in entries.entries
+                        through(c, a, @out, Judged(at: entry.key, ty: m.key))
+                        through(c, a, @out, Judged(at: entry.value, ty: m.value))
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .array | .fixed | .fallible | .function_ty | .named       => return
+                .case_ty | .failure | .generic | .error                   => return
+        # A branch's value is judged against what the whole is (`walk.hero`).
+        .if_expr i =>
+            for b in i.branches
+                tail(c, a, @out, value: last_value(a, b.block), ty: one.ty)
+
+            if !i.otherwise.is_err()
+                tail(c, a, @out, value: last_value(a, i.otherwise.must()), ty: one.ty)
+        .match_expr m =>
+            for arm in m.arms
+                match arm.body
+                    .one_stmt o => tail(c, a, @out, value: stmt_value(a, o.at), ty: one.ty)
+                    .block b    => tail(c, a, @out, value: last_value(a, b.block), ty: one.ty)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit  => return
+        .null_ptr | .name | .hole | .unary | .binary | .field | .field_name => return
+        .index | .call | .method | .variant_case | .try_expr | .error       => return
+
+function tail(c: state.Checker, a: ast.Ast, @out: [Judged], value: i64, ty: i64)
+    if value >= 0
+        through(c, a, @out, Judged(at: value, ty: ty))
+
+# Whether the type node `id`, or any node written inside it, is one the
+# sweep refused.
+function refused_within(a: ast.Ast, refused: {i64: bool}, id: i64) -> bool
+    if !refused[id].is_err()
+        return true
+    within: bool @ false
+
+    match a.types[id].kind
+        .fixed x        => within @ refused_within(a, refused, x.element)
+        .array_of inner => within @ refused_within(a, refused, inner.element)
+        .fallible o     => within @ refused_within(a, refused, o.inner)
+        .map_of m       => within @ refused_within(a, refused, m.key) || refused_within(a, refused, m.value)
+        .function_type f =>
+            within @ refused_within(a, refused, f.result)
+
+            for p in f.params
+                within @ within || refused_within(a, refused, p)
+        .named | .unit | .error => within @ false
+
+    return within
+
+# Whether `d` judged one of `values` against a type holding a fixed array,
+# where the value would fit the `[T]` that type becomes: a literal's length
+# is a fixed array's question alone, an empty literal fits a `[T]` or a map
+# of its own shape, and any other value fits where its type is the `[T]`.
+function withdrawn(@c: state.Checker, a: ast.Ast, values: [Judged], d: diag.Diagnostic) -> bool
+    if d.code != "type_mismatch" && d.code != "fixed_array_length"
+        return false
+
+    for v in values
+        if a.exprs[v.at].span != d.span
+            continue
+        twin = fixed_repairs.growable_twin(@c, v.ty)
+
+        if twin == v.ty
+            continue
+
+        if d.code == "fixed_array_length" || fits(c, a, value: v.at, twin: twin)
+            return true
+
+    return false
+
+function fits(c: state.Checker, a: ast.Ast, value: i64, twin: i64) -> bool
+    empty_array: bool @ false
+    empty_map: bool @ false
+
+    match a.exprs[value].kind
+        .array items                                                        => empty_array @ items.elements.len() == 0
+        .map entries                                                        => empty_map @ entries.entries.len() == 0
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit  => empty_array @ false
+        .null_ptr | .name | .hole | .unary | .binary | .field | .field_name => empty_array @ false
+        .index | .call | .method | .variant_case | .try_expr | .if_expr     => empty_array @ false
+        .match_expr | .error                                                => empty_array @ false
+
+    match table.get(c.out.types, twin)
+        .array => return empty_array || !empty_map && c.out.expr_types[value] == twin
+        .map => return empty_map || !empty_array && c.out.expr_types[value] == twin
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .fixed | .fallible | .function_ty | .named | .case_ty => return !empty_array && !empty_map && c.out.expr_types[value] == twin
+        .failure | .generic | .error => return false
+
+    return false

@@ -12,6 +12,12 @@
 # case was written for no longer arises; what it pins now is that one
 # message before `fixed_array_length` on the same line. The `ORDER:` key
 # stands in `selfhost/check/ffi_sweep.hero`, the order the sweep pushes in.
+#
+# **And `fixed_array_length` left the line with defect 423** (the same day):
+# the literal was judged against the `i64[2][3]` the sweep refuses, and the
+# `[[i64]]` the refusal offers takes it, so that judgement is withdrawn
+# (`selfhost/check/fixed_judged.hero`). The line holds one message, and
+# `bad_operand` below is a use of the binding, which keeps what it was told.
 function main()
-    x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]  #~ fixed_outside_a_group fixed_array_length
+    x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]  #~ fixed_outside_a_group
     print(len(x))  #~ bad_operand
