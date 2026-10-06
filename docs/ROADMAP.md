@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 96 defects · 0 decisions.** The defects are the open issues whose card
+**Open: 98 defects · 0 decisions.** The defects are the open issues whose card
 says `kind: defect` and the decisions the open ones that say `kind: decision`,
 files of `issues/` since 2026-10-04 (their rules `issues/README.md`); this line
 must equal both.
@@ -19,13 +19,14 @@ against a banner reading 3.
 | | |
 |---|---|
 | **Current milestone** | **M-issue-files**, row 83, opened 2026-10-04 by author instruction: every item is one file of `issues/`, a card on each, ready for GitHub. Row 63, **M-buildable-structs**, stays `scheduled`; its census sat as panel 178 on a peer session's branch, `lane-panel-178`, which is not on the trunk. Defects 129 and 130 are carried to the milestone opened next, by the author's waiver of 2026-09-28 16:40, and `records/tagged` holds that waiver as `CARRIED_OVER` |
+| **Next** | after batch 12 closes, by the author's instruction of 2026-10-06: panel 178 sat again on the trunk of that day and brought in, its defects 091 to 094 re-run and filed for what they are then, its ratification filed, so that row 63, **M-buildable-structs**, can open on it (`issues/2026-10/06/2026-10-06-1118-panel-178-reaches-the-trunk-sat-again-on-the-trunk-of-today.md`) |
 | **Last closed** | **M-agreed-retention**, 2026-09-28, `m-agreed-retention` ([061](journal/061-agreed-retention.md)) — five words for what a C call does with a handle, a runtime that holds the program to them, and a line that ends where it says it does · before it **M-declared-extents** ([060](journal/060-declared-extents.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **62** of 83 · **62** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **78,853** lines of Heroes in **287** modules (`find selfhost -name '*.hero'`) · the seed **1,026,106** lines of C, regenerated at every step of this milestone and the fixpoint verified byte-identical each time |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **6838** on the vendored ranks and **9060** on the reader's own, against a ceiling of **10240**. The milestone spent six rows of `docs/measurements/010-spec-budget-ledger.md`: four in § 13 for what a C call does with a handle (panels 175 to 177, 8270 to 8861 real) and two for where a line breaks inside brackets and ends outside them (panels 180 and 181, 8861 to 9060) |
 | The contract | **7875** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-28 when § Verification gained the author's rule that a lane lives under `.claude/worktrees/` |
-| Records | sittings **179** · journals **62**, numbered files only · milestone pages **52** in `docs/roadmap/milestones/` · measurements **38** · issues **1,703** in `issues/`, 151 open, since 2026-10-04 · questions **461** in `docs/learn/`, 436 open, not issues since 2026-10-05 · `docs/records/book/beats/` **129** |
+| Records | sittings **179** · journals **62**, numbered files only · milestone pages **52** in `docs/roadmap/milestones/` · measurements **38** · issues **1,706** in `issues/`, 154 open, since 2026-10-04 · questions **461** in `docs/learn/`, 436 open, not issues since 2026-10-05 · `docs/records/book/beats/` **129** |
 | Waiting on the author | **panel 189's ratification**, the one item on the decision list (with the critic's two-arm run, about 1.4 to 2.0 USD, the author's to fund or not); batch 8 closed on 2026-10-04, 29 defects, its four platforms green on the closing code, its push to be asked for |
 
 **Re-measured 2026-09-28 at the close, the full net on a compiler built from
