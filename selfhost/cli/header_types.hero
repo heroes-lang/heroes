@@ -32,6 +32,7 @@
 use bytes
 use emit/ffi_pointee
 use emit/ffi_unit
+use emit/ffi_mutable
 use cli/pointee_ask
 use emit/c_text
 
@@ -95,6 +96,11 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
             )
             continue
 
+        # A read-only lend's question and answer are `emit/ffi_mutable.hero`'s.
+        if asked.declared == pointee_ask.READ
+            lines @ lines.push(ffi_mutable.read_only_assertion(asked, header_type: header_type))
+            continue
+
         # **A depth ask is one line and its own marker** (defect 083). The
         # guard against `void` is folded in, because `*(void *)0` is only a
         # warning on clang and the guard fails first as the marker line; the
@@ -148,6 +154,11 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
         if one.index >= params.must().len()
             continue
         written = params.must()[one.index]
+
+        if one.declared == pointee_ask.READ
+            through = desugared_at(sugar, name: one.name, index: one.index)
+            out @ ffi_mutable.with_read_answer(out, one, written: written, through: through)
+            continue
 
         # A lend's asks keep the parameter's type whole, and only where it is
         # a pointer as clang reads it through every typedef: one the header
