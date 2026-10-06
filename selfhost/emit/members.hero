@@ -23,6 +23,7 @@ use ir/phases
 use emit
 use emit/ctype
 use emit/types
+use emit/func_ref
 
 # The tables every TU shares, built ONCE for the whole build.
 #
@@ -149,17 +150,29 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                             .extern_fn | .builtin_fn | .indirect => instance @ instance
                     # A function VALUE names its target without calling
                     # it, and C needs the name declared just the same —
-                    # `xs.fold(0, add)` puts `&h_m_add` in a temporary.
-                    # The checker refuses a generic function as a value,
-                    # so a target here is always an ordinary one.
+                    # `xs.fold(0, add)` puts `&h_m_add` in a temporary. A
+                    # generic one names the instance its context named
+                    # (defect 402), defined here as a call's is: until then
+                    # this arm read only ordinary targets, on the stated
+                    # premise that the checker refused a generic value,
+                    # which `_ = ident` had never obeyed.
 
                     .func_ref fr =>
                         match fr.callee
                             .heroes_fn hf =>
-                                ordinary = by_decl[hf.decl]
+                                named = func_ref.instance_at(f, c, at: inst.span.end)
 
-                                if !ordinary.is_err()
-                                    declared[ordinary.must()] @ true
+                                if named.len() > 0
+                                    found = instance_index(p, decl: hf.decl, instance: named)
+
+                                    if !found.is_err() && taken[found.must()].is_err()
+                                        taken[found.must()] @ true
+                                        frontier @ frontier.push(found.must())
+                                else
+                                    ordinary = by_decl[hf.decl]
+
+                                    if !ordinary.is_err()
+                                        declared[ordinary.must()] @ true
                             .extern_fn | .builtin_fn | .indirect => continue
                     .lit | .load | .store | .push_owned | .unary | .binary | .cast              => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
