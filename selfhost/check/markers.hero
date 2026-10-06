@@ -10,10 +10,20 @@
 # `not_a_place`; a loop variable, a plain parameter, a payload and a constant
 # did the same. `data_errors.marker_mismatch` offers the `@` only where it can
 # stand, and says what answers elsewhere.
+#
+# AND WHAT IT ASKS OF A VALUE: nothing can carry it (defect 398). A function
+# type has no `@` — `(function(@Box) -> ())` is `expected_type` at the `@`,
+# measured since panel 109 — so a function with a marked parameter has no
+# value at all, and an `@` at a call through a value marks an argument no
+# value changes. Both were `check` 0 and then clang's refusal of `void
+# (int64_t *)` as `void (*)(int64_t)`, an internal error at exit 2.
 
 use ast
+use token
 use source
 use resolved
+use data_errors
+use check/state
 use check/leasing
 
 # Why the argument cannot take the `@`, empty where it can. The words follow
@@ -43,3 +53,27 @@ function blocked(a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64)
         .top | .module | .builtin | .unresolved => return "`" + name + "` is no cell, and there are no mutable globals: pass a cell declared with `@`"
 
     return ""
+
+# Whether the function a name stands for as a VALUE marks a parameter `@`,
+# told where it stands; `true` is a refusal, and the name's type is then the
+# error type, so the call or the binding it reaches says nothing more. The
+# first marked parameter is named: one is enough to have no value. The
+# function is named as written, `helper.bump` where a module qualifies it.
+function refused_as_value(@c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, span: token.Span) -> bool
+    match decls[decl].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                if p.mutable
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.mutable_parameter_as_value(name: source.span_text(s, span), param: source.span_text(s, p.name), span: span)
+                    )
+                    return true
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# An `@` before an argument of a call through a function value.
+function through_a_value(@c: state.Checker, a: ast.Ast, arg: ast.Arg)
+    if arg.mutable
+        state.push_diagnostic(@c, data_errors.marker_through_a_value(a.exprs[arg.value].span))
