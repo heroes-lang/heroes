@@ -38,6 +38,7 @@ use comment_habit
 use word_place
 use separator_runs
 use text_lines
+use comment_refusal
 
 ## One line of words
 
@@ -76,7 +77,7 @@ function line_body(@l: state.LexState, text: str)
             l.last_significant @ fail(code: state.ERR_NO_SIGNIFICANT, msg: "line ended")
             return
         else if b == '#'
-            comment(@l, text)
+            comment_refusal.comment(@l, text)
         else if b == '"'
             literals.string(@l, text)
         else if b == 'f' && number.byte_at(text, l.pos + 1) == '"'
@@ -104,33 +105,8 @@ function line_body(@l: state.LexState, text: str)
 
 ## The comment
 
-# `# …` to end of line, retained as a token (doc comments and `##` section
-# headings are the parser's reading of the same span). Comments never
-# influence terminator insertion, so this bypasses `emit` and leaves
-# `last_significant` alone.
-function comment(@l: state.LexState, text: str)
-    start = l.pos
-
-    while l.pos < text.len() && text[l.pos] != '\n'
-        l.pos @ l.pos + 1
-
-    end: i64 @ l.pos
-
-    # Don't let a trailing \r into the comment's text.
-    if end > start && text[end - 1] == layout.CR
-        end @ end - 1
-    comment_token(@l, start: start, end: end)
-
-# The comment token from `start` to `end`. A comment line after one that owes
-# its terminator is held, so that it follows the terminator as it always did
-# (`open_line`).
-function comment_token(@l: state.LexState, start: i64, end: i64)
-    t = token.Token(kind: .comment, span: token.Span(start: start, end: end))
-
-    if l.owed >= 0
-        state.push_token(@l.held, t)
-    else
-        state.push_token(@l.tokens, t)
+# A `# …` comment and its token are `comment_refusal`'s, which finds its end
+# and refuses there what a reader cannot see (panel 192's R3).
 
 # `//` or `/* … */` at `l.pos`, a comment another language writes
 # (`comment_habit.hero`): told once, `unexpected_character`, and read as the
@@ -175,7 +151,7 @@ function foreign_comment(@l: state.LexState, text: str)
                 diag.Fix(title: "write the comment with `#`", replacement: comment_habit.written_with_hashes(text, at: start, end: end), span: token.Span(start: start, end: end), certainty: .certain)
             )
         state.push_diagnostic(@l.diagnostics, d)
-        comment_token(@l, start: start, end: end)
+        comment_refusal.comment_token(@l, start: start, end: end)
         l.pos @ end
         return
     width = comment_habit.slashes(text, at: start)
@@ -194,7 +170,7 @@ function foreign_comment(@l: state.LexState, text: str)
         diag.Fix(title: "begin the comment with `#`", replacement: "#", span: token.Span(start: start, end: start + width), certainty: certainty)
     )
     state.push_diagnostic(@l.diagnostics, d)
-    comment(@l, text)
+    comment_refusal.comment(@l, text)
 
 ## The word
 

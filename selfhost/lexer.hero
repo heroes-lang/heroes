@@ -35,7 +35,6 @@ use not_text
 use file_start
 use refused_runs
 use heads_told
-use comment_refusal
 
 ## The output
 
@@ -239,11 +238,7 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
 
         if l.pos >= text.len()
             break
-        line = l.pos
         scan.line_body(@l, text)
-
-        # What the line's comment holds that a reader cannot see (panel 192).
-        comment_refusal.refuse_in_line(@l.diagnostics, tokens: l.tokens, held: l.held, text: text, from: line)
 
     # An indentation run the file's end ends is told as every run is.
     indent_runs.finish(@l, text)
@@ -888,7 +883,7 @@ test "a join is certain only where the operator takes the literal it is written 
 # parser tells the arm's own mistakes, once. Where both readings stand, the
 # stream is the join. Defect 182: off the arms' margin too, the line going
 # with the margin it laid out and the reports that margin said, and a stream
-# that is no join records no break (`parse/joined_lines` reads breaks as joins).
+# that is no join records no break (`joined_lines.hero` reads breaks as joins).
 test "an operator alone above an arm is offered its deletion, and the stream is what the deletion writes"
     shapes = [
         ["k = match n\n    +\n    1 => 10\n", "k = match n\n    1 => 10\n"]
