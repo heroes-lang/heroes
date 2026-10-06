@@ -1,0 +1,8 @@
+extern "s092.h"
+    record One tag one
+        a: i32
+    function peek(buf: ptr counted_by n lent, n: u64) -> i64
+
+function main()
+    o = One(a: 0)
+    print(peek(buf: o.ptr(), n: 4096))

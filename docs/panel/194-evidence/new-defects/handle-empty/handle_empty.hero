@@ -1,0 +1,7 @@
+# A handle (no fields, an incomplete C struct) ended with `rest: zero`.
+extern "kinds.h"
+    record Opaque tag opaque
+
+function main()
+    h = Opaque()
+    print(h == nullptr)

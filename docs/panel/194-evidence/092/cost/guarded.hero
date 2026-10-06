@@ -1,0 +1,18 @@
+extern "cost.h"
+    record One tag one
+        a: i32
+        b: i32
+    function touch(@buf: One counted_by n, n: u64) -> i64
+
+function main()
+    o: One @ One(a: 0, b: 0)
+    k = args().len().to_u64().must() + 6
+    sum: i64 @ 0
+    i: i64 @ 0
+
+    while i < 10000000
+        n = k + (i % 2).to_u64().must()
+        sum @ sum + touch(@o, n: n)
+        i @ i + 1
+
+    print(sum)

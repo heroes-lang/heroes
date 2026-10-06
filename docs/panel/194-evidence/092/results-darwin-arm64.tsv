@@ -1,0 +1,76 @@
+# program	compiler	exit	first words (lane ffi13, 2026-10-06, Apple clang 21.0.0; base = the round's seed, A = route A, AB = routes A and B)
+today-const-void-read-by-value	base	1	error[ffi_parameter_type]
+today-const-void-read	base	0	out: 211786 
+today-count-through-a-cell	base	133	panic: the process is dying of SIGTRAP, and this runtime did not raise it.
+today-read-into-addrinfo	base	138	out: 4096 1094795585 
+today-typed-pointer-byte-count	base	133	panic: the process is dying of SIGTRAP, and this runtime did not raise it.
+today-typed-pointer-record-count	base	0	out: 512 1 
+today-void-a-field-lent-whole	base	133	panic: the process is dying of SIGTRAP, and this runtime did not raise it.
+today-void-count-fits	base	0	out: 4 1094795585 
+today-void-count-past	base	133	panic: the process is dying of SIGTRAP, under todayvoidcountpast.main, and this runtime did not r
+today-void-padded	base	133	panic: the process is dying of SIGTRAP, and this runtime did not raise it.
+a-const-void-read	base	1	error[counted_by_shape]
+a-count-through-a-cell	base	1	error[counted_by_shape]
+a-read-into-addrinfo-fits	base	1	error[counted_by_shape]
+a-read-into-addrinfo	base	1	error[counted_by_shape]
+a-typed-pointer-byte-count	base	1	error[counted_by_shape]
+a-typed-pointer-record-count	base	1	error[counted_by_shape]
+a-void-a-field-lent-whole	base	1	error[counted_by_shape]
+a-void-count-fits	base	1	error[counted_by_shape]
+a-void-count-past	base	1	error[counted_by_shape]
+b-const-void-read	base	1	error[bad_operand]
+b-count-through-a-cell	base	1	error[counted_by_shape]
+b-read-into-addrinfo-fits	base	1	error[bad_operand]
+b-read-into-addrinfo	base	1	error[bad_operand]
+b-typed-pointer-byte-count	base	1	error[bad_operand]
+b-typed-pointer-record-count	base	1	error[bad_operand]
+b-void-a-field-lent-whole	base	1	error[bad_operand]
+b-void-count-fits	base	1	error[bad_operand]
+b-void-count-past	base	1	error[bad_operand]
+today-const-void-read-by-value	A	1	error[ffi_parameter_type]
+today-const-void-read	A	1	error[ffi_parameter_type]
+today-count-through-a-cell	A	1	error[ffi_parameter_type]
+today-read-into-addrinfo	A	1	error[ffi_parameter_type]
+today-typed-pointer-byte-count	A	133	panic: the process is dying of SIGTRAP, and this runtime did not raise it.
+today-typed-pointer-record-count	A	0	out: 512 1 
+today-void-a-field-lent-whole	A	1	error[ffi_parameter_type]
+today-void-count-fits	A	1	error[ffi_parameter_type]
+today-void-count-past	A	1	error[ffi_parameter_type]
+today-void-padded	A	1	error[ffi_parameter_type]
+a-const-void-read	A	134	panic: `peek` was told a count in `n` past the bytes of the record lent to `buf`
+a-count-through-a-cell	A	1	error[counted_by_shape]
+a-read-into-addrinfo-fits	A	0	out: 8 1094795585 
+a-read-into-addrinfo	A	134	panic: `read` was told a count in `n` past the bytes of the record lent to `buf`
+a-typed-pointer-byte-count	A	134	panic: `fill_typed` was told a count in `n` past the bytes of the record lent to `buf`
+a-typed-pointer-record-count	A	0	out: 2 1 
+a-void-a-field-lent-whole	A	134	panic: `fill` was told a count in `n` past the bytes of the record lent to `buf`
+a-void-count-fits	A	0	out: 4 1094795585 
+a-void-count-past	A	134	panic: `fill` was told a count in `n` past the bytes of the record lent to `buf`
+today-const-void-read-by-value	AB	1	error[ffi_parameter_type]
+today-const-void-read	AB	1	error[ffi_parameter_type]
+today-count-through-a-cell	AB	1	error[ffi_parameter_type]
+today-read-into-addrinfo	AB	1	error[ffi_parameter_type]
+today-typed-pointer-byte-count	AB	133	panic: the process is dying of SIGTRAP, and this runtime did not raise it.
+today-typed-pointer-record-count	AB	0	out: 512 1 
+today-void-a-field-lent-whole	AB	1	error[ffi_parameter_type]
+today-void-count-fits	AB	1	error[ffi_parameter_type]
+today-void-count-past	AB	1	error[ffi_parameter_type]
+today-void-padded	AB	1	error[ffi_parameter_type]
+a-const-void-read	AB	134	panic: `peek` was told a count in `n` past the bytes of the record lent to `buf`
+a-count-through-a-cell	AB	1	error[counted_by_shape]
+a-read-into-addrinfo-fits	AB	0	out: 8 1094795585 
+a-read-into-addrinfo	AB	134	panic: `read` was told a count in `n` past the bytes of the record lent to `buf`
+a-typed-pointer-byte-count	AB	134	panic: `fill_typed` was told a count in `n` past the bytes of the record lent to `buf`
+a-typed-pointer-record-count	AB	0	out: 2 1 
+a-void-a-field-lent-whole	AB	134	panic: `fill` was told a count in `n` past the bytes of the record lent to `buf`
+a-void-count-fits	AB	0	out: 4 1094795585 
+a-void-count-past	AB	134	panic: `fill` was told a count in `n` past the bytes of the record lent to `buf`
+b-const-void-read	AB	1	error[field_lend_extent]
+b-count-through-a-cell	AB	1	error[counted_by_shape]
+b-read-into-addrinfo-fits	AB	0	out: 8 1094795585 
+b-read-into-addrinfo	AB	1	error[field_lend_extent]
+b-typed-pointer-byte-count	AB	1	error[field_lend_extent]
+b-typed-pointer-record-count	AB	0	out: 2 1 
+b-void-a-field-lent-whole	AB	1	error[field_lend_extent]
+b-void-count-fits	AB	0	out: 4 1094795585 
+b-void-count-past	AB	134	panic: b-void-count-past.hero:9: `fill` was given an extent past the 0 bytes of the field lent to

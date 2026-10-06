@@ -1,0 +1,57 @@
+# program	compiler	exit	first words (lane ffi13, 2026-10-06, Debian clang 22.1.8 in heroes-linux-arm64; base = the round's seed, AB = routes A and B; exit 143 is a run that did not end and was stopped: today-const-void-read under base by hand after about 120 s, today-typed-pointer-record-count under both by a 30 s watchdog)
+today-const-void-read-by-value	base	1	error[ffi_parameter_type]
+today-const-void-read	base	143	out: 
+today-count-through-a-cell	base	0	out: 4096 1094795585 
+today-read-into-addrinfo	base	135	out: 3568 1094795585 
+today-typed-pointer-byte-count	base	0	out: 4096 1094795585 
+today-typed-pointer-record-count	base	143	out: 
+today-void-a-field-lent-whole	base	0	out: 4096 1094795585 
+today-void-count-fits	base	0	out: 4 1094795585 
+today-void-count-past	base	139	out: 
+today-void-padded	base	0	out: 64 4702111234474983745 
+a-const-void-read	base	1	error[counted_by_shape]
+a-count-through-a-cell	base	1	error[counted_by_shape]
+a-read-into-addrinfo-fits	base	1	error[counted_by_shape]
+a-read-into-addrinfo	base	1	error[counted_by_shape]
+a-typed-pointer-byte-count	base	1	error[counted_by_shape]
+a-typed-pointer-record-count	base	1	error[counted_by_shape]
+a-void-a-field-lent-whole	base	1	error[counted_by_shape]
+a-void-count-fits	base	1	error[counted_by_shape]
+a-void-count-past	base	1	error[counted_by_shape]
+b-const-void-read	base	1	error[bad_operand]
+b-count-through-a-cell	base	1	error[counted_by_shape]
+b-read-into-addrinfo-fits	base	1	error[bad_operand]
+b-read-into-addrinfo	base	1	error[bad_operand]
+b-typed-pointer-byte-count	base	1	error[bad_operand]
+b-typed-pointer-record-count	base	1	error[bad_operand]
+b-void-a-field-lent-whole	base	1	error[bad_operand]
+b-void-count-fits	base	1	error[bad_operand]
+b-void-count-past	base	1	error[bad_operand]
+today-const-void-read-by-value	AB	1	error[ffi_parameter_type]
+today-const-void-read	AB	1	error[ffi_parameter_type]
+today-count-through-a-cell	AB	1	error[ffi_parameter_type]
+today-read-into-addrinfo	AB	1	error[ffi_parameter_type]
+today-typed-pointer-byte-count	AB	0	out: 4096 1094795585 
+today-typed-pointer-record-count	AB	143	out: 
+today-void-a-field-lent-whole	AB	1	error[ffi_parameter_type]
+today-void-count-fits	AB	1	error[ffi_parameter_type]
+today-void-count-past	AB	1	error[ffi_parameter_type]
+today-void-padded	AB	1	error[ffi_parameter_type]
+a-const-void-read	AB	134	panic: `peek` was told a count in `n` past the bytes of the record lent to `buf`
+a-count-through-a-cell	AB	1	error[counted_by_shape]
+a-read-into-addrinfo-fits	AB	0	out: 8 1094795585 
+a-read-into-addrinfo	AB	134	panic: `read` was told a count in `n` past the bytes of the record lent to `buf`
+a-typed-pointer-byte-count	AB	134	panic: `fill_typed` was told a count in `n` past the bytes of the record lent to `buf`
+a-typed-pointer-record-count	AB	0	out: 2 1 
+a-void-a-field-lent-whole	AB	134	panic: `fill` was told a count in `n` past the bytes of the record lent to `buf`
+a-void-count-fits	AB	0	out: 4 1094795585 
+a-void-count-past	AB	134	panic: `fill` was told a count in `n` past the bytes of the record lent to `buf`
+b-const-void-read	AB	1	error[field_lend_extent]
+b-count-through-a-cell	AB	1	error[counted_by_shape]
+b-read-into-addrinfo-fits	AB	0	out: 8 1094795585 
+b-read-into-addrinfo	AB	1	error[field_lend_extent]
+b-typed-pointer-byte-count	AB	1	error[field_lend_extent]
+b-typed-pointer-record-count	AB	0	out: 2 1 
+b-void-a-field-lent-whole	AB	1	error[field_lend_extent]
+b-void-count-fits	AB	0	out: 4 1094795585 
+b-void-count-past	AB	134	panic: b-void-count-past.hero:9: `fill` was given an extent past the 0 bytes of the field lent to

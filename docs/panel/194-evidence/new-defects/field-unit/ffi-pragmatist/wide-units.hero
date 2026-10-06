@@ -1,0 +1,11 @@
+# Today, landed: a 16-byte field lent through ptr() to mbstowcs, whose n counts WIDE characters (4 bytes each here).
+extern "wide.h"
+    record WBox tag wbox
+        w: u8[16]
+        after: i64
+    function mbstowcs(dst: ptr counted_by n lent, src: cstr lent, n: u64) -> u64
+
+function main()
+    b: WBox @ WBox(w: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(mbstowcs(dst: b.w.ptr(), src: "abcdefghijklmnop".cstr(), n: 16))
+    print(b.after)

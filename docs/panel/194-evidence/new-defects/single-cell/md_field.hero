@@ -1,0 +1,20 @@
+# The same lend, from a field of a group record: what C writes past the one byte lands in the record's next fields.
+extern "box.h" package "libcrypto"
+    record Box tag box
+        m: u8
+        rest: u8[7]
+        after: i64
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: u8, @c: Sha256Ctx) -> i32
+
+function main()
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    b: Box @ Box(m: 0, rest: [0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(SHA256_Init(@c))
+    print(SHA256_Update(@c, data: "abc".cstr(), len: 3))
+    print(SHA256_Final(md: @b.m, @c))
+    print(b.m)
+    print(b.after)
