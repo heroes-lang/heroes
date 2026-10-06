@@ -197,13 +197,13 @@ function rich(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 # Each round reads the program again from disk, because a round can write a
 # `use` line the first reading never followed (`use "geom"` to `use geom`),
 # and a module a round cannot read fails the whole `--apply` (defect 236).
+# So a later round can meet a module the first never read, and its certain
+# fixes are said with the first round's, once each: until 2026-10-06 only
+# the first round's were, and `geom.hero`'s `fn` behind `use "geom"` was
+# neither written nor told (`surface-fixtures/applylater/`).
 function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation, stage: i64) -> str?
     round = certain.applied(first, s)
-
-    if round.elsewhere.len() > 0
-        io.eprint(
-            text: "note: " + round.elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + round.elsewhere.join(", ")
-        )
+    elsewhere: [str] @ round.elsewhere
     text: str @ round.text
     seen: [str] @ [source_extent.user_text(s)]
     malformed: i64 @ round.malformed
@@ -214,6 +214,10 @@ function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation
         again = modules.load_text(path: s.name, root_text: text, library: library_source.text())?
         next = certain.applied(said_at(again, inv, stage: stage), again)
         malformed @ malformed + next.malformed
+
+        for at in next.elsewhere
+            if !certain.listed(names: elsewhere, name: at)
+                elsewhere @ elsewhere.push(at)
 
         if next.applied == 0 || next.text == text
             wrote @ 0
@@ -229,6 +233,11 @@ function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation
         text @ next.text
         wrote @ next.applied
         count @ count + 1
+
+    if elsewhere.len() > 0
+        io.eprint(
+            text: "note: " + elsewhere.len().to_str() + " certain fix(es) are in another module and were not applied: " + elsewhere.join(", ")
+        )
 
     if wrote > 0
         io.eprint(
