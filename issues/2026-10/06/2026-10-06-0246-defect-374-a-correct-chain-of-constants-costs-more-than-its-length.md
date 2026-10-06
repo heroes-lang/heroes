@@ -3,7 +3,7 @@ kind: defect
 area: resolve
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 353fdecffe4710e484698f7bbc6621242144dc9b
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b12-parse12, 2026-10-06, found beside defects 363 and 370 (its report's *found beside*); reproduced by the coordinator at 02:46 and filed into batch 12 under the author's instruction of 2026-10-05, any defect found that is not an improvement goes into the batch.
 
     **Class: adjacent**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a cost found beside the work on a correct program, no message wrong.
+
+    Repaired at `353fdecf`, 2026-10-06 (lane b12-parse12), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
