@@ -1,0 +1,9 @@
+# Panel 178, the smallest shape: one element of a fixed field, written through a cell.
+extern "elem_min.h"
+    record Slot tag slot partial
+        name: i8[4]
+
+function main()
+    s: Slot @ Slot(name: [0, 0, 0, 0])
+    s.name[1] @ 72
+    print(s.name[1])

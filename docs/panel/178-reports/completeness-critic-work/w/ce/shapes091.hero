@@ -1,0 +1,32 @@
+# Panel 178, compiler-engineer: the shapes beside defect 091 (CL-061).
+extern "shapes091.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Slot tag slot
+        name: i8[4]
+        id: i32
+    record Outer tag outer
+        inner: Slot
+        pts: Pt[3]
+
+function set_through(@s: Slot, i: i64)
+    s.name[i] @ 66
+
+function main()
+    o: Outer @ Outer(inner: Slot(name: [0, 0, 0, 0], id: 1), pts: [Pt(x: 0, y: 0), Pt(x: 0, y: 0), Pt(x: 0, y: 0)])
+    # a fixed field of a nested record
+    o.inner.name[2] @ 67
+    # a field of a record that is an element of a fixed array
+    o.pts[1].y @ 9
+    # a whole record element of a fixed array
+    o.pts[2] @ Pt(x: 5, y: 6)
+    # read-modify-write
+    o.inner.name[2] @ o.inner.name[2] + 1
+    # through an @ parameter
+    set_through(@o.inner, 0)
+    # inside a [T] element
+    xs: [Slot] @ [Slot(name: [0, 0, 0, 0], id: 2)]
+    ys = xs
+    xs[0].name[3] @ 70
+    print(o.inner.name[0], o.inner.name[2], o.pts[1].y, o.pts[2].x, xs[0].name[3], ys[0].name[3])

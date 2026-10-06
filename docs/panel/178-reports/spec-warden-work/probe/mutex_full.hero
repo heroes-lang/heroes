@@ -1,0 +1,10 @@
+# Panel 178 spec-warden: the same state through a full declaration, every byte spelled.
+extern "pthread.h"
+    record Mutex tag _opaque_pthread_mutex_t
+        __sig: i64
+        __opaque: i8[56]
+    function pthread_mutex_lock(@m: Mutex) -> i32
+
+function main()
+    m: Mutex @ Mutex(__sig: 0, __opaque: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    print(pthread_mutex_lock(@m))

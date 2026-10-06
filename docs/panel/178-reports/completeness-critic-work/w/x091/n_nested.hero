@@ -1,0 +1,10 @@
+# Critic, panel 178: 091's neighbours, a fixed array of fixed arrays.
+extern "next.h"
+    record Grid tag grid
+        g: i8[4][3]
+
+function main()
+    o: Grid @ Grid(g: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
+    o.g[2][3] @ 7
+    o.g[1][0] @ 5
+    print(o.g[2][3], o.g[1][0], o.g[0][0])

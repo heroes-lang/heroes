@@ -1,0 +1,36 @@
+--- /dev/fd/12	2026-09-24 21:19:33
++++ selfhost/emit/container.hero	2026-09-24 20:28:22
+@@ -197,13 +197,32 @@
+                 # is no element to descend into.
+                 is_map: bool @ false
+                 element: i64 @ 0 - 1
++                fixed_len: i64 @ 0 - 1
++                fixed_element: i64 @ 0 - 1
+ 
+                 match table.get(c.types, ty)
+                     .map                                                      => is_map @ true
+                     .array arr                                                => element @ arr.element
++                    .fixed x =>
++                        fixed_len @ x.length
++                        fixed_element @ x.element
+                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
+-                    .fixed | .fallible | .function_ty | .named                => is_map @ is_map
++                    .fallible | .function_ty | .named                         => is_map @ is_map
+                     .case_ty | .failure | .generic | .error                   => is_map @ is_map
++
++                # PANEL 178 PROTOTYPE (defect 091): a C array member is an
++                # lvalue in place, so an element store is a subscript with
++                # the read path's guard, and nothing is unshared.
++                if fixed_len >= 0
++                    i = mangle.value(ix.value)
++                    lvalue @ lvalue + "[((uint64_t)(" + i + ") >= UINT64_C(" + fixed_len.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + i + "))]"
++                    ty @ fixed_element
++
++                    if last
++                        lines @ lines.push(lvalue + " = " + mangle.value(value) + ";")
++                        return ok(lines)
++                    position @ position + 1
++                    continue
+ 
+                 if is_map
+                     if !last

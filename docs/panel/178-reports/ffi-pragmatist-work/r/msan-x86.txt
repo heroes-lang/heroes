@@ -1,0 +1,61 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+=== x86_64 MSan -O0
+sizeof addrinfo 48, union sigval 8 (first member 4), termios 60
+CONTROL fields only, no initialiser      MSan: UNINITIALISED bytes reached write()
+CONTROL copied over a zeroed cell        MSan: UNINITIALISED bytes reached write()
+CONTROL union via its 4-byte member      MSan: UNINITIALISED bytes reached write()
+S today: literal -> temp -> cell         clean: every byte defined
+R1 literal straight into cell            clean: every byte defined
+R1 memset cell, stores in place          clean: every byte defined
+R1 memset temp, stores, copy to cell     clean: every byte defined
+= {0}, stores                            clean: every byte defined
+R0 (T){0}, stores                        clean: every byte defined
+union sigval = (union){0}                clean: every byte defined
+union sigval memset                      clean: every byte defined
+termios literal                          clean: every byte defined
+termios memset                           clean: every byte defined
+=== x86_64 MSan -O1
+sizeof addrinfo 48, union sigval 8 (first member 4), termios 60
+CONTROL fields only, no initialiser      MSan: UNINITIALISED bytes reached write()
+CONTROL copied over a zeroed cell        clean: every byte defined
+CONTROL union via its 4-byte member      MSan: UNINITIALISED bytes reached write()
+S today: literal -> temp -> cell         clean: every byte defined
+R1 literal straight into cell            clean: every byte defined
+R1 memset cell, stores in place          clean: every byte defined
+R1 memset temp, stores, copy to cell     clean: every byte defined
+= {0}, stores                            clean: every byte defined
+R0 (T){0}, stores                        clean: every byte defined
+union sigval = (union){0}                clean: every byte defined
+union sigval memset                      clean: every byte defined
+termios literal                          clean: every byte defined
+termios memset                           clean: every byte defined
+=== x86_64 MSan -O2
+sizeof addrinfo 48, union sigval 8 (first member 4), termios 60
+CONTROL fields only, no initialiser      MSan: UNINITIALISED bytes reached write()
+CONTROL copied over a zeroed cell        clean: every byte defined
+CONTROL union via its 4-byte member      MSan: UNINITIALISED bytes reached write()
+S today: literal -> temp -> cell         clean: every byte defined
+R1 literal straight into cell            clean: every byte defined
+R1 memset cell, stores in place          clean: every byte defined
+R1 memset temp, stores, copy to cell     clean: every byte defined
+= {0}, stores                            clean: every byte defined
+R0 (T){0}, stores                        clean: every byte defined
+union sigval = (union){0}                clean: every byte defined
+union sigval memset                      clean: every byte defined
+termios literal                          clean: every byte defined
+termios memset                           clean: every byte defined
+=== x86_64 MSan -O3
+sizeof addrinfo 48, union sigval 8 (first member 4), termios 60
+CONTROL fields only, no initialiser      MSan: UNINITIALISED bytes reached write()
+CONTROL copied over a zeroed cell        clean: every byte defined
+CONTROL union via its 4-byte member      MSan: UNINITIALISED bytes reached write()
+S today: literal -> temp -> cell         clean: every byte defined
+R1 literal straight into cell            clean: every byte defined
+R1 memset cell, stores in place          clean: every byte defined
+R1 memset temp, stores, copy to cell     clean: every byte defined
+= {0}, stores                            clean: every byte defined
+R0 (T){0}, stores                        clean: every byte defined
+union sigval = (union){0}                clean: every byte defined
+union sigval memset                      clean: every byte defined
+termios literal                          clean: every byte defined
+termios memset                           clean: every byte defined

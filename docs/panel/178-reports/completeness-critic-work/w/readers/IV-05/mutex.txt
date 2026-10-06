@@ -1,0 +1,1 @@
+no. The cell starts as zeros (`__sig: 0, __opaque: [0; 56]`) only because every field has to be written, and pthread_mutex_init runs on it before any lock or unlock.

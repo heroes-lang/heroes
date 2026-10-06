@@ -1,0 +1,18 @@
+extern "app.h"
+    record SockaddrUn tag sockaddr_un
+        sun_len: u8
+        sun_family: u8
+        sun_path: i8[104]
+    function app_connect(@addr: SockaddrUn) -> i64
+
+function main()
+    path = "/tmp/app.sock"
+    assert path.len() < 104
+    addr: SockaddrUn @ SockaddrUn(sun_len: 0, sun_family: 1, sun_path: [0; 104])
+    for i in range(from: 0, to: path.len())
+        addr.sun_path[i] @ to_i8(path[i]).must()
+    fd = app_connect(@addr)
+    if fd == -1
+        print("app_connect failed")
+        exit(code: 1)
+    print("connected: ", fd)
