@@ -1,0 +1,15 @@
+# Defect 391, 2026-10-06: the whole form of a string in backticks told once,
+# its caret under the whole stretch and the literal that writes it offered
+# as a guess, never applied by `--apply`: a hole renders its value as
+# `to_str` does, not as JavaScript's `String`, and a string in backticks is
+# also Go's raw string and Python 2's `repr`. A run is told in the
+# scanner's words, with no fix, as one character is.
+
+function main()
+    x = 7
+    m: {str: i64} @ {}
+    m[f"ключ{x}"] @ 2
+    print(f"{m[`ключ${x}`].must()}")  #~ unexpected_character
+    print(`a {b} "c"`)  #~ unexpected_character
+    y = $€  #~ unexpected_character
+    print(y)

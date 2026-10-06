@@ -1,0 +1,51 @@
+# Defect 391, 2026-10-06 (panel 187's R2 mutant `interp-js`, read by the
+# coordinator at batch 12's gate). Symptom: JavaScript's template literal
+# `` `ключ${x}` `` in a hole of `print(f"...")` was told seven times,
+# `unexpected_character` at its two backticks, its four Cyrillic letters and
+# its `$`, under `check` and `check --permissive` alike; seven of the eight
+# refused characters a file tells, so the next mistake of its kind was the
+# last one told. Cause: the scanner refuses a character the syntax does not
+# have one at a time (`scan.punct`), and a string written in another
+# language's terms is one mistake. A backtick opening a string that closes
+# on its line is read to its close as JavaScript reads one and told once,
+# by name, with the `f"…"` or `"…"` that writes it as a guess
+# (`backtick_strings.hero`); the runs are the case beside this one. A
+# backtick this language reads as a stray one stays one message: its close
+# in a string, or a comment begun after it. A template written over two
+# lines is not one stretch: the lexer reads a line at a time.
+
+function in_a_hole(x: i64)
+    m: {str: i64} @ {}
+    m[f"ключ{x}"] @ 2
+    print(f"{m[`ключ${x}`].must()}")  #~ unexpected_character
+
+function outside(x: i64)
+    print(`v=${x}`)  #~ unexpected_character
+
+function no_hole()
+    print(`say "hi"`)  #~ unexpected_character
+
+function nested(x: i64)
+    print(`a${`b${x}`}c`)  #~ unexpected_character
+
+# A `}` in the template closed the hole it stands in, a `lone_brace` after.
+function brace_in_a_hole()
+    print(f"{`a}b`}")  #~ unexpected_character
+
+function stray_before_a_comment()
+    #~v unexpected_character
+    x = 1 ` # the `x` above
+    print(x)
+
+function closed_in_a_string()
+    x = ` "a`b"  #~ unexpected_character
+    print(x)
+
+function main()
+    in_a_hole(7)
+    outside(7)
+    no_hole()
+    nested(7)
+    brace_in_a_hole()
+    stray_before_a_comment()
+    closed_in_a_string()

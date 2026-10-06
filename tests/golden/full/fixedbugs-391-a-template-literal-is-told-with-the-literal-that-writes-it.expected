@@ -1,0 +1,19 @@
+error[unexpected_character]: `` `ключ${x}` `` is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f"…"` literal: `f"ключ{x}"`
+  at tests/golden/full/fixedbugs-391-a-template-literal-is-told-with-the-literal-that-writes-it.hero:12:16
+     |
+  12 |     print(f"{m[`ключ${x}`].must()}")  #~ unexpected_character
+     |                ^^^^^^^^^^
+  fix (guess): write it as `f"ключ{x}"`
+
+error[unexpected_character]: `` `a {b} "c"` `` is a string in backticks, which are not part of the language's syntax — a string is written in double quotes, a brace as text doubled in an `f"…"` literal: `f"a {{b}} \"c\""`
+  at tests/golden/full/fixedbugs-391-a-template-literal-is-told-with-the-literal-that-writes-it.hero:13:11
+     |
+  13 |     print(`a {b} "c"`)  #~ unexpected_character
+     |           ^^^^^^^^^^^
+  fix (guess): write it as `f"a {{b}} \"c\""`
+
+error[unexpected_character]: `$€` is not part of the language's syntax
+  at tests/golden/full/fixedbugs-391-a-template-literal-is-told-with-the-literal-that-writes-it.hero:14:9
+     |
+  14 |     y = $€  #~ unexpected_character
+     |         ^^

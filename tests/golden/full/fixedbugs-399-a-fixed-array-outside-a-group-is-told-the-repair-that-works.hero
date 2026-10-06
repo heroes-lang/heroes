@@ -1,0 +1,40 @@
+# Defect 399, 2026-10-06 (panel 194's completeness critic, its second pass,
+# compiling the blind readers' programs of task 1). Symptom: `struct
+# utsname`'s `char[256]` fields built from a binding and from a constant of
+# their own type, `zero: i8[256] = [...]` and `constant ZEROS: i8[256]`, are
+# refused as a fixed array outside a group, rightly, and the one note said
+# *use `[T]` here*: written as it said, the program met five
+# `type_mismatch`, a `[T]` never being a fixed array. Cause: the message
+# and the note were written for an ordinary record's field (panel 062), and
+# the sweep that asks every written type tells them at every place. The
+# message names no record now, and the notes name each repair that works
+# under the condition that makes it the program's: where the array is meant
+# for a C struct's field, the elements written out where the group's record
+# is built; where nothing C's holds it, the `[T]` it becomes. A nested
+# array and a `str` one, which no group's field holds, are told the `[T]`
+# alone (a nested one is told twice, its inner array too, as
+# `check/nested-fixed-array-tiebreak.hero` pins). The readers' program written as the first note says checks clean
+# and prints `Darwin` and `arm64` (`sys/utsname.h`, measured on this Mac;
+# this case's header is its own, since the Windows leg has no `utsname`).
+
+extern "fixedbugs-399-a-fixed-array-outside-a-group-is-told-the-repair-that-works.h"
+    record Name
+        bytes: i8[4]
+        id: i32
+    function name_first(n: Name) -> i32
+
+constant ZEROS: i8[4]  #~ fixed_outside_a_group
+    [0, 0, 0, 0]
+
+record Kept
+    counts: i32[4]  #~ fixed_outside_a_group
+
+function corner(grid: i64[2][3]) -> i64  #~ fixed_outside_a_group fixed_outside_a_group
+    return grid[0][0]
+
+function main()
+    zero: i8[4] = [0, 0, 0, 0]  #~ fixed_outside_a_group
+    labels: str[2] = ["a", "b"]  #~ fixed_outside_a_group
+    built = Name(bytes: zero, id: 7)
+    other = Name(bytes: ZEROS, id: 8)
+    print(built.name_first(), other.id, labels[0])

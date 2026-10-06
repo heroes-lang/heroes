@@ -1,0 +1,2 @@
+tests/golden/permissive/fixedbugs-391-the-control-arm-tells-a-template-literal-once.hero:11:16: error[unexpected_character]: `` `ключ${x}` `` is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f"…"` literal: `f"ключ{x}"`
+tests/golden/permissive/fixedbugs-391-the-control-arm-tells-a-template-literal-once.hero:12:9: error[unexpected_character]: `ключ` is not part of the language's syntax

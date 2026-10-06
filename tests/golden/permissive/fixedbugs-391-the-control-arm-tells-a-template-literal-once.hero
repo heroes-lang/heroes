@@ -1,0 +1,13 @@
+# Defect 391, 2026-10-06: JavaScript's template literal in a hole of an
+# `f"…"` literal, panel 187's R2 mutant `interp-js`, was seven messages under
+# `check --permissive` as under `check`, one a character; the control arm
+# reads the same lexer, and tells it once, as it tells a run of characters
+# the syntax does not have.
+
+function main()
+    x = 7
+    m: {str: i64} @ {}
+    m[f"ключ{x}"] @ 2
+    print(f"{m[`ключ${x}`].must()}")  #~ unexpected_character
+    y = ключ  #~ unexpected_character
+    print(y)
