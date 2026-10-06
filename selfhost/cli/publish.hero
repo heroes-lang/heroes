@@ -113,19 +113,38 @@ function write_whole(path: str, text: str, keyed: bool) -> ()?
 
     if made.is_err()
         return fail(code: "not_written", msg: "cannot write " + path + message_of(made))
-    return publish(staged: staged, path: path, keyed: keyed)
+    return renamed_into(staged: staged, path: path, keyed: keyed)
 
 # How many private names one write asks for before it says it cannot write.
 constant STAGE_TRIES: i64
     4
 
-# Move a finished private file into place as `path`. The failure that is
-# accepted is asked of the destination rather than of the reason: a keyed
-# FILE is there, which is another build's copy of these bytes, whatever
-# the platform's number for its refusal. A directory there is no artifact.
+# Move a finished private file ANOTHER process wrote into place as `path`,
+# flushed to the device first: clang's object, the linker's binary. **Its
+# bytes reach the disk before its name does** (defect 357's object row,
+# 2026-10-06): such a process exits with no flush of its own, and a name
+# renamed over a file still in the system's memory held zeros at its length
+# after a power cut, as kept texts did on the Windows box, which an object
+# turns into `ld: unknown file type` at every later link (planted on this
+# Mac). The flush is `write_whole`'s stage's, asked of a path
+# (`files.flush`); a power cut itself is not run on any machine here.
 function publish(staged: str, path: str, keyed: bool) -> ()?
+    if files.flush(staged).is_err()
+        return not_published(staged: staged, path: path, keyed: keyed)
+    return renamed_into(staged: staged, path: path, keyed: keyed)
+
+# A private file already on the device moved into place as `path`.
+function renamed_into(staged: str, path: str, keyed: bool) -> ()?
     if !process.rename_over(from: staged, to: path).is_err()
         return ok()
+    return not_published(staged: staged, path: path, keyed: keyed)
+
+# A private file that could not be published, thrown away. The failure that
+# is accepted is asked of the destination rather than of the reason: a keyed
+# FILE is there, which is another build's copy of these bytes, whatever the
+# platform's number for its refusal. A directory there is no artifact. The
+# reason is read before the throwing away, which asks the system again.
+function not_published(staged: str, path: str, keyed: bool) -> ()?
     why = process.because()
     discard(staged)
 
@@ -340,6 +359,25 @@ test "a private name a killed build left behind is passed over and never written
     assert !write_whole(path: target, text: "NEW", keyed: true).is_err()
     assert read_file(target).must() == "NEW"
     assert read_file(left).must() == "LEFT BY A KILLED BUILD"
+
+# Defect 357's object row: a file another writer made, as clang makes an
+# object, is flushed and published whole over what was there, and nothing is
+# left beside it; a path with nothing there is a flush refused with its
+# reason. What the flush buys, a name that holds its bytes after a power cut,
+# no machine here can be asked.
+test "a file another process wrote is flushed and published whole, and nothing there is a refused flush"
+    dir = "build/selftest-publish-flushed"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/app.o", text: "EARLIER").is_err()
+    staged = private_name(dir + "/app.o")
+    assert !write_file(path: staged, text: "WHAT CLANG WROTE").is_err()
+    assert !publish(staged: staged, path: dir + "/app.o", keyed: false).is_err()
+    assert read_file(dir + "/app.o").must() == "WHAT CLANG WROTE"
+    assert !process.path_exists(staged)
+    gone = files.flush(dir + "/nothing.o")
+    assert gone.is_err()
+    assert holds(text: failure_of(gone), needle: "not_flushed: : the operating system's own reason is ")
 
 # A rename that fails on every platform with a file already at the
 # destination: a staged name nothing was written to. The destination is the

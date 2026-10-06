@@ -327,6 +327,7 @@
 #pragma push_macro("hero_fs_deny_delete")
 #pragma push_macro("hero_fs_exists")
 #pragma push_macro("hero_fs_flagged")
+#pragma push_macro("hero_fs_flush")
 #pragma push_macro("hero_fs_is_directory")
 #pragma push_macro("hero_fs_kind")
 #pragma push_macro("hero_fs_landing")

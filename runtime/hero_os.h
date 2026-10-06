@@ -267,6 +267,11 @@ int64_t hero_file_stage(const char *staged, HeroStr text, const char *like);
 /* `staged` put in place of `path`, and the directory holding them flushed. */
 int64_t hero_fs_replace(const char *staged, const char *path);
 
+/* A file another process wrote, clang's object or the linker's binary,
+ * flushed to the device before it is renamed into place (defect 357).
+ * HERO_OS_OK or HERO_OS_FAILED. */
+int64_t hero_fs_flush(const char *path);
+
 /* A staged file that could not be put in place, removed even where it carries
  * an ACL that denies deleting it. HERO_OS_OK or HERO_OS_FAILED. */
 int64_t hero_file_unstage(const char *staged);
