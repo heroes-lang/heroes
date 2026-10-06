@@ -52,6 +52,8 @@ function main()
     never_closed()
 
 # Never closed before the file's end: no template takes the file's rest.
+# Since defect 414, 2026-10-06, its one message holds the rest of its line,
+# which the line leaves open (`fixedbugs-414-*`).
 function never_closed()
     #~v unexpected_character
     s = `never closed

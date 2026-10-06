@@ -1,0 +1,5 @@
+error[unexpected_character]: `` `never closed ${x} ``, closed nowhere on its line, is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f"…"` literal, opened and closed on one line
+  at tests/golden/full/fixedbugs-414-an-open-backtick-is-told-with-the-rest-of-its-line.hero:8:11
+    |
+  8 |     print(`never closed ${x})  #~ unexpected_character
+    |           ^^^^^^^^^^^^^^^^^^
