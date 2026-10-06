@@ -1,0 +1,69 @@
+# Fixed defect 415, 2026-10-06 (lane b13-gen402, found beside defect 402).
+# Symptom: `m: {str: u8} = {"a": 1}` was refused `type_mismatch`, *expected
+# `{str: u8}`, found `{str: i64}`*, where `xs: [u8] = [1, 2]` checked clean.
+# Cause: a map literal with entries, checked against a type, synthesised itself
+# and compared, so its keys and values never saw the key and value types asked
+# for; an array literal hands its element type to each element. Repair: spec
+# § 2, a literal takes the type its context asks for, and a map literal's
+# keys and values are where that context lands (`check/walk.hero`'s
+# `checked_map_literal`). The shapes: an annotated binding, an `@` cell and a
+# store into it, an argument, a return, a record's field, `ok(…)`, a nested
+# `{str: [u8]}` with a full and an empty array, a key typed by its context,
+# `.case` values, a float width, a generic function value (defect 402), an
+# empty map, and a map with no context, whose numbers stay `i64`.
+
+variant Op
+    plus
+    minus
+
+record Holder
+    counts: {str: u8}
+
+function ident<A>(x: A) -> A
+    return x
+
+function total(m: {str: u8}) -> u8
+    sum: u8 @ 0
+
+    for k in keys(m)
+        sum @ sum + m[k].must()
+
+    return sum
+
+function made() -> {str: u8}
+    return {"x": 7}
+
+function maybe() -> {str: u8}?
+    return ok({"y": 8})
+
+function main()
+    m: {str: u8} = {"a": 1}
+    print(m["a"].must())
+    cell: {str: u8} @ {"b": 2}
+    cell @ {"b": 3}
+    print(cell["b"].must())
+    print(total({"c": 4, "d": 1}))
+    h = Holder(counts: {"e": 6})
+    print(h.counts["e"].must())
+    print(made()["x"].must())
+    print(maybe().must()["y"].must())
+    nested: {str: [u8]} = {"f": [9, 10], "g": []}
+    print(nested["f"].must()[1])
+    print(nested["g"].must().len())
+    names: {u8: str} = {11: "eleven"}
+    eleven: u8 = 11
+    print(names[eleven].must())
+    ops: {str: Op} = {"p": .plus, "q": .minus}
+
+    match ops["q"].must()
+        .plus  => print("plus")
+        .minus => print("minus")
+
+    halves: {str: f32} = {"h": 12.5}
+    print(halves["h"].must())
+    calls: {str: (function(i64) -> i64)} = {"i": ident}
+    print(calls["i"].must()(13))
+    none: {str: u8} = {}
+    print(none.len())
+    plain = {"j": 1}
+    print(plain["j"].must() * 1000000000000)
