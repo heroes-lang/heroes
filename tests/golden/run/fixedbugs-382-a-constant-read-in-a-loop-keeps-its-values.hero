@@ -9,6 +9,11 @@
 # rather than in a constant. The output is the values, and the program
 # reaching the end of `main` is the runtime's own count of the blocks: one
 # reference too many or too few in the literal and it aborts there.
+#
+# 2026-10-06, panel 195: in a plain build each constant below is now a static
+# block no count moves, so there the count at the end of `main` sees the
+# loop's own literal alone; under `--sanitize` every constant is built at each
+# read and counted as this case was written to count it.
 
 variant Shape
     dot

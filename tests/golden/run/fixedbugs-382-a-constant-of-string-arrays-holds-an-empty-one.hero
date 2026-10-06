@@ -1,0 +1,20 @@
+# Defect 382, 2026-10-06. A constant of arrays of strings, one of them
+# empty, is laid out as static blocks whose elements are the literals' own,
+# the empty inner array a header alone (`HERO_ARRAY_STATIC_EMPTY`, since C11
+# has no array of no elements); under `--sanitize` it is built at every read
+# (panel 195's R1 and R2). The empty one is pushed onto through a copy.
+
+constant NESTS: [[str]]
+    [["a", "b"], [], ["c"], [""]]
+
+function main()
+    total: i64 @ 0
+
+    for inner in NESTS
+        total @ total + inner.len()
+
+    print(total, " ", NESTS[2][0], " ", NESTS[1].len(), " ", NESTS[3][0].len(), " ", NESTS[0].join("+"))
+    copy: [[str]] @ NESTS
+    copy[1] @ copy[1].push("d")
+    copy[0][1] @ "e"
+    print(copy[1][0], " ", copy[0].join("+"), " ", NESTS[1].len(), " ", NESTS[0].join("+"))

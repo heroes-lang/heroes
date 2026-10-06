@@ -1,0 +1,26 @@
+# Defect 382, 2026-10-06. A constant of strings is one static block whose
+# elements are the literals' own static blocks, `HERO_STR_LIT` of each, so a
+# read builds nothing and counts nothing (panel 195's R1); under `--sanitize`
+# it is built at every read (R2). An empty string, a quoted one and a
+# repeated one stand among the elements; the copy written below takes its own
+# block and the constant keeps its words.
+
+constant WORDS: [str]
+    ["ziggy", "", "spiders", "from", "mars", "ziggy", "a \"quoted\" \\ word"]
+
+function main()
+    letters: i64 @ 0
+    at: i64 @ 0
+
+    while at < 700
+        letters @ letters + WORDS[at % 7].len()
+        at @ at + 1
+
+    print(letters, " ", WORDS.len(), " ", WORDS[1].len(), " ", WORDS[0] == WORDS[5])
+    print(WORDS.join("|"))
+    print(sort(WORDS).join(","))
+    print(WORDS[2] + WORDS[4], " ", WORDS[4].chars().len(), " ", WORDS == WORDS)
+    xs: [str] @ WORDS
+    xs[1] @ "stardust"
+    xs @ xs.push("bowie")
+    print(xs.join(" "), " ", WORDS[1].len(), " ", WORDS.len())

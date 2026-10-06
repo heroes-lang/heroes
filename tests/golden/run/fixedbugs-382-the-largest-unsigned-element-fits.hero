@@ -1,0 +1,21 @@
+# Defect 382, 2026-10-06. An unsigned element of a constant is spelled
+# through `UINT64_C`, so the largest `u64` is a value C can hold in the
+# static block's initializer, and each narrower width holds its own largest
+# (panel 195's R1); under `--sanitize` it is built at every read (R2).
+
+constant BIG: [u64]
+    [18446744073709551615, 0, 9223372036854775808]
+
+constant BYTES: [u8]
+    [0, 255, 'a']
+
+constant HALVES: [u16]
+    [65535]
+
+constant WORDS: [u32]
+    [4294967295, 1]
+
+function main()
+    print(BIG[0], " ", BIG[1], " ", BIG[2], " ", BIG[0] > BIG[2])
+    print(BYTES[1], " ", BYTES[2], " ", HALVES[0], " ", WORDS[0], " ", WORDS[1])
+    print(sort(BIG)[2], " ", BIG.len() + BYTES.len())
