@@ -36,9 +36,11 @@
     Una correzione contrassegnata da <code>certain</code> si basa su informazioni verificate dal compilatore, come il tipo dedotto o l&rsquo;unico nome simile disponibile. <code>heroes check --apply</code> applica queste correzioni. Può essere necessario correggere altri errori prima che il programma sia completo. Le correzioni contrassegnate da <code>guess</code> sono suggerimenti da valutare e non vengono applicate automaticamente dal comando.
   </p>
   <p>
-    Gli stessi messaggi escono anche in JSON, il formato che i programmi
-    leggono facilmente, per quando a leggerli non è una persona ma un altro
-    programma.
+    Gli stessi messaggi escono anche in JSON, schema 2, scritto su stderr, il
+    formato che i programmi leggono facilmente, per quando a leggerli non è
+    una persona ma un altro programma. Ogni correzione dice dove si applica, e
+    <code>heroes check --apply</code> è il comando che scrive nel programma
+    quelle certain.
   </p>
   <p>Il giro completo, in comandi:</p>
   <pre><code>$ heroes check program.hero           <span class="c"># le diagnostiche, su stderr</span>

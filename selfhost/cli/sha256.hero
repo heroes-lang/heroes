@@ -1,0 +1,236 @@
+# SHA-256 of a text's bytes, as FIPS 180-4 defines it: the digest every
+# answer of `check --json` gives for each file it read (panel 193's R5), so a
+# tool holding the answer can refuse a tree that moved since the check, with
+# the `sha256sum` or the hashlib every platform already has. The compiler's
+# own `cli/digest.hero` keys a cache and no tool outside it can compute it,
+# which is why this is a second digest and not that one.
+#
+# The arithmetic is 32 bits wide inside an `i64`, every sum masked and every
+# shift kept below bit 32, since an `i64` that overflowed would abort
+# (spec § 7): a rotation shifts the low bits up only after masking them.
+
+# The 64 round constants, the cube roots' fractional bits of the first 64
+# primes.
+constant K: [i64]
+    [
+        1116352408
+        1899447441
+        3049323471
+        3921009573
+        961987163
+        1508970993
+        2453635748
+        2870763221
+        3624381080
+        310598401
+        607225278
+        1426881987
+        1925078388
+        2162078206
+        2614888103
+        3248222580
+        3835390401
+        4022224774
+        264347078
+        604807628
+        770255983
+        1249150122
+        1555081692
+        1996064986
+        2554220882
+        2821834349
+        2952996808
+        3210313671
+        3336571891
+        3584528711
+        113926993
+        338241895
+        666307205
+        773529912
+        1294757372
+        1396182291
+        1695183700
+        1986661051
+        2177026350
+        2456956037
+        2730485921
+        2820302411
+        3259730800
+        3345764771
+        3516065817
+        3600352804
+        4094571909
+        275423344
+        430227734
+        506948616
+        659060556
+        883997877
+        958139571
+        1322822218
+        1537002063
+        1747873779
+        1955562222
+        2024104815
+        2227730452
+        2361852424
+        2428436474
+        2756734187
+        3204031479
+        3329325298
+    ]
+
+# The first hash value, the square roots' fractional bits of the first eight
+# primes.
+constant START: [i64]
+    [
+        1779033703
+        3144134277
+        1013904242
+        2773480762
+        1359893119
+        2600822924
+        528734635
+        1541459225
+    ]
+
+constant MASK: i64
+    4294967295
+
+# The digest of `text`'s bytes, 64 lowercase hexadecimal digits.
+function of(text: str) -> str
+    bytes: [i64] @ []
+    at: i64 @ 0
+
+    # Each byte read into a name before it is pushed: a push whose argument
+    # holds a `.must()` copied the whole array each time, measured here, 481
+    # thousand instructions a byte, where this costs a few hundred.
+    while at < text.len()
+        b = text[at].to_i64().must()
+        bytes @ bytes.push(b)
+        at @ at + 1
+
+    # The padding: a one bit, zeros to 56 bytes of 64, and the length in
+    # bits, big-endian, in the last 8.
+    bits = text.len() * 8
+    bytes @ bytes.push(128)
+
+    while bytes.len() % 64 != 56
+        bytes @ bytes.push(0)
+
+    shift: i64 @ 56
+
+    while shift >= 0
+        bytes @ bytes.push(bits >> shift & 255)
+        shift @ shift - 8
+
+    h: [i64] @ START
+    constants = K
+    block: i64 @ 0
+
+    while block < bytes.len()
+        h @ compressed(h: h, bytes: bytes, from: block, constants: constants)
+        block @ block + 64
+
+    out: [str] @ []
+
+    for word in h
+        out @ out.push(hex8(word))
+
+    return out.join("")
+
+# The hash after one block of 64 bytes from `from`.
+function compressed(h: [i64], bytes: [i64], from: i64, constants: [i64]) -> [i64]
+    w: [i64] @ []
+    i: i64 @ 0
+
+    while i < 16
+        at = from + i * 4
+        w @ w.push(bytes[at] << 24 | bytes[at + 1] << 16 | bytes[at + 2] << 8 | bytes[at + 3])
+        i @ i + 1
+
+    while i < 64
+        s0 = rotr(word: w[i - 15], by: 7) ^ rotr(word: w[i - 15], by: 18) ^ w[i - 15] >> 3
+        s1 = rotr(word: w[i - 2], by: 17) ^ rotr(word: w[i - 2], by: 19) ^ w[i - 2] >> 10
+        w @ w.push(w[i - 16] + s0 + w[i - 7] + s1 & MASK)
+        i @ i + 1
+
+    a: i64 @ h[0]
+    b: i64 @ h[1]
+    c: i64 @ h[2]
+    d: i64 @ h[3]
+    e: i64 @ h[4]
+    f: i64 @ h[5]
+    g: i64 @ h[6]
+    k: i64 @ h[7]
+    round: i64 @ 0
+
+    while round < 64
+        s1 = rotr(word: e, by: 6) ^ rotr(word: e, by: 11) ^ rotr(word: e, by: 25)
+        choose = e & f ^ (MASK ^ e) & g
+        one = k + s1 + choose + constants[round] + w[round] & MASK
+        s0 = rotr(word: a, by: 2) ^ rotr(word: a, by: 13) ^ rotr(word: a, by: 22)
+        major = a & b ^ a & c ^ b & c
+        two = s0 + major & MASK
+        k @ g
+        g @ f
+        f @ e
+        e @ d + one & MASK
+        d @ c
+        c @ b
+        b @ a
+        a @ one + two & MASK
+        round @ round + 1
+
+    return [
+        h[0] + a & MASK
+        h[1] + b & MASK
+        h[2] + c & MASK
+        h[3] + d & MASK
+        h[4] + e & MASK
+        h[5] + f & MASK
+        h[6] + g & MASK
+        h[7] + k & MASK
+    ]
+
+# `word` rotated right `by` bits within 32: its low bits are masked before
+# they move up, so nothing passes bit 31.
+function rotr(word: i64, by: i64) -> i64
+    low = word & (1 << by) - 1
+    return word >> by | low << 32 - by
+
+# A 32-bit word as eight lowercase hexadecimal digits.
+function hex8(word: i64) -> str
+    digits = "0123456789abcdef"
+    out: str @ ""
+    value: i64 @ word
+    count: i64 @ 0
+
+    while count < 8
+        d = value % 16
+        out @ digits.slice(from: d, to: d + 1) + out
+        value @ value / 16
+        count @ count + 1
+
+    return out
+
+## Tests
+
+# FIPS 180-4's own examples and the empty text, two lengths at the padding's
+# edge, 55 and 56 bytes, and characters of two to four bytes before a CRLF,
+# whose digests `shasum -a 256` gave on this Mac (2026-10-06).
+test "the digest is FIPS 180-4's"
+    assert of("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert of("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    assert of("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+    assert of("a".repeat(55)) == FIFTY_FIVE
+    assert of("a".repeat(56)) == FIFTY_SIX
+    assert of("é€😀\r\n") == WIDE
+
+constant FIFTY_FIVE: str
+    "9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318"
+
+constant FIFTY_SIX: str
+    "b35439a4ac6f0948b6d6f9e3c6af0f5f590ce20f1bde7090ef7970686ec6738a"
+
+constant WIDE: str
+    "41e9758fa925017e7f12f9550ff474c4a817ab6727fac5e30568b8bb3e7fbe72"

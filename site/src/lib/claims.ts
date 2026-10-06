@@ -50,6 +50,7 @@ const DOCTOR_FILE = 'selfhost/cli/doctor.hero';
 const CHAPTERS_DIR = 'site/src/html/docs';
 const SPEC_SUITE = 'tests/harness/suite_spec.hero';
 const MUTATION_RECORD = 'docs/measurements/024-the-corpus-at-one-hundred-and-twenty-files.md';
+const CHECK_JSON_FILE = 'selfhost/cli/check_json.hero';
 
 /* -- The facts, each read from the one place the tree keeps it ------------- */
 
@@ -69,6 +70,20 @@ export function specCeiling(): number {
   const n = Number(found[1]);
   if (n < 1024) throw new Error(`${SPEC_SUITE}: the ceiling reads ${n}, below any budget the language has had.`);
   return n;
+}
+
+/**
+ * The schema `heroes check --json` writes, read from the writer's own
+ * constant (panel 193's R8): the page a model reads and the errors page say
+ * it, and a schema that moves moves them or turns the build red.
+ */
+export function jsonSchema(): number {
+  const text = readText(CHECK_JSON_FILE);
+  const found = /^constant SCHEMA: i64\n\s+(\d+)$/m.exec(text);
+  if (found === null) {
+    throw new Error(`${CHECK_JSON_FILE}: no \`constant SCHEMA: i64\` with its number on the line under it.`);
+  }
+  return Number(found[1]);
 }
 
 /**
@@ -459,6 +474,14 @@ const CLAIMS: Claim[] = [
     fact: mutationCorpus, shape: (n) => new RegExp(`complete run on the ${n} programs`, 'i') },
   { page: 'site/src/html/it/docs/errors.html', what: 'the corpus the mutation table was taken over',
     fact: mutationCorpus, shape: (n) => new RegExp(`completa sui ${n} programmi`, 'i') },
+
+  // The schema `check --json` writes and the stream it writes to (panel 193's
+  // R8). A version is written in digits, so the shape reads the fact itself
+  // and ignores the number word it is handed.
+  { page: 'site/src/html/docs/errors.html', what: 'the schema check --json writes, on stderr',
+    fact: jsonSchema, shape: () => new RegExp(`JSON, schema ${jsonSchema()}, written to stderr`, 'i') },
+  { page: 'site/src/html/it/docs/errors.html', what: 'the schema check --json writes, on stderr',
+    fact: jsonSchema, shape: () => new RegExp(`JSON, schema ${jsonSchema()}, scritto su stderr`, 'i') },
 ];
 
 /**

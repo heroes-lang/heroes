@@ -73,6 +73,12 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
             io.print_artifact(text: source_extent.user_text(s))
         return .ok_exit
 
+    # A clean program's answer is a document too (panel 193's R3), where it
+    # was no bytes at all, which no JSON reader takes.
+    if argv.has(inv, spelling: "--json")
+        none: [diag.Diagnostic] = []
+        io.eprint_raw(text: check_json.json(none, s))
+
     if argv.has(inv, spelling: "--dump-scopes")
         io.print_artifact(text: scopes.dump_scopes(out, s, parsed.decls))
 
@@ -373,10 +379,24 @@ test "the json schema leads with its version and escapes its strings"
     parsed = parse.parse_source(s)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     got = check_json.json(out.diagnostics, s)
-    assert has_text(text: got, needle: "{\n  \"schema\": 1,\n  \"diagnostics\": [\n")
+    assert has_text(text: got, needle: "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n")
     assert has_text(text: got, needle: "\"code\": \"unused_binding\"")
     assert has_text(text: got, needle: "\"file\": \"t.hero\"")
     assert has_text(text: got, needle: "  ]\n}\n")
+
+# Panel 193's R8: the help says the schema the writer writes and the stream
+# it writes to, held to `check_json.SCHEMA` so the two cannot part.
+test "the help names the answer's schema and its stream"
+    said: str @ ""
+
+    for c in cli_table.commands()
+        if c.name == "check"
+            for f in c.flags
+                if f.spelling == "--json"
+                    said @ f.what
+
+    assert has_text(text: said, needle: "schema " + check_json.SCHEMA.to_str())
+    assert has_text(text: said, needle: "stderr")
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

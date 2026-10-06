@@ -1,19 +1,53 @@
-# Schema 1: the diagnostics `check --json` prints (design.md §4.17;
-# CLAUDE.md §10, `--json` says how to print, never what). Moved out of
-# `cli/check.hero` unchanged on 2026-10-03, defect 236, when the rounds of
-# `check --apply` needed the lines to say that a module could not be read
-# again and that file stood at §11's 300: the writer shares nothing with the
-# stages but the diagnostics it is handed.
+# Schema 2: the answers `check --json` gives (design.md §4.17, which holds the
+# terms; panel 193, provisional, author ratification pending; CLAUDE.md §10,
+# `--json` says how to print, never what). Moved out of `cli/check.hero`
+# unchanged on 2026-10-03, defect 236, when the rounds of `check --apply`
+# needed the lines to say that a module could not be read again and that file
+# stood at §11's 300: the writer shares nothing with the stages but the
+# diagnostics it is handed.
+#
+# **Every answer says what it is, and a clean program gets one** (panel 193's
+# R3): a document opening `"schema": 2` and its `"kind"`, here
+# `"diagnostics"`, written to stderr, `"diagnostics": []` where every stage
+# was quiet, which was 0 bytes no JSON reader takes. **It names the files it
+# read and their SHA-256** (R5), so a tool can refuse a tree that moved since.
+#
+# **Every fix says where it applies** (defect 271's JSON half, R1): its
+# `file`, always and never inferred from its diagnostic's; `line`, `col`,
+# `end_line` and `end_col`, lines split at `\n` alone and columns in
+# characters as the diagnostic's own (`char_column`); `byte_start` and
+# `byte_end`, that file's own bytes as stored, from 0, the end excluded, the
+# joined text's offsets less the file's start (`source`: one text of every
+# file); and `text`, the bytes it replaces. **And a certain fix says what
+# `--apply`'s first round does with it** (R2), `first_round`, from
+# `cli/certain.hero`'s own ordering and choice, never restated: `written`,
+# `withheld`, `twin`, `elsewhere` or `malformed`. A guess carries none; its
+# place is for showing. Each place costs two binary searches, not a walk of
+# its line (defect 372), the price panel 193's R6 measured on one long line.
 
 use diag
 use source
+use source_extent
+use token
 use cli/json_text
+use cli/certain
+use cli/sha256
 
-# Schema 1. Versioned because a schema is a promise: a consumer that
-# reads `schema` can refuse a version it does not know, which is the
-# whole reason the field is first.
+# The schema's number, which every document opens with. The help, the page a
+# model reads and the errors page say it, each held to this constant.
+constant SCHEMA: i64
+    2
+
+# The diagnostics a stage said, as the document `check --json` writes.
 function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    rows: [str] @ ["{\n  \"schema\": 1,\n  \"diagnostics\": [\n"]
+    rows: [str] @ [head(kind: "diagnostics", s: s)]
+
+    if diagnostics.len() == 0
+        rows @ rows.push("  \"diagnostics\": []\n}\n")
+        return rows.join("")
+    rows @ rows.push("  \"diagnostics\": [\n")
+    rounds = certain.outcomes(diagnostics, s)
+    flat: i64 @ 0
     index: i64 @ 0
 
     for d in diagnostics
@@ -36,9 +70,14 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 
             if fix.certainty == .certain
                 tag @ "certain"
+            first: str @ ""
+
+            if rounds[flat].len() > 0
+                first @ ", \"first_round\": \"" + rounds[flat] + "\""
             fixes @ fixes.push(
-                "{\"title\": " + quote(fix.title) + ", \"replacement\": " + quote(fix.replacement) + ", \"certainty\": \"" + tag + "\"}"
+                "{\"title\": " + quote(fix.title) + ", \"replacement\": " + quote(fix.replacement) + ", \"certainty\": \"" + tag + "\"" + place(s, span: fix.span) + first + "}"
             )
+            flat @ flat + 1
 
         rows @ rows.push("      \"fixes\": [" + fixes.join(", ") + "]\n")
 
@@ -51,15 +90,94 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
     rows @ rows.push("  ]\n}\n")
     return rows.join("")
 
+# What every document opens with: its schema, its kind, and the files the
+# check read, each with the SHA-256 of its bytes. A file holding a byte that
+# is not UTF-8 is held as the compiler shows it, so it is named with a null
+# digest: no fix is placed in a file that was never lexed (`lexer.lex_files`).
+function head(kind: str, s: source.Source) -> str
+    read: [str] @ []
+    index: i64 @ 0
+
+    for entry in s.files
+        if !entry.is_library
+            digest: str @ "null"
+
+            if !faulted(s, index: index)
+                digest @ "\"" + sha256.of(source_extent.text_of(s, index)) + "\""
+            read @ read.push("    {\"file\": " + quote(entry.name) + ", \"sha256\": " + digest + "}")
+        index @ index + 1
+
+    return "{\n  \"schema\": " + SCHEMA.to_str() + ",\n  \"kind\": \"" + kind + "\",\n  \"read\": [\n" + read.join(",\n") + "\n  ],\n"
+
+# Whether the file at `index` holds a byte that is not UTF-8.
+function faulted(s: source.Source, index: i64) -> bool
+    start = s.files[index].start
+    end: i64 @ s.text.len()
+
+    if index + 1 < s.files.len()
+        end @ s.files[index + 1].start
+
+    for one in s.faults
+        if one.at >= start && one.at < end
+            return true
+
+    return false
+
+# Where a fix applies, as R1 gives it, or nothing for a span that is not one,
+# ends past the text, or crosses from one file into another: `--apply` writes
+# no such fix (`cli/certain`), and a place would name bytes nobody holds.
+function place(s: source.Source, span: token.Span) -> str
+    if span.start < 0 || span.end < span.start || span.end > s.text.len()
+        return ""
+
+    if source.file_of(s, span.start) != source.file_of(s, span.end)
+        return ""
+    from = source.locate(s, span.start)
+    to = source.locate(s, span.end)
+    base = source.file_at(s, span.start).start
+    return ", \"file\": " + quote(from.file) + ", \"line\": " + from.line.to_str() + ", \"col\": " + from.col.to_str() + ", \"end_line\": " + to.line.to_str() + ", \"end_col\": " + to.col.to_str() + ", \"byte_start\": " + (span.start - base).to_str() + ", \"byte_end\": " + (span.end - base).to_str() + ", \"text\": " + quote(source.span_text(s, span))
+
 # A JSON string, quoted, through the one escape every JSON writer here shares
 # (defect 102: this one escaped three characters of the thirty-four JSON
-# forbids raw, and a stray control byte in a message made schema 1 unreadable).
+# forbids raw, and a stray control byte in a message made the answer
+# unreadable).
 function quote(text: str) -> str
     return "\"" + json_text.json_string(text) + "\""
 
 ## Tests
 
-# Schema 1 goes through the one escape (defect 102): the tab and the carriage
-# return this writer used to pass raw.
+# The answer goes through the one escape (defect 102): the tab and the
+# carriage return this writer used to pass raw.
 test "a JSON string here escapes what JSON forbids raw"
     assert quote("a\tb\rc\n\"d\\e") == "\"a\\tb\\rc\\n\\\"d\\\\e\""
+
+# A fix's place is its own file's (panel 193's R1): a span in the second file
+# of one text names that file, its own line, a column in characters past two
+# `é` of two bytes each, and byte offsets less the file's start; one that is
+# not a span gets no place.
+test "a fix's place is per file, its column in characters and its offsets in bytes"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "use geom\n")
+        source.user_file(name: "geom.hero", text: "a = \"éé\", b\n")
+    ]
+    s = source.from_files(inputs)
+    at = s.files[1].start + 10
+    got = place(s, span: token.Span(start: at, end: at + 1))
+    assert got == ", \"file\": \"geom.hero\", \"line\": 1, \"col\": 9, \"end_line\": 1, \"end_col\": 10, \"byte_start\": 10, \"byte_end\": 11, \"text\": \",\""
+    assert place(s, span: token.Span(start: 3, end: 1)) == ""
+
+    # An insertion at the end of a file, its end its start, and a span at a
+    # CRLF line's end, its column the carriage return's (defect 373).
+    crlf = source.new_source(name: "c.hero", text: "x = 1,\r\ny")
+    assert place(crlf, span: token.Span(start: 9, end: 9)) == ", \"file\": \"c.hero\", \"line\": 2, \"col\": 2, \"end_line\": 2, \"end_col\": 2, \"byte_start\": 9, \"byte_end\": 9, \"text\": \"\""
+    assert place(crlf, span: token.Span(start: 5, end: 6)) == ", \"file\": \"c.hero\", \"line\": 1, \"col\": 6, \"end_line\": 1, \"end_col\": 7, \"byte_start\": 5, \"byte_end\": 6, \"text\": \",\""
+    assert place(crlf, span: token.Span(start: 7, end: 7)) == ", \"file\": \"c.hero\", \"line\": 1, \"col\": 7, \"end_line\": 1, \"end_col\": 7, \"byte_start\": 7, \"byte_end\": 7, \"text\": \"\""
+
+# Panel 193's R3 and R5: every answer opens with its schema and its kind, a
+# clean one is a document, and the files read are named with their SHA-256,
+# the library never.
+test "every answer says its schema and kind, names what it read, and a clean one is a document"
+    s = source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
+    none: [diag.Diagnostic] = []
+    clean = json(none, s)
+    assert clean == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"diagnostics\": []\n}\n"
