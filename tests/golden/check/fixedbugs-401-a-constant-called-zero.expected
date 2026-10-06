@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-401-a-constant-called-zero.hero:27:28: error[rest_outside_a_group]: `.ring` builds a case of a Heroes `variant`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's
+tests/golden/check/fixedbugs-401-a-constant-called-zero.hero:28:20: error[rest_not_a_construction]: `rest: zero` ends a construction of a group's `record`, every field it does not name zero, and this call builds none: the words are never an argument

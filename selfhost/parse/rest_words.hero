@@ -2,9 +2,11 @@
 # (panel 194; spec § 13): every field it does not name is zero. Written where
 # a labelled argument is, they are none: the parser takes them off the list
 # into `Ast.rests`, so no later pass reads `zero` as a name. Which call may
-# end with them is `check/rest_zero.hero`'s question; where they stand, this
-# file's. Called by `grammar_expr`'s call suffix and `after_dot`. A variant
-# case keeps them as an argument: `.c(rest: zero)` names a field `rest`.
+# end with them is the name stage's question (`resolve/rest_zero.hero`, defect
+# 401); where they stand, this file's. Called by `grammar_expr`'s call suffix
+# and `after_dot`. A variant case keeps its list whole, and the name stage
+# sets the words apart there and refuses them: `.c(rest: zero)` is the words
+# wherever it is written, never a field `rest` given a value called `zero`.
 
 use token
 use ast
