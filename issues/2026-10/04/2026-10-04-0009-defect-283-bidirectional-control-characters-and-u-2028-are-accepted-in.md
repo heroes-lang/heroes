@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-04
-commit: 36c6944730cd51e5838080878cfc9f596b321217
+commit: 4efb0a8e2e703662aa91b23a68f3a819e318c55e
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: systemic**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a program whose text shows one order and compiles another, a truth `blocking` names, whose remedy (a refusal in comments, in strings, or a word the reader sees) is a ruling no rule reaches: a sitting's, since spec § 1 admits every character there.
 
     Repaired at `36c69447`, 2026-10-05, on panel 192's R2 and R3 (the refusal of `462b4a2d` widened, the escape of `aa150c8c` its fix's spelling), gated by its cases and the compiler's own tests; the net is owed at the batch's close.
+
+    Repaired at `4efb0a8e` too, 2026-10-05: the refusal's cost on the compiler's own check within panel 192's R11, +1.43% instructions retired against the base, measured.
