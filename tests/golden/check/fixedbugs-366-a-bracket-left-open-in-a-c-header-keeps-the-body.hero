@@ -1,0 +1,69 @@
+# Fixed defect 366, 2026-10-06 (lane b12-parse12, found beside defect 302).
+# Symptom: `for (i = 0; i < f(3; i++` over its body cost four messages,
+# `unexpected_character` at the `;` inside the call, the call's `(` still
+# open at the next declaration, `for_missing_in`, and `missing_body` for
+# the body the open call took in; five on the base. Cause: a `;` was C's
+# header's only where the header's `(` was the innermost bracket
+# (`closers.in_a_for_header`), and so was the reach the header's `(` ends
+# at the line below (`bracket_reach.a_header_open`, defect 302): a call or a
+# list left open in the header made its `;` a stray and its body a line of
+# the call. Repair: a bracket open in the header stands in it, its `;` the
+# header's, told by the header's one report (`closers.for_header`), and the
+# reach of every bracket the header holds ends at the line below it that
+# holds no clause, each named still open where the header it stands in is
+# over, the body read as the body (`parse/loop_habit.c_header` reading the
+# `;` in it). The shapes: a call left open, the header's `)` written and the
+# call's not, a list, the first clause's call, two calls deep, a brace past
+# the header, no body; and the call closed, as before.
+
+function f(n: i64) -> i64
+    return n
+
+function a_call_left_open()
+    #~v unclosed_bracket
+    for (i = 0; i < f(3; i++  #~ for_missing_in
+        print(i)
+
+function the_headers_paren_written()
+    for (i = 0; i < f(3; i++)  #~ for_missing_in
+        print(i)
+
+function a_list()
+    #~v unclosed_bracket
+    for (i = 0; i < [3; i++  #~ for_missing_in
+        print(i)
+
+function the_first_clause()
+    #~v unclosed_bracket
+    for (i = f(0; i < 3; i++  #~ for_missing_in
+        print(i)
+
+function two_calls_deep()
+    #~v unclosed_bracket unclosed_bracket
+    for (i = 0; i < f(f(3; i++  #~ for_missing_in
+        print(i)
+
+function a_brace()
+    #~v unclosed_bracket
+    for (i = 0; i < f(3; i++ {  #~ for_missing_in missing_body
+        print(i)
+    }
+
+function no_body()
+    #~v unclosed_bracket
+    for (i = 0; i < f(3; i++  #~ for_missing_in
+    print(1)  #~ missing_body
+
+function the_call_closed()
+    for (i = 0; i < f(3); i++  #~ for_missing_in
+        print(i)
+
+function main()
+    a_call_left_open()
+    the_headers_paren_written()
+    a_list()
+    the_first_clause()
+    two_calls_deep()
+    a_brace()
+    no_body()
+    the_call_closed()

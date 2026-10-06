@@ -89,24 +89,19 @@ function ended_by_a_brace(@l: state.LexState, text: str, at: i64) -> bool
     state.push_offset(@l.closes, at: at)
     return true
 
-# Whether the innermost opener is the `(` of C's `for` header
-# (`closers.in_a_for_header`) holding, in no bracket of its own, a `;` the
-# lexer left to the parser.
+# Whether a bracket open is the `(` of C's `for` header (`closers.for_header`)
+# holding a `;` the lexer left to the parser, in it or in a bracket it holds,
+# a call or a list left open there (defect 366).
 function a_header_open(l: state.LexState, text: str) -> bool
-    if !closers.in_a_for_header(l)
+    k = closers.for_header(l, text)
+
+    if k < 0
         return false
-    open = l.open_brackets[l.open_brackets.len() - 1].start
+    open = l.open_brackets[k].start
     i: i64 @ l.tokens.len() - 1
-    depth: i64 @ 0
 
     while i >= 0 && l.tokens[i].span.start > open
-        k = l.tokens[i].kind
-
-        if token.is_closer(k)
-            depth @ depth + 1
-        else if k == .lparen || k == .lbracket || k == .lbrace
-            depth @ depth - 1
-        else if depth == 0 && k == .error && text.slice(from: l.tokens[i].span.start, to: l.tokens[i].span.end) == ";"
+        if l.tokens[i].kind == .error && text.slice(from: l.tokens[i].span.start, to: l.tokens[i].span.end) == ";"
             return true
         i @ i - 1
 
