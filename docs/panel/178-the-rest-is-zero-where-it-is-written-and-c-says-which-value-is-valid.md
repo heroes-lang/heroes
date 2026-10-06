@@ -269,6 +269,18 @@ instrument. They are the record of how a number was taken, as
 
 ## Author's verdict
 
+**SUPERSEDED 2026-10-06.** This sitting stood only on its branch,
+`lane-panel-178`, from 2026-09-25 until the branch was merged on 2026-10-06,
+and its ratification was in no list of the trunk. The author's instruction of
+2026-10-06, meant as: *I agree with your proposal, but there have been a
+thousand changes since that sitting, so the panel should perhaps be
+regenerated, or at least updated, and then you can bring it in, so we lose
+nothing.* So it is sat again on the trunk of that day as panel 194, and its
+`panel 178` item is closed as superseded
+(`issues/2026-09/25/2026-09-25-1106-panel-178-ratify-the-rest-is-zero-where-it-is-written.md`).
+What this sitting measured stays its record, and so does what this section
+read until 2026-10-06:
+
 *Pending: `docs/work/DECIDE.md` carries this sitting as `panel 178`. Work
 proceeds on the provisional resolution: defects 091 to 094 are filed, and the
 landing is M-buildable-structs' when its row opens.*
