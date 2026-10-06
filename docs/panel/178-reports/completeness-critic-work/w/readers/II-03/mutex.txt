@@ -1,0 +1,1 @@
+no. The program writes the starting value out as explicit zeros and does not mark the record `zero`, because all zeros is not a valid mutex. It always calls pthread_mutex_init on that value before lock or unlock.

@@ -1,0 +1,21 @@
+# Panel 178, compiler-engineer: route L with a UTF-8 path, the byte folded into i8 by arithmetic.
+extern "sys/un.h"
+    record SockaddrUn tag sockaddr_un partial
+        sun_family: u8
+        sun_path: i8[104]
+
+function main()
+    a: SockaddrUn @ SockaddrUn(sun_family: 1, rest: zero)
+    path = "/tmp/hèroes-178.sock"
+    i: i64 @ 0
+
+    while i < path.len()
+        b = path[i].to_i64().must()
+
+        if b > 127
+            a.sun_path[i] @ (b - 256).to_i8().must()
+        else
+            a.sun_path[i] @ b.to_i8().must()
+        i @ i + 1
+
+    print(a.sun_path.validated_bytes().must())

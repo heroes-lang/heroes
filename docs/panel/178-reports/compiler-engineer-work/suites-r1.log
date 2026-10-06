@@ -1,0 +1,36 @@
+=== check
+  check: 135 passed, 0 failed
+harness: 135 passed, 0 failed
+real 2.08
+user 1.16
+sys 0.18
+=== ir
+  ir: 24 passed, 0 failed
+harness: 24 passed, 0 failed
+real 1.75
+user 0.87
+sys 0.20
+=== emit
+  emit: 8 passed, 0 failed
+harness: 8 passed, 0 failed
+real 2.15
+user 1.62
+sys 0.28
+=== unsupported
+  unsupported: 15 passed, 0 failed
+harness: 15 passed, 0 failed
+real 2.05
+user 1.25
+sys 0.31
+=== run
+  run: 146 passed, 0 failed
+harness: 146 passed, 0 failed
+real 322.17
+user 113.72
+sys 28.13
+=== corpus
+  corpus: 55 passed, 0 failed
+harness: 55 passed, 0 failed
+real 286.84
+user 145.13
+sys 21.90

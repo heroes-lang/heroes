@@ -1,0 +1,1 @@
+no. The cell has to start with some value, so it starts as an all-zero literal. pthread_mutex_init runs on it before any lock. I did not mark the record `zero`, because an all-zero pthread_mutex_t is not a valid mutex on every platform.

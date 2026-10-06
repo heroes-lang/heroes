@@ -1,0 +1,3 @@
+function main()
+    xs: [i64] = [0; 4]
+    print(xs.len())

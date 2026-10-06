@@ -1,0 +1,12 @@
+# Panel 178 ffi-pragmatist, route S: Darwin `statfs`, where the 1024-byte arrays are what the program reads.
+extern "sys/mount.h"
+    record Statfs tag statfs partial
+        f_fstypename: i8[16]
+        f_mntonname: i8[1024]
+    function statfs(path: cstr lent, @s: Statfs) -> i32
+
+function main()
+    s: Statfs @ Statfs.zero()
+    print(statfs(path: "/".cstr(), @s))
+    print(s.f_fstypename.validated_bytes().must())
+    print(s.f_mntonname.validated_bytes().must())

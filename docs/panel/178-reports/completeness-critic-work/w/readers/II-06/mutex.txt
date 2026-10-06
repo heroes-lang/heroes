@@ -1,0 +1,1 @@
+no. The language makes every binding start with a value, so the program writes out zero bytes as the starting storage (by hand, with no `zero` claim, because all zeros is not a valid mutex everywhere). pthread_mutex_init runs on that storage before any lock or unlock.

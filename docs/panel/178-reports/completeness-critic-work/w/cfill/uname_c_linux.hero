@@ -1,0 +1,18 @@
+# Critic, panel 178: route C for `utsname`, every field declared (so `==` stays).
+extern "zshim.h"
+    record Utsname tag utsname
+        sysname: i8[65]
+        nodename: i8[65]
+        release: i8[65]
+        version: i8[65]
+        machine: i8[65]
+        __domainname: i8[65]
+    function hero_utsname_zero() -> Utsname
+    function uname(@name: Utsname) -> i32
+
+function main()
+    u: Utsname @ hero_utsname_zero()
+    blank = u
+    _ = uname(@u).to_i64().must()
+    print(u.sysname.validated_bytes().must())
+    print(u == blank)

@@ -1,0 +1,25 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+x86_64
+
+real	0m38.345s
+user	0m38.077s
+sys	0m0.224s
+wrote heroes-r1
+
+real	3m5.727s
+user	2m59.693s
+sys	0m5.775s
+elem_min.hero  seed run=134 [] panic: entered unreachable code — this is a compiler bug, please report it  ||  prototype run=0 [72|] 
+sunpath_linux_ascii.hero  seed run=134 [] panic: entered unreachable code — this is a compiler bug, please report it  ||  prototype run=0 [/tmp/heroes-178.sock|] 
+uname_r1_linux.hero  seed run=1 [] error[unknown_name]: nothing named `zero` is in scope  ||  prototype run=0 [Linux|] 
+sunpath_r1_linux.hero  seed run=1 [] error[unknown_name]: nothing named `zero` is in scope  ||  prototype run=0 [1 /tmp/heroes-178.sock|] 
+kinds.hero  seed run=1 [] error[unknown_name]: nothing named `zero` is in scope  ||  prototype run=0 [00.0falsetruetrue000.0true9|1 5 0|] 
+shapes091.hero  seed run=134 [] panic: entered unreachable code — this is a compiler bug, please report it  ||  prototype run=0 [666895700|] 
+    t2 = (struct utsname){.sysname = {0}};
+    t3 = (struct sockaddr_un){.sun_family = t1, .sun_path = {0}};
+refusal own check=1
+refusal fn check=1
+refusal case check=1
+refusal order check=1
+refusal notlast check=1
+refusal restfield check=1

@@ -1,0 +1,1 @@
+no. The program fills the cell with zeros only because every binding must start with a value, and it calls pthread_mutex_init on it before any lock or unlock.
