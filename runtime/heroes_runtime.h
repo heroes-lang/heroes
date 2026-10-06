@@ -55,7 +55,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 27
+#define HERO_RUNTIME_ABI 28
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -482,6 +482,57 @@ HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap);
 void hero_array_incref(HeroArrayHeader *a);
 void hero_array_decref(HeroArrayHeader *a); /* no-op on NULL */
 int64_t hero_array_len(const HeroArrayHeader *a);
+
+/* A CONSTANT'S ARRAY IS A STATIC BLOCK, laid out by clang the way
+ * `HERO_STR_STATIC` lays out a literal, and its count is -1 (panel 195, defect
+ * 382): a read of a constant is the block's address and builds nothing.
+ * `hero_array_incref` and `hero_array_decref` return on that count before they
+ * write, and every write to an array copies a block whose count is not 1 first
+ * (`parts/cow.c`), so nothing writes it: it is `const`, and a write that got
+ * past them would fault rather than change what a constant holds. The elements
+ * follow the header because that is where `hero_array_at` reads them, and the
+ * assert says so. Declared HERE, under the ABI stamp, for `hero_thread_guard`'s
+ * reason: emitted C that hands the runtime such a block needs a runtime that
+ * skips it, and a header without these is a compile error, not a fault at the
+ * first release. An empty constant takes the header alone, since C11 has no
+ * array of no elements. */
+#define HERO_ARRAY_STATIC(name, type, elem, n, ...)                          \
+    static const struct {                                                    \
+        HeroArrayHeader h;                                                   \
+        type b[n];                                                           \
+    } name = {{-1, n, n, elem}, {__VA_ARGS__}};                              \
+    _Static_assert(offsetof(__typeof__(name), b) == sizeof(HeroArrayHeader), \
+                   "a constant's elements must follow its header")
+#define HERO_ARRAY_STATIC_EMPTY(name, elem) \
+    static const struct {                   \
+        HeroArrayHeader h;                  \
+    } name = {{-1, 0, 0, elem}}
+#define HERO_ARRAY_LIT(name) ((HeroArrayHeader *)&(name).h)
+
+/* WHETHER A CONSTANT IS ITS STATIC BLOCK, or is built at every read (panel
+ * 195's R2): 1, and 0 under AddressSanitizer, which is what `--sanitize` turns
+ * on. The emitter writes both routes of such a constant, the block under
+ * `#if HERO_STATIC_CONSTANTS` and the function that builds it under its
+ * `#else`, so the C is the same whatever the build and the choice is the
+ * compiler's own. What the switch buys is the block's one cost: no count moves
+ * on it, so a release too many of a constant's value is silent on it, and so
+ * is one missing; on a block built at the read ASan names the first,
+ * `heap-use-after-free`, and `hero_runtime_check_leaks` the second, so in the
+ * build that hunts memory errors nothing the block makes silent stays silent,
+ * and a plain build pays nothing. Asked of the compiler as `parts/stack.c` asks
+ * it, clang's spelling and GCC's, and fixed HERE as a value, before any header
+ * a program's group names is read. */
+#if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define HERO_STATIC_CONSTANTS 0
+#  endif
+#endif
+#if defined(__SANITIZE_ADDRESS__) && !defined(HERO_STATIC_CONSTANTS)
+#  define HERO_STATIC_CONSTANTS 0
+#endif
+#if !defined(HERO_STATIC_CONSTANTS)
+#  define HERO_STATIC_CONSTANTS 1
+#endif
 
 /* Read one element. Aborts out of range (spec § 10 Strings, arrays, maps) — never reads
  * arbitrary memory, which is the guarantee §4.9 states. */

@@ -53,6 +53,7 @@ use ir/layout
 use emit/mangle
 use emit/ctype
 use emit/signature
+use emit/static_constant
 use emit/callback_guard
 use emit/callback_thunk
 use emit/field_lend
@@ -77,7 +78,20 @@ function is_extern_constant(decls: [ast.Decl], f: containers.Function) -> bool
 
     return false
 
+# A constant of literals is written twice, its static block and the function
+# that builds it, and the runtime's switch picks one (panel 195,
+# `emit/static_constant.hero`); every other function once.
 function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
+    laid = static_constant.laid_for(p, c, names, s, decls, f: f)
+
+    if !laid.is_err()
+        static_constant.open(@w, c, names, s, decls, f: f, laid: laid.must())
+    built(@w, p, c, names, s, decls, f: f, guarded_decls: guarded_decls)
+
+    if !laid.is_err()
+        static_constant.close(@w)
+
+function built(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
     writer.blank(@w)
 
     # The signature is pointed at the author's declaration: a clang

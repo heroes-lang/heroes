@@ -1,0 +1,32 @@
+# Defect 382, 2026-10-06. A constant of function values is built at every
+# read, as before panel 195: its body holds a `funcref` for each function,
+# and that is what gives a function handed to C its thread guard
+# (`emit/callback_guard.hero`), which a C address in a static initializer
+# would drop (R1 lays out literals alone). `twice` and `thrice` are handed
+# to `hero_thread_spawn` through `worker`, so both keep the guard; a spawned
+# thread and `main` read the constant and call through it.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant STEPS: [(function(i64) -> i64)]
+    [twice, thrice]
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function thrice(n: i64) -> i64
+    return n * 3
+
+function worker(n: i64) -> i64
+    total: i64 @ 0
+
+    for f in STEPS
+        total @ total + f(n)
+
+    return total
+
+function main()
+    spawned = hero_thread_spawn(body: worker, arg: 5)
+    print(worker(7), " ", hero_thread_join(handle: spawned), " ", STEPS[1](4), " ", STEPS.len())

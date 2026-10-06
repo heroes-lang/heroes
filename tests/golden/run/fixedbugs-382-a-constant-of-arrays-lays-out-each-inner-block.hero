@@ -1,0 +1,29 @@
+# Defect 382, 2026-10-06. A constant of arrays is laid out inner block
+# first: each inner literal is a static block of its own and the outer one
+# holds their addresses (panel 195's R1), three levels deep below, an empty
+# inner array among them; under `--sanitize` it is built at every read (R2).
+# A write two levels down unshares each level of the copy and leaves every
+# level of the constant as it was.
+
+constant GRID: [[i64]]
+    [[1, 2], [], [3, 4, 5]]
+
+constant DEEP: [[[i64]]]
+    [[[1], []], [], [[2, 3], [4]]]
+
+function main()
+    cells: i64 @ 0
+    at: i64 @ 0
+
+    while at < 300
+        cells @ cells + GRID[at % 3].len() + DEEP[at % 3].len()
+        at @ at + 1
+
+    print(cells, " ", GRID[2][2], " ", GRID[1].len(), " ", DEEP[2][0][1], " ", DEEP[0][1].len())
+    ys: [[i64]] @ GRID
+    ys[2][0] @ 7
+    ys[1] @ ys[1].push(8)
+    print(ys[2][0], " ", ys[1][0], " ", GRID[2][0], " ", GRID[1].len())
+    zs: [[[i64]]] @ DEEP
+    zs[2][1][0] @ 40
+    print(zs[2][1][0], " ", DEEP[2][1][0], " ", GRID == [[1, 2], [], [3, 4, 5]], " ", GRID[0] == DEEP[0][0])

@@ -7,7 +7,7 @@
 #include <dead-handle-read-by-c-at-the-last-word-of-the-dead-region.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 27, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 28, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 

@@ -1,0 +1,24 @@
+# Defect 382, 2026-10-06. A constant with an `f"..."` element writes that
+# element with calls, so the constant is built at every read, as before
+# panel 195 (R1 lays out literals alone); its plain literal elements are
+# still the literals' static strings. Read in a loop, and written through a
+# copy.
+
+constant BASE: i64
+    40
+
+constant SHOUTS: [str]
+    [f"a{BASE}b", "plain", f"{BASE + 2}"]
+
+function main()
+    letters: i64 @ 0
+    at: i64 @ 0
+
+    while at < 300
+        letters @ letters + SHOUTS[at % 3].len()
+        at @ at + 1
+
+    print(letters, " ", SHOUTS.join(","))
+    copy: [str] @ SHOUTS
+    copy[0] @ "bowie"
+    print(copy[0], " ", SHOUTS[0])
