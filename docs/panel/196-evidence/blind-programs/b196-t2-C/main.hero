@@ -1,0 +1,7 @@
+extern "math.h"
+    function frexp(x: f64, @exponent: i32) -> f64
+
+function main()
+    e: i32 @ 0
+    _ = frexp(8.0, @e)
+    print(e)
