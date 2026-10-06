@@ -1,0 +1,9 @@
+# A named function with an `@` parameter, taken as a value and discarded.
+function bump(@n: i64)
+    n @ n + 1
+
+function main()
+    f = bump
+    x: i64 @ 1
+    f(@x)
+    print(x)

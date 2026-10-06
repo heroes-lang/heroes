@@ -1,0 +1,12 @@
+# Today's field lend (panel 166): `counted_by` is checked in bytes, and C
+# counts in the pointee's own unit, here `int`.
+extern "wide.h"
+    record Held tag held
+        buf: u8[16]
+        after: i64
+    function fill_ints(a: ptr counted_by n lent, n: u64)
+
+function main()
+    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    fill_ints(a: h.buf.ptr(), n: 16)
+    print(h.after)
