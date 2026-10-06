@@ -17,21 +17,32 @@
 # that rule to one call site and three other positions SHIPPED: two
 # aborted a built binary at 134 under a `#line` pointing at the author's
 # own source, and one died at exit 2.
+#
+# ONE MESSAGE PER FIXED ARRAY WRITTEN, AND THE CONSTRUCTION IT FEEDS. A
+# nested one is told at its outermost alone (defect 405), and where the
+# program builds the value into a group record's field, the message names
+# that construction, which only a pass over the whole file can find: the
+# type is declared in one place and built from in another (defect 408).
+# What the message says is `check/fixed_repairs.hero`'s.
 
 use ast
+use diag
 use source
 use parse
 use resolve
+use resolved
 use check/table
 use check/state
 use check/lower
+use check/ffi
+use check/fixed_repairs
 use ffi_errors
 
 # It asks the value, not the world: the legal set is built by reading the
 # declarations in hand, so a position added later is refused by default.
 # And it walks `written_types`, never the syntax — panel 061's `map_keys`
 # walked `TypeKind` nodes and missed every type a literal interned.
-function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     owned: {i64: bool} @ {}
 
     for decl in decls
@@ -42,22 +53,37 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, s: source.Source, 
                         claim(a, field.ty, @owned)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    # ORDER: ascending type-node id — span.start ties on nested fixed
-    # arrays, so a span sort cannot replace this key: it decides which
-    # diagnostic prints first. The Rust BTreeMap gave the order free; the
-    # port pays with one sort over the map's keys (§4.9).
+    # A fixed array written inside another is told with it, once, at the
+    # outermost (defect 405, 2026-10-06): `i64[2][3]` is one mistake and one
+    # edit, and its `[T]` is the whole type's. The inner `i64[2]` was told
+    # too until then, at the same column, a message per level.
+    inside: {i64: bool} @ {}
+
+    for node in range(from: 0, to: a.types.len())
+        written = c.out.written_types[node]
+
+        if written.is_err() || !is_fixed(c, written.must())
+            continue
+
+        match a.types[node].kind
+            .fixed x                                                                   => claim(a, x.element, @inside)
+            .named | .unit | .array_of | .map_of | .fallible | .function_type | .error => continue
+
+    built: {i64: ffi_errors.BuiltInto} @ {}
+    scanned: bool @ false
+
+    # ORDER: ascending type-node id. It decided which of a nested pair
+    # printed first, the two sharing span.start, until defect 405 told the
+    # pair once; it stays the order the diagnostics are pushed in, which the
+    # stable position sort keeps for any two starting on one byte. The Rust
+    # BTreeMap gave the order free; the port pays with one sort over the
+    # map's keys (§4.9).
     for node in sort(keys(c.out.written_types))
-        if !owned[node].is_err()
+        if !owned[node].is_err() || !inside[node].is_err()
             continue
         ty = c.out.written_types[node].must()
 
-        is_fixed = match table.get(c.out.types, ty)
-            .fixed                                                    => true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-            .array | .map | .fallible | .function_ty | .named         => false
-            .case_ty | .failure | .generic | .error                   => false
-
-        if !is_fixed
+        if !is_fixed(c, ty)
             continue
 
         # An ordinary record's field is already refused on the same rule,
@@ -72,8 +98,149 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, s: source.Source, 
 
         if already
             continue
-        shown = state.show(c, s, decls, ty)
-        state.push_diagnostic(@c, ffi_errors.fixed_outside_a_group(shown, span))
+
+        # Where the program builds the value into a group record's field
+        # (defect 408): asked once, and only of a file that has one to tell.
+        if !scanned
+            built @ built_into(c, a, r, s, decls)
+            scanned @ true
+        fixed_repairs.told(@c, s, decls, ty: ty, span: span, into: built[node])
+
+function is_fixed(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .fixed                                                    => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .map | .fallible | .function_ty | .named         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# Every construction of a group's `record` whose labelled argument is a
+# value the program declared a type for, by the node that declared it: a
+# binding's or a parameter's annotation, a constant's type, or a function's
+# result at a call of it (defect 408). The first construction in the arena's
+# order wins, with every field it fills from that one value. A field counts
+# only where it is a fixed array a group's field may be, the one place
+# writing the elements there instead is the repair.
+function built_into(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: ffi_errors.BuiltInto}
+    found: {i64: ffi_errors.BuiltInto} @ {}
+    at: i64 @ -1
+
+    for node in a.exprs
+        at @ at + 1
+        callee: resolved.Ref @ .unresolved
+        given: [ast.Arg] @ []
+
+        match node.kind
+            .call cl =>
+                callee @ r.uses[cl.callee]
+                given @ cl.args
+            .method m =>
+                # `geom.Tag(name: x)`: the resolver filed what a qualified
+                # name means at the method node itself (`check/rest_zero.hero`).
+                if r.uses[m.receiver] == .module
+                    callee @ r.uses[at]
+                    given @ m.args
+            .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit  => continue
+            .null_ptr | .name | .hole | .unary | .binary | .field | .field_name => continue
+            .index | .variant_case | .array | .map | .try_expr | .if_expr       => continue
+            .match_expr | .error                                                => continue
+
+        into_fields(@found, c, a, r, s, decls, callee: callee, given: given, start: node.span.start)
+
+    return found
+
+function into_fields(@found: {i64: ffi_errors.BuiltInto}, c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: resolved.Ref, given: [ast.Arg], start: i64)
+    holder: i64 @ -1
+
+    match callee
+        .top t                                    => holder @ t.at
+        .unresolved | .local | .builtin | .module => return
+
+    fields: [ast.Field] @ []
+
+    match decls[holder].kind
+        .record_decl rec =>
+            if rec.header.is_err()
+                return
+            fields @ rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return
+
+    rests: bool @ true
+
+    for f in fields
+        if source.span_text(s, f.name) == "rest"
+            rests @ false
+
+    # The values this construction is the first to build, so a second field
+    # it fills from one of them joins that entry rather than being skipped.
+    mine: {i64: bool} @ {}
+
+    for arg in given
+        from = declared_at(a, r, decls, arg.value)
+
+        if arg.name.is_err() || from < 0
+            continue
+        prior = found[from]
+
+        if !prior.is_err() && mine[from].is_err()
+            continue
+        label = source.span_text(s, arg.name.must())
+
+        for f in fields
+            ty = state.written_type(c.out, f.ty)
+
+            if source.span_text(s, f.name) != label || ty.is_err() || !held_in_a_group(c, decls, ty.must())
+                continue
+
+            if prior.is_err()
+                found[from] @ ffi_errors.BuiltInto(
+                    holder: source.span_text(s, decls[holder].name),
+                    fields: [label],
+                    field_type: state.show(c, s, decls, ty.must()),
+                    at: source.elsewhere(s, here: a.types[from].span.start, there: start),
+                    rests: rests
+                )
+                mine[from] @ true
+            else
+                one: ffi_errors.BuiltInto @ prior.must()
+                one.fields @ one.fields.push(label)
+                found[from] @ one
+
+function held_in_a_group(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .fixed x                                                  => ffi.fixed_element_fine(c, decls, x.element)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .map | .fallible | .function_ty | .named         => false
+        .case_ty | .failure | .generic | .error                   => false
+
+# The type node that declared what `e` holds, where `e` says it plainly: a
+# local's annotation, a constant's type, the result of the function a call
+# names; or -1.
+function declared_at(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], e: i64) -> i64
+    callee: i64 @ e
+
+    match a.exprs[e].kind
+        .name =>
+            match r.uses[e]
+                .local l => return r.locals[l.at].ty.default(-1)
+                .top t =>
+                    match decls[t.at].kind
+                        .constant_decl k                                           => return k.ty
+                        .function_decl | .record_decl | .variant_decl | .test_decl => return -1
+                .unresolved | .builtin | .module => return -1
+        .call cl                                                             => callee @ cl.callee
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit   => return -1
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index => return -1
+        .method | .variant_case | .array | .map | .try_expr | .if_expr       => return -1
+        .match_expr | .error                                                 => return -1
+
+    match r.uses[callee]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl f                                           => return f.value.result
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return -1
+        .unresolved | .local | .builtin | .module => return -1
+
+    return -1
 
 # A group record's field type AND EVERYTHING WRITTEN INSIDE IT — the
 # whole node, not just its root: claiming only the outer one left the
@@ -106,16 +273,38 @@ function claim(a: ast.Ast, id: i64, @owned: {i64: bool})
 # discarded with `_ =` and which asserted nothing — they satisfied the
 # unused-binding rule and said nothing to a reader.
 test "the file-wide sweep stays quiet on the one legal position"
-    text = "extern \"r.h\"\n    record Color\n        parts: u8[4]\n"
+    assert swept("extern \"r.h\"\n    record Color\n        parts: u8[4]\n").len() == 0
+
+# Defect 405: one message for a nested fixed array, the outermost's, at any
+# depth; two written apart are two.
+test "a nested fixed array outside a group is told once, at its outermost"
+    nested = swept("function f(g: i64[2][3], h: u8[2][3][4]) -> i64\n    return 0\n")
+    assert nested.len() == 2
+    assert nested[0].message == "`i64[2][3]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert nested[1].message == "`u8[2][3][4]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert nested[1].notes == ["where no C struct holds it, use `[[[u8]]]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"]
+
+# Defect 408: a binding built into a group record's field is told that
+# construction, by its record, field and line.
+test "a value built into a group record's field is told that construction"
+    told = swept(
+        "extern \"r.h\"\n    record Tag\n        name: i8[4]\n        id: i32\n\nfunction main()\n    zero: i8[4] = [0, 0, 0, 0]\n    t = Tag(name: zero, id: 7)\n    print(t.id)\n"
+    )
+    assert told.len() == 1
+    assert told[0].notes == ["`Tag`'s field `name` is built from it at line 8: write the elements there instead, `name: [a, b, …]`, as many as `i8[4]` says, or, where they are zero, leave `name` out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant or parameter holds a fixed array, and `[i8]` is not one"]
+
+# The sweep over `text`, its types lowered as the declaration pass leaves
+# them; the bodies are not typed, which the sweep does not read.
+function swept(text: str) -> [diag.Diagnostic]
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     i: i64 @ 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
 
-    fixed_only_in_a_group(@c, p.tree, s, p.decls)
-    assert c.out.diagnostics.len() == 0
+    fixed_only_in_a_group(@c, p.tree, out, s, p.decls)
+    return c.out.diagnostics

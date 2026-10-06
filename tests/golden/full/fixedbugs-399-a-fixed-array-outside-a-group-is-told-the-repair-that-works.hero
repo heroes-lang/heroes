@@ -16,6 +16,13 @@
 # `check/nested-fixed-array-tiebreak.hero` pins). The readers' program written as the first note says checks clean
 # and prints `Darwin` and `arm64` (`sys/utsname.h`, measured on this Mac;
 # this case's header is its own, since the Windows leg has no `utsname`).
+#
+# **Two sentences above moved the same day.** Since defect 405 a nested
+# array is told once, at its outermost, `corner`'s `i64[2][3]` with no
+# message for its `i64[2]` (`check/nested-fixed-array-tiebreak.hero` pins
+# the one). Since defect 408 `zero` and `ZEROS`, which this program builds
+# into `Name`'s field `bytes`, are told that construction and `rest: zero`
+# rather than the two readings, and the first reading names `rest: zero`.
 
 extern "fixedbugs-399-a-fixed-array-outside-a-group-is-told-the-repair-that-works.h"
     record Name
@@ -29,7 +36,7 @@ constant ZEROS: i8[4]  #~ fixed_outside_a_group
 record Kept
     counts: i32[4]  #~ fixed_outside_a_group
 
-function corner(grid: i64[2][3]) -> i64  #~ fixed_outside_a_group fixed_outside_a_group
+function corner(grid: i64[2][3]) -> i64  #~ fixed_outside_a_group
     return grid[0][0]
 
 function main()
