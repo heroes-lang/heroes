@@ -1,0 +1,308 @@
+diff -ru a/selfhost/check/lend_extent.hero b/selfhost/check/lend_extent.hero
+--- a/selfhost/check/lend_extent.hero
++++ b/selfhost/check/lend_extent.hero
+@@ -66,7 +66,7 @@
+         sibling_name = source.span_text(s, mark)
+         why: str @ ""
+ 
+-        if !is_ptr(c, param.ty)
++        if !is_ptr(c, param.ty) && !(param.mutable && is_named(c, param.ty))
+             why @ "`counted_by` says how far C reads or writes through a `ptr`, and `" + param_name + "` is not one"
+         sibling = sibling_named(f, s, owner: param.name, name: sibling_name)
+ 
+@@ -97,6 +97,19 @@
+     if written.is_err()
+         return false
+     return table.get(c.out.types, written.must()) == .ptr
++
++# PROTOTYPE 092 (lane ffi13, not landed): a whole record lent through `@`.
++function is_named(c: state.Checker, ty: i64) -> bool
++    written = state.written_type(c.out, ty)
++
++    if written.is_err()
++        return false
++
++    return match table.get(c.out.types, written.must())
++        .named                                                    => true
++        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
++        .array | .fixed | .map | .fallible | .function_ty         => false
++        .case_ty | .failure | .generic | .error                   => false
+ 
+ function is_cstr(c: state.Checker, ty: i64) -> bool
+     written = state.written_type(c.out, ty)
+diff -ru a/selfhost/check/lend_types.hero b/selfhost/check/lend_types.hero
+--- a/selfhost/check/lend_types.hero
++++ b/selfhost/check/lend_types.hero
+@@ -17,6 +17,7 @@
+ # may stand is not a type fact either and stays `check/lending.hero`'s.
+ 
+ use ast
++use handles
+ use token
+ use source
+ use check/state
+@@ -87,7 +88,7 @@
+     # across 16 headers have none. So a field reaching a `cstr` parameter stays
+     # refused, and the text route stays `validated_bytes`, which copies.
+     if name == "ptr" && given.len() == 1
+-        if fixed_byte_run(c, given[0])
++        if fixed_byte_run(c, given[0]) || group_record(c, decls, given[0])
+             return ok(table.intern(@c.out.types, .ptr))
+         return ok(
+             refused_operand(@c, s, decls, name: name, allowed: "a fixed run of bytes — `i8[N]` or `u8[N]`", got: given[0], span: span)
+@@ -131,6 +132,21 @@
+         .array | .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return false
+         .unit | .map | .fallible | .function_ty | .named           => return false
+         .case_ty | .failure | .generic | .error                    => return false
++
++# PROTOTYPE 092 route R7 (lane ffi13, not landed): a whole group record that is
++# not a handle lends its address through `ptr()`, held to `counted_by` as a
++# field is.
++function group_record(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
++    match table.get(c.out.types, ty)
++        .named n =>
++            match decls[n.decl].kind
++                .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
++                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
++        .array | .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .fixed => return false
++        .unit | .map | .fallible | .function_ty                             => return false
++        .case_ty | .failure | .generic | .error                             => return false
++
++    return false
+ 
+ function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
+     shown = state.show(c, s, decls, got)
+diff -ru a/selfhost/cli/header_types.hero b/selfhost/cli/header_types.hero
+--- a/selfhost/cli/header_types.hero
++++ b/selfhost/cli/header_types.hero
+@@ -80,6 +80,13 @@
+         # 8 for a real, 12 for a struct, measured on clang 21 and 22 — so a
+         # header that takes one pointer where the program hands the address
+         # of its cell fails here, at the author's line, and never reaches C.
++        # PROTOTYPE 092: a whole record's ask is the void guard alone.
++        if asked.declared == "record"
++            lines @ lines.push(
++                "_Static_assert(!__builtin_types_compatible_p(" + header_type + ", void), \"" + ffi_pointee.RECORD_VOID_MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
++            )
++            continue
++
+         if asked.depth
+             lines @ lines.push(
+                 "_Static_assert(!__builtin_types_compatible_p(" + header_type + ", void) && __builtin_classify_type(*(" + header_type + " *)0) == 5, \"" + ffi_pointee.DEPTH_MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
+diff -ru a/selfhost/cli/pointee_wants.hero b/selfhost/cli/pointee_wants.hero
+--- a/selfhost/cli/pointee_wants.hero
++++ b/selfhost/cli/pointee_wants.hero
+@@ -43,6 +43,14 @@
+                 out @ out.push(
+                     pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: declared.must(), file: found.file, line: found.line, depth: false)
+                 )
++
++            # PROTOTYPE 092 (lane ffi13, not landed): a whole record lent
++            # through `@` that names no extent asks whether C takes it as
++            # `void *`, where nothing but another argument tells C its size.
++            if whole_out(c, slot, decls) && !counted(decls, f: f, index: index)
++                out @ out.push(
++                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: "record", file: found.file, line: found.line, depth: false)
++                )
+             opaque = opaque_out(c, slot, decls)
+ 
+             if !opaque.is_err()
+@@ -52,6 +60,35 @@
+             index @ index + 1
+ 
+     return out
++
++# PROTOTYPE 092: an `@` parameter whose type is a group record and not a handle.
++function whole_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) -> bool
++    mutable: bool @ false
++
++    match slot.kind
++        .param_slot ps =>
++            if ps.mutable
++                mutable @ true
++        .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
++
++    if !mutable
++        return false
++
++    return match table.get(c.types, slot.ty)
++        .named n                                                  => !handles.is_handle(decls[n.decl])
++        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
++        .array | .fixed | .map | .fallible | .function_ty         => false
++        .case_ty | .failure | .generic | .error                   => false
++
++# PROTOTYPE 092: whether the extern's parameter at `index` declares `counted_by`.
++function counted(decls: [ast.Decl], f: containers.Function, index: i64) -> bool
++    match decls[f.decl].kind
++        .function_decl fd =>
++            if index < fd.value.params.len()
++                return !fd.value.params[index].counted_by.is_err()
++        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
++
++    return false
+ 
+ # The C spelling of a numeric `@` parameter's declared type, or absent for
+ # any other kind of slot.
+diff -ru a/selfhost/emit/ffi.hero b/selfhost/emit/ffi.hero
+--- a/selfhost/emit/ffi.hero
++++ b/selfhost/emit/ffi.hero
+@@ -114,6 +114,11 @@
+         if !void_p.is_err()
+             found @ ffi_lookup.add_once(found, d: void_p.must())
+ 
++        whole_v = ffi_pointee.record_void(s, decls, line: line)
++
++        if !whole_v.is_err()
++            found @ ffi_lookup.add_once(found, d: whole_v.must())
++
+         # An opaque `@` whose header takes one pointer (defect 083): its own
+         # marker line, read before the width reader like the void one.
+         depth = ffi_pointee.pointee_depth(s, decls, tree, line: line)
+diff -ru a/selfhost/emit/ffi_pointee.hero b/selfhost/emit/ffi_pointee.hero
+--- a/selfhost/emit/ffi_pointee.hero
++++ b/selfhost/emit/ffi_pointee.hero
+@@ -41,6 +41,10 @@
+ # The depth assertion's marker, for an opaque `@` — a `ptr` or a handle —
+ # whose header parameter must point at a POINTER (defect 083). Like the void
+ # marker, `MARKER` is not a prefix of it.
++# PROTOTYPE 092 (lane ffi13, not landed).
++constant RECORD_VOID_MARKER: str
++    "heroes-ffi-record-void "
++
+ constant DEPTH_MARKER: str
+     "heroes-ffi-pointee-depth "
+ 
+@@ -170,6 +174,33 @@
+         header_type: trim_quote(tail.join(" ")),
+         why: "which has no width — nothing can be written back into a cell the header describes as sizeless"
+     )
++
++# PROTOTYPE 092 (lane ffi13, not landed): a whole record lent through `@` to a
++# header's `void *`, with no `counted_by` naming the count C is told.
++function record_void(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
++    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
++        return fail(code: "none", msg: "not an assertion failure")
++    rest = ffi_lookup.after(text: line, marker: RECORD_VOID_MARKER)
++
++    if rest.is_err()
++        return fail(code: "none", msg: "not a record-void assertion")
++    parts = ffi_lookup.words(text: rest.must())
++
++    if parts.len() < 3
++        return fail(code: "none", msg: "the marker's tail is not ours")
++    found = ffi_lookup.declaration(s, decls, name: parts[0])
++
++    if found.is_err()
++        return fail(code: "none", msg: "no group declares this name")
++    d: diag.Diagnostic @ diag.new_diagnostic(
++        code: "ffi_parameter_type",
++        message: "`" + parts[1] + "` of `" + parts[0] + "` lends a whole record to C as `void *`, and nothing says how many bytes C may reach through it: the count is another argument C reads, and this declaration ties none to the record",
++        span: found.must().span
++    )
++    d.notes @ d.notes.push(
++        "name the parameter that carries the count, `@" + parts[1] + ": <record> counted_by <count>`, and the call is held to the record's size before C runs"
++    )
++    return ok(d)
+ 
+ # An opaque `@` whose header takes ONE pointer (defect 083, 2026-09-24). The
+ # program's `@p: Mem` over `record Mem tag void` is `void **` at the call,
+diff -ru a/selfhost/emit/field_lend.hero b/selfhost/emit/field_lend.hero
+--- a/selfhost/emit/field_lend.hero
++++ b/selfhost/emit/field_lend.hero
+@@ -44,6 +44,7 @@
+ 
+ use token
+ use check/state
++use check/table
+ use ir
+ use ir/containers
+ use emit/writer
+@@ -243,4 +244,15 @@
+ 
+     if !root.is_err() && slot_is_mutable(f.slots[root.must()])
+         cast @ "(void *)"
+-    writer.line(@w, text: "    " + into + " = " + cast + "(" + place.must() + ");")
++
++    # PROTOTYPE 092 route B (lane ffi13, not landed): a whole record is an
++    # object, not an array, so its address is taken.
++    address: str @ ""
++
++    match table.get(c.types, containers.value_type(f, source_value.must()))
++        .named                                                    => address @ "&"
++        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => address @ ""
++        .array | .fixed | .map | .fallible | .function_ty         => address @ ""
++        .case_ty | .failure | .generic | .error                   => address @ ""
++
++    writer.line(@w, text: "    " + into + " = " + cast + address + "(" + place.must() + ");")
+diff -ru a/selfhost/emit/lend_extent.hero b/selfhost/emit/lend_extent.hero
+--- a/selfhost/emit/lend_extent.hero
++++ b/selfhost/emit/lend_extent.hero
+@@ -42,6 +42,7 @@
+ use emit/mangle
+ use emit/ctype
+ use emit/field_lend
++use emit/aggregate
+ use emit/literal
+ use widths
+ 
+@@ -92,11 +93,48 @@
+ 
+                         if !guard.is_err()
+                             writer.line(@w, text: "    " + guard.must())
+-            .inout_arg =>
+-                _ = 0
++            .inout_arg io =>
++                if index < counted.len() && counted[index] >= 0 && counted[index] < given.len()
++                    whole = record_guard(
++                        c,
++                        s,
++                        decls,
++                        f,
++                        place: aggregate.place(c, s, decls, f, at: io.place),
++                        extent: given[counted[index]],
++                        decl: decl,
++                        count: counted[index],
++                        pointer: index
++                    )
+ 
++                    if !whole.is_err()
++                        writer.line(@w, text: "    " + whole.must())
++
+         index @ index + 1
+ 
++# PROTOTYPE 092 (lane ffi13, not landed): the count C is told, compared with
++# the size of the whole record lent through `@` before C runs, in bytes.
++function record_guard(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, place: str, extent: ir.Arg, decl: i64, count: i64, pointer: i64) -> str?
++    extent_value = match extent
++        .value_arg e => e.value
++        .inout_arg   => 0 - 1
++
++    if extent_value < 0
++        return fail(code: "none", msg: "an @ argument carries no count in")
++    ty = containers.value_type(f, extent_value)
++    params = param_names(s, decls, decl: decl)
++
++    if count >= params.len() || pointer >= params.len()
++        return fail(code: "none", msg: "a position past the signature")
++    said = "`" + source.span_text(s, decls[decl].name) + "` was told a count in `" + params[count] + "` past the bytes of the record lent to `" + params[pointer] + "`"
++    low: str @ ""
++
++    if signed_int(c, ty)
++        low @ mangle.value(extent_value) + " < 0 || "
++    return ok(
++        "if (" + low + "(uint64_t)(" + mangle.value(extent_value) + ") > (uint64_t)sizeof(" + place + ")) hero_panic(" + quoted(said) + ");"
++    )
++
+ # For each parameter of the extern, the position of the sibling its
+ # `counted_by` names, or -1: the pointer at position k is counted by the
+ # integer at position `counted[k]`.
+@@ -324,7 +362,8 @@
+     match table.get(c.types, containers.value_type(f, value))
+         .fixed x                                                  => return ok(x.length)
+         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a fixed array")
+-        .array | .map | .fallible | .function_ty | .named         => return fail(code: "none", msg: "not a fixed array")
++        .named                                                    => return ok(0)
++        .array | .map | .fallible | .function_ty                  => return fail(code: "none", msg: "not a fixed array")
+         .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a fixed array")
+ 
+     return fail(code: "none", msg: "unreached")

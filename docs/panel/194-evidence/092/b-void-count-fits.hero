@@ -1,0 +1,9 @@
+extern "s092.h"
+    record One tag one
+        a: i32
+    function fill(buf: ptr counted_by n lent, n: u64) -> i64
+
+function main()
+    o: One @ One(a: 0)
+    print(fill(buf: o.ptr(), n: 4))
+    print(o.a)
