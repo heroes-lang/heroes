@@ -1,0 +1,112 @@
+# Defect 381, 2026-10-06. `xs @ xs.push(e)` grows `xs` in place when `xs` is a
+# plain name (spec § 10), and until this repair it did so only where the load
+# of `xs` and the store back into it sat in one block: `.must()`, `.default()`,
+# `?`, `&&` and `||` in `e` branch, so each of them copied the whole array at
+# every push, 48.1 billion instructions for 40,000 of them. The place store
+# now asks whether anything can write `xs` on any path between the two, and a
+# branch to an abort or a short circuit writes nothing. Each function below
+# pushes through one of the five, two of them in one value, and one nested in
+# a call's argument; the output is the values, which growing in place must
+# not change. `fixedbugs-381-a-branching-pushed-value-is-push-owned` in
+# `tests/golden/ir/` is the witness that each one grows.
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail(code: "odd", msg: "odd")
+
+function through_must(n: i64) -> [i64]
+    out: [i64] @ []
+    at: i64 @ 0
+
+    while at < n
+        out @ out.push(half(at * 2).must())
+        at @ at + 1
+
+    return out
+
+function through_default(n: i64) -> [i64]
+    out: [i64] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(half(at).default(0 - 1))
+
+    return out
+
+function through_question(n: i64) -> [i64]?
+    out: [i64] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(half(at * 2)?)
+
+    return ok(out)
+
+function stops_at_question(n: i64) -> [i64]?
+    out: [i64] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(half(at)?)
+
+    return ok(out)
+
+function through_and(n: i64) -> [bool]
+    out: [bool] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(at > 1 && at < 4)
+
+    return out
+
+function through_or(n: i64) -> [bool]
+    out: [bool] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(at < 1 || at > 3)
+
+    return out
+
+function through_two(n: i64) -> [i64]
+    out: [i64] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(half(at * 2).must() + half(at).default(7))
+
+    return out
+
+function through_a_call(n: i64) -> [str]
+    out: [str] @ []
+
+    for at in range(from: 0, to: n)
+        out @ out.push(to_str(half(at * 2).must()))
+
+    return out
+
+function shown(xs: [i64]) -> str
+    parts: [str] @ []
+
+    for x in xs
+        parts @ parts.push(x.to_str())
+
+    return parts.join(",")
+
+function said(xs: [bool]) -> str
+    parts: [str] @ []
+
+    for x in xs
+        parts @ parts.push(x.to_str())
+
+    return parts.join(",")
+
+function main()
+    print(shown(through_must(5)))
+    print(shown(through_default(5)))
+    print(shown(through_question(5).must()))
+
+    match stops_at_question(5)
+        .ok xs => print("all: ", xs.len())
+        .err e => print("stopped: ", e.code)
+
+    print(said(through_and(5)))
+    print(said(through_or(5)))
+    print(shown(through_two(4)))
+    print(through_a_call(4).join(","))

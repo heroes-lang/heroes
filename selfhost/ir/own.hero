@@ -112,7 +112,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
             match inst.op
                 # A borrowed load whose value outlives a write to its own
                 # root loses its header the moment counts are honest
-                # (place_store.load_survives_write says why). Give it a
+                # (survival.load_survives_write says why). Give it a
                 # reference of its own, and rule 5's slot machinery does
                 # the rest.
                 .load =>
@@ -410,7 +410,7 @@ test "a straight function of 400 chained strings verifies at owned, its sweep re
 
 test "a block's survivors are the per-load walk's, the writer table is the per-root reading, and both walks stay linear"
     # Defect 230's oracle, over the IR the ownership pass is handed (after
-    # the place store). `place_store.load_survives_write` is the walk per
+    # the place store). `survival.load_survives_write` is the walk per
     # load this replaced and answers every load here; the per-root reading
     # of what an operation writes is written out below as it stood, and
     # answers every instruction and every root. The programs hold loads that
@@ -466,7 +466,7 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
                     match one.op
                         .load ld =>
                             if !one.dest.is_err()
-                                old = place_store.load_survives_write(
+                                old = survival.load_survives_write(
                                     f,
                                     blk.insts,
                                     blk.term,
@@ -524,7 +524,7 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
                                 now @ true
 
                         assert now == before
-                        assert place_store.writes_root(f, one.op, root: root) == before
+                        assert survival.writes_root(f, one.op, root: root) == before
                         root @ root + 1
 
                     at @ at + 1

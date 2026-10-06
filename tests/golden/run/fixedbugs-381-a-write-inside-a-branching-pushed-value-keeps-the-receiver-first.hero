@@ -1,0 +1,60 @@
+# Defect 381, 2026-10-06: the shapes the place store must leave copying, now
+# that the load and the store of `xs @ xs.push(e)` may stand in two blocks.
+# Value semantics reads the receiver FIRST, so where `e` writes `xs` through an
+# `@` argument the push is onto the array as it was before that write; growing
+# `xs` in place would push onto what the write left, one element longer. The
+# write here sits after a `.must()`, in a block of its own between the load and
+# the store, which is the case the walk over the blocks between must see; the
+# same write in the load's own block, and a push onto a record's field, which
+# spec § 10 says copies, stand beside it.
+#
+# `kept` holds each receiver's array as well, so the case asks only the order:
+# without a second holder, the `@` call frees the array the copying push still
+# reads, a separate defect found beside this one the same day.
+
+record Bag
+    xs: [i64]
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail(code: "odd", msg: "odd")
+
+function bump(@xs: [i64]) -> i64
+    xs @ xs.push(100)
+    return xs.len()
+
+function written_after_a_branch() -> [i64]
+    out: [i64] @ [1, 2]
+    kept = out
+    out @ out.push(half(4).must() + bump(@out))
+    print("kept ", kept.len())
+    return out
+
+function written_in_the_load_block() -> [i64]
+    out: [i64] @ [1, 2]
+    kept = out
+    out @ out.push(bump(@out) + half(4).must())
+    print("kept ", kept.len())
+    return out
+
+function through_a_field() -> Bag
+    b: Bag @ Bag(xs: [])
+
+    for at in range(from: 0, to: 3)
+        b.xs @ b.xs.push(half(at * 2).must())
+
+    return b
+
+function shown(xs: [i64]) -> str
+    parts: [str] @ []
+
+    for x in xs
+        parts @ parts.push(x.to_str())
+
+    return parts.join(",")
+
+function main()
+    print(shown(written_after_a_branch()))
+    print(shown(written_in_the_load_block()))
+    print(shown(through_a_field().xs))

@@ -1,0 +1,40 @@
+# Defect 381, 2026-10-06. Each of the five things that branch inside a pushed
+# value, `.must()`, `.default()`, `?`, `&&` and `||`, opens blocks between the
+# load of `out` and the store back into it, and until this repair each push
+# here was `call builtin push` on the loaded array, a copy of every element.
+# Now each is one `push_owned out`, the load and the call gone: nothing on the
+# way writes `out`. `kept_classic` is the shape that must stay a copy: its
+# value writes `out` through `@` after the `.must()`, so the receiver is read
+# first and pushed onto as it was.
+
+function half(n: i64) -> i64?
+    if n % 2 == 0
+        return ok(n / 2)
+    return fail(code: "odd", msg: "odd")
+
+function bump(@xs: [i64]) -> i64
+    xs @ xs.push(100)
+    return xs.len()
+
+function grown(n: i64) -> [i64]?
+    out: [i64] @ []
+    out @ out.push(half(n).must())
+    out @ out.push(half(n).default(0))
+    out @ out.push(half(n)?)
+    return ok(out)
+
+function flags(n: i64) -> [bool]
+    out: [bool] @ []
+    out @ out.push(n > 1 && n < 4)
+    out @ out.push(n < 1 || n > 3)
+    return out
+
+function kept_classic() -> [i64]
+    out: [i64] @ [1]
+    kept = out
+    out @ out.push(half(2).must() + bump(@out))
+    print(kept.len())
+    return out
+
+function main()
+    print(grown(2).must().len(), flags(2).len(), kept_classic().len())
