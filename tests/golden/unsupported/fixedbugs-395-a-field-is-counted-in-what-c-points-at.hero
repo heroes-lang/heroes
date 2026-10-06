@@ -21,7 +21,8 @@
 # counted by one count, a header constant, `wchar_t` (`mbstowcs`'s unit, read
 # through the case's own header, since the system's declaration of `mbstowcs`
 # is spelled differently on each leg); and a byte's unit past
-# the field, through `char *` and through a typedef of `void *`. The counts
+# the field, through `char *` and through a typedef of `void *`; and the lend
+# as a UFCS receiver, `h.buf.ptr().fill_ints(n: 16)`, position 0. The counts
 # that fit are `tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs`.
 extern "fixedbugs-395-units.h"
     constant HELD_BYTES: u64
@@ -58,4 +59,5 @@ function main()
     print(fill_wide(dst: h.buf.ptr(), n: 16))  #~ field_lend_extent
     print(fill_bytes(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
     print(fill_lpvoid(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
+    print(h.buf.ptr().fill_ints(n: 16))  #~ field_lend_extent
     print(h.after)

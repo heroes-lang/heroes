@@ -1,86 +1,93 @@
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states 16 — `a` of `fill_ints` is declared `counted_by n`, and the header's `int *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:48:40
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:49:40
      |
-  48 |     print(fill_ints(a: h.buf.ptr(), n: 16))  #~ field_lend_extent
+  49 |     print(fill_ints(a: h.buf.ptr(), n: 16))  #~ field_lend_extent
      |                                        ^^
   note: C reads and writes `n` of what `int *` points at, never `n` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `t.buf.ptr()` lends a field of 10 bytes, and `n` states 6 — `a` of `fill_shorts` is declared `counted_by n`, and the header's `int16_t *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:49:42
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:50:42
      |
-  49 |     print(fill_shorts(a: t.buf.ptr(), n: 6))  #~ field_lend_extent
+  50 |     print(fill_shorts(a: t.buf.ptr(), n: 6))  #~ field_lend_extent
      |                                          ^
   note: C reads and writes `n` of what `int16_t *` points at, never `n` bytes, so a count above the field's 10 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `t.buf.ptr()` lends a field of 10 bytes, and `n` states 3 — `a` of `fill_ints` is declared `counted_by n`, and the header's `int *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:50:40
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:51:40
      |
-  50 |     print(fill_ints(a: t.buf.ptr(), n: 3))  #~ field_lend_extent
+  51 |     print(fill_ints(a: t.buf.ptr(), n: 3))  #~ field_lend_extent
      |                                        ^
   note: C reads and writes `n` of what `int *` points at, never `n` bytes, so a count above the field's 10 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `r.buf.ptr()` lends a field of 16 bytes, and `n` states 5 — `a` of `read_ints` is declared `counted_by n`, and the header's `const int *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:52:40
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:53:40
      |
-  52 |     print(read_ints(a: r.buf.ptr(), n: 5))  #~ field_lend_extent
+  53 |     print(read_ints(a: r.buf.ptr(), n: 5))  #~ field_lend_extent
      |                                        ^
   note: C reads and writes `n` of what `const int *` points at, never `n` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `nfds` states 3 — `fds` of `poll_like` is declared `counted_by nfds`, and the header's `struct pfd *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:53:45
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:54:45
      |
-  53 |     print(poll_like(fds: h.buf.ptr(), nfds: 3))  #~ field_lend_extent
+  54 |     print(poll_like(fds: h.buf.ptr(), nfds: 3))  #~ field_lend_extent
      |                                             ^
   note: C reads and writes `nfds` of what `struct pfd *` points at, never `nfds` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `nfds` states 3 — `fds` of `poll_typedef` is declared `counted_by nfds`, and the header's `LPPFD` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:54:48
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:55:48
      |
-  54 |     print(poll_typedef(fds: h.buf.ptr(), nfds: 3))  #~ field_lend_extent
+  55 |     print(poll_typedef(fds: h.buf.ptr(), nfds: 3))  #~ field_lend_extent
      |                                                ^
   note: C reads and writes `nfds` of what `LPPFD` points at, never `nfds` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states 2 — `rows` of `fill_rows` is declared `counted_by n`, and the header's `int (*)[4]` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:55:43
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:56:43
      |
-  55 |     print(fill_rows(rows: h.buf.ptr(), n: 2))  #~ field_lend_extent
+  56 |     print(fill_rows(rows: h.buf.ptr(), n: 2))  #~ field_lend_extent
      |                                           ^
   note: C reads and writes `n` of what `int (*)[4]` points at, never `n` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `t.buf.ptr()` lends a field of 10 bytes, and `n` states 16 — `src` of `copy_n` is declared `counted_by n`, and C read the field's own size from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:56:57
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:57:57
      |
-  56 |     print(copy_n(dst: h.buf.ptr(), src: t.buf.ptr(), n: 16))  #~ field_lend_extent
+  57 |     print(copy_n(dst: h.buf.ptr(), src: t.buf.ptr(), n: 16))  #~ field_lend_extent
      |                                                         ^^
   note: C reads and writes exactly the bytes this number says, so a larger one reaches past the field into whatever the header put beside it — a sibling of the same record, silently, at exit 0. Write the field's own length, or lend a longer field
   fix (guess): state the field's own length, 10
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states HELD_BYTES — `a` of `fill_ints` is declared `counted_by n`, and the header's `int *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:57:40
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:58:40
      |
-  57 |     print(fill_ints(a: h.buf.ptr(), n: HELD_BYTES))  #~ field_lend_extent
+  58 |     print(fill_ints(a: h.buf.ptr(), n: HELD_BYTES))  #~ field_lend_extent
      |                                        ^^^^^^^^^^
   note: C reads and writes `n` of what `int *` points at, never `n` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states 16 — `dst` of `fill_wide` is declared `counted_by n`, and the header's `wchar_t *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:58:42
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:59:42
      |
-  58 |     print(fill_wide(dst: h.buf.ptr(), n: 16))  #~ field_lend_extent
+  59 |     print(fill_wide(dst: h.buf.ptr(), n: 16))  #~ field_lend_extent
      |                                          ^^
   note: C reads and writes `n` of what `wchar_t *` points at, never `n` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states 17 — `buf` of `fill_bytes` is declared `counted_by n`, and C read the field's own size from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:59:43
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:60:43
      |
-  59 |     print(fill_bytes(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
+  60 |     print(fill_bytes(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
      |                                           ^^
   note: C reads and writes exactly the bytes this number says, so a larger one reaches past the field into whatever the header put beside it — a sibling of the same record, silently, at exit 0. Write the field's own length, or lend a longer field
   fix (guess): state the field's own length, 16
 
 error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states 17 — `buf` of `fill_lpvoid` is declared `counted_by n`, and C read the field's own size from the header
-  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:60:44
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:61:44
      |
-  60 |     print(fill_lpvoid(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
+  61 |     print(fill_lpvoid(buf: h.buf.ptr(), n: 17))  #~ field_lend_extent
      |                                            ^^
   note: C reads and writes exactly the bytes this number says, so a larger one reaches past the field into whatever the header put beside it — a sibling of the same record, silently, at exit 0. Write the field's own length, or lend a longer field
   fix (guess): state the field's own length, 16
+
+error[field_lend_extent]: `h.buf.ptr()` lends a field of 16 bytes, and `n` states 16 — `a` of `fill_ints` is declared `counted_by n`, and the header's `int *` counts it in what it points at, so C reaches past the field: C read both sizes from the header
+  at tests/golden/unsupported/fixedbugs-395-a-field-is-counted-in-what-c-points-at.hero:62:36
+     |
+  62 |     print(h.buf.ptr().fill_ints(n: 16))  #~ field_lend_extent
+     |                                    ^^
+  note: C reads and writes `n` of what `int *` points at, never `n` bytes, so a count above the field's 16 bytes divided by that size reaches past it into whatever the header put beside it, silently, at exit 0. State at most that many, or lend a longer field
