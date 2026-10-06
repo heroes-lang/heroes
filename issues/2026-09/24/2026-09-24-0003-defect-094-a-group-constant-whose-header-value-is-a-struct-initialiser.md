@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-09-24
-commit: none
+commit: 41c5d1b49c6dbde2177bdd1ca40f1f6b163af1ef
 github: none
 ---
 
@@ -40,3 +40,5 @@ github: none
     is valid C.
 
     Re-run 2026-10-06 on `bef739dd`: this worktree's compiler, built from the round's seed, over the reproducer as `docs/panel/178-reports/compiler-engineer-work/w/cinit/` holds it, in a scratch directory from 11:38 by the clock: `check` 0; `run` 2 three of three, *internal error: compiling the generated C failed*, clang refusing both places the item names, `_Static_assert(HERO_RET_RECORD(PT_INIT, struct pt), ...)` with *statement expression not allowed at file scope* and `return PT_INIT;` with *expected expression*. Still broken. Linux arm64 and x86-64 unrun that day.
+
+    Repaired at `41c5d1b4`, 2026-10-06, lane ffi13 of batch 12, gated by its cases and the compiler's own tests; the net is owed at the batch's close, and the platform legs before the item closes (Linux arm64 ran its cases that day, run 8 and unsupported 6, 0 failed).
