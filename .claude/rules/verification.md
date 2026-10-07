@@ -611,7 +611,9 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets
-  to this, above); a `git commit` on the same command line as a gate is refused
+  to this, above), those of the tree the run stands in, found from the
+  command's own `cd` since 2026-10-07 (defect 348: a lane's run from a session
+  on the trunk was judged against the trunk); a `git commit` on the same command line as a gate is refused
   (two commits went past a red `records` in one week, `f22c8baf`, `efaf5564`,
   because the chain read the pipe's last exit); a gate piped into `head` or
   `tail` is refused (seven `emit` goldens stayed red for two steps behind an

@@ -268,5 +268,62 @@ class Age(unittest.TestCase):
         self.assertEqual(said, "")
 
 
+class HarnessTree(unittest.TestCase):
+    """Defect 348: a harness run's compiler is judged against the tree the run
+    stands in, found from the command's own `cd`, never the session's."""
+
+    def setUp(self):
+        self.top = fresh("hooks-348-")
+        self.trunk = make_tree(os.path.join(self.top, "trunk"))
+        self.lane = make_tree(os.path.join(self.trunk, ".claude", "worktrees", "lane"))
+
+    def age(self, tree, what="selfhost/resolve/state.hero"):
+        """`tree`'s compiler made older than one of its sources."""
+        write(os.path.join(tree, what), "# moved\n", T0 + 200)
+
+    def test_a_lane_run_from_a_trunk_session_is_judged_by_the_lane(self):
+        self.age(self.trunk)
+        said = guard_bash.verdict("cd " + self.lane + " && ./heroes run tests/harness/main.hero -- ./heroes records", self.trunk)
+        self.assertIsNone(said)
+
+    def test_an_old_lane_compiler_is_refused_from_a_trunk_session(self):
+        self.age(self.lane)
+        said = guard_bash.verdict("cd " + self.lane + " && ./heroes run tests/harness/main.hero -- ./heroes records", self.trunk)
+        self.assertIsNotNone(said)
+        self.assertIn("selfhost/resolve/state.hero", said)
+        self.assertIn(self.lane, said)
+
+    def test_a_relative_cd_moves_the_tree_too(self):
+        self.age(self.lane)
+        said = guard_bash.verdict("cd .claude/worktrees/lane && ./heroes run tests/harness/main.hero -- ./heroes", self.trunk)
+        self.assertIsNotNone(said)
+
+    def test_an_absolute_compiler_is_judged_against_the_tree_the_run_stands_in(self):
+        self.age(self.lane)
+        heroes = os.path.join(self.lane, "heroes")
+        said = guard_bash.verdict("cd " + self.lane + " && " + heroes + " run tests/harness/main.hero -- " + heroes, self.trunk)
+        self.assertIsNotNone(said)
+
+    def test_a_harness_named_by_its_absolute_path_is_a_harness_run(self):
+        self.age(self.lane)
+        harness = os.path.join(self.lane, "tests", "harness", "main.hero")
+        said = guard_bash.verdict("./heroes run " + harness + " -- ./heroes", self.lane)
+        self.assertIsNotNone(said)
+
+    def test_a_directory_the_text_cannot_tell_gives_no_opinion(self):
+        self.age(self.trunk)
+        said = guard_bash.verdict('cd "$NOWHERE_SET_348" && ./heroes run tests/harness/main.hero -- ./heroes', self.trunk)
+        self.assertIsNone(said)
+
+    def test_a_compiler_newer_than_its_tree_passes(self):
+        said = guard_bash.verdict("cd " + self.lane + " && ./heroes run tests/harness/main.hero -- ./heroes", self.trunk)
+        self.assertIsNone(said)
+
+    def test_an_old_compiler_in_the_session_tree_is_still_refused(self):
+        self.age(self.trunk)
+        said = guard_bash.verdict("./heroes run tests/harness/main.hero -- ./heroes", self.trunk)
+        self.assertIsNotNone(said)
+
+
 if __name__ == "__main__":
     unittest.main()
