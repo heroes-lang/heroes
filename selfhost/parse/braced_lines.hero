@@ -38,6 +38,7 @@ use lexer
 use text_lines
 use parse/brace_habit
 use laid_braces
+use pairing
 
 ## The view
 
@@ -47,7 +48,7 @@ use laid_braces
 # and bracket of it judged as the unbraced program's.
 function laid_out(c: cursor.Cursor, text: str) -> cursor.Cursor
     if laid_braces.laid_out_by_lexer(c, open: c.pos)
-        return lexer_laid(c)
+        return lexer_laid(c, text)
     return lines_from(c, text, from: c.pos + 1, close: brace_habit.closer(c, open: c.pos))
 
 # The view of the lines from the cursor to the token at `close`: the braces
@@ -128,11 +129,11 @@ function lines_from(c: cursor.Cursor, text: str, from: i64, close: i64) -> curso
 
     tokens @ tokens.push(token.Token(kind: .dedent, span: end))
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end.end, end: end.end)))
-    return cursor.lexed_cursor(tokens: tokens, root_end: c.root_end, closes: c.closes, swaps: c.swaps)
+    return pairing.view(c, tokens: tokens, text: text)
 
 # The view of a block the lexer laid out below the `{` under the cursor: an
 # indent for the `{`, the block's own lines, a dedent where it ends.
-function lexer_laid(c: cursor.Cursor) -> cursor.Cursor
+function lexer_laid(c: cursor.Cursor, text: str) -> cursor.Cursor
     b = laid_braces.laid_block(c, open: c.pos)
     tokens: [token.Token] @ [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
     i: i64 @ b.indent + 1
@@ -144,7 +145,7 @@ function lexer_laid(c: cursor.Cursor) -> cursor.Cursor
     end = c.tokens[b.past - 1].span
     tokens @ tokens.push(token.Token(kind: .dedent, span: end))
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end.end, end: end.end)))
-    return cursor.lexed_cursor(tokens: tokens, root_end: c.root_end, closes: c.closes, swaps: c.swaps)
+    return pairing.view(c, tokens: tokens, text: text)
 
 # What the view's reading said, said by the cursor, held reports included and
 # kept in the order they were held; and the cursor past the braces its `{`
@@ -292,3 +293,16 @@ test "what the view's reading said is the cursor's, and the cursor is past the b
     assert c.diagnostics.len() == 1
     assert cursor.at(c, .ident)
     assert cursor.slice_of(text, cursor.current_span(c)) == "y"
+
+# Defect 257: a view is paired as the parse's stream is, each opener's closer
+# the one the walk from it finds, so that asking for it is a lookup; in braces
+# the lexer laid out and in braces it took for a bracket.
+test "a view of braces is paired as the walk from each of its openers pairs it"
+    for text in ["function f() {\n    x = [[1], g([2, (3]]\n    print(x)\n}\n", "0 => {\n    m: {str: [i64]},\n    n: f([1, [2\n}\n"]
+        c: cursor.Cursor @ at_brace(text)
+        view = laid_out(c, text)
+        assert view.tables.pairs.len() == view.tokens.len()
+
+        for at in range(from: 0, to: view.tokens.len())
+            if pairing.opens(view.tokens[at].kind)
+                assert view.tables.pairs[at] == pairing.walked_closer(view, text, open: at)

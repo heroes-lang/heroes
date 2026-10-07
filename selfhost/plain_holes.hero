@@ -23,6 +23,7 @@ use ast
 use diag
 use cursor
 use lexer
+use pairing
 use grammar_expr
 use escape_readings
 use escape
@@ -98,6 +99,7 @@ function hole(ftext: str, lexed: lexer.LexOutput, from: i64, to: i64) -> [token.
     tokens: [token.Token] @ lexed.tokens.slice(from: from, to: to)
     tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: end, end: end)))
     c: cursor.Cursor @ cursor.new_cursor(tokens)
+    pairing.pair_all(@c, ftext)
     a: ast.Ast @ ast.new_ast()
     _ = grammar_expr.parse_expr(@c, @a, ftext)
 
