@@ -487,7 +487,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert !write_file(path: lacks + "/db/store.hero", text: "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32\n").is_err()
     told = absence.missing_header_said(
         header: absence.NOWHERE,
-        tail: " — clang looked and did not find it",
+        tail: absence.HEADER_LOOKED,
         at: lacks + "/db/store.hero:2:5"
     )
     assert !write_file(path: lacks + "/main.said", text: told).is_err()

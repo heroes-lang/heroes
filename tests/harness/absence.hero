@@ -93,6 +93,13 @@ record Absence
 # raylib and they failed as *did not build* on a machine that simply has no
 # `pkg-config`.
 #
+# And no other module of the net spells one of them (defect 450, 2026-10-07):
+# three suites wrote *clang looked and did not find it* in six places of
+# their own, and `suite_golden` a group's owner, a package's close and
+# pkg-config's note, each a copy defect 328's red could not see. The test
+# *the compiler's words for a missing library are spelled in this module
+# alone* reads every module of the net for the pieces below.
+#
 # The renderer writes a headline `error[<code>]: <message>` and a note
 # `  note: <note>` (`selfhost/diag_render.hero`).
 constant HEADER_CODE: str
@@ -117,6 +124,12 @@ constant OWNER_OPEN: str
 
 constant OWNER_CLOSE: str
     "`, the header this group names"
+
+# What follows the owner's close in the compiler's words, before the line it
+# includes the header at or the headers it includes it through; read by no
+# absence, and spelled here so a test's plant is the compiler's sentence.
+constant OWNER_TAIL: str
+    ", includes it"
 
 # A package: the headline opens with `PACKAGE_HEAD` and the rest of the
 # driver's line after its marker (`PACKAGE_MARK`, whose last character opens the
@@ -188,7 +201,7 @@ function spellings() -> [Spelling]
         Spelling(file: build, heard: "\"" + PACKAGE_CODE + "\"")
         Spelling(file: build, heard: "\"" + PACKAGE_HEAD + "\"")
         Spelling(file: build, heard: "\"`\" + header + \"" + HEADER_CLOSE + HEADER_LOOKED + "\"")
-        Spelling(file: reach, heard: "\"`\" + missing + \"" + HEADER_CLOSE + OWNER_OPEN + "\" + owner.header + \"" + OWNER_CLOSE)
+        Spelling(file: reach, heard: "\"`\" + missing + \"" + HEADER_CLOSE + OWNER_OPEN + "\" + owner.header + \"" + OWNER_CLOSE + OWNER_TAIL + "\"")
         Spelling(file: "selfhost/emit/ffi_lookup.hero", heard: "\"" + strings.without_suffix(text: PACKAGE_MARK, suffix: "`") + "\"")
         Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + PACKAGE_CLOSE + "\"")
         Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + INSTALLED_CLOSE + "\"")
@@ -1277,6 +1290,60 @@ test "fixedbugs: the spellings are the compiler's own, read out of the files tha
 
     assert parted.join("\n") == ""
     assert spellings().len() == 17
+
+# DEFECT 450: the pieces above are spelled in this module and in no other of
+# the net, so no copy can lag the compiler where the test above does not look.
+# Every module of `tests/harness/` but this one is read, its comment lines left
+# out, since a piece quoted in prose explains where one in code is a copy. The
+# pieces any sentence may hold (`NOTE`, `PACKAGE_HEAD`, `OWNER_OPEN`,
+# `OWNER_TAIL`, the two codes) are not asked; each stands in the compiler's
+# words beside one that is. Until that day three suites spelled
+# `HEADER_LOOKED` six times and `suite_golden` a group's owner, a package's
+# close and pkg-config's note, matching the compiler only while it said so.
+test "fixedbugs: the compiler's words for a missing library are spelled in this module alone (defect 450)"
+    pieces = [
+        HEADER_CLOSE
+        HEADER_LOOKED
+        OWNER_CLOSE
+        PACKAGE_MARK
+        PACKAGE_CLOSE
+        INSTALLED_CLOSE
+        UNASKED_CLOSE
+        TOOL_OPEN
+        TOOL_CLOSE
+        SAID
+        NO_REASON
+        NOT_INSTALLED_WAY
+        INSTALLED_WAY
+        SILENT_WAY
+        TOOL_WAY
+    ]
+    copies: [str] @ []
+    read: i64 @ 0
+
+    for path in shell.list_entries(scratch: "build/harness-selftest", dir: "tests/harness").must()
+        if !strings.ends_with(text: path, suffix: ".hero") || strings.ends_with(text: path, suffix: "/absence.hero")
+            continue
+        text = read_file(path)
+        assert !text.is_err()
+        read @ read + 1
+        at: i64 @ 0
+
+        for row in strings.lines(text.must())
+            at @ at + 1
+
+            if strings.starts_with(text: strings.trimmed(row), prefix: "#")
+                continue
+
+            for piece in pieces
+                if strings.contains(text: row, needle: as_written(piece))
+                    copies @ copies.push(path + ":" + at.to_str() + ": " + piece)
+
+    assert copies.join("\n") == ""
+
+    # Forty-one modules beside this one on the day: a walk reaching fewer is
+    # not reading the net.
+    assert read >= 41
 
 # DEFECT 328 asked of the compiler itself: what it writes for a library a
 # machine lacks, over cases of every shape, is what this module reads, and the
