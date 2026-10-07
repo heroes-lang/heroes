@@ -1,0 +1,70 @@
+# fixedbugs, defect 413, lane b13-land-addr, 2026-10-07: one call handed a
+# place through `@` and, by value, something that shares that place's array:
+# the callee writes through `@` and then reads its by-value parameter, which
+# § 9's copy in, copy out says still holds the value the call was handed.
+# Panel 196's R1 hands the callee the place itself, an element's included, so
+# the meaning is kept by the ownership pass: each such argument is held for
+# the call (`selfhost/ir/held.hero`), and the callee's write copies the array
+# the argument still names.
+#
+# Every array below is held by one reference when the call is made, which is
+# what makes these the shapes: a literal is also held by a slot of its own
+# until the function returns, so it reaches a call shared and copies on its
+# first write anyway; a block made the place's own by an earlier element store,
+# or grown in place by a push onto a plain name, does not. Until this repair
+# the rows through a field read `7 7` where the meaning is `1 7`, and the
+# callee that replaces `b.items` read the block it had just released: exit
+# 134, AddressSanitizer naming a heap use after free. The element rows read
+# right before R1 only because the element was a temporary written back after
+# the call. Rows: the completeness critic's `alias.hero`; an element and its
+# array; a field and its record; the record and its field; the record and its
+# field, the field replaced; an `@` parameter's element and the parameter.
+record B
+    items: [i64]
+
+record P
+    a: i64
+
+function rewrite(@p: P, q: P) -> i64
+    p @ P(a: 5)
+    return q.a
+
+function set_element(@e: i64, q: [i64]) -> i64
+    e @ 9
+    return q[0]
+
+function set_in_field(@items: [i64], q: B) -> i64
+    items[0] @ 7
+    return q.items[0]
+
+function set_in_record(@b: B, items: [i64]) -> i64
+    b.items[0] @ 7
+    return items[0]
+
+function replace(@b: B, items: [i64]) -> i64
+    b.items @ [5, 6]
+    return items[0] + items[1]
+
+function through(@xs: [i64]) -> i64
+    return set_element(@xs[0], q: xs)
+
+function main()
+    x: P @ P(a: 1)
+    print(rewrite(p: @x, q: x), " ", x.a)
+    xs: [i64] @ []
+    xs @ xs.push(1)
+    xs @ xs.push(2)
+    print(set_element(@xs[0], q: xs), " ", xs[0])
+    f: B @ B(items: [1, 2])
+    f.items[1] @ 3
+    print(set_in_field(@f.items, q: f), " ", f.items[0])
+    r: B @ B(items: [1, 2])
+    r.items[1] @ 3
+    print(set_in_record(@r, r.items), " ", r.items[0])
+    z: B @ B(items: [1, 2])
+    z.items[1] @ 3
+    print(replace(@z, z.items), " ", z.items[0])
+    ws: [i64] @ []
+    ws @ ws.push(1)
+    ws @ ws.push(2)
+    print(through(@ws), " ", ws[0])

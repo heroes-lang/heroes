@@ -7,7 +7,7 @@
 # every function here TAKES the builder and emits, and **not one of
 # them walks back into the tree**. A tag read, a payload read, an
 # arm's store into a join slot, the copy-out chain §4.8 owes on every
-# exit edge, a call and the write-backs it pays after it — each is a
+# exit edge, a call — each is a
 # shape several places in the walk need to spell identically, and
 # spelling it once here is what stops two of them from drifting.
 #
@@ -103,18 +103,15 @@ function payload_of(@b: build.Lowering, subject: i64, at: i64, ty: i64, span: to
 # `dst = call print(x)` is a hard clang error and raylib is almost
 # entirely void-returning, so a () result produces no destination at
 # all — the value handed back is the function-wide unit, which no
-# instruction defines. What the call owes AFTER the instruction — an `@`
-# argument handed over as a temporary, stored back through its indexed
-# place — is paid here, because only the call knows when it has returned
-# (`ir/inout.hero`).
+# instruction defines. An `@` argument owes nothing after the call since
+# panel 196's R1, an element's included: the callee wrote its place
+# (`ir/inout.hero`). A marked cell's release is owed, and
+# `ir/owned_release.hero` pays it around this call.
 function emit_call(@b: build.Lowering, target: ir.Callee, given: inout.Args, variadic: bool, ty: i64, span: token.Span) -> i64
     if ty == build.unit_ty(b)
         build.emit_void(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
-        inout.write_back(@b, given.after, span: span)
         return build.unit_value()
-    result = build.emit(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
-    inout.write_back(@b, given.after, span: span)
-    return result
+    return build.emit(@b, op: .call(callee: target, arguments: given.run, variadic: variadic), ty: ty, span: span)
 
 # The asserted expression AS THE AUTHOR WROTE IT: the statement's own
 # text with the keyword taken off the front. It used to be the

@@ -1,6 +1,9 @@
-# Records as C: construction, field reads, places with a path, and the
-# calls that keep a counted field alive (design.md §4.9, §4.10; panels
-# 021, 022, 060, 061). Port of archive/bootstrap-rs/heroes/src/emit/aggregate.rs.
+# Records as C: construction, field reads, and the calls that keep a
+# counted field alive (design.md §4.9, §4.10; panels 021, 022, 060, 061).
+# Port of archive/bootstrap-rs/heroes/src/emit/aggregate.rs. A place with a
+# path, and the field it walks through, are `emit/places.hero`'s since panel
+# 196's R1 gave a place an element; `field` and `place` below are where the
+# rest of the emitter asks them.
 #
 # One question: GIVEN A TYPE AND A FIELD INDEX, WHAT IS THE C FOR IT.
 # The field's name is needed to spell the member, and by the IR a field
@@ -25,73 +28,17 @@ use ir
 use ir/containers
 use emit/mangle
 use emit/ctype
+use emit/places
 use parse
 use resolve
 use checker
 use token
 
-# The C member name of a field, and the type it holds. Absent where the
-# owner is not an aggregate or the index is past its fields — which by
-# here means the checker reported something already.
-record FieldRead
-    member: str
-    ty: i64
-
-function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, index: i64) -> FieldRead?
-    # §4.6's built-in record: two strs, code then msg, with no
-    # declaration anywhere to read them from.
-    is_failure: bool @ false
-
-    match table.get(c.types, owner)
-        .failure                                                   => is_failure @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_failure @ is_failure
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_failure @ is_failure
-        .case_ty | .generic | .error                               => is_failure @ is_failure
-
-    if is_failure
-        member: str @ "msg"
-
-        if index == 0
-            member @ "code"
-        return ok(FieldRead(member: member, ty: table.str_ty(c.types)))
-    decl: i64 @ 0 - 1
-    case_at: i64 @ 0 - 1
-
-    match table.get(c.types, owner)
-        .named n => decl @ n.decl
-        .case_ty vc =>
-            decl @ vc.decl
-            case_at @ vc.at
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ decl
-        .array | .fixed | .map | .fallible | .function_ty         => decl @ decl
-        .failure | .generic | .error                              => decl @ decl
-
-    if decl < 0
-        return fail(code: "none", msg: "not an aggregate")
-    fields: [ast.Field] @ []
-    foreign: bool @ false
-
-    match decls[decl].kind
-        .record_decl rec =>
-            fields @ rec.fields
-
-            if !rec.header.is_err()
-                foreign @ true
-        .variant_decl v =>
-            if case_at < 0 || case_at >= v.cases.len()
-                return fail(code: "none", msg: "not a case of this variant")
-            fields @ v.cases[case_at].fields
-        .constant_decl | .function_decl | .test_decl => return fail(code: "none", msg: "not an aggregate declaration")
-
-    if index >= fields.len()
-        return fail(code: "none", msg: "past the fields")
-    written = state.written_type(c, fields[index].ty)
-
-    if written.is_err()
-        return fail(code: "none", msg: "the field's type was never lowered")
-    return ok(
-        FieldRead(member: mangle.field_of(foreign: foreign, name: source.span_text(s, fields[index].name)), ty: written.must())
-    )
+# The C member name of a field, and the type it holds: `emit/places.hero`
+# answers it, where a place's walk lives, and every reader of a field asks
+# it here.
+function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, index: i64) -> places.FieldRead?
+    return places.field(c, s, decls, owner: owner, index: index)
 
 # The variant a case belongs to, and the case's own name, for spelling
 # a tag or a union member.
@@ -111,36 +58,10 @@ function case_names(names: ctype.Names, s: source.Source, decls: [ast.Decl], dec
 
     return fail(code: "none", msg: "unreached")
 
-# A place as a C lvalue: the slot, then one .member per step. The path
-# is walked with the TYPE alongside it, because the member's spelling
-# comes from the declaration and each step changes which declaration
-# that is. An index step cannot appear here: the container store owns a
-# store through one, and `ir/inout.hero` hands an `@` argument through one
-# to the callee as a temporary — `ir/verify.hero` refuses the place
-# otherwise. This comment said "the walk stops rather than producing
-# something that compiles" until 2026-09-03, and that was false: the walk
-# stopped, the text compiled with a warning, and `add(@bs[0], "y")` was
-# handed `&h0_bs` — the whole array — and died at exit 138. So the arm
-# below spells an undeclared identifier: if it is ever reached again, clang
-# refuses the unit and the failure is exit 2, the compiler's, and loud.
+# A place as a C lvalue, read from the declarations alone: `emit/places.hero`
+# spells it, and the readers that hold no names ask it here.
 function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
-    slot = f.slots[at.root]
-    parts: [str] @ [mangle.slot(index: at.root, name: slot.name)]
-    ty: i64 @ slot.ty
-
-    for step in containers.steps_of(f, at.path)
-        match step
-            .field_step fs =>
-                found = field(c, s, decls, owner: ty, index: fs.at)
-
-                if found.is_err()
-                    return parts.join("")
-                member = "." + found.must().member
-                parts @ parts.push(member)
-                ty @ found.must().ty
-            .index_step => return parts.join("") + " HERO_INDEX_STEP_IS_NOT_AN_LVALUE"
-
-    return parts.join("")
+    return places.place(c, s, decls, f, at: at)
 
 # t3 = (h_m_Point){.f_x = t1, .f_y = t2};
 function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str]) -> str?
