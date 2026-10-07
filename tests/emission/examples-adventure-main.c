@@ -320,7 +320,7 @@ bb0:
 #line 28 "examples/adventure/main.hero"
     t2 = h0_given;
 #line 28 "examples/adventure/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 28 "examples/adventure/main.hero"
     t4 = INT64_C(0);
 #line 28 "examples/adventure/main.hero"
@@ -334,7 +334,7 @@ bb1:
 #line 32 "examples/adventure/main.hero"
     t8 = INT64_C(0);
 #line 32 "examples/adventure/main.hero"
-    t9 = *(HeroStr const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 32 "examples/adventure/main.hero"
     t10 = h_library_read_file(t9);
 #line 32 "examples/adventure/main.hero"
@@ -404,7 +404,7 @@ bb5:
 #line 33 "examples/adventure/main.hero"
     t17 = INT64_C(0);
 #line 33 "examples/adventure/main.hero"
-    t18 = *(HeroStr const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t16 + 1))[t17]);
 #line 33 "examples/adventure/main.hero"
     t19 = HERO_STR_LIT(hero_str_1dce);
 #line 33 "examples/adventure/main.hero"
@@ -597,7 +597,7 @@ bb1:
 #line 41 "examples/adventure/main.hero"
     t11 = h4_xs0;
 #line 41 "examples/adventure/main.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 41 "examples/adventure/main.hero"
     t13 = t10 < t12;
 #line 41 "examples/adventure/main.hero"
@@ -609,7 +609,7 @@ bb2:
 #line 41 "examples/adventure/main.hero"
     t15 = h5_i0;
 #line 41 "examples/adventure/main.hero"
-    t16 = *(HeroStr const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 41 "examples/adventure/main.hero"
     t36 = h6_said;
 #line 616 "main.c"
@@ -844,7 +844,7 @@ bb1:
 #line 58 "examples/adventure/main.hero"
     t6 = h2_xs0;
 #line 58 "examples/adventure/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 58 "examples/adventure/main.hero"
     t8 = t5 < t7;
 #line 58 "examples/adventure/main.hero"
@@ -856,7 +856,7 @@ bb2:
 #line 58 "examples/adventure/main.hero"
     t10 = h3_i0;
 #line 58 "examples/adventure/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 58 "examples/adventure/main.hero"
     t34 = h4_line;
 #line 863 "main.c"
@@ -1998,7 +1998,7 @@ bb1:
 #line 56 "examples/adventure/game.hero"
     t5 = h2_xs0;
 #line 56 "examples/adventure/game.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 56 "examples/adventure/game.hero"
     t7 = t4 < t6;
 #line 56 "examples/adventure/game.hero"
@@ -2010,7 +2010,7 @@ bb2:
 #line 56 "examples/adventure/game.hero"
     t9 = h3_i0;
 #line 56 "examples/adventure/game.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 56 "examples/adventure/game.hero"
     t21 = h4_one;
 #line 2017 "main.c"
@@ -3774,7 +3774,7 @@ bb0:
 #line 137 "examples/adventure/game.hero"
     t2 = t1.f_carrying;
 #line 137 "examples/adventure/game.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 137 "examples/adventure/game.hero"
     t4 = INT64_C(0);
 #line 137 "examples/adventure/game.hero"
@@ -4241,7 +4241,7 @@ bb1:
 #line 164 "examples/adventure/game.hero"
     t7 = h4_xs0;
 #line 164 "examples/adventure/game.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 164 "examples/adventure/game.hero"
     t9 = t6 < t8;
 #line 164 "examples/adventure/game.hero"
@@ -4253,7 +4253,7 @@ bb2:
 #line 164 "examples/adventure/game.hero"
     t11 = h5_i0;
 #line 164 "examples/adventure/game.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 164 "examples/adventure/game.hero"
     t46 = h6_line;
 #line 4260 "main.c"
@@ -4376,7 +4376,7 @@ bb5:
 #line 167 "examples/adventure/game.hero"
     t21 = h8_xs1;
 #line 167 "examples/adventure/game.hero"
-    t22 = hero_array_len(t21);
+    t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
 #line 167 "examples/adventure/game.hero"
     t23 = t20 < t22;
 #line 167 "examples/adventure/game.hero"
@@ -4388,7 +4388,7 @@ bb6:
 #line 167 "examples/adventure/game.hero"
     t25 = h9_i1;
 #line 167 "examples/adventure/game.hero"
-    t26 = *(HeroStr const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]);
 #line 167 "examples/adventure/game.hero"
     t51 = h10_one;
 #line 4395 "main.c"
@@ -5442,7 +5442,7 @@ bb1:
 #line 118 "examples/adventure/world.hero"
     t10 = h2_queue;
 #line 118 "examples/adventure/world.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 118 "examples/adventure/world.hero"
     t12 = t9 < t11;
 #line 118 "examples/adventure/world.hero"
@@ -5454,7 +5454,7 @@ bb2:
 #line 119 "examples/adventure/world.hero"
     t14 = h3_head;
 #line 119 "examples/adventure/world.hero"
-    t15 = *(HeroStr const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]);
 #line 119 "examples/adventure/world.hero"
     t72 = h4_here;
 #line 5461 "main.c"
@@ -5644,7 +5644,7 @@ bb7:
 #line 125 "examples/adventure/world.hero"
     t32 = h7_xs0;
 #line 125 "examples/adventure/world.hero"
-    t33 = hero_array_len(t32);
+    t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
 #line 125 "examples/adventure/world.hero"
     t34 = t31 < t33;
 #line 125 "examples/adventure/world.hero"
@@ -5656,7 +5656,7 @@ bb8:
 #line 125 "examples/adventure/world.hero"
     t36 = h8_i0;
 #line 125 "examples/adventure/world.hero"
-    t37 = *(HeroStr const *)hero_array_at(t35, t36);
+    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t36]);
 #line 125 "examples/adventure/world.hero"
     t81 = h9_direction;
 #line 5663 "main.c"

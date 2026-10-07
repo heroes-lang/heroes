@@ -373,7 +373,7 @@ bb2:
 #line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
     t10 = t8 % t9;
 #line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t11 = *(int64_t const *)hero_array_at(t7, t10);
+    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t10]);
 #line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
     if (__builtin_add_overflow(t6, t11, &t12)) hero_panic_overflow();
 #line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"

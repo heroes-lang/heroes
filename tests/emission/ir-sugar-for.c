@@ -144,7 +144,7 @@ bb1:
 #line 7 "tests/golden/ir/sugar-for.hero"
     t5 = h2_xs0;
 #line 7 "tests/golden/ir/sugar-for.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 7 "tests/golden/ir/sugar-for.hero"
     t7 = t4 < t6;
 #line 7 "tests/golden/ir/sugar-for.hero"
@@ -156,7 +156,7 @@ bb2:
 #line 7 "tests/golden/ir/sugar-for.hero"
     t9 = h3_i0;
 #line 7 "tests/golden/ir/sugar-for.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 7 "tests/golden/ir/sugar-for.hero"
     h4_x = t10;
 #line 8 "tests/golden/ir/sugar-for.hero"

@@ -494,7 +494,7 @@ bb0:
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t22 = INT64_C(0);
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t23 = *(h_0fn_48ac9712 const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t21 + 1))[t22]);
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t24 = INT64_C(5);
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -504,7 +504,7 @@ bb0:
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t27 = INT64_C(1);
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t28 = *(h_0fn_48ac9712 const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t26 + 1))[t27]);
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t29 = INT64_C(5);
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -544,7 +544,7 @@ bb0:
 #line 62 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t36 = INT64_C(1);
 #line 62 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t37 = *(h_0fn_48ac9712 const *)hero_array_at(t35, t36);
+    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t35 + 1))[t36]);
 #line 62 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t38 = INT64_C(6);
 #line 62 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -578,7 +578,7 @@ bb0:
 #line 65 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t45 = INT64_C(0);
 #line 65 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t46 = *(h_0fn_48ac9712 const *)hero_array_at(t44, t45);
+    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t44 + 1))[t45]);
 #line 65 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t47 = INT64_C(7);
 #line 65 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -614,7 +614,7 @@ bb0:
 #line 615 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_decref(t92);
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t55 = hero_array_len(t54);
+    t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t56 = INT64_C(99);
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -960,7 +960,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t4 = h2_kept;
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t6 = INT64_C(1);
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -1028,7 +1028,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t4 = h2_kept;
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t6 = INT64_C(1);
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"

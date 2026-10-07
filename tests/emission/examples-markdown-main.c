@@ -361,7 +361,7 @@ bb0:
 #line 23 "examples/markdown/main.hero"
     t2 = h0_given;
 #line 23 "examples/markdown/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 23 "examples/markdown/main.hero"
     t4 = INT64_C(0);
 #line 23 "examples/markdown/main.hero"
@@ -375,7 +375,7 @@ bb1:
 #line 27 "examples/markdown/main.hero"
     t9 = INT64_C(0);
 #line 27 "examples/markdown/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 27 "examples/markdown/main.hero"
     t11 = h_library_read_file(t10);
 #line 27 "examples/markdown/main.hero"
@@ -474,7 +474,7 @@ bb5:
 #line 28 "examples/markdown/main.hero"
     t18 = INT64_C(0);
 #line 28 "examples/markdown/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 28 "examples/markdown/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 28 "examples/markdown/main.hero"
@@ -624,7 +624,7 @@ bb0:
 #line 38 "examples/markdown/main.hero"
     t3 = h1_given;
 #line 38 "examples/markdown/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 38 "examples/markdown/main.hero"
     t5 = INT64_C(1);
 #line 38 "examples/markdown/main.hero"
@@ -660,7 +660,7 @@ bb2:
 #line 38 "examples/markdown/main.hero"
     t8 = INT64_C(1);
 #line 38 "examples/markdown/main.hero"
-    t9 = *(HeroStr const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 38 "examples/markdown/main.hero"
     t10 = HERO_STR_LIT(hero_str_4fb724d0);
 #line 38 "examples/markdown/main.hero"
@@ -724,7 +724,7 @@ bb6:
 #line 39 "examples/markdown/main.hero"
     t17 = h4_xs0;
 #line 39 "examples/markdown/main.hero"
-    t18 = hero_array_len(t17);
+    t18 = ((void)(t17 == NULL ? ((void)hero_array_len(t17), hero_unreachable()) : (void)0), t17->len);
 #line 39 "examples/markdown/main.hero"
     t19 = t16 < t18;
 #line 39 "examples/markdown/main.hero"
@@ -736,7 +736,7 @@ bb7:
 #line 39 "examples/markdown/main.hero"
     t21 = h5_i0;
 #line 39 "examples/markdown/main.hero"
-    t22 = *(HeroStr const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t20 + 1))[t21]);
 #line 39 "examples/markdown/main.hero"
     t34 = h6_line;
 #line 743 "main.c"
@@ -874,7 +874,7 @@ bb1:
 #line 53 "examples/markdown/main.hero"
     t5 = h2_xs0;
 #line 53 "examples/markdown/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 53 "examples/markdown/main.hero"
     t7 = t4 < t6;
 #line 53 "examples/markdown/main.hero"
@@ -886,7 +886,7 @@ bb2:
 #line 53 "examples/markdown/main.hero"
     t9 = h3_i0;
 #line 53 "examples/markdown/main.hero"
-    t10 = *(h_blocks_Block const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_blocks_Block) ? hero_unreachable() : (void)0), ((h_blocks_Block const *)(const void *)(t8 + 1))[t9]);
 #line 53 "examples/markdown/main.hero"
     t43 = h4_b;
 #line 893 "main.c"
@@ -2288,7 +2288,7 @@ bb1:
 #line 112 "examples/markdown/blocks.hero"
     t7 = h3_xs0;
 #line 112 "examples/markdown/blocks.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 112 "examples/markdown/blocks.hero"
     t9 = t6 < t8;
 #line 112 "examples/markdown/blocks.hero"
@@ -2300,7 +2300,7 @@ bb2:
 #line 112 "examples/markdown/blocks.hero"
     t11 = h4_i0;
 #line 112 "examples/markdown/blocks.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 112 "examples/markdown/blocks.hero"
     h5_i = t12;
 #line 113 "examples/markdown/blocks.hero"
@@ -2920,7 +2920,7 @@ bb1:
 #line 137 "examples/markdown/blocks.hero"
     t6 = h1_lines;
 #line 137 "examples/markdown/blocks.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 137 "examples/markdown/blocks.hero"
     t8 = t5 < t7;
 #line 137 "examples/markdown/blocks.hero"
@@ -2932,7 +2932,7 @@ bb2:
 #line 138 "examples/markdown/blocks.hero"
     t10 = h3_i;
 #line 138 "examples/markdown/blocks.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 138 "examples/markdown/blocks.hero"
     t12 = h_blocks_trimmed(t11);
 #line 138 "examples/markdown/blocks.hero"
@@ -3101,7 +3101,7 @@ bb7:
 #line 144 "examples/markdown/blocks.hero"
     t21 = h1_lines;
 #line 144 "examples/markdown/blocks.hero"
-    t22 = hero_array_len(t21);
+    t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
 #line 144 "examples/markdown/blocks.hero"
     t23 = t20 < t22;
 #line 144 "examples/markdown/blocks.hero"
@@ -3115,7 +3115,7 @@ bb8:
 #line 145 "examples/markdown/blocks.hero"
     t34 = h3_i;
 #line 145 "examples/markdown/blocks.hero"
-    t35 = *(HeroStr const *)hero_array_at(t33, t34);
+    t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? ((void)hero_array_at(t33, t34), hero_unreachable()) : (void)0), (void)(t33->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t33 + 1))[t34]);
 #line 145 "examples/markdown/blocks.hero"
     hero_array_push_owned(&h5_body, &t35);
 #line 146 "examples/markdown/blocks.hero"
@@ -3135,7 +3135,7 @@ bb9:
 #line 148 "examples/markdown/blocks.hero"
     t41 = h1_lines;
 #line 148 "examples/markdown/blocks.hero"
-    t42 = hero_array_len(t41);
+    t42 = ((void)(t41 == NULL ? ((void)hero_array_len(t41), hero_unreachable()) : (void)0), t41->len);
 #line 148 "examples/markdown/blocks.hero"
     t43 = t40 < t42;
 #line 148 "examples/markdown/blocks.hero"
@@ -3147,7 +3147,7 @@ bb10:
 #line 144 "examples/markdown/blocks.hero"
     t25 = h3_i;
 #line 144 "examples/markdown/blocks.hero"
-    t26 = *(HeroStr const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]);
 #line 144 "examples/markdown/blocks.hero"
     t27 = h_blocks_trimmed(t26);
 #line 144 "examples/markdown/blocks.hero"
@@ -3565,7 +3565,7 @@ bb29:
 #line 174 "examples/markdown/blocks.hero"
     t140 = h1_lines;
 #line 174 "examples/markdown/blocks.hero"
-    t141 = hero_array_len(t140);
+    t141 = ((void)(t140 == NULL ? ((void)hero_array_len(t140), hero_unreachable()) : (void)0), t140->len);
 #line 174 "examples/markdown/blocks.hero"
     t142 = t139 < t141;
 #line 174 "examples/markdown/blocks.hero"
@@ -3579,7 +3579,7 @@ bb30:
 #line 175 "examples/markdown/blocks.hero"
     t152 = h3_i;
 #line 175 "examples/markdown/blocks.hero"
-    t153 = *(HeroStr const *)hero_array_at(t151, t152);
+    t153 = ((void)((t151 == NULL || t152 < 0 || t152 >= t151->len) ? ((void)hero_array_at(t151, t152), hero_unreachable()) : (void)0), (void)(t151->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t151 + 1))[t152]);
 #line 175 "examples/markdown/blocks.hero"
     t154 = h_blocks_trimmed(t153);
 #line 175 "examples/markdown/blocks.hero"
@@ -3644,7 +3644,7 @@ bb32:
 #line 174 "examples/markdown/blocks.hero"
     t144 = h3_i;
 #line 174 "examples/markdown/blocks.hero"
-    t145 = *(HeroStr const *)hero_array_at(t143, t144);
+    t145 = ((void)((t143 == NULL || t144 < 0 || t144 >= t143->len) ? ((void)hero_array_at(t143, t144), hero_unreachable()) : (void)0), (void)(t143->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t143 + 1))[t144]);
 #line 174 "examples/markdown/blocks.hero"
     t146 = h_blocks_trimmed(t145);
 #line 174 "examples/markdown/blocks.hero"
@@ -3965,7 +3965,7 @@ bb1:
 #line 23 "examples/markdown/render.hero"
     t5 = h3_xs0;
 #line 23 "examples/markdown/render.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 23 "examples/markdown/render.hero"
     t7 = t4 < t6;
 #line 23 "examples/markdown/render.hero"
@@ -3977,7 +3977,7 @@ bb2:
 #line 23 "examples/markdown/render.hero"
     t9 = h4_i0;
 #line 23 "examples/markdown/render.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 23 "examples/markdown/render.hero"
     t23 = h5_line;
 #line 3984 "main.c"
@@ -4839,7 +4839,7 @@ bb1:
 #line 64 "examples/markdown/render.hero"
     t4 = h0_document;
 #line 64 "examples/markdown/render.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 64 "examples/markdown/render.hero"
     t6 = t3 < t5;
 #line 64 "examples/markdown/render.hero"
@@ -4861,7 +4861,7 @@ bb3:
 #line 73 "examples/markdown/render.hero"
     t45 = h1_out;
 #line 73 "examples/markdown/render.hero"
-    t46 = hero_array_len(t45);
+    t46 = ((void)(t45 == NULL ? ((void)hero_array_len(t45), hero_unreachable()) : (void)0), t45->len);
 #line 73 "examples/markdown/render.hero"
     t47 = INT64_C(0);
 #line 73 "examples/markdown/render.hero"
@@ -4875,7 +4875,7 @@ bb4:
 #line 68 "examples/markdown/render.hero"
     t25 = h2_i;
 #line 68 "examples/markdown/render.hero"
-    t26 = *(h_blocks_Block const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(h_blocks_Block) ? hero_unreachable() : (void)0), ((h_blocks_Block const *)(const void *)(t24 + 1))[t25]);
 #line 68 "examples/markdown/render.hero"
     t27 = h_render_lines_of(t26);
 #line 68 "examples/markdown/render.hero"
@@ -4909,13 +4909,13 @@ bb5:
 #line 65 "examples/markdown/render.hero"
     if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow();
 #line 65 "examples/markdown/render.hero"
-    t14 = *(h_blocks_Block const *)hero_array_at(t10, t13);
+    t14 = ((void)((t10 == NULL || t13 < 0 || t13 >= t10->len) ? ((void)hero_array_at(t10, t13), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_blocks_Block) ? hero_unreachable() : (void)0), ((h_blocks_Block const *)(const void *)(t10 + 1))[t13]);
 #line 65 "examples/markdown/render.hero"
     t15 = h0_document;
 #line 65 "examples/markdown/render.hero"
     t16 = h2_i;
 #line 65 "examples/markdown/render.hero"
-    t17 = *(h_blocks_Block const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(h_blocks_Block) ? hero_unreachable() : (void)0), ((h_blocks_Block const *)(const void *)(t15 + 1))[t16]);
 #line 65 "examples/markdown/render.hero"
     t18 = h_render_runs_on(t14, t17);
 #line 65 "examples/markdown/render.hero"
@@ -4949,7 +4949,7 @@ bb9:
 #line 68 "examples/markdown/render.hero"
     t30 = h4_xs0;
 #line 68 "examples/markdown/render.hero"
-    t31 = hero_array_len(t30);
+    t31 = ((void)(t30 == NULL ? ((void)hero_array_len(t30), hero_unreachable()) : (void)0), t30->len);
 #line 68 "examples/markdown/render.hero"
     t32 = t29 < t31;
 #line 68 "examples/markdown/render.hero"
@@ -4961,7 +4961,7 @@ bb10:
 #line 68 "examples/markdown/render.hero"
     t34 = h5_i0;
 #line 68 "examples/markdown/render.hero"
-    t35 = *(HeroStr const *)hero_array_at(t33, t34);
+    t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? ((void)hero_array_at(t33, t34), hero_unreachable()) : (void)0), (void)(t33->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t33 + 1))[t34]);
 #line 68 "examples/markdown/render.hero"
     t60 = h6_line;
 #line 4968 "main.c"

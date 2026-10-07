@@ -382,7 +382,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t18 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t19 = *(uint8_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t17 + 1))[t18]);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t20 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -390,7 +390,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t22 = INT64_C(1);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t23 = *(uint8_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t24 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -400,7 +400,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t27 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t28 = *(uint8_t const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t26 + 1))[t27]);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t29 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -412,7 +412,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     t33 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t34 = *(HeroStr const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t32 + 1))[t33]);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     hero_print_int(t19);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"

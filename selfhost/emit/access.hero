@@ -18,6 +18,7 @@ use emit/mangle
 use emit/ctype
 use emit/aggregate
 use emit/container
+use emit/array_read
 use emit/fallible
 use emit/writer
 use token
@@ -44,6 +45,11 @@ function len_read(@w: writer.Writer, c: state.Checked, f: containers.Function, v
 
     if counter == ""
         writer.line(@w, text: "    hero_unreachable(); /* len counts a str, an array or a map */")
+        return
+
+    # An array's length is read in place (defect 389, `emit/array_read.hero`).
+    if counter == "hero_array_len"
+        writer.line(@w, text: "    " + target.must() + " = " + array_read.length(mangle.value(value)) + ";")
         return
     writer.line(@w, text: "    " + target.must() + " = " + counter + "(" + mangle.value(value) + ");")
 

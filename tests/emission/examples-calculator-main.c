@@ -522,7 +522,7 @@ bb1:
 #line 79 "examples/calculator/main.hero"
     t15 = h2_xs0;
 #line 79 "examples/calculator/main.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 79 "examples/calculator/main.hero"
     t17 = t14 < t16;
 #line 79 "examples/calculator/main.hero"
@@ -534,7 +534,7 @@ bb2:
 #line 79 "examples/calculator/main.hero"
     t19 = h3_i0;
 #line 79 "examples/calculator/main.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 79 "examples/calculator/main.hero"
     t48 = h4_c;
 #line 541 "main.c"
@@ -1036,7 +1036,7 @@ bb1:
 #line 31 "examples/calculator/eval.hero"
     t5 = h3_xs0;
 #line 31 "examples/calculator/eval.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 31 "examples/calculator/eval.hero"
     t7 = t4 < t6;
 #line 31 "examples/calculator/eval.hero"
@@ -1048,7 +1048,7 @@ bb2:
 #line 31 "examples/calculator/eval.hero"
     t9 = h4_i0;
 #line 31 "examples/calculator/eval.hero"
-    t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_parse_Expr) ? hero_unreachable() : (void)0), ((h_parse_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 31 "examples/calculator/eval.hero"
     t32 = h5_c;
 #line 1055 "main.c"
@@ -1253,7 +1253,7 @@ bb1:
 #line 39 "examples/calculator/eval.hero"
     t5 = h3_xs0;
 #line 39 "examples/calculator/eval.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 39 "examples/calculator/eval.hero"
     t7 = t4 < t6;
 #line 39 "examples/calculator/eval.hero"
@@ -1265,7 +1265,7 @@ bb2:
 #line 39 "examples/calculator/eval.hero"
     t9 = h4_i0;
 #line 39 "examples/calculator/eval.hero"
-    t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_parse_Expr) ? hero_unreachable() : (void)0), ((h_parse_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 39 "examples/calculator/eval.hero"
     t32 = h5_c;
 #line 1272 "main.c"
@@ -1967,7 +1967,7 @@ bb1:
 #line 63 "examples/calculator/eval.hero"
     t5 = h2_xs0;
 #line 63 "examples/calculator/eval.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 63 "examples/calculator/eval.hero"
     t7 = t4 < t6;
 #line 63 "examples/calculator/eval.hero"
@@ -1979,7 +1979,7 @@ bb2:
 #line 63 "examples/calculator/eval.hero"
     t9 = h3_i0;
 #line 63 "examples/calculator/eval.hero"
-    t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_parse_Expr) ? hero_unreachable() : (void)0), ((h_parse_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 63 "examples/calculator/eval.hero"
     t34 = h4_c;
 #line 1986 "main.c"
@@ -2058,7 +2058,7 @@ bb5:
 #line 64 "examples/calculator/eval.hero"
     t15 = h5_xs1;
 #line 64 "examples/calculator/eval.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 64 "examples/calculator/eval.hero"
     t17 = t14 < t16;
 #line 64 "examples/calculator/eval.hero"
@@ -2070,7 +2070,7 @@ bb6:
 #line 64 "examples/calculator/eval.hero"
     t19 = h6_i1;
 #line 64 "examples/calculator/eval.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 64 "examples/calculator/eval.hero"
     t37 = h7_n;
 #line 2077 "main.c"
@@ -2716,7 +2716,7 @@ bb1:
 #line 134 "examples/calculator/eval.hero"
     t5 = h2_xs0;
 #line 134 "examples/calculator/eval.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 134 "examples/calculator/eval.hero"
     t7 = t4 < t6;
 #line 134 "examples/calculator/eval.hero"
@@ -2728,7 +2728,7 @@ bb2:
 #line 134 "examples/calculator/eval.hero"
     t9 = h3_i0;
 #line 134 "examples/calculator/eval.hero"
-    t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_parse_Expr) ? hero_unreachable() : (void)0), ((h_parse_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 134 "examples/calculator/eval.hero"
     t27 = h4_child;
 #line 2735 "main.c"
@@ -2896,7 +2896,7 @@ bb1:
 #line 146 "examples/calculator/eval.hero"
     t5 = h2_xs0;
 #line 146 "examples/calculator/eval.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 146 "examples/calculator/eval.hero"
     t7 = t4 < t6;
 #line 146 "examples/calculator/eval.hero"
@@ -2908,7 +2908,7 @@ bb2:
 #line 146 "examples/calculator/eval.hero"
     t9 = h3_i0;
 #line 146 "examples/calculator/eval.hero"
-    t10 = *(h_parse_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_parse_Expr) ? hero_unreachable() : (void)0), ((h_parse_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 146 "examples/calculator/eval.hero"
     t27 = h4_child;
 #line 2915 "main.c"
@@ -3140,7 +3140,7 @@ bb0:
 #line 164 "examples/calculator/eval.hero"
     t1 = h0_kept;
 #line 164 "examples/calculator/eval.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 164 "examples/calculator/eval.hero"
     t3 = INT64_C(1);
 #line 164 "examples/calculator/eval.hero"
@@ -3152,7 +3152,7 @@ bb1:
 #line 167 "examples/calculator/eval.hero"
     t8 = h0_kept;
 #line 167 "examples/calculator/eval.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 167 "examples/calculator/eval.hero"
     t10 = INT64_C(0);
 #line 167 "examples/calculator/eval.hero"
@@ -3166,7 +3166,7 @@ bb2:
 #line 165 "examples/calculator/eval.hero"
     t6 = INT64_C(0);
 #line 165 "examples/calculator/eval.hero"
-    t7 = *(h_parse_Expr const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(h_parse_Expr) ? hero_unreachable() : (void)0), ((h_parse_Expr const *)(const void *)(t5 + 1))[t6]);
 #line 165 "examples/calculator/eval.hero"
     h2_ret0 = t7;
 #line 165 "examples/calculator/eval.hero"
@@ -4217,7 +4217,7 @@ bb0:
 #line 42 "examples/calculator/parse.hero"
     t4 = t3.f_ts;
 #line 42 "examples/calculator/parse.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 42 "examples/calculator/parse.hero"
     t6 = t2 >= t5;
 #line 42 "examples/calculator/parse.hero"
@@ -4244,7 +4244,7 @@ bb0:
 #line 45 "examples/calculator/parse.hero"
     t4 = t3.f_pos;
 #line 45 "examples/calculator/parse.hero"
-    t5 = *(h_lex_Token const *)hero_array_at(t2, t4);
+    t5 = ((void)((t2 == NULL || t4 < 0 || t4 >= t2->len) ? ((void)hero_array_at(t2, t4), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_lex_Token) ? hero_unreachable() : (void)0), ((h_lex_Token const *)(const void *)(t2 + 1))[t4]);
 #line 4249 "main.c"
     h_lex_Token_retain(&t5);
     return t5;
@@ -5102,7 +5102,7 @@ bb5:
 #line 92 "examples/calculator/parse.hero"
     t33 = h3_children;
 #line 92 "examples/calculator/parse.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 92 "examples/calculator/parse.hero"
     t35 = INT64_C(1);
 #line 92 "examples/calculator/parse.hero"
@@ -5475,7 +5475,7 @@ bb5:
 #line 105 "examples/calculator/parse.hero"
     t33 = h3_children;
 #line 105 "examples/calculator/parse.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 105 "examples/calculator/parse.hero"
     t35 = INT64_C(1);
 #line 105 "examples/calculator/parse.hero"
@@ -5717,7 +5717,7 @@ bb1:
 #line 41 "examples/calculator/main.hero"
     t5 = h3_xs0;
 #line 41 "examples/calculator/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 41 "examples/calculator/main.hero"
     t7 = t4 < t6;
 #line 41 "examples/calculator/main.hero"
@@ -5729,7 +5729,7 @@ bb2:
 #line 41 "examples/calculator/main.hero"
     t9 = h4_i0;
 #line 41 "examples/calculator/main.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 41 "examples/calculator/main.hero"
     h5_x = t10;
 #line 42 "examples/calculator/main.hero"
@@ -5829,7 +5829,7 @@ bb1:
 #line 51 "examples/calculator/main.hero"
     t5 = h4_xs0;
 #line 51 "examples/calculator/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 51 "examples/calculator/main.hero"
     t7 = t4 < t6;
 #line 51 "examples/calculator/main.hero"
@@ -5841,7 +5841,7 @@ bb2:
 #line 51 "examples/calculator/main.hero"
     t9 = h5_i0;
 #line 51 "examples/calculator/main.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 51 "examples/calculator/main.hero"
     h6_x = t10;
 #line 52 "examples/calculator/main.hero"

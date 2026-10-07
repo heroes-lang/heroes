@@ -753,7 +753,7 @@ bb6:
 #line 754 "libraryhigherorder.c"
     hero_array_decref(t105);
 #line 60 "tests/golden/run/library-higher-order.hero"
-    t72 = hero_array_len(t71);
+    t72 = ((void)(t71 == NULL ? ((void)hero_array_len(t71), hero_unreachable()) : (void)0), t71->len);
 #line 60 "tests/golden/run/library-higher-order.hero"
     t73 = h5_empty;
 #line 60 "tests/golden/run/library-higher-order.hero"
@@ -945,7 +945,7 @@ bb1:
 #line 38 "<heroes library>"
     t5 = h3_xs0;
 #line 38 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 38 "<heroes library>"
     t7 = t4 < t6;
 #line 38 "<heroes library>"
@@ -957,7 +957,7 @@ bb2:
 #line 38 "<heroes library>"
     t9 = h4_i0;
 #line 38 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     h5_x = t10;
 #line 39 "<heroes library>"
@@ -1081,7 +1081,7 @@ bb1:
 #line 45 "<heroes library>"
     t5 = h3_xs0;
 #line 45 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 45 "<heroes library>"
     t7 = t4 < t6;
 #line 45 "<heroes library>"
@@ -1093,7 +1093,7 @@ bb2:
 #line 45 "<heroes library>"
     t9 = h4_i0;
 #line 45 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 45 "<heroes library>"
     h5_x = t10;
 #line 46 "<heroes library>"
@@ -1205,7 +1205,7 @@ bb1:
 #line 60 "<heroes library>"
     t5 = h4_xs0;
 #line 60 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 60 "<heroes library>"
     t7 = t4 < t6;
 #line 60 "<heroes library>"
@@ -1217,7 +1217,7 @@ bb2:
 #line 60 "<heroes library>"
     t9 = h5_i0;
 #line 60 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     h6_x = t10;
 #line 61 "<heroes library>"
@@ -1321,7 +1321,7 @@ bb1:
 #line 60 "<heroes library>"
     t5 = h4_xs0;
 #line 60 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 60 "<heroes library>"
     t7 = t4 < t6;
 #line 60 "<heroes library>"
@@ -1333,7 +1333,7 @@ bb2:
 #line 60 "<heroes library>"
     t9 = h5_i0;
 #line 60 "<heroes library>"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     t21 = h6_x;
 #line 1340 "libraryhigherorder.c"
@@ -1457,7 +1457,7 @@ bb1:
 #line 67 "<heroes library>"
     t4 = h2_xs0;
 #line 67 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 67 "<heroes library>"
     t6 = t3 < t5;
 #line 67 "<heroes library>"
@@ -1469,7 +1469,7 @@ bb2:
 #line 67 "<heroes library>"
     t8 = h3_i0;
 #line 67 "<heroes library>"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 67 "<heroes library>"
     h4_x = t9;
 #line 68 "<heroes library>"
@@ -1610,7 +1610,7 @@ bb1:
 #line 75 "<heroes library>"
     t4 = h2_xs0;
 #line 75 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 75 "<heroes library>"
     t6 = t3 < t5;
 #line 75 "<heroes library>"
@@ -1622,7 +1622,7 @@ bb2:
 #line 75 "<heroes library>"
     t8 = h3_i0;
 #line 75 "<heroes library>"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 75 "<heroes library>"
     h4_x = t9;
 #line 76 "<heroes library>"
@@ -1732,7 +1732,7 @@ bb1:
 #line 83 "<heroes library>"
     t4 = h2_xs0;
 #line 83 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 83 "<heroes library>"
     t6 = t3 < t5;
 #line 83 "<heroes library>"
@@ -1744,7 +1744,7 @@ bb2:
 #line 83 "<heroes library>"
     t8 = h3_i0;
 #line 83 "<heroes library>"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 83 "<heroes library>"
     h4_x = t9;
 #line 84 "<heroes library>"
@@ -1873,7 +1873,7 @@ bb1:
 #line 38 "<heroes library>"
     t5 = h3_xs0;
 #line 38 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 38 "<heroes library>"
     t7 = t4 < t6;
 #line 38 "<heroes library>"
@@ -1885,7 +1885,7 @@ bb2:
 #line 38 "<heroes library>"
     t9 = h4_i0;
 #line 38 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     h5_x = t10;
 #line 39 "<heroes library>"

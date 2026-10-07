@@ -1,0 +1,8 @@
+# FIXED DEFECT 389, 2026-10-07 (lane b14-emit): a read in place keeps the
+# runtime's abort. Index 0 of an array of none is past its length, and
+# `hero_array_at` says so in its own words.
+
+function main()
+    empty: [i64] = []
+    print(empty.len())
+    print(empty[0])

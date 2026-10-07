@@ -234,7 +234,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t4 = (*ph0_xs);
 #line 20 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 20 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     return t5;
 #line 241 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
@@ -272,7 +272,7 @@ bb0:
 #line 27 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t1 = h0_xs;
 #line 27 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 27 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(1000);
 #line 27 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
@@ -313,7 +313,7 @@ bb1:
 #line 32 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = h0_xs;
 #line 32 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 32 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t10 = INT64_C(1000);
 #line 32 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
@@ -327,7 +327,7 @@ bb2:
 #line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t2 = h0_xs;
 #line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t4 = INT64_C(1000);
 #line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
@@ -840,7 +840,7 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = h0_out;
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
@@ -929,7 +929,7 @@ bb0:
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = h0_out;
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = INT64_C(5);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"

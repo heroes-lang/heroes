@@ -157,7 +157,7 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     t5 = h0_s;
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_print_str(t4);
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"

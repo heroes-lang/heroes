@@ -294,7 +294,7 @@ bb4:
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t13 = h3_xs0;
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t15 = t12 < t14;
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
@@ -306,7 +306,7 @@ bb5:
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t17 = h4_i0;
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-    t18 = *(int64_t const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h5_b = t18;
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"

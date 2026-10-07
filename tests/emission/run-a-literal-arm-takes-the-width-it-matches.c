@@ -761,7 +761,7 @@ bb1:
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t9 = h2_xs0;
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t11 = t8 < t10;
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -773,7 +773,7 @@ bb2:
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t13 = h3_i0;
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    t14 = *(int64_t const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h4_i = t14;
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"

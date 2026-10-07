@@ -239,13 +239,13 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t6 = INT64_C(0);
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t7 = *(int64_t const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t8 = h0_p;
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t9 = t8.f_cells;
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_int(t7);
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
@@ -283,13 +283,13 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t16 = INT64_C(0);
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t17 = *(int64_t const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]);
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t18 = h0_p;
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t19 = t18.f_cells;
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_int(t17);
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
@@ -349,7 +349,7 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t28 = t27.f_cells;
 #line 41 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t29 = hero_array_len(t28);
+    t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len);
 #line 41 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_int(t29);
 #line 41 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
@@ -466,7 +466,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t44 = INT64_C(1);
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t45 = *(int64_t const *)hero_array_at(t43, t44);
+    t45 = ((void)((t43 == NULL || t44 < 0 || t44 >= t43->len) ? ((void)hero_array_at(t43, t44), hero_unreachable()) : (void)0), (void)(t43->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t43 + 1))[t44]);
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t46 = h1_q;
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
@@ -476,7 +476,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t49 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t50 = *(int64_t const *)hero_array_at(t48, t49);
+    t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? ((void)hero_array_at(t48, t49), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t48 + 1))[t49]);
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_int(t45);
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
@@ -502,7 +502,7 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t55 = t54.f_cells;
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
-    t56 = hero_array_len(t55);
+    t56 = ((void)(t55 == NULL ? ((void)hero_array_len(t55), hero_unreachable()) : (void)0), t55->len);
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_int(t56);
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"

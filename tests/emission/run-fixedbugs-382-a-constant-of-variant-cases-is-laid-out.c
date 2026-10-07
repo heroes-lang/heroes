@@ -846,7 +846,7 @@ bb4:
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t15 = t14.f_pts;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1230,7 +1230,7 @@ bb2:
 #line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t10 = t8 % t9;
 #line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t11 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)hero_array_at(t7, t10);
+    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Shape) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)(const void *)(t7 + 1))[t10]);
 #line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t12 = h_fixedbugs382aconstantofvariantcasesislaidout_weight(t11);
 #line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1264,7 +1264,7 @@ bb3:
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t20 = INT64_C(0);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t21 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Tree) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)(const void *)(t19 + 1))[t20]);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t22 = h_fixedbugs382aconstantofvariantcasesislaidout_sum(t21);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1280,7 +1280,7 @@ bb3:
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t25 = INT64_C(1);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t26 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Tree) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)(const void *)(t24 + 1))[t25]);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t27 = h_fixedbugs382aconstantofvariantcasesislaidout_sum(t26);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1296,7 +1296,7 @@ bb3:
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t30 = INT64_C(4);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t31 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)hero_array_at(t29, t30);
+    t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? ((void)hero_array_at(t29, t30), hero_unreachable()) : (void)0), (void)(t29->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Shape) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)(const void *)(t29 + 1))[t30]);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t32 = UINT64_C(255);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1367,7 +1367,7 @@ bb3:
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t41 = INT64_C(1);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t42 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)hero_array_at(t40, t41);
+    t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Shape) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)(const void *)(t40 + 1))[t41]);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t43 = h_fixedbugs382aconstantofvariantcasesislaidout_weight(t42);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1383,7 +1383,7 @@ bb3:
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t46 = INT64_C(1);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t47 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)hero_array_at(t45, t46);
+    t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? ((void)hero_array_at(t45, t46), hero_unreachable()) : (void)0), (void)(t45->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Shape) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Shape const *)(const void *)(t45 + 1))[t46]);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t48 = h_fixedbugs382aconstantofvariantcasesislaidout_weight(t47);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1532,7 +1532,7 @@ bb1:
 #line 60 "<heroes library>"
     t5 = h4_xs0;
 #line 60 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 60 "<heroes library>"
     t7 = t4 < t6;
 #line 60 "<heroes library>"
@@ -1544,7 +1544,7 @@ bb2:
 #line 60 "<heroes library>"
     t9 = h5_i0;
 #line 60 "<heroes library>"
-    t10 = *(h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Tree) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     t20 = h6_x;
 #line 1551 "fixedbugs382aconstantofvariantcasesislaidout.c"

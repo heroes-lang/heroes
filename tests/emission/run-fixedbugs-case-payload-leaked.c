@@ -319,7 +319,7 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t19 = h0_out;
 #line 47 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 47 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_print_int(t20);
 #line 47 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
@@ -327,7 +327,7 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t21 = h1_copy;
 #line 48 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t22 = hero_array_len(t21);
+    t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
 #line 48 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_print_int(t22);
 #line 48 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
@@ -337,7 +337,7 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t24 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t25 = *(h_fixedbugscasepayloadleaked_Token const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(h_fixedbugscasepayloadleaked_Token) ? hero_unreachable() : (void)0), ((h_fixedbugscasepayloadleaked_Token const *)(const void *)(t23 + 1))[t24]);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t26 = HERO_STR_LIT(hero_str_1d7a5355);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
@@ -363,7 +363,7 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t32 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    t33 = *(h_fixedbugscasepayloadleaked_Token const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(h_fixedbugscasepayloadleaked_Token) ? hero_unreachable() : (void)0), ((h_fixedbugscasepayloadleaked_Token const *)(const void *)(t31 + 1))[t32]);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t34 = INT64_C(12);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"

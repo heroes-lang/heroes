@@ -799,7 +799,7 @@ bb0:
 #line 52 "examples/query/main.hero"
     t3 = h0_given;
 #line 52 "examples/query/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 52 "examples/query/main.hero"
     t5 = INT64_C(0);
 #line 52 "examples/query/main.hero"
@@ -875,7 +875,7 @@ bb2:
 #line 53 "examples/query/main.hero"
     t8 = INT64_C(0);
 #line 53 "examples/query/main.hero"
-    t9 = *(HeroStr const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 53 "examples/query/main.hero"
     t88 = h1_path;
 #line 882 "main.c"
@@ -933,7 +933,7 @@ bb5:
 #line 57 "examples/query/main.hero"
     t19 = h2_made;
 #line 57 "examples/query/main.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 57 "examples/query/main.hero"
     t21 = hero_int_to_str(t20);
 #line 57 "examples/query/main.hero"
@@ -1147,7 +1147,7 @@ bb15:
 #line 71 "examples/query/main.hero"
     t68 = h11_back;
 #line 71 "examples/query/main.hero"
-    t69 = hero_array_len(t68);
+    t69 = ((void)(t68 == NULL ? ((void)hero_array_len(t68), hero_unreachable()) : (void)0), t68->len);
 #line 71 "examples/query/main.hero"
     t70 = hero_int_to_str(t69);
 #line 71 "examples/query/main.hero"
@@ -1798,7 +1798,7 @@ bb1:
 #line 106 "examples/query/main.hero"
     t48 = h7_xs0;
 #line 106 "examples/query/main.hero"
-    t49 = hero_array_len(t48);
+    t49 = ((void)(t48 == NULL ? ((void)hero_array_len(t48), hero_unreachable()) : (void)0), t48->len);
 #line 106 "examples/query/main.hero"
     t50 = t47 < t49;
 #line 106 "examples/query/main.hero"
@@ -1810,7 +1810,7 @@ bb2:
 #line 106 "examples/query/main.hero"
     t52 = h8_i0;
 #line 106 "examples/query/main.hero"
-    t53 = *(h_queryplan_Group const *)hero_array_at(t51, t52);
+    t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? ((void)hero_array_at(t51, t52), hero_unreachable()) : (void)0), (void)(t51->elem->size != sizeof(h_queryplan_Group) ? hero_unreachable() : (void)0), ((h_queryplan_Group const *)(const void *)(t51 + 1))[t52]);
 #line 106 "examples/query/main.hero"
     t146 = h9_key;
 #line 1817 "main.c"
@@ -2018,7 +2018,7 @@ bb7:
 #line 121 "examples/query/main.hero"
     t92 = h13_xs1;
 #line 121 "examples/query/main.hero"
-    t93 = hero_array_len(t92);
+    t93 = ((void)(t92 == NULL ? ((void)hero_array_len(t92), hero_unreachable()) : (void)0), t92->len);
 #line 121 "examples/query/main.hero"
     t94 = t91 < t93;
 #line 121 "examples/query/main.hero"
@@ -2030,7 +2030,7 @@ bb8:
 #line 121 "examples/query/main.hero"
     t96 = h14_i1;
 #line 121 "examples/query/main.hero"
-    t97 = *(h_datarow_Row const *)hero_array_at(t95, t96);
+    t97 = ((void)((t95 == NULL || t96 < 0 || t96 >= t95->len) ? ((void)hero_array_at(t95, t96), hero_unreachable()) : (void)0), (void)(t95->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t95 + 1))[t96]);
 #line 121 "examples/query/main.hero"
     t154 = h15_r;
 #line 2037 "main.c"
@@ -2560,7 +2560,7 @@ bb1:
 #line 2561 "main.c"
     hero_array_decref(t22);
 #line 90 "examples/query/data/row.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 90 "examples/query/data/row.hero"
     t6 = t3 < t5;
 #line 90 "examples/query/data/row.hero"
@@ -2578,7 +2578,7 @@ bb2:
 #line 91 "examples/query/data/row.hero"
     t9 = h1_at;
 #line 91 "examples/query/data/row.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 91 "examples/query/data/row.hero"
     t11 = h_datarow_REGIONS();
 #line 91 "examples/query/data/row.hero"
@@ -2590,7 +2590,7 @@ bb2:
 #line 91 "examples/query/data/row.hero"
     t12 = h1_at;
 #line 91 "examples/query/data/row.hero"
-    t13 = *(HeroStr const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]);
 #line 2595 "main.c"
     hero_str_incref(t10);
 #line 91 "examples/query/data/row.hero"
@@ -2842,7 +2842,7 @@ bb2:
 #line 2843 "main.c"
     hero_array_decref(t58);
 #line 125 "examples/query/data/row.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 125 "examples/query/data/row.hero"
     if (t13 == 0) hero_panic("division by zero");
 #line 125 "examples/query/data/row.hero"
@@ -2850,7 +2850,7 @@ bb2:
 #line 125 "examples/query/data/row.hero"
     t14 = t11 % t13;
 #line 125 "examples/query/data/row.hero"
-    t15 = *(HeroStr const *)hero_array_at(t9, t14);
+    t15 = ((void)((t9 == NULL || t14 < 0 || t14 >= t9->len) ? ((void)hero_array_at(t9, t14), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t14]);
 #line 125 "examples/query/data/row.hero"
     t59 = h4_team;
 #line 2857 "main.c"
@@ -3327,7 +3327,7 @@ bb1:
 #line 171 "examples/query/data/row.hero"
     t6 = h2_xs0;
 #line 171 "examples/query/data/row.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 171 "examples/query/data/row.hero"
     t8 = t5 < t7;
 #line 171 "examples/query/data/row.hero"
@@ -3339,7 +3339,7 @@ bb2:
 #line 171 "examples/query/data/row.hero"
     t10 = h3_i0;
 #line 171 "examples/query/data/row.hero"
-    t11 = *(h_datarow_Row const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t9 + 1))[t10]);
 #line 171 "examples/query/data/row.hero"
     t28 = h4_r;
 #line 3346 "main.c"
@@ -3525,7 +3525,7 @@ bb0:
 #line 3526 "main.c"
     hero_array_decref(t6);
 #line 39 "examples/query/data/table.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 3530 "main.c"
     hero_str_decref(h0_own0);
 #line 39 "examples/query/data/table.hero"
@@ -3773,7 +3773,7 @@ bb0:
 #line 62 "examples/query/data/table.hero"
     t4 = h1_all_lines;
 #line 62 "examples/query/data/table.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 62 "examples/query/data/table.hero"
     t6 = INT64_C(0);
 #line 62 "examples/query/data/table.hero"
@@ -3797,13 +3797,13 @@ bb2:
 #line 62 "examples/query/data/table.hero"
     t9 = h1_all_lines;
 #line 62 "examples/query/data/table.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 62 "examples/query/data/table.hero"
     t11 = INT64_C(1);
 #line 62 "examples/query/data/table.hero"
     if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow();
 #line 62 "examples/query/data/table.hero"
-    t13 = *(HeroStr const *)hero_array_at(t8, t12);
+    t13 = ((void)((t8 == NULL || t12 < 0 || t12 >= t8->len) ? ((void)hero_array_at(t8, t12), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t12]);
 #line 62 "examples/query/data/table.hero"
     t14 = HERO_STR_LIT(hero_str_0);
 #line 62 "examples/query/data/table.hero"
@@ -3827,7 +3827,7 @@ bb4:
 #line 63 "examples/query/data/table.hero"
     t19 = h1_all_lines;
 #line 63 "examples/query/data/table.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 63 "examples/query/data/table.hero"
     t21 = INT64_C(1);
 #line 63 "examples/query/data/table.hero"
@@ -5043,7 +5043,7 @@ bb0:
 #line 129 "examples/query/data/table.hero"
     t4 = h2_halves;
 #line 129 "examples/query/data/table.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 129 "examples/query/data/table.hero"
     t6 = INT64_C(2);
 #line 129 "examples/query/data/table.hero"
@@ -5173,7 +5173,7 @@ bb5:
 #line 132 "examples/query/data/table.hero"
     t31 = INT64_C(0);
 #line 132 "examples/query/data/table.hero"
-    t32 = *(HeroStr const *)hero_array_at(t30, t31);
+    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t30 + 1))[t31]);
 #line 132 "examples/query/data/table.hero"
     t33 = h1_line;
 #line 132 "examples/query/data/table.hero"
@@ -5231,7 +5231,7 @@ bb6:
 #line 135 "examples/query/data/table.hero"
     t46 = h2_halves;
 #line 135 "examples/query/data/table.hero"
-    t47 = hero_array_len(t46);
+    t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len);
 #line 135 "examples/query/data/table.hero"
     t48 = INT64_C(2);
 #line 135 "examples/query/data/table.hero"
@@ -5297,7 +5297,7 @@ bb9:
 #line 136 "examples/query/data/table.hero"
     t51 = INT64_C(1);
 #line 136 "examples/query/data/table.hero"
-    t52 = *(HeroStr const *)hero_array_at(t50, t51);
+    t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t50 + 1))[t51]);
 #line 136 "examples/query/data/table.hero"
     t183 = h7_fraction_digits;
 #line 5304 "main.c"
@@ -6569,7 +6569,7 @@ bb0:
 #line 190 "examples/query/data/table.hero"
     t3 = h1_all_lines;
 #line 190 "examples/query/data/table.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 190 "examples/query/data/table.hero"
     t5 = INT64_C(0);
 #line 190 "examples/query/data/table.hero"
@@ -6583,7 +6583,7 @@ bb1:
 #line 193 "examples/query/data/table.hero"
     t11 = INT64_C(0);
 #line 193 "examples/query/data/table.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 193 "examples/query/data/table.hero"
     t13 = h_datarow_HEADER();
 #line 193 "examples/query/data/table.hero"
@@ -6662,7 +6662,7 @@ bb4:
 #line 202 "examples/query/data/table.hero"
     t33 = h1_all_lines;
 #line 202 "examples/query/data/table.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 202 "examples/query/data/table.hero"
     t35 = hero_array_slice(t31, t32, t34);
 #line 202 "examples/query/data/table.hero"
@@ -6702,7 +6702,7 @@ bb5:
 #line 196 "examples/query/data/table.hero"
     t18 = INT64_C(0);
 #line 196 "examples/query/data/table.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 196 "examples/query/data/table.hero"
     t20 = hero_str_concat(t16, t19);
 #line 196 "examples/query/data/table.hero"
@@ -6776,7 +6776,7 @@ bb7:
 #line 202 "examples/query/data/table.hero"
     t38 = h5_xs0;
 #line 202 "examples/query/data/table.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 202 "examples/query/data/table.hero"
     t40 = t37 < t39;
 #line 202 "examples/query/data/table.hero"
@@ -6788,7 +6788,7 @@ bb8:
 #line 202 "examples/query/data/table.hero"
     t42 = h6_i0;
 #line 202 "examples/query/data/table.hero"
-    t43 = *(HeroStr const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t41 + 1))[t42]);
 #line 202 "examples/query/data/table.hero"
     t158 = h7_one;
 #line 6795 "main.c"
@@ -6828,7 +6828,7 @@ bb8:
 #line 206 "examples/query/data/table.hero"
     t50 = h8_fields;
 #line 206 "examples/query/data/table.hero"
-    t51 = hero_array_len(t50);
+    t51 = ((void)(t50 == NULL ? ((void)hero_array_len(t50), hero_unreachable()) : (void)0), t50->len);
 #line 206 "examples/query/data/table.hero"
     t52 = h4_wanted;
 #line 206 "examples/query/data/table.hero"
@@ -6872,7 +6872,7 @@ bb11:
 #line 212 "examples/query/data/table.hero"
     t73 = INT64_C(0);
 #line 212 "examples/query/data/table.hero"
-    t74 = *(HeroStr const *)hero_array_at(t72, t73);
+    t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? ((void)hero_array_at(t72, t73), hero_unreachable()) : (void)0), (void)(t72->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t72 + 1))[t73]);
 #line 212 "examples/query/data/table.hero"
     t75 = h3_number;
 #line 212 "examples/query/data/table.hero"
@@ -6944,7 +6944,7 @@ bb12:
 #line 209 "examples/query/data/table.hero"
     t61 = h8_fields;
 #line 209 "examples/query/data/table.hero"
-    t62 = hero_array_len(t61);
+    t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len);
 #line 209 "examples/query/data/table.hero"
     t63 = hero_int_to_str(t62);
 #line 209 "examples/query/data/table.hero"
@@ -7022,19 +7022,19 @@ bb14:
 #line 212 "examples/query/data/table.hero"
     t87 = INT64_C(1);
 #line 212 "examples/query/data/table.hero"
-    t88 = *(HeroStr const *)hero_array_at(t86, t87);
+    t88 = ((void)((t86 == NULL || t87 < 0 || t87 >= t86->len) ? ((void)hero_array_at(t86, t87), hero_unreachable()) : (void)0), (void)(t86->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t86 + 1))[t87]);
 #line 212 "examples/query/data/table.hero"
     t89 = h8_fields;
 #line 212 "examples/query/data/table.hero"
     t90 = INT64_C(2);
 #line 212 "examples/query/data/table.hero"
-    t91 = *(HeroStr const *)hero_array_at(t89, t90);
+    t91 = ((void)((t89 == NULL || t90 < 0 || t90 >= t89->len) ? ((void)hero_array_at(t89, t90), hero_unreachable()) : (void)0), (void)(t89->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t89 + 1))[t90]);
 #line 212 "examples/query/data/table.hero"
     t92 = h8_fields;
 #line 212 "examples/query/data/table.hero"
     t93 = INT64_C(3);
 #line 212 "examples/query/data/table.hero"
-    t94 = *(HeroStr const *)hero_array_at(t92, t93);
+    t94 = ((void)((t92 == NULL || t93 < 0 || t93 >= t92->len) ? ((void)hero_array_at(t92, t93), hero_unreachable()) : (void)0), (void)(t92->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t92 + 1))[t93]);
 #line 212 "examples/query/data/table.hero"
     t95 = h3_number;
 #line 212 "examples/query/data/table.hero"
@@ -7094,7 +7094,7 @@ bb16:
 #line 212 "examples/query/data/table.hero"
     t107 = INT64_C(4);
 #line 212 "examples/query/data/table.hero"
-    t108 = *(HeroStr const *)hero_array_at(t106, t107);
+    t108 = ((void)((t106 == NULL || t107 < 0 || t107 >= t106->len) ? ((void)hero_array_at(t106, t107), hero_unreachable()) : (void)0), (void)(t106->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t106 + 1))[t107]);
 #line 212 "examples/query/data/table.hero"
     t109 = h3_number;
 #line 212 "examples/query/data/table.hero"
@@ -7154,7 +7154,7 @@ bb18:
 #line 212 "examples/query/data/table.hero"
     t121 = INT64_C(5);
 #line 212 "examples/query/data/table.hero"
-    t122 = *(HeroStr const *)hero_array_at(t120, t121);
+    t122 = ((void)((t120 == NULL || t121 < 0 || t121 >= t120->len) ? ((void)hero_array_at(t120, t121), hero_unreachable()) : (void)0), (void)(t120->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t120 + 1))[t121]);
 #line 212 "examples/query/data/table.hero"
     t123 = h3_number;
 #line 212 "examples/query/data/table.hero"
@@ -7767,7 +7767,7 @@ bb1:
 #line 34 "examples/query/fmt/report.hero"
     t4 = h0_cells;
 #line 34 "examples/query/fmt/report.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 34 "examples/query/fmt/report.hero"
     t6 = t3 < t5;
 #line 34 "examples/query/fmt/report.hero"
@@ -7810,7 +7810,7 @@ bb4:
 #line 38 "examples/query/fmt/report.hero"
     t14 = h0_cells;
 #line 38 "examples/query/fmt/report.hero"
-    t15 = hero_array_len(t14);
+    t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len);
 #line 38 "examples/query/fmt/report.hero"
     t16 = INT64_C(1);
 #line 38 "examples/query/fmt/report.hero"
@@ -7864,7 +7864,7 @@ bb8:
 #line 39 "examples/query/fmt/report.hero"
     t21 = h3_at;
 #line 39 "examples/query/fmt/report.hero"
-    t22 = *(HeroStr const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t20 + 1))[t21]);
 #line 39 "examples/query/fmt/report.hero"
     t23 = hero_str_concat(t19, t22);
 #line 39 "examples/query/fmt/report.hero"
@@ -7890,13 +7890,13 @@ bb9:
 #line 41 "examples/query/fmt/report.hero"
     t26 = h3_at;
 #line 41 "examples/query/fmt/report.hero"
-    t27 = *(HeroStr const *)hero_array_at(t25, t26);
+    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t25 + 1))[t26]);
 #line 41 "examples/query/fmt/report.hero"
     t28 = h1_widths;
 #line 41 "examples/query/fmt/report.hero"
     t29 = h3_at;
 #line 41 "examples/query/fmt/report.hero"
-    t30 = *(int64_t const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t28 + 1))[t29]);
 #line 41 "examples/query/fmt/report.hero"
     t31 = h_fmtreport_wide(t27, t30);
 #line 41 "examples/query/fmt/report.hero"
@@ -8187,7 +8187,7 @@ bb1:
 #line 57 "examples/query/fmt/report.hero"
     t5 = h3_xs0;
 #line 57 "examples/query/fmt/report.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 57 "examples/query/fmt/report.hero"
     t7 = t4 < t6;
 #line 57 "examples/query/fmt/report.hero"
@@ -8199,7 +8199,7 @@ bb2:
 #line 57 "examples/query/fmt/report.hero"
     t9 = h4_i0;
 #line 57 "examples/query/fmt/report.hero"
-    t10 = *(h_queryplan_Column const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_queryplan_Column) ? hero_unreachable() : (void)0), ((h_queryplan_Column const *)(const void *)(t8 + 1))[t9]);
 #line 57 "examples/query/fmt/report.hero"
     h5_c = t10;
 #line 58 "examples/query/fmt/report.hero"
@@ -8278,7 +8278,7 @@ bb5:
 #line 60 "examples/query/fmt/report.hero"
     t17 = h7_xs1;
 #line 60 "examples/query/fmt/report.hero"
-    t18 = hero_array_len(t17);
+    t18 = ((void)(t17 == NULL ? ((void)hero_array_len(t17), hero_unreachable()) : (void)0), t17->len);
 #line 60 "examples/query/fmt/report.hero"
     t19 = t16 < t18;
 #line 60 "examples/query/fmt/report.hero"
@@ -8290,7 +8290,7 @@ bb6:
 #line 60 "examples/query/fmt/report.hero"
     t21 = h8_i1;
 #line 60 "examples/query/fmt/report.hero"
-    t22 = *(h_datarow_Row const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t20 + 1))[t21]);
 #line 60 "examples/query/fmt/report.hero"
     t46 = h9_r;
 #line 8297 "main.c"
@@ -8521,7 +8521,7 @@ bb1:
 #line 75 "examples/query/fmt/report.hero"
     t8 = h4_xs0;
 #line 75 "examples/query/fmt/report.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 75 "examples/query/fmt/report.hero"
     t10 = t7 < t9;
 #line 75 "examples/query/fmt/report.hero"
@@ -8533,7 +8533,7 @@ bb2:
 #line 75 "examples/query/fmt/report.hero"
     t12 = h5_i0;
 #line 75 "examples/query/fmt/report.hero"
-    t13 = *(h_queryplan_Column const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(h_queryplan_Column) ? hero_unreachable() : (void)0), ((h_queryplan_Column const *)(const void *)(t11 + 1))[t12]);
 #line 75 "examples/query/fmt/report.hero"
     h6_c = t13;
 #line 76 "examples/query/fmt/report.hero"
@@ -8617,7 +8617,7 @@ bb5:
 #line 80 "examples/query/fmt/report.hero"
     t28 = h8_xs1;
 #line 80 "examples/query/fmt/report.hero"
-    t29 = hero_array_len(t28);
+    t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len);
 #line 80 "examples/query/fmt/report.hero"
     t30 = t27 < t29;
 #line 80 "examples/query/fmt/report.hero"
@@ -8629,7 +8629,7 @@ bb6:
 #line 80 "examples/query/fmt/report.hero"
     t32 = h9_i1;
 #line 80 "examples/query/fmt/report.hero"
-    t33 = *(h_datarow_Row const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t31 + 1))[t32]);
 #line 80 "examples/query/fmt/report.hero"
     t73 = h10_r;
 #line 8636 "main.c"
@@ -8757,7 +8757,7 @@ bb9:
 #line 83 "examples/query/fmt/report.hero"
     t38 = h12_xs2;
 #line 83 "examples/query/fmt/report.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 83 "examples/query/fmt/report.hero"
     t40 = t37 < t39;
 #line 83 "examples/query/fmt/report.hero"
@@ -8769,7 +8769,7 @@ bb10:
 #line 83 "examples/query/fmt/report.hero"
     t42 = h13_i2;
 #line 83 "examples/query/fmt/report.hero"
-    t43 = *(h_queryplan_Column const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_queryplan_Column) ? hero_unreachable() : (void)0), ((h_queryplan_Column const *)(const void *)(t41 + 1))[t42]);
 #line 83 "examples/query/fmt/report.hero"
     h14_c = t43;
 #line 84 "examples/query/fmt/report.hero"
@@ -8995,7 +8995,7 @@ bb1:
 #line 94 "examples/query/fmt/report.hero"
     t5 = h3_xs0;
 #line 94 "examples/query/fmt/report.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 94 "examples/query/fmt/report.hero"
     t7 = t4 < t6;
 #line 94 "examples/query/fmt/report.hero"
@@ -9007,7 +9007,7 @@ bb2:
 #line 94 "examples/query/fmt/report.hero"
     t9 = h4_i0;
 #line 94 "examples/query/fmt/report.hero"
-    t10 = *(h_queryplan_Joined const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_queryplan_Joined) ? hero_unreachable() : (void)0), ((h_queryplan_Joined const *)(const void *)(t8 + 1))[t9]);
 #line 94 "examples/query/fmt/report.hero"
     t94 = h5_j;
 #line 9014 "main.c"
@@ -9097,7 +9097,7 @@ bb5:
 #line 100 "examples/query/fmt/report.hero"
     t25 = h8_xs1;
 #line 100 "examples/query/fmt/report.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 100 "examples/query/fmt/report.hero"
     t27 = t24 < t26;
 #line 100 "examples/query/fmt/report.hero"
@@ -9109,7 +9109,7 @@ bb6:
 #line 100 "examples/query/fmt/report.hero"
     t29 = h9_i1;
 #line 100 "examples/query/fmt/report.hero"
-    t30 = *(h_queryplan_Column const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(h_queryplan_Column) ? hero_unreachable() : (void)0), ((h_queryplan_Column const *)(const void *)(t28 + 1))[t29]);
 #line 100 "examples/query/fmt/report.hero"
     h10_c = t30;
 #line 101 "examples/query/fmt/report.hero"
@@ -9217,7 +9217,7 @@ bb9:
 #line 107 "examples/query/fmt/report.hero"
     t51 = h13_xs2;
 #line 107 "examples/query/fmt/report.hero"
-    t52 = hero_array_len(t51);
+    t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
 #line 107 "examples/query/fmt/report.hero"
     t53 = t50 < t52;
 #line 107 "examples/query/fmt/report.hero"
@@ -9229,7 +9229,7 @@ bb10:
 #line 107 "examples/query/fmt/report.hero"
     t55 = h14_i2;
 #line 107 "examples/query/fmt/report.hero"
-    t56 = *(h_queryplan_Joined const *)hero_array_at(t54, t55);
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(h_queryplan_Joined) ? hero_unreachable() : (void)0), ((h_queryplan_Joined const *)(const void *)(t54 + 1))[t55]);
 #line 107 "examples/query/fmt/report.hero"
     t107 = h15_j;
 #line 9236 "main.c"
@@ -9375,7 +9375,7 @@ bb13:
 #line 110 "examples/query/fmt/report.hero"
     t61 = h17_xs3;
 #line 110 "examples/query/fmt/report.hero"
-    t62 = hero_array_len(t61);
+    t62 = ((void)(t61 == NULL ? ((void)hero_array_len(t61), hero_unreachable()) : (void)0), t61->len);
 #line 110 "examples/query/fmt/report.hero"
     t63 = t60 < t62;
 #line 110 "examples/query/fmt/report.hero"
@@ -9387,7 +9387,7 @@ bb14:
 #line 110 "examples/query/fmt/report.hero"
     t65 = h18_i3;
 #line 110 "examples/query/fmt/report.hero"
-    t66 = *(h_queryplan_Column const *)hero_array_at(t64, t65);
+    t66 = ((void)((t64 == NULL || t65 < 0 || t65 >= t64->len) ? ((void)hero_array_at(t64, t65), hero_unreachable()) : (void)0), (void)(t64->elem->size != sizeof(h_queryplan_Column) ? hero_unreachable() : (void)0), ((h_queryplan_Column const *)(const void *)(t64 + 1))[t65]);
 #line 110 "examples/query/fmt/report.hero"
     h19_c = t66;
 #line 111 "examples/query/fmt/report.hero"
@@ -11077,7 +11077,7 @@ bb8:
 #line 129 "examples/query/query/plan.hero"
     t39 = h9_xs0;
 #line 129 "examples/query/query/plan.hero"
-    t40 = hero_array_len(t39);
+    t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
 #line 129 "examples/query/query/plan.hero"
     t41 = t38 < t40;
 #line 129 "examples/query/query/plan.hero"
@@ -11089,7 +11089,7 @@ bb9:
 #line 129 "examples/query/query/plan.hero"
     t43 = h10_i0;
 #line 129 "examples/query/query/plan.hero"
-    t44 = *(h_queryplan_Where const *)hero_array_at(t42, t43);
+    t44 = ((void)((t42 == NULL || t43 < 0 || t43 >= t42->len) ? ((void)hero_array_at(t42, t43), hero_unreachable()) : (void)0), (void)(t42->elem->size != sizeof(h_queryplan_Where) ? hero_unreachable() : (void)0), ((h_queryplan_Where const *)(const void *)(t42 + 1))[t43]);
 #line 129 "examples/query/query/plan.hero"
     t60 = h11_one;
 #line 11096 "main.c"
@@ -11619,7 +11619,7 @@ bb1:
 #line 34 "examples/query/run/engine.hero"
     t5 = h3_xs0;
 #line 34 "examples/query/run/engine.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 34 "examples/query/run/engine.hero"
     t7 = t4 < t6;
 #line 34 "examples/query/run/engine.hero"
@@ -11631,7 +11631,7 @@ bb2:
 #line 34 "examples/query/run/engine.hero"
     t9 = h4_i0;
 #line 34 "examples/query/run/engine.hero"
-    t10 = *(h_datarow_Row const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t8 + 1))[t9]);
 #line 34 "examples/query/run/engine.hero"
     t24 = h5_r;
 #line 11638 "main.c"
@@ -11766,7 +11766,7 @@ bb1:
 #line 46 "examples/query/run/engine.hero"
     t5 = h2_xs0;
 #line 46 "examples/query/run/engine.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 46 "examples/query/run/engine.hero"
     t7 = t4 < t6;
 #line 46 "examples/query/run/engine.hero"
@@ -11778,7 +11778,7 @@ bb2:
 #line 46 "examples/query/run/engine.hero"
     t9 = h3_i0;
 #line 46 "examples/query/run/engine.hero"
-    t10 = *(h_datarow_Team const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_datarow_Team) ? hero_unreachable() : (void)0), ((h_datarow_Team const *)(const void *)(t8 + 1))[t9]);
 #line 46 "examples/query/run/engine.hero"
     t22 = h4_t;
 #line 11785 "main.c"
@@ -11956,7 +11956,7 @@ bb1:
 #line 58 "examples/query/run/engine.hero"
     t7 = h4_xs0;
 #line 58 "examples/query/run/engine.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 58 "examples/query/run/engine.hero"
     t9 = t6 < t8;
 #line 58 "examples/query/run/engine.hero"
@@ -11968,7 +11968,7 @@ bb2:
 #line 58 "examples/query/run/engine.hero"
     t11 = h5_i0;
 #line 58 "examples/query/run/engine.hero"
-    t12 = *(h_datarow_Row const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t10 + 1))[t11]);
 #line 58 "examples/query/run/engine.hero"
     t45 = h6_r;
 #line 11975 "main.c"
@@ -12710,7 +12710,7 @@ bb1:
 #line 119 "examples/query/run/engine.hero"
     t5 = h0_left;
 #line 119 "examples/query/run/engine.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 119 "examples/query/run/engine.hero"
     t7 = t4 < t6;
 #line 119 "examples/query/run/engine.hero"
@@ -12726,13 +12726,13 @@ bb2:
 #line 120 "examples/query/run/engine.hero"
     t15 = h5_at_right;
 #line 120 "examples/query/run/engine.hero"
-    t16 = *(h_datarow_Row const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t14 + 1))[t15]);
 #line 120 "examples/query/run/engine.hero"
     t17 = h0_left;
 #line 120 "examples/query/run/engine.hero"
     t18 = h4_at_left;
 #line 120 "examples/query/run/engine.hero"
-    t19 = *(h_datarow_Row const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t17 + 1))[t18]);
 #line 120 "examples/query/run/engine.hero"
     t20 = h_runengine_before(t13, t16, t19);
 #line 120 "examples/query/run/engine.hero"
@@ -12748,7 +12748,7 @@ bb4:
 #line 119 "examples/query/run/engine.hero"
     t9 = h1_right;
 #line 119 "examples/query/run/engine.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 119 "examples/query/run/engine.hero"
     t11 = t8 < t10;
 #line 119 "examples/query/run/engine.hero"
@@ -12772,7 +12772,7 @@ bb7:
 #line 121 "examples/query/run/engine.hero"
     t23 = h5_at_right;
 #line 121 "examples/query/run/engine.hero"
-    t24 = *(h_datarow_Row const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t22 + 1))[t23]);
 #line 121 "examples/query/run/engine.hero"
     hero_array_push_owned(&h3_out, &t24);
 #line 122 "examples/query/run/engine.hero"
@@ -12792,7 +12792,7 @@ bb8:
 #line 124 "examples/query/run/engine.hero"
     t31 = h4_at_left;
 #line 124 "examples/query/run/engine.hero"
-    t32 = *(h_datarow_Row const *)hero_array_at(t30, t31);
+    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t30 + 1))[t31]);
 #line 124 "examples/query/run/engine.hero"
     hero_array_push_owned(&h3_out, &t32);
 #line 125 "examples/query/run/engine.hero"
@@ -12812,7 +12812,7 @@ bb9:
 #line 127 "examples/query/run/engine.hero"
     t38 = h0_left;
 #line 127 "examples/query/run/engine.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 127 "examples/query/run/engine.hero"
     t40 = t37 < t39;
 #line 127 "examples/query/run/engine.hero"
@@ -12824,7 +12824,7 @@ bb10:
 #line 128 "examples/query/run/engine.hero"
     t43 = h4_at_left;
 #line 128 "examples/query/run/engine.hero"
-    t44 = *(h_datarow_Row const *)hero_array_at(t42, t43);
+    t44 = ((void)((t42 == NULL || t43 < 0 || t43 >= t42->len) ? ((void)hero_array_at(t42, t43), hero_unreachable()) : (void)0), (void)(t42->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t42 + 1))[t43]);
 #line 128 "examples/query/run/engine.hero"
     hero_array_push_owned(&h3_out, &t44);
 #line 129 "examples/query/run/engine.hero"
@@ -12848,7 +12848,7 @@ bb12:
 #line 131 "examples/query/run/engine.hero"
     t50 = h1_right;
 #line 131 "examples/query/run/engine.hero"
-    t51 = hero_array_len(t50);
+    t51 = ((void)(t50 == NULL ? ((void)hero_array_len(t50), hero_unreachable()) : (void)0), t50->len);
 #line 131 "examples/query/run/engine.hero"
     t52 = t49 < t51;
 #line 131 "examples/query/run/engine.hero"
@@ -12860,7 +12860,7 @@ bb13:
 #line 132 "examples/query/run/engine.hero"
     t55 = h5_at_right;
 #line 132 "examples/query/run/engine.hero"
-    t56 = *(h_datarow_Row const *)hero_array_at(t54, t55);
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t54 + 1))[t55]);
 #line 132 "examples/query/run/engine.hero"
     hero_array_push_owned(&h3_out, &t56);
 #line 133 "examples/query/run/engine.hero"
@@ -12933,7 +12933,7 @@ bb0:
 #line 141 "examples/query/run/engine.hero"
     t1 = h0_rows;
 #line 141 "examples/query/run/engine.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 141 "examples/query/run/engine.hero"
     t3 = INT64_C(1);
 #line 141 "examples/query/run/engine.hero"
@@ -12945,7 +12945,7 @@ bb1:
 #line 143 "examples/query/run/engine.hero"
     t6 = h0_rows;
 #line 143 "examples/query/run/engine.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 143 "examples/query/run/engine.hero"
     t8 = INT64_C(2);
 #line 143 "examples/query/run/engine.hero"
@@ -12987,7 +12987,7 @@ bb1:
 #line 146 "examples/query/run/engine.hero"
     t18 = h0_rows;
 #line 146 "examples/query/run/engine.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 146 "examples/query/run/engine.hero"
     t20 = hero_array_slice(t16, t17, t19);
 #line 146 "examples/query/run/engine.hero"
@@ -13116,7 +13116,7 @@ bb2:
 #line 153 "examples/query/run/engine.hero"
     t5 = h0_rows;
 #line 153 "examples/query/run/engine.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 153 "examples/query/run/engine.hero"
     t7 = t4 >= t6;
 #line 153 "examples/query/run/engine.hero"
@@ -13221,7 +13221,7 @@ bb1:
 #line 163 "examples/query/run/engine.hero"
     t5 = h3_xs0;
 #line 163 "examples/query/run/engine.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 163 "examples/query/run/engine.hero"
     t7 = t4 < t6;
 #line 163 "examples/query/run/engine.hero"
@@ -13233,7 +13233,7 @@ bb2:
 #line 163 "examples/query/run/engine.hero"
     t9 = h4_i0;
 #line 163 "examples/query/run/engine.hero"
-    t10 = *(h_datarow_Row const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t8 + 1))[t9]);
 #line 163 "examples/query/run/engine.hero"
     t30 = h5_r;
 #line 13240 "main.c"
@@ -13448,7 +13448,7 @@ bb1:
 #line 178 "examples/query/run/engine.hero"
     t5 = h2_xs0;
 #line 178 "examples/query/run/engine.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 178 "examples/query/run/engine.hero"
     t7 = t4 < t6;
 #line 178 "examples/query/run/engine.hero"
@@ -13460,7 +13460,7 @@ bb2:
 #line 178 "examples/query/run/engine.hero"
     t9 = h3_i0;
 #line 178 "examples/query/run/engine.hero"
-    t10 = *(h_datarow_Row const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_datarow_Row) ? hero_unreachable() : (void)0), ((h_datarow_Row const *)(const void *)(t8 + 1))[t9]);
 #line 178 "examples/query/run/engine.hero"
     t47 = h4_r;
 #line 13467 "main.c"
@@ -13775,7 +13775,7 @@ bb1:
 #line 198 "examples/query/run/engine.hero"
     t6 = h2_xs0;
 #line 198 "examples/query/run/engine.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 198 "examples/query/run/engine.hero"
     t8 = t5 < t7;
 #line 198 "examples/query/run/engine.hero"
@@ -13787,7 +13787,7 @@ bb2:
 #line 198 "examples/query/run/engine.hero"
     t10 = h3_i0;
 #line 198 "examples/query/run/engine.hero"
-    t11 = *(h_queryplan_Group const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_queryplan_Group) ? hero_unreachable() : (void)0), ((h_queryplan_Group const *)(const void *)(t9 + 1))[t10]);
 #line 198 "examples/query/run/engine.hero"
     t42 = h4_k;
 #line 13794 "main.c"
@@ -13871,7 +13871,7 @@ bb5:
 #line 203 "examples/query/run/engine.hero"
     t24 = h6_xs1;
 #line 203 "examples/query/run/engine.hero"
-    t25 = hero_array_len(t24);
+    t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len);
 #line 203 "examples/query/run/engine.hero"
     t26 = t23 < t25;
 #line 203 "examples/query/run/engine.hero"
@@ -13883,7 +13883,7 @@ bb6:
 #line 203 "examples/query/run/engine.hero"
     t28 = h7_i1;
 #line 203 "examples/query/run/engine.hero"
-    t29 = *(HeroStr const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]);
 #line 203 "examples/query/run/engine.hero"
     t48 = h8_one;
 #line 13890 "main.c"

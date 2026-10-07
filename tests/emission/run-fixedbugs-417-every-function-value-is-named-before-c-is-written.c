@@ -535,7 +535,7 @@ bb1:
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
     t52 = INT64_C(0);
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-    t53 = *(h_0fn_48ac9712 const *)hero_array_at(t51, t52);
+    t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? ((void)hero_array_at(t51, t52), hero_unreachable()) : (void)0), (void)(t51->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t51 + 1))[t52]);
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
     t54 = INT64_C(17);
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
@@ -551,7 +551,7 @@ bb1:
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
     t57 = INT64_C(1);
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-    t58 = *(h_0fn_48ac9712 const *)hero_array_at(t56, t57);
+    t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t56 + 1))[t57]);
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
     t59 = INT64_C(1);
 #line 67 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"

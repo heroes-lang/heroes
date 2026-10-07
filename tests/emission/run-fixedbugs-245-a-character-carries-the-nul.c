@@ -301,7 +301,7 @@ bb3:
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
     t16 = h1_xs0;
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
     t18 = t15 < t17;
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
@@ -313,7 +313,7 @@ bb4:
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
     t20 = h2_i0;
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 23 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
     h3_b = t21;
 #line 24 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
@@ -522,7 +522,7 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
     t4 = INT64_C(1);
 #line 31 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
-    t5 = *(HeroStr const *)hero_array_at(t3, t4);
+    t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t3 + 1))[t4]);
 #line 31 "tests/golden/run/fixedbugs-245-a-character-carries-the-nul.hero"
     t17 = h1_made;
 #line 529 "fixedbugs245acharactercarriesthenul.c"

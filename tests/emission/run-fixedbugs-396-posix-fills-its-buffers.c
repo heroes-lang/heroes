@@ -380,7 +380,7 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t4 = h0_fds;
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t6 = HERO_STR_LIT(hero_str_20);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -388,13 +388,13 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t8 = INT64_C(0);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t9 = *(int32_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t7 + 1))[t8]);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t10 = h0_fds;
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t11 = INT64_C(1);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t12 = *(int32_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t10 + 1))[t11]);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t13 = t9 != t12;
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -414,7 +414,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t15 = INT64_C(1);
 #line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t16 = *(int32_t const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t14 + 1))[t15]);
 #line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t17 = HERO_STR_LIT(hero_str_2f372e9c);
 #line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -432,7 +432,7 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t22 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t23 = *(int32_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t21 + 1))[t22]);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t24 = h_fixedbugs396posixfillsitsbuffers_POLLIN();
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -484,7 +484,7 @@ bb1:
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t37 = INT64_C(1);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t38 = *(int32_t const *)hero_array_at(t36, t37);
+    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t36 + 1))[t37]);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t39 = h_fixedbugs396posixfillsitsbuffers_POLLOUT();
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -582,7 +582,7 @@ bb3:
 #line 40 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t56 = h3_watched;
 #line 40 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t57 = hero_array_len(t56);
+    t57 = ((void)(t56 == NULL ? ((void)hero_array_len(t56), hero_unreachable()) : (void)0), t56->len);
 #line 41 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t58 = HERO_STR_LIT(hero_str_20);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -590,7 +590,7 @@ bb3:
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t60 = INT64_C(0);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t61 = *(struct pollfd const *)hero_array_at(t59, t60);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(struct pollfd) ? hero_unreachable() : (void)0), ((struct pollfd const *)(const void *)(t59 + 1))[t60]);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t62 = t61.revents;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -652,7 +652,7 @@ bb5:
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t76 = INT64_C(1);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t77 = *(struct pollfd const *)hero_array_at(t75, t76);
+    t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(struct pollfd) ? hero_unreachable() : (void)0), ((struct pollfd const *)(const void *)(t75 + 1))[t76]);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t78 = t77.revents;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -744,7 +744,7 @@ bb7:
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t92 = INT64_C(0);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t93 = *(int32_t const *)hero_array_at(t91, t92);
+    t93 = ((void)((t91 == NULL || t92 < 0 || t92 >= t91->len) ? ((void)hero_array_at(t91, t92), hero_unreachable()) : (void)0), (void)(t91->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t91 + 1))[t92]);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t94 = UINT64_C(64);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -766,7 +766,7 @@ bb7:
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t97 = h6_buf;
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t98 = hero_array_len(t97);
+    t98 = ((void)(t97 == NULL ? ((void)hero_array_len(t97), hero_unreachable()) : (void)0), t97->len);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t99 = HERO_STR_LIT(hero_str_20);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -774,7 +774,7 @@ bb7:
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t101 = INT64_C(0);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t102 = *(uint8_t const *)hero_array_at(t100, t101);
+    t102 = ((void)((t100 == NULL || t101 < 0 || t101 >= t100->len) ? ((void)hero_array_at(t100, t101), hero_unreachable()) : (void)0), (void)(t100->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t100 + 1))[t101]);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t103 = HERO_STR_LIT(hero_str_20);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -782,7 +782,7 @@ bb7:
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t105 = INT64_C(4);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t106 = *(uint8_t const *)hero_array_at(t104, t105);
+    t106 = ((void)((t104 == NULL || t105 < 0 || t105 >= t104->len) ? ((void)hero_array_at(t104, t105), hero_unreachable()) : (void)0), (void)(t104->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t104 + 1))[t105]);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t107 = HERO_STR_LIT(hero_str_20);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -790,7 +790,7 @@ bb7:
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t109 = INT64_C(5);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t110 = *(uint8_t const *)hero_array_at(t108, t109);
+    t110 = ((void)((t108 == NULL || t109 < 0 || t109 >= t108->len) ? ((void)hero_array_at(t108, t109), hero_unreachable()) : (void)0), (void)(t108->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t108 + 1))[t109]);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_int(t95);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -816,7 +816,7 @@ bb7:
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t112 = INT64_C(0);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t113 = *(int32_t const *)hero_array_at(t111, t112);
+    t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? ((void)hero_array_at(t111, t112), hero_unreachable()) : (void)0), (void)(t111->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t111 + 1))[t112]);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t114 = close(t113);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -826,7 +826,7 @@ bb7:
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t117 = INT64_C(1);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t118 = *(int32_t const *)hero_array_at(t116, t117);
+    t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? ((void)hero_array_at(t116, t117), hero_unreachable()) : (void)0), (void)(t116->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t116 + 1))[t117]);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t119 = close(t118);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -874,7 +874,7 @@ bb7:
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t124 = h7_name;
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t125 = hero_array_len(t124);
+    t125 = ((void)(t124 == NULL ? ((void)hero_array_len(t124), hero_unreachable()) : (void)0), t124->len);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t126 = HERO_STR_LIT(hero_str_20);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -882,7 +882,7 @@ bb7:
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t128 = INT64_C(0);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t129 = *(int8_t const *)hero_array_at(t127, t128);
+    t129 = ((void)((t127 == NULL || t128 < 0 || t128 >= t127->len) ? ((void)hero_array_at(t127, t128), hero_unreachable()) : (void)0), (void)(t127->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t127 + 1))[t128]);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t130 = INT64_C(0);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"

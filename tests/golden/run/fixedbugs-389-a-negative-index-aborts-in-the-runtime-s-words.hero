@@ -1,0 +1,9 @@
+# FIXED DEFECT 389, 2026-10-07 (lane b14-emit): a read in place keeps the
+# runtime's abort. An index below zero is handed to `hero_array_at`, which
+# says what it always said; the read never happens.
+
+function main()
+    xs = [10, 20, 30]
+    at: i64 = 0 - 1
+    print(xs[2])
+    print(xs[at])

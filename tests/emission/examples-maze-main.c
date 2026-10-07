@@ -306,7 +306,7 @@ bb0:
 #line 20 "examples/maze/main.hero"
     t2 = h0_given;
 #line 20 "examples/maze/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 20 "examples/maze/main.hero"
     t4 = INT64_C(0);
 #line 20 "examples/maze/main.hero"
@@ -320,7 +320,7 @@ bb1:
 #line 24 "examples/maze/main.hero"
     t9 = INT64_C(0);
 #line 24 "examples/maze/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 24 "examples/maze/main.hero"
     t11 = h_library_read_file(t10);
 #line 24 "examples/maze/main.hero"
@@ -419,7 +419,7 @@ bb5:
 #line 25 "examples/maze/main.hero"
     t18 = INT64_C(0);
 #line 25 "examples/maze/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 25 "examples/maze/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 25 "examples/maze/main.hero"
@@ -869,7 +869,7 @@ bb1:
 #line 43 "examples/maze/main.hero"
     t6 = h2_xs0;
 #line 43 "examples/maze/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 43 "examples/maze/main.hero"
     t8 = t5 < t7;
 #line 43 "examples/maze/main.hero"
@@ -881,7 +881,7 @@ bb2:
 #line 43 "examples/maze/main.hero"
     t10 = h3_i0;
 #line 43 "examples/maze/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 43 "examples/maze/main.hero"
     t21 = h4_line;
 #line 888 "main.c"
@@ -1100,7 +1100,7 @@ bb1:
 #line 53 "examples/maze/main.hero"
     t5 = h3_xs0;
 #line 53 "examples/maze/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 53 "examples/maze/main.hero"
     t7 = t4 < t6;
 #line 53 "examples/maze/main.hero"
@@ -1112,7 +1112,7 @@ bb2:
 #line 53 "examples/maze/main.hero"
     t9 = h4_i0;
 #line 53 "examples/maze/main.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 53 "examples/maze/main.hero"
     h5_index = t10;
 #line 54 "examples/maze/main.hero"
@@ -1188,7 +1188,7 @@ bb5:
 #line 58 "examples/maze/main.hero"
     t23 = h7_xs1;
 #line 58 "examples/maze/main.hero"
-    t24 = hero_array_len(t23);
+    t24 = ((void)(t23 == NULL ? ((void)hero_array_len(t23), hero_unreachable()) : (void)0), t23->len);
 #line 58 "examples/maze/main.hero"
     t25 = t22 < t24;
 #line 58 "examples/maze/main.hero"
@@ -1200,7 +1200,7 @@ bb6:
 #line 58 "examples/maze/main.hero"
     t27 = h8_i1;
 #line 58 "examples/maze/main.hero"
-    t28 = *(int64_t const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]);
 #line 58 "examples/maze/main.hero"
     h9_row = t28;
 #line 59 "examples/maze/main.hero"
@@ -1317,7 +1317,7 @@ bb9:
 #line 61 "examples/maze/main.hero"
     t36 = h11_xs2;
 #line 61 "examples/maze/main.hero"
-    t37 = hero_array_len(t36);
+    t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len);
 #line 61 "examples/maze/main.hero"
     t38 = t35 < t37;
 #line 61 "examples/maze/main.hero"
@@ -1329,7 +1329,7 @@ bb10:
 #line 61 "examples/maze/main.hero"
     t40 = h12_i2;
 #line 61 "examples/maze/main.hero"
-    t41 = *(int64_t const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t39 + 1))[t40]);
 #line 61 "examples/maze/main.hero"
     h13_column = t41;
 #line 62 "examples/maze/main.hero"
@@ -1993,7 +1993,7 @@ bb1:
 #line 65 "examples/maze/grid.hero"
     t6 = h2_xs0;
 #line 65 "examples/maze/grid.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 65 "examples/maze/grid.hero"
     t8 = t5 < t7;
 #line 65 "examples/maze/grid.hero"
@@ -2005,7 +2005,7 @@ bb2:
 #line 65 "examples/maze/grid.hero"
     t10 = h3_i0;
 #line 65 "examples/maze/grid.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 65 "examples/maze/grid.hero"
     t92 = h4_line;
 #line 2012 "main.c"
@@ -2039,7 +2039,7 @@ bb4:
 #line 69 "examples/maze/grid.hero"
     t21 = h1_rows;
 #line 69 "examples/maze/grid.hero"
-    t22 = hero_array_len(t21);
+    t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
 #line 69 "examples/maze/grid.hero"
     t23 = INT64_C(0);
 #line 69 "examples/maze/grid.hero"
@@ -2069,7 +2069,7 @@ bb8:
 #line 71 "examples/maze/grid.hero"
     t29 = INT64_C(0);
 #line 71 "examples/maze/grid.hero"
-    t30 = *(HeroStr const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t29]);
 #line 71 "examples/maze/grid.hero"
     t31 = hero_str_len(t30);
 #line 71 "examples/maze/grid.hero"
@@ -2130,7 +2130,7 @@ bb11:
 #line 73 "examples/maze/grid.hero"
     t35 = h6_xs1;
 #line 73 "examples/maze/grid.hero"
-    t36 = hero_array_len(t35);
+    t36 = ((void)(t35 == NULL ? ((void)hero_array_len(t35), hero_unreachable()) : (void)0), t35->len);
 #line 73 "examples/maze/grid.hero"
     t37 = t34 < t36;
 #line 73 "examples/maze/grid.hero"
@@ -2142,7 +2142,7 @@ bb12:
 #line 73 "examples/maze/grid.hero"
     t39 = h7_i1;
 #line 73 "examples/maze/grid.hero"
-    t40 = *(HeroStr const *)hero_array_at(t38, t39);
+    t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t38 + 1))[t39]);
 #line 73 "examples/maze/grid.hero"
     t96 = h8_line;
 #line 2149 "main.c"
@@ -2182,7 +2182,7 @@ bb14:
 #line 77 "examples/maze/grid.hero"
     t58 = h1_rows;
 #line 77 "examples/maze/grid.hero"
-    t59 = hero_array_len(t58);
+    t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len);
 #line 2187 "main.c"
     hero_array_incref(t56);
 #line 77 "examples/maze/grid.hero"
@@ -2573,7 +2573,7 @@ bb0:
 #line 94 "examples/maze/grid.hero"
     t5 = h_grid_row_of(t3, t4);
 #line 94 "examples/maze/grid.hero"
-    t6 = *(HeroStr const *)hero_array_at(t2, t5);
+    t6 = ((void)((t2 == NULL || t5 < 0 || t5 >= t2->len) ? ((void)hero_array_at(t2, t5), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t2 + 1))[t5]);
 #line 94 "examples/maze/grid.hero"
     t7 = h0_g;
 #line 94 "examples/maze/grid.hero"
@@ -2865,7 +2865,7 @@ bb1:
 #line 107 "examples/maze/grid.hero"
     t10 = h3_xs0;
 #line 107 "examples/maze/grid.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 107 "examples/maze/grid.hero"
     t12 = t9 < t11;
 #line 107 "examples/maze/grid.hero"
@@ -2877,7 +2877,7 @@ bb2:
 #line 107 "examples/maze/grid.hero"
     t14 = h4_i0;
 #line 107 "examples/maze/grid.hero"
-    t15 = *(int64_t const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]);
 #line 107 "examples/maze/grid.hero"
     h5_row = t15;
 #line 108 "examples/maze/grid.hero"
@@ -2937,7 +2937,7 @@ bb5:
 #line 108 "examples/maze/grid.hero"
     t22 = h6_xs1;
 #line 108 "examples/maze/grid.hero"
-    t23 = hero_array_len(t22);
+    t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
 #line 108 "examples/maze/grid.hero"
     t24 = t21 < t23;
 #line 108 "examples/maze/grid.hero"
@@ -2949,7 +2949,7 @@ bb6:
 #line 108 "examples/maze/grid.hero"
     t26 = h7_i1;
 #line 108 "examples/maze/grid.hero"
-    t27 = *(int64_t const *)hero_array_at(t25, t26);
+    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]);
 #line 108 "examples/maze/grid.hero"
     h8_column = t27;
 #line 109 "examples/maze/grid.hero"
@@ -3937,7 +3937,7 @@ bb5:
 #line 32 "examples/maze/solve.hero"
     t32 = h6_queue;
 #line 32 "examples/maze/solve.hero"
-    t33 = hero_array_len(t32);
+    t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
 #line 32 "examples/maze/solve.hero"
     t34 = t31 < t33;
 #line 32 "examples/maze/solve.hero"
@@ -3949,7 +3949,7 @@ bb6:
 #line 33 "examples/maze/solve.hero"
     t36 = h7_head;
 #line 33 "examples/maze/solve.hero"
-    t37 = *(int64_t const *)hero_array_at(t35, t36);
+    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t35 + 1))[t36]);
 #line 33 "examples/maze/solve.hero"
     h8_here = t37;
 #line 34 "examples/maze/solve.hero"
@@ -4067,7 +4067,7 @@ bb11:
 #line 39 "examples/maze/solve.hero"
     t54 = h9_xs0;
 #line 39 "examples/maze/solve.hero"
-    t55 = hero_array_len(t54);
+    t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
 #line 39 "examples/maze/solve.hero"
     t56 = t53 < t55;
 #line 39 "examples/maze/solve.hero"
@@ -4079,7 +4079,7 @@ bb12:
 #line 39 "examples/maze/solve.hero"
     t58 = h10_i0;
 #line 39 "examples/maze/solve.hero"
-    t59 = *(int64_t const *)hero_array_at(t57, t58);
+    t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t57 + 1))[t58]);
 #line 39 "examples/maze/solve.hero"
     h11_next = t59;
 #line 40 "examples/maze/solve.hero"
@@ -4465,7 +4465,7 @@ bb0:
 #line 61 "examples/maze/solve.hero"
     t3 = h0_xs;
 #line 61 "examples/maze/solve.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 61 "examples/maze/solve.hero"
     t5 = h_library_range(t2, t4);
 #line 61 "examples/maze/solve.hero"
@@ -4495,7 +4495,7 @@ bb1:
 #line 61 "examples/maze/solve.hero"
     t8 = h2_xs0;
 #line 61 "examples/maze/solve.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 61 "examples/maze/solve.hero"
     t10 = t7 < t9;
 #line 61 "examples/maze/solve.hero"
@@ -4507,7 +4507,7 @@ bb2:
 #line 61 "examples/maze/solve.hero"
     t12 = h3_i0;
 #line 61 "examples/maze/solve.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 61 "examples/maze/solve.hero"
     h4_i = t13;
 #line 62 "examples/maze/solve.hero"
@@ -4515,7 +4515,7 @@ bb2:
 #line 62 "examples/maze/solve.hero"
     t16 = h0_xs;
 #line 62 "examples/maze/solve.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 62 "examples/maze/solve.hero"
     t18 = INT64_C(1);
 #line 62 "examples/maze/solve.hero"
@@ -4525,7 +4525,7 @@ bb2:
 #line 62 "examples/maze/solve.hero"
     if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow();
 #line 62 "examples/maze/solve.hero"
-    t22 = *(int64_t const *)hero_array_at(t15, t21);
+    t22 = ((void)((t15 == NULL || t21 < 0 || t21 >= t15->len) ? ((void)hero_array_at(t15, t21), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t21]);
 #line 62 "examples/maze/solve.hero"
     hero_array_push_owned(&h1_out, &t22);
 #line 62 "examples/maze/solve.hero"
@@ -4575,7 +4575,7 @@ bb0:
 #line 68 "examples/maze/solve.hero"
     t1 = h0_path;
 #line 68 "examples/maze/solve.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 68 "examples/maze/solve.hero"
     t3 = INT64_C(1);
 #line 68 "examples/maze/solve.hero"
@@ -4637,7 +4637,7 @@ bb0:
 #line 73 "examples/maze/solve.hero"
     t1 = h1_path;
 #line 73 "examples/maze/solve.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 73 "examples/maze/solve.hero"
     t3 = INT64_C(0);
 #line 73 "examples/maze/solve.hero"
@@ -4651,7 +4651,7 @@ bb1:
 #line 76 "examples/maze/solve.hero"
     t7 = h1_path;
 #line 76 "examples/maze/solve.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 76 "examples/maze/solve.hero"
     t9 = h_library_range(t6, t8);
 #line 76 "examples/maze/solve.hero"
@@ -4693,7 +4693,7 @@ bb4:
 #line 76 "examples/maze/solve.hero"
     t12 = h2_xs0;
 #line 76 "examples/maze/solve.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 76 "examples/maze/solve.hero"
     t14 = t11 < t13;
 #line 76 "examples/maze/solve.hero"
@@ -4705,7 +4705,7 @@ bb5:
 #line 76 "examples/maze/solve.hero"
     t16 = h3_i0;
 #line 76 "examples/maze/solve.hero"
-    t17 = *(int64_t const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]);
 #line 76 "examples/maze/solve.hero"
     h4_i = t17;
 #line 77 "examples/maze/solve.hero"
@@ -4719,7 +4719,7 @@ bb5:
 #line 77 "examples/maze/solve.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 77 "examples/maze/solve.hero"
-    t23 = *(int64_t const *)hero_array_at(t19, t22);
+    t23 = ((void)((t19 == NULL || t22 < 0 || t22 >= t19->len) ? ((void)hero_array_at(t19, t22), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t22]);
 #line 77 "examples/maze/solve.hero"
     t24 = h_grid_neighbours(t18, t23);
 #line 77 "examples/maze/solve.hero"
@@ -4733,7 +4733,7 @@ bb5:
 #line 77 "examples/maze/solve.hero"
     t26 = h4_i;
 #line 77 "examples/maze/solve.hero"
-    t27 = *(int64_t const *)hero_array_at(t25, t26);
+    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]);
 #line 77 "examples/maze/solve.hero"
     t28 = h_solve_contains(t24, t27);
 #line 77 "examples/maze/solve.hero"
@@ -4842,7 +4842,7 @@ bb1:
 #line 83 "examples/maze/solve.hero"
     t4 = h2_xs0;
 #line 83 "examples/maze/solve.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 83 "examples/maze/solve.hero"
     t6 = t3 < t5;
 #line 83 "examples/maze/solve.hero"
@@ -4854,7 +4854,7 @@ bb2:
 #line 83 "examples/maze/solve.hero"
     t8 = h3_i0;
 #line 83 "examples/maze/solve.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 83 "examples/maze/solve.hero"
     h4_each = t9;
 #line 84 "examples/maze/solve.hero"

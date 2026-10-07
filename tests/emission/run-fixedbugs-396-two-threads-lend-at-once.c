@@ -443,7 +443,7 @@ bb7:
 #line 27 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t22 = h5_at;
 #line 27 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    t23 = *(uint8_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]);
 #line 27 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t24 = h0_seed;
 #line 27 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"

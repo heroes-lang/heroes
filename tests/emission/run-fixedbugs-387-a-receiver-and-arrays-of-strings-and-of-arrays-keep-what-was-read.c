@@ -234,7 +234,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t4 = (*ph0_xs);
 #line 15 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 15 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     return t5;
 #line 241 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
@@ -255,7 +255,7 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t4 = (*ph0_ws);
 #line 19 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 19 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     return t5;
 #line 262 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
@@ -298,7 +298,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t4 = h0_ws;
 #line 22 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 22 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t6 = INT64_C(1000);
 #line 22 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
@@ -366,7 +366,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t5 = (*ph0_g);
 #line 26 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 24 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 #line 372 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
     hero_array_decref(h1_own1);
@@ -395,7 +395,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t1 = h0_g;
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t3 = INT64_C(1000);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
@@ -405,11 +405,11 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t6 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t7 = *(HeroArrayHeader * const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t5 + 1))[t6]);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t8 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t10 = INT64_C(100);
 #line 29 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
@@ -613,7 +613,7 @@ bb1:
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t19 = h0_out;
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t21 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
@@ -621,7 +621,7 @@ bb1:
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t23 = INT64_C(0);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t24 = *(int64_t const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t22 + 1))[t23]);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t25 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
@@ -629,7 +629,7 @@ bb1:
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t27 = INT64_C(1);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    t28 = *(int64_t const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     hero_print_int(t20);
 #line 35 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"

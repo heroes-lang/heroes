@@ -160,7 +160,7 @@ bb0:
 #line 161 "abortarrayslice.c"
     hero_array_decref(t17);
 #line 7 "tests/golden/run/abort-array-slice.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     hero_print_int(t9);
 #line 7 "tests/golden/run/abort-array-slice.hero"
@@ -180,7 +180,7 @@ bb0:
 #line 181 "abortarrayslice.c"
     hero_array_decref(t18);
 #line 8 "tests/golden/run/abort-array-slice.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     hero_print_int(t14);
 #line 8 "tests/golden/run/abort-array-slice.hero"

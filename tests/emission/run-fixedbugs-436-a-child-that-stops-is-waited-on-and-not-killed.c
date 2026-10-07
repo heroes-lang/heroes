@@ -220,7 +220,7 @@ bb0:
 #line 221 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(t25);
 #line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t3 = INT64_C(0);
 #line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"

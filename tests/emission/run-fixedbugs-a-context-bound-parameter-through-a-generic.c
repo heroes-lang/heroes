@@ -530,7 +530,7 @@ bb0:
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t1 = h0_xs;
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t3 = INT64_C(0);
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -544,7 +544,7 @@ bb1:
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t8 = INT64_C(0);
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9};
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -618,7 +618,7 @@ bb0:
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t1 = h0_xs;
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t3 = INT64_C(0);
 #line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -632,7 +632,7 @@ bb1:
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
     t8 = INT64_C(0);
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t9 = *(HeroStr const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 637 "fixedbugsacontextboundparameterthroughageneric.c"
     hero_str_incref(t9);
 #line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"

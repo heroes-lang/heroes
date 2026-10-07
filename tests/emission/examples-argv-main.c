@@ -261,7 +261,7 @@ bb0:
 #line 43 "examples/argv/main.hero"
     t3 = h0_given;
 #line 43 "examples/argv/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 43 "examples/argv/main.hero"
     hero_print_int(t4);
 #line 43 "examples/argv/main.hero"
@@ -269,11 +269,11 @@ bb0:
 #line 44 "examples/argv/main.hero"
     t5 = h1_checked;
 #line 44 "examples/argv/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 44 "examples/argv/main.hero"
     t7 = h0_given;
 #line 44 "examples/argv/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 44 "examples/argv/main.hero"
     t9 = t6 == t8;
 #line 44 "examples/argv/main.hero"
@@ -297,7 +297,7 @@ bb1:
 #line 51 "examples/argv/main.hero"
     t13 = h0_given;
 #line 51 "examples/argv/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 51 "examples/argv/main.hero"
     t15 = t12 < t14;
 #line 51 "examples/argv/main.hero"
@@ -309,7 +309,7 @@ bb2:
 #line 52 "examples/argv/main.hero"
     t17 = h3_i;
 #line 52 "examples/argv/main.hero"
-    t18 = *(h_0opt_f87774a const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t16 + 1))[t17]);
 #line 52 "examples/argv/main.hero"
     t79 = h4_one;
 #line 316 "main.c"
@@ -369,7 +369,7 @@ bb3:
 #line 66 "examples/argv/main.hero"
     t47 = INT64_C(0);
 #line 66 "examples/argv/main.hero"
-    t48 = *(h_0opt_f87774a const *)hero_array_at(t46, t47);
+    t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t46 + 1))[t47]);
 #line 66 "examples/argv/main.hero"
     t82 = h8_f2;
 #line 376 "main.c"
@@ -439,7 +439,7 @@ bb7:
 #line 54 "examples/argv/main.hero"
     t34 = h3_i;
 #line 54 "examples/argv/main.hero"
-    t35 = *(HeroStr const *)hero_array_at(t33, t34);
+    t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? ((void)hero_array_at(t33, t34), hero_unreachable()) : (void)0), (void)(t33->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t33 + 1))[t34]);
 #line 54 "examples/argv/main.hero"
     t36 = !hero_str_eq(t32, t35);
 #line 54 "examples/argv/main.hero"
@@ -481,7 +481,7 @@ bb11:
 #line 67 "examples/argv/main.hero"
     t58 = INT64_C(0);
 #line 67 "examples/argv/main.hero"
-    t59 = *(h_0opt_f87774a const *)hero_array_at(t57, t58);
+    t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t57 + 1))[t58]);
 #line 67 "examples/argv/main.hero"
     t84 = h9_f3;
 #line 488 "main.c"
@@ -547,7 +547,7 @@ bb15:
 #line 68 "examples/argv/main.hero"
     t69 = INT64_C(0);
 #line 68 "examples/argv/main.hero"
-    t70 = *(h_0opt_f87774a const *)hero_array_at(t68, t69);
+    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t68 + 1))[t69]);
 #line 68 "examples/argv/main.hero"
     t87 = h11_f4;
 #line 554 "main.c"

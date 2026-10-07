@@ -387,7 +387,7 @@ bb1:
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t5 = h1_xs0;
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t7 = t4 < t6;
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -399,7 +399,7 @@ bb2:
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t9 = h2_i0;
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h3_x = t10;
 #line 20 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -439,7 +439,7 @@ bb4:
 #line 440 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t85);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t21 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -451,7 +451,7 @@ bb4:
 #line 452 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t86);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t23 = hero_array_len(t22);
+    t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t24 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -463,7 +463,7 @@ bb4:
 #line 464 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t87);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t27 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -477,9 +477,9 @@ bb4:
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t29 = INT64_C(0);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t30 = *(HeroArrayHeader * const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t28 + 1))[t29]);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t31 = hero_array_len(t30);
+    t31 = ((void)(t30 == NULL ? ((void)hero_array_len(t30), hero_unreachable()) : (void)0), t30->len);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_print_int(t17);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -551,7 +551,7 @@ bb4:
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t41 = INT64_C(0);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t42 = *(HeroArrayHeader * const *)hero_array_at(t40, t41);
+    t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t40 + 1))[t41]);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t43 = h_fixedbugs382anemptyconstantisaheaderalone_NONE();
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -637,7 +637,7 @@ bb4:
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t56 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t57 = *(HeroArrayHeader * const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t55 + 1))[t56]);
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t58 = INT64_C(9);
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -656,7 +656,7 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t60 = h4_xs;
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t61 = hero_array_len(t60);
+    t61 = ((void)(t60 == NULL ? ((void)hero_array_len(t60), hero_unreachable()) : (void)0), t60->len);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t62 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -664,7 +664,7 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t64 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t65 = *(HeroStr const *)hero_array_at(t63, t64);
+    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t63 + 1))[t64]);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t66 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -672,11 +672,11 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t68 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t69 = *(HeroArrayHeader * const *)hero_array_at(t67, t68);
+    t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? ((void)hero_array_at(t67, t68), hero_unreachable()) : (void)0), (void)(t67->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t67 + 1))[t68]);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t70 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t71 = *(int64_t const *)hero_array_at(t69, t70);
+    t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t69 + 1))[t70]);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t72 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -688,7 +688,7 @@ bb4:
 #line 689 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t102);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t74 = hero_array_len(t73);
+    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t75 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -700,7 +700,7 @@ bb4:
 #line 701 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t103);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t77 = hero_array_len(t76);
+    t77 = ((void)(t76 == NULL ? ((void)hero_array_len(t76), hero_unreachable()) : (void)0), t76->len);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t78 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
@@ -714,9 +714,9 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t80 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t81 = *(HeroArrayHeader * const *)hero_array_at(t79, t80);
+    t81 = ((void)((t79 == NULL || t80 < 0 || t80 >= t79->len) ? ((void)hero_array_at(t79, t80), hero_unreachable()) : (void)0), (void)(t79->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t79 + 1))[t80]);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    t82 = hero_array_len(t81);
+    t82 = ((void)(t81 == NULL ? ((void)hero_array_len(t81), hero_unreachable()) : (void)0), t81->len);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_print_int(t61);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"

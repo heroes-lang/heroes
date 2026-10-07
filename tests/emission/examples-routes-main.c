@@ -903,7 +903,7 @@ bb9:
 #line 52 "examples/routes/main.hero"
     t33 = h6_frontier;
 #line 52 "examples/routes/main.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 52 "examples/routes/main.hero"
     t35 = t32 < t34;
 #line 52 "examples/routes/main.hero"
@@ -915,7 +915,7 @@ bb10:
 #line 53 "examples/routes/main.hero"
     t37 = h9_at;
 #line 53 "examples/routes/main.hero"
-    t38 = *(HeroStr const *)hero_array_at(t36, t37);
+    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t36 + 1))[t37]);
 #line 53 "examples/routes/main.hero"
     t105 = h10_here;
 #line 922 "main.c"
@@ -1019,7 +1019,7 @@ bb12:
 #line 56 "examples/routes/main.hero"
     t47 = h11_xs0;
 #line 56 "examples/routes/main.hero"
-    t48 = hero_array_len(t47);
+    t48 = ((void)(t47 == NULL ? ((void)hero_array_len(t47), hero_unreachable()) : (void)0), t47->len);
 #line 56 "examples/routes/main.hero"
     t49 = t46 < t48;
 #line 56 "examples/routes/main.hero"
@@ -1031,7 +1031,7 @@ bb13:
 #line 56 "examples/routes/main.hero"
     t51 = h12_i0;
 #line 56 "examples/routes/main.hero"
-    t52 = *(HeroStr const *)hero_array_at(t50, t51);
+    t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t50 + 1))[t51]);
 #line 56 "examples/routes/main.hero"
     t112 = h13_next;
 #line 1038 "main.c"
@@ -1454,7 +1454,7 @@ bb3:
 #line 82 "examples/routes/main.hero"
     t23 = h3_backwards;
 #line 82 "examples/routes/main.hero"
-    t24 = hero_array_len(t23);
+    t24 = ((void)(t23 == NULL ? ((void)hero_array_len(t23), hero_unreachable()) : (void)0), t23->len);
 #line 82 "examples/routes/main.hero"
     t25 = INT64_C(1);
 #line 82 "examples/routes/main.hero"
@@ -1532,7 +1532,7 @@ bb8:
 #line 85 "examples/routes/main.hero"
     t32 = h9_i;
 #line 85 "examples/routes/main.hero"
-    t33 = *(HeroStr const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t31 + 1))[t32]);
 #line 85 "examples/routes/main.hero"
     hero_array_push_owned(&h8_forwards, &t33);
 #line 86 "examples/routes/main.hero"
@@ -1652,7 +1652,7 @@ bb1:
 #line 91 "examples/routes/main.hero"
     t13 = t12.as.ok;
 #line 91 "examples/routes/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 91 "examples/routes/main.hero"
     t15 = INT64_C(1);
 #line 91 "examples/routes/main.hero"

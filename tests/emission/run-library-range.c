@@ -210,19 +210,19 @@ bb0:
 #line 20 "tests/golden/run/library-range.hero"
     t4 = h0_xs;
 #line 20 "tests/golden/run/library-range.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 20 "tests/golden/run/library-range.hero"
     t6 = h0_xs;
 #line 20 "tests/golden/run/library-range.hero"
     t7 = INT64_C(0);
 #line 20 "tests/golden/run/library-range.hero"
-    t8 = *(int64_t const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]);
 #line 20 "tests/golden/run/library-range.hero"
     t9 = h0_xs;
 #line 20 "tests/golden/run/library-range.hero"
     t10 = INT64_C(3);
 #line 20 "tests/golden/run/library-range.hero"
-    t11 = *(int64_t const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
 #line 20 "tests/golden/run/library-range.hero"
     hero_print_int(t5);
 #line 20 "tests/golden/run/library-range.hero"
@@ -268,7 +268,7 @@ bb1:
 #line 24 "tests/golden/run/library-range.hero"
     t18 = h2_xs0;
 #line 24 "tests/golden/run/library-range.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 24 "tests/golden/run/library-range.hero"
     t20 = t17 < t19;
 #line 24 "tests/golden/run/library-range.hero"
@@ -280,7 +280,7 @@ bb2:
 #line 24 "tests/golden/run/library-range.hero"
     t22 = h3_i0;
 #line 24 "tests/golden/run/library-range.hero"
-    t23 = *(int64_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 24 "tests/golden/run/library-range.hero"
     h4_i = t23;
 #line 25 "tests/golden/run/library-range.hero"
@@ -326,7 +326,7 @@ bb4:
 #line 327 "libraryrange.c"
     hero_array_decref(t64);
 #line 30 "tests/golden/run/library-range.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 30 "tests/golden/run/library-range.hero"
     t35 = INT64_C(5);
 #line 30 "tests/golden/run/library-range.hero"
@@ -340,7 +340,7 @@ bb4:
 #line 341 "libraryrange.c"
     hero_array_decref(t65);
 #line 30 "tests/golden/run/library-range.hero"
-    t38 = hero_array_len(t37);
+    t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len);
 #line 30 "tests/golden/run/library-range.hero"
     hero_print_int(t34);
 #line 30 "tests/golden/run/library-range.hero"
@@ -408,7 +408,7 @@ bb4:
 #line 36 "tests/golden/run/library-range.hero"
     t51 = INT64_C(2);
 #line 36 "tests/golden/run/library-range.hero"
-    t52 = *(int64_t const *)hero_array_at(t50, t51);
+    t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t50 + 1))[t51]);
 #line 36 "tests/golden/run/library-range.hero"
     t53 = INT64_C(0);
 #line 36 "tests/golden/run/library-range.hero"
@@ -434,7 +434,7 @@ bb4:
 #line 435 "libraryrange.c"
     hero_array_decref(t72);
 #line 36 "tests/golden/run/library-range.hero"
-    t59 = hero_array_len(t58);
+    t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len);
 #line 36 "tests/golden/run/library-range.hero"
     hero_print_int(t52);
 #line 36 "tests/golden/run/library-range.hero"
@@ -552,7 +552,7 @@ bb1:
 #line 41 "tests/golden/run/library-range.hero"
     t5 = h2_xs0;
 #line 41 "tests/golden/run/library-range.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 41 "tests/golden/run/library-range.hero"
     t7 = t4 < t6;
 #line 41 "tests/golden/run/library-range.hero"
@@ -564,7 +564,7 @@ bb2:
 #line 41 "tests/golden/run/library-range.hero"
     t9 = h3_i0;
 #line 41 "tests/golden/run/library-range.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 41 "tests/golden/run/library-range.hero"
     h4_x = t10;
 #line 42 "tests/golden/run/library-range.hero"

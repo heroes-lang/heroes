@@ -217,7 +217,7 @@ bb1:
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t5 = h2_xs0;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t7 = t4 < t6;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"

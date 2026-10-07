@@ -341,7 +341,7 @@ bb1:
 #line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h0_ks;
 #line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t3 < t5;
 #line 35 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -353,13 +353,13 @@ bb2:
 #line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h3_i;
 #line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t9 = *(double const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t7 + 1))[t8]);
 #line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = h1_vs;
 #line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h3_i;
 #line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 36 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h2_m), &t9, &t12);
 #line 37 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -458,7 +458,7 @@ bb1:
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h0_ks;
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t3 < t5;
 #line 45 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -470,13 +470,13 @@ bb2:
 #line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h4_i;
 #line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t9 = *(double const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t7 + 1))[t8]);
 #line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = h1_vs;
 #line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h4_i;
 #line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 46 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h3_m), &t9, &t12);
 #line 47 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -640,7 +640,7 @@ bb1:
 #line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t4 = h0_ks;
 #line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t6 = t3 < t5;
 #line 55 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -652,13 +652,13 @@ bb2:
 #line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t8 = h4_i;
 #line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t9 = *(double const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t7 + 1))[t8]);
 #line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t10 = h1_vs;
 #line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h4_i;
 #line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 56 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h3_m), &t9, &t12);
 #line 57 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -817,7 +817,7 @@ bb1:
 #line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t5 = h0_ks;
 #line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t7 = t4 < t6;
 #line 66 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -829,13 +829,13 @@ bb2:
 #line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t9 = h4_i;
 #line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t10 = *(double const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]);
 #line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t11 = h1_vs;
 #line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t12 = h4_i;
 #line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 67 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h2_a), &t10, &t13);
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
@@ -843,13 +843,13 @@ bb2:
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t15 = h4_i;
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t16 = *(double const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t14 + 1))[t15]);
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = h1_vs;
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t18 = h4_i;
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 68 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_map_set(&(h3_b), &t16, &t19);
 #line 69 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"

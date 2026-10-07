@@ -216,7 +216,7 @@ bb0:
 #line 9 "tests/golden/ir/map-access.hero"
     t2 = INT64_C(0);
 #line 9 "tests/golden/ir/map-access.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 9 "tests/golden/ir/map-access.hero"
     return t3;
 #line 223 "mapaccess.c"

@@ -2056,7 +2056,7 @@ bb6:
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t42 = h2_seen;
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-    t43 = hero_array_len(t42);
+    t43 = ((void)(t42 == NULL ? ((void)hero_array_len(t42), hero_unreachable()) : (void)0), t42->len);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     t44 = HERO_STR_LIT(hero_str_20);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"

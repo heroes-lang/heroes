@@ -140,7 +140,7 @@ bb1:
 #line 8 "tests/golden/ir/core-blocks.hero"
     t3 = h0_xs;
 #line 8 "tests/golden/ir/core-blocks.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 8 "tests/golden/ir/core-blocks.hero"
     t5 = t2 < t4;
 #line 8 "tests/golden/ir/core-blocks.hero"
@@ -152,7 +152,7 @@ bb2:
 #line 9 "tests/golden/ir/core-blocks.hero"
     t7 = h2_i;
 #line 9 "tests/golden/ir/core-blocks.hero"
-    t8 = *(int64_t const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]);
 #line 9 "tests/golden/ir/core-blocks.hero"
     h3_v = t8;
 #line 10 "tests/golden/ir/core-blocks.hero"

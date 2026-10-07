@@ -711,7 +711,7 @@ bb4:
 #line 73 "examples/pipeline/main.hero"
     t11 = h2_xs0;
 #line 73 "examples/pipeline/main.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 73 "examples/pipeline/main.hero"
     t13 = t10 < t12;
 #line 73 "examples/pipeline/main.hero"
@@ -723,7 +723,7 @@ bb5:
 #line 73 "examples/pipeline/main.hero"
     t15 = h3_i0;
 #line 73 "examples/pipeline/main.hero"
-    t16 = *(HeroStr const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 73 "examples/pipeline/main.hero"
     t32 = h4_ch;
 #line 730 "main.c"
@@ -987,7 +987,7 @@ bb1:
 #line 16 "examples/pipeline/read/source.hero"
     t7 = h3_xs0;
 #line 16 "examples/pipeline/read/source.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 16 "examples/pipeline/read/source.hero"
     t9 = t6 < t8;
 #line 16 "examples/pipeline/read/source.hero"
@@ -999,7 +999,7 @@ bb2:
 #line 16 "examples/pipeline/read/source.hero"
     t11 = h4_i0;
 #line 16 "examples/pipeline/read/source.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 16 "examples/pipeline/read/source.hero"
     t41 = h5_ch;
 #line 1006 "main.c"
@@ -1182,7 +1182,7 @@ bb0:
 #line 31 "examples/pipeline/read/source.hero"
     t4 = t3.f_lines;
 #line 31 "examples/pipeline/read/source.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 31 "examples/pipeline/read/source.hero"
     t6 = t2 >= t5;
 #line 31 "examples/pipeline/read/source.hero"
@@ -1198,7 +1198,7 @@ bb1:
 #line 33 "examples/pipeline/read/source.hero"
     t13 = t12.f_at;
 #line 33 "examples/pipeline/read/source.hero"
-    t14 = *(HeroStr const *)hero_array_at(t11, t13);
+    t14 = ((void)((t11 == NULL || t13 < 0 || t13 >= t11->len) ? ((void)hero_array_at(t11, t13), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t13]);
 #line 33 "examples/pipeline/read/source.hero"
     t22 = h1_one;
 #line 1205 "main.c"
@@ -1294,7 +1294,7 @@ bb0:
 #line 38 "examples/pipeline/read/source.hero"
     t2 = t1.f_lines;
 #line 38 "examples/pipeline/read/source.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 38 "examples/pipeline/read/source.hero"
     t4 = h0_r;
 #line 38 "examples/pipeline/read/source.hero"
@@ -1450,7 +1450,7 @@ bb0:
 #line 24 "examples/pipeline/write/source.hero"
     t2 = t1.f_rows;
 #line 24 "examples/pipeline/write/source.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 24 "examples/pipeline/write/source.hero"
     return t3;
 #line 1457 "main.c"

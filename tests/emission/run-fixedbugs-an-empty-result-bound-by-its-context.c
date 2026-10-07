@@ -201,13 +201,13 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t7 = h0_xs;
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t9 = HERO_STR_LIT(hero_str_20);
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t10 = h1_fs;
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t12 = HERO_STR_LIT(hero_str_20);
 #line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
@@ -259,7 +259,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t24 = INT64_C(0);
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t25 = *(int64_t const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t26 = HERO_STR_LIT(hero_str_20);
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
@@ -267,7 +267,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     t28 = INT64_C(0);
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t29 = *(double const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t27 + 1))[t28]);
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     hero_print_int(t25);
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"

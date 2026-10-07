@@ -252,7 +252,7 @@ bb1:
 #line 28 "examples/wrap/main.hero"
     t7 = h3_xs0;
 #line 28 "examples/wrap/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 28 "examples/wrap/main.hero"
     t9 = t6 < t8;
 #line 28 "examples/wrap/main.hero"
@@ -264,7 +264,7 @@ bb2:
 #line 28 "examples/wrap/main.hero"
     t11 = h4_i0;
 #line 28 "examples/wrap/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 28 "examples/wrap/main.hero"
     t51 = h5_ch;
 #line 271 "main.c"
@@ -623,7 +623,7 @@ bb4:
 #line 47 "examples/wrap/main.hero"
     t13 = h4_xs0;
 #line 47 "examples/wrap/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 47 "examples/wrap/main.hero"
     t15 = t12 < t14;
 #line 47 "examples/wrap/main.hero"
@@ -635,7 +635,7 @@ bb5:
 #line 47 "examples/wrap/main.hero"
     t17 = h5_i0;
 #line 47 "examples/wrap/main.hero"
-    t18 = *(HeroStr const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t16 + 1))[t17]);
 #line 47 "examples/wrap/main.hero"
     t61 = h6_word;
 #line 642 "main.c"
@@ -1104,7 +1104,7 @@ bb3:
 #line 77 "examples/wrap/main.hero"
     t16 = h4_xs0;
 #line 77 "examples/wrap/main.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 77 "examples/wrap/main.hero"
     t18 = t15 < t17;
 #line 77 "examples/wrap/main.hero"
@@ -1116,7 +1116,7 @@ bb4:
 #line 77 "examples/wrap/main.hero"
     t20 = h5_i0;
 #line 77 "examples/wrap/main.hero"
-    t21 = *(HeroStr const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]);
 #line 77 "examples/wrap/main.hero"
     t38 = h6_line;
 #line 1123 "main.c"
@@ -1462,7 +1462,7 @@ bb3:
 #line 88 "examples/wrap/main.hero"
     t22 = t21.as.ok;
 #line 88 "examples/wrap/main.hero"
-    t23 = hero_array_len(t22);
+    t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
 #line 88 "examples/wrap/main.hero"
     hero_print_int(t23);
 #line 88 "examples/wrap/main.hero"
@@ -1758,7 +1758,7 @@ bb15:
 #line 99 "examples/wrap/main.hero"
     t89 = t88.as.ok;
 #line 99 "examples/wrap/main.hero"
-    t90 = hero_array_len(t89);
+    t90 = ((void)(t89 == NULL ? ((void)hero_array_len(t89), hero_unreachable()) : (void)0), t89->len);
 #line 99 "examples/wrap/main.hero"
     hero_print_int(t90);
 #line 99 "examples/wrap/main.hero"

@@ -241,7 +241,7 @@ bb0:
 #line 17 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t4 = (*ph0_xs);
 #line 17 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 17 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     return t5;
 #line 248 "fixedbugs381abranchingpushedvalueispushowned.c"
@@ -781,7 +781,7 @@ bb1:
 #line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t18 = h1_kept;
 #line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_print_int(t19);
 #line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
@@ -886,7 +886,7 @@ bb1:
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t10 = t9.as.ok;
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t12 = INT64_C(2);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
@@ -898,7 +898,7 @@ bb1:
 #line 899 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_decref(t19);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t15 = h_fixedbugs381abranchingpushedvalueispushowned_kept_classic();
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
@@ -908,7 +908,7 @@ bb1:
 #line 909 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_decref(t20);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_print_int(t11);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"

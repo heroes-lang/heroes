@@ -968,7 +968,7 @@ bb3:
 #line 92 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t37 = h5_md;
 #line 92 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    t38 = hero_array_len(t37);
+    t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len);
 #line 92 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     if (t38 >= -2147483648LL && t38 <= 2147483647LL) {
 #line 92 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
@@ -1022,7 +1022,7 @@ bb4:
 #line 93 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t51 = INT64_C(0);
 #line 93 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    t52 = *(uint8_t const *)hero_array_at(t50, t51);
+    t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t50 + 1))[t51]);
 #line 93 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     hero_print_int(t48);
 #line 93 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"

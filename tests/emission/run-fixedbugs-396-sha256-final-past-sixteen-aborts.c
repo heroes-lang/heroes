@@ -206,7 +206,7 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t12 = h1_md;
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_str(t11);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"

@@ -159,7 +159,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t5 = h0_md;
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_str(t4);
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
