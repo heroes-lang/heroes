@@ -458,6 +458,14 @@ constant CEILING: i64
 # defect 259's memo out into `check/type_fit.hero` (`b2be2c9c`): a ceiling
 # left above what its file measures is room for growth nobody sees.
 #
+# **And down again the same night, for defect 502.** `check/table.hero` 370
+# -> **353**, what it measures at lane b14-p409's tip (`0c8df40c`) once
+# defect 409 moved the type table's two runs out into `check/type_runs.hero`
+# and its pushes into `append_node`. Measured in this suite's unit on that
+# tree merged with lane b15-harness's; the trunk before that merge measures
+# 370, so this row reads red on a tree that lacks defect 409's repair, which
+# is the merge order the round carries.
+#
 # **One arrived on 2026-10-07, for defect 333.** `print/brackets.hero` at
 # **315**: an empty call past the width no longer breaks as `.must(` over `)`,
 # which made nothing shorter, and the bracket that holds nothing is printed by
@@ -473,7 +481,7 @@ constant DECIDED: [str]
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 550"
-        "selfhost/check/table.hero 370"
+        "selfhost/check/table.hero 353"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 400"
@@ -568,12 +576,35 @@ constant LEAST: i64
 # 2026-10-05): the parser's, the resolver's, the checker's and the
 # lowering's grow by one per report, and each push copied every one before
 # it (`reports_through_a_field`).
+#
+# **And the twelve pushes defect 409 made grow in place** (defect 502,
+# 2026-10-07), each spelled here as it stood before lane b14-p409 lent its
+# array to a helper: the type table's nodes, their poison and its two runs
+# (`check/table.hero`, `append_node` and `check/type_runs.hero`), the
+# checker's missing returns and its holes (`state.append_diagnostic`,
+# `state.append_hole`), the moved walk's reports, the C writer's chunk and
+# chunks (`emit/writer.hero`'s `add_line`), and a compilation's faults
+# (`module/reading.hero`'s `add_fault`). Each was quadratic in what the
+# program holds, the type table the square of every type it interns, and
+# nothing kept a repair from being undone by the next edit until this list
+# named them. A spelling, as the four above: the holder's name the module
+# gives it, which is what an edit would write back.
 constant SLOW_APPENDS: [str]
     [
         "l.tokens @ l.tokens.push("
         "l.diagnostics @ l.diagnostics.push("
         "l.breaks @ l.breaks.push("
         "l.open_brackets @ l.open_brackets.push("
+        "t.nodes @ t.nodes.push("
+        "t.poison @ t.poison.push("
+        "t.params @ t.params.push("
+        "t.labels @ t.labels.push("
+        "c.missing_returns @ c.missing_returns.push("
+        "c.out.holes @ c.out.holes.push("
+        "w.found @ w.found.push("
+        "w.chunk @ w.chunk.push("
+        "w.chunks @ w.chunks.push("
+        "out.faults @ out.faults.push("
     ]
 
 # A TEXT IS NEVER GROWN BY `+` WHERE THAT COPIES IT AT EVERY STEP (defect 105,
@@ -709,7 +740,7 @@ function run_all(scratch: str, only: str) -> report.Report?
         report.keep_failure(
             @r,
             label: "layout/appends",
-            detail: "  the lexer's growing arrays and every list of reports are appended through a helper the array is lent to, `state.push_token(@l.tokens, t)`, `state.push_diagnostic(@l.diagnostics, d)`, `cursor.say(@c, d)` or an `append_diagnostic(@r.out.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defects 103 and 350, design.md Part 8 wart 8):\n" + slow.join("\n")
+            detail: "  the lexer's growing arrays, every list of reports and the arrays defect 409 grew in place (the type table's, the checker's holes, the C writer's chunks, a compilation's faults) are appended through a helper the array is lent to, `state.push_token(@l.tokens, t)`, `state.push_diagnostic(@l.diagnostics, d)`, `cursor.say(@c, d)`, an `append_diagnostic(@r.out.diagnostics, d)`, `append_node(@t.nodes, @t.poison, …)` or `add_line(@w.chunk, …)`, never through the field itself, which copies the whole array at every append (defects 103, 350 and 409, design.md Part 8 wart 8):\n" + slow.join("\n")
         )
     else
         report.keep_pass(@r)
@@ -1129,6 +1160,50 @@ test "an append to the lexer's state through the field is found, and one in a co
         text: "    r.out.diagnostics @ r.out.diagnostics.push(d)\n    append_diagnostic(@r.out.diagnostics, d)\n"
     )
     assert reports.len() == 1
+
+# DEFECT 502, held as a test (2026-10-07): each of the twelve pushes defect
+# 409 made grow in place, written back through its field as the trunk held it
+# at `56def9b4` (`check/table.hero`, `decls.hero`, `walk.hero`,
+# `moved_walk.hero`, `emit/writer.hero`, `module/reading.hero`), is found,
+# and the spelling lane b14-p409 wrote in its place is not. Until that day
+# every one read green here.
+test "fixedbugs: defect 409's pushes, spelled through their fields again, are found (defect 502)"
+    slow = [
+        "            t.nodes @ t.nodes.push(ty)"
+        "            t.poison @ t.poison.push(bad)"
+        "            t.params @ t.params.push(p)"
+        "            t.labels @ t.labels.push(name)"
+        "                        c.missing_returns @ c.missing_returns.push("
+        "            c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: missing))"
+        "        c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: expected))"
+        "    w.found @ w.found.push("
+        "    w.chunk @ w.chunk.push(text + \"\\n\")"
+        "        w.chunks @ w.chunks.push(join(w.chunk, \"\"))"
+        "            out.faults @ out.faults.push(source.Fault(at: one.at + s.files[index].start, byte: one.byte))"
+        "        out.faults @ out.faults.push(one)"
+    ]
+
+    for line in slow
+        assert slow_appends(path: "x.hero", text: line + "\n").len() == 1
+
+    # Twelve lines, ten spellings: the holes and the faults were each pushed
+    # from two places.
+    assert slow.len() == 12
+    grown = [
+        "    append_node(@t.nodes, @t.poison, ty: ty, bad: bad)"
+        "    start = type_runs.id_run(ids: @t.params, @t.runs, run: params)"
+        "    label_start = type_runs.name_run(names: @t.labels, @t.label_runs, run: labels)"
+        "                        state.append_diagnostic(\n                            @c.missing_returns,"
+        "            state.append_hole(@c.out.holes, state.Hole(at: id, span: span, expected: missing))"
+        "    state.append_diagnostic(\n        @w.found,"
+        "    add_line(@w.chunk, text: text + \"\\n\")"
+        "        add_line(@w.chunks, text: join(w.chunk, \"\"))"
+        "            add_fault(@out.faults, one)"
+        "    nodes @ nodes.push(ty)"
+    ]
+
+    for line in grown
+        assert slow_appends(path: "x.hero", text: line + "\n").len() == 0
 
 # Defect 105's check, both ways: a growth no allowance names fails, one it
 # names passes, and an allowance no growth matches fails as stale.
