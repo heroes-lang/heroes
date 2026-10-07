@@ -17,6 +17,8 @@
 # Nothing here knows about clang, the cache, or a path. Each function reads its
 # argument and answers; none of them can fail.
 
+use bytes
+
 # `\r\n` -> `\n`, byte-walked. A lone `\r` (classic Mac, or wire bytes in a
 # diagnostic clang quotes back) is left alone: the poison is the line-ending
 # pair, and rewriting anything else would edit clang's own words.
@@ -110,6 +112,23 @@ function starts_with(text: str, prefix: str) -> bool
 
     return true
 
+# Whether `needle` stands anywhere in `text`, each offset asked of its bytes
+# (`bytes.bytes_at`) and never by slicing (defect 296). Three tests' own
+# copies of this predicate sliced the text at every byte, and a slice that
+# begins or ends inside a character of more than one byte aborts (spec
+# § 10), so a text holding `é`, `€` or an emoji stopped the search when
+# the needle was absent or came after it, with *string slice splits a
+# character* where the answer was no.
+function holds(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return true
+        at @ at + 1
+
+    return false
+
 # Whether `text` ends with `suffix`, asked of the bytes: a path is
 # arbitrary UTF-8 and a cut by characters from the end would be a count
 # of characters, where a suffix is a count of bytes.
@@ -127,6 +146,20 @@ function ends_with(text: str, suffix: str) -> bool
     return true
 
 ## Tests
+
+# DEFECT 296's CASE: a needle absent, before and after characters of two,
+# three and four bytes, and a needle that is one of them; the copies this
+# replaces aborted on the second line.
+test "a needle is asked of the bytes, so a text above ASCII never splits (defect 296)"
+    wide = "é€😀 tail"
+    assert holds(text: wide, needle: "tail")
+    assert !holds(text: wide, needle: "absent")
+    assert holds(text: "head é€😀", needle: "head")
+    assert holds(text: wide, needle: "€😀")
+    assert !holds(text: wide, needle: "😀€")
+    assert !holds(text: "é", needle: "éé")
+    assert holds(text: "é", needle: "")
+    assert !holds(text: "", needle: "é")
 
 test "a suffix is asked of the bytes"
     assert ends_with(text: "build/tu-1/p-0123.o", suffix: ".o")

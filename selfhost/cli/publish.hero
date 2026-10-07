@@ -59,6 +59,7 @@
 
 use cli/files
 use cli/process
+use cli/strings
 
 # A name for `path` that no other process, and no other call in this one,
 # will ever ask for. The last part of the path keeps at most NAME_KEPT bytes
@@ -305,18 +306,6 @@ function message_of(failed: ()?) -> str
 
 ## Tests
 
-function holds(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    at: i64 @ 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 function failure_of(failed: ()?) -> str
     match failed
         .ok    => return ""
@@ -326,8 +315,8 @@ test "a private name is this process's own, and a second ask is another name"
     one = private_name("build/x.o")
     two = private_name("build/x.o")
     assert one != two
-    assert holds(text: one, needle: "build/x.o." + process.pid().to_str() + "-")
-    assert holds(text: one, needle: ".tmp")
+    assert strings.holds(text: one, needle: "build/x.o." + process.pid().to_str() + "-")
+    assert strings.holds(text: one, needle: ".tmp")
 
 test "a publish replaces what was there with the whole of what was written, and leaves no private name"
     dir = "build/selftest-publish"
@@ -377,7 +366,7 @@ test "a file another process wrote is flushed and published whole, and nothing t
     assert !process.path_exists(staged)
     gone = files.flush(dir + "/nothing.o")
     assert gone.is_err()
-    assert holds(text: failure_of(gone), needle: "not_flushed: : the operating system's own reason is ")
+    assert strings.holds(text: failure_of(gone), needle: "not_flushed: : the operating system's own reason is ")
 
 # A rename that fails on every platform with a file already at the
 # destination: a staged name nothing was written to. The destination is the
@@ -403,7 +392,7 @@ test "an author's destination is never kept that way: the failure names it and s
     assert !write_file(path: dir + "/app", text: "EARLIER").is_err()
     staged = private_name(dir + "/app")
     said = failure_of(publish(staged: staged, path: dir + "/app", keyed: false))
-    assert holds(
+    assert strings.holds(
         text: said,
         needle: "not_written: cannot publish " + dir + "/app: the operating system's own reason is "
     )
@@ -418,12 +407,12 @@ test "a directory where a keyed file belongs is no artifact, and is reported, an
     assert !process.mkdir_all(dir + "/artifact").is_err()
     assert !write_file(path: dir + "/artifact/inside", text: "x").is_err()
     said = failure_of(write_whole(path: dir + "/artifact", text: "MINE", keyed: true))
-    assert holds(text: said, needle: "cannot publish " + dir + "/artifact")
+    assert strings.holds(text: said, needle: "cannot publish " + dir + "/artifact")
     assert process.files_under(dir).must() == [dir + "/artifact/inside"]
 
 test "a write that cannot happen names the path and the operating system's reason"
     said = failure_of(write_whole(path: "build/selftest-publish-none/deeper/x.c", text: "int x;", keyed: true))
-    assert holds(
+    assert strings.holds(
         text: said,
         needle: "not_written: cannot write build/selftest-publish-none/deeper/x.c: the operating system's own reason is "
     )
@@ -471,11 +460,11 @@ test "a new text that cannot be written leaves the author's file byte for byte, 
     said = failure_of(
         staged_through(path: dir + "/p.hero", at: dir + "/p.hero", staged: dir + "/taken", text: "NEW", like: dir + "/p.hero")
     )
-    assert holds(
+    assert strings.holds(
         text: said,
         needle: "not_written: cannot write " + dir + "/p.hero: no file could be made beside it for its new text: the operating system's own reason is "
     )
-    assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+    assert strings.holds(text: said, needle: "; " + dir + "/p.hero is untouched")
     assert read_file(dir + "/p.hero").must() == "THE AUTHOR'S TEXT"
     assert process.is_directory(dir + "/taken")
 
@@ -489,11 +478,11 @@ test "a new text that cannot take the file's place leaves it as it was, and its 
     said = failure_of(
         staged_through(path: dir + "/p.hero", at: dir + "/p.hero", staged: dir + "/staged", text: "NEW", like: "")
     )
-    assert holds(
+    assert strings.holds(
         text: said,
         needle: ": its new text could not be put in its place: the operating system's own reason is "
     )
-    assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+    assert strings.holds(text: said, needle: "; " + dir + "/p.hero is untouched")
     assert process.files_under(dir).must() == [dir + "/p.hero/inside"]
     assert read_file(dir + "/p.hero/inside").must() == "KEPT"
 
@@ -515,11 +504,11 @@ test "a read-only file is refused as fopen refused it and left byte for byte, an
     assert mode == 0o444
 
     if fopen_refuses
-        assert holds(
+        assert strings.holds(
             text: said,
             needle: "not_written: cannot write " + dir + "/p.hero: it cannot be opened for writing: the operating system's own reason is "
         )
-        assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+        assert strings.holds(text: said, needle: "; " + dir + "/p.hero is untouched")
         assert kept == "OLD"
     else
         assert said == ""
@@ -569,12 +558,12 @@ test "a new text that cannot take the place of a file its ACL protects is remove
     fresh(dir)
 
     if denied
-        assert holds(
+        assert strings.holds(
             text: said,
             needle: "not_written: cannot write " + dir + "/p.hero: its new text could not be put in its place: the operating system's own reason is "
         )
-        assert holds(text: said, needle: "; " + dir + "/p.hero is untouched")
-        assert !holds(text: said, needle: "left in")
+        assert strings.holds(text: said, needle: "; " + dir + "/p.hero is untouched")
+        assert !strings.holds(text: said, needle: "left in")
         assert left == [dir + "/p.hero"]
         assert kept == "OLD"
     else
@@ -615,7 +604,7 @@ test "a symbolic link is written through to the file it names, and stays a link"
     assert read_file(dir + "/t.hero").must() == "NEW"
 
     for file in process.files_under(dir).must()
-        assert !holds(text: file, needle: ".tmp")
+        assert !strings.holds(text: file, needle: ".tmp")
 
 test "what is not a file is written into, and a directory is refused untouched"
     assert !rewrite(path: process.discard(), text: "into nothing").is_err()
@@ -631,7 +620,7 @@ test "a private name keeps one part of a path within 244 bytes, cut at a charact
     named = private_name("build/" + "n".repeat(250) + ".hero")
     last = named.slice(from: 6, to: named.len())
     assert last.len() <= 244
-    assert holds(text: named, needle: "build/" + "n".repeat(200) + ".")
+    assert strings.holds(text: named, needle: "build/" + "n".repeat(200) + ".")
     wide = private_name("build/" + "é".repeat(150))
     assert wide.slice(from: 6, to: 206) == "é".repeat(100)
-    assert holds(text: private_name("build/x.o"), needle: "build/x.o." + process.pid().to_str() + "-")
+    assert strings.holds(text: private_name("build/x.o"), needle: "build/x.o." + process.pid().to_str() + "-")

@@ -31,6 +31,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use cli/strings
 
 record ExternSpans
     header: token.Span?
@@ -268,16 +269,6 @@ test "a name no tool carries is found again before any tool is handed it (panel 
     c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     said = unjudged(low.program, s, parsed.decls)
-    assert has_text(text: said, needle: "holds `>`")
-    assert has_text(text: said, needle: "library's name is empty")
-    assert has_text(text: said, needle: "package's name holds a space")
-
-function has_text(text: str, needle: str) -> bool
-    at: i64 @ 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
+    assert strings.holds(text: said, needle: "holds `>`")
+    assert strings.holds(text: said, needle: "library's name is empty")
+    assert strings.holds(text: said, needle: "package's name holds a space")

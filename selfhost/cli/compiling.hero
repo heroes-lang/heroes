@@ -228,9 +228,9 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
             turned @ turned.push(ch)
 
     beside = turned.join("")
-    assert process.holds(text: beside, needle: digest.digest(one) + " " + root + "/src/x.h")
-    assert !process.holds(text: beside, needle: root + "/inc/x.h")
-    assert !process.holds(text: beside, needle: root + "/build/reads/")
+    assert strings.holds(text: beside, needle: digest.digest(one) + " " + root + "/src/x.h")
+    assert !strings.holds(text: beside, needle: root + "/inc/x.h")
+    assert !strings.holds(text: beside, needle: root + "/build/reads/")
     assert !write_file(path: root + "/inc/x.h", text: two).is_err()
     second: {str: str} @ {}
     again: [str] @ []
@@ -242,9 +242,9 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
             again @ again.push(ch)
 
     earlier = again.join("")
-    assert process.holds(text: earlier, needle: digest.digest(two) + " " + root + "/inc/x.h")
-    assert !process.holds(text: earlier, needle: root + "/src/x.h")
-    assert !process.holds(text: earlier, needle: root + "/build/reads/")
+    assert strings.holds(text: earlier, needle: digest.digest(two) + " " + root + "/inc/x.h")
+    assert !strings.holds(text: earlier, needle: root + "/src/x.h")
+    assert !strings.holds(text: earlier, needle: root + "/build/reads/")
     assert earlier != beside
 
     # A header that is not there does not preprocess, and the answer is
@@ -390,29 +390,9 @@ test "clang reads the emitter's spellings of a program's text as written, and sa
         refused = process.run(program: "clang", words: named, out: process.discard(), err: root + "/said.txt")
         said = read_file(root + "/said.txt").must()
         assert refused.code != 0
-        assert holds_bytes(text: said, needle: file + ":7:")
-        assert holds_bytes(text: said, needle: "heroes-c-text")
-        assert !holds_bytes(text: said, needle: "warning:")
-
-# Whether `needle` stands in `text`, asked of their bytes. `process.holds`
-# slices the text at every byte, so a text holding a character above ASCII,
-# as clang's answer naming `wide` does, stops it with *string slice splits a
-# character* (found beside defect 240, 2026-10-04); a byte read is never a
-# slice.
-function holds_bytes(text: str, needle: str) -> bool
-    at: i64 @ 0
-
-    while at + needle.len() <= text.len()
-        k: i64 @ 0
-
-        while k < needle.len() && text[at + k] == needle[k]
-            k @ k + 1
-
-        if k == needle.len()
-            return true
-        at @ at + 1
-
-    return false
+        assert strings.holds(text: said, needle: file + ":7:")
+        assert strings.holds(text: said, needle: "heroes-c-text")
+        assert !strings.holds(text: said, needle: "warning:")
 
 # What clang predefines for C under `more`, read from an empty unit.
 function macros(more: [str]) -> str
