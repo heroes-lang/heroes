@@ -192,7 +192,7 @@ bb0:
     (*ph0_s) = t3;
 #line 194 "fixedbugs440abyteselementstaysaplace.c"
     hero_str_decref(t5);
-#line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
+#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 #line 197 "fixedbugs440abyteselementstaysaplace.c"
     hero_str_decref(h1_own1);
     return;

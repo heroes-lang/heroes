@@ -94,7 +94,7 @@ function statement(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
             mutation(@b, a, r, c, s, decls, into: m.place, value: m.value, span: span)
             return fail(code: "none", msg: "a mutation produces nothing")
         .return_stmt ret =>
-            returned(@b, a, r, c, s, decls, value: ret.value)
+            returned(@b, a, r, c, s, decls, value: ret.value, span: span)
             return fail(code: "none", msg: "a return produces nothing")
         .break_stmt =>
             if b.loops.len() > 0
@@ -132,9 +132,9 @@ function mutation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
     ty = build.value_ty(b, produced)
     build.emit_void(@b, op: .store(place: target, value: produced), ty: ty, span: span)
 
-function returned(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], value: i64?)
+function returned(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], value: i64?, span: token.Span)
     if value.is_err()
-        emissions.copy_out(@b, c)
+        emissions.copy_out(@b, c, span: span)
         build.terminate(@b, .return_term(value: fail(code: "none", msg: "bare return")))
         return
     produced = expr(@b, a, r, c, s, decls, id: value.must())
@@ -142,7 +142,7 @@ function returned(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
     # The copy-out chain goes AFTER the value is computed and before control
     # leaves: the returned value was read from the pre-copy-out state, which
     # is what "copy in, copy out" means.
-    emissions.copy_out(@b, c)
+    emissions.copy_out(@b, c, span: span)
     build.terminate(@b, .return_term(value: ok(produced)))
 
 # `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
@@ -475,7 +475,7 @@ function try_expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
         ty: build.result_type(b),
         span: span
     )
-    emissions.copy_out(@b, c)
+    emissions.copy_out(@b, c, span: span)
     build.terminate(@b, .return_term(value: ok(wrapped)))
     build.switch_to(@b, target: good)
     return emissions.payload_of(@b, subject: subject, at: 0, ty: ty, span: span)

@@ -237,14 +237,14 @@ bb3:
     goto bb1;
 #line 24 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 bb4:
-#line 20 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
+#line 24 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     t13 = h1_ret0;
 #line 243 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_retain(&t13);
-#line 20 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
+#line 24 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 #line 246 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(&h2_own2);
-#line 20 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
+#line 24 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 #line 249 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(&h3_own3);
     hero_lend_local_give(hero_lend_h0_db);

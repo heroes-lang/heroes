@@ -213,14 +213,14 @@ bb3:
     goto bb1;
 #line 25 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb4:
-#line 23 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+#line 25 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t13 = h1_ret0;
 #line 219 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     h_0opt_e201354_retain(&t13);
-#line 23 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+#line 25 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 #line 222 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     h_0opt_e201354_release(&h2_own2);
-#line 23 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+#line 25 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 #line 225 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;

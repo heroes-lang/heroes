@@ -363,7 +363,7 @@ bb0:
     (*ph0_h) = t7;
 #line 365 "aggregatesnested.c"
     h_aggregatesnested_Holder_release(&t9);
-#line 35 "tests/golden/run/aggregates-nested.hero"
+#line 36 "tests/golden/run/aggregates-nested.hero"
 #line 368 "aggregatesnested.c"
     h_aggregatesnested_Holder_release(&h1_own1);
     return;

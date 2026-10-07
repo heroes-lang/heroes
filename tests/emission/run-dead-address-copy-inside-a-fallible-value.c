@@ -237,14 +237,14 @@ bb3:
     goto bb1;
 #line 20 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb4:
-#line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
+#line 20 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t13 = h1_ret0;
 #line 243 "deadaddresscopyinsideafalliblevalue.c"
     h_0opt_77d4f5ff_retain(&t13);
-#line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
+#line 20 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 #line 246 "deadaddresscopyinsideafalliblevalue.c"
     h_0opt_77d4f5ff_release(&h2_own2);
-#line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
+#line 20 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 #line 249 "deadaddresscopyinsideafalliblevalue.c"
     h_0opt_77d4f5ff_release(&h3_own3);
     hero_lend_local_give(hero_lend_h0_db);

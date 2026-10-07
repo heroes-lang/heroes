@@ -340,14 +340,14 @@ bb3:
     goto bb1;
 #line 36 "tests/golden/run/closure-list.hero"
 bb4:
-#line 34 "tests/golden/run/closure-list.hero"
+#line 36 "tests/golden/run/closure-list.hero"
     t13 = h1_ret0;
 #line 346 "closurelist.c"
     h_0opt_e201354_retain(&t13);
-#line 34 "tests/golden/run/closure-list.hero"
+#line 36 "tests/golden/run/closure-list.hero"
 #line 349 "closurelist.c"
     h_0opt_e201354_release(&h2_own2);
-#line 34 "tests/golden/run/closure-list.hero"
+#line 36 "tests/golden/run/closure-list.hero"
 #line 352 "closurelist.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;
@@ -460,20 +460,20 @@ bb2:
     goto bb3;
 #line 40 "tests/golden/run/closure-list.hero"
 bb3:
-#line 39 "tests/golden/run/closure-list.hero"
+#line 40 "tests/golden/run/closure-list.hero"
     t16 = h3_ret0;
 #line 466 "closurelist.c"
     h_0opt_e201354_retain(&t16);
-#line 39 "tests/golden/run/closure-list.hero"
+#line 40 "tests/golden/run/closure-list.hero"
 #line 469 "closurelist.c"
     h_0opt_e201354_release(&h1_f0);
-#line 39 "tests/golden/run/closure-list.hero"
+#line 40 "tests/golden/run/closure-list.hero"
 #line 472 "closurelist.c"
     h_0opt_e201354_release(&h4_own4);
-#line 39 "tests/golden/run/closure-list.hero"
+#line 40 "tests/golden/run/closure-list.hero"
 #line 475 "closurelist.c"
     h_0opt_e201354_release(&h5_own5);
-#line 39 "tests/golden/run/closure-list.hero"
+#line 40 "tests/golden/run/closure-list.hero"
 #line 478 "closurelist.c"
     h_0opt_e201354_release(&h6_own6);
     return t16;

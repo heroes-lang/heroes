@@ -485,26 +485,26 @@ bb9:
     goto bb7;
 #line 56 "examples/sieve/main.hero"
 bb10:
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
     t26 = h5_ret0;
 #line 491 "main.c"
     hero_array_incref(t26);
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
 #line 494 "main.c"
     hero_array_decref(h1_empty);
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
 #line 497 "main.c"
     hero_array_decref(h2_flags);
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
 #line 500 "main.c"
     hero_array_decref(h3_out);
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
 #line 503 "main.c"
     hero_array_decref(h6_own6);
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
 #line 506 "main.c"
     hero_array_decref(h7_own7);
-#line 46 "examples/sieve/main.hero"
+#line 49 "examples/sieve/main.hero"
 #line 509 "main.c"
     hero_array_decref(h8_own8);
     return t26;
@@ -569,7 +569,7 @@ bb3:
     goto bb1;
 #line 63 "examples/sieve/main.hero"
 bb4:
-#line 61 "examples/sieve/main.hero"
+#line 63 "examples/sieve/main.hero"
     t9 = h1_ret0;
 #line 575 "main.c"
     hero_array_decref(h2_own2);
@@ -1217,9 +1217,9 @@ bb9:
     goto bb7;
 #line 182 "examples/sieve/main.hero"
 bb10:
-#line 175 "examples/sieve/main.hero"
+#line 177 "examples/sieve/main.hero"
     t21 = h2_ret0;
-#line 175 "examples/sieve/main.hero"
+#line 177 "examples/sieve/main.hero"
     return t21;
 #line 1225 "main.c"
 }

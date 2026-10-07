@@ -373,9 +373,9 @@ bb6:
     goto bb4;
 #line 44 "examples/mandelbrot/main.hero"
 bb7:
-#line 34 "examples/mandelbrot/main.hero"
+#line 44 "examples/mandelbrot/main.hero"
     t44 = h8_ret0;
-#line 34 "examples/mandelbrot/main.hero"
+#line 44 "examples/mandelbrot/main.hero"
     return t44;
 #line 381 "main.c"
 }

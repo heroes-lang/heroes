@@ -273,9 +273,9 @@ bb3:
     goto bb1;
 #line 76 "examples/threads/main.hero"
 bb4:
-#line 74 "examples/threads/main.hero"
+#line 76 "examples/threads/main.hero"
     t11 = h1_ret0;
-#line 74 "examples/threads/main.hero"
+#line 76 "examples/threads/main.hero"
     return t11;
 #line 281 "main.c"
 }
