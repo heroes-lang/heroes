@@ -46,6 +46,7 @@ use resolve
 use resolved
 use checker
 use resolve/near_names
+use resolve/asked
 use library_source
 
 # The codes whose one fix is the did-you-mean rename: a name, a function
@@ -107,8 +108,12 @@ function judged(out: resolved.Resolved, s: source.Source, parsed: parse.ParseOut
     for d in checker.check(parsed.tree, out, s, parsed.decls).diagnostics
         written @ written.push(said(d, edit: none_edit()))
 
+    # One trial renames one name and asks every other did-you-mean the first
+    # asked, so the trials share their answers (defect 386).
+    asking: asked.Asking @ asked.new_asking()
+
     for offer in offers
-        if fits(offer, s, written)
+        if fits(offer, s, written, @asking)
             result.diagnostics[offer.diagnostic].fixes[offer.fix].certainty @ .certain
 
     return result
@@ -128,13 +133,14 @@ function within(span: token.Span, s: source.Source) -> bool
 
 # Whether the text `offer` writes says nothing `written` did not, the offer's
 # own diagnostic aside (`written` holds the name stage's first, in its order).
-function fits(offer: Offer, s: source.Source, written: [Said]) -> bool
+# The did-you-mean answers from `asking` and keeps its answers there.
+function fits(offer: Offer, s: source.Source, written: [Said], @asking: asked.Asking) -> bool
     tried = renamed(s, offer.edit)
     parsed = parse.parse_source(tried)
 
     if parsed.diagnostics.len() > 0 || modules.errors(tried, parsed.uses).len() > 0
         return false
-    out = resolve.resolve(parsed.tree, tried, parsed.decls, parsed.uses)
+    out = resolve.resolve_asking(parsed.tree, tried, parsed.decls, parsed.uses, @asking)
     now: [Said] @ []
 
     for d in out.diagnostics

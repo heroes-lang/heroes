@@ -16,9 +16,10 @@
 use ast
 use source
 use resolved
-use inventory
+use resolve/builtin_names
 use diag
 use resolve/state
+use resolve/did_you_mean
 use resolve/errors
 use resolve/binding as resolve_binding
 
@@ -43,7 +44,7 @@ function report(@r: state.Resolver, s: source.Source)
         # declaration of its module holds is refused there and bound only so
         # that what follows is the binding's (defect 422). Whether it is read
         # is asked once it is renamed, so the one mistake is one message.
-        if !inventory.index_of(name).is_err() || !resolved.top_in(r.out, module: module, name: name).is_err()
+        if builtin_names.taken(r.library, name) || !resolved.top_in(r.out, module: module, name: name).is_err()
             continue
 
         # Already spoken for: the compiler offered this name as the repair
@@ -86,6 +87,6 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     assert !state.declare(@offered, s, decls, state.span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     candidates: [[str]] = [["x"]]
     offered.module @ "t"
-    _ = state.near_names(@offered, "z", candidates)
+    _ = did_you_mean.near_names(@offered, "z", candidates)
     report(@offered, s)
     assert offered.out.diagnostics.len() == 0

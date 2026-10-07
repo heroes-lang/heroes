@@ -1,0 +1,50 @@
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:57:11: error[unknown_name]: nothing named `zq00xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:58:11: error[unknown_name]: nothing named `zq01xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:59:11: error[unknown_name]: nothing named `zq02xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:60:11: error[unknown_name]: nothing named `zq03xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:61:11: error[unknown_name]: nothing named `zq04xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:62:11: error[unknown_name]: nothing named `zq05xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:63:11: error[unknown_name]: nothing named `zq06xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:64:11: error[unknown_name]: nothing named `zq07xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:65:11: error[unknown_name]: nothing named `zq08xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:66:11: error[unknown_name]: nothing named `zq09xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:67:11: error[unknown_name]: nothing named `zq10xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:68:11: error[unknown_name]: nothing named `zq11xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:69:11: error[unknown_name]: nothing named `zq12xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:70:11: error[unknown_name]: nothing named `zq13xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:71:11: error[unknown_name]: nothing named `zq14xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:72:11: error[unknown_name]: nothing named `zq15xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:73:11: error[unknown_name]: nothing named `zq16xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:74:11: error[unknown_name]: nothing named `zq17xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:75:11: error[unknown_name]: nothing named `zq18xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:76:11: error[unknown_name]: nothing named `zq19xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:77:11: error[unknown_name]: nothing named `zq20xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:78:11: error[unknown_name]: nothing named `zq21xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:79:11: error[unknown_name]: nothing named `zq22xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:80:11: error[unknown_name]: nothing named `zq23xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:81:11: error[unknown_name]: nothing named `zq24xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:82:11: error[unknown_name]: nothing named `zq25xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:83:11: error[unknown_name]: nothing named `zq26xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:84:11: error[unknown_name]: nothing named `zq27xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:85:11: error[unknown_name]: nothing named `zq28xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:86:11: error[unknown_name]: nothing named `zq29xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:87:11: error[unknown_name]: nothing named `zq30xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:88:11: error[unknown_name]: nothing named `zq31xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:89:11: error[unknown_name]: nothing named `zq32xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:90:11: error[unknown_name]: nothing named `zq33xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:91:11: error[unknown_name]: nothing named `zq34xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:92:11: error[unknown_name]: nothing named `zq35xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:93:11: error[unknown_name]: nothing named `zq36xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:94:11: error[unknown_name]: nothing named `zq37xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:95:11: error[unknown_name]: nothing named `zq38xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:96:11: error[unknown_name]: nothing named `zq39xw` is in scope
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:97:11: error[unknown_name]: nothing named `lco00` is in scope — did you mean `loc00`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:98:11: error[unknown_name]: nothing named `lco04` is in scope — did you mean `loc04`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:99:11: error[unknown_name]: nothing named `lco08` is in scope — did you mean `loc08`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:100:11: error[unknown_name]: nothing named `lco12` is in scope — did you mean `loc12`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:101:11: error[unknown_name]: nothing named `lco16` is in scope — did you mean `loc16`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:102:11: error[unknown_name]: nothing named `lco20` is in scope — did you mean `loc20`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:103:11: error[unknown_name]: nothing named `lco24` is in scope — did you mean `loc24`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:104:11: error[unknown_name]: nothing named `lco28` is in scope — did you mean `loc28`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:105:11: error[unknown_name]: nothing named `lco32` is in scope — did you mean `loc32`?
+tests/golden/check/fixedbugs-388-a-scope-of-many-names-and-many-unknown-ones.hero:106:11: error[unknown_name]: nothing named `lco36` is in scope — did you mean `loc36`?

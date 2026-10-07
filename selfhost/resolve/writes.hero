@@ -31,8 +31,9 @@ use ast
 use diag
 use token
 use source
-use inventory
+use resolve/builtin_names
 use resolve/state
+use resolve/did_you_mean
 use resolve/errors
 use resolve/qualified
 use resolve/names
@@ -60,8 +61,8 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
 
     # A built-in first: the library declares some of them (`args`, `range`),
     # and one written where no binding of its name stands is the language's,
-    # never a top-level declaration of the author's (defect 422).
-    if !inventory.index_of(text).is_err()
+    # never a top-level declaration of the author's (defects 422, 455).
+    if builtin_names.taken(r.library, text)
         state.push_diagnostic(@r, errors.no_mutable_globals(name: text, what: "built-in", span: span))
         return
 
@@ -72,7 +73,7 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         )
         return
     candidates = names.value_candidates(@r)
-    near = state.near_names(@r, text, candidates)
+    near = did_you_mean.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_name(text, near, span))
 
 # The root of an `@` argument, held to the rule of the left of `@`. The
