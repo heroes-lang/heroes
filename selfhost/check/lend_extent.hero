@@ -57,6 +57,7 @@ use handles
 use check/state
 use check/table
 use check/lower
+use check/ffi_buffer
 use ffi_errors
 use digits
 use widths
@@ -88,8 +89,8 @@ function declared_extents(@c: state.Checker, a: ast.Ast, s: source.Source, decls
         sibling_name = source.span_text(s, mark)
         why: str @ ""
 
-        if !is_ptr(c, param.ty) && !lent_whole(c, decls, param)
-            why @ "`counted_by` says how far C reads or writes through a `ptr`, or through a group's record lent whole with `@`, and `" + param_name + "` is neither"
+        if !is_ptr(c, param.ty) && !lent_whole(c, decls, param) && !ffi_buffer.is_array_out(c, param)
+            why @ "`counted_by` says how far C reads or writes through a `ptr`, through a group's record lent whole with `@`, or through an array lent with `@` as a buffer, and `" + param_name + "` is none of them"
         sibling = sibling_named(f, s, owner: param.name, name: sibling_name)
         literal = is_literal(sibling_name)
 

@@ -163,6 +163,12 @@
 /* `[T]`, its descriptor, and the primitives that do not mutate. */
 #include "parts/array.c"
 
+/* The buffer C fills, lent off the stack in a guarded region of the calling
+ * thread (panel 196's R4). After `array.c`, whose layout it copies in and out
+ * of; `stack.c`'s handler and `spawn.c`'s thread end call into it through the
+ * declarations they carry, this being one translation unit. */
+#include "parts/lend.c"
+
 /* `sort`, which needs the array's layout helpers and the scalar descriptors it
  * dispatches on by pointer identity. */
 #include "parts/sort.c"

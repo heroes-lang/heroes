@@ -55,7 +55,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 28
+#define HERO_RUNTIME_ABI 29
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -640,6 +640,25 @@ void hero_array_set(HeroArrayHeader **slot, int64_t index, const void *value);
  * re-read across the copy and a moved count undoes and takes the copying path,
  * which snapshots. */
 void hero_array_push_owned(HeroArrayHeader **slot, const void *value);
+
+/* -- the buffer C fills, lent off the stack (panel 196's R4) ----------------
+ *
+ * `@md: [u8] counted_by 32 lent` hands C a buffer of exactly the extent the
+ * declaration states, the array's first elements copied in and zeros after,
+ * and replaces the array by the buffer's elements after the call. The buffer
+ * lives in a region this runtime maps for the calling thread, ending at a page
+ * nothing may touch, so C reaching past the extent stops on that page and the
+ * handler of `parts/stack.c` names the call and the parameter. A region per
+ * buffer, taken in stack order: a callback into Heroes that lends again takes
+ * its own. Since ABI 29 (`parts/lend.c` holds the reasoning).
+ *
+ * `hero_lend_take` copies in and returns the buffer; `hero_lend_give` gives
+ * the region back and returns the array the place now holds, releasing the one
+ * it held; `hero_lend_count_u64` is an unsigned extent as the `int64_t` the two
+ * take, refused above `INT64_MAX`. The two strings are what a message names. */
+void *hero_lend_take(const HeroArrayHeader *from, int64_t, const char *, const char *);
+HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *, int64_t);
+int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
 
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *

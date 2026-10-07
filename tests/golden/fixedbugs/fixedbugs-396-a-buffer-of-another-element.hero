@@ -1,0 +1,36 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4, a
+# buffer whose element is not what the header's pointer points at. C writes
+# what its pointer points at, so the element is held to it before the call, in
+# C's own arithmetic on the header's own type, as an `@` number's width and
+# sign are: refused at the build, on the parameter where it is declared.
+#
+# FOUR SHAPES: `u32`s where the header says `unsigned char *`; `i32`s against
+# `void *`, which takes `[u8]` alone, the byte being the unit where the header
+# gives none; a group's record against `int *`; and `u8` against `char *`,
+# whose sign `-fsigned-char` makes the other one. The quiet two beside them:
+# `[u8]` against `void *` and `[i8]` against `char *`.
+extern "fixedbugs-396-a-buffer-of-another-element.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+    function wide(@md: [u32] counted_by 8 lent)  #~ ffi_parameter_type
+    function ints_void(@p: [i32] counted_by 4 lent)  #~ ffi_parameter_type
+    function pairs_as_ints(@p: [Pair] counted_by 1 lent)  #~ ffi_parameter_type
+    function signed_chars(@p: [u8] counted_by 4 lent)  #~ ffi_parameter_type
+    function bytes_void(@p: [u8] counted_by 4 lent)
+    function plain_chars(@p: [i8] counted_by 4 lent)
+
+function main()
+    a: [u32] @ []
+    wide(@a)
+    b: [i32] @ []
+    ints_void(@b)
+    c: [Pair] @ []
+    pairs_as_ints(@c)
+    d: [u8] @ []
+    signed_chars(@d)
+    e: [u8] @ []
+    bytes_void(@e)
+    f: [i8] @ []
+    plain_chars(@f)
+    print(a.len(), b.len(), c.len(), d.len(), e.len(), f.len())

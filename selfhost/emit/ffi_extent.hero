@@ -15,6 +15,7 @@ use source
 use diag
 use emit/ffi_lookup
 use emit/lend_extent
+use emit/lend_buffer
 use field_lend_errors
 
 constant MARKER: str
@@ -25,6 +26,10 @@ constant MARKER: str
 function overstated_extent(s: source.Source, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
+    buffer = ffi_lookup.after(text: line, marker: lend_buffer.MARKER)
+
+    if !buffer.is_err()
+        return buffer_pointee(rest: buffer.must())
     stated_record = ffi_lookup.after(text: line, marker: lend_extent.STATED_RECORD_MARKER)
 
     if !stated_record.is_err()
@@ -151,6 +156,31 @@ function short_place(s: source.Source, rest: str, whole: bool) -> diag.Diagnosti
     )
     d.notes @ d.notes.push(
         "the declaration says how far C reaches, whatever the call hands it, so a field shorter than that is written past, into whatever the header put beside it. Lend a field that holds the extent; if C reaches less, the declaration is what is wrong"
+    )
+    return ok(d)
+
+# `<name> <param> <start> <end> <element> <header type…>`: a buffer C fills
+# (panel 196's R4) whose element is not what the header's pointer points at.
+# The call is right and the declaration is wrong about C, so the message lands
+# on the parameter where it is declared.
+function buffer_pointee(rest: str) -> diag.Diagnostic?
+    parts = ffi_lookup.words(text: rest)
+
+    if parts.len() < 6
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    start = ffi_lookup.number(parts[2])
+    end = ffi_lookup.number(parts[3])
+
+    if start.is_err() || end.is_err()
+        return fail(code: "none", msg: "a position is not numeric")
+    header_type = trim_quote(tail_from(parts, at: 5))
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + parts[1] + "` of `" + parts[0] + "` is a buffer of `" + parts[4] + "`, and the header's `" + header_type + "` points at something else — C writes what its pointer points at, so the buffer's element is held to it",
+        span: token.Span(start: start.must(), end: end.must())
+    )
+    d.notes @ d.notes.push(
+        "§4.19: a buffer's element is a number of the width and sign the header's pointee has, as an `@` number is, or the group's record that is that struct; against a `void *` it is `u8`, the byte being the unit where the header gives none"
     )
     return ok(d)
 

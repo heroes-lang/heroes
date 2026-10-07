@@ -1,0 +1,113 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4, the
+# buffer C fills, on a header of the program's own so every platform runs it.
+#
+# `@md: [u8] counted_by 32 lent` hands C a buffer of exactly the extent the
+# declaration states, the array's own elements copied in and zeros after, and
+# leaves the array exactly those elements. Before the sitting no binding of
+# `digest32` but C written by hand was correct: a one-byte cell took 32 bytes
+# at exit 0.
+#
+# THE SHAPES BESIDE IT, each printed so a wrong one shows: the extent as a
+# number, as the group's constant and as a sibling counted at the call (a
+# `void *` taking `[u8]`, the byte its unit); an element of `int32_t`, of a
+# group's record and of `double`; an array longer than the extent (cut to
+# it) and shorter (zeros after), whose copy taken before the call keeps its
+# value; a field and an element as the place; and a callback into Heroes,
+# made while C holds one buffer, that lends another of its own. And an
+# extent of 16 MiB, which a buffer on the stack could not hold (the critic's
+# exit 139 at 8 MiB): the region is mapped to its size.
+extern "fixedbugs-396-buffers.h"
+    constant DIGEST_LEN: i64
+    record Pair tag pair
+        a: i32
+        b: i32
+    function digest32(@md: [u8] counted_by 32 lent) -> i32
+    function fill_void(@buf: [u8] counted_by n lent, n: u64) -> i64
+    function fill_ints4(@p: [i32] counted_by 4 lent)
+    function fill_pairs2(@p: [Pair] counted_by 2 lent)
+    function fill_reals3(@p: [f64] counted_by 3 lent)
+    function double_bytes(@p: [u8] counted_by 4 lent)
+    function fill_after(@md: [u8] counted_by 16 lent, cb: (function() -> ()))
+    function digest_const(@md: [u8] counted_by DIGEST_LEN lent) -> i32
+
+record Holder
+    digest: [u8]
+    after: i64
+
+function inner()
+    other: [u8] @ []
+    _ = digest32(@other)
+    print("inner ", other.len(), " ", other[31])
+
+function main()
+    md: [u8] @ [
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+        9
+    ]
+    before = md
+    print(digest32(@md), " ", md.len(), " ", md[0], " ", md[31], " ", before.len(), " ", before[0])
+    named: [u8] @ []
+    print(digest_const(@named), " ", named.len(), " ", named[31])
+    bytes: [u8] @ []
+    print(fill_void(@bytes, n: 5), " ", bytes.len(), " ", bytes[4])
+    ints: [i32] @ [7]
+    fill_ints4(@ints)
+    print(ints.len(), " ", ints[0], " ", ints[3])
+    pairs: [Pair] @ []
+    fill_pairs2(@pairs)
+    print(pairs.len(), " ", pairs[0].b, " ", pairs[1].a)
+    reals: [f64] @ []
+    fill_reals3(@reals)
+    print(reals.len(), " ", reals[2])
+    small: [u8] @ [1, 2]
+    double_bytes(@small)
+    print(small.len(), " ", small[0], " ", small[1], " ", small[2], " ", small[3])
+    h: Holder @ Holder(digest: [], after: 7)
+    _ = digest32(@h.digest)
+    print(h.digest.len(), " ", h.digest[1], " ", h.after)
+    rows: [[u8]] @ [[], []]
+    _ = digest32(@rows[1])
+    print(rows[0].len(), " ", rows[1].len(), " ", rows[1][2])
+    late: [u8] @ []
+    fill_after(@late, cb: inner)
+    print(late.len(), " ", late[15])
+    big: [u8] @ []
+    print(fill_void(@big, n: 16777216), " ", big.len(), " ", big[16777215])

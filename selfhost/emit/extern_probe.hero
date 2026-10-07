@@ -212,9 +212,10 @@ function is_cast_out(c: state.Checked, slot: containers.Slot) -> bool
     if !mutable
         return false
 
+    # An array is the buffer C fills, its pointee asked by `emit/lend_buffer.hero` (panel 196's R4).
     return match table.get(c.types, slot.ty)
-        .ptr | .int_ty | .float_ty | .bool                                 => true
-        .cstr | .str | .named | .unit | .array | .fixed | .map             => false
+        .ptr | .int_ty | .float_ty | .bool | .array                        => true
+        .cstr | .str | .named | .unit | .fixed | .map                      => false
         .fallible | .function_ty | .case_ty | .failure | .generic | .error => false
 
 # The names a probe gives its arguments: positional, so nothing about
@@ -310,7 +311,8 @@ function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
         .cstr                                               => return ok("const char *")
         .ptr                                                => return ok("void *")
         .function_ty                                        => return ok(ctype.func_of(names, ty: ty))
-        .unit | .array | .fixed | .map                      => return fail(code: "none", msg: "no C spelling")
+        .array x                                            => return c_type_of(names, c, ty: x.element)
+        .unit | .fixed | .map                               => return fail(code: "none", msg: "no C spelling")
         .fallible | .case_ty | .failure | .generic | .error => return fail(code: "none", msg: "no C spelling")
 
     return fail(code: "none", msg: "unreached")

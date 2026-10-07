@@ -1,0 +1,47 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: `SHA256_Final` writes
+# 32 bytes through `unsigned char *md` and takes no count. Bound as a one-byte
+# cell, `@md: u8`, it wrote the digest's other 31 bytes over what lay beside
+# the cell at exit 0 (panel 194's ffi-pragmatist); the one correct binding
+# needed C written by hand. Panel 196's R4: `@md: [u8] counted_by
+# SHA256_DIGEST_LENGTH lent`, the header's own macro as the extent, and the
+# digest lands in an array, from this one file and OpenSSL's header.
+#
+# BESIDE IT: `EVP_DigestFinal_ex`, whose `unsigned int *s` is an out-count
+# and no extent, bound with `EVP_MAX_MD_SIZE` as the buffer's extent and fed
+# SHA-512's 64 bytes, where the out-count read as an extent wrote past it
+# (the sitting's critic); and a copy of the array taken before the call keeps
+# what it held.
+extern "fixedbugs-396-openssl.h" package "libcrypto"
+    constant SHA256_DIGEST_LENGTH: i64
+    constant EVP_MAX_MD_SIZE: i64
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    record MdCtx tag EVP_MD_CTX
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: [u8] counted_by SHA256_DIGEST_LENGTH lent, @c: Sha256Ctx) -> i32
+    function EVP_MD_CTX_new() -> MdCtx acquires EVP_MD_CTX_free
+    function EVP_MD_CTX_free(ctx: MdCtx consumes)
+    function EVP_sha512() -> ptr
+    function EVP_DigestInit_ex(ctx: MdCtx, md: ptr, engine: ptr) -> i32
+    function EVP_DigestUpdate(ctx: MdCtx, data: cstr lent, len: u64) -> i32
+    function EVP_DigestFinal_ex(ctx: MdCtx, @md: [u8] counted_by EVP_MAX_MD_SIZE lent, @s: u32) -> i32
+
+function main()
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    md: [u8] @ [9, 9, 9]
+    kept = md
+    print(SHA256_Init(@c), " ", SHA256_Update(@c, data: "abc".cstr(), len: 3), " ", SHA256_Final(@md, @c))
+    print(md.len(), " ", md[0], " ", md[31], " ", kept.len(), " ", kept[0])
+    ctx = EVP_MD_CTX_new()
+    out: [u8] @ []
+    s: u32 @ 0
+    print(
+        EVP_DigestInit_ex(ctx: ctx, md: EVP_sha512(), engine: nullptr),
+        " ",
+        EVP_DigestUpdate(ctx: ctx, data: "abc".cstr(), len: 3),
+        " ",
+        EVP_DigestFinal_ex(ctx: ctx, @out, @s)
+    )
+    print(s, " ", out.len(), " ", out[0], " ", out[63])
+    EVP_MD_CTX_free(ctx: ctx)

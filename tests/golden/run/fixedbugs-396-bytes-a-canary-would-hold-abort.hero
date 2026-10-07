@@ -1,0 +1,14 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4 against
+# the shape that defeated the sitting's first guard (its completeness critic):
+# `fgets` called with a count above the extent, writing bytes equal to the
+# 16-byte canary's own pattern, `0xA5`, which no compare can tell from the
+# canary. The guard page compares nothing: C stops on the first byte past the
+# 16 elements, whatever byte it is, and the runtime names the call.
+extern "fixedbugs-396-buffers.h"
+    function fill_a5(@s: [i8] counted_by 16 lent, n: i32)
+
+function main()
+    s: [i8] @ []
+    print("before")
+    fill_a5(@s, n: 48)
+    print("not reached ", s.len())

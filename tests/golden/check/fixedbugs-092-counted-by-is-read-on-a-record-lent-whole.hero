@@ -11,6 +11,8 @@
 # **Corrected 2026-10-07, panel 196's R5 (lane b13-land-buf):** a count may
 # also be a `constant` of the group or a number the declaration states, so
 # `no_sibling`'s message names all three; it is refused as before.
+# And since panel 196's R4 an array lent through `@` is the third thing a
+# `counted_by` may stand on, so `not_lent`'s and `a_handle`'s messages name it.
 extern "fixedbugs-092-counted-by.h"
     record One tag one
         a: i32
