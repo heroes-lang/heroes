@@ -186,28 +186,32 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     )
     under = assemble.compiled_under(t, options, site)
 
-    # THE ROUNDS, and the one reason there is more than one (defect 037,
-    # panel 152 R1). The first round spells every handle's tag as the author
-    # wrote it. When clang refuses a tag with *must use 'struct' tag to refer
-    # to type 'X'* — which it says only when the bare word X names a struct
-    # tag of exactly that spelling — the word is learned, and the round runs
-    # again with `struct X *` where `X *` was; where the round's words could
-    # not say it, the header's answer to the record's own question does
-    # (`cli/tag_spelling.hero`, defect 400). A round that learns nothing new
-    # ends the loop with its verdict, so the loop is bounded by the number of
-    # tagged handles in the program and a program whose tags need nothing
-    # runs one round, as before. Cost, measured 2026-09-15 on the one-module
-    # case: one extra failing clang compile of that module, and the second
-    # round's object is cached under its own text so a warm build pays only
-    # the first.
+    # THE ROUNDS (defect 037, panel 152 R1): a handle's tag is spelled as the
+    # author wrote it, and where clang says *must use 'struct' tag to refer to
+    # type 'X'*, which it says only when X names a struct tag of that spelling,
+    # in the round or of the record's own declaration (`cli/tag_spelling.hero`,
+    # defect 400), the round runs again with `struct X *`. A round that learns
+    # nothing ends the loop, so it is bounded by the program's tagged handles;
+    # a round costs one failing compile (2026-09-15), the probe asked once.
     struct_tags: {str: bool} @ {}
     told: {str: bool} @ {}
     linked: ()? @ ok()
     binary: str @ ""
     asked: ffi_asked.Asked? @ fail(code: "none", msg: "the header was not asked")
+    probe = assemble.probe_of(t, options, art.must(), s, site)
 
     while true
-        went = assemble.round(t, options, art.must(), s, site, @answered, struct_tags: struct_tags, told: @told)
+        went = assemble.round(
+            t,
+            options,
+            art.must(),
+            s,
+            site,
+            @answered,
+            probe: probe,
+            struct_tags: struct_tags,
+            told: @told
+        )
         linked @ went.verdict
         binary @ went.binary
 

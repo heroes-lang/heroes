@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-400-tags-of-three-kinds.h` declares no `opaqe` — clang read the header and could not find it
+  at tests/golden/unsupported/fixedbugs-416-a-misspelled-handle-tag-bound-only-in-a-test.hero:12:5
+     |
+  12 |     record Opaque tag opaqe  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `opaqe`

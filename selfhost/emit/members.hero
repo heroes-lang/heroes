@@ -284,6 +284,52 @@ function fields_written(decls: [ast.Decl], decl: i64) -> [i64]
 
     return out
 
+# Every group record a module declares, which the module's TU spells whether
+# or not a line of its code reaches it (defect 416, 2026-10-06). **A binding
+# the header refutes is the program's mistake whether or not a line uses
+# it**, and the fused unit, which `heroes test`, `--emit-c` and the seed
+# compile, already said so: its per-type functions are asked of every
+# declaration. Until that day a module's unit spelled only what its code
+# reached, so a handle over a union's tag or a misspelled one that nothing
+# used was refused by `test` alone, and `--emit-c` wrote a unit clang refuses
+# at exit 0. The layout check already asked every group record with fields
+# (`cli/layout.hero`); this reaches the handles, whose only question is their
+# spelling.
+#
+# `decls` are the declarations, which is what the per-type functions are keyed
+# by, since a record nothing mentions is in no type the arena holds; `types`
+# are what they and their fields are, where the arena holds them, so the
+# fields' own functions and typedefs are reached with them.
+record Groups
+    decls: [i64]
+    types: [i64]
+
+function group_records(module: str, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Groups
+    found: [i64] @ []
+    typed: [i64] @ []
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && source.component_at(s, decl.name.start) == module
+                    found @ found.push(index)
+                    id = table.lookup(c.types, .named(decl: index))
+
+                    if !id.is_err()
+                        typed @ typed.push(id.must())
+
+                    for written in fields_written(decls, decl: index)
+                        field = state.written_type(c, written)
+
+                        if !field.is_err()
+                            typed @ typed.push(field.must())
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
+        index @ index + 1
+
+    return Groups(decls: found, types: typed)
+
 # A program filtered to one TU's members. Declarations, types and the
 # string table stay whole — every index a kept function carries still
 # resolves — and only `functions` shrinks.

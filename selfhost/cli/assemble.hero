@@ -69,16 +69,9 @@ record Round
 
 # `told` is what clang said that this build has printed, across its rounds
 # (defect 327, `cli/clang_told.hero`): the second round compiles again what
-# the first did, and replays it where it is warm.
-function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], struct_tags: {str: bool}, @told: {str: bool}) -> Round
-    # What both checks ask with, asked of clang once: the probe's words and
-    # what the program's headers resolve to under them (`cli/compiling`).
-    probe = compiling.probe(
-        t.build,
-        under: compiled_under(t, options, site),
-        headers: emit_externs.headers(art.program, s, art.decls)
-    )
-
+# the first did, and replays it where it is warm. `probe` is the build's
+# (`probe_of`), the same for every round.
+function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], probe: compiling.Probe, struct_tags: {str: bool}, @told: {str: bool}) -> Round
     # What the extern out-parameters point at, asked of the header before
     # any unit compiles (panel 103): the width and sign of a numeric `@`
     # against the header's own type. A failure here is the AUTHOR's, and it
@@ -103,8 +96,44 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     counted = header_types.lend_units(answered)
 
     if site.is_tests
-        return fused(t, options, art, s, site, struct_tags: struct_tags, lend_units: counted, told: @told)
-    return per_module(t, options, art, s, site, struct_tags: struct_tags, lend_units: counted, told: @told)
+        return fused(
+            t,
+            options,
+            art,
+            s,
+            site,
+            struct_tags: struct_tags,
+            lend_units: counted,
+            digests: probe.digests,
+            told: @told
+        )
+    return per_module(
+        t,
+        options,
+        art,
+        s,
+        site,
+        struct_tags: struct_tags,
+        lend_units: counted,
+        digests: probe.digests,
+        told: @told
+    )
+
+# What both checks ask with, asked of clang once per BUILD and not per round
+# (defect 416, 2026-10-06): the probe's words and what the program's headers
+# resolve to under them (`cli/compiling`), every one of them digested. It is a
+# function of the build's words and headers, which no round changes, and it
+# was asked again by each. Its digests also start each round's own memo
+# (`fused`, `per_module`), where every unit asked them again of the same
+# headers. Measured 2026-10-06, a warm `heroes run`, instructions retired:
+# `run/fixedbugs-a-tag-that-needs-struct`, two rounds, 3.75 billion before
+# and 2.27 after; a one-round `print(1)`, 2.58 and 2.09.
+function probe_of(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site) -> compiling.Probe
+    return compiling.probe(
+        t.build,
+        under: compiled_under(t, options, site),
+        headers: emit_externs.headers(art.program, s, art.decls)
+    )
 
 # What every probe of this build compiles the program's headers under
 # (`cli/compiling`): the level, the sanitizers, the `--include`
@@ -133,13 +162,13 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
 # another build's clang read it, and its object and binary were staged under
 # one name each. Through `units.tu_object` the text names its own directory
 # and the object is cached like every other, a warm `heroes test` included.
-function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, @told: {str: bool}) -> Round
+function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, digests: {str: str}, @told: {str: bool}) -> Round
     none: [str] = []
     text: str @ art.c
 
     if struct_tags.len() > 0 || lend_units.len() > 0
         text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags, lend_units: lend_units).c
-    memo: {str: str} @ {}
+    memo: {str: str} @ digests
     made = units.tu_object(
         t,
         module: module_names.module_of(s.name),
@@ -165,7 +194,7 @@ function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 # One .c per module (panel 093): each TU compiled to its own cached object,
 # every dirty TU before any verdict (R5), one link over all of them re-run
 # every build.
-function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, @told: {str: bool}) -> Round
+function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, digests: {str: str}, @told: {str: bool}) -> Round
     root = module_names.module_of(s.name)
     objects: [str] @ [site.object]
     stopped: ()? @ ok()
@@ -188,8 +217,9 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # One build's answers about files on disk. Every TU asks whether the
     # headers it read still say the same thing, and 157 of them share
     # almost all of those headers — so the map is threaded through the loop
-    # rather than rebuilt per unit.
-    memo: {str: str} @ {}
+    # rather than rebuilt per unit. It starts from the probe's own digests
+    # (defect 416), the same build's answers about the same headers.
+    memo: {str: str} @ digests
 
     for component in units.components(s)
         tu_text = unit.unit(
