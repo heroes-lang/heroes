@@ -393,19 +393,19 @@ bb0:
 #line 28 "tests/golden/run/arrays-mutated.hero"
     t12 = INT64_C(0);
 #line 28 "tests/golden/run/arrays-mutated.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 28 "tests/golden/run/arrays-mutated.hero"
     t14 = h0_ns;
 #line 28 "tests/golden/run/arrays-mutated.hero"
     t15 = INT64_C(1);
 #line 28 "tests/golden/run/arrays-mutated.hero"
-    t16 = *(int64_t const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]);
 #line 28 "tests/golden/run/arrays-mutated.hero"
     t17 = h0_ns;
 #line 28 "tests/golden/run/arrays-mutated.hero"
     t18 = INT64_C(2);
 #line 28 "tests/golden/run/arrays-mutated.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 28 "tests/golden/run/arrays-mutated.hero"
     hero_print_int(t13);
 #line 28 "tests/golden/run/arrays-mutated.hero"
@@ -501,13 +501,13 @@ bb0:
 #line 33 "tests/golden/run/arrays-mutated.hero"
     t36 = INT64_C(0);
 #line 33 "tests/golden/run/arrays-mutated.hero"
-    t37 = *(HeroStr const *)hero_array_at(t35, t36);
+    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t36]);
 #line 33 "tests/golden/run/arrays-mutated.hero"
     t38 = h1_ws;
 #line 33 "tests/golden/run/arrays-mutated.hero"
     t39 = INT64_C(1);
 #line 33 "tests/golden/run/arrays-mutated.hero"
-    t40 = *(HeroStr const *)hero_array_at(t38, t39);
+    t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t38 + 1))[t39]);
 #line 33 "tests/golden/run/arrays-mutated.hero"
     hero_print_str(t37);
 #line 33 "tests/golden/run/arrays-mutated.hero"
@@ -571,7 +571,7 @@ bb0:
 #line 38 "tests/golden/run/arrays-mutated.hero"
     t57 = INT64_C(0);
 #line 38 "tests/golden/run/arrays-mutated.hero"
-    t58 = *(h_arraysmutated_Point const *)hero_array_at(t56, t57);
+    t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t56 + 1))[t57]);
 #line 38 "tests/golden/run/arrays-mutated.hero"
     t59 = t58.f_x;
 #line 38 "tests/golden/run/arrays-mutated.hero"
@@ -579,7 +579,7 @@ bb0:
 #line 38 "tests/golden/run/arrays-mutated.hero"
     t61 = INT64_C(1);
 #line 38 "tests/golden/run/arrays-mutated.hero"
-    t62 = *(h_arraysmutated_Point const *)hero_array_at(t60, t61);
+    t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t60 + 1))[t61]);
 #line 38 "tests/golden/run/arrays-mutated.hero"
     t63 = t62.f_x;
 #line 38 "tests/golden/run/arrays-mutated.hero"
@@ -587,7 +587,7 @@ bb0:
 #line 38 "tests/golden/run/arrays-mutated.hero"
     t65 = INT64_C(1);
 #line 38 "tests/golden/run/arrays-mutated.hero"
-    t66 = *(h_arraysmutated_Point const *)hero_array_at(t64, t65);
+    t66 = ((void)((t64 == NULL || t65 < 0 || t65 >= t64->len) ? ((void)hero_array_at(t64, t65), hero_unreachable()) : (void)0), (void)(t64->elem->size != sizeof(h_arraysmutated_Point) ? hero_unreachable() : (void)0), ((h_arraysmutated_Point const *)(const void *)(t64 + 1))[t65]);
 #line 38 "tests/golden/run/arrays-mutated.hero"
     t67 = t66.f_y;
 #line 38 "tests/golden/run/arrays-mutated.hero"
@@ -729,7 +729,7 @@ bb0:
 #line 43 "tests/golden/run/arrays-mutated.hero"
     t88 = INT64_C(0);
 #line 43 "tests/golden/run/arrays-mutated.hero"
-    t89 = *(h_arraysmutated_Holder const *)hero_array_at(t87, t88);
+    t89 = ((void)((t87 == NULL || t88 < 0 || t88 >= t87->len) ? ((void)hero_array_at(t87, t88), hero_unreachable()) : (void)0), (void)(t87->elem->size != sizeof(h_arraysmutated_Holder) ? hero_unreachable() : (void)0), ((h_arraysmutated_Holder const *)(const void *)(t87 + 1))[t88]);
 #line 43 "tests/golden/run/arrays-mutated.hero"
     t90 = t89.f_name;
 #line 43 "tests/golden/run/arrays-mutated.hero"
@@ -737,7 +737,7 @@ bb0:
 #line 43 "tests/golden/run/arrays-mutated.hero"
     t92 = INT64_C(1);
 #line 43 "tests/golden/run/arrays-mutated.hero"
-    t93 = *(h_arraysmutated_Holder const *)hero_array_at(t91, t92);
+    t93 = ((void)((t91 == NULL || t92 < 0 || t92 >= t91->len) ? ((void)hero_array_at(t91, t92), hero_unreachable()) : (void)0), (void)(t91->elem->size != sizeof(h_arraysmutated_Holder) ? hero_unreachable() : (void)0), ((h_arraysmutated_Holder const *)(const void *)(t91 + 1))[t92]);
 #line 43 "tests/golden/run/arrays-mutated.hero"
     t94 = t93.f_name;
 #line 43 "tests/golden/run/arrays-mutated.hero"
@@ -845,31 +845,31 @@ bb0:
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t110 = INT64_C(0);
 #line 48 "tests/golden/run/arrays-mutated.hero"
-    t111 = *(HeroArrayHeader * const *)hero_array_at(t109, t110);
+    t111 = ((void)((t109 == NULL || t110 < 0 || t110 >= t109->len) ? ((void)hero_array_at(t109, t110), hero_unreachable()) : (void)0), (void)(t109->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t109 + 1))[t110]);
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t112 = INT64_C(0);
 #line 48 "tests/golden/run/arrays-mutated.hero"
-    t113 = *(int64_t const *)hero_array_at(t111, t112);
+    t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? ((void)hero_array_at(t111, t112), hero_unreachable()) : (void)0), (void)(t111->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t111 + 1))[t112]);
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t114 = h4_gs;
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t115 = INT64_C(0);
 #line 48 "tests/golden/run/arrays-mutated.hero"
-    t116 = *(HeroArrayHeader * const *)hero_array_at(t114, t115);
+    t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? ((void)hero_array_at(t114, t115), hero_unreachable()) : (void)0), (void)(t114->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t114 + 1))[t115]);
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t117 = INT64_C(1);
 #line 48 "tests/golden/run/arrays-mutated.hero"
-    t118 = *(int64_t const *)hero_array_at(t116, t117);
+    t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? ((void)hero_array_at(t116, t117), hero_unreachable()) : (void)0), (void)(t116->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t116 + 1))[t117]);
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t119 = h4_gs;
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t120 = INT64_C(1);
 #line 48 "tests/golden/run/arrays-mutated.hero"
-    t121 = *(HeroArrayHeader * const *)hero_array_at(t119, t120);
+    t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? ((void)hero_array_at(t119, t120), hero_unreachable()) : (void)0), (void)(t119->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t119 + 1))[t120]);
 #line 48 "tests/golden/run/arrays-mutated.hero"
     t122 = INT64_C(0);
 #line 48 "tests/golden/run/arrays-mutated.hero"
-    t123 = *(int64_t const *)hero_array_at(t121, t122);
+    t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? ((void)hero_array_at(t121, t122), hero_unreachable()) : (void)0), (void)(t121->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t121 + 1))[t122]);
 #line 48 "tests/golden/run/arrays-mutated.hero"
     hero_print_int(t113);
 #line 48 "tests/golden/run/arrays-mutated.hero"
@@ -883,13 +883,13 @@ bb0:
 #line 49 "tests/golden/run/arrays-mutated.hero"
     t125 = INT64_C(0);
 #line 49 "tests/golden/run/arrays-mutated.hero"
-    t126 = *(HeroArrayHeader * const *)hero_array_at(t124, t125);
+    t126 = ((void)((t124 == NULL || t125 < 0 || t125 >= t124->len) ? ((void)hero_array_at(t124, t125), hero_unreachable()) : (void)0), (void)(t124->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t124 + 1))[t125]);
 #line 49 "tests/golden/run/arrays-mutated.hero"
-    t127 = hero_array_len(t126);
+    t127 = ((void)(t126 == NULL ? ((void)hero_array_len(t126), hero_unreachable()) : (void)0), t126->len);
 #line 49 "tests/golden/run/arrays-mutated.hero"
     t128 = h4_gs;
 #line 49 "tests/golden/run/arrays-mutated.hero"
-    t129 = hero_array_len(t128);
+    t129 = ((void)(t128 == NULL ? ((void)hero_array_len(t128), hero_unreachable()) : (void)0), t128->len);
 #line 49 "tests/golden/run/arrays-mutated.hero"
     hero_print_int(t127);
 #line 49 "tests/golden/run/arrays-mutated.hero"
@@ -899,7 +899,7 @@ bb0:
 #line 53 "tests/golden/run/arrays-mutated.hero"
     t130 = h0_ns;
 #line 53 "tests/golden/run/arrays-mutated.hero"
-    t131 = hero_array_len(t130);
+    t131 = ((void)(t130 == NULL ? ((void)hero_array_len(t130), hero_unreachable()) : (void)0), t130->len);
 #line 53 "tests/golden/run/arrays-mutated.hero"
     hero_print_int(t131);
 #line 53 "tests/golden/run/arrays-mutated.hero"

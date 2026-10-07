@@ -446,13 +446,13 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t29 = INT64_C(0);
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t30 = *(h_fixedbugsafieldstoredbehindanindex_Row const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t28 + 1))[t29]);
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t31 = t30.f_cells;
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t32 = INT64_C(0);
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t33 = *(h_fixedbugsafieldstoredbehindanindex_Cell const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t31 + 1))[t32]);
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t34 = t33.f_n;
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -470,13 +470,13 @@ bb1:
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t39 = INT64_C(0);
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t40 = *(h_fixedbugsafieldstoredbehindanindex_Row const *)hero_array_at(t38, t39);
+    t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t38 + 1))[t39]);
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t41 = t40.f_cells;
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t42 = INT64_C(0);
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t43 = *(h_fixedbugsafieldstoredbehindanindex_Cell const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t41 + 1))[t42]);
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t44 = t43.f_n;
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -544,7 +544,7 @@ bb3:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t56 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t57 = *(h_fixedbugsafieldstoredbehindanindex_Row const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t55 + 1))[t56]);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t58 = t57.f_label;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -552,13 +552,13 @@ bb3:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t60 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t61 = *(h_fixedbugsafieldstoredbehindanindex_Row const *)hero_array_at(t59, t60);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t59 + 1))[t60]);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t62 = t61.f_cells;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t63 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t64 = *(h_fixedbugsafieldstoredbehindanindex_Cell const *)hero_array_at(t62, t63);
+    t64 = ((void)((t62 == NULL || t63 < 0 || t63 >= t62->len) ? ((void)hero_array_at(t62, t63), hero_unreachable()) : (void)0), (void)(t62->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t62 + 1))[t63]);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t65 = t64.f_n;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -566,13 +566,13 @@ bb3:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t67 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t68 = *(h_fixedbugsafieldstoredbehindanindex_Row const *)hero_array_at(t66, t67);
+    t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? ((void)hero_array_at(t66, t67), hero_unreachable()) : (void)0), (void)(t66->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Row const *)(const void *)(t66 + 1))[t67]);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t69 = t68.f_cells;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t70 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    t71 = *(h_fixedbugsafieldstoredbehindanindex_Cell const *)hero_array_at(t69, t70);
+    t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Cell) ? hero_unreachable() : (void)0), ((h_fixedbugsafieldstoredbehindanindex_Cell const *)(const void *)(t69 + 1))[t70]);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t72 = t71.f_tag;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"

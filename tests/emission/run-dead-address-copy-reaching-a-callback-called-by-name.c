@@ -229,7 +229,7 @@ bb0:
 #line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t7 = INT64_C(0);
 #line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t8 = *(node * const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(node *) ? hero_unreachable() : (void)0), ((node * const *)(const void *)(t6 + 1))[t7]);
 #line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t9 = h_deadaddresscopyreachingacallbackcalledbyname_seen(t8);
 #line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"

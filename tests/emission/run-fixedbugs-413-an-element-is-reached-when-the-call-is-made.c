@@ -216,13 +216,13 @@ bb0:
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t6 = INT64_C(0);
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    t7 = *(int64_t const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t8 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t9 = h0_xs;
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_print_int(t7);
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"

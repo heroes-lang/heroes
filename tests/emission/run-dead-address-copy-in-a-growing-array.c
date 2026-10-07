@@ -391,7 +391,7 @@ bb1:
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t15 = INT64_C(0);
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-    t16 = *(cdb * const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(cdb *) ? hero_unreachable() : (void)0), ((cdb * const *)(const void *)(t14 + 1))[t15]);
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     hero_handle_alive(t16, "the argument `db` of `db_changes`");
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"

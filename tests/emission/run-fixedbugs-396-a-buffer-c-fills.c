@@ -226,7 +226,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t4 = h0_other;
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t6 = HERO_STR_LIT(hero_str_20);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -234,7 +234,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t8 = INT64_C(31);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t9 = *(uint8_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t7 + 1))[t8]);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_str(t3);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -703,7 +703,7 @@ bb0:
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t45 = h0_md;
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t46 = hero_array_len(t45);
+    t46 = ((void)(t45 == NULL ? ((void)hero_array_len(t45), hero_unreachable()) : (void)0), t45->len);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t47 = HERO_STR_LIT(hero_str_20);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -711,7 +711,7 @@ bb0:
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t49 = INT64_C(0);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t50 = *(uint8_t const *)hero_array_at(t48, t49);
+    t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? ((void)hero_array_at(t48, t49), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t48 + 1))[t49]);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t51 = HERO_STR_LIT(hero_str_20);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -719,13 +719,13 @@ bb0:
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t53 = INT64_C(31);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t54 = *(uint8_t const *)hero_array_at(t52, t53);
+    t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? ((void)hero_array_at(t52, t53), hero_unreachable()) : (void)0), (void)(t52->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t52 + 1))[t53]);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t55 = HERO_STR_LIT(hero_str_20);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t56 = h1_before;
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t57 = hero_array_len(t56);
+    t57 = ((void)(t56 == NULL ? ((void)hero_array_len(t56), hero_unreachable()) : (void)0), t56->len);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t58 = HERO_STR_LIT(hero_str_20);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -733,7 +733,7 @@ bb0:
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t60 = INT64_C(0);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t61 = *(uint8_t const *)hero_array_at(t59, t60);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t59 + 1))[t60]);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t43);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -793,7 +793,7 @@ bb0:
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t65 = h2_named;
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t66 = hero_array_len(t65);
+    t66 = ((void)(t65 == NULL ? ((void)hero_array_len(t65), hero_unreachable()) : (void)0), t65->len);
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t67 = HERO_STR_LIT(hero_str_20);
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -801,7 +801,7 @@ bb0:
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t69 = INT64_C(31);
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t70 = *(uint8_t const *)hero_array_at(t68, t69);
+    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t68 + 1))[t69]);
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t63);
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -851,7 +851,7 @@ bb0:
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t75 = h3_bytes;
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t76 = hero_array_len(t75);
+    t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t77 = HERO_STR_LIT(hero_str_20);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -859,7 +859,7 @@ bb0:
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t79 = INT64_C(4);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t80 = *(uint8_t const *)hero_array_at(t78, t79);
+    t80 = ((void)((t78 == NULL || t79 < 0 || t79 >= t78->len) ? ((void)hero_array_at(t78, t79), hero_unreachable()) : (void)0), (void)(t78->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t78 + 1))[t79]);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t73);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -909,7 +909,7 @@ bb0:
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t83 = h4_ints;
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t84 = hero_array_len(t83);
+    t84 = ((void)(t83 == NULL ? ((void)hero_array_len(t83), hero_unreachable()) : (void)0), t83->len);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t85 = HERO_STR_LIT(hero_str_20);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -917,7 +917,7 @@ bb0:
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t87 = INT64_C(0);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t88 = *(int32_t const *)hero_array_at(t86, t87);
+    t88 = ((void)((t86 == NULL || t87 < 0 || t87 >= t86->len) ? ((void)hero_array_at(t86, t87), hero_unreachable()) : (void)0), (void)(t86->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t86 + 1))[t87]);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t89 = HERO_STR_LIT(hero_str_20);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -925,7 +925,7 @@ bb0:
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t91 = INT64_C(3);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t92 = *(int32_t const *)hero_array_at(t90, t91);
+    t92 = ((void)((t90 == NULL || t91 < 0 || t91 >= t90->len) ? ((void)hero_array_at(t90, t91), hero_unreachable()) : (void)0), (void)(t90->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t90 + 1))[t91]);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t84);
 #line 93 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -971,7 +971,7 @@ bb0:
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t94 = h5_pairs;
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t95 = hero_array_len(t94);
+    t95 = ((void)(t94 == NULL ? ((void)hero_array_len(t94), hero_unreachable()) : (void)0), t94->len);
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t96 = HERO_STR_LIT(hero_str_20);
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -979,7 +979,7 @@ bb0:
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t98 = INT64_C(0);
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t99 = *(struct pair const *)hero_array_at(t97, t98);
+    t99 = ((void)((t97 == NULL || t98 < 0 || t98 >= t97->len) ? ((void)hero_array_at(t97, t98), hero_unreachable()) : (void)0), (void)(t97->elem->size != sizeof(struct pair) ? hero_unreachable() : (void)0), ((struct pair const *)(const void *)(t97 + 1))[t98]);
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t100 = t99.b;
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -989,7 +989,7 @@ bb0:
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t103 = INT64_C(1);
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t104 = *(struct pair const *)hero_array_at(t102, t103);
+    t104 = ((void)((t102 == NULL || t103 < 0 || t103 >= t102->len) ? ((void)hero_array_at(t102, t103), hero_unreachable()) : (void)0), (void)(t102->elem->size != sizeof(struct pair) ? hero_unreachable() : (void)0), ((struct pair const *)(const void *)(t102 + 1))[t103]);
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t105 = t104.a;
 #line 96 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1037,7 +1037,7 @@ bb0:
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t107 = h6_reals;
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t108 = hero_array_len(t107);
+    t108 = ((void)(t107 == NULL ? ((void)hero_array_len(t107), hero_unreachable()) : (void)0), t107->len);
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t109 = HERO_STR_LIT(hero_str_20);
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1045,7 +1045,7 @@ bb0:
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t111 = INT64_C(2);
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t112 = *(double const *)hero_array_at(t110, t111);
+    t112 = ((void)((t110 == NULL || t111 < 0 || t111 >= t110->len) ? ((void)hero_array_at(t110, t111), hero_unreachable()) : (void)0), (void)(t110->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t110 + 1))[t111]);
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t108);
 #line 99 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1095,7 +1095,7 @@ bb0:
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t116 = h7_small;
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t117 = hero_array_len(t116);
+    t117 = ((void)(t116 == NULL ? ((void)hero_array_len(t116), hero_unreachable()) : (void)0), t116->len);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t118 = HERO_STR_LIT(hero_str_20);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1103,7 +1103,7 @@ bb0:
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t120 = INT64_C(0);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t121 = *(uint8_t const *)hero_array_at(t119, t120);
+    t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? ((void)hero_array_at(t119, t120), hero_unreachable()) : (void)0), (void)(t119->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t119 + 1))[t120]);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t122 = HERO_STR_LIT(hero_str_20);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1111,7 +1111,7 @@ bb0:
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t124 = INT64_C(1);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t125 = *(uint8_t const *)hero_array_at(t123, t124);
+    t125 = ((void)((t123 == NULL || t124 < 0 || t124 >= t123->len) ? ((void)hero_array_at(t123, t124), hero_unreachable()) : (void)0), (void)(t123->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t123 + 1))[t124]);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t126 = HERO_STR_LIT(hero_str_20);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1119,7 +1119,7 @@ bb0:
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t128 = INT64_C(2);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t129 = *(uint8_t const *)hero_array_at(t127, t128);
+    t129 = ((void)((t127 == NULL || t128 < 0 || t128 >= t127->len) ? ((void)hero_array_at(t127, t128), hero_unreachable()) : (void)0), (void)(t127->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t127 + 1))[t128]);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t130 = HERO_STR_LIT(hero_str_20);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1127,7 +1127,7 @@ bb0:
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t132 = INT64_C(3);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t133 = *(uint8_t const *)hero_array_at(t131, t132);
+    t133 = ((void)((t131 == NULL || t132 < 0 || t132 >= t131->len) ? ((void)hero_array_at(t131, t132), hero_unreachable()) : (void)0), (void)(t131->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t131 + 1))[t132]);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t117);
 #line 102 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1195,7 +1195,7 @@ bb0:
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t139 = t138.f_digest;
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t140 = hero_array_len(t139);
+    t140 = ((void)(t139 == NULL ? ((void)hero_array_len(t139), hero_unreachable()) : (void)0), t139->len);
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t141 = HERO_STR_LIT(hero_str_20);
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1205,7 +1205,7 @@ bb0:
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t144 = INT64_C(1);
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t145 = *(uint8_t const *)hero_array_at(t143, t144);
+    t145 = ((void)((t143 == NULL || t144 < 0 || t144 >= t143->len) ? ((void)hero_array_at(t143, t144), hero_unreachable()) : (void)0), (void)(t143->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t143 + 1))[t144]);
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t146 = HERO_STR_LIT(hero_str_20);
 #line 105 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1283,9 +1283,9 @@ bb0:
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t155 = INT64_C(0);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t156 = *(HeroArrayHeader * const *)hero_array_at(t154, t155);
+    t156 = ((void)((t154 == NULL || t155 < 0 || t155 >= t154->len) ? ((void)hero_array_at(t154, t155), hero_unreachable()) : (void)0), (void)(t154->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t154 + 1))[t155]);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t157 = hero_array_len(t156);
+    t157 = ((void)(t156 == NULL ? ((void)hero_array_len(t156), hero_unreachable()) : (void)0), t156->len);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t158 = HERO_STR_LIT(hero_str_20);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1293,9 +1293,9 @@ bb0:
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t160 = INT64_C(1);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t161 = *(HeroArrayHeader * const *)hero_array_at(t159, t160);
+    t161 = ((void)((t159 == NULL || t160 < 0 || t160 >= t159->len) ? ((void)hero_array_at(t159, t160), hero_unreachable()) : (void)0), (void)(t159->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t159 + 1))[t160]);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t162 = hero_array_len(t161);
+    t162 = ((void)(t161 == NULL ? ((void)hero_array_len(t161), hero_unreachable()) : (void)0), t161->len);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t163 = HERO_STR_LIT(hero_str_20);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1303,11 +1303,11 @@ bb0:
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t165 = INT64_C(1);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t166 = *(HeroArrayHeader * const *)hero_array_at(t164, t165);
+    t166 = ((void)((t164 == NULL || t165 < 0 || t165 >= t164->len) ? ((void)hero_array_at(t164, t165), hero_unreachable()) : (void)0), (void)(t164->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t164 + 1))[t165]);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t167 = INT64_C(2);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t168 = *(uint8_t const *)hero_array_at(t166, t167);
+    t168 = ((void)((t166 == NULL || t167 < 0 || t167 >= t166->len) ? ((void)hero_array_at(t166, t167), hero_unreachable()) : (void)0), (void)(t166->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t166 + 1))[t167]);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t157);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1355,7 +1355,7 @@ bb0:
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t171 = h10_late;
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t172 = hero_array_len(t171);
+    t172 = ((void)(t171 == NULL ? ((void)hero_array_len(t171), hero_unreachable()) : (void)0), t171->len);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t173 = HERO_STR_LIT(hero_str_20);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1363,7 +1363,7 @@ bb0:
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t175 = INT64_C(15);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t176 = *(uint8_t const *)hero_array_at(t174, t175);
+    t176 = ((void)((t174 == NULL || t175 < 0 || t175 >= t174->len) ? ((void)hero_array_at(t174, t175), hero_unreachable()) : (void)0), (void)(t174->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t174 + 1))[t175]);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t172);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1409,7 +1409,7 @@ bb0:
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t181 = h11_big;
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t182 = hero_array_len(t181);
+    t182 = ((void)(t181 == NULL ? ((void)hero_array_len(t181), hero_unreachable()) : (void)0), t181->len);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t183 = HERO_STR_LIT(hero_str_20);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1417,7 +1417,7 @@ bb0:
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t185 = INT64_C(16777215);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t186 = *(uint8_t const *)hero_array_at(t184, t185);
+    t186 = ((void)((t184 == NULL || t185 < 0 || t185 >= t184->len) ? ((void)hero_array_at(t184, t185), hero_unreachable()) : (void)0), (void)(t184->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t184 + 1))[t185]);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t179);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"

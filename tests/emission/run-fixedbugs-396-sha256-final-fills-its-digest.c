@@ -319,7 +319,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t16 = h1_md;
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t18 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -327,7 +327,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t20 = INT64_C(0);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t21 = *(uint8_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t19 + 1))[t20]);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t22 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -335,13 +335,13 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t24 = INT64_C(31);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t25 = *(uint8_t const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t23 + 1))[t24]);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t26 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t27 = h2_kept;
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t28 = hero_array_len(t27);
+    t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t29 = HERO_STR_LIT(hero_str_20);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -349,7 +349,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t31 = INT64_C(0);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t32 = *(uint8_t const *)hero_array_at(t30, t31);
+    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t30 + 1))[t31]);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_print_int(t17);
 #line 35 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -461,7 +461,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t51 = h4_out;
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t52 = hero_array_len(t51);
+    t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t53 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -469,7 +469,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t55 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t56 = *(uint8_t const *)hero_array_at(t54, t55);
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t54 + 1))[t55]);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t57 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -477,7 +477,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t59 = INT64_C(63);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    t60 = *(uint8_t const *)hero_array_at(t58, t59);
+    t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t58 + 1))[t59]);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_print_int(t49);
 #line 46 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"

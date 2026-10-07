@@ -349,7 +349,7 @@ bb1:
 #line 29 "examples/template/main.hero"
     t10 = h7_xs0;
 #line 29 "examples/template/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 29 "examples/template/main.hero"
     t12 = t9 < t11;
 #line 29 "examples/template/main.hero"
@@ -361,7 +361,7 @@ bb2:
 #line 29 "examples/template/main.hero"
     t14 = h8_i0;
 #line 29 "examples/template/main.hero"
-    t15 = *(HeroStr const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]);
 #line 29 "examples/template/main.hero"
     t107 = h9_ch;
 #line 368 "main.c"
@@ -1088,7 +1088,7 @@ bb1:
 #line 93 "examples/template/main.hero"
     t6 = h4_xs0;
 #line 93 "examples/template/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 93 "examples/template/main.hero"
     t8 = t5 < t7;
 #line 93 "examples/template/main.hero"
@@ -1100,7 +1100,7 @@ bb2:
 #line 93 "examples/template/main.hero"
     t10 = h5_i0;
 #line 93 "examples/template/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 93 "examples/template/main.hero"
     t30 = h6_key;
 #line 1107 "main.c"
@@ -1357,7 +1357,7 @@ bb1:
 #line 112 "examples/template/main.hero"
     t9 = h5_xs0;
 #line 112 "examples/template/main.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 112 "examples/template/main.hero"
     t11 = t8 < t10;
 #line 112 "examples/template/main.hero"
@@ -1369,7 +1369,7 @@ bb2:
 #line 112 "examples/template/main.hero"
     t13 = h6_i0;
 #line 112 "examples/template/main.hero"
-    t14 = *(HeroStr const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t12 + 1))[t13]);
 #line 112 "examples/template/main.hero"
     t50 = h7_ch;
 #line 1376 "main.c"

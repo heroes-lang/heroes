@@ -727,7 +727,7 @@ bb1:
 #line 82 "examples/checksum/main.hero"
     t5 = h2_xs0;
 #line 82 "examples/checksum/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 82 "examples/checksum/main.hero"
     t7 = t4 < t6;
 #line 82 "examples/checksum/main.hero"
@@ -739,7 +739,7 @@ bb2:
 #line 82 "examples/checksum/main.hero"
     t9 = h3_i0;
 #line 82 "examples/checksum/main.hero"
-    t10 = *(uint8_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]);
 #line 82 "examples/checksum/main.hero"
     h4_one = t10;
 #line 83 "examples/checksum/main.hero"
@@ -896,7 +896,7 @@ bb1:
 #line 89 "examples/checksum/main.hero"
     t4 = h0_xs0;
 #line 89 "examples/checksum/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 89 "examples/checksum/main.hero"
     t6 = t3 < t5;
 #line 89 "examples/checksum/main.hero"
@@ -908,7 +908,7 @@ bb2:
 #line 89 "examples/checksum/main.hero"
     t8 = h1_i0;
 #line 89 "examples/checksum/main.hero"
-    t9 = *(HeroStr const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 89 "examples/checksum/main.hero"
     t50 = h2_text;
 #line 915 "main.c"
@@ -2453,7 +2453,7 @@ bb0:
 #line 92 "examples/checksum/base64.hero"
     t3 = h0_data;
 #line 92 "examples/checksum/base64.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 92 "examples/checksum/base64.hero"
     h3_n = t4;
 #line 92 "examples/checksum/base64.hero"
@@ -2475,7 +2475,7 @@ bb2:
 #line 95 "examples/checksum/base64.hero"
     t9 = h2_i;
 #line 95 "examples/checksum/base64.hero"
-    t10 = *(uint8_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]);
 #line 95 "examples/checksum/base64.hero"
     t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10};
 #line 95 "examples/checksum/base64.hero"
@@ -2629,7 +2629,7 @@ bb7:
 #line 101 "examples/checksum/base64.hero"
     if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow();
 #line 101 "examples/checksum/base64.hero"
-    t32 = *(uint8_t const *)hero_array_at(t28, t31);
+    t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? ((void)hero_array_at(t28, t31), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t28 + 1))[t31]);
 #line 101 "examples/checksum/base64.hero"
     t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t32};
 #line 101 "examples/checksum/base64.hero"
@@ -2771,7 +2771,7 @@ bb12:
 #line 105 "examples/checksum/base64.hero"
     if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow();
 #line 105 "examples/checksum/base64.hero"
-    t52 = *(uint8_t const *)hero_array_at(t48, t51);
+    t52 = ((void)((t48 == NULL || t51 < 0 || t51 >= t48->len) ? ((void)hero_array_at(t48, t51), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t48 + 1))[t51]);
 #line 105 "examples/checksum/base64.hero"
     t53 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t52};
 #line 105 "examples/checksum/base64.hero"

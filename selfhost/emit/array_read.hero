@@ -1,0 +1,49 @@
+# An array's element and its length, READ IN PLACE (defect 389,
+# 2026-10-07; design.md §4.9, §4.20, spec § 10). The emitted C reads the
+# header and the block itself, where it called `hero_array_at` and
+# `hero_array_len`: panel 195's loop of a million reads retired 116.1 to
+# 117.0 million instructions with the call and 93.1 to 93.7 million read in
+# place at -O0, 38.1 to 38.7 against 24.1 to 24.8 million at -O2 (three
+# runs each), and a `for` over an array reads its length and an element at
+# every step.
+#
+# THE ABORT IS STILL THE RUNTIME'S. A NULL slot, or an index outside
+# [0, len), is handed to `hero_array_at` or `hero_array_len` itself, which
+# aborts in its own words and with its own exit code, so a program reading
+# out of range prints what it always printed. `hero_unreachable()` after
+# that call is never reached; it is there so clang sees the branch end,
+# rather than reasoning about the read after it from a premise about the
+# call.
+#
+# THE ELEMENT IS READ AT `sizeof` OF ITS C TYPE, and the descriptor is
+# asked to agree first: every write already copies `elem->size` bytes out
+# of a value of that type (`hero_array_push`, `_set`, `_push_owned`), so the
+# two are one fact, and a read that found them apart would read past its
+# slot. It aborts instead, which `hero_array_at` never asked.
+#
+# Emitted and not a macro of `heroes_runtime.h`: the same C once
+# preprocessed, measured so, and a word the header gains is owed to the
+# guard list and to two of the runtime's files (`emit/guarded_names.hero`).
+# Every argument is a temporary's name, so naming it more than once
+# evaluates nothing twice.
+
+# `xs[i]`: `spelling` is the element's C type, `base` and `index` the two
+# temporaries. `{spelling} const *`, not `const {spelling} *`: the two
+# differ exactly when the element is itself a pointer.
+function element(spelling: str, base: str, index: str) -> str
+    checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
+    sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
+    read = "((" + spelling + " const *)(const void *)(" + base + " + 1))[" + index + "]"
+    return "((void)(" + checked + " ? ((void)hero_array_at(" + base + ", " + index + "), hero_unreachable()) : (void)0), (void)" + sized + ", " + read + ")"
+
+# `xs.len()`, `len(xs)` and the length a `for` reads at every step, where
+# a value is wanted; `value` is a temporary.
+function length(value: str) -> str
+    return "((void)(" + value + " == NULL ? ((void)hero_array_len(" + value + "), hero_unreachable()) : (void)0), " + value + "->len)"
+
+## Tests
+
+test "an element and a length are read in place, every failing read handed to the runtime"
+    assert element(spelling: "int64_t", base: "t0", index: "t1") == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? ((void)hero_array_at(t0, t1), hero_unreachable()) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
+    assert element(spelling: "char *", base: "t2", index: "t3") == "((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(char *) ? hero_unreachable() : (void)0), ((char * const *)(const void *)(t2 + 1))[t3])"
+    assert length("t4") == "((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len)"

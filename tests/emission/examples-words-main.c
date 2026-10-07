@@ -230,7 +230,7 @@ bb1:
 #line 27 "examples/words/main.hero"
     t7 = h3_xs0;
 #line 27 "examples/words/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 27 "examples/words/main.hero"
     t9 = t6 < t8;
 #line 27 "examples/words/main.hero"
@@ -242,7 +242,7 @@ bb2:
 #line 27 "examples/words/main.hero"
     t11 = h4_i0;
 #line 27 "examples/words/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 27 "examples/words/main.hero"
     t43 = h5_ch;
 #line 249 "main.c"
@@ -908,7 +908,7 @@ bb1:
 #line 75 "examples/words/main.hero"
     t6 = h2_xs0;
 #line 75 "examples/words/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 75 "examples/words/main.hero"
     t8 = t5 < t7;
 #line 75 "examples/words/main.hero"
@@ -920,7 +920,7 @@ bb2:
 #line 75 "examples/words/main.hero"
     t10 = h3_i0;
 #line 75 "examples/words/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 75 "examples/words/main.hero"
     t34 = h4_one;
 #line 927 "main.c"
@@ -1252,7 +1252,7 @@ bb1:
 #line 93 "examples/words/main.hero"
     t10 = h4_xs0;
 #line 93 "examples/words/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 93 "examples/words/main.hero"
     t12 = t9 < t11;
 #line 93 "examples/words/main.hero"
@@ -1264,7 +1264,7 @@ bb2:
 #line 93 "examples/words/main.hero"
     t14 = h5_i0;
 #line 93 "examples/words/main.hero"
-    t15 = *(HeroStr const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]);
 #line 93 "examples/words/main.hero"
     t86 = h6_word;
 #line 1271 "main.c"
@@ -1505,7 +1505,7 @@ bb13:
 #line 105 "examples/words/main.hero"
     t43 = h10_xs1;
 #line 105 "examples/words/main.hero"
-    t44 = hero_array_len(t43);
+    t44 = ((void)(t43 == NULL ? ((void)hero_array_len(t43), hero_unreachable()) : (void)0), t43->len);
 #line 105 "examples/words/main.hero"
     t45 = t42 < t44;
 #line 105 "examples/words/main.hero"
@@ -1517,7 +1517,7 @@ bb14:
 #line 105 "examples/words/main.hero"
     t47 = h11_i1;
 #line 105 "examples/words/main.hero"
-    t48 = *(HeroStr const *)hero_array_at(t46, t47);
+    t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t46 + 1))[t47]);
 #line 105 "examples/words/main.hero"
     t93 = h12_word;
 #line 1524 "main.c"
@@ -1725,7 +1725,7 @@ bb0:
 #line 1726 "main.c"
     hero_array_decref(t13);
 #line 117 "examples/words/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 117 "examples/words/main.hero"
     hero_print_int(t3);
 #line 117 "examples/words/main.hero"
@@ -1755,7 +1755,7 @@ bb0:
 #line 1756 "main.c"
     hero_array_decref(t16);
 #line 118 "examples/words/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 118 "examples/words/main.hero"
     hero_print_int(t7);
 #line 118 "examples/words/main.hero"

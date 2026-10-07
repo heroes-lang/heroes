@@ -575,7 +575,7 @@ bb4:
 #line 63 "examples/matmul/main.hero"
     t29 = h4_xs0;
 #line 63 "examples/matmul/main.hero"
-    t30 = hero_array_len(t29);
+    t30 = ((void)(t29 == NULL ? ((void)hero_array_len(t29), hero_unreachable()) : (void)0), t29->len);
 #line 63 "examples/matmul/main.hero"
     t31 = t28 < t30;
 #line 63 "examples/matmul/main.hero"
@@ -587,7 +587,7 @@ bb5:
 #line 63 "examples/matmul/main.hero"
     t33 = h5_i0;
 #line 63 "examples/matmul/main.hero"
-    t34 = *(HeroArrayHeader * const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t32 + 1))[t33]);
 #line 63 "examples/matmul/main.hero"
     t58 = h6_r;
 #line 594 "main.c"
@@ -652,7 +652,7 @@ bb8:
 #line 64 "examples/matmul/main.hero"
     t38 = h7_xs1;
 #line 64 "examples/matmul/main.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 64 "examples/matmul/main.hero"
     t40 = t37 < t39;
 #line 64 "examples/matmul/main.hero"
@@ -664,7 +664,7 @@ bb9:
 #line 64 "examples/matmul/main.hero"
     t42 = h8_i1;
 #line 64 "examples/matmul/main.hero"
-    t43 = *(int64_t const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t41 + 1))[t42]);
 #line 64 "examples/matmul/main.hero"
     h9_v = t43;
 #line 65 "examples/matmul/main.hero"
@@ -826,7 +826,7 @@ bb4:
 #line 79 "examples/matmul/main.hero"
     t18 = h3_xs0;
 #line 79 "examples/matmul/main.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 79 "examples/matmul/main.hero"
     t20 = t17 < t19;
 #line 79 "examples/matmul/main.hero"
@@ -838,7 +838,7 @@ bb5:
 #line 79 "examples/matmul/main.hero"
     t22 = h4_i0;
 #line 79 "examples/matmul/main.hero"
-    t23 = *(int64_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 79 "examples/matmul/main.hero"
     h5_h = t23;
 #line 80 "examples/matmul/main.hero"
@@ -980,7 +980,7 @@ bb4:
 #line 89 "examples/matmul/main.hero"
     t10 = h2_xs0;
 #line 89 "examples/matmul/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 89 "examples/matmul/main.hero"
     t12 = t9 < t11;
 #line 89 "examples/matmul/main.hero"
@@ -992,7 +992,7 @@ bb5:
 #line 89 "examples/matmul/main.hero"
     t14 = h3_i0;
 #line 89 "examples/matmul/main.hero"
-    t15 = *(int64_t const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]);
 #line 89 "examples/matmul/main.hero"
     h4_v = t15;
 #line 90 "examples/matmul/main.hero"

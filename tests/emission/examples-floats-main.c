@@ -340,7 +340,7 @@ bb1:
 #line 55 "examples/floats/main.hero"
     t5 = h2_xs0;
 #line 55 "examples/floats/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 55 "examples/floats/main.hero"
     t7 = t4 < t6;
 #line 55 "examples/floats/main.hero"
@@ -352,7 +352,7 @@ bb2:
 #line 55 "examples/floats/main.hero"
     t9 = h3_i0;
 #line 55 "examples/floats/main.hero"
-    t10 = *(double const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]);
 #line 55 "examples/floats/main.hero"
     h4_one = t10;
 #line 56 "examples/floats/main.hero"
@@ -470,7 +470,7 @@ bb0:
 #line 67 "examples/floats/main.hero"
     t3 = h1_good;
 #line 67 "examples/floats/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 67 "examples/floats/main.hero"
     t5 = INT64_C(0);
 #line 67 "examples/floats/main.hero"
@@ -518,7 +518,7 @@ bb4:
 #line 71 "examples/floats/main.hero"
     t12 = h3_xs0;
 #line 71 "examples/floats/main.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 71 "examples/floats/main.hero"
     t14 = t11 < t13;
 #line 71 "examples/floats/main.hero"
@@ -530,7 +530,7 @@ bb5:
 #line 71 "examples/floats/main.hero"
     t16 = h4_i0;
 #line 71 "examples/floats/main.hero"
-    t17 = *(double const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]);
 #line 71 "examples/floats/main.hero"
     h5_one = t17;
 #line 72 "examples/floats/main.hero"
@@ -562,7 +562,7 @@ bb7:
 #line 74 "examples/floats/main.hero"
     t25 = h1_good;
 #line 74 "examples/floats/main.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 74 "examples/floats/main.hero"
     t27 = hero_int_to_f64(t26);
 #line 74 "examples/floats/main.hero"
@@ -682,7 +682,7 @@ bb1:
 #line 85 "examples/floats/main.hero"
     t7 = h2_xs0;
 #line 85 "examples/floats/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 85 "examples/floats/main.hero"
     t9 = t6 < t8;
 #line 85 "examples/floats/main.hero"
@@ -694,7 +694,7 @@ bb2:
 #line 85 "examples/floats/main.hero"
     t11 = h3_i0;
 #line 85 "examples/floats/main.hero"
-    t12 = *(double const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t10 + 1))[t11]);
 #line 85 "examples/floats/main.hero"
     h4_one = t12;
 #line 86 "examples/floats/main.hero"
@@ -1119,7 +1119,7 @@ bb0:
 #line 1120 "main.c"
     hero_array_decref(t79);
 #line 124 "examples/floats/main.hero"
-    t63 = hero_array_len(t62);
+    t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len);
 #line 124 "examples/floats/main.hero"
     hero_print_int(t63);
 #line 124 "examples/floats/main.hero"

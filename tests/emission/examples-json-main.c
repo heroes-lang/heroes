@@ -411,7 +411,7 @@ bb0:
 #line 26 "examples/json/main.hero"
     t2 = h0_given;
 #line 26 "examples/json/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 26 "examples/json/main.hero"
     t4 = INT64_C(0);
 #line 26 "examples/json/main.hero"
@@ -425,7 +425,7 @@ bb1:
 #line 30 "examples/json/main.hero"
     t9 = INT64_C(0);
 #line 30 "examples/json/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 30 "examples/json/main.hero"
     t11 = h_library_read_file(t10);
 #line 30 "examples/json/main.hero"
@@ -524,7 +524,7 @@ bb5:
 #line 31 "examples/json/main.hero"
     t18 = INT64_C(0);
 #line 31 "examples/json/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 31 "examples/json/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 31 "examples/json/main.hero"
@@ -856,7 +856,7 @@ bb0:
 #line 49 "examples/json/main.hero"
     t9 = h1_given;
 #line 49 "examples/json/main.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 49 "examples/json/main.hero"
     t11 = INT64_C(1);
 #line 49 "examples/json/main.hero"
@@ -892,7 +892,7 @@ bb2:
 #line 50 "examples/json/main.hero"
     t15 = INT64_C(1);
 #line 50 "examples/json/main.hero"
-    t16 = *(HeroStr const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 50 "examples/json/main.hero"
     t17 = h_value_field(t13, t16);
 #line 50 "examples/json/main.hero"
@@ -952,7 +952,7 @@ bb5:
 #line 51 "examples/json/main.hero"
     t24 = INT64_C(1);
 #line 51 "examples/json/main.hero"
-    t25 = *(HeroStr const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t24]);
 #line 51 "examples/json/main.hero"
     t26 = HERO_STR_LIT(hero_str_1dce);
 #line 51 "examples/json/main.hero"
@@ -992,7 +992,7 @@ bb6:
 #line 52 "examples/json/main.hero"
     t33 = INT64_C(1);
 #line 52 "examples/json/main.hero"
-    t34 = *(HeroStr const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t32 + 1))[t33]);
 #line 52 "examples/json/main.hero"
     t35 = HERO_STR_LIT(hero_str_1dce);
 #line 52 "examples/json/main.hero"
@@ -4628,7 +4628,7 @@ bb4:
 #line 258 "examples/json/parse.hero"
     t10 = h2_xs0;
 #line 258 "examples/json/parse.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 258 "examples/json/parse.hero"
     t12 = t9 < t11;
 #line 258 "examples/json/parse.hero"
@@ -4672,7 +4672,7 @@ bb8:
 #line 263 "examples/json/parse.hero"
     t25 = h4_xs1;
 #line 263 "examples/json/parse.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 263 "examples/json/parse.hero"
     t27 = t24 < t26;
 #line 263 "examples/json/parse.hero"
@@ -7016,7 +7016,7 @@ bb1:
 #line 61 "examples/json/value.hero"
     t5 = h2_xs0;
 #line 61 "examples/json/value.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 61 "examples/json/value.hero"
     t7 = t4 < t6;
 #line 61 "examples/json/value.hero"
@@ -7028,7 +7028,7 @@ bb2:
 #line 61 "examples/json/value.hero"
     t9 = h3_i0;
 #line 61 "examples/json/value.hero"
-    t10 = *(h_value_Json const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_value_Json) ? hero_unreachable() : (void)0), ((h_value_Json const *)(const void *)(t8 + 1))[t9]);
 #line 61 "examples/json/value.hero"
     t22 = h4_item;
 #line 7035 "main.c"
@@ -7205,7 +7205,7 @@ bb1:
 #line 69 "examples/json/value.hero"
     t7 = h2_xs0;
 #line 69 "examples/json/value.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 69 "examples/json/value.hero"
     t9 = t6 < t8;
 #line 69 "examples/json/value.hero"
@@ -7217,7 +7217,7 @@ bb2:
 #line 69 "examples/json/value.hero"
     t11 = h3_i0;
 #line 69 "examples/json/value.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 69 "examples/json/value.hero"
     t41 = h4_k;
 #line 7224 "main.c"
@@ -7488,7 +7488,7 @@ bb1:
 #line 82 "examples/json/value.hero"
     t7 = h2_xs0;
 #line 82 "examples/json/value.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 82 "examples/json/value.hero"
     t9 = t6 < t8;
 #line 82 "examples/json/value.hero"
@@ -7500,7 +7500,7 @@ bb2:
 #line 82 "examples/json/value.hero"
     t11 = h3_i0;
 #line 82 "examples/json/value.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 82 "examples/json/value.hero"
     t53 = h4_c;
 #line 7507 "main.c"
@@ -7868,7 +7868,7 @@ bb1:
 #line 112 "examples/json/value.hero"
     t5 = h2_xs0;
 #line 112 "examples/json/value.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 112 "examples/json/value.hero"
     t7 = t4 < t6;
 #line 112 "examples/json/value.hero"
@@ -7880,7 +7880,7 @@ bb2:
 #line 112 "examples/json/value.hero"
     t9 = h3_i0;
 #line 112 "examples/json/value.hero"
-    t10 = *(h_value_Json const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_value_Json) ? hero_unreachable() : (void)0), ((h_value_Json const *)(const void *)(t8 + 1))[t9]);
 #line 112 "examples/json/value.hero"
     t20 = h4_item;
 #line 7887 "main.c"
@@ -8006,7 +8006,7 @@ bb1:
 #line 120 "examples/json/value.hero"
     t6 = h2_xs0;
 #line 120 "examples/json/value.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 120 "examples/json/value.hero"
     t8 = t5 < t7;
 #line 120 "examples/json/value.hero"
@@ -8018,7 +8018,7 @@ bb2:
 #line 120 "examples/json/value.hero"
     t10 = h3_i0;
 #line 120 "examples/json/value.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 120 "examples/json/value.hero"
     t32 = h4_k;
 #line 8025 "main.c"
@@ -8372,7 +8372,7 @@ bb1:
 #line 138 "examples/json/value.hero"
     t5 = h2_xs0;
 #line 138 "examples/json/value.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 138 "examples/json/value.hero"
     t7 = t4 < t6;
 #line 138 "examples/json/value.hero"
@@ -8384,7 +8384,7 @@ bb2:
 #line 138 "examples/json/value.hero"
     t9 = h3_i0;
 #line 138 "examples/json/value.hero"
-    t10 = *(h_value_Json const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_value_Json) ? hero_unreachable() : (void)0), ((h_value_Json const *)(const void *)(t8 + 1))[t9]);
 #line 138 "examples/json/value.hero"
     t22 = h4_item;
 #line 8391 "main.c"
@@ -8549,7 +8549,7 @@ bb1:
 #line 149 "examples/json/value.hero"
     t7 = h2_xs0;
 #line 149 "examples/json/value.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 149 "examples/json/value.hero"
     t9 = t6 < t8;
 #line 149 "examples/json/value.hero"
@@ -8561,7 +8561,7 @@ bb2:
 #line 149 "examples/json/value.hero"
     t11 = h3_i0;
 #line 149 "examples/json/value.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 149 "examples/json/value.hero"
     t35 = h4_k;
 #line 8568 "main.c"

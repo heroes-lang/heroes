@@ -4143,7 +4143,7 @@ bb0:
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_print_int(t3);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"

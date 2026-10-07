@@ -231,7 +231,7 @@ bb0:
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t2 = INT64_C(2);
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t4 = h_fixedbugs382anarrayliteralisoneblock_WORDS();
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
@@ -243,7 +243,7 @@ bb0:
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t5 = INT64_C(1);
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t6 = *(HeroStr const *)hero_array_at(t4, t5);
+    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t4 + 1))[t5]);
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t7 = hero_str_len(t6);
 #line 22 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
@@ -271,13 +271,13 @@ bb0:
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t10 = INT64_C(0);
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t11 = *(int64_t const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t12 = h0_pair;
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     t13 = INT64_C(1);
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    t14 = *(int64_t const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]);
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     if (__builtin_add_overflow(t11, t14, &t15)) hero_panic_overflow();
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"

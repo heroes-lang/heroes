@@ -351,7 +351,7 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t25 = h3_xs;
 #line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_int(t26);
 #line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -361,7 +361,7 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t28 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-    t29 = *(Color const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(Color) ? hero_unreachable() : (void)0), ((Color const *)(const void *)(t27 + 1))[t28]);
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t30 = h0_a;
 #line 53 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"

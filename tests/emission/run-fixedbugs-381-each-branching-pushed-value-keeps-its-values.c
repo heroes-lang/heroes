@@ -481,7 +481,7 @@ bb1:
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -493,7 +493,7 @@ bb2:
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -697,7 +697,7 @@ bb1:
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -709,7 +709,7 @@ bb2:
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -939,7 +939,7 @@ bb1:
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -951,7 +951,7 @@ bb2:
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1163,7 +1163,7 @@ bb1:
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1175,7 +1175,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1329,7 +1329,7 @@ bb1:
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1341,7 +1341,7 @@ bb2:
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1519,7 +1519,7 @@ bb1:
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1531,7 +1531,7 @@ bb2:
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1780,7 +1780,7 @@ bb1:
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1792,7 +1792,7 @@ bb2:
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_i0;
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1969,7 +1969,7 @@ bb1:
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = h2_xs0;
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = t4 < t6;
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1981,7 +1981,7 @@ bb2:
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = h3_i0;
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_x = t10;
 #line 88 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -2119,7 +2119,7 @@ bb1:
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = h2_xs0;
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = t4 < t6;
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -2131,7 +2131,7 @@ bb2:
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = h3_i0;
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t10 = *(bool const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t8 + 1))[t9]);
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_x = t10;
 #line 96 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -2579,7 +2579,7 @@ bb4:
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t25 = h2_xs;
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t24);
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"

@@ -1,0 +1,54 @@
+# FIXED DEFECT 389, 2026-10-07 (lane b14-emit): every array read called
+# `hero_array_at`, and every length `hero_array_len`, where a read in place
+# would do. Panel 195's loop of a million reads retired 116.1 to 117.0
+# million instructions at -O0; read in place, 93.1 to 93.7 million (three
+# runs each, measured with the repair). Nothing a program prints moves, so
+# this case pins the shapes the repair rewrote, each answer what the
+# program means.
+
+record Bag
+    items: [i64]
+    name: str
+
+function bump(@n: i64)
+    n @ n + 1
+
+function total(xs: [i64]) -> i64
+    sum: i64 @ 0
+
+    for x in xs
+        sum @ sum + x
+
+    return sum
+
+function main()
+    xs: [i64] @ [3, 1, 4, 1, 5]
+
+    # A read, and two in a condition.
+    print(xs[0])
+
+    if xs[2] > xs[1]
+        print("four is more")
+
+    # A read of a read, and a read of a record's array field.
+    grid: [[i64]] = [[1, 2], [3, 4]]
+    print(grid[1][0])
+    bag = Bag(items: [7, 8, 9], name: "b")
+    print(bag.items[2], bag.name)
+
+    # An element passed `@`, then read.
+    bump(@xs[3])
+    print(xs[3])
+
+    # The three lengths: `.len()`, `len(…)` and the one a `for` reads.
+    print(xs.len(), " ", len(xs), " ", total(xs))
+
+    # Elements of other sizes: a counted one, a bool, a byte, and none.
+    words: [str] = ["a", "bc"]
+    print(words[1])
+    flags: [bool] = [true, false]
+    print(flags[1])
+    small: [u8] = [255, 7]
+    print(small[0])
+    empty: [i64] = []
+    print(empty.len())

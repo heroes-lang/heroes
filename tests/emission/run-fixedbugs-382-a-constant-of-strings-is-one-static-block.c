@@ -340,7 +340,7 @@ bb2:
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t10 = t8 % t9;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t11 = *(HeroStr const *)hero_array_at(t7, t10);
+    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t10]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t12 = hero_str_len(t11);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -372,7 +372,7 @@ bb3:
 #line 373 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_decref(t76);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t21 = HERO_STR_LIT(hero_str_20);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -386,7 +386,7 @@ bb3:
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t23 = INT64_C(1);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t24 = *(HeroStr const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t25 = hero_str_len(t24);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -402,7 +402,7 @@ bb3:
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t28 = INT64_C(0);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t29 = *(HeroStr const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t30 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -414,7 +414,7 @@ bb3:
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t31 = INT64_C(5);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t32 = *(HeroStr const *)hero_array_at(t30, t31);
+    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t30 + 1))[t31]);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t33 = hero_str_eq(t29, t32);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -496,7 +496,7 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t42 = INT64_C(2);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t43 = *(HeroStr const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t41 + 1))[t42]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t44 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -508,7 +508,7 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t45 = INT64_C(4);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t46 = *(HeroStr const *)hero_array_at(t44, t45);
+    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t44 + 1))[t45]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t47 = hero_str_concat(t43, t46);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -530,7 +530,7 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t50 = INT64_C(4);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t51 = *(HeroStr const *)hero_array_at(t49, t50);
+    t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t52 = hero_str_chars(t51);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -540,7 +540,7 @@ bb3:
 #line 541 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_decref(t89);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t53 = hero_array_len(t52);
+    t53 = ((void)(t52 == NULL ? ((void)hero_array_len(t52), hero_unreachable()) : (void)0), t52->len);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t54 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -626,7 +626,7 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t69 = INT64_C(1);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t70 = *(HeroStr const *)hero_array_at(t68, t69);
+    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t68 + 1))[t69]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t71 = hero_str_len(t70);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
@@ -640,7 +640,7 @@ bb3:
 #line 641 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_decref(t96);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t74 = hero_array_len(t73);
+    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_print_str(t66);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"

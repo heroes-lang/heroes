@@ -405,7 +405,7 @@ bb0:
 #line 27 "examples/assembler/main.hero"
     t2 = h0_given;
 #line 27 "examples/assembler/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 27 "examples/assembler/main.hero"
     t4 = INT64_C(0);
 #line 27 "examples/assembler/main.hero"
@@ -419,7 +419,7 @@ bb1:
 #line 31 "examples/assembler/main.hero"
     t9 = INT64_C(0);
 #line 31 "examples/assembler/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 31 "examples/assembler/main.hero"
     t11 = h_library_read_file(t10);
 #line 31 "examples/assembler/main.hero"
@@ -518,7 +518,7 @@ bb5:
 #line 32 "examples/assembler/main.hero"
     t18 = INT64_C(0);
 #line 32 "examples/assembler/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 32 "examples/assembler/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 32 "examples/assembler/main.hero"
@@ -866,7 +866,7 @@ bb0:
 #line 45 "examples/assembler/main.hero"
     t1 = h1_given;
 #line 45 "examples/assembler/main.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 45 "examples/assembler/main.hero"
     t3 = INT64_C(1);
 #line 45 "examples/assembler/main.hero"
@@ -920,7 +920,7 @@ bb2:
 #line 45 "examples/assembler/main.hero"
     t6 = INT64_C(1);
 #line 45 "examples/assembler/main.hero"
-    t7 = *(HeroStr const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]);
 #line 45 "examples/assembler/main.hero"
     t8 = HERO_STR_LIT(hero_str_56f061fe);
 #line 45 "examples/assembler/main.hero"
@@ -974,7 +974,7 @@ bb6:
 #line 46 "examples/assembler/main.hero"
     t16 = h3_xs0;
 #line 46 "examples/assembler/main.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 46 "examples/assembler/main.hero"
     t18 = t15 < t17;
 #line 46 "examples/assembler/main.hero"
@@ -986,7 +986,7 @@ bb7:
 #line 46 "examples/assembler/main.hero"
     t20 = h4_i0;
 #line 46 "examples/assembler/main.hero"
-    t21 = *(HeroStr const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]);
 #line 46 "examples/assembler/main.hero"
     t69 = h5_line;
 #line 993 "main.c"
@@ -1104,7 +1104,7 @@ bb13:
 #line 54 "examples/assembler/main.hero"
     t46 = h9_xs1;
 #line 54 "examples/assembler/main.hero"
-    t47 = hero_array_len(t46);
+    t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len);
 #line 54 "examples/assembler/main.hero"
     t48 = t45 < t47;
 #line 54 "examples/assembler/main.hero"
@@ -1116,7 +1116,7 @@ bb14:
 #line 54 "examples/assembler/main.hero"
     t50 = h10_i1;
 #line 54 "examples/assembler/main.hero"
-    t51 = *(HeroStr const *)hero_array_at(t49, t50);
+    t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]);
 #line 54 "examples/assembler/main.hero"
     t75 = h11_line;
 #line 1123 "main.c"
@@ -1152,7 +1152,7 @@ bb16:
 #line 57 "examples/assembler/main.hero"
     t57 = t56.f_code;
 #line 57 "examples/assembler/main.hero"
-    t58 = hero_array_len(t57);
+    t58 = ((void)(t57 == NULL ? ((void)hero_array_len(t57), hero_unreachable()) : (void)0), t57->len);
 #line 57 "examples/assembler/main.hero"
     t59 = h_program_WORDS();
 #line 57 "examples/assembler/main.hero"
@@ -1166,7 +1166,7 @@ bb16:
 #line 57 "examples/assembler/main.hero"
     t62 = h8_output;
 #line 57 "examples/assembler/main.hero"
-    t63 = hero_array_len(t62);
+    t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len);
 #line 57 "examples/assembler/main.hero"
     t64 = HERO_STR_LIT(hero_str_3ef510a7);
 #line 57 "examples/assembler/main.hero"
@@ -1312,7 +1312,7 @@ bb1:
 #line 65 "examples/assembler/main.hero"
     t6 = h0_code;
 #line 65 "examples/assembler/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 65 "examples/assembler/main.hero"
     t8 = t5 <= t7;
 #line 65 "examples/assembler/main.hero"
@@ -1342,7 +1342,7 @@ bb2:
 #line 66 "examples/assembler/main.hero"
     t14 = h2_at;
 #line 66 "examples/assembler/main.hero"
-    t15 = *(int64_t const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]);
 #line 66 "examples/assembler/main.hero"
     t16 = h_main_name_of(t15);
 #line 66 "examples/assembler/main.hero"
@@ -1360,7 +1360,7 @@ bb2:
 #line 66 "examples/assembler/main.hero"
     if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow();
 #line 66 "examples/assembler/main.hero"
-    t21 = *(int64_t const *)hero_array_at(t17, t20);
+    t21 = ((void)((t17 == NULL || t20 < 0 || t20 >= t17->len) ? ((void)hero_array_at(t17, t20), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t20]);
 #line 66 "examples/assembler/main.hero"
     t22 = hero_int_to_str(t21);
 #line 66 "examples/assembler/main.hero"
@@ -1378,7 +1378,7 @@ bb2:
 #line 66 "examples/assembler/main.hero"
     if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
 #line 66 "examples/assembler/main.hero"
-    t27 = *(int64_t const *)hero_array_at(t23, t26);
+    t27 = ((void)((t23 == NULL || t26 < 0 || t26 >= t23->len) ? ((void)hero_array_at(t23, t26), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t26]);
 #line 66 "examples/assembler/main.hero"
     t28 = hero_int_to_str(t27);
 #line 66 "examples/assembler/main.hero"
@@ -1887,7 +1887,7 @@ bb1:
 #line 41 "examples/assembler/assemble.hero"
     t6 = h3_xs0;
 #line 41 "examples/assembler/assemble.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 41 "examples/assembler/assemble.hero"
     t8 = t5 < t7;
 #line 41 "examples/assembler/assemble.hero"
@@ -1899,7 +1899,7 @@ bb2:
 #line 41 "examples/assembler/assemble.hero"
     t10 = h4_i0;
 #line 41 "examples/assembler/assemble.hero"
-    t11 = *(h_program_Line const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_program_Line) ? hero_unreachable() : (void)0), ((h_program_Line const *)(const void *)(t9 + 1))[t10]);
 #line 41 "examples/assembler/assemble.hero"
     t58 = h5_line;
 #line 1906 "main.c"
@@ -2380,7 +2380,7 @@ bb3:
 #line 61 "examples/assembler/assemble.hero"
     t16 = h4_xs0;
 #line 61 "examples/assembler/assemble.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 61 "examples/assembler/assemble.hero"
     t18 = t15 < t17;
 #line 61 "examples/assembler/assemble.hero"
@@ -2392,7 +2392,7 @@ bb4:
 #line 61 "examples/assembler/assemble.hero"
     t20 = h5_i0;
 #line 61 "examples/assembler/assemble.hero"
-    t21 = *(h_program_Line const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(h_program_Line) ? hero_unreachable() : (void)0), ((h_program_Line const *)(const void *)(t19 + 1))[t20]);
 #line 61 "examples/assembler/assemble.hero"
     t67 = h6_line;
 #line 2399 "main.c"
@@ -2544,7 +2544,7 @@ bb12:
 #line 65 "examples/assembler/assemble.hero"
     t40 = h8_xs1;
 #line 65 "examples/assembler/assemble.hero"
-    t41 = hero_array_len(t40);
+    t41 = ((void)(t40 == NULL ? ((void)hero_array_len(t40), hero_unreachable()) : (void)0), t40->len);
 #line 65 "examples/assembler/assemble.hero"
     t42 = t39 < t41;
 #line 65 "examples/assembler/assemble.hero"
@@ -2556,7 +2556,7 @@ bb13:
 #line 65 "examples/assembler/assemble.hero"
     t44 = h9_i1;
 #line 65 "examples/assembler/assemble.hero"
-    t45 = *(int64_t const *)hero_array_at(t43, t44);
+    t45 = ((void)((t43 == NULL || t44 < 0 || t44 >= t43->len) ? ((void)hero_array_at(t43, t44), hero_unreachable()) : (void)0), (void)(t43->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t43 + 1))[t44]);
 #line 65 "examples/assembler/assemble.hero"
     h10_word = t45;
 #line 66 "examples/assembler/assemble.hero"
@@ -3098,7 +3098,7 @@ bb4:
 #line 79 "examples/assembler/assemble.hero"
     t21 = INT64_C(0);
 #line 79 "examples/assembler/assemble.hero"
-    t22 = *(HeroStr const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t20 + 1))[t21]);
 #line 79 "examples/assembler/assemble.hero"
     t23 = h0_line;
 #line 79 "examples/assembler/assemble.hero"
@@ -3162,7 +3162,7 @@ bb6:
 #line 79 "examples/assembler/assemble.hero"
     t37 = INT64_C(1);
 #line 79 "examples/assembler/assemble.hero"
-    t38 = *(HeroStr const *)hero_array_at(t36, t37);
+    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t36 + 1))[t37]);
 #line 79 "examples/assembler/assemble.hero"
     t39 = h0_line;
 #line 79 "examples/assembler/assemble.hero"
@@ -3365,7 +3365,7 @@ bb17:
 #line 85 "examples/assembler/assemble.hero"
     t80 = INT64_C(0);
 #line 85 "examples/assembler/assemble.hero"
-    t81 = *(HeroStr const *)hero_array_at(t79, t80);
+    t81 = ((void)((t79 == NULL || t80 < 0 || t80 >= t79->len) ? ((void)hero_array_at(t79, t80), hero_unreachable()) : (void)0), (void)(t79->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t79 + 1))[t80]);
 #line 85 "examples/assembler/assemble.hero"
     t82 = h0_line;
 #line 85 "examples/assembler/assemble.hero"
@@ -3429,7 +3429,7 @@ bb19:
 #line 85 "examples/assembler/assemble.hero"
     t96 = INT64_C(1);
 #line 85 "examples/assembler/assemble.hero"
-    t97 = *(HeroStr const *)hero_array_at(t95, t96);
+    t97 = ((void)((t95 == NULL || t96 < 0 || t96 >= t95->len) ? ((void)hero_array_at(t95, t96), hero_unreachable()) : (void)0), (void)(t95->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t95 + 1))[t96]);
 #line 85 "examples/assembler/assemble.hero"
     t98 = h0_line;
 #line 85 "examples/assembler/assemble.hero"
@@ -3592,7 +3592,7 @@ bb26:
 #line 90 "examples/assembler/assemble.hero"
     t130 = INT64_C(0);
 #line 90 "examples/assembler/assemble.hero"
-    t131 = *(HeroStr const *)hero_array_at(t129, t130);
+    t131 = ((void)((t129 == NULL || t130 < 0 || t130 >= t129->len) ? ((void)hero_array_at(t129, t130), hero_unreachable()) : (void)0), (void)(t129->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t129 + 1))[t130]);
 #line 90 "examples/assembler/assemble.hero"
     t132 = h0_line;
 #line 90 "examples/assembler/assemble.hero"
@@ -3757,7 +3757,7 @@ bb33:
 #line 95 "examples/assembler/assemble.hero"
     t165 = INT64_C(0);
 #line 95 "examples/assembler/assemble.hero"
-    t166 = *(HeroStr const *)hero_array_at(t164, t165);
+    t166 = ((void)((t164 == NULL || t165 < 0 || t165 >= t164->len) ? ((void)hero_array_at(t164, t165), hero_unreachable()) : (void)0), (void)(t164->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t164 + 1))[t165]);
 #line 95 "examples/assembler/assemble.hero"
     t167 = h0_line;
 #line 95 "examples/assembler/assemble.hero"
@@ -3821,7 +3821,7 @@ bb35:
 #line 95 "examples/assembler/assemble.hero"
     t181 = INT64_C(1);
 #line 95 "examples/assembler/assemble.hero"
-    t182 = *(HeroStr const *)hero_array_at(t180, t181);
+    t182 = ((void)((t180 == NULL || t181 < 0 || t181 >= t180->len) ? ((void)hero_array_at(t180, t181), hero_unreachable()) : (void)0), (void)(t180->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t180 + 1))[t181]);
 #line 95 "examples/assembler/assemble.hero"
     t183 = h1_labels;
 #line 95 "examples/assembler/assemble.hero"
@@ -3986,7 +3986,7 @@ bb42:
 #line 100 "examples/assembler/assemble.hero"
     t216 = INT64_C(0);
 #line 100 "examples/assembler/assemble.hero"
-    t217 = *(HeroStr const *)hero_array_at(t215, t216);
+    t217 = ((void)((t215 == NULL || t216 < 0 || t216 >= t215->len) ? ((void)hero_array_at(t215, t216), hero_unreachable()) : (void)0), (void)(t215->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t215 + 1))[t216]);
 #line 100 "examples/assembler/assemble.hero"
     t218 = h1_labels;
 #line 100 "examples/assembler/assemble.hero"
@@ -4608,7 +4608,7 @@ bb0:
 #line 119 "examples/assembler/assemble.hero"
     t2 = t1.f_operands;
 #line 119 "examples/assembler/assemble.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 119 "examples/assembler/assemble.hero"
     t4 = h1_wanted;
 #line 119 "examples/assembler/assemble.hero"
@@ -4728,7 +4728,7 @@ bb2:
 #line 122 "examples/assembler/assemble.hero"
     t25 = t24.f_operands;
 #line 122 "examples/assembler/assemble.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 122 "examples/assembler/assemble.hero"
     t27 = hero_int_to_str(t26);
 #line 122 "examples/assembler/assemble.hero"
@@ -5501,7 +5501,7 @@ bb4:
 #line 43 "examples/assembler/machine.hero"
     t33 = t32.f_pc;
 #line 43 "examples/assembler/machine.hero"
-    t34 = *(int64_t const *)hero_array_at(t31, t33);
+    t34 = ((void)((t31 == NULL || t33 < 0 || t33 >= t31->len) ? ((void)hero_array_at(t31, t33), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t31 + 1))[t33]);
 #line 43 "examples/assembler/machine.hero"
     h5_opcode = t34;
 #line 44 "examples/assembler/machine.hero"
@@ -5515,7 +5515,7 @@ bb4:
 #line 44 "examples/assembler/machine.hero"
     if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow();
 #line 44 "examples/assembler/machine.hero"
-    t40 = *(int64_t const *)hero_array_at(t35, t39);
+    t40 = ((void)((t35 == NULL || t39 < 0 || t39 >= t35->len) ? ((void)hero_array_at(t35, t39), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t35 + 1))[t39]);
 #line 44 "examples/assembler/machine.hero"
     h6_a = t40;
 #line 45 "examples/assembler/machine.hero"
@@ -5529,7 +5529,7 @@ bb4:
 #line 45 "examples/assembler/machine.hero"
     if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow();
 #line 45 "examples/assembler/machine.hero"
-    t46 = *(int64_t const *)hero_array_at(t41, t45);
+    t46 = ((void)((t41 == NULL || t45 < 0 || t45 >= t41->len) ? ((void)hero_array_at(t41, t45), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t41 + 1))[t45]);
 #line 45 "examples/assembler/machine.hero"
     h7_b = t46;
 #line 47 "examples/assembler/machine.hero"
@@ -5553,7 +5553,7 @@ bb5:
 #line 41 "examples/assembler/machine.hero"
     t24 = h0_code;
 #line 41 "examples/assembler/machine.hero"
-    t25 = hero_array_len(t24);
+    t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len);
 #line 41 "examples/assembler/machine.hero"
     t26 = t23 > t25;
 #line 41 "examples/assembler/machine.hero"
@@ -5910,7 +5910,7 @@ bb4:
 #line 59 "examples/assembler/machine.hero"
     t12 = h3_b;
 #line 59 "examples/assembler/machine.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 59 "examples/assembler/machine.hero"
     hero_array_set(&((*ph0_m).f_registers), t9, &t13);
 #line 59 "examples/assembler/machine.hero"
@@ -5936,7 +5936,7 @@ bb6:
 #line 61 "examples/assembler/machine.hero"
     t20 = h2_a;
 #line 61 "examples/assembler/machine.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 61 "examples/assembler/machine.hero"
     t22 = (*ph0_m);
 #line 61 "examples/assembler/machine.hero"
@@ -5944,7 +5944,7 @@ bb6:
 #line 61 "examples/assembler/machine.hero"
     t24 = h3_b;
 #line 61 "examples/assembler/machine.hero"
-    t25 = *(int64_t const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
 #line 61 "examples/assembler/machine.hero"
     if (__builtin_add_overflow(t21, t25, &t26)) hero_panic_overflow();
 #line 61 "examples/assembler/machine.hero"
@@ -5972,7 +5972,7 @@ bb8:
 #line 63 "examples/assembler/machine.hero"
     t33 = h2_a;
 #line 63 "examples/assembler/machine.hero"
-    t34 = *(int64_t const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t32 + 1))[t33]);
 #line 63 "examples/assembler/machine.hero"
     t35 = (*ph0_m);
 #line 63 "examples/assembler/machine.hero"
@@ -5980,7 +5980,7 @@ bb8:
 #line 63 "examples/assembler/machine.hero"
     t37 = h3_b;
 #line 63 "examples/assembler/machine.hero"
-    t38 = *(int64_t const *)hero_array_at(t36, t37);
+    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t36 + 1))[t37]);
 #line 63 "examples/assembler/machine.hero"
     if (__builtin_sub_overflow(t34, t38, &t39)) hero_panic_overflow();
 #line 63 "examples/assembler/machine.hero"
@@ -6010,7 +6010,7 @@ bb10:
 #line 65 "examples/assembler/machine.hero"
     t47 = h2_a;
 #line 65 "examples/assembler/machine.hero"
-    t48 = *(int64_t const *)hero_array_at(t46, t47);
+    t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t46 + 1))[t47]);
 #line 65 "examples/assembler/machine.hero"
     t49 = hero_int_to_str(t48);
 #line 65 "examples/assembler/machine.hero"
@@ -6084,7 +6084,7 @@ bb14:
 #line 70 "examples/assembler/machine.hero"
     t62 = h2_a;
 #line 70 "examples/assembler/machine.hero"
-    t63 = *(int64_t const *)hero_array_at(t61, t62);
+    t63 = ((void)((t61 == NULL || t62 < 0 || t62 >= t61->len) ? ((void)hero_array_at(t61, t62), hero_unreachable()) : (void)0), (void)(t61->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t61 + 1))[t62]);
 #line 70 "examples/assembler/machine.hero"
     t64 = INT64_C(0);
 #line 70 "examples/assembler/machine.hero"
@@ -8061,7 +8061,7 @@ bb1:
 #line 165 "examples/assembler/program.hero"
     t7 = h3_xs0;
 #line 165 "examples/assembler/program.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 165 "examples/assembler/program.hero"
     t9 = t6 < t8;
 #line 165 "examples/assembler/program.hero"
@@ -8073,7 +8073,7 @@ bb2:
 #line 165 "examples/assembler/program.hero"
     t11 = h4_i0;
 #line 165 "examples/assembler/program.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 165 "examples/assembler/program.hero"
     t29 = h5_line;
 #line 8080 "main.c"
@@ -8972,7 +8972,7 @@ bb9:
 #line 202 "examples/assembler/program.hero"
     t42 = h6_xs0;
 #line 202 "examples/assembler/program.hero"
-    t43 = hero_array_len(t42);
+    t43 = ((void)(t42 == NULL ? ((void)hero_array_len(t42), hero_unreachable()) : (void)0), t42->len);
 #line 202 "examples/assembler/program.hero"
     t44 = t41 < t43;
 #line 202 "examples/assembler/program.hero"
@@ -8984,7 +8984,7 @@ bb10:
 #line 202 "examples/assembler/program.hero"
     t46 = h7_i0;
 #line 202 "examples/assembler/program.hero"
-    t47 = *(int64_t const *)hero_array_at(t45, t46);
+    t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? ((void)hero_array_at(t45, t46), hero_unreachable()) : (void)0), (void)(t45->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t45 + 1))[t46]);
 #line 202 "examples/assembler/program.hero"
     h8_i = t47;
 #line 203 "examples/assembler/program.hero"

@@ -177,7 +177,7 @@ bb0:
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t10 = INT64_C(9);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t11 = *(int64_t const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t12 = hero_int_to_str(t11);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"

@@ -607,9 +607,9 @@ bb2:
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t10 = t8 % t9;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t11 = *(HeroArrayHeader * const *)hero_array_at(t7, t10);
+    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t7 + 1))[t10]);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow();
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -631,9 +631,9 @@ bb2:
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t17 = t15 % t16;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t18 = *(HeroArrayHeader * const *)hero_array_at(t14, t17);
+    t18 = ((void)((t14 == NULL || t17 < 0 || t17 >= t14->len) ? ((void)hero_array_at(t14, t17), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t14 + 1))[t17]);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     if (__builtin_add_overflow(t13, t19, &t20)) hero_panic_overflow();
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -665,11 +665,11 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t27 = INT64_C(2);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t28 = *(HeroArrayHeader * const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t26 + 1))[t27]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t29 = INT64_C(2);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t30 = *(int64_t const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t28 + 1))[t29]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t31 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -683,9 +683,9 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t33 = INT64_C(1);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t34 = *(HeroArrayHeader * const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t32 + 1))[t33]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t35 = hero_array_len(t34);
+    t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t36 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -699,15 +699,15 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t38 = INT64_C(2);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t39 = *(HeroArrayHeader * const *)hero_array_at(t37, t38);
+    t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? ((void)hero_array_at(t37, t38), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t37 + 1))[t38]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t40 = INT64_C(0);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t41 = *(HeroArrayHeader * const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t39 + 1))[t40]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t42 = INT64_C(1);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t43 = *(int64_t const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t41 + 1))[t42]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t44 = HERO_STR_LIT(hero_str_20);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -721,13 +721,13 @@ bb3:
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t46 = INT64_C(0);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t47 = *(HeroArrayHeader * const *)hero_array_at(t45, t46);
+    t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? ((void)hero_array_at(t45, t46), hero_unreachable()) : (void)0), (void)(t45->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t45 + 1))[t46]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t48 = INT64_C(1);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t49 = *(HeroArrayHeader * const *)hero_array_at(t47, t48);
+    t49 = ((void)((t47 == NULL || t48 < 0 || t48 >= t47->len) ? ((void)hero_array_at(t47, t48), hero_unreachable()) : (void)0), (void)(t47->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t47 + 1))[t48]);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t50 = hero_array_len(t49);
+    t50 = ((void)(t49 == NULL ? ((void)hero_array_len(t49), hero_unreachable()) : (void)0), t49->len);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_print_int(t24);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -781,7 +781,7 @@ bb3:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t57 = INT64_C(1);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t58 = *(HeroArrayHeader * const *)hero_array_at(t56, t57);
+    t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t56 + 1))[t57]);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t59 = INT64_C(8);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -802,11 +802,11 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t62 = INT64_C(2);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t63 = *(HeroArrayHeader * const *)hero_array_at(t61, t62);
+    t63 = ((void)((t61 == NULL || t62 < 0 || t62 >= t61->len) ? ((void)hero_array_at(t61, t62), hero_unreachable()) : (void)0), (void)(t61->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t61 + 1))[t62]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t64 = INT64_C(0);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t65 = *(int64_t const *)hero_array_at(t63, t64);
+    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t63 + 1))[t64]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t66 = HERO_STR_LIT(hero_str_20);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -814,11 +814,11 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t68 = INT64_C(1);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t69 = *(HeroArrayHeader * const *)hero_array_at(t67, t68);
+    t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? ((void)hero_array_at(t67, t68), hero_unreachable()) : (void)0), (void)(t67->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t67 + 1))[t68]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t70 = INT64_C(0);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t71 = *(int64_t const *)hero_array_at(t69, t70);
+    t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t69 + 1))[t70]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t72 = HERO_STR_LIT(hero_str_20);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -832,11 +832,11 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t74 = INT64_C(2);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t75 = *(HeroArrayHeader * const *)hero_array_at(t73, t74);
+    t75 = ((void)((t73 == NULL || t74 < 0 || t74 >= t73->len) ? ((void)hero_array_at(t73, t74), hero_unreachable()) : (void)0), (void)(t73->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t73 + 1))[t74]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t76 = INT64_C(0);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t77 = *(int64_t const *)hero_array_at(t75, t76);
+    t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t75 + 1))[t76]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t78 = HERO_STR_LIT(hero_str_20);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -850,9 +850,9 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t80 = INT64_C(1);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t81 = *(HeroArrayHeader * const *)hero_array_at(t79, t80);
+    t81 = ((void)((t79 == NULL || t80 < 0 || t80 >= t79->len) ? ((void)hero_array_at(t79, t80), hero_unreachable()) : (void)0), (void)(t79->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t79 + 1))[t80]);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t82 = hero_array_len(t81);
+    t82 = ((void)(t81 == NULL ? ((void)hero_array_len(t81), hero_unreachable()) : (void)0), t81->len);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_print_int(t65);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -904,15 +904,15 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t89 = INT64_C(2);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t90 = *(HeroArrayHeader * const *)hero_array_at(t88, t89);
+    t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? ((void)hero_array_at(t88, t89), hero_unreachable()) : (void)0), (void)(t88->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t88 + 1))[t89]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t91 = INT64_C(1);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t92 = *(HeroArrayHeader * const *)hero_array_at(t90, t91);
+    t92 = ((void)((t90 == NULL || t91 < 0 || t91 >= t90->len) ? ((void)hero_array_at(t90, t91), hero_unreachable()) : (void)0), (void)(t90->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t90 + 1))[t91]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t93 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t94 = *(int64_t const *)hero_array_at(t92, t93);
+    t94 = ((void)((t92 == NULL || t93 < 0 || t93 >= t92->len) ? ((void)hero_array_at(t92, t93), hero_unreachable()) : (void)0), (void)(t92->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t92 + 1))[t93]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t95 = HERO_STR_LIT(hero_str_20);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -926,15 +926,15 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t97 = INT64_C(2);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t98 = *(HeroArrayHeader * const *)hero_array_at(t96, t97);
+    t98 = ((void)((t96 == NULL || t97 < 0 || t97 >= t96->len) ? ((void)hero_array_at(t96, t97), hero_unreachable()) : (void)0), (void)(t96->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t96 + 1))[t97]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t99 = INT64_C(1);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t100 = *(HeroArrayHeader * const *)hero_array_at(t98, t99);
+    t100 = ((void)((t98 == NULL || t99 < 0 || t99 >= t98->len) ? ((void)hero_array_at(t98, t99), hero_unreachable()) : (void)0), (void)(t98->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t98 + 1))[t99]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t101 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t102 = *(int64_t const *)hero_array_at(t100, t101);
+    t102 = ((void)((t100 == NULL || t101 < 0 || t101 >= t100->len) ? ((void)hero_array_at(t100, t101), hero_unreachable()) : (void)0), (void)(t100->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t100 + 1))[t101]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t103 = HERO_STR_LIT(hero_str_20);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -1018,7 +1018,7 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t117 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t118 = *(HeroArrayHeader * const *)hero_array_at(t116, t117);
+    t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? ((void)hero_array_at(t116, t117), hero_unreachable()) : (void)0), (void)(t116->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t116 + 1))[t117]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t119 = h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP();
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
@@ -1030,11 +1030,11 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t120 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t121 = *(HeroArrayHeader * const *)hero_array_at(t119, t120);
+    t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? ((void)hero_array_at(t119, t120), hero_unreachable()) : (void)0), (void)(t119->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t119 + 1))[t120]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t122 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    t123 = *(HeroArrayHeader * const *)hero_array_at(t121, t122);
+    t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? ((void)hero_array_at(t121, t122), hero_unreachable()) : (void)0), (void)(t121->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t121 + 1))[t122]);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t124 = hero_array_eq(t118, t123);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"

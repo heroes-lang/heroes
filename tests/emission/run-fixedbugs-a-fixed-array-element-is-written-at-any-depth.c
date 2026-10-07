@@ -303,7 +303,7 @@ bb0:
 #line 304 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t135);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t3 = INT64_C(2);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
@@ -583,7 +583,7 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t116 = INT64_C(1);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t117 = *(struct nums const *)hero_array_at(t115, t116);
+    t117 = ((void)((t115 == NULL || t116 < 0 || t116 >= t115->len) ? ((void)hero_array_at(t115, t116), hero_unreachable()) : (void)0), (void)(t115->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t115 + 1))[t116]);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t119 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
@@ -595,7 +595,7 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t123 = INT64_C(1);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t124 = *(struct nums const *)hero_array_at(t122, t123);
+    t124 = ((void)((t122 == NULL || t123 < 0 || t123 >= t122->len) ? ((void)hero_array_at(t122, t123), hero_unreachable()) : (void)0), (void)(t122->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t122 + 1))[t123]);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t126 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
@@ -607,7 +607,7 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t130 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t131 = *(struct nums const *)hero_array_at(t129, t130);
+    t131 = ((void)((t129 == NULL || t130 < 0 || t130 >= t129->len) ? ((void)hero_array_at(t129, t130), hero_unreachable()) : (void)0), (void)(t129->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t129 + 1))[t130]);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t133 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"

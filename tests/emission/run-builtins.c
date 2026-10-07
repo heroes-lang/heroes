@@ -411,19 +411,19 @@ bb0:
 #line 22 "tests/golden/run/builtins.hero"
     t8 = INT64_C(0);
 #line 22 "tests/golden/run/builtins.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 22 "tests/golden/run/builtins.hero"
     t10 = h1_sorted;
 #line 22 "tests/golden/run/builtins.hero"
     t11 = INT64_C(1);
 #line 22 "tests/golden/run/builtins.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 22 "tests/golden/run/builtins.hero"
     t13 = h1_sorted;
 #line 22 "tests/golden/run/builtins.hero"
     t14 = INT64_C(2);
 #line 22 "tests/golden/run/builtins.hero"
-    t15 = *(int64_t const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]);
 #line 22 "tests/golden/run/builtins.hero"
     hero_print_int(t9);
 #line 22 "tests/golden/run/builtins.hero"
@@ -437,19 +437,19 @@ bb0:
 #line 25 "tests/golden/run/builtins.hero"
     t17 = INT64_C(0);
 #line 25 "tests/golden/run/builtins.hero"
-    t18 = *(int64_t const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 25 "tests/golden/run/builtins.hero"
     t19 = h0_xs;
 #line 25 "tests/golden/run/builtins.hero"
     t20 = INT64_C(1);
 #line 25 "tests/golden/run/builtins.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 25 "tests/golden/run/builtins.hero"
     t22 = h0_xs;
 #line 25 "tests/golden/run/builtins.hero"
     t23 = INT64_C(2);
 #line 25 "tests/golden/run/builtins.hero"
-    t24 = *(int64_t const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t22 + 1))[t23]);
 #line 25 "tests/golden/run/builtins.hero"
     hero_print_int(t18);
 #line 25 "tests/golden/run/builtins.hero"
@@ -555,7 +555,7 @@ bb0:
 #line 31 "tests/golden/run/builtins.hero"
     t40 = INT64_C(0);
 #line 31 "tests/golden/run/builtins.hero"
-    t41 = *(double const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t39 + 1))[t40]);
 #line 31 "tests/golden/run/builtins.hero"
     t42 = HERO_STR_LIT(hero_str_20);
 #line 31 "tests/golden/run/builtins.hero"
@@ -571,7 +571,7 @@ bb0:
 #line 31 "tests/golden/run/builtins.hero"
     t45 = INT64_C(2);
 #line 31 "tests/golden/run/builtins.hero"
-    t46 = *(double const *)hero_array_at(t44, t45);
+    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t44 + 1))[t45]);
 #line 31 "tests/golden/run/builtins.hero"
     hero_print_f64(t41);
 #line 31 "tests/golden/run/builtins.hero"
@@ -639,31 +639,31 @@ bb0:
 #line 37 "tests/golden/run/builtins.hero"
     t56 = INT64_C(0);
 #line 37 "tests/golden/run/builtins.hero"
-    t57 = *(bool const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t55 + 1))[t56]);
 #line 37 "tests/golden/run/builtins.hero"
     t58 = h5_ordered;
 #line 37 "tests/golden/run/builtins.hero"
     t59 = INT64_C(1);
 #line 37 "tests/golden/run/builtins.hero"
-    t60 = *(bool const *)hero_array_at(t58, t59);
+    t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t58 + 1))[t59]);
 #line 37 "tests/golden/run/builtins.hero"
     t61 = h5_ordered;
 #line 37 "tests/golden/run/builtins.hero"
     t62 = INT64_C(2);
 #line 37 "tests/golden/run/builtins.hero"
-    t63 = *(bool const *)hero_array_at(t61, t62);
+    t63 = ((void)((t61 == NULL || t62 < 0 || t62 >= t61->len) ? ((void)hero_array_at(t61, t62), hero_unreachable()) : (void)0), (void)(t61->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t61 + 1))[t62]);
 #line 37 "tests/golden/run/builtins.hero"
     t64 = h5_ordered;
 #line 37 "tests/golden/run/builtins.hero"
     t65 = INT64_C(3);
 #line 37 "tests/golden/run/builtins.hero"
-    t66 = *(bool const *)hero_array_at(t64, t65);
+    t66 = ((void)((t64 == NULL || t65 < 0 || t65 >= t64->len) ? ((void)hero_array_at(t64, t65), hero_unreachable()) : (void)0), (void)(t64->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t64 + 1))[t65]);
 #line 37 "tests/golden/run/builtins.hero"
     t67 = h5_ordered;
 #line 37 "tests/golden/run/builtins.hero"
     t68 = INT64_C(4);
 #line 37 "tests/golden/run/builtins.hero"
-    t69 = *(bool const *)hero_array_at(t67, t68);
+    t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? ((void)hero_array_at(t67, t68), hero_unreachable()) : (void)0), (void)(t67->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t67 + 1))[t68]);
 #line 37 "tests/golden/run/builtins.hero"
     hero_print_bool(t57);
 #line 37 "tests/golden/run/builtins.hero"
@@ -701,7 +701,7 @@ bb0:
 #line 41 "tests/golden/run/builtins.hero"
     t74 = h6_tail;
 #line 41 "tests/golden/run/builtins.hero"
-    t75 = hero_array_len(t74);
+    t75 = ((void)(t74 == NULL ? ((void)hero_array_len(t74), hero_unreachable()) : (void)0), t74->len);
 #line 41 "tests/golden/run/builtins.hero"
     t76 = h6_tail;
 #line 41 "tests/golden/run/builtins.hero"
@@ -735,7 +735,7 @@ bb0:
 #line 736 "builtins.c"
     hero_array_decref(t179);
 #line 42 "tests/golden/run/builtins.hero"
-    t83 = hero_array_len(t82);
+    t83 = ((void)(t82 == NULL ? ((void)hero_array_len(t82), hero_unreachable()) : (void)0), t82->len);
 #line 42 "tests/golden/run/builtins.hero"
     t84 = h2_names;
 #line 42 "tests/golden/run/builtins.hero"
@@ -751,7 +751,7 @@ bb0:
 #line 752 "builtins.c"
     hero_array_decref(t180);
 #line 42 "tests/golden/run/builtins.hero"
-    t88 = hero_array_len(t87);
+    t88 = ((void)(t87 == NULL ? ((void)hero_array_len(t87), hero_unreachable()) : (void)0), t87->len);
 #line 42 "tests/golden/run/builtins.hero"
     hero_print_int(t83);
 #line 42 "tests/golden/run/builtins.hero"
@@ -859,7 +859,7 @@ bb0:
 #line 860 "builtins.c"
     hero_array_decref(t187);
 #line 51 "tests/golden/run/builtins.hero"
-    t107 = hero_array_len(t106);
+    t107 = ((void)(t106 == NULL ? ((void)hero_array_len(t106), hero_unreachable()) : (void)0), t106->len);
 #line 51 "tests/golden/run/builtins.hero"
     hero_print_int(t103);
 #line 51 "tests/golden/run/builtins.hero"

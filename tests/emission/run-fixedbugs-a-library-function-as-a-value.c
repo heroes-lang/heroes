@@ -123,7 +123,7 @@ bb0:
 #line 124 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t6);
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 128 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(h1_own1);
     return t5;

@@ -530,7 +530,7 @@ bb7:
 #line 43 "examples/roman/main.hero"
     t19 = h4_all_values;
 #line 43 "examples/roman/main.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 43 "examples/roman/main.hero"
     t21 = t18 < t20;
 #line 43 "examples/roman/main.hero"
@@ -566,7 +566,7 @@ bb10:
 #line 47 "examples/roman/main.hero"
     t24 = h3_at;
 #line 47 "examples/roman/main.hero"
-    t25 = *(int64_t const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
 #line 47 "examples/roman/main.hero"
     t26 = t22 >= t25;
 #line 47 "examples/roman/main.hero"
@@ -580,7 +580,7 @@ bb11:
 #line 48 "examples/roman/main.hero"
     t29 = h3_at;
 #line 48 "examples/roman/main.hero"
-    t30 = *(HeroStr const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t29]);
 #line 48 "examples/roman/main.hero"
     t31 = hero_str_concat(t27, t30);
 #line 48 "examples/roman/main.hero"
@@ -604,7 +604,7 @@ bb11:
 #line 49 "examples/roman/main.hero"
     t34 = h3_at;
 #line 49 "examples/roman/main.hero"
-    t35 = *(int64_t const *)hero_array_at(t33, t34);
+    t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? ((void)hero_array_at(t33, t34), hero_unreachable()) : (void)0), (void)(t33->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t33 + 1))[t34]);
 #line 49 "examples/roman/main.hero"
     if (__builtin_sub_overflow(t32, t35, &t36)) hero_panic_overflow();
 #line 49 "examples/roman/main.hero"
@@ -1164,7 +1164,7 @@ bb1:
 #line 77 "examples/roman/main.hero"
     t12 = h3_letters_here;
 #line 77 "examples/roman/main.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 77 "examples/roman/main.hero"
     t14 = INT64_C(1);
 #line 77 "examples/roman/main.hero"
@@ -1217,7 +1217,7 @@ bb5:
 #line 80 "examples/roman/main.hero"
     t20 = h4_i;
 #line 80 "examples/roman/main.hero"
-    t21 = *(HeroStr const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]);
 #line 80 "examples/roman/main.hero"
     t22 = h_main_value_of_letter(t21);
 #line 80 "examples/roman/main.hero"
@@ -1445,7 +1445,7 @@ bb1:
 #line 94 "examples/roman/main.hero"
     t6 = h2_xs0;
 #line 94 "examples/roman/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 94 "examples/roman/main.hero"
     t8 = t5 < t7;
 #line 94 "examples/roman/main.hero"
@@ -1457,7 +1457,7 @@ bb2:
 #line 94 "examples/roman/main.hero"
     t10 = h3_i0;
 #line 94 "examples/roman/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 94 "examples/roman/main.hero"
     t23 = h4_ch;
 #line 1464 "main.c"
@@ -1712,7 +1712,7 @@ bb1:
 #line 100 "examples/roman/main.hero"
     t15 = h0_xs0;
 #line 100 "examples/roman/main.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 100 "examples/roman/main.hero"
     t17 = t14 < t16;
 #line 100 "examples/roman/main.hero"
@@ -1724,7 +1724,7 @@ bb2:
 #line 100 "examples/roman/main.hero"
     t19 = h1_i0;
 #line 100 "examples/roman/main.hero"
-    t20 = *(int64_t const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
 #line 100 "examples/roman/main.hero"
     h2_one = t20;
 #line 101 "examples/roman/main.hero"

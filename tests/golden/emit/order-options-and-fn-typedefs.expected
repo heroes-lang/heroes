@@ -616,7 +616,7 @@ bb0:
 #line 44 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t9 = INT64_C(0);
 #line 44 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    t10 = *(h_orderoptionsandfntypedefs_Point const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_orderoptionsandfntypedefs_Point) ? hero_unreachable() : (void)0), ((h_orderoptionsandfntypedefs_Point const *)(const void *)(t8 + 1))[t9]);
 #line 44 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t11 = t10.f_x;
 #line 44 "tests/golden/emit/order-options-and-fn-typedefs.hero"

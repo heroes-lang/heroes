@@ -781,7 +781,7 @@ bb10:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     t44 = t42 % t43;
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    t45 = *(int64_t const *)hero_array_at(t41, t44);
+    t45 = ((void)((t41 == NULL || t44 < 0 || t44 >= t41->len) ? ((void)hero_array_at(t41, t44), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t41 + 1))[t44]);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     if (__builtin_add_overflow(t30, t45, &t46)) hero_panic_overflow();
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -1125,7 +1125,7 @@ bb21:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     t110 = t109.as.ok;
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    t111 = hero_array_len(t110);
+    t111 = ((void)(t110 == NULL ? ((void)hero_array_len(t110), hero_unreachable()) : (void)0), t110->len);
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     hero_print_int(t86);
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"

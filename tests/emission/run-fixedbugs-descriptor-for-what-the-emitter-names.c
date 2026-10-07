@@ -720,7 +720,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t1 = h0_xs;
 #line 40 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 40 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     return t2;
 #line 727 "fixedbugsdescriptorforwhattheemitternames.c"

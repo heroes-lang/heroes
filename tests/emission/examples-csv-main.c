@@ -374,7 +374,7 @@ bb1:
 #line 31 "examples/csv/main.hero"
     t11 = h7_xs0;
 #line 31 "examples/csv/main.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 31 "examples/csv/main.hero"
     t13 = t10 < t12;
 #line 31 "examples/csv/main.hero"
@@ -386,7 +386,7 @@ bb2:
 #line 31 "examples/csv/main.hero"
     t15 = h8_i0;
 #line 31 "examples/csv/main.hero"
-    t16 = *(HeroStr const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 31 "examples/csv/main.hero"
     t101 = h9_ch;
 #line 393 "main.c"
@@ -776,7 +776,7 @@ bb34:
 #line 77 "examples/csv/main.hero"
     t79 = h2_row;
 #line 77 "examples/csv/main.hero"
-    t80 = hero_array_len(t79);
+    t80 = ((void)(t79 == NULL ? ((void)hero_array_len(t79), hero_unreachable()) : (void)0), t79->len);
 #line 77 "examples/csv/main.hero"
     t81 = INT64_C(0);
 #line 77 "examples/csv/main.hero"
@@ -884,7 +884,7 @@ bb0:
 #line 84 "examples/csv/main.hero"
     t2 = t1.f_rows;
 #line 84 "examples/csv/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 84 "examples/csv/main.hero"
     t4 = INT64_C(0);
 #line 84 "examples/csv/main.hero"
@@ -914,9 +914,9 @@ bb3:
 #line 87 "examples/csv/main.hero"
     t9 = INT64_C(0);
 #line 87 "examples/csv/main.hero"
-    t10 = *(HeroArrayHeader * const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]);
 #line 87 "examples/csv/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 84 "examples/csv/main.hero"
     h1_r0 = t11;
 #line 84 "examples/csv/main.hero"
@@ -981,7 +981,7 @@ bb1:
 #line 92 "examples/csv/main.hero"
     t5 = h1_xs0;
 #line 92 "examples/csv/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 92 "examples/csv/main.hero"
     t7 = t4 < t6;
 #line 92 "examples/csv/main.hero"
@@ -993,7 +993,7 @@ bb2:
 #line 92 "examples/csv/main.hero"
     t9 = h2_i0;
 #line 92 "examples/csv/main.hero"
-    t10 = *(HeroArrayHeader * const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]);
 #line 92 "examples/csv/main.hero"
     t23 = h3_one;
 #line 1000 "main.c"
@@ -1005,7 +1005,7 @@ bb2:
 #line 93 "examples/csv/main.hero"
     t11 = h3_one;
 #line 93 "examples/csv/main.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 93 "examples/csv/main.hero"
     t13 = h0_t;
 #line 93 "examples/csv/main.hero"
@@ -1217,7 +1217,7 @@ bb6:
 #line 103 "examples/csv/main.hero"
     t17 = h4_xs0;
 #line 103 "examples/csv/main.hero"
-    t18 = hero_array_len(t17);
+    t18 = ((void)(t17 == NULL ? ((void)hero_array_len(t17), hero_unreachable()) : (void)0), t17->len);
 #line 103 "examples/csv/main.hero"
     t19 = t16 < t18;
 #line 103 "examples/csv/main.hero"
@@ -1229,7 +1229,7 @@ bb7:
 #line 103 "examples/csv/main.hero"
     t21 = h5_i0;
 #line 103 "examples/csv/main.hero"
-    t22 = *(HeroArrayHeader * const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t20 + 1))[t21]);
 #line 103 "examples/csv/main.hero"
     t42 = h6_one;
 #line 1236 "main.c"
@@ -1243,7 +1243,7 @@ bb7:
 #line 104 "examples/csv/main.hero"
     t24 = h6_one;
 #line 104 "examples/csv/main.hero"
-    t25 = hero_array_len(t24);
+    t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len);
 #line 104 "examples/csv/main.hero"
     t26 = t23 < t25;
 #line 104 "examples/csv/main.hero"
@@ -1289,7 +1289,7 @@ bb11:
 #line 105 "examples/csv/main.hero"
     t29 = h1_at;
 #line 105 "examples/csv/main.hero"
-    t30 = *(HeroStr const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t29]);
 #line 105 "examples/csv/main.hero"
     hero_array_push_owned(&h3_out, &t30);
 #line 105 "examples/csv/main.hero"
@@ -1493,7 +1493,7 @@ bb1:
 #line 114 "examples/csv/main.hero"
     t12 = t11.f_rows;
 #line 114 "examples/csv/main.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 114 "examples/csv/main.hero"
     hero_print_int(t13);
 #line 114 "examples/csv/main.hero"
@@ -1521,7 +1521,7 @@ bb1:
 #line 118 "examples/csv/main.hero"
     t20 = INT64_C(1);
 #line 118 "examples/csv/main.hero"
-    t21 = *(HeroArrayHeader * const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t19 + 1))[t20]);
 #line 118 "examples/csv/main.hero"
     t22 = HERO_STR_LIT(hero_str_8a0b4);
 #line 118 "examples/csv/main.hero"
@@ -1543,7 +1543,7 @@ bb1:
 #line 119 "examples/csv/main.hero"
     t26 = INT64_C(2);
 #line 119 "examples/csv/main.hero"
-    t27 = *(HeroArrayHeader * const *)hero_array_at(t25, t26);
+    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t25 + 1))[t26]);
 #line 119 "examples/csv/main.hero"
     t28 = HERO_STR_LIT(hero_str_8a0b4);
 #line 119 "examples/csv/main.hero"
@@ -1723,7 +1723,7 @@ bb5:
 #line 125 "examples/csv/main.hero"
     t66 = t65.f_rows;
 #line 125 "examples/csv/main.hero"
-    t67 = hero_array_len(t66);
+    t67 = ((void)(t66 == NULL ? ((void)hero_array_len(t66), hero_unreachable()) : (void)0), t66->len);
 #line 125 "examples/csv/main.hero"
     hero_print_int(t67);
 #line 125 "examples/csv/main.hero"
