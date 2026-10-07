@@ -25,30 +25,17 @@
 
 use token
 use state
+use lost_reading
 
 # Whether the text at `at` stands past a quote on its line, and its line ends
 # inside a literal that never closes, read on from it as the lexer reads:
 # outside a string a `"` opens one, inside one a `\` takes the byte after it
 # and a `"` closes it, and a `#` outside every string begins a comment, which
-# holds no literal.
-function lost_in(text: str, at: i64) -> bool
-    if first_quote(text, from: line_start(text, at: at), to: at) < 0
-        return false
-    inside: bool @ false
-    i: i64 @ at + 1
-
-    while i < text.len() && text[i] != '\n'
-        b = text[i]
-
-        if inside && b == '\\'
-            i @ i + 1
-        else if b == '"'
-            inside @ !inside
-        else if !inside && b == '#'
-            return false
-        i @ i + 1
-
-    return inside
+# holds no literal. Answered from the lexer's one reading of the text, which
+# its outline holds (`lost_reading.hero`), since a line of refused
+# characters asks it of each (defect 293).
+function lost_in(@l: state.LexState, text: str, at: i64) -> bool
+    return lost_reading.lost(@l.outline.lost[0], text, at: at)
 
 # At the end of a line a literal that never closed ran to: the openers still
 # open, where every one was opened on this line and has a closer of its own
@@ -117,15 +104,20 @@ function closer_past(text: str, from: i64, to: i64, opener: u8) -> bool
 
 ## Tests
 
+# The question asked of a text a lexer holds alone.
+function lost_alone(text: str, at: i64) -> bool
+    l: state.LexState @ state.new_state()
+    return lost_in(@l, text, at: at)
+
 test "a backslash past a quote on a line that ends inside a literal is the lost quote's"
     lost = "x == \"  || x == \"\\t\" || y\n"
-    assert lost_in(lost, at: 17)
+    assert lost_alone(lost, at: 17)
 
     # No quote before it, a line whose strings all close, or a comment after
     # it: a `\` of its own.
-    assert !lost_in("x = a \\ b + \"c\n", at: 6)
-    assert !lost_in("x == \"a\" \\ \"b\"\n", at: 9)
-    assert !lost_in("x == \"a\" \\ # \"b\n", at: 9)
+    assert !lost_alone("x = a \\ b + \"c\n", at: 6)
+    assert !lost_alone("x == \"a\" \\ \"b\"\n", at: 9)
+    assert !lost_alone("x == \"a\" \\ # \"b\n", at: 9)
 
 test "the openers a line opened are closed at its end where a string took their closers"
     text = "assert report(\") == \"lines: 0\"\n"

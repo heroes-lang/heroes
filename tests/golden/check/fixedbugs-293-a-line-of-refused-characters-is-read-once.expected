@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:14:13: error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:15:217: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:16:316: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:9: error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:10: error[unexpected_character]: the control character U+0002 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:11: error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:12: error[unexpected_character]: the control character U+0002 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:13: error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:14: error[unexpected_character]: the control character U+0002 is not part of the language's syntax
+tests/golden/check/fixedbugs-293-a-line-of-refused-characters-is-read-once.hero:17:15: error[unexpected_character]: the control character U+0001 is not part of the language's syntax
