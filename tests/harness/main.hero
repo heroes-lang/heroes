@@ -168,14 +168,21 @@ function main()
         print("harness: cannot create " + scratch)
         exit(2)
 
-    if compiler.len() == 0
-        print("harness: " + shell.no_compiler_anywhere())
-        exit(2)
+    # A compiler named that no case could start is refused here, saying what
+    # the path is (defect 332): a directory or a file that will not start was
+    # taken, and every case of every suite failed as a program that could not
+    # be started. `shell.some_compiler` asks its answer the same question. The
+    # scratch held only the start's captures, which went with it.
+    if given.len() > 0
+        refused = shell.unstartable(scratch: scratch, path: compiler)
 
-    if !shell.exists(compiler)
-        print("harness: no compiler at " + compiler)
-        print("  build one first, or name it: heroes run tests/harness/main.hero -- <compiler>")
-        exit(2)
+        if refused.len() > 0
+            print(
+                "harness: the compiler named, `" + compiler + "`, cannot be started: " + refused + ", so every case would fail as a program that could not be started"
+            )
+            print("  build one first, or name its file: heroes run tests/harness/main.hero -- <compiler>")
+            _ = shell.remove_tree(scratch).is_err()
+            exit(2)
 
     forms: [suite_golden.Shape] = [
         suite_golden.shape_check()
