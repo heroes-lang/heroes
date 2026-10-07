@@ -519,6 +519,198 @@ class Pathspec(unittest.TestCase):
         self.passed("git -C . add CLAUDE.md")
 
 
+def branched(tree, side_file="a.txt"):
+    """`tree` holding `a.txt` and `b.txt`, a branch `other` that changes
+    `a.txt` then `b.txt` in two commits, and `main` changing `side_file`, so a
+    rebase of `other` onto `main` stops at its first pick when `side_file` is
+    `a.txt`. `main` is checked out."""
+    write(os.path.join(tree, "a.txt"), "a\n")
+    write(os.path.join(tree, "b.txt"), "b\n")
+    git(tree, "add", "--", "a.txt", "b.txt")
+    git(tree, "commit", "-q", "-m", "ab", "--", "a.txt", "b.txt")
+    git(tree, "checkout", "-q", "-b", "other")
+    write(os.path.join(tree, "a.txt"), "a other\n")
+    git(tree, "commit", "-q", "-m", "other1", "--", "a.txt")
+    write(os.path.join(tree, "b.txt"), "b other\n")
+    git(tree, "commit", "-q", "-m", "other2", "--", "b.txt")
+    git(tree, "checkout", "-q", "main")
+    write(os.path.join(tree, side_file), side_file + " main\n")
+    git(tree, "add", "--", side_file)
+    git(tree, "commit", "-q", "-m", "main1", "--", side_file)
+
+
+def stopped(tree, how, extra=None):
+    """`tree` stopped in `how`, its conflict resolved and staged, and `extra`,
+    a file the stop never brought, staged beside it: `rebase` and
+    `rebase-apply` (each backend) stop on `other`'s first pick, `am` on the
+    first of `other`'s patches, `edit` at an `edit` of that pick."""
+    branched(tree)
+    if how == "am":
+        patches = os.path.join(os.path.dirname(tree), os.path.basename(tree) + "-patches")
+        git(tree, "format-patch", "-q", "-2", "-o", patches, "other")
+        names = sorted(os.listdir(patches))
+        done = git(tree, "am", *[os.path.join(patches, n) for n in names], check=False)
+        assert done.returncode != 0, done.stdout + done.stderr
+        staged(tree, "a.txt", "a other\n")
+    elif how == "edit":
+        git(tree, "checkout", "-q", "other")
+        env = dict(GIT_ENV, GIT_SEQUENCE_EDITOR="sed -i.bak 's/^pick \\(.* other1\\)$/edit \\1/'")
+        done = subprocess.run(["git", "rebase", "-i", "HEAD~2"], cwd=tree, env=env, capture_output=True, text=True)
+        assert done.returncode == 0 and os.path.isdir(os.path.join(tree, ".git", "rebase-merge")), done.stderr
+    else:
+        git(tree, "checkout", "-q", "other")
+        backend = ["--apply"] if how == "rebase-apply" else []
+        done = git(tree, "rebase", *backend, "main", check=False)
+        assert done.returncode != 0, done.stdout + done.stderr
+        staged(tree, "a.txt", "a resolved\n")
+    if extra is not None:
+        staged(tree, extra, "not the stop's\n")
+
+
+class Sequences(unittest.TestCase):
+    """Defect 487: a rebase or an am concluded by `--continue` commits the
+    whole index, so it is refused when the index holds a file it did not
+    bring; and every spelling git reads as `--continue` is read."""
+
+    def setUp(self):
+        self.top = fresh("hooks-487-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+
+    def refused(self, command):
+        said = guard_bash.verdict(command, self.tree)
+        self.assertIsNotNone(said, command)
+        return said
+
+    def passed(self, command):
+        said = guard_bash.verdict(command, self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_rebase_continued_with_a_file_it_did_not_bring_is_refused(self):
+        stopped(self.tree, "rebase", extra="c.txt")
+        said = self.refused("GIT_EDITOR=true git rebase --continue")
+        self.assertIn("this rebase", said)
+        self.assertIn("c.txt", said)
+        self.assertNotIn("a.txt", said)
+        self.assertIn("git commit -- <paths>", said)
+
+    def test_a_rebase_continued_with_its_own_files_passes(self):
+        stopped(self.tree, "rebase")
+        self.passed("GIT_EDITOR=true git rebase --continue")
+
+    def test_a_rebase_by_the_apply_backend_is_read_by_its_patch(self):
+        stopped(self.tree, "rebase-apply", extra="c.txt")
+        self.assertIn("c.txt", self.refused("git rebase --continue"))
+        self.refused("git am --continue")
+
+    def test_an_edit_stop_continued_over_a_staged_file_is_refused(self):
+        stopped(self.tree, "edit", extra="c.txt")
+        said = self.refused("git rebase --continue")
+        self.assertIn("--amend", said)
+        self.passed("git commit --amend -F m -- c.txt")
+
+    def test_an_am_continued_with_a_file_it_did_not_bring_is_refused_by_every_spelling(self):
+        stopped(self.tree, "am", extra="c.txt")
+        for spelling in ("--continue", "--resolved", "-r", "-qr", "--cont"):
+            said = self.refused("git am " + spelling)
+            self.assertIn("this am", said)
+            self.assertIn("c.txt", said)
+        self.passed("git am -p1r --continue-not")
+
+    def test_an_am_continued_with_its_own_files_passes(self):
+        stopped(self.tree, "am")
+        self.passed("git am --continue")
+        self.passed("git am -r")
+
+    def test_a_patch_renaming_a_file_brings_its_old_name_and_its_new(self):
+        branched(self.tree, side_file="b.txt")
+        git(self.tree, "checkout", "-q", "-b", "move", "other~2")
+        git(self.tree, "mv", "a.txt", "moved.txt")
+        write(os.path.join(self.tree, "b.txt"), "b moved\n")
+        git(self.tree, "add", "--", "b.txt")
+        git(self.tree, "commit", "-q", "-m", "move", "--", "a.txt", "moved.txt", "b.txt")
+        patches = os.path.join(self.top, "renames")
+        git(self.tree, "format-patch", "-q", "-1", "-o", patches, "HEAD")
+        git(self.tree, "checkout", "-q", "main")
+        done = git(self.tree, "am", *[os.path.join(patches, n) for n in os.listdir(patches)], check=False)
+        self.assertNotEqual(done.returncode, 0, done.stdout)
+        # Applied by hand, as an am that stopped is: the move and b.txt.
+        git(self.tree, "mv", "a.txt", "moved.txt")
+        staged(self.tree, "b.txt", "b moved\n")
+        held = git(self.tree, "diff", "--cached", "--name-only", "--no-renames").stdout.split()
+        self.assertEqual(sorted(held), ["a.txt", "b.txt", "moved.txt"])
+        self.passed("git am --continue")
+        staged(self.tree, "c.txt", "not the patch's\n")
+        self.assertIn("c.txt", self.refused("git am --continue"))
+
+    def test_an_abbreviated_continue_is_read(self):
+        conflicted(self.tree, "merge", extra="c.txt")
+        self.assertIn("c.txt", self.refused("git merge --cont"))
+        self.refused("git merge --con")
+
+    def test_a_bare_commit_while_a_rebase_stands_keeps_its_refusal(self):
+        stopped(self.tree, "rebase")
+        self.assertIn("no `--`", self.refused("git commit --no-edit"))
+        self.passed("git commit -F m -- a.txt")
+
+    def test_a_continue_with_nothing_standing_gives_no_opinion(self):
+        branched(self.tree)
+        staged(self.tree, "c.txt", "c\n")
+        self.passed("git rebase --continue")
+        self.passed("git am --continue")
+
+    def test_a_lane_rebase_is_read_from_its_own_tree(self):
+        stopped(self.tree, "rebase", extra="c.txt")
+        said = guard_bash.verdict("git -C " + self.tree + " rebase --continue", self.top)
+        self.assertIsNotNone(said)
+        self.assertIsNotNone(guard_bash.verdict("bash -c 'cd " + self.tree + " && git rebase --continue'", self.top))
+
+    def test_a_rebase_redoing_a_merge_brings_what_the_merge_brings(self):
+        write(os.path.join(self.tree, "a.txt"), "a\n")
+        write(os.path.join(self.tree, "b.txt"), "b\n")
+        write(os.path.join(self.tree, "d.txt"), "d\n")
+        git(self.tree, "add", "--", "a.txt", "b.txt", "d.txt")
+        git(self.tree, "commit", "-q", "-m", "abd", "--", "a.txt", "b.txt", "d.txt")
+        git(self.tree, "checkout", "-q", "-b", "side")
+        write(os.path.join(self.tree, "b.txt"), "b side\n")
+        git(self.tree, "commit", "-q", "-m", "side1", "--", "b.txt")
+        git(self.tree, "checkout", "-q", "-b", "other", "main")
+        write(os.path.join(self.tree, "b.txt"), "b other\n")
+        git(self.tree, "commit", "-q", "-m", "other1", "--", "b.txt")
+        git(self.tree, "merge", "-q", "--no-edit", "side", check=False)
+        staged(self.tree, "b.txt", "b merged\n")
+        git(self.tree, "commit", "-q", "--no-edit")
+        git(self.tree, "checkout", "-q", "main")
+        write(os.path.join(self.tree, "d.txt"), "d main\n")
+        git(self.tree, "commit", "-q", "-m", "main1", "--", "d.txt")
+        git(self.tree, "checkout", "-q", "other")
+        done = git(self.tree, "rebase", "--rebase-merges", "main", check=False)
+        self.assertNotEqual(done.returncode, 0, done.stdout)
+        self.assertTrue(os.path.isfile(os.path.join(self.tree, ".git", "MERGE_HEAD")))
+        staged(self.tree, "b.txt", "b merged again\n")
+        self.passed("GIT_EDITOR=true git rebase --continue")
+        self.passed("git merge --continue")
+        staged(self.tree, "c.txt", "not the merge's\n")
+        self.assertIn("c.txt", self.refused("git rebase --continue"))
+        self.assertIn("c.txt", self.refused("git merge --continue"))
+
+    def test_a_root_commit_picked_brings_its_files(self):
+        write(os.path.join(self.tree, "a.txt"), "a\n")
+        git(self.tree, "add", "--", "a.txt")
+        git(self.tree, "commit", "-q", "-m", "a", "--", "a.txt")
+        git(self.tree, "checkout", "-q", "--orphan", "root")
+        git(self.tree, "rm", "-q", "-r", "--cached", "--", ".")
+        write(os.path.join(self.tree, "a.txt"), "a root\n")
+        git(self.tree, "add", "--", "a.txt")
+        git(self.tree, "commit", "-q", "-m", "root", "--", "a.txt")
+        git(self.tree, "checkout", "-q", "-f", "main")
+        done = git(self.tree, "cherry-pick", "root", check=False)
+        self.assertNotEqual(done.returncode, 0, done.stdout)
+        staged(self.tree, "a.txt", "a resolved\n")
+        self.passed("git cherry-pick --continue")
+        staged(self.tree, "c.txt", "not the pick's\n")
+        self.assertIn("c.txt", self.refused("git cherry-pick --continue"))
+
+
 REPO = os.path.dirname(os.path.dirname(HOOKS))
 ZWSP = chr(0x200B)
 RLO = chr(0x202E)
