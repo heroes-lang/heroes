@@ -38,8 +38,25 @@ function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnost
     suggest(@d, near, span)
     return d
 
+# A name nothing binds, called (defect 270): `print(sqrt(2.0))` with no
+# `extern` was offered `sort` alone, a guess that is true and points away
+# from the repair, since a function of C is bound in an `extern` group. The
+# note says how, in words true whatever the name is: whether `sqrt` is C's
+# is a standard library's knowledge, which this compiler does not hold
+# (CLAUDE.md § 13), so the note says *if*, and the rename stays a guess.
+function unknown_called(name: str, near: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ unknown_name(name, near, span)
+    d.notes @ d.notes.push(binding_note(name))
+    return d
+
+# How a function of C is called: bound in a group of this file, since an
+# extern is never reached across a module (panel 033 R5).
+function binding_note(name: str) -> str
+    return "if `" + name + "` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern \"<header>.h\"`, and the signature is indented below it, `function " + name + "(…) -> …` (§4.19)"
+
 # `x.f(y)` is `f(x, y)` and nothing else (§4.11: there are no methods), so
-# an unknown name after the dot is answerable now — before types exist.
+# an unknown name after the dot is answerable now — before types exist. It
+# is called, so a function of C is offered its binding as a bare name is.
 function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unknown_function",
@@ -47,6 +64,7 @@ function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diag
         span: span
     )
     suggest(@d, near, span)
+    d.notes @ d.notes.push(binding_note(name))
     return d
 
 function unknown_type(name: str, near: [str], span: token.Span) -> diag.Diagnostic
@@ -209,6 +227,20 @@ test "one candidate is a rename offered, three are prose"
     e = unknown_name("totl", many, span)
     assert e.fixes.len() == 0
     assert e.message == "nothing named `totl` is in scope — the closest names in scope are `tot`, `toll`, `tall`"
+
+# Defect 270: a name called is told how a function of C is bound, whatever
+# the name, and the rename beside it stays the guess it is; a name read is
+# told nothing of C.
+test "a name nothing binds, called, is told how a function of C is bound"
+    span = token.Span(start: 0, end: 4)
+    near: [str] = ["sort"]
+    called = unknown_called("sqrt", near, span)
+    assert called.code == "unknown_name"
+    assert called.message == "nothing named `sqrt` is in scope — did you mean `sort`?"
+    assert called.fixes[0].certainty == .guess
+    assert called.notes == ["if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern \"<header>.h\"`, and the signature is indented below it, `function sqrt(…) -> …` (§4.19)"]
+    assert unknown_name("sqrt", near, span).notes.len() == 0
+    assert unknown_function("sqrt", near, span).notes == called.notes
 
 # Defect 220: what makes a rename certain is not this pass's to know, so every
 # one it offers is a guess, the letters' best case included; `rename_fit.hero`
