@@ -418,6 +418,31 @@ test "the runtime's object is named by what it read, beside the record that name
 
     assert runtime_object(t, level: "-O0", sanitize: false).must() == object
 
+# DEFECT 435's finding, pinned (2026-10-07): a warm build does not compile
+# the runtime. The clang line naming `runtime/runtime.c` that every build's
+# log shows is `clang_floor.identity`'s `-###`, which prints what clang would
+# run and compiles nothing; measured by logging every clang call, a warm
+# `build`, `run` or `test` of `print(1)` makes three, that one, the headers'
+# `-M` and the link. The object is `runtime_object`'s, served by its record:
+# asked again under the same key from a runtime directory that is not there,
+# it answers the same object, where a compile would have no `runtime.c` to
+# read. The key holds the runtime's contents, never its path, which is what
+# this test rests on; one that keyed the path would fail here first.
+test "a warm ask for the runtime's object compiles nothing and reads no runtime (defect 435)"
+    t: Toolchain @ locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-runtime-warm-435"
+    assert !process.remove_tree(t.build).is_err()
+    object = runtime_object(t, level: "-O0", sanitize: false).must()
+    gone: Toolchain @ t
+    gone.runtime @ "build/selftest-runtime-warm-435-no-runtime"
+    assert !process.path_exists(path: gone.runtime)
+    assert runtime_object(gone, level: "-O0", sanitize: false).must() == object
+
+    # The same directory at another level is another key, and that one does
+    # compile, so it fails where there is nothing to compile.
+    assert runtime_object(gone, level: "-O2", sanitize: false).is_err()
+    assert !process.remove_tree(t.build).is_err()
+
 test "an object compiled under one clang answer is never served under another (defect 122)"
     found = locate_toolchain(hint: "", fingerprint: "port-test")
     assert !found.is_err()

@@ -19,6 +19,7 @@ use cli/table as cli_table
 use cli/argv
 use cli/io
 use cli/publish
+use cli/strings
 
 # heroes parse <file.hero> [--dump-ast]: without the flag a syntax
 # check, silent on success; with it the tree — but only when the file
@@ -227,7 +228,7 @@ test "the tree guard sees an alias, and it was blind to one for a day"
     stripped = "use render/scale\n\nfunction main()\n    print(0)\n"
     caught = guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
     assert !caught.is_err()
-    assert strings_has(haystack: caught.must(), needle: "changed the TREE")
+    assert strings.holds(text: caught.must(), needle: "changed the TREE")
 
     # And it stays quiet on the real thing: the formatter's own output for a
     # file that already carries an alias.
@@ -237,20 +238,6 @@ test "the tree guard sees an alias, and it was blind to one for a day"
     assert formatted == original
     quiet = guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: formatted)
     assert quiet.is_err()
-
-# Does the haystack hold the needle? One line, local to the test above,
-# because the harness's `strings` module is not reachable from `selfhost/`.
-function strings_has(haystack: str, needle: str) -> bool
-    if needle.len() > haystack.len()
-        return false
-    at: i64 @ 0
-
-    while at + needle.len() <= haystack.len()
-        if haystack.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
 
 test "the tree guard sees `owned`, and this is the alias test's own lesson applied before the fact"
     # **The same shape as the alias above, pinned BEFORE it could ship.** On
@@ -271,7 +258,7 @@ test "the tree guard sees `owned`, and this is the alias test's own lesson appli
     stripped = "extern \"stdlib.h\"\n    function free(p: ptr)\n\nextern \"string.h\"\n    function strdup(s: cstr) -> cstr\n\nfunction main()\n    print(0)\n"
     caught = guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
     assert !caught.is_err()
-    assert strings_has(haystack: caught.must(), needle: "changed the TREE")
+    assert strings.holds(text: caught.must(), needle: "changed the TREE")
 
     # The `@` position too, because the mark rides two places and a guard that
     # sees one of them is the same blindness one position over.
@@ -301,7 +288,7 @@ test "a comment moved off the code it was written beside is refused, whichever p
     moved = "function f(a: i64, b: i64) -> i64  # about a\n    return a + b\n"
     caught = guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: moved)
     assert !caught.is_err()
-    assert strings_has(haystack: caught.must(), needle: "would move the comment on line 1")
+    assert strings.holds(text: caught.must(), needle: "would move the comment on line 1")
 
     # Off the line it trails, with nothing crossed: an opener's comment
     # printed as its block's first line.
