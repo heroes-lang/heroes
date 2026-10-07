@@ -88,9 +88,9 @@ exempt directories are named nowhere in the walk* asserts `dir !=
 suite's code without its `test` blocks and its comments. Run against its old
 self that day it moved three rows of its output and no other: `canonical` lost
 the four directories, `unseen` lost `seed/heroes.c` (its test asserts the seed
-EXEMPT), and `records` lost `selfhost`, `docs/design/` and
-`docs/work/milestones`, three literals of its tests, the last two asserted
-absent; the table's `records` cells stand, since `records` reads every file
+EXEMPT), and `records` lost `selfhost` and two retired document paths,
+three literals of its tests, the two paths asserted absent; the table's
+`records` cells stand, since `records` reads every file
 `shell.project_files` names, which no literal shows. The four rows above lost
 `canonical`, which runs a suite too many and never one too few.
 
