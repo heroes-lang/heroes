@@ -30,8 +30,18 @@ variant IntKind
     u64
 
 # Every width, in declaration order, for the places that must enumerate them.
+#
+# **A constant, read through the function its callers name** (defect 475).
+# The function's body built the array again at every call, 22,187 times in
+# the compiler's own check; a constant whose body is case constructions is
+# one block clang lays out, and a read of it builds nothing (panel 195,
+# `emit/static_constant.hero`). `float_kinds` below, and
+# `operators.binary_tokens`, are the same.
+constant INT_KINDS: [IntKind]
+    [.i8, .i16, .i32, .i64, .u8, .u16, .u32, .u64]
+
 function int_kinds() -> [IntKind]
-    return [.i8, .i16, .i32, .i64, .u8, .u16, .u32, .u64]
+    return INT_KINDS
 
 # The surface spelling, which is also what a diagnostic prints. There is no
 # `int` (panel 042): one spelling per width, and `int` is a foreign word
@@ -145,8 +155,11 @@ variant FloatKind
     f32
     f64
 
+constant FLOAT_KINDS: [FloatKind]
+    [.f32, .f64]
+
 function float_kinds() -> [FloatKind]
-    return [.f32, .f64]
+    return FLOAT_KINDS
 
 function float_name(kind: FloatKind) -> str
     return match kind
