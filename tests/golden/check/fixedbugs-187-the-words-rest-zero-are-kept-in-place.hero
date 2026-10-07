@@ -1,0 +1,70 @@
+# Fixed defect 187, 2026-10-07 (lane b14-parse). The item named four parser
+# reports appended through a field place; those four went with defects 184
+# and 343, and the modules found beside them with defect 350, whose `layout`
+# check refuses a list of reports grown so. Symptom of what was left: a file
+# of N constructions ending with `rest: zero` cost the square of N, 16,000 of
+# them 27.6 billion instructions retired to parse where the same lines
+# without the words cost 7.7. Cause: `parse/rest_words` took the words off
+# each call's list through the field place, `a.rests @ a.rests.push(arg)`,
+# copying every one taken before it. Repair: they are appended in place
+# (`ast.push_rest`, defect 146's rule). Each construction below keeps its
+# own words: a Heroes record's is told at its own line, a group's reads.
+
+extern "fixedbugs-187.h"
+    record Pair tag pair
+        a: i32
+        b: i32
+
+record Point
+    x: i64
+    y: i64
+
+function main()
+    print(Pair(a: 0, rest: zero).b)
+    print(Pair(a: 1, rest: zero).b)
+    print(Pair(a: 2, rest: zero).b)
+    print(Pair(a: 3, rest: zero).b)
+    print(Pair(a: 4, rest: zero).b)
+    print(Point(x: 5, rest: zero).x)  #~ rest_outside_a_group
+    print(Pair(a: 6, rest: zero).b)
+    print(Pair(a: 7, rest: zero).b)
+    print(Pair(a: 8, rest: zero).b)
+    print(Pair(a: 9, rest: zero).b)
+    print(Pair(a: 10, rest: zero).b)
+    print(Pair(a: 11, rest: zero).b)
+    print(Pair(a: 12, rest: zero).b)
+    print(Point(x: 13, rest: zero).x)  #~ rest_outside_a_group
+    print(Pair(a: 14, rest: zero).b)
+    print(Pair(a: 15, rest: zero).b)
+    print(Pair(a: 16, rest: zero).b)
+    print(Pair(a: 17, rest: zero).b)
+    print(Pair(a: 18, rest: zero).b)
+    print(Pair(a: 19, rest: zero).b)
+    print(Pair(a: 20, rest: zero).b)
+    print(Point(x: 21, rest: zero).x)  #~ rest_outside_a_group
+    print(Pair(a: 22, rest: zero).b)
+    print(Pair(a: 23, rest: zero).b)
+    print(Pair(a: 24, rest: zero).b)
+    print(Pair(a: 25, rest: zero).b)
+    print(Pair(a: 26, rest: zero).b)
+    print(Pair(a: 27, rest: zero).b)
+    print(Pair(a: 28, rest: zero).b)
+    print(Point(x: 29, rest: zero).x)  #~ rest_outside_a_group
+    print(Pair(a: 30, rest: zero).b)
+    print(Pair(a: 31, rest: zero).b)
+    print(Pair(a: 32, rest: zero).b)
+    print(Pair(a: 33, rest: zero).b)
+    print(Pair(a: 34, rest: zero).b)
+    print(Pair(a: 35, rest: zero).b)
+    print(Pair(a: 36, rest: zero).b)
+    print(Point(x: 37, rest: zero).x)  #~ rest_outside_a_group
+    print(Pair(a: 38, rest: zero).b)
+    print(Pair(a: 39, rest: zero).b)
+    print(Pair(a: 40, rest: zero).b)
+    print(Pair(a: 41, rest: zero).b)
+    print(Pair(a: 42, rest: zero).b)
+    print(Pair(a: 43, rest: zero).b)
+    print(Pair(a: 44, rest: zero).b)
+    print(Point(x: 45, rest: zero).x)  #~ rest_outside_a_group
+    print(Pair(a: 46, rest: zero).b)
+    print(Pair(a: 47, rest: zero).b)
