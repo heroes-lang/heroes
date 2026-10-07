@@ -127,6 +127,10 @@ function commands() -> [Command]
     mutate_flags: [Flag] = [
         plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
         valued(spelling: "--operator", what: "score this operator alone, by its id")
+        plain(spelling: "--recovery", what: "replay the frozen plan of planted mistakes in the folder named (default: tests/golden/recovery) instead of scoring the metric (panel 187's R2)")
+        valued(spelling: "--compiler", what: "with --recovery, the compiler that judges the plan's mistakes")
+        valued(spelling: "-o", what: "with --recovery, the folder a run writes its records to, which must be new, or the run --compare reads")
+        valued(spelling: "--compare", what: "with --recovery, read the run in -o against this earlier one, the base, and name every mutant that moved")
     ]
     probe_flags: [Flag] = [
         named(spelling: "--family", what: "make that family's variants alone: single, multi, bracket, paren, ends, columns or texts", placeholder: "name")
