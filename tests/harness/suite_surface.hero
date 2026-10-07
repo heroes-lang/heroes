@@ -120,7 +120,71 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     in_place_cases(scratch: scratch, compiler: compiler, r: @r)
     apply_json_in_place(scratch: scratch, compiler: compiler, r: @r)
     measure_with_no_operand(scratch: scratch, compiler: compiler, r: @r)
+    warning_told_once(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
+
+# **A clang warning on a bound header is told once, by the program's own unit,
+# never by the pointee probe's file** (defect 248, its surface case being
+# defect 328's remedy). `warning248/lib.h` carries a `#warning`, the repair's
+# own second shape beside the defect's Latin-1 byte (2 copies before, 1 after):
+# a byte that is not UTF-8 is no text, so `fixes` could not copy the case and
+# this could not copy it portably. The case builds a copy made under this
+# run's scratch, never the tree's own: the program's object and the probe's
+# verdict are cached by where the header is, so a build of the tree's copy
+# would tell the warning only while a warm build compiled the unit again,
+# which defect 227's header digest decides, and a cached probe would print
+# nothing whichever compiler asked. A fresh directory asks both, so the count
+# of copies is the compiler's.
+function warning_told_once(scratch: str, compiler: str, @r: report.Report)
+    label = "surface/a bound header's clang warning is told once, by the program's unit, never naming the pointee probe's file (defect 248)"
+    from = "tests/golden/surface-fixtures/warning248"
+    dir = scratch + "/warning248"
+    made = shell.mkdir_all(dir)
+    header = read_file(from + "/lib.h")
+    program = read_file(from + "/main.hero")
+
+    if made.is_err() || header.is_err() || program.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + from + " or make " + dir)
+        return
+
+    if write_file(path: dir + "/lib.h", text: header.must()).is_err() || write_file(path: dir + "/main.hero", text: program.must()).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the case's copy under " + dir)
+        return
+    built = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", dir + "/main.hero", "-o", dir + "/program" + shell.exe_suffix()]
+    )
+
+    if built.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.ending(built))
+        return
+    wrong = warning_wrong(built.must())
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  its stderr was:\n" + built.must().err)
+        return
+    report.keep_pass(@r)
+
+# What is wrong with a build of `warning248/`: one sentence each, none when it
+# exits 0 telling clang's warning exactly once and naming no probe's file.
+# The needle opens at `warning: `, so the source line clang quotes under the
+# warning, `#warning "…"`, is not counted as a second copy.
+function warning_wrong(said: shell.Run) -> [str]
+    wrong: [str] @ []
+    copies = strings.split_text(text: said.err, separator: "warning: \"defect 248: a bound header's warning, told once\"").len() - 1
+
+    if said.code != 0
+        wrong @ wrong.push("  exit " + said.code.to_str() + ", where a header clang only warns of builds")
+
+    if copies != 1
+        wrong @ wrong.push(
+            "  clang's warning is told " + copies.to_str() + " times, where the program's unit tells it once"
+        )
+
+    if strings.contains(text: said.err, needle: "pointee-")
+        wrong @ wrong.push("  stderr names the pointee probe's file, which the author never wrote")
+    return wrong
 
 # **`measure` with no operand measures the spec, whatever its pin says**
 # (defect 379). A row stood in the help table asking for exit 0, which is the
@@ -322,6 +386,8 @@ function argv_probes() -> [probe.Probe]
         row(name: "a clean file exits 0", argv: "check examples/gallery/01-points.hero", code: 0)
         row(name: "a file with diagnostics exits 1", argv: "check tests/golden/check/shadowing.hero", code: 1)
         row(name: "a file that is not there exits 2", argv: "check no/such/file.hero", code: 2)
+        row(name: "a root that does not exist is told so, never as unreadable (defect 295)", argv: "check no/such/file.hero", code: 2).err_has("no file is named `no/such/file.hero`").err_lacks("cannot read")
+        row(name: "and a root that is there and is no file, a directory, is told unreadable (defect 295)", argv: "check tests/golden", code: 2).err_has("cannot read `tests/golden`").err_lacks("no file is named")
         row(name: "an unknown flag exits 2", argv: "check --nonsense examples/gallery/00-first.hero", code: 2)
         row(name: "an unknown command exits 2", argv: "frobnicate", code: 2)
         row(name: "a dump is the artifact", argv: "parse examples/gallery/00-first.hero --dump-ast", code: 0).out_nonempty().err_empty()
@@ -339,6 +405,8 @@ function argv_probes() -> [probe.Probe]
         row(name: "a control byte the language refuses is named by its code in check's JSON, where the byte went raw", argv: "check tests/golden/surface-fixtures/json102/control.hero --json", code: 1).err_has("\"message\": \"the control character U+0001 is not part of the language's syntax\"")
         row(name: "a character a terminal shows as nothing, or that reorders the line, is named by its code alone, and one that can be seen is shown and named", argv: "check tests/golden/surface-fixtures/json102/unseen.hero", code: 1).err_has("the invisible character U+202E is not").err_has("the invisible character U+200B is not").err_has("`€` (U+20AC) is not")
         row(name: "and the token dump writes those two by their code as well, and the one that can be seen as itself (defect 291)", argv: "lex tests/golden/surface-fixtures/json102/unseen.hero --dump-tokens", code: 1).out_has("2:11 error <U+202E>\n").out_has("3:11 error <U+200B>\n").out_has("4:11 error €\n").out_lacks("\u{202e}")
+        row(name: "a string's raw ESC reaches the token dump by its code, never as the byte a terminal acts on (defect 290)", argv: "lex tests/golden/surface-fixtures/escape290/main.hero --dump-tokens", code: 1).out_has("str \"<U+001B>[2Jboom\"").out_lacks("\u{1b}").err_lacks("\u{1b}")
+        row(name: "and neither stream of the syntax tree's dump carries the byte (defect 290)", argv: "parse tests/golden/surface-fixtures/escape290/main.hero --dump-ast", code: 1).out_lacks("\u{1b}").err_lacks("\u{1b}").err_has("error[invisible_character]")
         row(name: "a missing operand shows the shape", argv: "check", code: 2).err_is("error: `check` needs a file: `heroes check <file.hero>`\n")
         row(name: "two files are refused", argv: "check a.hero b.hero", code: 2).err_has("takes one file")
         row(name: "-o needs a path", argv: "build examples/gallery/00-first.hero -o", code: 2).err_has("needs a path")
@@ -845,7 +913,13 @@ test "the tables are what this module is, so they are counted"
     # pinned where the byte went into JSON raw or into a message unseen.
     # 30 -> 31 on 2026-10-05, defect 291: `lex --dump-tokens` over the same
     # characters a terminal cannot show, each written by its code.
-    assert argv_probes().len() == 31
+    # 31 -> 33 on 2026-10-07, defect 328's remedy for defect 295 (lane
+    # b14-harness-b): a root that is not there told so, and a directory given
+    # as the root told unreadable.
+    # 33 -> 35 the same day, defect 328's remedy for defect 290: a string's raw
+    # ESC through the token dump, written by its code, and through the syntax
+    # tree's dump, on neither stream (`escape290/`).
+    assert argv_probes().len() == 35
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
     # 5 -> 4 on 2026-10-07, defect 379: `measure` with no operand left the
@@ -1111,6 +1185,27 @@ test "measure with no operand is held to naming the spec, and to an ending its c
     # And a report of another file, or one that writes on stderr.
     other = shell.Run(code: 0, out: "CLAUDE.md\n" + fresh.out, err: "", started: true, why: 0)
     assert no_operand_wrong(said: other, spelled: other).len() == 1
+
+test "a bound header's warning is held to one copy, from the program's unit (defect 248)"
+    warned = "In file included from build/tu-1/main.c:6:\nlib.h:6:2: warning: \"defect 248: a bound header's warning, told once\" [-W#warnings]\n    6 | #warning \"defect 248: a bound header's warning, told once\"\n"
+    once = shell.Run(code: 0, out: "", err: warned + "1 warning generated.\nwrote program\n", started: true, why: 0)
+    assert warning_wrong(once).len() == 0
+
+    # The defect's own shape: a second copy from the probe's unit under
+    # `build/`, which is two sentences, the count and the file.
+    twice = shell.Run(
+        code: 0,
+        out: "",
+        err: warned + "In file included from build/pointee-ab/check-cd.c:2:\n" + warned,
+        started: true,
+        why: 0
+    )
+    assert warning_wrong(twice).len() == 2
+
+    # And none at all, which a cached unit would give: the case's own copy is
+    # what keeps that from passing.
+    silent = shell.Run(code: 0, out: "", err: "wrote program\n", started: true, why: 0)
+    assert warning_wrong(silent).len() == 1
 
 test "a probe holds when everything it asks for is true"
     scratch = shell.own_scratch()
