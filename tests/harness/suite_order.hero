@@ -72,11 +72,16 @@ constant WALK: str
 # **30 marks on 2026-10-07**, measured by this suite: batch 13's round had put
 # 28 in the tree, and panel 196's R7 (`emit/lend_local.hero`) added two, which
 # took the count past a quarter above 23, so `floors.check` asked for it here.
+#
+# **42 marks and 36 walks at batch 14's gate, 2026-10-07**, measured by this
+# suite on the merged round, past a quarter above both floors: lane
+# b14-mutate's recovery arm (defect 210), whose modules alone take the walks
+# to 36 and the marks to 42 by that lane's own count.
 constant LEAST_MARKS: i64
-    30
+    42
 
 constant LEAST_WALKS: i64
-    21
+    36
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()
