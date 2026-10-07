@@ -216,6 +216,13 @@ function key_asked(c: state.Checker, a: ast.Ast, decls: [ast.Decl], base: i64, i
 # 134 saying *this is a compiler bug*, which blames the author for a gap in the
 # compiler (defect 052, panel 159). Since defect 097 (2026-09-25) that failure
 # is spelled as a C identifier clang refuses, so it is loud at build time.
+#
+# **And an `@` argument is the same write** (defect 440, 2026-10-07): the call
+# hands the place over and writes back into it, so `f(@s[0])` asks this too,
+# from `check/walk.hero`'s call, after the argument is typed. Until then it was
+# `check` 0 and the build's exit 2, clang refusing the C, and since panel 196's
+# R1 handed C an element's own address, `emit/places.hero` spells a string's
+# byte as no place at all.
 function refuse_str_element(@c: state.Checker, a: ast.Ast, place: i64)
     match a.exprs[place].kind
         .index i =>

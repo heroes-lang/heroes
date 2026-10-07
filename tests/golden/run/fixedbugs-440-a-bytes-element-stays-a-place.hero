@@ -1,0 +1,37 @@
+# fixedbugs, defect 440, lane b13-land-addr, 2026-10-07: the legal neighbours
+# of `tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument`.
+# A string's byte is refused as an `@` argument because a `str` is immutable
+# (`spec § 3`); the refusal asks the place's own base and nothing it reaches,
+# so a `[u8]`'s element stays a place, through a Heroes function, an
+# `extern`, UFCS and a field, and so do a `str` lent whole and an element of a
+# `[str]`, which a call may replace. Every one runs and prints what the calls
+# wrote: 97 and 98 each bumped, 99 bumped once, `a` and `b` each shouted.
+extern "fixedbugs-440-bytes.h"
+    function bump(@n: u8)
+
+record Packet
+    bytes: [u8]
+
+function f(@n: u8)
+    n @ n + 1
+
+function add(k: i64, @n: u8)
+    n @ n + 1
+    print(k)
+
+function shout(@s: str)
+    s @ s + "!"
+
+function main()
+    bs: [u8] @ [97, 98]
+    f(@bs[0])
+    bump(@bs[1])
+    k = 3
+    k.add(@bs[0])
+    p: Packet @ Packet(bytes: [99])
+    f(@p.bytes[0])
+    s: str @ "a"
+    shout(@s)
+    xs: [str] @ ["b"]
+    shout(@xs[0])
+    print(bs[0], " ", bs[1], " ", p.bytes[0], " ", s, " ", xs[0])
