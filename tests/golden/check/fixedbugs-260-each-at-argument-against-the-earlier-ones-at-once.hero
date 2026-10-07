@@ -1,0 +1,163 @@
+# fixedbugs, defect 260, lane b14-resolve, 2026-10-07, counted by batch 8's
+# emit lane: `resolve/writes.refuse_aliased_places` compared each `@`
+# argument of a call with every earlier one, 319,600 comparisons on one call
+# of 800. The places kept are one tree of their steps now
+# (`resolve/aliased_places.hero`), and each new place walks it once; the
+# verdicts are the walk's, each naming the EARLIEST argument it overlaps:
+# through a prefix kept before it, through one it is a prefix of, through
+# an undecided step on either side, and none where a decided step proves
+# two apart. The last call holds 64 `@` arguments and nothing to tell; the
+# growth is the lane's counts, not this case's.
+
+record P
+    x: i64
+    y: i64
+
+function five(@a: P, @b: i64, @c: i64, @d: P, @e: i64)
+    a.x @ a.x + b + c + d.y + e
+
+function three(@a: i64, @b: i64, @c: i64)
+    a @ a + b + c
+
+function many(@v00: i64, @v01: i64, @v02: i64, @v03: i64, @v04: i64, @v05: i64, @v06: i64, @v07: i64, @v08: i64, @v09: i64, @v10: i64, @v11: i64, @v12: i64, @v13: i64, @v14: i64, @v15: i64, @v16: i64, @v17: i64, @v18: i64, @v19: i64, @v20: i64, @v21: i64, @v22: i64, @v23: i64, @v24: i64, @v25: i64, @v26: i64, @v27: i64, @v28: i64, @v29: i64, @v30: i64, @v31: i64, @v32: i64, @v33: i64, @v34: i64, @v35: i64, @v36: i64, @v37: i64, @v38: i64, @v39: i64, @v40: i64, @v41: i64, @v42: i64, @v43: i64, @v44: i64, @v45: i64, @v46: i64, @v47: i64, @v48: i64, @v49: i64, @v50: i64, @v51: i64, @v52: i64, @v53: i64, @v54: i64, @v55: i64, @v56: i64, @v57: i64, @v58: i64, @v59: i64, @v60: i64, @v61: i64, @v62: i64, @v63: i64)
+    v00 @ v00 + 1
+    v01 @ v01 + 1
+    v02 @ v02 + 1
+    v03 @ v03 + 1
+    v04 @ v04 + 1
+    v05 @ v05 + 1
+    v06 @ v06 + 1
+    v07 @ v07 + 1
+    v08 @ v08 + 1
+    v09 @ v09 + 1
+    v10 @ v10 + 1
+    v11 @ v11 + 1
+    v12 @ v12 + 1
+    v13 @ v13 + 1
+    v14 @ v14 + 1
+    v15 @ v15 + 1
+    v16 @ v16 + 1
+    v17 @ v17 + 1
+    v18 @ v18 + 1
+    v19 @ v19 + 1
+    v20 @ v20 + 1
+    v21 @ v21 + 1
+    v22 @ v22 + 1
+    v23 @ v23 + 1
+    v24 @ v24 + 1
+    v25 @ v25 + 1
+    v26 @ v26 + 1
+    v27 @ v27 + 1
+    v28 @ v28 + 1
+    v29 @ v29 + 1
+    v30 @ v30 + 1
+    v31 @ v31 + 1
+    v32 @ v32 + 1
+    v33 @ v33 + 1
+    v34 @ v34 + 1
+    v35 @ v35 + 1
+    v36 @ v36 + 1
+    v37 @ v37 + 1
+    v38 @ v38 + 1
+    v39 @ v39 + 1
+    v40 @ v40 + 1
+    v41 @ v41 + 1
+    v42 @ v42 + 1
+    v43 @ v43 + 1
+    v44 @ v44 + 1
+    v45 @ v45 + 1
+    v46 @ v46 + 1
+    v47 @ v47 + 1
+    v48 @ v48 + 1
+    v49 @ v49 + 1
+    v50 @ v50 + 1
+    v51 @ v51 + 1
+    v52 @ v52 + 1
+    v53 @ v53 + 1
+    v54 @ v54 + 1
+    v55 @ v55 + 1
+    v56 @ v56 + 1
+    v57 @ v57 + 1
+    v58 @ v58 + 1
+    v59 @ v59 + 1
+    v60 @ v60 + 1
+    v61 @ v61 + 1
+    v62 @ v62 + 1
+    v63 @ v63 + 1
+
+function main()
+    p: P @ P(x: 1, y: 2)
+    q: P @ P(x: 3, y: 4)
+    xs: [i64] @ [1, 2, 3]
+    ys: [i64] @ [4, 5, 6]
+    i = 0
+    five(a: @p, b: @q.x, c: @p.y, d: @q, e: @p.x)  #~ aliased_mutable_arguments aliased_mutable_arguments aliased_mutable_arguments
+    three(a: @xs[0], b: @xs[1], c: @xs[i])  #~ aliased_mutable_arguments
+    three(a: @xs[i], b: @ys[0], c: @xs[2])  #~ aliased_mutable_arguments
+    three(a: @p.x, b: @p.y, c: @q.x)
+    c00: i64 @ 0
+    c01: i64 @ 1
+    c02: i64 @ 2
+    c03: i64 @ 3
+    c04: i64 @ 4
+    c05: i64 @ 5
+    c06: i64 @ 6
+    c07: i64 @ 7
+    c08: i64 @ 8
+    c09: i64 @ 9
+    c10: i64 @ 10
+    c11: i64 @ 11
+    c12: i64 @ 12
+    c13: i64 @ 13
+    c14: i64 @ 14
+    c15: i64 @ 15
+    c16: i64 @ 16
+    c17: i64 @ 17
+    c18: i64 @ 18
+    c19: i64 @ 19
+    c20: i64 @ 20
+    c21: i64 @ 21
+    c22: i64 @ 22
+    c23: i64 @ 23
+    c24: i64 @ 24
+    c25: i64 @ 25
+    c26: i64 @ 26
+    c27: i64 @ 27
+    c28: i64 @ 28
+    c29: i64 @ 29
+    c30: i64 @ 30
+    c31: i64 @ 31
+    c32: i64 @ 32
+    c33: i64 @ 33
+    c34: i64 @ 34
+    c35: i64 @ 35
+    c36: i64 @ 36
+    c37: i64 @ 37
+    c38: i64 @ 38
+    c39: i64 @ 39
+    c40: i64 @ 40
+    c41: i64 @ 41
+    c42: i64 @ 42
+    c43: i64 @ 43
+    c44: i64 @ 44
+    c45: i64 @ 45
+    c46: i64 @ 46
+    c47: i64 @ 47
+    c48: i64 @ 48
+    c49: i64 @ 49
+    c50: i64 @ 50
+    c51: i64 @ 51
+    c52: i64 @ 52
+    c53: i64 @ 53
+    c54: i64 @ 54
+    c55: i64 @ 55
+    c56: i64 @ 56
+    c57: i64 @ 57
+    c58: i64 @ 58
+    c59: i64 @ 59
+    c60: i64 @ 60
+    c61: i64 @ 61
+    c62: i64 @ 62
+    c63: i64 @ 63
+    many(v00: @c00, v01: @c01, v02: @c02, v03: @c03, v04: @c04, v05: @c05, v06: @c06, v07: @c07, v08: @c08, v09: @c09, v10: @c10, v11: @c11, v12: @c12, v13: @c13, v14: @c14, v15: @c15, v16: @c16, v17: @c17, v18: @c18, v19: @c19, v20: @c20, v21: @c21, v22: @c22, v23: @c23, v24: @c24, v25: @c25, v26: @c26, v27: @c27, v28: @c28, v29: @c29, v30: @c30, v31: @c31, v32: @c32, v33: @c33, v34: @c34, v35: @c35, v36: @c36, v37: @c37, v38: @c38, v39: @c39, v40: @c40, v41: @c41, v42: @c42, v43: @c43, v44: @c44, v45: @c45, v46: @c46, v47: @c47, v48: @c48, v49: @c49, v50: @c50, v51: @c51, v52: @c52, v53: @c53, v54: @c54, v55: @c55, v56: @c56, v57: @c57, v58: @c58, v59: @c59, v60: @c60, v61: @c61, v62: @c62, v63: @c63)
+    print(p.x, q.y, xs[0], ys[0], c00 + c63)
