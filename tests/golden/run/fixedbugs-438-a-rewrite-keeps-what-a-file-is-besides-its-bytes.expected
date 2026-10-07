@@ -1,0 +1,7 @@
+a name not there: written true, holds the text true, beside it 1
+a file with its own mode: written true, holds the text true, mode kept true, beside it 1
+a file with two names: written true, both hold the text true, still two names true
+a directory that takes no new name: written true, holds the text true
+the null device: written true, still a device true
+a directory: written false, still a directory true
+a name in a directory not there: written false, nothing made true
