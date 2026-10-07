@@ -397,8 +397,8 @@ Nothing lends a field to `cstr`, which promises a zero the field does not;
 naming the sibling C reads the extent from, a constant of the group or a number,
 and one past the field is refused; a group's record lent whole with `@` may say it too.
 C writes back through the lend only where the binding is a `@` name. A lend
-lives for its call and no longer: a parameter is taken to keep what it is
-handed unless declared `lent`, and a lend reaches only one so declared.
+lives for its call and no longer: a parameter, `@` or not, is taken to keep what
+it is handed unless declared `lent`, and a lend reaches only one so declared.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's

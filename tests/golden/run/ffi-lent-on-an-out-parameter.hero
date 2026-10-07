@@ -1,0 +1,18 @@
+# Panel 196's R3, the legal half (lane b13-land-buf, 2026-10-07): `lent` on an
+# `@` parameter says C keeps nothing of the address after the call, and it is
+# read there since the sitting, where it was `lent_shape` before (no lend
+# could stand in an `@` position). Two shapes: a number cell and a group's
+# record lent whole; each is the place itself, and C writes through it once.
+extern "ffi-lent-on-an-out-parameter.h"
+    record Span tag span
+        lo: i64
+        hi: i64
+    function halve(x: f64, @e: i32 lent) -> f64
+    function widen(@s: Span lent)
+
+function main()
+    e: i32 @ 0
+    print(halve(x: 3.0, @e), " ", e)
+    s: Span @ Span(lo: 10, hi: 20)
+    widen(@s)
+    print(s.lo, " ", s.hi)
