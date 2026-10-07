@@ -484,12 +484,9 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
     lacks = tree + "/lacks"
     assert !write_file(path: lacks + "/main.hero", text: "use db/store\n\nfunction main()\n    print(store.seven())\n").is_err()
-    assert !write_file(path: lacks + "/db/store.hero", text: "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32\n").is_err()
-    told = absence.missing_header_said(
-        header: absence.NOWHERE,
-        tail: absence.HEADER_LOOKED,
-        at: lacks + "/db/store.hero:2:5"
-    )
+    store = "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32\n"
+    assert !write_file(path: lacks + "/db/store.hero", text: store).is_err()
+    told = absence.header_said(path: lacks + "/db/store.hero", source: store, header: absence.NOWHERE).must()
     assert !write_file(path: lacks + "/main.said", text: told).is_err()
     excused: report.Report @ report.empty()
     skipped = one_program(

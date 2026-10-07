@@ -1025,6 +1025,54 @@ constant NOWHERE: str
 function missing_header_said(header: str, tail: str, at: str) -> str
     return header_open() + header + HEADER_CLOSE + tail + "\n  at " + at + "\n"
 
+# Where the compiler tells that a header is not on the include path,
+# `<line>:<column>` in `source`: the first declaration of the first group
+# naming `header`, as `selfhost/emit/ffi_lookup.hero`'s `group_head` answers
+# (and for a header another includes, the group naming that other,
+# `header_reach.hero`'s owner). A declaration is the first line under the
+# group's head that is indented and holds code, so a comment above it, its
+# documentation, is passed over. An error where no group of `source` names
+# the header, or its group declares nothing. Until defect 449 (2026-10-07)
+# every plant here stood at `:1:1`, the group's head, where the compiler's
+# stands at its first declaration; the defect 328 test *what the compiler
+# writes for a library a machine lacks* holds this to the compiler over five
+# shapes.
+function group_place(source: str, header: str) -> str?
+    at: i64 @ 0
+    in_group: bool @ false
+
+    for row in strings.lines(source)
+        at @ at + 1
+
+        if strings.starts_with(text: row, prefix: "extern ")
+            named = quoted(strings.without_prefix(text: row, prefix: "extern "))
+            in_group @ !named.is_err() && named.must().value == header
+            continue
+        code = strings.trimmed(row)
+
+        if !in_group || code.len() == 0 || code[0] == 35
+            continue
+
+        if row[0] != 32
+            in_group @ false
+            continue
+        spaces: i64 @ 0
+
+        while row[spaces] == 32
+            spaces @ spaces + 1
+
+        return ok(at.to_str() + ":" + (spaces + 1).to_str())
+
+    return fail(code: "none", msg: "no group of the source names `" + header + "` and declares something")
+
+# What the compiler says of a header the group naming it in `source` cannot
+# open, `source` written at `path`: `HEADER_LOOKED` after the header's close,
+# told at `group_place`. What a test hands its stand-in, so a plant stands
+# where the compiler's own would (defect 449).
+function header_said(path: str, source: str, header: str) -> str?
+    place = group_place(source: source, header: header)?
+    return ok(missing_header_said(header: header, tail: HEADER_LOOKED, at: path + ":" + place))
+
 # The compiler's headline for a package `pkg-config` does not know, told at
 # `at`, as `selfhost/cli/package_answer.hero`'s `worded` and
 # `selfhost/emit/ffi_build.hero`'s `package_problem` write it, notes left out.
@@ -1054,11 +1102,14 @@ function said_stub(scratch: str) -> str?
 
 # A case planted for those tests: `<dir>/<name>.hero`, one group binding
 # `bound`, and beside it what `said_stub` answers for it, that `missing` is not
-# on the include path, told at the group. Answers the case's path.
+# on the include path, told at the group's first declaration, where the
+# compiler tells it (`group_place`). Answers the case's path.
 function planted_case(dir: str, name: str, bound: str, missing: str) -> str?
     source = dir + "/" + name + ".hero"
-    write_file(path: source, text: "extern \"" + bound + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n")?
-    write_file(path: dir + "/" + name + ".said", text: missing_header_said(header: missing, tail: HEADER_LOOKED, at: source + ":1:1"))?
+    text = "extern \"" + bound + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
+    place = group_place(source: text, header: bound)?
+    write_file(path: source, text: text)?
+    write_file(path: dir + "/" + name + ".said", text: missing_header_said(header: missing, tail: HEADER_LOOKED, at: source + ":" + place))?
     return ok(source)
 
 ## Tests
@@ -1386,6 +1437,48 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
     assert through[0].name == NOWHERE
     assert through[0].owner == "outer328.h"
 
+    # DEFECT 449: a plant stands where the compiler tells it, its headline
+    # and its `at` line byte for byte, for a group on the first line, one
+    # after a comment and a blank line whose member is documented, a second
+    # group after one the machine has, a constant, and a record.
+    shapes = [
+        "extern \"" + NOWHERE + "\"\n" + calling
+        "# a program\n\nextern \"" + NOWHERE + "\"\n    # what seven does\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
+        "extern \"stdio.h\"\n    function puts(s: cstr) -> i32\n\nextern \"" + NOWHERE + "\"\n" + calling
+        "extern \"" + NOWHERE + "\"\n    constant SEVEN: i32\n\nfunction main()\n    print(SEVEN)\n"
+        "extern \"" + NOWHERE + "\"\n    record Seven\n        n: i32\n    function seven() -> Seven\n\nfunction main()\n    print(seven().n)\n"
+    ]
+    places: [str] @ []
+    count: i64 @ 0
+
+    for text in shapes
+        path = dir + "/placed-" + count.to_str() + ".hero"
+        planted = header_said(path: path, source: text, header: NOWHERE).must()
+        built = built_said(scratch: scratch, compiler: compiler, path: path, source: text, bin: "", alone: false).must()
+        assert strings.starts_with(text: built, prefix: planted)
+        places @ places.push(group_place(source: text, header: NOWHERE).must())
+        count @ count + 1
+
+    assert places == ["2:5", "5:5", "5:5", "2:5", "2:5"]
+
+    # And what `planted_case` writes beside its case, which seven suites'
+    # tests hand their stand-in, is what the compiler writes of that case.
+    laid = planted_case(dir: dir, name: "planted449", bound: NOWHERE, missing: NOWHERE)
+    assert !laid.is_err()
+    case_said = read_file(dir + "/planted449.said")
+    assert !case_said.is_err()
+    case_source = read_file(laid.must())
+    assert !case_source.is_err()
+    case_built = built_said(
+        scratch: scratch,
+        compiler: compiler,
+        path: laid.must(),
+        source: case_source.must(),
+        bin: "",
+        alone: false
+    )
+    assert strings.starts_with(text: case_built.must(), prefix: case_said.must())
+
     # A package, as a stand-in `pkg-config` answers for it.
     package = "heroes-absence-328-no-machine-has"
     asking = "extern \"stdio.h\" package \"" + package + "\"\n" + calling
@@ -1534,10 +1627,9 @@ test "a program's witness reads the file it was given, its modules, and what the
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree + "/db").is_err()
     assert !write_file(path: tree + "/main.hero", text: "use db/store\n\nfunction main()\n    print(1)\n").is_err()
-    assert !write_file(path: tree + "/db/store.hero", text: "extern \"" + NOWHERE + "\"  #~ ffi_missing_header\n    function seven() -> i32\n").is_err()
-    blamed = absences(
-        missing_header_said(header: NOWHERE, tail: HEADER_LOOKED, at: tree + "/db/store.hero:1:1")
-    )
+    store = "extern \"" + NOWHERE + "\"\n    function seven() -> i32  #~ ffi_missing_header\n"
+    assert !write_file(path: tree + "/db/store.hero", text: store).is_err()
+    blamed = absences(header_said(path: tree + "/db/store.hero", source: store, header: NOWHERE).must())
     read = read_sources(path: tree + "/main.hero", modules: [], named: blamed)
     assert !read.is_err()
     assert read.must().len() == 2
@@ -1545,7 +1637,8 @@ test "a program's witness reads the file it was given, its modules, and what the
     assert binds_of(read.must()).headers == [NOWHERE]
 
     # The module's own mark keys by its file, which is how the place pins it.
-    assert marks_of(read.must()) == [tree + "/db/store.hero:1:ffi_missing_header"]
+    assert marks_of(read.must()) == [tree + "/db/store.hero:2:ffi_missing_header"]
+    assert blamed[0].line == 2
 
     # A file outside the program's directory is never read on the compiler's
     # word, and one that cannot be read fails the question.
