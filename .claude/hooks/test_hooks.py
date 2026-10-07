@@ -496,5 +496,139 @@ class Pathspec(unittest.TestCase):
         self.passed("git -C . add CLAUDE.md")
 
 
+ANNOTATIONS = '''constant DIRECTORIES: [str]
+    [
+        "tests/golden/check"
+        "tests/golden/unsupported"
+        "tests/golden/permissive"
+        "tests/golden/full"
+    ]
+
+constant RUN_ROOTS: [str]
+    [
+        "tests/golden/fixedbugs"
+        "tests/golden/surface-fixtures"
+    ]
+'''
+
+
+def answer(tree, suite, code, text):
+    """What the stand-in's harness says when `suite` is run in `tree`."""
+    write(os.path.join(tree, "answer-" + suite), text)
+    write(os.path.join(tree, "answer-" + suite + ".code"), str(code) + "\n")
+
+
+def runs(tree):
+    """The harness runs the stand-in of `tree` was asked for, as `<suite> <word>`."""
+    out = []
+    for call in calls(tree):
+        said = call.split("|", 1)[1].split()
+        if said and said[0] == "run":
+            out.append(" ".join(said[4:]))
+    return out
+
+
+class Marks(unittest.TestCase):
+    """Defect 334: a staged golden case holding a diagnostic on purpose is
+    judged by its marks, asked of the `annotations` suite once, not by `fmt`."""
+
+    def setUp(self):
+        self.top = fresh("hooks-334-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        write(os.path.join(self.tree, "tests", "harness", "suite_annotations.hero"), ANNOTATIONS)
+
+    def case(self, rel, marked=True, expected=True):
+        staged(self.tree, rel, "BROKEN on purpose" + ("  #~ unknown_escape" if marked else "") + "\n")
+        if expected:
+            staged(self.tree, rel[: -len(".hero")] + ".expected", "x.hero:1:1: error[unknown_escape]: ...\n")
+
+    def commit(self, *rels):
+        return guard_bash.verdict("git commit -F m -- " + " ".join(rels), self.tree)
+
+    def test_a_marked_case_its_suite_passes_is_committed(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-900-a): 1 passed, 0 failed\n")
+        self.case("tests/golden/check/fixedbugs-900-a.hero")
+        self.assertIsNone(self.commit("tests/golden/check/fixedbugs-900-a.hero"))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-900-a"])
+
+    def test_a_marked_case_its_suite_fails_is_refused_with_the_suite_words(self):
+        answer(
+            self.tree, "annotations", 1,
+            "FAIL annotations/fixedbugs-900-a\n  the annotations and the diagnostics disagree\n"
+            "  annotations (only fixedbugs-900-a): 0 passed, 1 failed\n",
+        )
+        self.case("tests/golden/check/fixedbugs-900-a.hero")
+        said = self.commit("tests/golden/check/fixedbugs-900-a.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("marks and its expectation disagree", said)
+        self.assertIn("the annotations and the diagnostics disagree", said)
+        self.assertNotIn("does not parse", said)
+
+    def test_several_marked_cases_are_asked_in_one_run(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-90): 2 passed, 0 failed\n")
+        self.case("tests/golden/check/fixedbugs-900-a.hero")
+        self.case("tests/golden/unsupported/fixedbugs-901-b.hero")
+        self.assertIsNone(self.commit("tests/golden"))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-90"])
+
+    def test_a_marked_case_in_the_run_roots_is_left_to_the_whole_suite(self):
+        self.case("tests/golden/surface-fixtures/brackets/a.hero", expected=False)
+        self.assertIsNone(self.commit("tests/golden/surface-fixtures/brackets/a.hero"))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_an_unmarked_case_fmt_refuses_does_not_parse(self):
+        self.case("tests/golden/check/plain.hero", marked=False)
+        self.assertIn("tests/golden/check/plain.hero does not parse", self.commit("tests/golden/check/plain.hero"))
+
+    def test_a_marked_program_that_must_run_keeps_the_fmt_verdict(self):
+        self.case("tests/golden/run/prog.hero")
+        self.assertIn("tests/golden/run/prog.hero does not parse", self.commit("tests/golden/run/prog.hero"))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_marked_case_with_no_expectation_keeps_the_fmt_verdict(self):
+        self.case("tests/golden/check/lonely.hero", expected=False)
+        self.assertIn("does not parse", self.commit("tests/golden/check/lonely.hero"))
+
+    def test_a_suite_that_cannot_answer_gives_no_opinion(self):
+        self.case("tests/golden/check/fixedbugs-900-a.hero")
+        self.assertIsNone(self.commit("tests/golden/check/fixedbugs-900-a.hero"))
+
+    def test_a_run_past_its_bound_is_ended_with_its_children(self):
+        import marks
+
+        pids = os.path.join(self.top, "pids")
+        script = "sleep 30 & echo $! > " + pids + "; sleep 30"
+        self.assertIsNone(marks.bounded(["sh", "-c", script], self.top, limit=1.0))
+        with open(pids, encoding="utf-8") as handle:
+            orphan = int(handle.read().strip())
+        # Ended, and reaped by whoever inherits it: a moment is allowed for that.
+        import time
+
+        for _ in range(30):
+            try:
+                os.kill(orphan, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.1)
+        with self.assertRaises(ProcessLookupError):
+            os.kill(orphan, 0)
+
+    def test_the_write_hook_asks_no_run_of_a_case_the_narrowed_suite_does_not_judge(self):
+        prog = write(os.path.join(self.tree, "tests", "golden", "run", "prog.hero"), "fine\n")
+        write(os.path.join(self.tree, "tests", "golden", "run", "prog.expected"), "42\n")
+        code, said = written(self.tree, prog)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), [])
+
+    def test_the_write_hook_tells_a_marked_case_its_suite_fails(self):
+        answer(self.tree, "annotations", 1, "FAIL annotations/w\n  disagree\n")
+        write(os.path.join(self.tree, "tests", "golden", "check", "w.expected"), "x\n")
+        case = write(os.path.join(self.tree, "tests", "golden", "check", "w.hero"), "BROKEN  #~ unknown_escape\n")
+        code, said = written(self.tree, case)
+        self.assertEqual(code, 2, said)
+        self.assertIn("marks and its expectation disagree", said)
+        self.assertEqual(runs(self.tree), ["annotations w"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -622,7 +622,11 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   refused, the index being the one of the tree the commit runs in, `git -C` or
   the command's `cd`, since 2026-10-07 (defect 287: a lane's commit was judged
   by the trunk's index), and a refusal by a compiler older than that tree told
-  as its age. The hard stops' commit rule is read where it was blind until
+  as its age; a golden case whose `#~` marks claim diagnostics is judged by
+  its marks, not by `fmt`, every such case of a commit asked of `annotations`
+  in one run bounded at 45 s, which gives no opinion past it (defect 334,
+  `.claude/hooks/marks.py`, which the write-time hook asks through too). The
+  hard stops' commit rule is read where it was blind until
   2026-10-07 (defect 403): a `--` followed by no path, by expansions alone or
   by the whole tree is refused as a commit with no `--` is; a merge, a
   cherry-pick or a revert concluded with the whole index, `--continue` or a
