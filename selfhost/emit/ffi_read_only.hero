@@ -22,13 +22,11 @@
 # Split out of `emit/ffi_mutable.hero` on 2026-10-07, when the question took
 # the parameter count it is asked under past §11's 300 lines there, along the
 # seam the two routes already drew: the header's answer here, clang's phrase
-# there, and the one diagnostic both give here, which the phrase's route
-# imports.
+# there, and the one diagnostic both give there, which this file imports.
 
 use ast
 use bytes
 use source
-use token
 use diag
 use check/state
 use check/render
@@ -36,6 +34,7 @@ use ir/containers
 use emit/ffi_lookup
 use emit/ffi_site
 use emit/ffi_pointee
+use emit/ffi_mutable
 use cli/pointee_ask
 use parse
 use resolve
@@ -48,29 +47,6 @@ use ir/lower
 constant WRITABLE_MARKER: str
     "heroes-ffi-writable "
 
-# The one diagnostic both routes give, so the header's answer and clang's
-# phrase tell the author the same thing.
-function refusal(name: str, which: str, declared: str, c_type: str, span: token.Span) -> diag.Diagnostic
-    # "does not promise to leave it alone", not "would write through
-    # it" (author decision 2026-08-15, from panel 059): free(void *)
-    # does not WRITE through its argument, it deallocates it — both
-    # are the same defect for this program and neither is "writing",
-    # so the message states what the header actually declares.
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "ffi_writable_parameter",
-        message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type + "` — C does not promise to leave it alone",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
-    )
-
-    # The repair is not "add const", which is the header's to choose
-    # and not this program's. It is to stop lending and start owning.
-    d.notes @ d.notes.push("declare it `ptr` and give `" + name + "` a buffer C owns, then read the result back")
-    d.fixes @ d.fixes.push(diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: span, certainty: .guess))
-    return d
-
 ## The header's answer
 
 # `heroes-ffi-writable <name> <param> <header type…>` failed: the pointer the
@@ -79,7 +55,7 @@ function refusal(name: str, which: str, declared: str, c_type: str, span: token.
 # unit `#line`s the question at the author's declaration: a line in a file
 # this compilation does not own, the library's among them, is not the
 # author's to be told.
-function writable_pointee(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, line: str) -> diag.Diagnostic?
+function writable_pointee(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: containers.Program, c: state.Checked, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: WRITABLE_MARKER)
@@ -112,8 +88,9 @@ function writable_pointee(s: source.Source, decls: [ast.Decl], p: containers.Pro
         if f.slots[slot_id].name == parts[1]
             none: [str] = []
             declared = render.render_ty(c.types, s, decls, f.slots[slot_id].ty, none)
+            spans = ffi_mutable.spans_of(s, decls, tree, decl: f.decl, param: parts[1])
             return ok(
-                refusal(name: parts[0], which: "`" + parts[1] + "`", declared: declared, c_type: header_type, span: decls[f.decl].span)
+                ffi_mutable.refusal(name: parts[0], param: parts[1], declared: declared, c_type: header_type, spans: spans, whole: decls[f.decl].span)
             )
 
     return fail(code: "none", msg: "no parameter of that name")
@@ -344,21 +321,23 @@ test "the header's answer names the parameter and the type the call hands it to 
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     line = "t.hero:2:1: error: static assertion failed due to requirement '__builtin_types_compatible_p(unsigned char *, const unsigned char *)': heroes-ffi-writable SHA256_Final md unsigned char *restrict"
-    d = writable_pointee(s, parsed.decls, low.program, c, line: line)
+    d = writable_pointee(s, parsed.decls, parsed.tree, low.program, c, line: line)
     assert d.must().code == "ffi_writable_parameter"
     assert d.must().message == "`md` of `SHA256_Final` is declared `cstr`, and the header says `unsigned char *` — C does not promise to leave it alone"
     assert d.must().fixes[0].replacement == "ptr"
     assert d.must().fixes[0].certainty == .guess
+    assert source.span_text(s, d.must().span) == "md"
+    assert source.span_text(s, d.must().fixes[0].span) == "cstr"
 
     # clang's echo of the unit's line carries the marker and is no failure; a
     # line at a file this compilation does not own, the library's among them,
     # and a parameter the extern does not have are not the author's.
     echo = "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
-    assert writable_pointee(s, parsed.decls, low.program, c, line: echo).is_err()
+    assert writable_pointee(s, parsed.decls, parsed.tree, low.program, c, line: echo).is_err()
     elsewhere = "<heroes library>:2:1: error: static assertion failed: heroes-ffi-writable SHA256_Final md unsigned char *"
-    assert writable_pointee(s, parsed.decls, low.program, c, line: elsewhere).is_err()
+    assert writable_pointee(s, parsed.decls, parsed.tree, low.program, c, line: elsewhere).is_err()
     other = "t.hero:2:1: error: static assertion failed: heroes-ffi-writable SHA256_Final key unsigned char *"
-    assert writable_pointee(s, parsed.decls, low.program, c, line: other).is_err()
+    assert writable_pointee(s, parsed.decls, parsed.tree, low.program, c, line: other).is_err()
 
 test "the question is asked of the header's own pointer, an atomic one's inner pointer, and nothing by value"
     asked = pointee_ask.Pointee(
