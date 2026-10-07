@@ -786,17 +786,17 @@ bb9:
 bb10:
     goto bb8;
 bb11:
-#line 68 "examples/pipeline/main.hero"
+#line 70 "examples/pipeline/main.hero"
     t28 = h5_ret0;
 #line 792 "main.c"
     hero_str_decref(h1_first);
-#line 68 "examples/pipeline/main.hero"
+#line 70 "examples/pipeline/main.hero"
 #line 795 "main.c"
     hero_array_decref(h2_xs0);
-#line 68 "examples/pipeline/main.hero"
+#line 70 "examples/pipeline/main.hero"
 #line 798 "main.c"
     hero_str_decref(h4_ch);
-#line 68 "examples/pipeline/main.hero"
+#line 70 "examples/pipeline/main.hero"
 #line 801 "main.c"
     hero_array_decref(h6_own6);
     return t28;
@@ -1262,17 +1262,17 @@ bb3:
     goto bb1;
 #line 32 "examples/pipeline/read/source.hero"
 bb4:
-#line 30 "examples/pipeline/read/source.hero"
+#line 32 "examples/pipeline/read/source.hero"
     t21 = h2_ret0;
 #line 1268 "main.c"
     h_0opt_f87774a_retain(&t21);
-#line 30 "examples/pipeline/read/source.hero"
+#line 32 "examples/pipeline/read/source.hero"
 #line 1271 "main.c"
     hero_str_decref(h1_one);
-#line 30 "examples/pipeline/read/source.hero"
+#line 32 "examples/pipeline/read/source.hero"
 #line 1274 "main.c"
     h_0opt_f87774a_release(&h3_own3);
-#line 30 "examples/pipeline/read/source.hero"
+#line 32 "examples/pipeline/read/source.hero"
 #line 1277 "main.c"
     h_0opt_f87774a_release(&h4_own4);
     return t21;
@@ -1397,7 +1397,7 @@ bb0:
     (*ph0_s).f_rows = t4;
 #line 1399 "main.c"
     hero_array_decref(t6);
-#line 17 "examples/pipeline/write/source.hero"
+#line 18 "examples/pipeline/write/source.hero"
 #line 1402 "main.c"
     hero_array_decref(h2_own2);
     return;

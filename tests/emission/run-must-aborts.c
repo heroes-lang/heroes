@@ -198,14 +198,14 @@ bb3:
     goto bb1;
 #line 20 "tests/golden/run/must-aborts.hero"
 bb4:
-#line 18 "tests/golden/run/must-aborts.hero"
+#line 20 "tests/golden/run/must-aborts.hero"
     t13 = h1_ret0;
 #line 204 "mustaborts.c"
     h_0opt_e201354_retain(&t13);
-#line 18 "tests/golden/run/must-aborts.hero"
+#line 20 "tests/golden/run/must-aborts.hero"
 #line 207 "mustaborts.c"
     h_0opt_e201354_release(&h2_own2);
-#line 18 "tests/golden/run/must-aborts.hero"
+#line 20 "tests/golden/run/must-aborts.hero"
 #line 210 "mustaborts.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;

@@ -176,9 +176,9 @@ bb3:
     goto bb4;
 #line 22 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 21 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t6 = h2_ret0;
-#line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 21 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t6;
 #line 184 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -246,9 +246,9 @@ bb3:
     goto bb4;
 #line 31 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 28 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t8 = h2_ret0;
-#line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 28 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t8;
 #line 254 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -324,9 +324,9 @@ bb6:
     goto bb7;
 #line 39 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
-#line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 37 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t10 = h3_ret0;
-#line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 37 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t10;
 #line 332 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -429,9 +429,9 @@ bb9:
     goto bb10;
 #line 50 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb10:
-#line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 45 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t12 = h4_ret0;
-#line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 45 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t12;
 #line 437 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -562,9 +562,9 @@ bb11:
     goto bb12;
 #line 60 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb12:
-#line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 55 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t18 = h4_ret0;
-#line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 55 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t18;
 #line 570 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -651,9 +651,9 @@ bb6:
     goto bb7;
 #line 69 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
-#line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 68 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t10 = h4_ret0;
-#line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 68 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t10;
 #line 659 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -709,9 +709,9 @@ bb3:
     goto bb4;
 #line 75 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 74 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t6 = h2_ret0;
-#line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 74 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t6;
 #line 717 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -764,9 +764,9 @@ bb4:
     goto bb5;
 #line 80 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb5:
-#line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t7 = h2_ret0;
-#line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 79 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t7;
 #line 772 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -1006,7 +1006,7 @@ bb10:
     goto bb5;
 #line 101 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb11:
-#line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 100 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t26 = h6_ret0;
 #line 1012 "fixedbugs139matchstatementsthatleave.c"
     hero_array_decref(h2_xs0);
@@ -1108,9 +1108,9 @@ bb6:
     goto bb7;
 #line 112 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
-#line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 111 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t11 = h3_ret0;
-#line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 111 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t11;
 #line 1116 "fixedbugs139matchstatementsthatleave.c"
 }
@@ -1449,9 +1449,9 @@ bb3:
     goto bb1;
 #line 148 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 149 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     t6 = h3_ret0;
-#line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
+#line 149 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     return t6;
 #line 1457 "fixedbugs139matchstatementsthatleave.c"
 }

@@ -1,0 +1,139 @@
+strings
+    0  "ziggy"
+    1  "mars"
+    2  "stardust"
+    3  "spiders"
+    4  "jean"
+    5  "genie"
+
+constant PRIMES: [i64]
+    slots  $own0: [i64]
+    bb0  entry
+        $t1: i64 = const 2
+        $t2: i64 = const 3
+        $t3: i64 = const 5
+        $t4: i64 = const 7
+        $t5: i64 = const 11
+        $t6: i64 = const 13
+        $t7: i64 = const 17
+        $t8: i64 = const 19
+        $t9: i64 = const 23
+        $t10: i64 = const 29
+        $t11: i64 = const 31
+        $t12: i64 = const 37
+        $t13: i64 = const 41
+        $t14: i64 = const 43
+        $t15: i64 = const 47
+        $t16: i64 = const 53
+        $t17: i64 = const 59
+        $t18: i64 = const 61
+        $t19: i64 = const 67
+        $t20: i64 = const 71
+        $t21: i64 = const 73
+        $t22: i64 = const 79
+        $t23: i64 = const 83
+        $t24: i64 = const 89
+        $t25: i64 = const 97
+        $t26: i64 = const 101
+        $t27: i64 = const 103
+        $t28: i64 = const 107
+        $t29: i64 = const 109
+        $t30: i64 = const 113
+        $t31: i64 = const 127
+        $t32: i64 = const 131
+        $t33: [i64] = construct array($t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8, $t9, $t10, $t11, $t12, $t13, $t14, $t15, $t16, $t17, $t18, $t19, $t20, $t21, $t22, $t23, $t24, $t25, $t26, $t27, $t28, $t29, $t30, $t31, $t32)
+        $t34: [i64] = load $own0
+        store $own0 <- $t33
+        decref $t34
+        incref $t33
+        decref_slot $own0
+        return $t33
+
+constant AGES: {str: i64}
+    slots  $own0: {str: i64}
+    bb0  entry
+        $t1: str = const str 0
+        $t2: i64 = const 42
+        $t3: str = const str 1
+        $t4: i64 = const 7
+        $t5: str = const str 2
+        $t6: i64 = const 19
+        $t7: str = const str 3
+        $t8: i64 = const 5
+        $t9: str = const str 4
+        $t10: i64 = const 30
+        $t11: str = const str 5
+        $t12: i64 = const 8
+        $t13: {str: i64} = construct map($t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8, $t9, $t10, $t11, $t12)
+        $t14: {str: i64} = load $own0
+        store $own0 <- $t13
+        decref $t14
+        incref $t13
+        decref_slot $own0
+        return $t13
+
+function main()
+    slots  w: Wide · $f0: i64? · $r0: i64 · $own3: [i64] · $own4: [i64] · $own5: {str: i64} · $own6: i64?
+    bb0  entry
+        $t1: i64 = const 1
+        $t2: i64 = const 2
+        $t3: i64 = const 3
+        $t4: i64 = const 4
+        $t5: i64 = const 5
+        $t6: i64 = const 6
+        $t7: i64 = const 7
+        $t8: i64 = const 8
+        $t9: Wide = construct Wide($t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8)
+        store w <- $t9
+        $t10: [i64] = call heroes PRIMES()
+        $t31: [i64] = load $own3
+        store $own3 <- $t10
+        decref $t31
+        $t11: i64 = call builtin len($t10)
+        $t12: [i64] = call heroes PRIMES()
+        $t32: [i64] = load $own4
+        store $own4 <- $t12
+        decref $t32
+        $t13: i64 = const 31
+        $t14: i64 = index! $t12, $t13
+        $t15: {str: i64} = call heroes AGES()
+        $t33: {str: i64} = load $own5
+        store $own5 <- $t15
+        decref $t33
+        $t16: str = const str 1
+        $t17: i64? = mapget $t15, $t16
+        $t34: i64? = load $own6
+        store $own6 <- $t17
+        decref $t34
+        $t35: i64? = load $f0
+        incref $t17
+        store $f0 <- $t17
+        decref $t35
+        $t18: i64? = load $f0
+        $t19: i64 = tag $t18
+        $t20: i64 = const 0
+        $t21: bool = eq $t19, $t20
+        branch $t21 -> bb1 else bb2
+    bb1  default: ok    preds bb0
+        $t22: i64? = load $f0
+        $t23: i64 = payload $t22 .ok
+        store $r0 <- $t23
+        jump bb3
+    bb2  default: else    preds bb0
+        $t24: i64 = const 0
+        store $r0 <- $t24
+        jump bb3
+    bb3  default: join    preds bb1, bb2
+        $t25: i64 = load $r0
+        $t26: Wide = load w
+        $t27: i64 = field $t26.a
+        $t28: Wide = load w
+        $t29: i64 = field $t28.h
+        $t30: i64 = add! $t27, $t29
+        call builtin print($t11, $t14, $t25, $t30) variadic
+        decref_slot $f0
+        decref_slot $own3
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        return

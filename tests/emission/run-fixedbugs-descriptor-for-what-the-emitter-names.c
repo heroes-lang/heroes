@@ -281,14 +281,14 @@ bb3:
     goto bb1;
 #line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 bb4:
-#line 27 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
+#line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t8 = h1_ret0;
 #line 287 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_786b106a_retain(&t8);
-#line 27 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
+#line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 290 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_786b106a_release(&h2_own2);
-#line 27 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
+#line 29 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 293 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_786b106a_release(&h3_own3);
     return t8;
@@ -363,14 +363,14 @@ bb3:
     goto bb1;
 #line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 bb4:
-#line 32 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
+#line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t8 = h1_ret0;
 #line 369 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_538f2d82_retain(&t8);
-#line 32 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
+#line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 372 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_538f2d82_release(&h2_own2);
-#line 32 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
+#line 34 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
 #line 375 "fixedbugsdescriptorforwhattheemitternames.c"
     h_0opt_538f2d82_release(&h3_own3);
     return t8;

@@ -840,41 +840,41 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
     t38 = h3_ret0;
 #line 846 "edgesfileargsexit.c"
     h_0opt_f87774a_retain(&t38);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 849 "edgesfileargsexit.c"
     hero_str_decref(h2_text);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 852 "edgesfileargsexit.c"
     hero_str_decref(h4_own4);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 855 "edgesfileargsexit.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 858 "edgesfileargsexit.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 861 "edgesfileargsexit.c"
     hero_str_decref(h7_own7);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 864 "edgesfileargsexit.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 867 "edgesfileargsexit.c"
     hero_str_decref(h9_own9);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 870 "edgesfileargsexit.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 873 "edgesfileargsexit.c"
     hero_str_decref(h11_own11);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 876 "edgesfileargsexit.c"
     hero_str_decref(h12_own12);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 879 "edgesfileargsexit.c"
     h_0opt_f87774a_release(&h13_own13);
     hero_lend_local_give(hero_lend_h1_status);
@@ -1023,20 +1023,20 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
     t19 = h3_ret0;
 #line 1029 "edgesfileargsexit.c"
     h_0opt_a8ea2_retain(&t19);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1032 "edgesfileargsexit.c"
     h_0opt_a8ea2_release(&h4_own4);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1035 "edgesfileargsexit.c"
     hero_str_decref(h5_own5);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1038 "edgesfileargsexit.c"
     h_0opt_a8ea2_release(&h6_own6);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1041 "edgesfileargsexit.c"
     h_0opt_a8ea2_release(&h7_own7);
     return t19;

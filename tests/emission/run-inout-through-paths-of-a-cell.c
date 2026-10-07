@@ -167,7 +167,7 @@ bb0:
     (*ph0_b).f_items = t4;
 #line 169 "inoutthroughpathsofacell.c"
     hero_array_decref(t6);
-#line 27 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 28 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 #line 172 "inoutthroughpathsofacell.c"
     hero_array_decref(h2_own2);
     return;
@@ -230,7 +230,7 @@ bb0:
     (*ph1_b) = t3;
 #line 232 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t6);
-#line 33 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+#line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 #line 235 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&h2_held);
     return;

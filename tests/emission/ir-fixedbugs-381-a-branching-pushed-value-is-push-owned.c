@@ -213,14 +213,14 @@ bb3:
     goto bb1;
 #line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb4:
-#line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t13 = h1_ret0;
 #line 219 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_retain(&t13);
-#line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 222 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h2_own2);
-#line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 225 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;
@@ -495,38 +495,38 @@ bb7:
     goto bb8;
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb8:
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t41 = h6_ret0;
 #line 501 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_2270cbe7_retain(&t41);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 504 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_decref(h1_out);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 507 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h2_f0);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 510 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h3_f1);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 513 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h5_f2);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 516 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_decref(h7_own7);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 519 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h8_own8);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 522 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h9_own9);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 525 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_e201354_release(&h10_own10);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 528 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_2270cbe7_release(&h11_own11);
-#line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 #line 531 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_2270cbe7_release(&h12_own12);
     return t41;

@@ -249,14 +249,14 @@ bb3:
     goto bb1;
 #line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb4:
-#line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t13 = h1_ret0;
 #line 255 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_retain(&t13);
-#line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 #line 258 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&h2_own2);
-#line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 16 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 #line 261 "orderoptionsandfntypedefs.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;
@@ -336,14 +336,14 @@ bb3:
     goto bb1;
 #line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb4:
-#line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t9 = h1_ret0;
 #line 342 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_retain(&t9);
-#line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 #line 345 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&h2_own2);
-#line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 21 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 #line 348 "orderoptionsandfntypedefs.c"
     h_0opt_f87774a_release(&h3_own3);
     return t9;
@@ -421,14 +421,14 @@ bb3:
     goto bb1;
 #line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb4:
-#line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     t9 = h1_ret0;
 #line 427 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_retain(&t9);
-#line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 #line 430 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&h2_own2);
-#line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
+#line 26 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 #line 433 "orderoptionsandfntypedefs.c"
     h_0opt_de89a9a_release(&h3_own3);
     return t9;

@@ -1,0 +1,194 @@
+strings
+    0  "x"
+    1  "y"
+    2  "z"
+
+function score(p: Pick) -> i64
+    slots  $s0: Pick · $r0: i64
+    bb0  entry
+        $t1: Pick = load p
+        store $s0 <- $t1
+        $t2: Pick = load $s0
+        $t3: i64 = tag $t2
+        switch $t3 case 0 -> bb2, case 1 -> bb3, case 2 -> bb4, case 3 -> bb5, case 4 -> bb6, case 5 -> bb7, case 6 -> bb8, case 7 -> bb9
+    bb1  match: join    preds bb2, bb3, bb4, bb5, bb6, bb7, bb8, bb9
+        $t12: i64 = load $r0
+        return $t12
+    bb2  match: arm    preds bb0
+        $t4: i64 = const 1
+        store $r0 <- $t4
+        jump bb1
+    bb3  match: arm    preds bb0
+        $t5: i64 = const 2
+        store $r0 <- $t5
+        jump bb1
+    bb4  match: arm    preds bb0
+        $t6: i64 = const 3
+        store $r0 <- $t6
+        jump bb1
+    bb5  match: arm    preds bb0
+        $t7: i64 = const 4
+        store $r0 <- $t7
+        jump bb1
+    bb6  match: arm    preds bb0
+        $t8: i64 = const 5
+        store $r0 <- $t8
+        jump bb1
+    bb7  match: arm    preds bb0
+        $t9: i64 = const 6
+        store $r0 <- $t9
+        jump bb1
+    bb8  match: arm    preds bb0
+        $t10: i64 = const 7
+        store $r0 <- $t10
+        jump bb1
+    bb9  match: arm    preds bb0
+        $t11: i64 = const 8
+        store $r0 <- $t11
+        jump bb1
+
+function fill(@g: Grid, @first: str, @second: str, @third: str, n: i64)
+    slots  s0: str · s1: str · s2: str · $own8: str · $own9: str · $own10: str · $own11: str
+    bb0  entry
+        $t1: str = load first
+        $t2: i64 = load n
+        $t3: str = call builtin to_str($t2)
+        $t21: str = load $own8
+        store $own8 <- $t3
+        decref $t21
+        $t4: str = add $t1, $t3
+        $t22: str = load $own9
+        store $own9 <- $t4
+        decref $t22
+        $t23: str = load s0
+        incref $t4
+        store s0 <- $t4
+        decref $t23
+        $t5: str = load s0
+        $t6: str = load second
+        $t7: str = add $t5, $t6
+        $t24: str = load $own10
+        store $own10 <- $t7
+        decref $t24
+        $t25: str = load s1
+        incref $t7
+        store s1 <- $t7
+        decref $t25
+        $t8: str = load s1
+        $t9: str = load third
+        $t10: str = add $t8, $t9
+        $t26: str = load $own11
+        store $own11 <- $t10
+        decref $t26
+        $t27: str = load s2
+        incref $t10
+        store s2 <- $t10
+        decref $t27
+        $t11: str = load s2
+        $t28: str = load first
+        incref $t11
+        store first <- $t11
+        decref $t28
+        $t12: str = load s1
+        $t29: str = load second
+        incref $t12
+        store second <- $t12
+        decref $t29
+        $t13: str = load s0
+        $t30: str = load third
+        incref $t13
+        store third <- $t13
+        decref $t30
+        $t14: i64 = const 0
+        $t15: i64 = const 0
+        $t16: i64 = load n
+        store g.rows[$t14].cells[$t15] <- $t16
+        $t17: i64 = const 0
+        $t18: i64 = const 1
+        $t19: Pick = construct Pick.c()
+        $t20: i64 = call heroes score($t19)
+        store g.rows[$t17].cells[$t18] <- $t20
+        copyout g
+        copyout first
+        copyout second
+        copyout third
+        decref_slot s0
+        decref_slot s1
+        decref_slot s2
+        decref_slot $own8
+        decref_slot $own9
+        decref_slot $own10
+        decref_slot $own11
+        return
+
+function main()
+    slots  g: Grid · x: str · y: str · z: str · $own4: [i64] · $own5: Row · $own6: [Row] · $own7: Grid
+    bb0  entry
+        $t1: i64 = const 0
+        $t2: i64 = const 0
+        $t3: [i64] = construct array($t1, $t2)
+        $t28: [i64] = load $own4
+        store $own4 <- $t3
+        decref $t28
+        incref $t3
+        $t4: Row = construct Row($t3)
+        $t29: Row = load $own5
+        store $own5 <- $t4
+        decref $t29
+        $t5: [Row] = construct array($t4)
+        $t30: [Row] = load $own6
+        store $own6 <- $t5
+        decref $t30
+        incref $t5
+        $t6: Grid = construct Grid($t5)
+        $t31: Grid = load $own7
+        store $own7 <- $t6
+        decref $t31
+        $t32: Grid = load g
+        incref $t6
+        store g <- $t6
+        decref $t32
+        $t7: str = const str 0
+        $t33: str = load x
+        incref $t7
+        store x <- $t7
+        decref $t33
+        $t8: str = const str 1
+        $t34: str = load y
+        incref $t8
+        store y <- $t8
+        decref $t34
+        $t9: str = const str 2
+        $t35: str = load z
+        incref $t9
+        store z <- $t9
+        decref $t35
+        $t10: i64 = const 4
+        call heroes fill(@g, @x, @y, @z, $t10)
+        $t11: str = load x
+        $t12: str = load y
+        $t13: str = load z
+        $t14: Grid = load g
+        $t15: [Row] = field $t14.rows
+        $t16: i64 = const 0
+        $t17: Row = index! $t15, $t16
+        $t18: [i64] = field $t17.cells
+        $t19: i64 = const 0
+        $t20: i64 = index! $t18, $t19
+        $t21: Grid = load g
+        $t22: [Row] = field $t21.rows
+        $t23: i64 = const 0
+        $t24: Row = index! $t22, $t23
+        $t25: [i64] = field $t24.cells
+        $t26: i64 = const 1
+        $t27: i64 = index! $t25, $t26
+        call builtin print($t11, $t12, $t13, $t20, $t27) variadic
+        decref_slot g
+        decref_slot x
+        decref_slot y
+        decref_slot z
+        decref_slot $own4
+        decref_slot $own5
+        decref_slot $own6
+        decref_slot $own7
+        return

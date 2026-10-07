@@ -391,14 +391,14 @@ bb9:
     hero_panic_must(t26);
     hero_unreachable();
 bb10:
-#line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
+#line 33 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t37 = h7_ret0;
 #line 397 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(h3_xs0);
-#line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
+#line 33 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 #line 400 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_release(&h6_f0);
-#line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
+#line 33 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 #line 403 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_release(&h8_own8);
     return t37;

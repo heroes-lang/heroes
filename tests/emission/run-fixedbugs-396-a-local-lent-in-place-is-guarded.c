@@ -411,17 +411,17 @@ bb7:
     hero_panic_must(t28);
     hero_unreachable();
 bb8:
-#line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 42 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t32 = h5_ret0;
 #line 417 "fixedbugs396alocallentinplaceisguarded.c"
     h_0opt_e1f4933_release(&h2_f0);
-#line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 42 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #line 420 "fixedbugs396alocallentinplaceisguarded.c"
     h_0opt_e201354_release(&h4_f1);
-#line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 42 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #line 423 "fixedbugs396alocallentinplaceisguarded.c"
     h_0opt_e1f4933_release(&h6_own6);
-#line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 42 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #line 426 "fixedbugs396alocallentinplaceisguarded.c"
     h_0opt_e201354_release(&h7_own7);
     hero_lend_local_give(hero_lend_h1_x);
@@ -483,11 +483,11 @@ bb3:
     goto bb1;
 #line 51 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb4:
-#line 46 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 51 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t6 = h2_ret0;
-#line 46 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 51 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     hero_lend_local_give(hero_lend_h1_x);
-#line 46 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+#line 51 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     return t6;
 #line 493 "fixedbugs396alocallentinplaceisguarded.c"
 }

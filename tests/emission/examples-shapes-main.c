@@ -309,9 +309,9 @@ bb3:
     goto bb1;
 #line 18 "examples/shapes/geom/point.hero"
 bb4:
-#line 14 "examples/shapes/geom/point.hero"
+#line 18 "examples/shapes/geom/point.hero"
     t13 = h3_ret0;
-#line 14 "examples/shapes/geom/point.hero"
+#line 18 "examples/shapes/geom/point.hero"
     return t13;
 #line 317 "main.c"
 }

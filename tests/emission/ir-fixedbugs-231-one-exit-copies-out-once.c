@@ -198,17 +198,17 @@ bb3:
     goto bb1;
 #line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb4:
-#line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     t11 = h1_ret0;
 #line 204 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_retain(&t11);
-#line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 207 "fixedbugs231oneexitcopiesoutonce.c"
     hero_str_decref(h2_own2);
-#line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 210 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h3_own3);
-#line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 213 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h4_own4);
     return t11;
@@ -404,26 +404,26 @@ bb5:
     goto bb6;
 #line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb6:
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     t31 = h3_ret0;
 #line 410 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_retain(&t31);
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 413 "fixedbugs231oneexitcopiesoutonce.c"
     hero_str_decref(h1_word);
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 416 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h2_f0);
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 419 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h4_own4);
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 422 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 425 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
+#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 #line 428 "fixedbugs231oneexitcopiesoutonce.c"
     h_0opt_f87774a_release(&h7_own7);
     return t31;

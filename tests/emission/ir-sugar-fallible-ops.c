@@ -253,14 +253,14 @@ bb8:
     hero_panic_must(t21);
     hero_unreachable();
 bb9:
-#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
+#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t24 = h5_ret0;
 #line 259 "sugarfallibleops.c"
     h_0opt_e201354_release(&h1_f0);
-#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
+#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
 #line 262 "sugarfallibleops.c"
     h_0opt_e201354_release(&h2_f1);
-#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
+#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
 #line 265 "sugarfallibleops.c"
     h_0opt_e201354_release(&h4_f2);
     return t24;

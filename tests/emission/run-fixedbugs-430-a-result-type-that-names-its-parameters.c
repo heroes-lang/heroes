@@ -338,9 +338,9 @@ bb4:
     goto bb5;
 #line 60 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 bb5:
-#line 57 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
+#line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t7 = h2_ret0;
-#line 57 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
+#line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t7;
 #line 346 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }

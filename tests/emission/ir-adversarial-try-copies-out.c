@@ -190,14 +190,14 @@ bb3:
     goto bb1;
 #line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
 bb4:
-#line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
     t11 = h1_ret0;
 #line 196 "adversarialtrycopiesout.c"
     h_0opt_e201354_retain(&t11);
-#line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 199 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h2_own2);
-#line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 202 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h3_own3);
     return t11;
@@ -355,23 +355,23 @@ bb5:
     goto bb3;
 #line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
 bb6:
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
     t23 = h4_ret0;
 #line 361 "adversarialtrycopiesout.c"
     h_0opt_e201354_retain(&t23);
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 364 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h2_f0);
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 367 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h5_own5);
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 370 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h6_own6);
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 373 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h7_own7);
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
+#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
 #line 376 "adversarialtrycopiesout.c"
     h_0opt_e201354_release(&h8_own8);
     return t23;

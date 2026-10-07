@@ -573,14 +573,14 @@ bb7:
     goto bb8;
 #line 74 "examples/floats/main.hero"
 bb8:
-#line 64 "examples/floats/main.hero"
+#line 68 "examples/floats/main.hero"
     t29 = h6_ret0;
 #line 579 "main.c"
     hero_array_decref(h1_good);
-#line 64 "examples/floats/main.hero"
+#line 68 "examples/floats/main.hero"
 #line 582 "main.c"
     hero_array_decref(h3_xs0);
-#line 64 "examples/floats/main.hero"
+#line 68 "examples/floats/main.hero"
 #line 585 "main.c"
     hero_array_decref(h7_own7);
     return t29;

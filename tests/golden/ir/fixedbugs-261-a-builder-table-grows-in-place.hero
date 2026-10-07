@@ -1,0 +1,59 @@
+# Defect 261, 2026-10-07. The lowering's builder added each slot, parameter,
+# block and path step by pushing onto a table reached through a field of
+# itself, `b.building.slots @ b.building.slots.push(...)`, and a push through a
+# field place copies the whole table (design.md Part 8, wart 8): a function of
+# N slots or N blocks cost the square of N. A join's predecessors were copied
+# and walked the same way at every edge into it. The tables are lent to helpers
+# that grow them in place now, and the join's list is hoisted, so the cost is a
+# function's size; the IR is what it was, byte for byte, and this case pins it
+# over every table the repair touched: many `@` parameters and locals (the
+# slots and the parameter list), a match of many arms into one join (the
+# blocks and a join's predecessors), and stores through paths of four steps.
+# The growth itself is measured, not pinned: instrumented copies of the
+# compiler count 325,450 slot copies at 800 strings before and 7,501 after,
+# 2,896,203 block copies at 800 returns before and 18,908 after (lane b14-ir).
+
+record Row
+    cells: [i64]
+
+record Grid
+    rows: [Row]
+
+variant Pick
+    a
+    b
+    c
+    d
+    e
+    f
+    g
+    h
+
+function score(p: Pick) -> i64
+    return match p
+        .a => 1
+        .b => 2
+        .c => 3
+        .d => 4
+        .e => 5
+        .f => 6
+        .g => 7
+        .h => 8
+
+function fill(@g: Grid, @first: str, @second: str, @third: str, n: i64)
+    s0 = first + n.to_str()
+    s1 = s0 + second
+    s2 = s1 + third
+    first @ s2
+    second @ s1
+    third @ s0
+    g.rows[0].cells[0] @ n
+    g.rows[0].cells[1] @ score(.c)
+
+function main()
+    g: Grid @ Grid(rows: [Row(cells: [0, 0])])
+    x: str @ "x"
+    y: str @ "y"
+    z: str @ "z"
+    fill(@g, first: @x, second: @y, third: @z, n: 4)
+    print(x, y, z, g.rows[0].cells[0], g.rows[0].cells[1])

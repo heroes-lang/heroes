@@ -183,9 +183,9 @@ bb5:
     goto bb1;
 #line 33 "tests/golden/run/variant-arms.hero"
 bb6:
-#line 29 "tests/golden/run/variant-arms.hero"
+#line 31 "tests/golden/run/variant-arms.hero"
     t10 = h1_ret0;
-#line 29 "tests/golden/run/variant-arms.hero"
+#line 31 "tests/golden/run/variant-arms.hero"
     return t10;
 #line 191 "variantarms.c"
 }

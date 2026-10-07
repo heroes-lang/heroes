@@ -484,14 +484,14 @@ bb3:
     goto bb1;
 #line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb4:
-#line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
+#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     t6 = h1_ret0;
 #line 490 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_retain(&t6);
-#line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
+#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 #line 493 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_release(&h2_own2);
-#line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
+#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 #line 496 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_release(&h3_own3);
     return t6;

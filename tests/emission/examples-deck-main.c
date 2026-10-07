@@ -1080,14 +1080,14 @@ bb11:
     goto bb12;
 #line 72 "examples/deck/main.hero"
 bb12:
-#line 56 "examples/deck/main.hero"
+#line 58 "examples/deck/main.hero"
     t37 = h6_ret0;
 #line 1086 "main.c"
     hero_array_incref(t37);
-#line 56 "examples/deck/main.hero"
+#line 58 "examples/deck/main.hero"
 #line 1089 "main.c"
     hero_array_decref(h3_out);
-#line 56 "examples/deck/main.hero"
+#line 58 "examples/deck/main.hero"
 #line 1092 "main.c"
     hero_array_decref(h7_own7);
     return t37;
@@ -1802,14 +1802,14 @@ bb11:
     goto bb12;
 #line 72 "examples/deck/main.hero"
 bb12:
-#line 56 "examples/deck/main.hero"
+#line 58 "examples/deck/main.hero"
     t37 = h6_ret0;
 #line 1808 "main.c"
     hero_array_incref(t37);
-#line 56 "examples/deck/main.hero"
+#line 58 "examples/deck/main.hero"
 #line 1811 "main.c"
     hero_array_decref(h3_out);
-#line 56 "examples/deck/main.hero"
+#line 58 "examples/deck/main.hero"
 #line 1814 "main.c"
     hero_array_decref(h7_own7);
     return t37;

@@ -2266,7 +2266,7 @@ bb3:
     goto bb1;
 #line 134 "examples/query/main.hero"
 bb4:
-#line 132 "examples/query/main.hero"
+#line 134 "examples/query/main.hero"
     t4 = h1_ret0;
 #line 2272 "main.c"
     hero_str_incref(t4);
@@ -3215,7 +3215,7 @@ bb3:
     goto bb1;
 #line 159 "examples/query/data/row.hero"
 bb4:
-#line 157 "examples/query/data/row.hero"
+#line 159 "examples/query/data/row.hero"
     t4 = h1_ret0;
 #line 3221 "main.c"
     hero_str_incref(t4);
@@ -3850,17 +3850,17 @@ bb5:
     goto bb1;
 #line 63 "examples/query/data/table.hero"
 bb6:
-#line 59 "examples/query/data/table.hero"
+#line 63 "examples/query/data/table.hero"
     t25 = h3_ret0;
 #line 3856 "main.c"
     hero_array_incref(t25);
-#line 59 "examples/query/data/table.hero"
+#line 63 "examples/query/data/table.hero"
 #line 3859 "main.c"
     hero_array_decref(h1_all_lines);
-#line 59 "examples/query/data/table.hero"
+#line 63 "examples/query/data/table.hero"
 #line 3862 "main.c"
     hero_array_decref(h4_own4);
-#line 59 "examples/query/data/table.hero"
+#line 63 "examples/query/data/table.hero"
 #line 3865 "main.c"
     hero_array_decref(h5_own5);
     return t25;
@@ -4051,35 +4051,35 @@ bb6:
     goto bb4;
 #line 74 "examples/query/data/table.hero"
 bb7:
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
     t23 = h2_ret0;
 #line 4057 "main.c"
     h_0opt_473cb9ae_retain(&t23);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4060 "main.c"
     h_0opt_473cb9ae_release(&h3_own3);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4063 "main.c"
     hero_str_decref(h4_own4);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4066 "main.c"
     hero_str_decref(h5_own5);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4069 "main.c"
     hero_str_decref(h6_own6);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4072 "main.c"
     hero_str_decref(h7_own7);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4075 "main.c"
     hero_str_decref(h8_own8);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4078 "main.c"
     hero_str_decref(h9_own9);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4081 "main.c"
     h_0opt_473cb9ae_release(&h10_own10);
-#line 69 "examples/query/data/table.hero"
+#line 71 "examples/query/data/table.hero"
 #line 4084 "main.c"
     h_0opt_473cb9ae_release(&h11_own11);
     return t23;
@@ -4663,71 +4663,71 @@ bb22:
     goto bb20;
 #line 104 "examples/query/data/table.hero"
 bb23:
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
     t86 = h9_ret0;
 #line 4669 "main.c"
     h_0opt_e201354_retain(&t86);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4672 "main.c"
     h_0opt_e201354_release(&h8_f0);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4675 "main.c"
     hero_str_decref(h10_own10);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4678 "main.c"
     hero_str_decref(h11_own11);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4681 "main.c"
     hero_str_decref(h12_own12);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4684 "main.c"
     hero_str_decref(h13_own13);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4687 "main.c"
     h_0opt_e201354_release(&h14_own14);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4690 "main.c"
     hero_str_decref(h15_own15);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4693 "main.c"
     hero_str_decref(h16_own16);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4696 "main.c"
     hero_str_decref(h17_own17);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4699 "main.c"
     hero_str_decref(h18_own18);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4702 "main.c"
     h_0opt_e201354_release(&h19_own19);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4705 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4708 "main.c"
     hero_str_decref(h21_own21);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4711 "main.c"
     hero_str_decref(h22_own22);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4714 "main.c"
     hero_str_decref(h23_own23);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4717 "main.c"
     hero_str_decref(h24_own24);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4720 "main.c"
     hero_str_decref(h25_own25);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4723 "main.c"
     hero_str_decref(h26_own26);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4726 "main.c"
     h_0opt_e201354_release(&h27_own27);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4729 "main.c"
     h_0opt_e201354_release(&h28_own28);
-#line 81 "examples/query/data/table.hero"
+#line 83 "examples/query/data/table.hero"
 #line 4732 "main.c"
     h_0opt_e201354_release(&h29_own29);
     return t86;
@@ -5848,146 +5848,146 @@ bb32:
     goto bb30;
 #line 168 "examples/query/data/table.hero"
 bb33:
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
     t166 = h17_ret0;
 #line 5854 "main.c"
     h_0opt_db92a83_retain(&t166);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5857 "main.c"
     hero_array_decref(h2_halves);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5860 "main.c"
     h_0opt_f87774a_release(&h5_f0);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5863 "main.c"
     hero_str_decref(h6_whole_digits);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5866 "main.c"
     hero_str_decref(h7_fraction_digits);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5869 "main.c"
     hero_str_decref(h8_all_digits);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5872 "main.c"
     h_0opt_e201354_release(&h13_f1);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5875 "main.c"
     hero_array_decref(h18_own18);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5878 "main.c"
     hero_str_decref(h19_own19);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5881 "main.c"
     hero_str_decref(h20_own20);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5884 "main.c"
     hero_str_decref(h21_own21);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5887 "main.c"
     hero_str_decref(h22_own22);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5890 "main.c"
     hero_str_decref(h23_own23);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5893 "main.c"
     hero_str_decref(h24_own24);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5896 "main.c"
     h_0opt_db92a83_release(&h25_own25);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5899 "main.c"
     h_0opt_f87774a_release(&h26_own26);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5902 "main.c"
     h_0opt_db92a83_release(&h27_own27);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5905 "main.c"
     hero_str_decref(h28_own28);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5908 "main.c"
     hero_str_decref(h29_own29);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5911 "main.c"
     hero_str_decref(h30_own30);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5914 "main.c"
     hero_str_decref(h31_own31);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5917 "main.c"
     hero_str_decref(h32_own32);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5920 "main.c"
     hero_str_decref(h33_own33);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5923 "main.c"
     hero_str_decref(h34_own34);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5926 "main.c"
     h_0opt_db92a83_release(&h35_own35);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5929 "main.c"
     hero_str_decref(h36_own36);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5932 "main.c"
     hero_str_decref(h37_own37);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5935 "main.c"
     hero_str_decref(h38_own38);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5938 "main.c"
     hero_str_decref(h39_own39);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5941 "main.c"
     hero_str_decref(h40_own40);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5944 "main.c"
     hero_str_decref(h41_own41);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5947 "main.c"
     hero_str_decref(h42_own42);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5950 "main.c"
     hero_str_decref(h43_own43);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5953 "main.c"
     hero_str_decref(h44_own44);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5956 "main.c"
     hero_str_decref(h45_own45);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5959 "main.c"
     hero_str_decref(h46_own46);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5962 "main.c"
     h_0opt_db92a83_release(&h47_own47);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5965 "main.c"
     h_0opt_e201354_release(&h48_own48);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5968 "main.c"
     hero_str_decref(h49_own49);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5971 "main.c"
     hero_str_decref(h50_own50);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5974 "main.c"
     hero_str_decref(h51_own51);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5977 "main.c"
     hero_str_decref(h52_own52);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5980 "main.c"
     hero_str_decref(h53_own53);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5983 "main.c"
     hero_str_decref(h54_own54);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5986 "main.c"
     h_0opt_db92a83_release(&h55_own55);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5989 "main.c"
     h_0opt_db92a83_release(&h56_own56);
-#line 126 "examples/query/data/table.hero"
+#line 130 "examples/query/data/table.hero"
 #line 5992 "main.c"
     h_0opt_db92a83_release(&h57_own57);
     return t166;
@@ -6268,47 +6268,47 @@ bb9:
     goto bb7;
 #line 180 "examples/query/data/table.hero"
 bb10:
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
     t34 = h3_ret0;
 #line 6274 "main.c"
     h_0opt_f87774a_retain(&t34);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6277 "main.c"
     hero_str_decref(h4_own4);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6280 "main.c"
     hero_str_decref(h5_own5);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6283 "main.c"
     hero_str_decref(h6_own6);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6286 "main.c"
     hero_str_decref(h7_own7);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6289 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6292 "main.c"
     h_0opt_f87774a_release(&h9_own9);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6295 "main.c"
     hero_str_decref(h10_own10);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6298 "main.c"
     h_0opt_f87774a_release(&h11_own11);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6301 "main.c"
     hero_str_decref(h12_own12);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6304 "main.c"
     hero_str_decref(h13_own13);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6307 "main.c"
     hero_str_decref(h14_own14);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6310 "main.c"
     hero_str_decref(h15_own15);
-#line 174 "examples/query/data/table.hero"
+#line 176 "examples/query/data/table.hero"
 #line 6313 "main.c"
     h_0opt_f87774a_release(&h16_own16);
     return t34;
@@ -7248,137 +7248,137 @@ bb21:
     goto bb22;
 #line 212 "examples/query/data/table.hero"
 bb22:
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
     t141 = h13_ret0;
 #line 7254 "main.c"
     h_0opt_40ab612a_retain(&t141);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7257 "main.c"
     hero_array_decref(h1_all_lines);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7260 "main.c"
     hero_array_decref(h2_out);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7263 "main.c"
     hero_array_decref(h5_xs0);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7266 "main.c"
     hero_str_decref(h7_one);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7269 "main.c"
     hero_array_decref(h8_fields);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7272 "main.c"
     h_0opt_e201354_release(&h9_f0);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7275 "main.c"
     h_0opt_473cb9ae_release(&h10_f1);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7278 "main.c"
     h_0opt_e201354_release(&h11_f2);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7281 "main.c"
     h_0opt_db92a83_release(&h12_f3);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7284 "main.c"
     hero_array_decref(h14_own14);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7287 "main.c"
     hero_str_decref(h15_own15);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7290 "main.c"
     hero_str_decref(h16_own16);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7293 "main.c"
     h_0opt_40ab612a_release(&h17_own17);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7296 "main.c"
     hero_array_decref(h18_own18);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7299 "main.c"
     hero_array_decref(h19_own19);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7302 "main.c"
     hero_str_decref(h20_own20);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7305 "main.c"
     hero_str_decref(h21_own21);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7308 "main.c"
     hero_str_decref(h22_own22);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7311 "main.c"
     hero_str_decref(h23_own23);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7314 "main.c"
     hero_str_decref(h24_own24);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7317 "main.c"
     hero_str_decref(h25_own25);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7320 "main.c"
     h_0opt_40ab612a_release(&h26_own26);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7323 "main.c"
     hero_array_decref(h27_own27);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7326 "main.c"
     h_0opt_40ab612a_release(&h28_own28);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7329 "main.c"
     h_0opt_e201354_release(&h29_own29);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7332 "main.c"
     hero_str_decref(h30_own30);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7335 "main.c"
     hero_str_decref(h31_own31);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7338 "main.c"
     hero_str_decref(h32_own32);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7341 "main.c"
     hero_str_decref(h33_own33);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7344 "main.c"
     hero_str_decref(h34_own34);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7347 "main.c"
     hero_str_decref(h35_own35);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7350 "main.c"
     hero_str_decref(h36_own36);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7353 "main.c"
     hero_str_decref(h37_own37);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7356 "main.c"
     hero_str_decref(h38_own38);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7359 "main.c"
     h_0opt_40ab612a_release(&h39_own39);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7362 "main.c"
     h_0opt_473cb9ae_release(&h40_own40);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7365 "main.c"
     h_0opt_40ab612a_release(&h41_own41);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7368 "main.c"
     h_0opt_e201354_release(&h42_own42);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7371 "main.c"
     h_0opt_40ab612a_release(&h43_own43);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7374 "main.c"
     h_0opt_db92a83_release(&h44_own44);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7377 "main.c"
     h_0opt_40ab612a_release(&h45_own45);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7380 "main.c"
     h_datarow_Row_release(&h46_own46);
-#line 187 "examples/query/data/table.hero"
+#line 191 "examples/query/data/table.hero"
 #line 7383 "main.c"
     h_0opt_40ab612a_release(&h47_own47);
     return t141;
@@ -7682,7 +7682,7 @@ bb9:
     goto bb7;
 #line 277 "examples/query/data/table.hero"
 bb10:
-#line 270 "examples/query/data/table.hero"
+#line 272 "examples/query/data/table.hero"
     t29 = h3_ret0;
 #line 7688 "main.c"
     hero_str_decref(h4_own4);
@@ -8067,20 +8067,20 @@ bb5:
     hero_panic_must(t18);
     hero_unreachable();
 bb6:
-#line 48 "examples/query/fmt/report.hero"
+#line 50 "examples/query/fmt/report.hero"
     t23 = h3_ret0;
 #line 8073 "main.c"
     hero_str_incref(t23);
-#line 48 "examples/query/fmt/report.hero"
+#line 50 "examples/query/fmt/report.hero"
 #line 8076 "main.c"
     h_0opt_fbbb698_release(&h2_f0);
-#line 48 "examples/query/fmt/report.hero"
+#line 50 "examples/query/fmt/report.hero"
 #line 8079 "main.c"
     h_0opt_fbbb698_release(&h4_own4);
-#line 48 "examples/query/fmt/report.hero"
+#line 50 "examples/query/fmt/report.hero"
 #line 8082 "main.c"
     hero_str_decref(h5_own5);
-#line 48 "examples/query/fmt/report.hero"
+#line 50 "examples/query/fmt/report.hero"
 #line 8085 "main.c"
     hero_str_decref(h6_own6);
     return t23;
@@ -9981,7 +9981,7 @@ bb3:
     goto bb1;
 #line 132 "examples/query/fmt/report.hero"
 bb4:
-#line 130 "examples/query/fmt/report.hero"
+#line 132 "examples/query/fmt/report.hero"
     t4 = h1_ret0;
 #line 9987 "main.c"
     hero_str_incref(t4);
@@ -10584,7 +10584,7 @@ bb9:
     goto bb7;
 #line 228 "examples/query/fmt/report.hero"
 bb10:
-#line 221 "examples/query/fmt/report.hero"
+#line 223 "examples/query/fmt/report.hero"
     t29 = h3_ret0;
 #line 10590 "main.c"
     hero_str_decref(h4_own4);
@@ -10805,14 +10805,14 @@ bb3:
     goto bb1;
 #line 114 "examples/query/query/plan.hero"
 bb4:
-#line 112 "examples/query/query/plan.hero"
+#line 114 "examples/query/query/plan.hero"
     t15 = h1_ret0;
 #line 10811 "main.c"
     h_0opt_db92a83_retain(&t15);
-#line 112 "examples/query/query/plan.hero"
+#line 114 "examples/query/query/plan.hero"
 #line 10814 "main.c"
     h_0opt_db92a83_release(&h2_own2);
-#line 112 "examples/query/query/plan.hero"
+#line 114 "examples/query/query/plan.hero"
 #line 10817 "main.c"
     h_0opt_db92a83_release(&h3_own3);
     return t15;
@@ -11146,20 +11146,20 @@ bb14:
     goto bb12;
 #line 131 "examples/query/query/plan.hero"
 bb15:
-#line 121 "examples/query/query/plan.hero"
+#line 122 "examples/query/query/plan.hero"
     t55 = h12_ret0;
 #line 11152 "main.c"
     h_queryplan_Where_release(&h2_s0);
-#line 121 "examples/query/query/plan.hero"
+#line 122 "examples/query/query/plan.hero"
 #line 11155 "main.c"
     h_queryplan_Where_c_team_is_release(&h4_t);
-#line 121 "examples/query/query/plan.hero"
+#line 122 "examples/query/query/plan.hero"
 #line 11158 "main.c"
     h_queryplan_Where_c_both_release(&h8_b);
-#line 121 "examples/query/query/plan.hero"
+#line 122 "examples/query/query/plan.hero"
 #line 11161 "main.c"
     hero_array_decref(h9_xs0);
-#line 121 "examples/query/query/plan.hero"
+#line 122 "examples/query/query/plan.hero"
 #line 11164 "main.c"
     h_queryplan_Where_release(&h11_one);
     return t55;
@@ -11408,7 +11408,7 @@ bb3:
     goto bb1;
 #line 149 "examples/query/query/plan.hero"
 bb4:
-#line 147 "examples/query/query/plan.hero"
+#line 149 "examples/query/query/plan.hero"
     t4 = h1_ret0;
 #line 11414 "main.c"
     hero_str_incref(t4);
@@ -12605,9 +12605,9 @@ bb9:
     goto bb7;
 #line 107 "examples/query/run/engine.hero"
 bb10:
-#line 98 "examples/query/run/engine.hero"
+#line 107 "examples/query/run/engine.hero"
     t35 = h4_ret0;
-#line 98 "examples/query/run/engine.hero"
+#line 107 "examples/query/run/engine.hero"
     return t35;
 #line 12613 "main.c"
 }
@@ -13034,23 +13034,23 @@ bb3:
     goto bb1;
 #line 142 "examples/query/run/engine.hero"
 bb4:
-#line 140 "examples/query/run/engine.hero"
+#line 142 "examples/query/run/engine.hero"
     t25 = h3_ret0;
 #line 13040 "main.c"
     hero_array_incref(t25);
-#line 140 "examples/query/run/engine.hero"
+#line 142 "examples/query/run/engine.hero"
 #line 13043 "main.c"
     hero_array_decref(h4_own4);
-#line 140 "examples/query/run/engine.hero"
+#line 142 "examples/query/run/engine.hero"
 #line 13046 "main.c"
     hero_array_decref(h5_own5);
-#line 140 "examples/query/run/engine.hero"
+#line 142 "examples/query/run/engine.hero"
 #line 13049 "main.c"
     hero_array_decref(h6_own6);
-#line 140 "examples/query/run/engine.hero"
+#line 142 "examples/query/run/engine.hero"
 #line 13052 "main.c"
     hero_array_decref(h7_own7);
-#line 140 "examples/query/run/engine.hero"
+#line 142 "examples/query/run/engine.hero"
 #line 13055 "main.c"
     hero_array_decref(h8_own8);
     return t25;
@@ -13143,11 +13143,11 @@ bb5:
     goto bb1;
 #line 154 "examples/query/run/engine.hero"
 bb6:
-#line 152 "examples/query/run/engine.hero"
+#line 154 "examples/query/run/engine.hero"
     t14 = h3_ret0;
 #line 13149 "main.c"
     hero_array_incref(t14);
-#line 152 "examples/query/run/engine.hero"
+#line 154 "examples/query/run/engine.hero"
 #line 13152 "main.c"
     hero_array_decref(h4_own4);
     return t14;
@@ -14036,14 +14036,14 @@ bb3:
     goto bb1;
 #line 214 "examples/query/run/engine.hero"
 bb4:
-#line 212 "examples/query/run/engine.hero"
+#line 214 "examples/query/run/engine.hero"
     t11 = h1_ret0;
 #line 14042 "main.c"
     hero_str_incref(t11);
-#line 212 "examples/query/run/engine.hero"
+#line 214 "examples/query/run/engine.hero"
 #line 14045 "main.c"
     hero_str_decref(h2_own2);
-#line 212 "examples/query/run/engine.hero"
+#line 214 "examples/query/run/engine.hero"
 #line 14048 "main.c"
     hero_str_decref(h3_own3);
     return t11;
@@ -14463,41 +14463,41 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
     t38 = h3_ret0;
 #line 14469 "main.c"
     h_0opt_f87774a_retain(&t38);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14472 "main.c"
     hero_str_decref(h2_text);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14475 "main.c"
     hero_str_decref(h4_own4);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14478 "main.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14481 "main.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14484 "main.c"
     hero_str_decref(h7_own7);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14487 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14490 "main.c"
     hero_str_decref(h9_own9);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14493 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14496 "main.c"
     hero_str_decref(h11_own11);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14499 "main.c"
     hero_str_decref(h12_own12);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 14502 "main.c"
     h_0opt_f87774a_release(&h13_own13);
     hero_lend_local_give(hero_lend_h1_status);
@@ -14646,20 +14646,20 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
     t19 = h3_ret0;
 #line 14652 "main.c"
     h_0opt_a8ea2_retain(&t19);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 14655 "main.c"
     h_0opt_a8ea2_release(&h4_own4);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 14658 "main.c"
     hero_str_decref(h5_own5);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 14661 "main.c"
     h_0opt_a8ea2_release(&h6_own6);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 14664 "main.c"
     h_0opt_a8ea2_release(&h7_own7);
     return t19;

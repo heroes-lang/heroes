@@ -830,11 +830,11 @@ bb22:
     goto bb19;
 #line 76 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb23:
-#line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
+#line 75 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t51 = h8_ret0;
 #line 836 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h2_xs0);
-#line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
+#line 75 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 #line 839 "fixedbugs147onestatementonanarmsline.c"
     hero_array_decref(h9_own9);
     return t51;
@@ -1173,9 +1173,9 @@ bb3:
     goto bb1;
 #line 117 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb4:
-#line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
+#line 116 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t7 = h2_ret0;
-#line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
+#line 116 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     return t7;
 #line 1181 "fixedbugs147onestatementonanarmsline.c"
 }

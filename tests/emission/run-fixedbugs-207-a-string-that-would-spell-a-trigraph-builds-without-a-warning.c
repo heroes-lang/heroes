@@ -181,7 +181,7 @@ bb4:
     goto bb5;
 #line 25 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
 bb5:
-#line 22 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
+#line 24 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t7 = h2_ret0;
 #line 187 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
     hero_str_decref(h1_s0);

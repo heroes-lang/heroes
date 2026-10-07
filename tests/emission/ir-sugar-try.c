@@ -193,14 +193,14 @@ bb3:
     goto bb1;
 #line 9 "tests/golden/ir/sugar-try.hero"
 bb4:
-#line 7 "tests/golden/ir/sugar-try.hero"
+#line 9 "tests/golden/ir/sugar-try.hero"
     t12 = h1_ret0;
 #line 199 "sugartry.c"
     h_0opt_e201354_retain(&t12);
-#line 7 "tests/golden/ir/sugar-try.hero"
+#line 9 "tests/golden/ir/sugar-try.hero"
 #line 202 "sugartry.c"
     h_0opt_e201354_release(&h2_own2);
-#line 7 "tests/golden/ir/sugar-try.hero"
+#line 9 "tests/golden/ir/sugar-try.hero"
 #line 205 "sugartry.c"
     h_0opt_e201354_release(&h3_own3);
     return t12;
@@ -321,20 +321,20 @@ bb2:
     goto bb3;
 #line 13 "tests/golden/ir/sugar-try.hero"
 bb3:
-#line 12 "tests/golden/ir/sugar-try.hero"
+#line 13 "tests/golden/ir/sugar-try.hero"
     t18 = h4_ret0;
 #line 327 "sugartry.c"
     h_0opt_e201354_retain(&t18);
-#line 12 "tests/golden/ir/sugar-try.hero"
+#line 13 "tests/golden/ir/sugar-try.hero"
 #line 330 "sugartry.c"
     h_0opt_e201354_release(&h2_f0);
-#line 12 "tests/golden/ir/sugar-try.hero"
+#line 13 "tests/golden/ir/sugar-try.hero"
 #line 333 "sugartry.c"
     h_0opt_e201354_release(&h5_own5);
-#line 12 "tests/golden/ir/sugar-try.hero"
+#line 13 "tests/golden/ir/sugar-try.hero"
 #line 336 "sugartry.c"
     h_0opt_e201354_release(&h6_own6);
-#line 12 "tests/golden/ir/sugar-try.hero"
+#line 13 "tests/golden/ir/sugar-try.hero"
 #line 339 "sugartry.c"
     h_0opt_e201354_release(&h7_own7);
     return t18;
