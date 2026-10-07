@@ -1,0 +1,3 @@
+four entries, released twice
+!sanitizer: heap-use-after-free
+!panic: a map released after its last reference
