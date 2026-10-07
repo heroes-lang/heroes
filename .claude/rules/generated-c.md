@@ -33,7 +33,8 @@ stopping rule in `.claude/rules/cli-surface.md` (panels 016, 020).
 One `goto` and label per basic block, explicit entry `goto bb0`, a label **only
 where an edge targets it**, all locals hoisted to the prologue, and a
 unit-typed temporary never declared at all (`void t0;` is a hard error). An `@`
-parameter is a pointer parameter, so design.md §4.8's copy-out is `*p_l = l;`.
+parameter is a pointer parameter and the body reaches the caller's place through
+it, `(*p_l)`, so §4.8's copy-out writes no C (design.md §3.1, panel 196's R1).
 `hero_unreachable()` at every type-system-proven-unreachable point. The emitted
 C never mentions the output path.
 
