@@ -622,7 +622,13 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   refused, the index being the one of the tree the commit runs in, `git -C` or
   the command's `cd`, since 2026-10-07 (defect 287: a lane's commit was judged
   by the trunk's index), and a refusal by a compiler older than that tree told
-  as its age.
+  as its age. The hard stops' commit rule is read where it was blind until
+  2026-10-07 (defect 403): a `--` followed by no path, by expansions alone or
+  by the whole tree is refused as a commit with no `--` is; a merge, a
+  cherry-pick or a revert concluded with the whole index, `--continue` or a
+  bare commit while it stands, is refused when the index holds a file it did
+  not bring; and a command behind an assignment, a wrapper (`env`, `time`,
+  `caffeinate`, `timeout`) or a shell's `-c` is read as the shell runs it.
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
