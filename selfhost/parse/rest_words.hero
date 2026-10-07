@@ -31,8 +31,7 @@ function split(@c: cursor.Cursor, @a: ast.Ast, text: str, given: [ast.Arg]) -> S
             found @ true
 
             if k == given.len() - 1
-                rest @ a.rests.len()
-                a.rests @ a.rests.push(arg)
+                rest @ ast.push_rest(@a.rests, words: arg)
             else
                 cursor.error(
                     @c,
