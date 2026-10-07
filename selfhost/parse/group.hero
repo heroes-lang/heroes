@@ -67,7 +67,7 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
         return
     header = h.must()
     library = group_head.library_clause(@c, text)
-    head = token.Span(start: keyword.start, end: cursor.previous_significant_span(c).end)
+    head = token.Span(start: keyword.start, end: cursor.previous_significant_span(@c).end)
     cursor.skip_terminators(@c)
 
     linkage: tails.Linkage = .from_c(header: header, library: library)
@@ -269,7 +269,7 @@ function comma(@c: cursor.Cursor, @habit: i64)
     gone = diag.Fix(
         title: "delete the `,`",
         replacement: "",
-        span: token.Span(start: cursor.previous_significant_span(c).end, end: at.end),
+        span: token.Span(start: cursor.previous_significant_span(@c).end, end: at.end),
         certainty: .certain
     )
 

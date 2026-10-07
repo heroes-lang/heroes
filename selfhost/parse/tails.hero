@@ -118,7 +118,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             cursor.recover_to_next_decl(@c)
             return
         body @ b
-    finish: token.Span @ cursor.previous_significant_span(c)
+    finish: token.Span @ cursor.previous_significant_span(@c)
 
     if !body.is_err()
         finish @ body.must().span

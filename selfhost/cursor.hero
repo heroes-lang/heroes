@@ -39,6 +39,7 @@ use diag
 use describe
 use swap_words
 use report_marks
+use stream_tables
 
 ## Reading the text
 
@@ -88,8 +89,9 @@ record Cursor
     # hand, has none to tell, and its words are read from the text as the
     # lexer reads them (`parse/swap_reading.swap_at`).
     lexed: bool
-    # Each opener's closer by token index, once `pairing.pair_all` ran.
-    pairs: [i64]
+    # What the parser looks up by a token's index and keeps (`stream_tables`):
+    # each opener's closer, and the last walk back to a token a reader sees.
+    tables: stream_tables.Tables
 
 # A cursor over tokens no lexer made, a test's, all of them the author's.
 function new_cursor(tokens: [token.Token]) -> Cursor
@@ -113,7 +115,7 @@ function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps
         closes: closes,
         swaps: swaps,
         lexed: true,
-        pairs: []
+        tables: stream_tables.none()
     )
     pass_comments(@c)
     return c
@@ -166,26 +168,21 @@ function previous_kind(c: Cursor) -> token.TokenKind
     return c.tokens[c.pos - 1].kind
 
 # The last span a READER CAN SEE — walking back over the tokens that are layout
-# or annotation rather than program text.
+# or annotation rather than program text, on from where the last walk ended
+# once it meets where that one began (defect 258).
 #
 # A statement's own extent is built from this, and the extent is what §4.17's
 # caret underlines. Built from the previous span it reached the line's
 # terminator, whose position is past any trailing comment: `f() # a note` was
 # underlined twenty-three columns wide for a three-column statement, so the part
 # of the message that says WHERE pointed at something the author cannot fix.
-function previous_significant_span(c: Cursor) -> token.Span
-    i: i64 @ 0
-
-    if c.pos > 0
-        i @ c.pos - 1
-
-    while i > 0 && is_invisible(c.tokens[i].kind)
-        i @ i - 1
-
-    return c.tokens[i].span
+function previous_significant_span(@c: Cursor) -> token.Span
+    seen = stream_tables.seen_before(c.tokens, c.tables, at: c.pos - 1)
+    stream_tables.walked(@c.tables, from: c.pos - 1, to: seen.at)
+    return seen.span
 
 function is_invisible(kind: token.TokenKind) -> bool
-    return kind == .comment || kind == .terminator || kind == .indent || kind == .dedent
+    return stream_tables.is_invisible(kind)
 
 # True where the lexer already reported the problem: say nothing more.
 function at_reported_error(c: Cursor) -> bool
@@ -365,7 +362,7 @@ test "the caret underlines what a reader can see"
     c: Cursor @ new_cursor(tokens)
     _ = bump(@c)
     _ = bump(@c)
-    assert previous_significant_span(c) == token.Span(start: 0, end: 3)
+    assert previous_significant_span(@c) == token.Span(start: 0, end: 3)
 
 ## Recovery — what to drop after a mistake
 

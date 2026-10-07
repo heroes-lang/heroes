@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-258-a-block-s-end-is-found-past-the-dedents-in-one-step.hero:21:30: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` (this is not Python)
+tests/golden/check/fixedbugs-258-a-block-s-end-is-found-past-the-dedents-in-one-step.hero:41:111: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` (this is not Python)
+tests/golden/check/fixedbugs-258-a-block-s-end-is-found-past-the-dedents-in-one-step.hero:61:191: error[trailing_colon]: a block is opened by the indentation alone — drop the `:` (this is not Python)

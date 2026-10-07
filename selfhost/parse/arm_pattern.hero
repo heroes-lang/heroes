@@ -65,7 +65,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
         if cursor.at(c, .ident)
             binding @ ok(cursor.bump(@c).span)
         return ok(
-            ast.Pattern(kind: .variant_case(name: name, binding: binding), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+            ast.Pattern(kind: .variant_case(name: name, binding: binding), span: token.Span(start: start.start, end: cursor.previous_significant_span(@c).end))
         )
 
     # `_` lexes as an identifier: it is the wildcard only here.
@@ -86,7 +86,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
             )
             return fail(code: "no_pattern", msg: "the literal goes on as an expression")
         return ok(
-            ast.Pattern(kind: .literal(value: value.must()), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+            ast.Pattern(kind: .literal(value: value.must()), span: token.Span(start: start.start, end: cursor.previous_significant_span(@c).end))
         )
     refuse(@c, message: "expected a pattern, found " + cursor.found(c, text) + " — " + ALLOWED)
     return fail(code: "no_pattern", msg: "nothing here starts a pattern")
