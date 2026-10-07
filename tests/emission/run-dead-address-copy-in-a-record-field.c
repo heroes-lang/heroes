@@ -148,7 +148,8 @@ void h_deadaddresscopyinarecordfield_main(void);
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 h_0opt_1946b540 h_deadaddresscopyinarecordfield_opened(void) {
 #line 151 "deadaddresscopyinarecordfield.c"
-    cdb * h0_db;
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinarecordfield.opened", "db");
+#define h0_db (*hero_lend_h0_db)
     h_0opt_1946b540 h1_ret0 = {0};
     h_0opt_1946b540 h2_own2 = {0};
     h_0opt_1946b540 h3_own3 = {0};
@@ -178,6 +179,8 @@ bb0:
 #line 21 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t3 = hero_str_lend(t2);
 #line 21 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
+    hero_lend_local_name(hero_lend_h0_db, "db_open", "out");
+#line 21 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t4 = db_open(hero_cstr_nonnull(t3), &h0_db);
 #line 21 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     hero_handle_acquired(h0_db, "db_close");
@@ -199,7 +202,7 @@ bb1:
     t14 = h2_own2;
 #line 23 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     h2_own2 = t12;
-#line 203 "deadaddresscopyinarecordfield.c"
+#line 206 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&t14);
 #line 23 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     h1_ret0 = t12;
@@ -211,10 +214,10 @@ bb2:
     t7 = HERO_STR_LIT(hero_str_2cb37c54);
 #line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t8 = HERO_STR_LIT(hero_str_38b9);
-#line 215 "deadaddresscopyinarecordfield.c"
+#line 218 "deadaddresscopyinarecordfield.c"
     hero_str_incref(t7);
 #line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-#line 218 "deadaddresscopyinarecordfield.c"
+#line 221 "deadaddresscopyinarecordfield.c"
     hero_str_incref(t8);
 #line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t9 = (h_0opt_1946b540){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}};
@@ -222,7 +225,7 @@ bb2:
     t15 = h3_own3;
 #line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     h3_own3 = t9;
-#line 226 "deadaddresscopyinarecordfield.c"
+#line 229 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&t15);
 #line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     h1_ret0 = t9;
@@ -236,20 +239,22 @@ bb3:
 bb4:
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t13 = h1_ret0;
-#line 240 "deadaddresscopyinarecordfield.c"
+#line 243 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_retain(&t13);
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-#line 243 "deadaddresscopyinarecordfield.c"
+#line 246 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&h2_own2);
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-#line 246 "deadaddresscopyinarecordfield.c"
+#line 249 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&h3_own3);
+    hero_lend_local_give(hero_lend_h0_db);
     return t13;
 }
+#undef h0_db
 
 #line 25 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 int64_t h_deadaddresscopyinarecordfield_closed(h_deadaddresscopyinarecordfield_Db *ph0_db) {
-#line 253 "deadaddresscopyinarecordfield.c"
+#line 258 "deadaddresscopyinarecordfield.c"
     h_deadaddresscopyinarecordfield_Db t1;
     cdb * t2;
     int64_t t3;
@@ -273,12 +278,12 @@ bb0:
     }
 #line 26 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     return t3;
-#line 277 "deadaddresscopyinarecordfield.c"
+#line 282 "deadaddresscopyinarecordfield.c"
 }
 
 #line 28 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 void h_deadaddresscopyinarecordfield_main(void) {
-#line 282 "deadaddresscopyinarecordfield.c"
+#line 287 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540 h0_f0 = {0};
     h_deadaddresscopyinarecordfield_Db h1_db;
     h_deadaddresscopyinarecordfield_Db h2_kept;
@@ -306,15 +311,15 @@ bb0:
     t15 = h3_own3;
 #line 29 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     h3_own3 = t1;
-#line 310 "deadaddresscopyinarecordfield.c"
+#line 315 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&t15);
 #line 29 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t16 = h0_f0;
-#line 314 "deadaddresscopyinarecordfield.c"
+#line 319 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_retain(&t1);
 #line 29 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     h0_f0 = t1;
-#line 318 "deadaddresscopyinarecordfield.c"
+#line 323 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&t16);
 #line 29 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t2 = h0_f0;
@@ -352,10 +357,10 @@ bb1:
     hero_print_int(t14);
 #line 32 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     hero_print_end();
-#line 356 "deadaddresscopyinarecordfield.c"
+#line 361 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&h0_f0);
 #line 32 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-#line 359 "deadaddresscopyinarecordfield.c"
+#line 364 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&h3_own3);
     return;
 bb2:
@@ -363,7 +368,7 @@ bb2:
     t6 = h0_f0;
 #line 29 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t7 = t6.as.err;
-#line 367 "deadaddresscopyinarecordfield.c"
+#line 372 "deadaddresscopyinarecordfield.c"
     hero_panic_must(t7);
     hero_unreachable();
 }

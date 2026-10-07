@@ -130,8 +130,10 @@ int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
 #line 33 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 HeroStr h_fixedbugs436achildthatstopsiswaitedonandnotkilled_itself(void) {
 #line 133 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
-    __attribute__((unused)) int64_t h0_status;
-    __attribute__((unused)) int64_t h1_marks;
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.itself", "status");
+#define h0_status (*hero_lend_h0_status)
+    int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.itself", "marks");
+#define h1_marks (*hero_lend_h1_marks)
     HeroStr h2_own2 = {0};
     int64_t t1;
     int64_t t2;
@@ -148,27 +150,36 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     h1_marks = t2;
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status");
+#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+    hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks");
+#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks);
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t4 = h2_own2;
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     h2_own2 = t3;
-#line 157 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 163 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(t4);
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-#line 160 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 166 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_incref(t3);
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-#line 163 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 169 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(h2_own2);
+    hero_lend_local_give(hero_lend_h1_marks);
+    hero_lend_local_give(hero_lend_h0_status);
     return t3;
 }
+#undef h0_status
+#undef h1_marks
 
 #line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 void h_fixedbugs436achildthatstopsiswaitedonandnotkilled_main(void) {
-#line 170 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 180 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     HeroStr h0_program = {0};
-    __attribute__((unused)) int64_t h1_status;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.main", "status");
+#define h1_status (*hero_lend_h1_status)
     int64_t h2_code;
     HeroArrayHeader * h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -206,7 +217,7 @@ bb0:
     t25 = h3_own3;
 #line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     h3_own3 = t1;
-#line 210 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 221 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(t25);
 #line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t2 = hero_array_len(t1);
@@ -224,15 +235,15 @@ bb1:
     t26 = h4_own4;
 #line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     h4_own4 = t9;
-#line 228 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 239 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(t26);
 #line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t27 = h0_program;
-#line 232 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 243 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_incref(t9);
 #line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     h0_program = t9;
-#line 236 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 247 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(t27);
 #line 45 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     (void)hero_run_reset();
@@ -268,6 +279,8 @@ bb1:
     t20 = HERO_STR_LIT(hero_str_0);
 #line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t21 = hero_str_lend(t20);
+#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+    hero_lend_local_name(hero_lend_h1_status, "hero_run_go", "status");
 #line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     t22 = hero_run_go(hero_cstr_nonnull(t15), hero_cstr_nonnull(t17), hero_cstr_nonnull(t19), hero_cstr_nonnull(t21), (void *)&h1_status);
 #line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
@@ -309,20 +322,22 @@ bb3:
 #line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 bb4:
 #line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-#line 313 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 326 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(h0_program);
 #line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-#line 316 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 329 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(h3_own3);
 #line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-#line 319 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 332 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(h4_own4);
+    hero_lend_local_give(hero_lend_h1_status);
     return;
 }
+#undef h1_status
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 326 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 341 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -349,15 +364,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 353 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 368 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 357 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 372 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 361 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 376 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -385,7 +400,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 389 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 404 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -403,16 +418,16 @@ bb2:
 bb3:
 #line 202 "<heroes library>"
     t13 = h0_out;
-#line 407 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 422 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t13);
 #line 202 "<heroes library>"
-#line 410 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 425 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(h0_out);
 #line 202 "<heroes library>"
-#line 413 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 428 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_decref(h2_own2);
 #line 202 "<heroes library>"
-#line 416 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 431 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(h3_own3);
     return t13;
 }
