@@ -1,2 +1,1 @@
 tests/golden/check/fixedbugs-439-an-at-past-end-lease-s-one-argument.hero:16:5: error[builtin_shape]: `end_lease` does not take 2 argument(s) of those types
-tests/golden/check/fixedbugs-439-an-at-past-end-lease-s-one-argument.hero:16:5: error[end_lease_of_no_lease]: `end_lease` frees what `.lease()` made, and it takes the cell that holds it: `end_lease(@x)` where `x: cstr @ s.lease()` — this argument is not such a cell

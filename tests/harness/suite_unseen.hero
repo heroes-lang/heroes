@@ -51,9 +51,11 @@ constant EXEMPT: [str]
 
 # How many documents the walk read, the count on the day it was written, so
 # a walk that stops reaching the tree is red (`floors`). **5,072 on
-# 2026-10-05**, lane b12-str192's tree, measured by this suite.
+# 2026-10-05**, lane b12-str192's tree, measured by this suite. **6,381 at
+# batch 14's gate, 2026-10-07**, the merged round: the issues filed since,
+# panel 197's sitting and the batch's new modules and cases.
 constant LEAST_DOCUMENTS: i64
-    5072
+    6381
 
 # One character found, by its file, its line and its code.
 record Found

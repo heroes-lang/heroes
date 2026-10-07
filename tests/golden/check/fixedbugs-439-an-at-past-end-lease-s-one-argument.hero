@@ -13,5 +13,12 @@
 function main()
     c: cstr @ "abc".lease()
     n = 1
-    end_lease(@c, @n)  #~ builtin_shape end_lease_of_no_lease
+    end_lease(@c, @n)  #~ builtin_shape
     print(n)
+
+# Corrected 2026-10-07 at batch 14's gate, below the program so no line moves:
+# defect 458 (lane b14-check, `9e9af1ad`) removed the second message this case
+# pinned, *this argument is not such a cell*, false of `@c`; a call with an
+# argument too many is told its count alone. The interaction of two repairs of
+# one batch, 439's case written before 458's repair, redone here as the later
+# one (`.claude/rules/verification.md` § The batch, *Red*).

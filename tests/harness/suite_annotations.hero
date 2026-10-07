@@ -195,8 +195,13 @@ constant RUN_ROOTS: [str]
 # stepped aside for a library the machine lacks), took the count past 2779 by
 # more than a quarter, and on the merged tree the suite found 3581, none
 # stepped aside.
+#
+# **4671 at batch 14's gate, 2026-10-07**: the cases of batch 14's fifteen
+# lanes (lane b14-resolve's alone read 4,538) took the count past 3581 by
+# more than a quarter, and on the merged tree, with defect 439's case moved to
+# one mark by defect 458's repair, the suite found 4671, none stepped aside.
 constant LEAST: i64
-    3581
+    4671
 
 # **The run roots' own floor** (defect 318, 2026-10-04): what the walk of
 # `RUN_ROOTS` reaches, asked or stepped aside. They hold 133 of the marks

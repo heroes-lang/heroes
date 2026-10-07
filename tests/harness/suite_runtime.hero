@@ -107,8 +107,12 @@ constant ALLOCATORS: [str]
 # The estimate that carried them forward was wrong, and the record says so rather
 # than quietly correcting it: they were judged a low risk because they count
 # things that do not grow. Two of the three had more than doubled.
+#
+# **29 at batch 14's gate, 2026-10-07**, measured by this suite on the merged
+# round, past a quarter above 23; the newest part is `parts/write.c`
+# (defect 438, lane b14-runtime).
 constant LEAST_FILES: i64
-    23
+    29
 
 # **3 -> 7 on 2026-09-13.** Four allocation sites had been added to the single
 # point since the floor was written, which is the single point doing its job —
