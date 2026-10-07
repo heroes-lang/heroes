@@ -1,0 +1,18 @@
+# Defect 263, 2026-10-07 (lane b14-emit). The emitter wrote an
+# instruction's source `#line` before every instruction, and a retain or a
+# release then asked for the generated file's, so a release after a release
+# left a source `#line` that no statement followed: 301 of 3,133 in a
+# function returning a hundred slots, 35,957 in the compiler's own C. The
+# writer now keeps a request pending until a line is written under it, and
+# writes none that the claim already holds. `joined` releases its three
+# strings at its one `return`; its blessed emission holds no `#line`
+# followed by another, and every other line is what it was.
+
+function joined(n: i64) -> str
+    a = "a" + n.to_str()
+    b = "b" + n.to_str()
+    c = "c" + n.to_str()
+    return a + b + c
+
+function main()
+    print(joined(1))
