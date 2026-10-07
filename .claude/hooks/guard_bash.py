@@ -24,14 +24,11 @@ import subprocess
 import sys
 
 import ceiling
+import trees
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
 HARNESS = "tests/harness/main.hero"
-# What the compiler that judges must be newer than: the seed it is built from
-# and every source the seed is emitted from (`.claude/rules/verification.md`
-# § The compiler that judges is a build artifact).
-SOURCES = ("seed/heroes.c", "selfhost", "runtime")
 
 # The one endpoint the Anthropic key is in `.env` for, and the clients that can
 # actually reach it. A python one-liner is a client; `grep` is a reader.
@@ -176,8 +173,11 @@ def short_flags(w):
 
 
 def is_harness_run(w):
-    """`heroes run tests/harness/main.hero -- <compiler> ...`, whatever the binary is called."""
-    return HARNESS in w and "run" in w
+    """`heroes run tests/harness/main.hero -- <compiler> ...`, whatever the
+    binary is called and whether the harness is named from the tree's root or
+    by its whole path (defect 348's shape beside it, 2026-10-07)."""
+    named = any(t == HARNESS or t.endswith("/" + HARNESS) for t in w)
+    return named and "run" in w
 
 
 def is_gate(w):
@@ -187,31 +187,63 @@ def is_gate(w):
     return len(w) > 2 and w[1] == "test" and os.path.basename(w[0]).startswith("heroes")
 
 
-def newest_source(cwd):
-    """The newest mtime under the sources the judging compiler is built from, and its path."""
-    newest, where = 0.0, None
-    for entry in SOURCES:
-        top = os.path.join(cwd, entry)
-        if os.path.isfile(top):
-            candidates = [top]
-        elif os.path.isdir(top):
-            candidates = []
-            for base, _dirs, files in os.walk(top):
-                candidates.extend(os.path.join(base, f) for f in files)
-        else:
+def bare(w):
+    """`w` without the brackets of a subshell around it, `(cd x` read as `cd x`."""
+    out = list(w)
+    if out and out[0].startswith("("):
+        out[0] = out[0][1:]
+        if not out[0]:
+            out = out[1:]
+    if out and out[-1].endswith(")"):
+        out[-1] = out[-1][:-1]
+        if not out[-1]:
+            out = out[:-1]
+    return out
+
+
+def moved_to(w, here):
+    """Where the directory stands after the segment `w`, run in `here`: a
+    `cd` or `pushd` moves it, anything else leaves it. None when the text
+    cannot tell, a variable this hook does not hold or `cd -`, so a question
+    about the tree is not answered with the wrong one."""
+    w = bare(w)
+    if not w or w[0] not in ("cd", "pushd", "popd"):
+        return here
+    if w[0] == "popd":
+        return None
+    named = [a for a in w[1:] if not (a.startswith("-") and a != "-")]
+    target = named[0] if named else "~"
+    if target == "-":
+        return None
+    target = os.path.expandvars(os.path.expanduser(target))
+    if "$" in target or "`" in target:
+        return None
+    if os.path.isabs(target):
+        return os.path.normpath(target)
+    if here is None:
+        return None
+    return os.path.normpath(os.path.join(here, target))
+
+
+def placed(command, cwd):
+    """Each segment's words with the directory it runs in, `None` where the
+    text cannot tell. Until 2026-10-07 every segment was read in the session's
+    directory, so `cd <lane> && ./heroes run ...` was judged in the trunk
+    (defect 348)."""
+    here = os.path.abspath(cwd) if cwd else None
+    out = []
+    for segment in segments(command):
+        w = words(segment)
+        if not w:
             continue
-        for path in candidates:
-            try:
-                stamp = os.path.getmtime(path)
-            except OSError:
-                continue
-            if stamp > newest:
-                newest, where = stamp, os.path.relpath(path, cwd)
-    return newest, where
+        out.append((w, here))
+        here = moved_to(w, here)
+    return out
 
 
-def stale_compiler(w, cwd):
-    """The refusal when a harness run names a compiler older than the tree, else None.
+def stale_compiler(w, here):
+    """The refusal when a harness run names a compiler older than the tree it
+    runs in, else None.
 
     **Added 2026-09-29 (CL-079).** On 2026-09-18 the full net was judged by a
     binary built at 02:08 against a HEAD of 18:17: 1862 passed, 23 failed, none
@@ -219,28 +251,44 @@ def stale_compiler(w, cwd):
     information (`.claude/rules/verification.md` § The compiler that judges is a
     build artifact). Rebuilding costs seconds; this asks for it before the gate.
     `heroes test <file>` is not touched: it compiles the source it is given.
+
+    **The tree is the one the run stands in, since 2026-10-07** (defect 348,
+    `trees.py`): the nearest directory above the segment's own directory, its
+    `cd` read, holding `seed/heroes.c` and a `.git` entry, or above the
+    compiler's own path where the directory cannot be told. The harness reads
+    the tree from its working directory, so that is the tree being judged.
+    Until that day the session's directory was asked, and a lane's run from a
+    session on the trunk was refused for the trunk's age while the lane's
+    compiler was newer than every file of the lane.
     """
     if not is_harness_run(w) or "--" not in w:
         return None
     at = w.index("--")
     if at + 1 >= len(w):
         return None
-    compiler = os.path.join(cwd, w[at + 1])
+    named = w[at + 1]
+    if os.path.isabs(named):
+        compiler = named
+    elif here is not None:
+        compiler = os.path.join(here, named)
+    else:
+        return None
     if not os.path.isfile(compiler):
         return None
-    try:
-        built = os.path.getmtime(compiler)
-    except OSError:
+    tree = trees.tree_of(here) if here is not None else None
+    if tree is None:
+        tree = trees.tree_of(compiler)
+    if tree is None:
         return None
-    newest, where = newest_source(cwd)
-    if where is None or newest <= built + 1.0:
+    old = trees.older_than_tree(compiler, tree)
+    if old is None:
         return None
+    where, built, wrote = old
     return (
-        "refused: " + w[at + 1] + " was built before " + where + " was written, so the net "
-        "would judge with a compiler older than the tree. Build it first "
-        "(`clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, or "
-        "`./heroes build selfhost/main.hero -o heroes-next` for the source as it stands). "
-        + LAST_JUDGE
+        "refused: " + named + " was built at " + trees.stamp(built) + ", before " + where
+        + " was written at " + trees.stamp(wrote) + " in the tree this run judges, " + tree
+        + ", so the net would judge with a compiler older than the tree. Build it first, "
+        "there: " + trees.rebuild_hint(where) + ". " + LAST_JUDGE
     )
 
 
@@ -315,8 +363,8 @@ def verdict(command, cwd=None):
             "whole file, or read the terminal as it is. " + LAST_JUDGE
         )
 
-    for w in parsed:
-        stale = stale_compiler(w, cwd)
+    for w, here in placed(command, cwd):
+        stale = stale_compiler(w, here)
         if stale is not None:
             return stale
 
