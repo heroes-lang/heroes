@@ -1,0 +1,450 @@
+# Two runs of the recovery arm read against each other, the trunk's (the
+# base) and the round's (the head), mutant by mutant: panel 187's R2, *the
+# instrument reads two compilers, never a total* (defect 210).
+#
+# **A finding is one of three**, and each names its mutant: a mutant told
+# more messages of its own in either arm; a pair whose second was told,
+# and whose second is a parse-stage mistake, newly hidden; any APPLY flag
+# that moved. Fewer messages and none worse is the round's evidence, and
+# every mutant that moved is named either way, so the round's closing
+# commit can name them (R2: *the round's closing commit names every moved
+# mutant*). The run's answer is exit 1 over a finding, 0 over none.
+#
+# What `scratchpad/inst-187/differential.py` did, and three things it did
+# not, each a correction:
+#
+# - **a message is the mutant's own once its program's are subtracted**
+#   (`mutate/own.hero`), where a run recorded its corpus; a Python run did
+#   not, and its messages are read as they stand;
+# - **a pair's stage is its second's**, read from the second's single,
+#   where the Python read a `stage` no pair record carries and so counted
+#   every pair a parse-stage one; a later-stage second newly hidden is
+#   counted apart, read and not a finding, since the parse stage hides
+#   every later one by design (`judge.py`'s `stage_of`);
+# - **two messages are compared with the planted file's name made one**,
+#   so *same count, other words* says that words moved: the Python's
+#   names held a process and a thread id, and 13,286 of 13,594 singles read
+#   so between two runs of one plan (batch 13's gate, 2026-10-07).
+#
+# The told status is a word, `same`, `other` or `hidden`, never a boolean
+# (batch 8's gate, 2026-10-04, where the Python read the word as true).
+
+use cli/process
+use mutate/json_read
+use mutate/json_fields
+use mutate/own
+use mutate/plan
+use mutate/run_records
+
+record Reading
+    lines: [str]
+    findings: [str]
+    moved: [str]
+
+# `head` read against `base`, over the plan in `plan_dir`.
+function compared(plan_dir: str, base: run_records.Run, head: run_records.Run) -> Reading?
+    p = plan.read_plan(plan_dir)?
+    pinned = plan.digests(plan_dir)?
+
+    for run in [base, head]
+        if run.plan_digests.len() > 0 && run.plan_digests != pinned
+            return fail(
+                code: "other_plan",
+                msg: "a run replayed another plan than " + plan_dir + ": its digests are " + run.plan_digests.join(", ")
+            )
+
+    frozen = run_records.Frozen(plan: plan.by_key(p), dir: plan_dir)
+    texts: {str: str} @ {}
+    r: Reading @ Reading(lines: [], findings: [], moved: [])
+    singles(@r, frozen: frozen, base: base, head: head, @texts)?
+    pairs(@r, frozen: frozen, base: base, head: head, @texts)?
+    corpus(@r, base: base, head: head, pinned: own.read_corpus_at(plan_dir + "/corpus-messages.jsonl")?)
+    add(@r.lines, line: "moved: " + r.moved.len().to_str())
+
+    for one in r.moved
+        add(@r.lines, line: "  " + one)
+
+    add(@r.lines, line: "findings: " + r.findings.len().to_str())
+
+    for one in r.findings
+        add(@r.lines, line: "  " + one)
+
+    return ok(r)
+
+function singles(@r: Reading, frozen: run_records.Frozen, base: run_records.Run, head: run_records.Run, @texts: {str: str}) -> ()?
+    # ORDER: `shared` sorts the keys, so the mutants are read and named in key order.
+    common = shared(a: keys(base.singles), b: keys(head.singles))
+    add(
+        @r.lines,
+        line: "singles: base " + base.singles.len().to_str() + ", head " + head.singles.len().to_str() + ", common " + common.len().to_str()
+    )
+
+    for arm in ["normal", "control"]
+        counts: {str: i64} @ {}
+        classes: {str: i64} @ {}
+
+        for k in common
+            a = base.singles[k]?
+            b = head.singles[k]?
+            x = run_records.own_single(a, arm: arm, run: base, frozen: frozen, @texts)?
+            y = run_records.own_single(b, arm: arm, run: head, frozen: frozen, @texts)?
+            op = json_fields.text_field(a, name: "op").default("")
+            word: str @ "same"
+
+            if y.len() < x.len()
+                word @ "fewer"
+            else if y.len() > x.len()
+                word @ "more"
+                add(
+                    @r.findings,
+                    line: arm + ", more messages: " + op + " " + k + ", " + x.len().to_str() + " -> " + y.len().to_str()
+                )
+            else if run_records.alike(x, used: run_records.used_of(a)) != run_records.alike(y, used: run_records.used_of(b))
+                word @ "same count, other words"
+            counts[word] @ counts[word].default(0) + 1
+            was = json_fields.text_field(a, name: "class_" + arm).default("")
+            now = json_fields.text_field(b, name: "class_" + arm).default("")
+
+            if was != now
+                classes[was + " -> " + now + ", " + op] @ classes[was + " -> " + now + ", " + op].default(0) + 1
+
+            if word != "same" || was != now
+                add(
+                    @r.moved,
+                    line: arm + " " + k + " " + op + ": " + x.len().to_str() + " -> " + y.len().to_str() + " messages of its own, " + was + " -> " + now
+                )
+
+        add(@r.lines, line: "  " + arm + ": " + tally(counts))
+        add(@r.lines, line: "  " + arm + " classes moved: " + total(classes).to_str())
+        listed(@r, counts: classes)
+
+    flag_moves(@r, field: "flags", common: common, base: base, head: head)
+    flag_moves(@r, field: "apply_flags", common: common, base: base, head: head)
+    return ok()
+
+# The flags of `field` that moved between the runs, and a finding for each
+# APPLY flag among them. `apply_flags` is the arm's alone (`mutate/applied.hero`):
+# where either run's record lacks the field, a Python run's, it is not read.
+function flag_moves(@r: Reading, field: str, common: [str], base: run_records.Run, head: run_records.Run)
+    flags: {str: i64} @ {}
+    read: i64 @ 0
+
+    for k in common
+        x = base.singles[k]
+        y = head.singles[k]
+
+        if x.is_err() || y.is_err() || !json_fields.has(x.must(), name: field) || !json_fields.has(y.must(), name: field)
+            continue
+        read @ read + 1
+        a = json_fields.texts_field(x.must(), name: field).default([])
+        b = json_fields.texts_field(y.must(), name: field).default([])
+
+        if a != b
+            op = json_fields.text_field(x.must(), name: "op").default("")
+            move = "[" + a.join(",") + "] -> [" + b.join(",") + "]"
+            flags[move + ", " + op] @ flags[move + ", " + op].default(0) + 1
+
+            if apply_moved(a: a, b: b)
+                add(@r.findings, line: field + ", an APPLY flag moved: " + op + " " + k + ", " + move)
+            add(@r.moved, line: field + " " + k + " " + op + ": " + move)
+
+    add(@r.lines, line: "  " + field + " read in " + read.to_str() + " singles, moved: " + total(flags).to_str())
+    listed(@r, counts: flags)
+
+# Whether a flag beginning `APPLY` is in one list and not the other.
+function apply_moved(a: [str], b: [str]) -> bool
+    for f in a
+        if starts_apply(f) && !in_list(f, b)
+            return true
+
+    for f in b
+        if starts_apply(f) && !in_list(f, a)
+            return true
+
+    return false
+
+function starts_apply(f: str) -> bool
+    return f.len() >= 5 && f.slice(from: 0, to: 5) == "APPLY"
+
+function in_list(f: str, list: [str]) -> bool
+    for one in list
+        if one == f
+            return true
+
+    return false
+
+function pairs(@r: Reading, frozen: run_records.Frozen, base: run_records.Run, head: run_records.Run, @texts: {str: str}) -> ()?
+    # ORDER: `shared` sorts the keys, so the pairs are read and named in key order.
+    common = shared(a: keys(base.pairs), b: keys(head.pairs))
+    add(
+        @r.lines,
+        line: "pairs: base " + base.pairs.len().to_str() + ", head " + head.pairs.len().to_str() + ", common " + common.len().to_str()
+    )
+
+    for arm in ["normal", "control"]
+        moved: {str: i64} @ {}
+        later: i64 @ 0
+
+        for k in common
+            a = base.pairs[k]?
+            b = head.pairs[k]?
+
+            if json_fields.has(a, name: "error") || json_fields.has(b, name: "error")
+                continue
+            was = run_records.own_told(a, arm: arm, run: base, frozen: frozen, @texts)?
+            now = run_records.own_told(b, arm: arm, run: head, frozen: frozen, @texts)?
+
+            if was == now
+                continue
+            moved[was + " -> " + now] @ moved[was + " -> " + now].default(0) + 1
+            second = json_fields.text_field(a, name: "b")?
+            add(@r.moved, line: arm + " pair " + k + ": the second " + was + " -> " + now)
+
+            if was != "hidden" && now == "hidden"
+                if run_records.stage_of(second, base: base) == "later"
+                    later @ later + 1
+                else
+                    add(
+                        @r.findings,
+                        line: arm + ", a told second now hidden: " + json_fields.text_field(a, name: "a_op").default("") + " then " + json_fields.text_field(a, name: "b_op").default("") + ", " + k
+                    )
+
+        add(@r.lines, line: "  " + arm + " second's told status moved: " + total(moved).to_str())
+        listed(@r, counts: moved)
+        add(@r.lines, line: "  " + arm + " later-stage seconds newly hidden, read and not a finding: " + later.to_str())
+
+    return ok()
+
+# Which programs the two runs' compilers tell otherwise unmutated, and
+# which each tells otherwise than the record pinned with the plan, the
+# trunk's of the day the plan was pinned: a program told otherwise there is
+# one the language moved under (the fourth round's reading).
+function corpus(@r: Reading, base: run_records.Run, head: run_records.Run, pinned: {str: json_read.Json})
+    against(@r, label: "corpus, the head's against the base's", was: base.corpus, now: head.corpus)
+    against(@r, label: "corpus, the base's against its pinned record", was: pinned, now: base.corpus)
+    against(@r, label: "corpus, the head's against its pinned record", was: pinned, now: head.corpus)
+
+function against(@r: Reading, label: str, was: {str: json_read.Json}, now: {str: json_read.Json})
+    if was.len() == 0 || now.len() == 0
+        add(@r.lines, line: label + ": not read, one side recorded none")
+        return
+    otherwise: [str] @ []
+
+    # ORDER: `shared` sorts the programs, so they are named in path order.
+    for file in shared(a: keys(was), b: keys(now))
+        for arm in ["normal", "control"]
+            x = own.program_diags(was, file: file, arm: arm)
+            y = own.program_diags(now, file: file, arm: arm)
+
+            if run_records.alike(x, used: own.program_used(was, file: file)) != run_records.alike(y, used: own.program_used(now, file: file))
+                otherwise @ otherwise.push(
+                    "  " + arm + " " + file + ": " + x.len().to_str() + " -> " + y.len().to_str() + " messages"
+                )
+
+    add(
+        @r.lines,
+        line: label + ": " + now.len().to_str() + " programs, told otherwise unmutated: " + otherwise.len().to_str()
+    )
+
+    for one in otherwise
+        add(@r.lines, line: one)
+
+## Counting
+
+# The keys both maps hold, sorted.
+function shared(a: [str], b: [str]) -> [str]
+    held: {str: bool} @ {}
+
+    for k in b
+        held[k] @ true
+
+    out: [str] @ []
+
+    for k in a
+        if !held[k].is_err()
+            out @ out.push(k)
+
+    return out.sort()
+
+function total(counts: {str: i64}) -> i64
+    n: i64 @ 0
+
+    # ORDER: none observed; a sum.
+    for k in keys(counts)
+        n @ n + counts[k].default(0)
+
+    return n
+
+# `fewer 24, same 284`: each count by its word, the words sorted.
+function tally(counts: {str: i64}) -> str
+    out: [str] @ []
+
+    # ORDER: the words ascending, so two readings print alike.
+    for k in sort(keys(counts))
+        out @ out.push(counts[k].default(0).to_str() + " " + k)
+
+    return out.join(", ")
+
+# One line onto a report's list, the list lent so it grows where it stands
+# (spec § 10: an array grown through a field copies itself at every push).
+function add(@list: [str], line: str)
+    list @ list.push(line)
+
+function listed(@r: Reading, counts: {str: i64})
+    # ORDER: the moves ascending, so two readings print alike.
+    for k in sort(keys(counts))
+        add(@r.lines, line: "    " + k + ": " + counts[k].default(0).to_str())
+
+## Tests
+
+# A plan of two singles in one program and the pair of them, its corpus one
+# program of three lines: what every reading below is read over.
+function test_plan(dir: str)
+    assert !process.mkdir_all(dir + "/corpus").is_err()
+    hunk = "\"hunks\": [{\"start\": 0, \"end\": 0, \"new\": [\"x\"], \"site\": [0]}], \"stmt_lines\": [[1, 1]]"
+    planned = "{\"op\": \"o1\", \"file\": \"p.hero\", \"key\": \"k1\", " + hunk + "}\n{\"op\": \"o2\", \"file\": \"p.hero\", \"key\": \"k2\", " + hunk + "}\n"
+    measured = "{\"key\": \"k1\", \"stage\": \"parse\", \"class_normal\": \"ONE\", \"class_control\": \"ONE\"}\n{\"key\": \"k2\", \"stage\": \"parse\", \"class_normal\": \"ONE\", \"class_control\": \"ONE\"}\n"
+    assert !write_file(path: dir + "/plan-singles.jsonl", text: planned).is_err()
+    assert !write_file(path: dir + "/plan-base.jsonl", text: measured).is_err()
+    assert !write_file(path: dir + "/plan-pairs.jsonl", text: "{\"a\": \"k1\", \"b\": \"k2\", \"a_op\": \"o1\", \"b_op\": \"o2\", \"file\": \"p.hero\"}\n").is_err()
+    assert !write_file(path: dir + "/corpus/p.hero.frozen", text: "a\nb\nc\n").is_err()
+
+# One message, at `line`.
+function told_at(code: str, line: i64) -> str
+    return "{\"file\": \"zzm.hero\", \"line\": " + line.to_str() + ", \"col\": 1, \"kind\": \"error\", \"code\": \"" + code + "\", \"msg\": \"m\"}"
+
+# A single's record: its messages in both arms, its class, its flags.
+function single_row(key: str, stage: str, messages: [str], flags: str) -> str
+    verdict = if messages.len() == 1
+        "ONE"
+    else
+        "EXTRA"
+    arm = "{\"exit\": 1, \"diags\": [" + messages.join(", ") + "], \"other\": []}"
+    return "{\"path_used\": \"zzm.hero\", \"stage\": \"" + stage + "\", \"normal\": " + arm + ", \"control\": " + arm + ", \"class_normal\": \"" + verdict + "\", \"class_control\": \"" + verdict + "\", \"key\": \"" + key + "\", \"op\": \"o\", \"file\": \"p.hero\", \"site\": [1, 2], \"flags\": [" + flags + "]}"
+
+function pair_row(told: str) -> str
+    return "{\"key\": \"k1+k2\", \"a\": \"k1\", \"b\": \"k2\", \"a_op\": \"o1\", \"b_op\": \"o2\", \"file\": \"p.hero\", \"site_b\": [1, 2], \"normal_b_told\": \"" + told + "\", \"control_b_told\": \"same\"}"
+
+function test_run(dir: str, rows: [str], told: str) -> run_records.Run
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/singles.jsonl", text: rows.join("\n") + "\n").is_err()
+    assert !write_file(path: dir + "/pairs.jsonl", text: pair_row(told) + "\n").is_err()
+    return run_records.read_run(dir).must()
+
+function has_line(lines: [str], start: str) -> bool
+    for line in lines
+        if line.len() >= start.len() && line.slice(from: 0, to: start.len()) == start
+            return true
+
+    return false
+
+test "a mutant told one message more is a finding, in each arm, and one told fewer is named and is not"
+    dir = "build/selftest-recovery-differential-more"
+    test_plan(dir + "/plan")
+    one = told_at(code: "c", line: 1)
+    base = test_run(
+        dir: dir + "/base",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one, one], flags: ""), single_row(key: "k2", stage: "parse", messages: [one], flags: "")],
+        told: "same"
+    )
+    head = test_run(
+        dir: dir + "/head",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one], flags: ""), single_row(key: "k2", stage: "parse", messages: [one, one], flags: "")],
+        told: "same"
+    )
+    r = compared(dir + "/plan", base: base, head: head).must()
+    assert r.findings == ["normal, more messages: o k2, 1 -> 2", "control, more messages: o k2, 1 -> 2"]
+    assert has_line(r.moved, start: "normal k1 o: 2 -> 1 messages of its own, EXTRA -> ONE")
+    assert has_line(r.lines, start: "  normal: 1 fewer, 1 more")
+
+test "an APPLY flag that moves is a finding, either way"
+    dir = "build/selftest-recovery-differential-apply"
+    test_plan(dir + "/plan")
+    one = told_at(code: "c", line: 1)
+    base = test_run(
+        dir: dir + "/base",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one], flags: ""), single_row(key: "k2", stage: "parse", messages: [one], flags: "\"APPLY-SAME\"")],
+        told: "same"
+    )
+    head = test_run(
+        dir: dir + "/head",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one], flags: "\"APPLY-SAME\""), single_row(key: "k2", stage: "parse", messages: [one], flags: "")],
+        told: "same"
+    )
+    r = compared(dir + "/plan", base: base, head: head).must()
+    assert r.findings == ["flags, an APPLY flag moved: o k1, [] -> [APPLY-SAME]", "flags, an APPLY flag moved: o k2, [APPLY-SAME] -> []"]
+
+    # The arm's own field is read the same way, where both runs wrote it.
+    other = "\"APPLY-OTHER\""
+    with_full = test_run(
+        dir: dir + "/full-head",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one], flags: "").slice(from: 0, to: single_row(key: "k1", stage: "parse", messages: [one], flags: "").len() - 1) + ", \"apply_flags\": [" + other + "]}"],
+        told: "same"
+    )
+    without = test_run(
+        dir: dir + "/full-base",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one], flags: "").slice(from: 0, to: single_row(key: "k1", stage: "parse", messages: [one], flags: "").len() - 1) + ", \"apply_flags\": []}"],
+        told: "same"
+    )
+    f = compared(dir + "/plan", base: without, head: with_full).must()
+    assert f.findings == ["apply_flags, an APPLY flag moved: o k1, [] -> [APPLY-OTHER]"]
+
+test "a told second newly hidden is a finding where it is a parse-stage mistake, and counted apart where it is a later one"
+    dir = "build/selftest-recovery-differential-hidden"
+    test_plan(dir + "/plan")
+    one = told_at(code: "c", line: 1)
+    both = [
+        single_row(key: "k1", stage: "parse", messages: [one], flags: "")
+        single_row(key: "k2", stage: "parse", messages: [one], flags: "")
+    ]
+    base = test_run(dir: dir + "/base", rows: both, told: "other")
+    head = test_run(dir: dir + "/head", rows: both, told: "hidden")
+    r = compared(dir + "/plan", base: base, head: head).must()
+    assert r.findings == ["normal, a told second now hidden: o1 then o2, k1+k2"]
+
+    # The second a later stage's mistake: the parse stage hides it by design.
+    later = [
+        single_row(key: "k1", stage: "parse", messages: [one], flags: "")
+        single_row(key: "k2", stage: "later", messages: [one], flags: "")
+    ]
+    late_base = test_run(dir: dir + "/late-base", rows: later, told: "same")
+    late_head = test_run(dir: dir + "/late-head", rows: later, told: "hidden")
+    l = compared(dir + "/plan", base: late_base, head: late_head).must()
+    assert l.findings.len() == 0
+    assert has_line(l.lines, start: "  normal later-stage seconds newly hidden, read and not a finding: 1")
+
+    # A second hidden that is told again is evidence, named, never a finding.
+    back = compared(dir + "/plan", base: head, head: base).must()
+    assert back.findings.len() == 0
+    assert has_line(back.moved, start: "normal pair k1+k2: the second hidden -> other")
+
+test "a message the program itself is told is taken out of each mutant's before the two are compared"
+    dir = "build/selftest-recovery-differential-corpus"
+    test_plan(dir + "/plan")
+    one = told_at(code: "c", line: 1)
+    program = told_at(code: "lone_brace", line: 3)
+    in_mutant = told_at(code: "lone_brace", line: 4)
+    arm = "{\"exit\": 1, \"diags\": [" + program + "], \"other\": []}"
+    clean = "{\"exit\": 0, \"diags\": [], \"other\": []}"
+    assert !process.mkdir_all(dir + "/base").is_err()
+    assert !process.mkdir_all(dir + "/head").is_err()
+    assert !write_file(path: dir + "/head/corpus.jsonl", text: "{\"file\": \"p.hero\", \"path_used\": \"zzm.hero\", \"normal\": " + arm + ", \"control\": " + arm + "}\n").is_err()
+    assert !write_file(path: dir + "/base/corpus.jsonl", text: "{\"file\": \"p.hero\", \"path_used\": \"zzm.hero\", \"normal\": " + clean + ", \"control\": " + clean + "}\n").is_err()
+    base = test_run(
+        dir: dir + "/base",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one], flags: ""), single_row(key: "k2", stage: "parse", messages: [one], flags: "")],
+        told: "same"
+    )
+    head = test_run(
+        dir: dir + "/head",
+        rows: [single_row(key: "k1", stage: "parse", messages: [one, in_mutant], flags: ""), single_row(key: "k2", stage: "parse", messages: [one], flags: "")],
+        told: "same"
+    )
+    r = compared(dir + "/plan", base: base, head: head).must()
+    assert r.findings.len() == 0
+    assert has_line(r.lines, start: "corpus, the head's against the base's: 1 programs, told otherwise unmutated: 2")
+
+    # Without the program's record, the same message is the mutant's own.
+    assert !write_file(path: dir + "/head/corpus.jsonl", text: "").is_err()
+    bare = compared(dir + "/plan", base: base, head: run_records.read_run(dir + "/head").must()).must()
+    assert bare.findings == ["normal, more messages: o k1, 1 -> 2", "control, more messages: o k1, 1 -> 2"]
