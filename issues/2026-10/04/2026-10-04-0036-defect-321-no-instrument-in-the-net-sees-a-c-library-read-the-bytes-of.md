@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: f0404dac3c88eea570712ad45ded866cf7876ea5
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 190's ffi-pragmatist, 2026-10-04 (`docs/panel/190-reports/ffi-pragmatist.md` §§ 2, 3, 19 and 27), named by the critic's second pass as in no file; filed with the sitting's synthesis.
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): hardening of the net: no program today is wrong for it, and panel 190's R5 refuses the two routes it would let through; a route that moves a release would pass the whole net without it.
+
+    Repaired at `f0404dac`, 2026-10-07 (lane b14-cli), gated by its cases and the net's own tests; the net is owed at the batch's close. Both sanitised runs of a `run` case get ASan's fill through `env` (`tests/harness/freed_bytes.hero`), and on Darwin the `-O0` binary runs again under Guard Malloc, a Darwin without it a failure; the planted keeper, its reader uninstrumented, prints 412 under `--sanitize` alone, 680 with the fill and faults under Guard Malloc, its twin reading in time right in all three; the fill +1.1% of the sanitised runs, and untested off this Mac on Linux's and Windows' ASan.

@@ -1,0 +1,172 @@
+# What makes a C library's read of freed bytes show in the `run` suite
+# (defect 321; panel 190's ffi-pragmatist, §§ 2, 3, 19 and 27 of its report).
+#
+# A binding whose `lent` is false of its function lets C keep a `str`'s bytes
+# past their release, as SQLite keeps a text bound with no destructor, and C
+# reads them later. AddressSanitizer does not see that read: the library is not
+# instrumented, and ASan's quarantine keeps the freed bytes as they were, so
+# the program prints the right answer at exit 0 under `--sanitize`, measured by
+# the sitting on this Mac, on Linux arm64 under two clangs and on the Windows
+# box. The plain runs see it only by the allocator's accident: Darwin's
+# allocator zeroes a small block it frees, so the read turns to zeros there,
+# and glibc's leaves the text in place, so it is right by accident there. A
+# compiler that releases a string earlier, at its last use or by sharing one
+# slot between two arms, would pass every leg the suite had.
+#
+# Two instruments see it, and this module gives `suite_run.hero` both:
+#
+# - **ASan's own fill**: `max_free_fill_size` and `free_fill_byte` make ASan
+#   write a byte over everything it frees, so the read in C returns that byte
+#   and the program prints a wrong answer the expectation refuses. It is given
+#   to every sanitised run, so it costs no build. Measured 2026-10-07 on this
+#   Mac: the planted keeper below prints 412 under `--sanitize` alone and 680
+#   with the fill, eight bytes of 85.
+# - **Guard Malloc** on Darwin, `libgmalloc`: each block on a page of its own
+#   and a freed one unmapped, so the read faults where it is made. It runs the
+#   `-O0` binary the first leg already built. Its own messages go to a file
+#   beside the case (`MALLOC_LOG_FILE`) and are told with a failure, since a
+#   case's stderr is part of its expectation.
+#
+# Both reach the program through `env`, the one way to give a child a variable
+# that the runtime's spawn has (it passes this process's environment on and
+# takes none of its own). Guard Malloc needs it for a second reason: a program
+# protected by System Integrity Protection, `/bin/sh` among them, is started
+# with every `DYLD_` variable dropped, and `env` is given the variable as an
+# argument and sets it itself for the program it starts.
+#
+# **Where each runs** is a premise about the world, written so it fails
+# loudly: Guard Malloc is Darwin's alone, asked of the file Darwin ships it as,
+# and a Darwin that does not have it is a failure of the leg, never a leg left
+# out in silence (`guard_malloc`). The fill is ASan's on every platform where
+# `--sanitize` runs. Measured on this Mac only: the fill on Linux and Windows,
+# and `env` on the Windows box, are the round's legs to run.
+
+use shell
+use strings
+
+# What every sanitised run of a case is handed: everything ASan frees is
+# overwritten with 85 (`U`) at its whole length, the length being the largest
+# the option takes in a 32-bit word, so no block is left half as it was.
+constant FILL: str
+    "ASAN_OPTIONS=max_free_fill_size=2147483647:free_fill_byte=85"
+
+# Where Darwin keeps Guard Malloc, and a file every Darwin has, which is how
+# this module asks whether it is on one.
+constant GUARD_MALLOC: str
+    "/usr/lib/libgmalloc.dylib"
+
+constant DARWIN: str
+    "/System/Library/CoreServices/SystemVersion.plist"
+
+# `words` run with the fill handed to the program they start.
+function filled(words: [str]) -> [str]
+    out: [str] @ ["env", FILL]
+
+    for word in words
+        out @ out.push(word)
+
+    return out
+
+# Guard Malloc's library where this is Darwin; `not_darwin` elsewhere; and
+# `missing` on a Darwin without it, which the leg reports as its failure.
+function guard_malloc() -> str?
+    if !shell.exists(DARWIN)
+        return fail(code: "not_darwin", msg: "Guard Malloc is Darwin's")
+
+    if !shell.exists(GUARD_MALLOC)
+        return fail(
+            code: "missing",
+            msg: "this is Darwin and " + GUARD_MALLOC + " is not here, so no leg of `run` sees a C library read freed bytes on this machine"
+        )
+    return ok(GUARD_MALLOC)
+
+# `binary` run under Guard Malloc, its messages written to `log`.
+function guarded(binary: str, library: str, log: str) -> [str]
+    return ["env", "DYLD_INSERT_LIBRARIES=" + library, "MALLOC_LOG_FILE=" + log, binary]
+
+## Tests
+
+# The planted control: a C library of the program's own that keeps the
+# pointer it is lent, as SQLite keeps a text bound with no destructor, and
+# reads eight of its bytes after the string is freed. Its reader is not
+# instrumented, as a system library's is not. The right answer is the sum of
+# `"0123456789".repeat(10)`'s bytes 40 to 47, 412.
+constant KEEPER_H: str
+    "#include <stdint.h>\nstatic const unsigned char *keeper_kept;\nstatic inline void keeper_keep(const char *text) { keeper_kept = (const unsigned char *)text; }\n__attribute__((no_sanitize(\"address\")))\nstatic inline int64_t keeper_sum(int64_t from, int64_t to) {\n    int64_t sum = 0;\n    for (int64_t i = from; i < to; i++) sum += keeper_kept[i];\n    return sum;\n}\n"
+
+# The binding says `lent`, which is false of `keeper_keep`: that is the
+# program's mistake, and the one no compiler can see.
+constant KEEPER: str
+    "extern \"keeper.h\"\n    function keeper_keep(text: cstr lent)\n    function keeper_sum(from: i64, to: i64) -> i64\n\nfunction lend(n: i64)\n    text = \"0123456789\".repeat(10) + n.to_str()\n    keeper_keep(text: text.cstr())\n\nfunction main()\n    lend(7)\n    print(keeper_sum(from: 40, to: 48))\n"
+
+# The same library read while the string is alive: the correct program, which
+# every leg must pass, so that what turns the control red is the read of freed
+# bytes and nothing else the leg does.
+constant READ_IN_TIME: str
+    "extern \"keeper.h\"\n    function keeper_keep(text: cstr lent)\n    function keeper_sum(from: i64, to: i64) -> i64\n\nfunction main()\n    text = \"0123456789\".repeat(10) + 7.to_str()\n    keeper_keep(text: text.cstr())\n    print(keeper_sum(from: 40, to: 48))\n"
+
+# The control and its twin, laid out under `dir`.
+function planted(dir: str) -> ()?
+    shell.mkdir_all(dir)?
+    write_file(path: dir + "/keeper.h", text: KEEPER_H)?
+    write_file(path: dir + "/keeper.hero", text: KEEPER)?
+    write_file(path: dir + "/in_time.hero", text: READ_IN_TIME)?
+    return ok()
+
+test "the fill turns a C library's read of freed bytes into a wrong answer, and ASan alone does not (defect 321)"
+    scratch = shell.own_scratch()
+    dir = scratch + "/freed-321"
+    assert !planted(dir).is_err()
+    compiler = shell.some_compiler().must()
+
+    # ASan alone: the right answer, and nothing said. This is the blindness.
+    alone = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", dir + "/keeper.hero", "--sanitize", "-O0"]).must(
+    )
+    assert alone.code == 0
+    assert alone.out == "412\n"
+    assert !strings.contains(text: alone.err, needle: "AddressSanitizer")
+
+    # With the fill, the bytes C reads are 85 each.
+    words = filled([compiler, "run", dir + "/keeper.hero", "--sanitize", "-O0"])
+    seen = shell.run(scratch: scratch, program: words[0], words: words).must()
+    assert seen.out == "680\n"
+
+    # And the program that reads in time is right under the fill too.
+    fine = filled([compiler, "run", dir + "/in_time.hero", "--sanitize", "-O0"])
+    right = shell.run(scratch: scratch, program: fine[0], words: fine).must()
+    assert right.code == 0
+    assert right.out == "412\n"
+    assert right.err == ""
+    assert !shell.remove_tree(scratch).is_err()
+
+test "Guard Malloc stops a C library at its read of freed bytes, on Darwin (defect 321)"
+    library = guard_malloc()
+
+    # Off Darwin there is nothing to run; on a Darwin without it, the leg's
+    # own failure is the answer, and so is this test's.
+    match library
+        .ok => _ = 0
+        .err e =>
+            assert e.code == "not_darwin"
+            return
+
+    scratch = shell.own_scratch()
+    dir = scratch + "/guarded-321"
+    assert !planted(dir).is_err()
+    compiler = shell.some_compiler().must()
+
+    for name in ["keeper", "in_time"]
+        built = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/" + name + ".hero", "-o", dir + "/" + name + shell.exe_suffix()]).must(
+        )
+        assert built.code == 0
+
+    stopped = guarded(binary: dir + "/keeper", library: library.must(), log: dir + "/keeper.gmalloc.txt")
+    faulted = shell.run(scratch: scratch, program: stopped[0], words: stopped).must()
+    assert faulted.code != 0
+    assert faulted.out == ""
+    clean = guarded(binary: dir + "/in_time", library: library.must(), log: dir + "/in_time.gmalloc.txt")
+    passed = shell.run(scratch: scratch, program: clean[0], words: clean).must()
+    assert passed.code == 0
+    assert passed.out == "412\n"
+    assert passed.err == ""
+    assert !shell.remove_tree(scratch).is_err()
