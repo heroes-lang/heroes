@@ -31,6 +31,7 @@
 
 use bytes
 use emit/ffi_pointee
+use emit/width_line
 use emit/ffi_unit
 use emit/ffi_read_only
 use emit/lend_type
@@ -134,9 +135,7 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
         lines @ lines.push(
             "_Static_assert(!__builtin_types_compatible_p(" + header_type + ", void), \"" + ffi_pointee.VOID_MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
         )
-        lines @ lines.push(
-            "_Static_assert(sizeof(" + header_type + ") == sizeof(" + asked.declared + ") && (((" + header_type + ")-1 > 0) == ((" + asked.declared + ")-1 > 0)), \"" + ffi_pointee.MARKER + asked.name + " " + asked.param + " " + asked.declared + " " + header_type + "\");"
-        )
+        lines @ lines.push(width_line.width_assertions(asked, header_type: header_type))
 
     return lines.join("\n") + "\n"
 
@@ -414,7 +413,8 @@ test "the check unit asserts width and sign at the author's line, with the marke
     unit = check_unit(headers, wanted, types: types, sugar: none)
     assert unit.slice(from: 0, to: 18) == "#include <stdio.h>"
     assert locate_text(text: unit, needle: "#line 2 \"t.hero\"", from: 0).must() > 0
-    assert locate_text(text: unit, needle: "_Static_assert(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0)), \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0
+    assert locate_text(text: unit, needle: "_Static_assert(!(!(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0))) && sizeof(size_t) * 8 == 64), \"heroes-ffi-pointee-bits getline n int32_t 64 size_t\");", from: 0).must() > 0
+    assert locate_text(text: unit, needle: "sizeof(size_t) * 8 == 128, \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0
     assert locate_text(text: unit, needle: "heroes-ffi-pointee frexp e int32_t int\"", from: 0).must() > 0
     assert locate_text(text: unit, needle: "_Static_assert(!__builtin_types_compatible_p(void, void) && __builtin_classify_type(*(void *)0) == 5, \"heroes-ffi-pointee-depth eat p handle void\");", from: 0).must() > 0
     assert locate_text(text: unit, needle: "sizeof(handle)", from: 0).is_err()

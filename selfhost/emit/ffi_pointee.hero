@@ -67,25 +67,48 @@ function parameter_spans(s: source.Source, decls: [ast.Decl], tree: ast.Ast, nam
 
     return fail(code: "none", msg: "no such parameter on an extern of that name")
 
+# The width line's companions' marker (2026-10-07, found on the Windows box
+# by batch 13's pre-leg; `emit/width_line.hero` writes them): no prefix of
+# `MARKER`'s, nor it of theirs.
+constant BITS_MARKER: str
+    "heroes-ffi-pointee-bits "
+
 # `heroes-ffi-pointee <name> <param> <declared C type> <header type…>`
 # failed: the header's parameter points at something of another width or
 # sign than the `@` parameter declares. The header type may be several
-# words (`unsigned long`), so it is everything after the third.
+# words (`unsigned long`), so it is everything after the third. Its
+# companion `heroes-ffi-pointee-bits`, read the same way, carries the
+# header's width in bits before the type, and that width is the one a
+# platform type is told at, never `long`'s.
 function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str, word_bits: i64) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
-    rest = ffi_lookup.after(text: line, marker: MARKER)
+    measured = ffi_lookup.after(text: line, marker: BITS_MARKER)
+    rest: str? @ ffi_lookup.after(text: line, marker: MARKER)
+    first: i64 @ 3
+    width: i64 @ word_bits
+
+    if !measured.is_err()
+        rest @ measured
+        first @ 4
 
     if rest.is_err()
         return fail(code: "none", msg: "not a pointee assertion")
     parts = ffi_lookup.words(text: rest.must())
 
-    if parts.len() < 4
+    if parts.len() < first + 1
         return fail(code: "none", msg: "the marker's tail is not ours")
+
+    if first == 4
+        bits = ffi_lookup.number(parts[3])
+
+        if bits.is_err()
+            return fail(code: "none", msg: "the marker's width is not a number")
+        width @ bits.must()
     name = parts[0]
     param = parts[1]
     tail: [str] @ []
-    index: i64 @ 3
+    index: i64 @ first
 
     while index < parts.len()
         tail @ tail.push(parts[index])
@@ -111,7 +134,7 @@ function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
     d.notes @ d.notes.push(
         "§4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`"
     )
-    spelled = c_spellings.spelling(c_type: header_type, word_bits: word_bits)
+    spelled = c_spellings.spelling(c_type: header_type, word_bits: width)
 
     if spelled.is_err()
         d.notes @ d.notes.push(
@@ -355,6 +378,19 @@ test "the marker's tail is read into the parameter's own diagnostic, with the he
     assert two.must().fixes[0].replacement == "u64"
     assert pointee_width(s, parsed.decls, parsed.tree, line: "t.hero:2:5: error: static assertion failed: heroes-ffi-return getline i64", word_bits: 64).is_err(
     )
+
+    # The width the header's type has on the target rides its own line, and a
+    # platform type is told at it, not at `long`'s: Windows, where `long` is 32
+    # bits and `size_t` 64 (batch 13's Windows pre-leg, 2026-10-07).
+    measured = pointee_width(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed due to requirement 'x': heroes-ffi-pointee-bits getline n int32_t 64 size_t",
+        word_bits: 32
+    )
+    assert measured.must().fixes[0].replacement == "u64"
+    assert ffi_lookup.has(text: measured.must().notes[1], needle: "64 bits on this machine")
 
 test "a void pointee is read off its guard line into ptr-and-no-@, and the fix spans from the @ (defect 010)"
     text = "extern \"string.h\"\n    function memcpy(@dst: i32, src: ptr, n: u64) -> ptr\n\nfunction main()\n    print(1)\n"

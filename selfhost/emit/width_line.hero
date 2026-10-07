@@ -1,0 +1,60 @@
+# The pointee check's width question for one `@` parameter, as the check
+# unit writes it (design.md §4.19, §1.12; panel 103; 2026-10-07). Split out of
+# `cli/header_types.hero`, which writes the unit and stands at 300 lines, and
+# kept apart from `emit/ffi_pointee.hero`, which reads the answer, so the two
+# markers it writes keep their one home there and this file imports them.
+
+use emit/ffi_pointee
+use cli/pointee_ask
+use emit/ffi_lookup
+
+# The check unit's width question for one `@` parameter, as ONE line, so every
+# assertion on it stands at the author's `#line`. **The header's own width
+# rides the refusal** (2026-10-07): the guess for a platform type named
+# `long`'s width as `size_t`'s, and `long` is 32 bits on Windows where
+# `size_t` is 64, so `fp_count(@n: i32)` against `size_t *` was told `u32`
+# there, a false message. So the width question is five assertions that fail
+# where the widths or signs disagree and `sizeof` of the header's type is 1,
+# 2, 4, 8 or 16 bytes, each naming that width, C11 arithmetic on the target's
+# own type, and a plain one for any other width.
+function width_assertions(asked: pointee_ask.Pointee, header_type: str) -> str
+    same = "sizeof(" + header_type + ") == sizeof(" + asked.declared + ") && (((" + header_type + ")-1 > 0) == ((" + asked.declared + ")-1 > 0))"
+    named = asked.name + " " + asked.param + " " + asked.declared + " "
+    out: [str] @ []
+    sized: [str] @ []
+
+    for bits in [8, 16, 32, 64, 128]
+        is_bits = "sizeof(" + header_type + ") * 8 == " + bits.to_str()
+        sized @ sized.push(is_bits)
+        out @ out.push(
+            "_Static_assert(!(!(" + same + ") && " + is_bits + "), \"" + ffi_pointee.BITS_MARKER + named + bits.to_str() + " " + header_type + "\");"
+        )
+
+    # The plain one fails only at a width none of the five names, so a wrong
+    # parameter is one refusal and clang's error limit counts it once.
+    out @ out.push(
+        "_Static_assert((" + same + ") || " + sized.join(" || ") + ", \"" + ffi_pointee.MARKER + named + header_type + "\");"
+    )
+    return out.join(" ")
+
+## Tests
+
+test "the width question names the header's width on the line that fails, and a plain line fails only at a width none names"
+    asked = pointee_ask.Pointee(
+        name: "getline",
+        param: "n",
+        index: 1,
+        declared: "int32_t",
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    written = width_assertions(asked, header_type: "size_t")
+    assert ffi_lookup.has(
+        text: written,
+        needle: "sizeof(size_t) * 8 == 16), \"heroes-ffi-pointee-bits getline n int32_t 16 size_t\");"
+    )
+    assert ffi_lookup.has(
+        text: written,
+        needle: "sizeof(size_t) * 8 == 128, \"heroes-ffi-pointee getline n int32_t size_t\");"
+    )
