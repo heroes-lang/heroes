@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-456-a-broken-type-beside-a-head-is-told-once.hero:9:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`i64`)
+tests/golden/check/fixedbugs-456-a-broken-type-beside-a-head-is-told-once.hero:14:13: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`i32`)
+tests/golden/check/fixedbugs-456-a-broken-type-beside-a-head-is-told-once.hero:17:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`i32`)

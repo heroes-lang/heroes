@@ -1,0 +1,10 @@
+# Defect 456, 2026-10-07: the head of defect 456's case, a parameter type
+# opened by `(` on one line and closed on the next, standing last in its
+# file with no body under it. `check` stopped there at exit 134 too, the
+# step past the stray closers reading past the last token; told now.
+
+function main()
+    print(1)
+
+function f(a: (  #~v expected_function_type expected_end_of_line expected_binding_symbol
+        bool), b: bool)

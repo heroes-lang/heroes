@@ -1,0 +1,17 @@
+# Defect 456, 2026-10-07: the shapes beside its case, where a parameter
+# type broken across lines in a head stopped `check` at exit 134: such a
+# type in a binding at a body's end, in a function of an `extern` group at
+# the file's end, and in a field of the group's record, each told once,
+# as each was before the repair.
+
+function main()
+    x: (  #~v expected_function_type
+        i64) @ 1
+
+extern "m.h"
+    record R
+        x: (  #~v expected_function_type
+            i32)
+        y: i32
+    function g(a: (  #~v expected_function_type
+        i32), b: i32) -> i32
