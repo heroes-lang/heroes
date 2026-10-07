@@ -110,7 +110,7 @@ function statement(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 
 function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     match a.exprs[id].kind
-        .name => names.bare_name(@r, a, s, decls, id)
+        .name => names.bare_name(@r, a, s, decls, id, called: false)
         # The module, not a flag: §4.16's suppression is file-wide, so a
         # hole here must not quiet the unused rule in a module nobody is
         # editing.
@@ -149,7 +149,12 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
         # `@` handed to a construction is told and taken off
         # (`resolve/built_marks`, defect 412).
         .call c =>
-            expr(@r, a, s, decls, c.callee)
+            # A name called is resolved as one, so the message for a name
+            # nothing binds says how a function of C is (defect 270).
+            if a.exprs[c.callee].kind == .name
+                names.bare_name(@r, a, s, decls, c.callee, called: true)
+            else
+                expr(@r, a, s, decls, c.callee)
             handed = built_marks.of_a_call(@r, a, s, decls, callee: c.callee, receiver: false, given: c.args)
             arguments(@r, a, s, decls, handed)
             rest_zero.at_call(@r, a, s, decls, at: id, rest: c.rest)
