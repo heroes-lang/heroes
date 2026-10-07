@@ -22,9 +22,11 @@ use resolve
 use check/table
 use check/state
 use check/lower
+use check/contextual
 use value_errors
 use data_errors
 use flow_errors
+use ffi_errors
 
 # `p.x` — a field of a record, of a variant's case, or of the error
 # payload.
@@ -148,6 +150,55 @@ function index_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], base
             return state.error_ty_of(c)
 
     return state.error_ty_of(c)
+
+# A constant index into a fixed array is judged HERE, where the index
+# EXPRESSION is (panel 062): the bound check needs the value, and
+# `v.params[9]` on an i32[4] is wrong when written. Moved here from
+# `check/walk.hero` on 2026-10-07 (defect 429), unchanged, beside the index
+# rule it belongs to: it calls nothing back in the walk.
+function fixed_bound_check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], base_ty: i64, index_expr: i64, span: token.Span)
+    match table.get(c.out.types, base_ty)
+        .fixed x =>
+            literal = contextual.literal_value(a, s, index_expr)
+
+            if literal.is_err()
+                return
+            v = literal.must()
+            past = !v.negative && v.magnitude >= x.length.to_u64().must()
+
+            if v.negative || past
+                shown = state.show(c, s, decls, base_ty)
+                rendered: str @ v.magnitude.to_str()
+
+                if v.negative
+                    rendered @ "-" + v.magnitude.to_str()
+                state.push_diagnostic(
+                    @c,
+                    ffi_errors.fixed_index_out_of_range(shown: shown, length: x.length, got_text: rendered, span: span)
+                )
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .array | .map | .fallible | .function_ty | .named         => return
+        .case_ty | .failure | .generic | .error                   => return
+
+# The key type a map asks of its index where the index has no type of its own,
+# a number literal, a `.case`, an empty literal (`contextual`), and adopts it
+# (defect 429): spec § 2's literal takes the type its context asks for, and a
+# map's index is asked for its key. An index with a type of its own keeps it
+# and is held to the key by `index_type` as before; an array's and a string's
+# index is an `i64` and nothing asks it otherwise.
+function key_asked(c: state.Checker, a: ast.Ast, decls: [ast.Decl], base: i64, index: i64) -> i64?
+    if !contextual.contextual(a, index)
+        return fail(code: "own", msg: "the index has a type of its own")
+
+    match table.get(c.out.types, base)
+        .map m =>
+            if contextual.adopts(c, a, decls, id: index, offered: m.key)
+                return ok(m.key)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "unasked", msg: "no key")
+        .array | .fixed | .fallible | .function_ty | .named       => return fail(code: "unasked", msg: "no key")
+        .case_ty | .failure | .generic | .error                   => return fail(code: "unasked", msg: "no key")
+
+    return fail(code: "unadopted", msg: "the index does not take the key type")
 
 # The WRITE side of the index rule above, and it lives here because it is the
 # same rule: `s[i]` READS a `u8` and there is nothing to write it back into,

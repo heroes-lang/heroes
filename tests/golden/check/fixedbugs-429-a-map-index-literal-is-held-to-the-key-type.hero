@@ -1,0 +1,36 @@
+# Fixed defect 429, 2026-10-07 (lane b13-gen402): the refusals. A map's index
+# with no type of its own is checked against the key type (spec § 2), so a
+# literal past the key's width is that literal's own `int_out_of_range`, at
+# the literal, read or stored, where the base told a `type_mismatch` naming
+# `i64` for every such index, in range or not. An index that has a type keeps
+# it: an `i64` name into a `u8` key, and a number into a `str` key, are the
+# mismatch they always were.
+
+function past_the_width_read()
+    names: {u8: str} = {11: "eleven"}
+    print(names[300].is_err())  #~ int_out_of_range
+
+function past_the_width_stored()
+    names: {u8: str} @ {}
+    names[256] @ "x"  #~ int_out_of_range
+    print(names.len())
+
+function below_an_unsigned_key()
+    names: {u8: str} = {11: "eleven"}
+    print(names[-1].is_err())  #~ int_out_of_range
+
+function an_index_with_its_own_type()
+    names: {u8: str} = {11: "eleven"}
+    k = 11
+    print(names[k].is_err())  #~ type_mismatch
+
+function a_number_into_a_str_key()
+    m: {str: i64} = {"a": 1}
+    print(m[1].is_err())  #~ type_mismatch
+
+function main()
+    past_the_width_read()
+    past_the_width_stored()
+    below_an_unsigned_key()
+    an_index_with_its_own_type()
+    a_number_into_a_str_key()

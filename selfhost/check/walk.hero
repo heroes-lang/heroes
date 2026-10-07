@@ -215,8 +215,8 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         )
         .index i =>
             base_ty = synth(@c, a, r, s, decls, i.base)
-            index_ty = synth(@c, a, r, s, decls, i.index)
-            fixed_bound_check(@c, a, s, decls, base_ty: base_ty, index_expr: i.index, span: span)
+            index_ty = index_of(@c, a, r, s, decls, base: base_ty, index: i.index)
+            access.fixed_bound_check(@c, a, s, decls, base_ty: base_ty, index_expr: i.index, span: span)
             return state.record_expr(
                 @c,
                 at: id,
@@ -323,32 +323,15 @@ function condition(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             value_errors.not_bool(what: "an `if` condition", got: shown, span: a.exprs[cond].span)
         )
 
-# A constant index into a fixed array is judged HERE, where the index
-# EXPRESSION is (panel 062): the bound check needs the value, and
-# `v.params[9]` on an i32[4] is wrong when written.
-function fixed_bound_check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], base_ty: i64, index_expr: i64, span: token.Span)
-    match table.get(c.out.types, base_ty)
-        .fixed x =>
-            literal = contextual.literal_value(a, s, index_expr)
+# An index's type: the key type a map asks of an index that has none of its
+# own (defect 429, `access.key_asked`), else the index's own.
+function index_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], base: i64, index: i64) -> i64
+    key = access.key_asked(c, a, decls, base: base, index: index)
 
-            if literal.is_err()
-                return
-            v = literal.must()
-            past = !v.negative && v.magnitude >= x.length.to_u64().must()
-
-            if v.negative || past
-                shown = state.show(c, s, decls, base_ty)
-                rendered: str @ v.magnitude.to_str()
-
-                if v.negative
-                    rendered @ "-" + v.magnitude.to_str()
-                state.push_diagnostic(
-                    @c,
-                    ffi_errors.fixed_index_out_of_range(shown: shown, length: x.length, got_text: rendered, span: span)
-                )
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .array | .map | .fallible | .function_ty | .named         => return
-        .case_ty | .failure | .generic | .error                   => return
+    if key.is_err()
+        return synth(@c, a, r, s, decls, index)
+    check(@c, a, r, s, decls, id: index, expected: key.must())
+    return key.must()
 
 function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> i64
     span = a.exprs[id].span
