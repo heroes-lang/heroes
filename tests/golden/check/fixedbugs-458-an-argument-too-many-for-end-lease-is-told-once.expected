@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-458-an-argument-too-many-for-end-lease-is-told-once.hero:15:5: error[builtin_shape]: `end_lease` does not take 2 argument(s) of those types
+tests/golden/check/fixedbugs-458-an-argument-too-many-for-end-lease-is-told-once.hero:16:5: error[builtin_shape]: `end_lease` does not take 2 argument(s) of those types
+tests/golden/check/fixedbugs-458-an-argument-too-many-for-end-lease-is-told-once.hero:18:5: error[builtin_shape]: `end_lease` does not take 2 argument(s) of those types

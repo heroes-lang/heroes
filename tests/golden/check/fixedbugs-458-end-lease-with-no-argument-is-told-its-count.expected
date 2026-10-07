@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-458-end-lease-with-no-argument-is-told-its-count.hero:9:5: error[builtin_shape]: `end_lease` does not take 0 argument(s) of those types

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-458-a-lease-cell-without-its-marker.hero:10:15: error[marker_mismatch]: `end_lease` changes this argument, so the call site writes `@` too

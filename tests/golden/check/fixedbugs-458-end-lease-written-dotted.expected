@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-458-end-lease-written-dotted.hero:9:7: error[ufcs_on_mutable]: `end_lease` changes its first argument, so it is called `end_lease(@x, …)` — the dotted form would hide the `@`

@@ -10,7 +10,7 @@ function main()
     d: cstr @ getenv(name: "HOME".cstr())
     end_lease(@d)  #~ end_lease_of_no_lease
     c: cstr @ "abc".lease()
-    end_lease(c)  #~ marker_mismatch
+    end_lease(@c)  #~ marker_mismatch
     end_lease(@c)
 
 # Moved 2026-10-07, defect 458: the lease passed by value, `end_lease(c)` on
