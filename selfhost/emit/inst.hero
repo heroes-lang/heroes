@@ -22,6 +22,7 @@ use check/state
 use widths
 use ir
 use ir/containers
+use ir/instances
 use emit/mangle
 use emit/ctype
 use emit/literal
@@ -195,17 +196,6 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
 
                     .inout_arg io => rendered @ rendered.push(places.argument(@w, c, names, s, decls, f, at: io.place))
 
-            # This copy first: call_instances is substituted per copy.
-            instance: [i64] @ []
-            on_copy = f.call_instances[inst.span.end]
-
-            if !on_copy.is_err()
-                instance @ on_copy.must()
-            else
-                recorded = c.instantiations[inst.span.end]
-
-                if !recorded.is_err()
-                    instance @ recorded.must()
             ops.call(
                 @w,
                 p,
@@ -218,7 +208,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
                 run: cl.arguments,
                 arguments: rendered,
                 target: target,
-                instance: instance
+                instance: instances.named_at(f, c, at: inst.span.end)
             )
         .len_of ln => access.len_read(@w, c, f, value: ln.value, target: target)
         .index ix =>
