@@ -55,12 +55,17 @@ use mark_readers
 use shell
 use strings
 
-# One thing a refusal says this machine lacks. `kind` is `header`, `package` or
-# `pkg-config`; `name` is the header or the package, for `pkg-config` the
-# package that asked it; `owner` is, for a header another header includes, the
-# header the group names, and "" otherwise. `code` is the diagnostic's, "" for
-# the driver's sentence about `pkg-config`, which has none; `file` and `line`
-# are where it is told, "" and 0 where the output does not say.
+# One thing a refusal says this machine lacks. `kind` is `header`, `package`
+# (not installed), `installed` (installed, and its flags out of `pkg-config`'s
+# reach, defect 292) or `pkg-config`; `name` is the header or the package, for
+# `pkg-config` the package that asked it; `owner` is, for a header another
+# header includes, the header the group names, and "" otherwise. `code` is the
+# diagnostic's, and "" for the sentence about `pkg-config`: the compiler tells it
+# under `ffi_package` at the package's string since defect 249, and a case
+# whose expectation or mark places `ffi_package` there pins the package's own
+# message, not a machine without `pkg-config`, which the Windows box is and
+# where such a case is skipped by name. `file` and `line` are where it is told,
+# "" and 0 where the output does not say.
 record Absence
     kind: str
     name: str
@@ -69,19 +74,43 @@ record Absence
     file: str
     line: i64
 
-# The three spellings, cut where the compiler writes them
-# (`selfhost/emit/ffi_build.hero`'s `missing_header` and `package_problem`,
-# `selfhost/emit/header_reach.hero`, `selfhost/cli/libraries.hero`'s
-# `resolve_packages`). A spelling these no longer read names no absence, so its
-# case is judged: the drift is a red, never a skip. The third, a `pkg-config`
-# not installed at all, joined the first two on 2026-08-31, when the Windows box
-# answered it for four `run/` cases naming raylib and they failed as *did not
-# build* on a machine that simply has no `pkg-config`.
-constant HEADER_OPEN: str
-    "error[ffi_missing_header]: `"
+# THE COMPILER'S WORDS FOR A LIBRARY A MACHINE LACKS, held here and nowhere else
+# in the net: each constant below is a piece one string literal of the
+# compiler's source holds whole, and `SPELLINGS` names the file that holds it,
+# which the test *the spellings are the compiler's own* reads. So a sentence the
+# compiler rewords is a red there, naming the file and the piece, before any
+# case is judged in the old words (defect 328, 2026-10-07). Until that day the
+# net kept its own copies, and three had lagged in silence: `notes_of` trimmed
+# pkg-config's answer before reading its `\r\n` lines, where the compiler reads
+# them first since defect 285; the tests planted defect 249's old bare sentence
+# about a `pkg-config` not installed; and defect 292's headline for a package
+# installed whose flags pkg-config cannot give was no spelling read here at
+# all, so a case over such a package read red where it is the machine's.
+#
+# A spelling these no longer read names no absence, so its case is judged: the
+# drift is a red, never a skip. The `pkg-config` sentence joined the first two
+# on 2026-08-31, when the Windows box answered it for four `run/` cases naming
+# raylib and they failed as *did not build* on a machine that simply has no
+# `pkg-config`.
+#
+# The renderer writes a headline `error[<code>]: <message>` and a note
+# `  note: <note>` (`selfhost/diag_render.hero`).
+constant HEADER_CODE: str
+    "ffi_missing_header"
 
+constant PACKAGE_CODE: str
+    "ffi_package"
+
+constant NOTE: str
+    "  note: "
+
+# A header no group names, reached through one that a group does (`OWNER_`),
+# or named by the group itself, which clang looked for (`HEADER_LOOKED`).
 constant HEADER_CLOSE: str
     "` is not on this machine's include path"
+
+constant HEADER_LOOKED: str
+    " — clang looked and did not find it"
 
 constant OWNER_OPEN: str
     ", and `"
@@ -89,17 +118,112 @@ constant OWNER_OPEN: str
 constant OWNER_CLOSE: str
     "`, the header this group names"
 
-constant PACKAGE_OPEN: str
-    "error[ffi_package]: the package `"
+# A package: the headline opens with `PACKAGE_HEAD` and the rest of the
+# driver's line after its marker (`PACKAGE_MARK`, whose last character opens the
+# name), then one of three closes: not installed, installed with its flags
+# out of reach, or `pkg-config` not on this machine at all.
+constant PACKAGE_HEAD: str
+    "the package "
+
+constant PACKAGE_MARK: str
+    "heroes-ffi-package `"
 
 constant PACKAGE_CLOSE: str
     "` is not installed on this machine"
+
+constant INSTALLED_CLOSE: str
+    "` is installed, and pkg-config cannot give its flags"
+
+constant UNASKED_CLOSE: str
+    "` cannot be looked up: "
 
 constant TOOL_OPEN: str
     "pkg-config is not on this machine, and `package \""
 
 constant TOOL_CLOSE: str
     "\"` asks it where the library is"
+
+# The notes under a package's headline: pkg-config's own words, or that it gave
+# none, then the way out, which differs by headline.
+constant SAID: str
+    "pkg-config said: "
+
+constant NO_REASON: str
+    "pkg-config gave no reason"
+
+constant NOT_INSTALLED_WAY: str
+    "install its development files, or name the library directly with `link`"
+
+constant INSTALLED_WAY: str
+    "install what pkg-config says it lacks, or name the library directly with `link`"
+
+constant SILENT_WAY: str
+    "name the library directly with `link`"
+
+constant TOOL_WAY: str
+    "install pkg-config, or name the library directly with `link`"
+
+# The headline openings, put together as the renderer writes them.
+function header_open() -> str
+    return "error[" + HEADER_CODE + "]: `"
+
+function package_open() -> str
+    return "error[" + PACKAGE_CODE + "]: " + PACKAGE_HEAD + "`"
+
+# Where each piece stands in the compiler's source, as its literal spells it:
+# a file and the text the file must hold. `heard` is the piece as the compiler
+# writes it, and the test asks the file for that text as a literal writes it
+# (`as_written`).
+record Spelling
+    file: str
+    heard: str
+
+function spellings() -> [Spelling]
+    build = "selfhost/emit/ffi_build.hero"
+    reach = "selfhost/emit/header_reach.hero"
+    answer = "selfhost/cli/package_answer.hero"
+    return [
+        Spelling(file: build, heard: "\"" + HEADER_CODE + "\"")
+        Spelling(file: reach, heard: "\"" + HEADER_CODE + "\"")
+        Spelling(file: build, heard: "\"" + PACKAGE_CODE + "\"")
+        Spelling(file: build, heard: "\"" + PACKAGE_HEAD + "\"")
+        Spelling(file: build, heard: "\"`\" + header + \"" + HEADER_CLOSE + HEADER_LOOKED + "\"")
+        Spelling(file: reach, heard: "\"`\" + missing + \"" + HEADER_CLOSE + OWNER_OPEN + "\" + owner.header + \"" + OWNER_CLOSE)
+        Spelling(file: "selfhost/emit/ffi_lookup.hero", heard: "\"" + strings.without_suffix(text: PACKAGE_MARK, suffix: "`") + "\"")
+        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + PACKAGE_CLOSE + "\"")
+        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + INSTALLED_CLOSE + "\"")
+        Spelling(file: answer, heard: "\"" + PACKAGE_MARK + "\" + package + \"" + UNASKED_CLOSE + as_written(TOOL_OPEN) + "\" + package + \"" + as_written(TOOL_CLOSE) + "\\n  " + TOOL_WAY + "\"")
+        Spelling(file: answer, heard: "\"\\n  " + SAID + "\"")
+        Spelling(file: answer, heard: "\"\\n  " + NO_REASON + "\"")
+        Spelling(file: answer, heard: "\"\\n  " + NOT_INSTALLED_WAY + "\"")
+        Spelling(file: answer, heard: "way: str @ \"" + INSTALLED_WAY + "\"")
+        Spelling(file: answer, heard: "way @ \"" + SILENT_WAY + "\"")
+        Spelling(file: "selfhost/diag_render.hero", heard: "\"" + NOTE + "\"")
+        Spelling(file: "selfhost/diag_render.hero", heard: "\"[\" + d.code + \"]: \"")
+    ]
+
+# `text` as a Heroes string literal spells it between its quotes: a backslash,
+# a quote and a line end each escaped, as the compiler's source writes them.
+function as_written(text: str) -> str
+    pieces: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        byte = text[at]
+
+        if byte == 92 || byte == 34 || byte == 10
+            pieces @ pieces.push(text.slice(from: start, to: at))
+
+            if byte == 10
+                pieces @ pieces.push("\\n")
+            else
+                pieces @ pieces.push("\\" + text.slice(from: at, to: at + 1))
+            start @ at + 1
+        at @ at + 1
+
+    pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces.join("")
 
 # Whether a case's output, which differs from its expectation, is this
 # MACHINE's answer, `path` being the source the compiler was given. Ok with the
@@ -154,7 +278,7 @@ function machine_lacks_among(scratch: str, path: str, modules: [str], expected: 
         if !needs(bound: bound, one: one)
             return fail(
                 code: "unbound",
-                msg: "the compiler says " + shown(one) + " is missing, and " + bound_by(path: path, count: sources.must().len()) + " no such " + one.kind
+                msg: "the compiler says " + shown(one) + " is missing, and " + bound_by(path: path, count: sources.must().len()) + " no such " + bound_as(one)
             )
         answer = asked(scratch: scratch, search: search.must(), one: one)
 
@@ -195,17 +319,23 @@ function absences(text: str) -> [Absence]
 # it, a package's to the last, since a package's name may hold a backtick
 # (defect 237's case) and its line ends with the close.
 function absence_in(row: str) -> Absence?
-    header = between(text: row, open: HEADER_OPEN, close: HEADER_CLOSE)
+    header = between(text: row, open: header_open(), close: HEADER_CLOSE)
 
     if !header.is_err()
         owner = between(text: row, open: HEADER_CLOSE + OWNER_OPEN, close: OWNER_CLOSE)
         return ok(
-            Absence(kind: "header", name: header.must(), owner: owner.default(""), code: "ffi_missing_header", file: "", line: 0)
+            Absence(kind: "header", name: header.must(), owner: owner.default(""), code: HEADER_CODE, file: "", line: 0)
         )
-    package = between_last(text: row, open: PACKAGE_OPEN, close: PACKAGE_CLOSE)
+    package = between_last(text: row, open: package_open(), close: PACKAGE_CLOSE)
 
     if !package.is_err()
-        return ok(Absence(kind: "package", name: package.must(), owner: "", code: "ffi_package", file: "", line: 0))
+        return ok(Absence(kind: "package", name: package.must(), owner: "", code: PACKAGE_CODE, file: "", line: 0))
+
+    # Defect 292's headline: the package is there, and what it requires is not.
+    installed = between_last(text: row, open: package_open(), close: INSTALLED_CLOSE)
+
+    if !installed.is_err()
+        return ok(Absence(kind: "installed", name: installed.must(), owner: "", code: PACKAGE_CODE, file: "", line: 0))
     asking = between_last(text: row, open: TOOL_OPEN, close: TOOL_CLOSE)
 
     if !asking.is_err()
@@ -535,17 +665,40 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
             return fail(code: "present", msg: "`pkg-config` runs on this machine")
         return ok("`pkg-config`, which `package \"" + one.name + "\"` asks, does not start here")
 
-    if one.kind == "package"
+    # A package, not installed or installed with its flags out of reach: the
+    # flags must be refused here, and whether `pkg-config` reads the package
+    # itself must agree with the headline (defect 292). It is asked in the two
+    # spellings the compiler asks it in (`selfhost/cli/package_answer.hero`'s
+    # `installed`); a `.pc` that only its third question, the search path, finds
+    # reads as not installed here, so a compiler saying *installed* of one is
+    # judged, a red and never a skip.
+    if one.kind == "package" || one.kind == "installed"
         answer = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--libs", "--", one.name])?
 
         if !answer.started
             return fail(
                 code: "present",
-                msg: "this machine has no `pkg-config` whose answer could say the package `" + one.name + "` is not installed"
+                msg: "this machine has no `pkg-config` whose answer could say the package `" + one.name + "` is out of reach"
             )
 
         if answer.code == 0
             return fail(code: "present", msg: "`pkg-config` knows the package `" + one.name + "` on this machine")
+        read = reads_alone(scratch: scratch, package: one.name)?
+
+        if one.kind == "package" && read
+            return fail(
+                code: "present",
+                msg: "`pkg-config` reads the package `" + one.name + "` on this machine, so it is installed"
+            )
+
+        if one.kind == "installed" && !read
+            return fail(
+                code: "present",
+                msg: "`pkg-config` does not read the package `" + one.name + "` on this machine, so nothing says it is installed"
+            )
+
+        if one.kind == "installed"
+            return ok("the package `" + one.name + "`, which `pkg-config` reads here and whose flags it cannot give")
         return ok("the package `" + one.name + "`, which `pkg-config` does not know here")
     probe = scratch + "/absence-probe.c"
     write_file(path: probe, text: "#include <" + one.name + ">\n")?
@@ -575,11 +728,33 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
         )
     return ok("`" + one.name + "`, which clang does not find on the include path the compiler searches")
 
+# Whether `pkg-config` reads `package` itself, its requirements not followed:
+# either of the two spellings the compiler asks answering (pkgconf takes
+# `--maximum-traverse-depth=1`, pkg-config 0.29.2 refuses it and reads a plain
+# `--modversion` alone, `package_answer.installed`'s measurement).
+function reads_alone(scratch: str, package: str) -> bool?
+    for words in [["pkg-config", "--maximum-traverse-depth=1", "--modversion", "--", package], ["pkg-config", "--modversion", "--", package]]
+        read = shell.attempted(scratch: scratch, program: "pkg-config", words: words)?
+
+        if read.started && read.code == 0
+            return ok(true)
+
+    return ok(false)
+
 # How a message names an absence.
 function shown(one: Absence) -> str
     if one.kind == "pkg-config"
         return "`pkg-config`"
+
+    if one.kind == "installed"
+        return "what the package `" + one.name + "` requires"
     return "the " + one.kind + " `" + one.name + "`"
+
+# What a case would bind for an absence to be its own: a header, or a package.
+function bound_as(one: Absence) -> str
+    if one.kind == "header"
+        return "header"
+    return "package"
 
 function message_of(got: str?) -> str
     return match got
@@ -604,14 +779,14 @@ function directory_of(path: str) -> str
 function first_line(text: str) -> str
     return strings.split_on(text: text, byte: 10)[0]
 
-# The two lines that frame `pkg-config`'s answer inside an `ffi_package`
-# message (`selfhost/cli/libraries.hero`'s `resolve_packages`, carried as notes
-# by `selfhost/emit/ffi_build.hero`'s `package_problem`).
-constant SAID_NOTE: str
-    "  note: pkg-config said:"
+# Whether `row` opens the notes that carry `pkg-config`'s answer under a
+# package's headline: its words, or that it gave none (defect 326).
+function opens_quotation(row: str) -> bool
+    return strings.starts_with(text: row, prefix: NOTE + strings.trimmed(SAID)) || row == NOTE + NO_REASON
 
-constant LAST_NOTE: str
-    "  note: install its development files, or name the library directly with `link`"
+# Whether `row` is the way out that closes them, under either headline.
+function closes_quotation(row: str) -> bool
+    return row == NOTE + NOT_INSTALLED_WAY || row == NOTE + INSTALLED_WAY || row == NOTE + SILENT_WAY
 
 # The expectation as the compiler would write it on THIS machine: each
 # `pkg-config` answer an `ffi_package` message quotes is replaced by what this
@@ -631,13 +806,19 @@ constant LAST_NOTE: str
 # quotation. The quoted lines in the file are one machine's, kept for the
 # reader.
 #
-# An expectation the frame does not fit, a machine with no `pkg-config` or one
-# that knows the package, or an answer `notes_of` does not rebuild leaves the
+# Under either package headline, not installed or installed with its flags out
+# of reach (defect 292), the quotation runs from its opening note through the
+# way out, which the installed headline words by whether `pkg-config` said
+# anything, so the way is this machine's too.
+#
+# An expectation the frame does not fit, or a machine with no `pkg-config`, one
+# that gives the package's flags, or one whose answer is not text, leaves the
 # expectation as written: the case is then judged on the file's own bytes.
 function quoted_here(scratch: str, expected: str) -> str
     rows = strings.split_on(text: expected, byte: 10)
     out: [str] @ []
     package: str @ ""
+    kind: str @ ""
     changed: bool @ false
     at: i64 @ 0
 
@@ -648,14 +829,15 @@ function quoted_here(scratch: str, expected: str) -> str
         if !named.is_err()
             package @ ""
 
-            if named.must().kind == "package"
+            if named.must().kind == "package" || named.must().kind == "installed"
                 package @ named.must().name
+                kind @ named.must().kind
 
-        if package != "" && strings.starts_with(text: row, prefix: SAID_NOTE)
+        if package != "" && opens_quotation(row)
             end = closing(rows: rows, from: at)
 
             if !end.is_err()
-                notes = quotation(scratch: scratch, package: package)
+                notes = quotation(scratch: scratch, package: package, kind: kind)
 
                 if !notes.is_err()
                     for note in notes.must()
@@ -663,7 +845,7 @@ function quoted_here(scratch: str, expected: str) -> str
 
                     changed @ true
                     package @ ""
-                    at @ end.must()
+                    at @ end.must() + 1
                     continue
         out @ out.push(row)
         at @ at + 1
@@ -672,48 +854,71 @@ function quoted_here(scratch: str, expected: str) -> str
         return expected
     return out.join("\n")
 
-# The index of the line that closes the quotation opening at `from`.
+# The index of the way out that closes the quotation opening at `from`.
 function closing(rows: [str], from: i64) -> i64?
-    at: i64 @ from + 1
+    at: i64 @ from
 
     while at < rows.len()
-        if rows[at] == LAST_NOTE
+        if closes_quotation(rows[at])
             return ok(at)
         at @ at + 1
 
     return fail(code: "none", msg: "no closing note")
 
-# This machine's answer for `package`, as the compiler's notes carry it, asked
-# with the compiler's own words (`resolve_packages`).
-function quotation(scratch: str, package: str) -> [str]?
+# This machine's answer for `package`, as the compiler's notes carry it under
+# the headline `kind` names, asked with the compiler's own words
+# (`selfhost/cli/libraries.hero`'s `resolve_packages`).
+function quotation(scratch: str, package: str, kind: str) -> [str]?
     ran = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--libs", "--", package])?
 
     if !ran.started || ran.code == 0
         return fail(code: "none", msg: "no refusal of this machine's to quote")
-    return notes_of(ran.err)
+    return ok(quoted_notes(answer: ran.err, kind: kind))
 
-# `pkg-config`'s complaint as the compiler's notes carry it: its ends trimmed of
-# spaces, tabs and line ends (`selfhost/cli/strings.hero`'s `trimmed`, which
-# keeps a return), `\r\n` read as one line end (its `without_returns`), then
-# each line after `pkg-config said: ` trimmed of spaces and tabs and kept where
-# it holds anything (`selfhost/emit/ffi_lookup.hero`'s `lines` and `trimmed`).
-# A control character the compiler writes by its code
-# (`selfhost/cli/shell_split.hero`'s `shown`) is not rebuilt here: an answer
-# holding one is refused, and its case is judged on the file's own bytes.
-function notes_of(answer: str) -> [str]?
-    said = pairs_joined(driver_trimmed(answer))
+# The notes the compiler writes under a package's headline for `pkg-config`'s
+# complaint `answer`: its words (`notes_of`), then the way out, the installed
+# headline's naming what pkg-config said it lacks only where it said anything.
+function quoted_notes(answer: str, kind: str) -> [str]
+    out: [str] @ notes_of(answer)
+    way: str @ NOT_INSTALLED_WAY
 
-    if !printable(said)
-        return fail(code: "unprintable", msg: "an answer holding a control character")
+    if kind == "installed"
+        way @ INSTALLED_WAY
+
+        if said_of(answer).len() == 0
+            way @ SILENT_WAY
+    out @ out.push(NOTE + way)
+    return out
+
+# `pkg-config`'s complaint as the compiler reads it before it words a note:
+# `\r\n` read as one line end where the bytes enter (`package_answer.complaint`,
+# defect 285), then its ends trimmed of spaces, tabs and line ends (`worded`,
+# `selfhost/cli/strings.hero`'s `trimmed`), a lone return kept. Until defect 328
+# the trim came first here, so the last `\r\n` lost its `\n` and left a return
+# the compiler no longer writes.
+function said_of(answer: str) -> str
+    return driver_trimmed(pairs_joined(answer))
+
+# `pkg-config`'s complaint as the compiler's notes carry it: nothing said is
+# the note that says so (defect 326); else `pkg-config said: ` and the
+# complaint, each control character but a line end written by its code
+# (`selfhost/cli/shell_split.hero`'s `shown`), then each line trimmed of spaces
+# and tabs and kept where it holds anything (`selfhost/emit/ffi_lookup.hero`'s
+# `lines` and `trimmed`, read by `ffi_build.package_problem`).
+function notes_of(answer: str) -> [str]
+    said = said_of(answer)
+
+    if said.len() == 0
+        return [NOTE + NO_REASON]
     notes: [str] @ []
 
-    for line in strings.split_on(text: "pkg-config said: " + said, byte: 10)
+    for line in strings.split_on(text: SAID + written_controls(said), byte: 10)
         note = blanks_trimmed(line)
 
         if note.len() > 0
-            notes @ notes.push("  note: " + note)
+            notes @ notes.push(NOTE + note)
 
-    return ok(notes)
+    return notes
 
 # Spaces, tabs and line ends off both ends, and a return kept.
 function driver_trimmed(text: str) -> str
@@ -758,26 +963,41 @@ function pairs_joined(text: str) -> str
     parts @ parts.push(text.slice(from: start, to: text.len()))
     return parts.join("")
 
-# Whether every character is one the compiler writes as itself: a line end,
-# or anything but a C0 control, DEL or a C1 control (U+0080 to U+009F, whose
-# UTF-8 is 0xC2 and 0x80 to 0x9F).
-function printable(text: str) -> bool
+# `text` with every character the compiler does not write as itself written by
+# its code, `<U+000D>`, as `shell_split.shown` writes it with its lines kept: a
+# C0 control but the line end, DEL, and a C1 control (U+0080 to U+009F, whose
+# UTF-8 is 0xC2 and 0x80 to 0x9F). Until defect 328 such an answer was refused
+# here, and its case judged on the file's own bytes.
+function written_controls(text: str) -> str
+    pieces: [str] @ []
+    start: i64 @ 0
     at: i64 @ 0
 
     while at < text.len()
         byte = text[at]
+        code: i64 @ -1
+        width: i64 @ 1
 
-        if byte < 32 && byte != 10
-            return false
-
-        if byte == 127
-            return false
+        if byte < 32 && byte != 10 || byte == 127
+            code @ to_i64(byte).must()
 
         if byte == 194 && at + 1 < text.len() && text[at + 1] >= 128 && text[at + 1] <= 159
-            return false
-        at @ at + 1
+            code @ to_i64(text[at + 1]).must()
+            width @ 2
 
-    return true
+        if code >= 0
+            pieces @ pieces.push(text.slice(from: start, to: at))
+            pieces @ pieces.push("<U+" + hex4(code) + ">")
+            start @ at + width
+        at @ at + width
+
+    pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces.join("")
+
+# `code`, below 256, as four upper-case hexadecimal digits.
+function hex4(code: i64) -> str
+    digits = "0123456789ABCDEF"
+    return "00" + digits.slice(from: code / 16, to: code / 16 + 1) + digits.slice(from: code % 16, to: code % 16 + 1)
 
 # **What the suites' own tests plant**, here rather than in each suite so that
 # the eight that skip for a missing library ask one stand-in the same thing.
@@ -790,7 +1010,21 @@ constant NOWHERE: str
 # `selfhost/emit/ffi_build.hero` writes them, `tail` after the header's close
 # and `at` the place it is told at.
 function missing_header_said(header: str, tail: str, at: str) -> str
-    return "error[ffi_missing_header]: `" + header + "` is not on this machine's include path" + tail + "\n  at " + at + "\n"
+    return header_open() + header + HEADER_CLOSE + tail + "\n  at " + at + "\n"
+
+# The compiler's headline for a package `pkg-config` does not know, told at
+# `at`, as `selfhost/cli/package_answer.hero`'s `worded` and
+# `selfhost/emit/ffi_build.hero`'s `package_problem` write it, notes left out.
+function package_said(package: str, at: str) -> str
+    return package_open() + package + PACKAGE_CLOSE + "\n  at " + at + "\n"
+
+# The compiler's words where `pkg-config` is not on this machine, told at `at`
+# (`package_answer.unasked`, defect 249): `ffi_package` at the package's
+# string, and the way out under it. They were a bare line with no code, no
+# place and no note until that defect, and this net planted the bare line
+# until defect 328.
+function tool_said(package: str, at: str) -> str
+    return package_open() + package + UNASKED_CLOSE + TOOL_OPEN + package + TOOL_CLOSE + "\n  at " + at + "\n" + NOTE + TOOL_WAY + "\n"
 
 # A stand-in compiler: whatever its verb, it answers the first `.hero` it is
 # handed with that case's `.said` file on stderr, at exit 1, so a test plants
@@ -811,15 +1045,13 @@ function said_stub(scratch: str) -> str?
 function planted_case(dir: str, name: str, bound: str, missing: str) -> str?
     source = dir + "/" + name + ".hero"
     write_file(path: source, text: "extern \"" + bound + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n")?
-    write_file(path: dir + "/" + name + ".said", text: missing_header_said(header: missing, tail: " — clang looked and did not find it", at: source + ":1:1"))?
+    write_file(path: dir + "/" + name + ".said", text: missing_header_said(header: missing, tail: HEADER_LOOKED, at: source + ":1:1"))?
     return ok(source)
 
 ## Tests
 
-test "the three spellings name what is missing, where, and a header reached through another names its owner"
-    direct = absences(
-        "error[ffi_missing_header]: `gone.h` is not on this machine's include path — clang looked and did not find it\n  at x.hero:2:5\n"
-    )
+test "the four spellings name what is missing, where, and a header reached through another names its owner"
+    direct = absences(missing_header_said(header: "gone.h", tail: HEADER_LOOKED, at: "x.hero:2:5"))
     assert direct.len() == 1
     assert direct[0].kind == "header"
     assert direct[0].name == "gone.h"
@@ -845,13 +1077,26 @@ test "the three spellings name what is missing, where, and a header reached thro
     assert ticked[0].file == "p.hero"
     assert ticked[0].line == 9
 
-    # The driver's sentence about `pkg-config` has no code and no place.
-    tool = absences("pkg-config is not on this machine, and `package \"raylib\"` asks it where the library is\n")
+    # The sentence about `pkg-config`, at its package's string since defect
+    # 249, keeps no code here (the record's comment says why) and its place.
+    tool = absences(tool_said(package: "raylib", at: "x.hero:1:26"))
     assert tool.len() == 1
     assert tool[0].kind == "pkg-config"
     assert tool[0].name == "raylib"
     assert tool[0].code == ""
-    assert tool[0].line == 0
+    assert tool[0].file == "x.hero"
+    assert tool[0].line == 1
+
+    # Defect 292's headline: a package installed, whose flags pkg-config
+    # cannot give, a backtick in its name as well.
+    installed = absences(
+        "p.hero:9:26: error[ffi_package]: the package `a`b` is installed, and pkg-config cannot give its flags\n"
+    )
+    assert installed.len() == 1
+    assert installed[0].kind == "installed"
+    assert installed[0].name == "a`b"
+    assert installed[0].code == "ffi_package"
+    assert installed[0].line == 9
 
     # A line in no spelling of the compiler's names nothing: the old stub's
     # text, and a refusal clang gave on a header the machine has.
@@ -859,7 +1104,7 @@ test "the three spellings name what is missing, where, and a header reached thro
     assert absences("error[ffi_return_type]: the header says `seven` returns `long`\n").len() == 0
 
 test "an absence the expectation or a mark makes the case's subject is judged, however its words change"
-    told = "error[ffi_missing_header]: `gone.h` is not on this machine's include path — clang looked and did not find it\n  at c.hero:4:5\n"
+    told = missing_header_said(header: "gone.h", tail: HEADER_LOOKED, at: "c.hero:4:5")
     expected = Witnesses(
         named: absences(told),
         reported: ["4:ffi_missing_header"],
@@ -881,7 +1126,7 @@ test "an absence the expectation or a mark makes the case's subject is judged, h
     # Another name at the place the case pins: a compiler that misnames the
     # header it did not find (defect 232's class) is judged.
     misnamed = absences(
-        "error[ffi_missing_header]: `gone` is not on this machine's include path — clang looked and did not find it\n  at c.hero:4:5\n"
+        missing_header_said(header: "gone", tail: HEADER_LOOKED, at: "c.hero:4:5")
     )
     assert pinned(one: misnamed[0], seen: expected)
 
@@ -900,11 +1145,11 @@ test "an absence the expectation or a mark makes the case's subject is judged, h
     # Another library at another place is a candidate for the machine's answer,
     # and so is one told in another file, whose lines are not the case's.
     other = absences(
-        "error[ffi_missing_header]: `sys/wait.h` is not on this machine's include path — clang looked and did not find it\n  at c.hero:12:5\n"
+        missing_header_said(header: "sys/wait.h", tail: HEADER_LOOKED, at: "c.hero:12:5")
     )
     assert !pinned(one: other[0], seen: expected)
     elsewhere = absences(
-        "error[ffi_missing_header]: `sys/wait.h` is not on this machine's include path — clang looked and did not find it\n  at m.hero:4:5\n"
+        missing_header_said(header: "sys/wait.h", tail: HEADER_LOOKED, at: "m.hero:4:5")
     )
     assert !pinned(one: elsewhere[0], seen: expected)
 
@@ -913,16 +1158,25 @@ test "an absence the expectation or a mark makes the case's subject is judged, h
     assert pinned(one: elsewhere[0], seen: in_module)
 
     # And a `pkg-config` that does not start is not the package the
-    # expectation says is not installed: the Windows box's answer.
-    package = "error[ffi_package]: the package `p` is not installed on this machine\n  at c.hero:1:26\n"
+    # expectation says is not installed: the Windows box's answer, told at the
+    # same string under the same code, and still not pinned there.
+    package = package_said(package: "p", at: "c.hero:1:26")
     asking = Witnesses(
         named: absences(package),
         reported: ["1:ffi_package"],
         marked: ["c.hero:1:ffi_package"],
         path: "c.hero"
     )
-    tool = absences("pkg-config is not on this machine, and `package \"p\"` asks it where the library is\n")
+    tool = absences(tool_said(package: "p", at: "c.hero:1:26"))
+    assert tool[0].line == 1
     assert !pinned(one: tool[0], seen: asking)
+
+    # A package said to be installed where the case pins it as not: the same
+    # code at the same place, so the case tests that message and is judged.
+    installed = absences(
+        "error[ffi_package]: the package `p` is installed, and pkg-config cannot give its flags\n  at c.hero:1:26\n"
+    )
+    assert pinned(one: installed[0], seen: asking)
 
 test "a case binds its groups' headers and packages, read as the language writes a string"
     bound = binds(
@@ -936,6 +1190,7 @@ test "a case binds its groups' headers and packages, read as the language writes
     assert !needs(bound: bound, one: an(kind: "header", name: "prose.h", owner: ""))
     assert needs(bound: bound, one: an(kind: "package", name: "zz", owner: ""))
     assert needs(bound: bound, one: an(kind: "pkg-config", name: "zz", owner: ""))
+    assert needs(bound: bound, one: an(kind: "installed", name: "zz", owner: ""))
     assert !needs(bound: bound, one: an(kind: "package", name: "other", owner: ""))
 
 test "clang is asked, and a header the machine has refutes the compiler"
@@ -971,31 +1226,174 @@ test "pkg-config is asked as the compiler asks it, and a pkg-config that runs re
         assert !asked(scratch: scratch, search: search, one: tool).is_err()
     assert !shell.remove_tree(scratch).is_err()
 
+# DEFECT 328's witness for defect 292's headline: a package installed whose
+# flags `pkg-config` cannot give is the machine's answer only where it reads the
+# package and refuses its flags. A `.pc` named by its path is read as that file
+# by every `pkg-config` measured (`selfhost/cli/libraries.hero`'s test of defect
+# 292), so one requiring a package no machine has is installed and out of
+# reach here; a package no machine has is neither, so a compiler calling it
+# installed is refuted, and one calling the `.pc` not installed is too.
+test "fixedbugs: a package said to be installed with its flags out of reach is asked both halves (defect 328)"
+    scratch = shell.own_scratch()
+    here = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--version"])
+    assert !here.is_err()
+    search: [str] = []
+    pc = scratch + "/broken328.pc"
+    assert !write_file(path: pc, text: "Name: broken328\nDescription: requires what no machine has\nVersion: 1.0\nRequires: heroes-absence-a-package-no-machine-has\nCflags: -I/nowhere\n").is_err()
+    broken = an(kind: "installed", name: pc, owner: "")
+    nobody = an(kind: "installed", name: "heroes-absence-a-package-no-machine-has", owner: "")
+    called_absent = an(kind: "package", name: pc, owner: "")
+
+    if here.must().started
+        assert strings.contains(
+            text: asked(scratch: scratch, search: search, one: broken).must(),
+            needle: "which `pkg-config` reads here and whose flags it cannot give"
+        )
+        assert strings.contains(
+            text: message_of(asked(scratch: scratch, search: search, one: nobody)),
+            needle: "so nothing says it is installed"
+        )
+        assert strings.contains(
+            text: message_of(asked(scratch: scratch, search: search, one: called_absent)),
+            needle: "so it is installed"
+        )
+    else
+        assert asked(scratch: scratch, search: search, one: broken).is_err()
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 328: every spelling the net reads the compiler's words by is a piece
+# one literal of the compiler's source holds, and this reads each out of the
+# file that writes it, so a sentence reworded there is a red here naming the
+# piece and the file, where until that day a lagging copy read on in silence.
+test "fixedbugs: the spellings are the compiler's own, read out of the files that write them (defect 328)"
+    parted: [str] @ []
+
+    for one in spellings()
+        source = read_file(one.file)
+        assert !source.is_err()
+
+        if !strings.contains(text: source.must(), needle: one.heard)
+            parted @ parted.push(one.file + " no longer holds " + one.heard)
+
+    assert parted.join("\n") == ""
+    assert spellings().len() == 17
+
+# DEFECT 328 asked of the compiler itself: what it writes for a library a
+# machine lacks, over cases of every shape, is what this module reads, and the
+# notes it writes under a package's headline are the ones `quoted_notes`
+# rebuilds from the same answer of `pkg-config`. That answer comes from a
+# stand-in on the compiler's PATH, so each shape is asked on every POSIX
+# machine: a Mac's lines, `\r\n` ones (defect 285), nothing and blanks (326),
+# and a tab and lone returns, which the compiler writes by their codes; and
+# under the headline of a package installed with its flags out of reach (292).
+# A `pkg-config` not on this machine is a PATH holding clang alone. Until that
+# day the CRLF answer was refused by the rebuild, the silent one rebuilt as
+# `pkg-config said:`, and the installed headline named nothing at all.
+test "fixedbugs: what the compiler writes for a library a machine lacks is read as it writes it (defect 328)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/said328"
+    assert !shell.mkdir_all(dir).is_err()
+    calling = "    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
+
+    # A header no machine has, named by the group, told at the group's first
+    # declaration, and the same reached through a header the group names.
+    direct = dir + "/direct.hero"
+    told = absences(
+        built_said(scratch: scratch, compiler: compiler, path: direct, source: "extern \"" + NOWHERE + "\"\n" + calling, bin: "", alone: false).must()
+    )
+    assert told.len() == 1
+    assert told[0].kind == "header"
+    assert told[0].name == NOWHERE
+    assert told[0].owner == ""
+    assert told[0].code == HEADER_CODE
+    assert told[0].file == direct
+    assert told[0].line == 2
+    assert !write_file(path: dir + "/outer328.h", text: "#include \"" + NOWHERE + "\"\nint seven(void);\n").is_err()
+    through = absences(
+        built_said(scratch: scratch, compiler: compiler, path: dir + "/through.hero", source: "extern \"outer328.h\"\n" + calling, bin: "", alone: false).must()
+    )
+    assert through.len() == 1
+    assert through[0].name == NOWHERE
+    assert through[0].owner == "outer328.h"
+
+    # A package, as a stand-in `pkg-config` answers for it.
+    package = "heroes-absence-328-no-machine-has"
+    asking = "extern \"stdio.h\" package \"" + package + "\"\n" + calling
+    answers = [
+        "Package " + package + " was not found in the pkg-config search path.\nPackage '" + package + "' not found\n"
+        "Package " + package + " was not found in the pkg-config search path.\r\nPackage '" + package + "' not found\r\n"
+        ""
+        "  \r\n"
+        "a\tb\rc\r\n"
+    ]
+    shape: i64 @ 0
+
+    for answer in answers
+        for installed in [false, true]
+            bin = dir + "/bin-" + shape.to_str()
+            assert !stand_in(dir: bin, answer: answer, installed: installed).is_err()
+            err = built_said(scratch: scratch, compiler: compiler, path: dir + "/package-" + shape.to_str() + ".hero", source: asking, bin: bin, alone: false).must(
+            )
+            named = absences(err)
+            kind: str @ "package"
+
+            if installed
+                kind @ "installed"
+            assert named.len() == 1
+            assert named[0].kind == kind
+            assert named[0].name == package
+            assert notes_in(err) == quoted_notes(answer: answer, kind: kind)
+            shape @ shape + 1
+
+    # No `pkg-config` at all: the compiler's PATH holds clang and nothing else.
+    clang = shell.run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "command -v clang"]).must()
+    assert clang.code == 0
+    only_clang = dir + "/clang-alone"
+    assert !shell.mkdir_all(only_clang).is_err()
+    linked = shell.run(scratch: scratch, program: "ln", words: ["ln", "-s", strings.trimmed(clang.out), only_clang + "/clang"]).must(
+    )
+    assert linked.code == 0
+    unasked = built_said(scratch: scratch, compiler: compiler, path: dir + "/tool.hero", source: asking, bin: only_clang, alone: true).must(
+    )
+    tool = absences(unasked)
+    assert tool.len() == 1
+    assert tool[0].kind == "pkg-config"
+    assert tool[0].name == package
+    assert tool[0].line == 1
+    assert notes_in(unasked) == [NOTE + TOOL_WAY]
+    assert !shell.remove_tree(scratch).is_err()
+
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
 # named `zz9`.
 test "pkg-config's answer becomes the compiler's notes, in either pkgconf's words"
     mac = "Package zz9 was not found in the pkg-config search path.\nPerhaps you should add the directory containing `zz9.pc'\nto the PKG_CONFIG_PATH environment variable\nPackage 'zz9' not found\n"
-    assert notes_of(mac).must() == ["  note: pkg-config said: Package zz9 was not found in the pkg-config search path.", "  note: Perhaps you should add the directory containing `zz9.pc'", "  note: to the PKG_CONFIG_PATH environment variable", "  note: Package 'zz9' not found"]
+    assert notes_of(mac) == ["  note: pkg-config said: Package zz9 was not found in the pkg-config search path.", "  note: Perhaps you should add the directory containing `zz9.pc'", "  note: to the PKG_CONFIG_PATH environment variable", "  note: Package 'zz9' not found"]
     linux = "Package zz9 was not found in the pkg-config search path.\nPerhaps you should add the directory containing `zz9.pc'\nto the PKG_CONFIG_PATH environment variable\nPackage 'zz9', required by 'virtual:world', not found\n"
-    assert notes_of(linux).must()[3] == "  note: Package 'zz9', required by 'virtual:world', not found"
+    assert notes_of(linux)[3] == "  note: Package 'zz9', required by 'virtual:world', not found"
 
-    # `\r\n` is one line end, an empty line no note, and nothing said is
-    # still the note that says so.
-    assert notes_of("one\r\n\r\n  two  \n").must() == ["  note: pkg-config said: one", "  note: two"]
-    assert notes_of("").must() == ["  note: pkg-config said:"]
+    # `\r\n` is one line end, an empty line no note.
+    assert notes_of("one\r\n\r\n  two  \n") == ["  note: pkg-config said: one", "  note: two"]
 
-    # But the LAST `\r\n` loses its `\n` to the trim before the pair is read,
-    # and the compiler writes the return left by its code (`not found<U+000D>`,
-    # measured 2026-10-04 with a `pkg-config` answering in CRLF lines), so that
-    # answer is refused here and its case judged on the file's own bytes.
-    assert notes_of("one\r\ntwo\r\n").is_err()
+    # The LAST `\r\n` is a line end too, read before the trim as the compiler
+    # reads it since defect 285; until defect 328 the trim came first here,
+    # the pair lost its `\n`, and this answer was refused.
+    assert notes_of("one\r\ntwo\r\n") == ["  note: pkg-config said: one", "  note: two"]
 
-    # What the compiler writes by its code is not rebuilt here: a tab, a lone
+    # Nothing said, or nothing but blanks and line ends, is the note that
+    # says so (defect 326); it was `pkg-config said:` over nothing here.
+    assert notes_of("") == ["  note: pkg-config gave no reason"]
+    assert notes_of("  \r\n\n") == ["  note: pkg-config gave no reason"]
+
+    # What the compiler writes by its code is written so here: a tab, a lone
     # return, and DEL and a C1 control, whose bytes no literal of this
     # language spells, so `printf` writes them (POSIX, as the script cases).
-    assert notes_of("a\tb").is_err()
-    assert notes_of("a\rb").is_err()
+    assert notes_of("a\tb") == ["  note: pkg-config said: a<U+0009>b"]
+    assert notes_of("a\rb\r") == ["  note: pkg-config said: a<U+000D>b<U+000D>"]
+    assert notes_of("café") == ["  note: pkg-config said: café"]
 
     if shell.can_run_scripts()
         controls = shell.run(
@@ -1006,24 +1404,35 @@ test "pkg-config's answer becomes the compiler's notes, in either pkgconf's word
         assert !controls.is_err()
         two = strings.lines(controls.must().out)
         assert two.len() == 2
-        assert notes_of(two[0]).is_err()
-        assert notes_of(two[1]).is_err()
-        assert !notes_of("café").is_err()
+        assert notes_of(two[0]) == ["  note: pkg-config said: a<U+007F>b"]
+        assert notes_of(two[1]) == ["  note: pkg-config said: a<U+0085>b"]
+
+    # The way out closes them, the installed headline's naming what pkg-config
+    # said it lacks only where it said anything.
+    assert quoted_notes(answer: "x\n", kind: "package") == [NOTE + SAID + "x", NOTE + NOT_INSTALLED_WAY]
+    assert quoted_notes(answer: "x\n", kind: "installed") == [NOTE + SAID + "x", NOTE + INSTALLED_WAY]
+    assert quoted_notes(answer: " \n", kind: "installed") == [NOTE + NO_REASON, NOTE + SILENT_WAY]
 
 test "an expectation's quotation is this machine's answer, and no other line moves"
     scratch = shell.own_scratch()
     package = "heroes-absence-a-package-no-machine-has"
-    head = "error[ffi_package]: the package `" + package + "` is not installed on this machine\n  at x.hero:1:26\n"
-    foreign = head + "  note: pkg-config said: words another machine wrote\n  note: and a second line of them\n" + LAST_NOTE + "\n"
+    head = package_said(package: package, at: "x.hero:1:26")
+    last = NOTE + NOT_INSTALLED_WAY + "\n"
+    foreign = head + "  note: pkg-config said: words another machine wrote\n  note: and a second line of them\n" + last
     got = quoted_here(scratch: scratch, expected: foreign)
-    here = quotation(scratch: scratch, package: package)
+    here = quotation(scratch: scratch, package: package, kind: "package")
 
     if here.is_err()
         # No `pkg-config` here, or one that knows the package: as written.
         assert got == foreign
     else
-        assert got == head + here.must().join("\n") + "\n" + LAST_NOTE + "\n"
+        assert got == head + here.must().join("\n") + "\n"
         assert quoted_here(scratch: scratch, expected: got) == got
+
+        # A quotation that said nothing is a frame too, its one note the
+        # opening and the way out the close (defect 326).
+        silent = head + NOTE + NO_REASON + "\n" + last
+        assert quoted_here(scratch: scratch, expected: silent) == got
 
     # No frame, no change: a header's message, and a package's message whose
     # closing note is missing.
@@ -1045,7 +1454,7 @@ test "a program's witness reads the file it was given, its modules, and what the
     assert !write_file(path: tree + "/main.hero", text: "use db/store\n\nfunction main()\n    print(1)\n").is_err()
     assert !write_file(path: tree + "/db/store.hero", text: "extern \"" + NOWHERE + "\"  #~ ffi_missing_header\n    function seven() -> i32\n").is_err()
     blamed = absences(
-        missing_header_said(header: NOWHERE, tail: " — clang looked and did not find it", at: tree + "/db/store.hero:1:1")
+        missing_header_said(header: NOWHERE, tail: HEADER_LOOKED, at: tree + "/db/store.hero:1:1")
     )
     read = read_sources(path: tree + "/main.hero", modules: [], named: blamed)
     assert !read.is_err()
@@ -1129,6 +1538,53 @@ test "every package group sits in a program's root, where the pkg-config witness
     # `examples/raylib` and `examples/sdl`, eight `check/` cases, five `run/`
     # and four `unsupported/`. A walk that finds fewer is not reaching the tree.
     assert seen >= 19
+
+# What the compiler writes on stderr building `source`, written at `path`: its
+# PATH as it is where `bin` is "", else `bin` before it, or `bin` alone where
+# `alone`. POSIX, as every script case here: a shell sets the PATH.
+function built_said(scratch: str, compiler: str, path: str, source: str, bin: str, alone: bool) -> str?
+    write_file(path: path, text: source)?
+    out = path + ".out"
+
+    if bin.len() == 0
+        direct = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", path, "-o", out])?
+        return ok(direct.err)
+    path_set: str @ "\"$PWD/$3:$PATH\""
+
+    if alone
+        path_set @ "\"$PWD/$3\""
+    script = "PATH=" + path_set + " exec \"$0\" build \"$1\" -o \"$2\""
+    ran = shell.run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", script, compiler, path, out, bin])?
+    return ok(ran.err)
+
+# A stand-in `pkg-config` in `dir`: it reads no package installed, or every
+# one where `installed`, has no search path of its own, and refuses every
+# package's flags with `answer` on stderr, as the compiler asks each
+# (`selfhost/cli/libraries.hero`, `selfhost/cli/package_answer.hero`).
+function stand_in(dir: str, answer: str, installed: bool) -> ()?
+    shell.mkdir_all(dir)?
+    write_file(path: dir + "/answer.txt", text: answer)?
+    reads: str @ "exit 1"
+
+    if installed
+        reads @ "echo 1.0; exit 0"
+    tool = dir + "/pkg-config"
+    write_file(path: tool, text: "#!/bin/sh\ncase \"$1\" in\n    --version) echo 0.29.2; exit 0 ;;\n    --variable=pc_path) exit 0 ;;\n    --cflags) cat \"" + dir + "/answer.txt\" 1>&2; exit 1 ;;\n    --modversion|--maximum-traverse-depth=1) " + reads + " ;;\nesac\nexit 1\n")?
+    made = shell.run(scratch: dir, program: "chmod", words: ["chmod", "+x", tool])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + tool + " executable")
+    return ok()
+
+# The notes of a compiler's message, as the renderer writes them.
+function notes_in(said: str) -> [str]
+    out: [str] @ []
+
+    for row in strings.lines(said)
+        if strings.starts_with(text: row, prefix: NOTE)
+            out @ out.push(row)
+
+    return out
 
 # An absence with no code and no place, for the tests that ask what a case
 # binds or what the machine lacks.
