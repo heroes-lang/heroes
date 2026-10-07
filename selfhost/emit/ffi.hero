@@ -36,6 +36,7 @@ use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
 use emit/ffi_read_only
+use emit/lend_type
 use emit/ffi_lend
 use emit/ffi_extent
 use emit/ffi_unit
@@ -76,13 +77,17 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # type spells itself without a table. `struct_tags` is the same
     # reason one level up: the round that failed spelled its handles with
     # it, so the table rebuilt here has to (defect 037).
-    names = ctype.with_functions(
+    names: ctype.Names @ ctype.with_functions(
         ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
         c: c,
         s: s,
         decls: decls,
         p: p
     )
+
+    # And the casts the round wrote its lends with, read from the same answers
+    # (defect 427), so a probe line rebuilt here is the one clang read.
+    names.lend_units @ lend_type.with_read_casts(names.lend_units, answered)
     found: [diag.Diagnostic] @ []
     text: str @ stderr
 
@@ -269,6 +274,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !bare.is_err()
             found @ ffi_lookup.add_once(found, d: bare.must())
+
+        # A `cstr` to a pointer at no kind of byte (defect 427): asked in the
+        # check, where the probe's call no longer can be once the lend is cast.
+        unbyte = ffi_read_only.not_bytes(s, decls, tree, p, line: line)
+
+        if !unbyte.is_err()
+            found @ ffi_lookup.add_once(found, d: unbyte.must())
 
         # The same clang phrase at a CALL's line rather than a probe's: a
         # `ptr` lend from a name the program may not write, handed to a

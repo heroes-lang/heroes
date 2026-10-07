@@ -25,8 +25,8 @@
 # there, and the one diagnostic both give there, which this file imports.
 
 use ast
-use bytes
 use source
+use token
 use diag
 use check/state
 use check/render
@@ -35,6 +35,7 @@ use emit/ffi_lookup
 use emit/ffi_site
 use emit/ffi_pointee
 use emit/ffi_mutable
+use emit/lend_type
 use cli/pointee_ask
 use parse
 use resolve
@@ -82,7 +83,7 @@ function writable_pointee(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p:
         tail @ tail.push(parts[index])
         index @ index + 1
 
-    header_type = unqualified(ffi_pointee.trim_quote(tail.join(" ")))
+    header_type = lend_type.unqualified(ffi_pointee.trim_quote(tail.join(" ")))
 
     for slot_id in f.params
         if f.slots[slot_id].name == parts[1]
@@ -108,8 +109,71 @@ function question(asked: pointee_ask.Pointee, header_type: str) -> str
 # qualifiers on the pointer itself, `char *const` and `restrict`, which bind
 # the callee's own copy. On a function pointer `const` has no effect, so the
 # question holds and the probe's call says what is wrong with the binding.
+#
+# **Where the lend will cross cast** (defect 427, `emit/lend_type.hero`), the
+# cast answers what the probe's call answered, so the second question is asked
+# here, on the same line and so at the same place: that the pointee is a byte,
+# `char` of any sign or `void`, which `__builtin_types_compatible_p` reads
+# through qualifiers and typedefs alike.
 function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> str
-    return "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + asked.name + " " + asked.param + " " + header_type + "\");"
+    tail = asked.name + " " + asked.param + " " + header_type + "\");"
+    line = "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + tail
+
+    if !lend_type.casts(header_type)
+        return line
+    pointee = "__typeof__(*(" + header_type + ")0)"
+    bytes: [str] @ []
+
+    for one in ["char", "signed char", "unsigned char", "void"]
+        bytes @ bytes.push("__builtin_types_compatible_p(" + pointee + ", " + one + ")")
+
+    return line + " _Static_assert(" + bytes.join(" || ") + ", \"" + BYTES_MARKER + tail
+
+# The bytes question's marker (defect 427).
+constant BYTES_MARKER: str
+    "heroes-ffi-bytes "
+
+# `heroes-ffi-bytes <name> <param> <header type…>` failed: the header's pointer
+# for a `cstr` points at no kind of byte, `const int *` or a struct, which the
+# probe's call refused as `ffi_parameter_type` before the lend crossed cast.
+function not_bytes(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: containers.Program, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: BYTES_MARKER)
+    at = ffi_site.location(s, line: line)
+
+    if rest.is_err() || at.is_err()
+        return fail(code: "none", msg: "not a bytes assertion at a line of ours")
+    parts = ffi_lookup.words(text: rest.must())
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+
+    if parts.len() < 3 || found.is_err() || found.must().name != parts[0]
+        return fail(code: "none", msg: "no extern of that name is declared at that line")
+    tail: [str] @ []
+
+    for one in parts.slice(from: 2, to: parts.len())
+        tail @ tail.push(one)
+
+    header_type = lend_type.unqualified(ffi_pointee.trim_quote(tail.join(" ")))
+    spans = ffi_mutable.spans_of(s, decls, tree, decl: found.must().f.decl, param: parts[1])
+    span: token.Span @ decls[found.must().f.decl].span
+
+    if !spans.is_err()
+        span @ spans.must().name
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + parts[1] + "` of `" + parts[0] + "` is declared `cstr`, and the header's `" + header_type + "` points at no kind of byte — a `cstr` hands C a string's bytes, and C would read them as something else",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.19: a `cstr` crosses to a pointer to `const` bytes, `char` of any sign or `void`; for anything else, declare the parameter `ptr` and hand C what its header names"
+    )
+
+    if !spans.is_err()
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: spans.must().ty, certainty: .guess)
+        )
+    return ok(d)
 
 ## A header that gives no prototype
 
@@ -216,97 +280,12 @@ function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee]
 
         if !bent.is_err() && one.index < bent.must().len()
             through @ bent.must()[one.index]
-        pointer = asked_type(written: params.must()[one.index], through: through)
+        pointer = lend_type.asked_type(written: params.must()[one.index], through: through)
 
         if !pointer.is_err()
             kept @ kept.push(pointee_ask.Answered(asked: one, header_type: pointer.must(), pointee: ""))
 
     return kept
-
-# The type a `cstr` parameter's question is asked of, from the two spellings
-# the pointee check's dump gives it, the header's own (`written`) and the one
-# through its typedefs (`through`, empty where they agree); or absent where
-# the header takes the parameter by value, where the probe's call is the
-# verdict. The header's own spelling is asked, as a lend's other questions
-# ask it, since a type spelled through its typedefs can name a struct with
-# no name C can write. An ATOMIC pointer (`_Atomic(char *)`) is the one
-# exception: C cannot apply `*` to it, so the pointer inside is asked, which
-# is what the call converts the argument to.
-function asked_type(written: str, through: str) -> str?
-    plain: str @ through
-
-    if plain.len() == 0
-        plain @ written
-    bare = without_leading_qualifiers(plain)
-
-    if bytes.bytes_at(text: bare, at: 0, needle: "_Atomic(") && bytes.bytes_at(text: bare, at: bare.len() - 1, needle: ")")
-        inner = ffi_lookup.trimmed(bare.slice(from: 8, to: bare.len() - 1))
-
-        if !ffi_lookup.has(text: inner, needle: "*")
-            return fail(code: "none", msg: "an atomic value or a pointer only its typedef spells")
-        return ok(inner)
-
-    if !ffi_lookup.has(text: plain, needle: "*")
-        return fail(code: "none", msg: "the header takes it by value")
-    return ok(written)
-
-# The type without the qualifiers written before it, `const _Atomic(char *)`
-# being an atomic pointer that is itself `const`.
-function without_leading_qualifiers(text: str) -> str
-    kept: str @ ffi_lookup.trimmed(text)
-    cut: bool @ true
-
-    while cut
-        cut @ false
-
-        for word in ["const ", "volatile "]
-            if !cut && bytes.bytes_at(text: kept, at: 0, needle: word)
-                kept @ ffi_lookup.trimmed(kept.slice(from: word.len(), to: kept.len()))
-                cut @ true
-
-    return kept
-
-# A qualifier written after a pointer's last `*` binds the parameter itself,
-# which only the callee sees: the type the call hands its argument to is the
-# type without it. So the message names that, as clang's own word for the
-# call always did, and reads the same on a libc that writes glibc's `char
-# *restrict` as on one that writes `char *`. Asked of the bytes: the text after
-# the last `*` is cut only where every word of it is such a qualifier, so `int
-# (*)[4]` and a type with no `*` are left whole.
-constant TOP_QUALIFIERS: [str]
-    [
-        "const"
-        "volatile"
-        "restrict"
-        "__restrict"
-        "__restrict__"
-        "_Nonnull"
-        "_Nullable"
-        "_Null_unspecified"
-        "_Nullable_result"
-    ]
-
-function unqualified(text: str) -> str
-    kept = ffi_lookup.trimmed(text)
-    star: i64 @ kept.len() - 1
-
-    while star >= 0 && !bytes.bytes_at(text: kept, at: star, needle: "*")
-        star @ star - 1
-
-    if star < 0
-        return kept
-
-    for word in ffi_lookup.words(text: kept.slice(from: star + 1, to: kept.len()))
-        qualifier: bool @ false
-
-        for one in TOP_QUALIFIERS
-            if one == word
-                qualifier @ true
-
-        if !qualifier
-            return kept
-
-    return kept.slice(from: 0, to: star + 1)
 
 ## Tests
 
@@ -349,16 +328,24 @@ test "the question is asked of the header's own pointer, an atomic one's inner p
         line: 2,
         depth: false
     )
-    assert question(asked, header_type: "unsigned char *") == "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
-    assert asked_type(written: "unsigned char *", through: "").must() == "unsigned char *"
-    assert asked_type(written: "LPSTR", through: "char *").must() == "LPSTR"
-    assert asked_type(written: "cb_t", through: "void (*)(int)").must() == "cb_t"
-    assert asked_type(written: "_Atomic(char *)", through: "").must() == "char *"
-    assert asked_type(written: "const _Atomic(unsigned char *)", through: "").must() == "unsigned char *"
-    assert asked_type(written: "ap", through: "_Atomic(const char *)").must() == "const char *"
-    assert asked_type(written: "int", through: "").is_err()
-    assert asked_type(written: "struct sv", through: "").is_err()
-    assert asked_type(written: "_Atomic(ubuf)", through: "").is_err()
+    asked_line = question(asked, header_type: "unsigned char *")
+    assert ffi_lookup.has(
+        text: asked_line,
+        needle: "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
+    )
+
+    # A pointer spelled otherwise than `const char *` crosses cast, so the
+    # bytes question rides the same line (defect 427).
+    assert ffi_lookup.has(text: asked_line, needle: "\"heroes-ffi-bytes SHA256_Final md unsigned char *\");")
+    assert lend_type.asked_type(written: "unsigned char *", through: "").must() == "unsigned char *"
+    assert lend_type.asked_type(written: "LPSTR", through: "char *").must() == "LPSTR"
+    assert lend_type.asked_type(written: "cb_t", through: "void (*)(int)").must() == "cb_t"
+    assert lend_type.asked_type(written: "_Atomic(char *)", through: "").must() == "char *"
+    assert lend_type.asked_type(written: "const _Atomic(unsigned char *)", through: "").must() == "unsigned char *"
+    assert lend_type.asked_type(written: "ap", through: "_Atomic(const char *)").must() == "const char *"
+    assert lend_type.asked_type(written: "int", through: "").is_err()
+    assert lend_type.asked_type(written: "struct sv", through: "").is_err()
+    assert lend_type.asked_type(written: "_Atomic(ubuf)", through: "").is_err()
 
 # The count the declaration gives, against the header's: equal, the question
 # is asked, through a typedef where the dump read one; one more or one fewer,
@@ -437,13 +424,38 @@ test "a function the header declares with no prototype is asked so, and told on 
     assert no_prototype(s, parsed.decls, low.program, line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable kr_write p char *").is_err(
     )
 
-test "a qualifier after the pointer's last star is the callee's, and nothing else is cut"
-    assert unqualified("char *restrict") == "char *"
-    assert unqualified("unsigned char *const") == "unsigned char *"
-    assert unqualified("char *const restrict") == "char *"
-    assert unqualified("char * _Nonnull") == "char *"
-    assert unqualified("int (*)[4]") == "int (*)[4]"
-    assert unqualified("foo_const") == "foo_const"
-    assert unqualified("const LPSTR") == "const LPSTR"
-    assert unqualified("漢 *restrict") == "漢 *"
-    assert unqualified("restrict") == "restrict"
+# Defect 427: a lend that will cross cast is asked, on the same line, whether
+# its pointer points at a byte, and a refusal of that is read back onto the
+# parameter; a `const char *` is asked nothing more.
+test "a lend that crosses cast is asked for a byte, and a pointer to none is told on the parameter (defect 427)"
+    asked = pointee_ask.Pointee(
+        name: "f",
+        param: "p",
+        index: 0,
+        declared: pointee_ask.READ,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    plain = question(asked, header_type: "const char *")
+    assert !ffi_lookup.has(text: plain, needle: BYTES_MARKER)
+    cast = question(asked, header_type: "const int *")
+    assert ffi_lookup.has(
+        text: cast,
+        needle: "__builtin_types_compatible_p(__typeof__(*(const int *)0), unsigned char)"
+    )
+    assert ffi_lookup.has(text: cast, needle: "\"heroes-ffi-bytes f p const int *\");")
+    text = "extern \"b.h\"\n    function f(p: cstr lent) -> i32\n\nfunction main()\n    print(f(p: \"a\".cstr()))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:2:1: error: static assertion failed due to requirement 'x': heroes-ffi-bytes f p const int *"
+    d = not_bytes(s, parsed.decls, parsed.tree, low.program, line: line)
+    assert d.must().code == "ffi_parameter_type"
+    assert source.span_text(s, d.must().span) == "p"
+    assert source.span_text(s, d.must().fixes[0].span) == "cstr"
+    assert not_bytes(s, parsed.decls, parsed.tree, low.program, line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable f p int *").is_err(
+    )

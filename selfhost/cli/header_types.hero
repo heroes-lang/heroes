@@ -33,6 +33,7 @@ use bytes
 use emit/ffi_pointee
 use emit/ffi_unit
 use emit/ffi_read_only
+use emit/lend_type
 use cli/pointee_ask
 use emit/c_text
 
@@ -199,7 +200,7 @@ function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
         if one.asked.declared == pointee_ask.UNIT
             out[one.asked.name + " " + one.asked.index.to_str()] @ one.header_type
 
-    return out
+    return lend_type.with_read_casts(out, answers)
 
 # What a header's parameter type points at: the text before its last `*`,
 # with `restrict` and `__restrict` gone. Absent when the header takes the

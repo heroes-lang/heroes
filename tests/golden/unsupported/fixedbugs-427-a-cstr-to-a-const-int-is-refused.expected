@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `p` of `r_int` is declared `cstr`, and the header's `const int *` points at no kind of byte — a `cstr` hands C a string's bytes, and C would read them as something else
+  at tests/golden/unsupported/fixedbugs-427-a-cstr-to-a-const-int-is-refused.hero:12:20
+     |
+  12 |     function r_int(p: cstr lent) -> i32  #~ ffi_parameter_type
+     |                    ^
+  note: §4.19: a `cstr` crosses to a pointer to `const` bytes, `char` of any sign or `void`; for anything else, declare the parameter `ptr` and hand C what its header names
+  fix (guess): declare it `ptr`
