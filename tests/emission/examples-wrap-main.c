@@ -796,38 +796,38 @@ bb16:
     goto bb14;
 #line 64 "examples/wrap/main.hero"
 bb17:
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
     t54 = h7_ret0;
 #line 802 "main.c"
     h_0opt_5a58f2ca_retain(&t54);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 805 "main.c"
     hero_array_decref(h2_lines);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 808 "main.c"
     hero_str_decref(h3_current);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 811 "main.c"
     hero_array_decref(h4_xs0);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 814 "main.c"
     hero_str_decref(h6_word);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 817 "main.c"
     hero_array_decref(h8_own8);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 820 "main.c"
     hero_array_decref(h9_own9);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 823 "main.c"
     h_0opt_5a58f2ca_release(&h10_own10);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 826 "main.c"
     hero_str_decref(h11_own11);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 829 "main.c"
     hero_str_decref(h12_own12);
-#line 41 "examples/wrap/main.hero"
+#line 43 "examples/wrap/main.hero"
 #line 832 "main.c"
     h_0opt_5a58f2ca_release(&h13_own13);
     return t54;
@@ -948,23 +948,23 @@ bb2:
     goto bb3;
 #line 69 "examples/wrap/main.hero"
 bb3:
-#line 68 "examples/wrap/main.hero"
+#line 69 "examples/wrap/main.hero"
     t16 = h3_ret0;
 #line 954 "main.c"
     h_0opt_f87774a_retain(&t16);
-#line 68 "examples/wrap/main.hero"
+#line 69 "examples/wrap/main.hero"
 #line 957 "main.c"
     h_0opt_5a58f2ca_release(&h2_f0);
-#line 68 "examples/wrap/main.hero"
+#line 69 "examples/wrap/main.hero"
 #line 960 "main.c"
     h_0opt_5a58f2ca_release(&h4_own4);
-#line 68 "examples/wrap/main.hero"
+#line 69 "examples/wrap/main.hero"
 #line 963 "main.c"
     hero_str_decref(h5_own5);
-#line 68 "examples/wrap/main.hero"
+#line 69 "examples/wrap/main.hero"
 #line 966 "main.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 68 "examples/wrap/main.hero"
+#line 69 "examples/wrap/main.hero"
 #line 969 "main.c"
     h_0opt_f87774a_release(&h7_own7);
     return t16;
@@ -1183,26 +1183,26 @@ bb9:
     goto bb7;
 #line 79 "examples/wrap/main.hero"
 bb10:
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
     t33 = h7_ret0;
 #line 1189 "main.c"
     h_0opt_e201354_retain(&t33);
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
 #line 1192 "main.c"
     h_0opt_5a58f2ca_release(&h3_f0);
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
 #line 1195 "main.c"
     hero_array_decref(h4_xs0);
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
 #line 1198 "main.c"
     hero_str_decref(h6_line);
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
 #line 1201 "main.c"
     h_0opt_5a58f2ca_release(&h8_own8);
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
 #line 1204 "main.c"
     h_0opt_e201354_release(&h9_own9);
-#line 74 "examples/wrap/main.hero"
+#line 77 "examples/wrap/main.hero"
 #line 1207 "main.c"
     h_0opt_e201354_release(&h10_own10);
     return t33;

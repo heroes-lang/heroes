@@ -174,9 +174,9 @@ bb6:
     goto bb4;
 #line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
 bb7:
-#line 12 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
     t15 = h2_ret0;
-#line 12 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
     return t15;
 #line 182 "adversarialcopyoutedges.c"
 }

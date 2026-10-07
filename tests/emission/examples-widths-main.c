@@ -473,26 +473,26 @@ bb4:
     hero_panic_must(t19);
     hero_unreachable();
 bb5:
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
     t23 = h4_ret0;
 #line 479 "main.c"
     h_0opt_e201354_retain(&t23);
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
 #line 482 "main.c"
     h_0opt_1ec004_release(&h1_f0);
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
 #line 485 "main.c"
     h_0opt_e201354_release(&h3_f1);
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
 #line 488 "main.c"
     h_0opt_1ec004_release(&h5_own5);
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
 #line 491 "main.c"
     h_0opt_e201354_release(&h6_own6);
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
 #line 494 "main.c"
     h_0opt_e201354_release(&h7_own7);
-#line 51 "examples/widths/main.hero"
+#line 52 "examples/widths/main.hero"
 #line 497 "main.c"
     h_0opt_e201354_release(&h8_own8);
     return t23;

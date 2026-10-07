@@ -189,7 +189,7 @@ bb6:
     goto bb4;
 #line 20 "tests/golden/run/adversarial-str-copy-out.hero"
 bb7:
-#line 13 "tests/golden/run/adversarial-str-copy-out.hero"
+#line 21 "tests/golden/run/adversarial-str-copy-out.hero"
 #line 194 "adversarialstrcopyout.c"
     hero_str_decref(h3_own3);
     return;

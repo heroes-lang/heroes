@@ -237,14 +237,14 @@ bb3:
     goto bb1;
 #line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 bb4:
-#line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
+#line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     t13 = h1_ret0;
 #line 243 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_retain(&t13);
-#line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
+#line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 #line 246 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&h2_own2);
-#line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
+#line 22 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 #line 249 "deadaddresscopyinarecordfield.c"
     h_0opt_1946b540_release(&h3_own3);
     hero_lend_local_give(hero_lend_h0_db);

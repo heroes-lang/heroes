@@ -334,13 +334,13 @@ bb6:
     goto bb4;
 #line 96 "examples/sqlite/main.hero"
 bb7:
-#line 80 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     t27 = h6_ret0;
-#line 80 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     hero_lend_local_give(hero_lend_h3_tail);
-#line 80 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     hero_lend_local_give(hero_lend_h2_statement);
-#line 80 "examples/sqlite/main.hero"
+#line 92 "examples/sqlite/main.hero"
     return t27;
 #line 346 "main.c"
 }
