@@ -27,16 +27,25 @@
 # end leaves that line where the walk bounded at it would: at the depth the
 # run began at.
 #
+# **And the literal a line ends inside** (defect 293): whether a refused
+# character's line ends inside a literal that never closes, read on from it,
+# is the outline's too, a reading of its own (`lost_reading.hero`) taken at
+# the first character that asks, where a walk per character cost a line of
+# them its square. The outline holds it, so the lexer's state carries its
+# readings of the whole text in one field.
+#
 # | entry | called by |
 # |---|---|
 # | `unread`, `read`, `inside`, `top_above` | `word_place.place_of` |
 # | `unread` | `state.new_state`, the tests of `foreign_at` and `word_place` |
+# | `lost`, the field | `lost_quote.lost_in` |
 #
 # A comment is `#` to its line's end, and another language's that the lexer
 # reads as one, `//` or `/* … */` (`comment_habit.hero`), is one here too:
 # brackets in its prose open nothing (2026-10-02).
 
 use comment_habit
+use lost_reading
 
 ## The outline
 
@@ -54,11 +63,18 @@ record Outline
     # The start of every line that opens at the margin with a mark of its own,
     # no space or tab before it and neither blank nor a comment, ascending.
     tops: [i64]
+    # Whether a line ends inside a literal that never closes, read on from
+    # an offset, its own reading, taken at the first refused character that
+    # asks (`lost_reading.hero`). Held in an array of one, as `LexState.run`
+    # is, so the state a lexing call copies grows by one pointer: held
+    # inline, `check` retired 0.6% more over the harness, which holds no
+    # refused character (measured 2026-10-07).
+    lost: [lost_reading.Reading]
 
 # An outline nothing has read yet.
 function unread() -> Outline
     none: [i64] = []
-    return Outline(read: false, length: 0, opens: none, tops: none)
+    return Outline(read: false, length: 0, opens: none, tops: none, lost: [lost_reading.unread()])
 
 # Read the outline of `text` into `o`, unless it holds it already.
 function read(@o: Outline, text: str)
@@ -68,7 +84,9 @@ function read(@o: Outline, text: str)
         # wrong lines.
         assert o.length == text.len()
         return
+    lost = o.lost
     o @ outline_of(text)
+    o.lost @ lost
 
 # Whether the line that begins at `at` goes on inside a bracket some line
 # above it left open. `at` is a line's start.
@@ -121,7 +139,13 @@ function outline_of(text: str) -> Outline
             depth @ depth - 1
         i @ i + 1
 
-    return Outline(read: true, length: text.len(), opens: opens, tops: margin_lines(text))
+    return Outline(
+        read: true,
+        length: text.len(),
+        opens: opens,
+        tops: margin_lines(text),
+        lost: [lost_reading.unread()]
+    )
 
 # Whether a line begins at `at`.
 function begins_a_line(text: str, at: i64) -> bool
