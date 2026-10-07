@@ -455,8 +455,15 @@ test "the pointee check asks each directory's own header, and one that appears e
     assert !check(t, low.program, c, s, parsed.decls, answered: @beside, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err()
     assert !write_file(path: inc + "/x.h", text: "#include <stdint.h>\nvoid hero_fill(int64_t *p);\n").is_err()
     earlier: [pointee_ask.Answered] @ []
-    assert check(t, low.program, c, s, parsed.decls, answered: @earlier, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err(
-    )
+    assert check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @earlier,
+        probe: probing(t, low.program, s, parsed.decls, under: under)
+    ).is_err()
 
 # **A probe compiles under the build's level and sanitizers** (defect 167,
 # `scratchpad/file-queue/optimize-macro/`'s shape). The header types the
@@ -511,8 +518,15 @@ test "the pointee check judges a parameter under the build's level and sanitizer
         runtime: t.runtime,
         source_dir: ""
     )
-    assert check(t, low.program, c, s, parsed.decls, answered: @sanitised, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err(
-    )
+    assert check(
+        t,
+        low.program,
+        c,
+        s,
+        parsed.decls,
+        answered: @sanitised,
+        probe: probing(t, low.program, s, parsed.decls, under: under)
+    ).is_err()
 
 # **A `cstr` is refused where the header's pointer points at bytes it may
 # write, and taken where they are `const`, whatever words clang has for the

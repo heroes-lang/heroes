@@ -141,8 +141,10 @@ function told(code: str, line: i64, msg: str) -> json_read.Json
 
 test "the program's own message is taken out once, at its line carried through the hunks"
     lines = ["a", "b", "c"]
-    applied = hunks.apply(lines, sets: [hunks.Tagged(tag: "a", hunks: [hunks.Hunk(start: 0, end: 0, lines: ["new"], site: [0])])]).must(
-    )
+    applied = hunks.apply(
+        lines,
+        sets: [hunks.Tagged(tag: "a", hunks: [hunks.Hunk(start: 0, end: 0, lines: ["new"], site: [0])])]
+    ).must()
     theirs = [told(code: "lone_brace", line: 3, msg: "in d/zzb_1.hero")]
 
     # The program's message stands one line lower in the mutant, and goes.

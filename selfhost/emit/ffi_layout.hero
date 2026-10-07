@@ -208,8 +208,12 @@ test "layout_record reads each marker, and a line that is not one is left alone"
     assert narrow_in.must().message == "`S3` holds `a` in `u`, a union of `s3.h`, and `a` is narrower than `u`, so comparing a `S3` or using one as a map key would compare only part of its bytes"
     assert layout_record(s, parsed.tree, parsed.decls, line: head + "heroes-ffi-narrow S3 a").is_err()
     assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: missing field 'b' initializer").is_err()
-    assert layout_record(s, parsed.tree, parsed.decls, line: "c.c:2:1: error: static assertion failed: heroes-ffi-missing Other b").is_err(
-    )
+    assert layout_record(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: "c.c:2:1: error: static assertion failed: heroes-ffi-missing Other b"
+    ).is_err()
 
 test "a field named after a header macro that names no member is told on the field"
     text = "extern \"m.h\"\n    record BUF\n        len: i32\n        size: i32\n\nfunction touch(b: BUF) -> i32\n    return b.len\n\nfunction main()\n    print(1)\n"
@@ -227,8 +231,16 @@ test "a field named after a header macro that names no member is told on the fie
     # Not a macro, or an assertion of this compiler's at the line: another reader's.
     none: {str: bool} @ {}
     assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: none).is_err()
-    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: static assertion failed due to requirement 'x': heroes-ffi-field BUF size", macros: macros).is_err(
-    )
+    assert macro_field(
+        s,
+        parsed.decls,
+        line: "t.hero:4:52: error: static assertion failed due to requirement 'x': heroes-ffi-field BUF size",
+        macros: macros
+    ).is_err()
     assert !macro_field(s, parsed.decls, line: "t.hero:4:52: error: no member named '__len' in 'BUF'", macros: macros).is_err()
-    assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: no member named 'size' in 'BUF'", macros: macros).is_err(
-    )
+    assert macro_field(
+        s,
+        parsed.decls,
+        line: "t.hero:4:52: error: no member named 'size' in 'BUF'",
+        macros: macros
+    ).is_err()

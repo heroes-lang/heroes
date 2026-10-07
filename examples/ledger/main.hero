@@ -256,8 +256,10 @@ test "sqlite's total and heroes' total are the same number"
 test "the join agrees with the same join done in Heroes"
     db: sqlite.Db @ sqlite.opened().must()
     build(db).must()
-    living = queried_int(db, "select sum(cents) from entry join account on account.name = entry.account where account.kind = 'living'").must(
-    )
+    living = queried_int(
+        db,
+        "select sum(cents) from entry join account on account.name = entry.account where account.kind = 'living'"
+    ).must()
     mine: i64 @ 0
 
     for e in entry.book()

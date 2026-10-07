@@ -230,8 +230,10 @@ test "narrowing tests both bounds, widening emits none, u64 tests only the floor
     w: writer.Writer @ writer.new_writer("t")
     width(@w, c, names, f, name: "to_i8", run: ir.Run(start: 0, length: 1), arguments: ["t0"], into: "t7")
     got = writer.finish(w)
-    i8_opt = table.lookup(c.types, .fallible(payload: table.lookup(c.types, .int_ty(kind: .i8)).must())).must(
-    )
+    i8_opt = table.lookup(
+        c.types,
+        .fallible(payload: table.lookup(c.types, .int_ty(kind: .i8)).must())
+    ).must()
     i8_union = ctype.option_of(names, ty: i8_opt)
     assert got == "    if (t0 >= -128LL && t0 <= 127LL) {\n        t7 = (" + i8_union + "){.tag = INT64_C(0), .as.ok = (int8_t)t0};\n    } else {\n        t7 = (" + i8_union + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};\n    }\n"
 
@@ -239,7 +241,9 @@ test "narrowing tests both bounds, widening emits none, u64 tests only the floor
     uw: writer.Writer @ writer.new_writer("t")
     width(@uw, c, names, f, name: "to_u64", run: ir.Run(start: 0, length: 1), arguments: ["t0"], into: "t8")
     u64_got = writer.finish(uw)
-    u64_opt = table.lookup(c.types, .fallible(payload: table.lookup(c.types, .int_ty(kind: .u64)).must())).must(
-    )
+    u64_opt = table.lookup(
+        c.types,
+        .fallible(payload: table.lookup(c.types, .int_ty(kind: .u64)).must())
+    ).must()
     u64_union = ctype.option_of(names, ty: u64_opt)
     assert u64_got == "    if (t0 >= 0LL) {\n        t8 = (" + u64_union + "){.tag = INT64_C(0), .as.ok = (uint64_t)t0};\n    } else {\n        t8 = (" + u64_union + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};\n    }\n"

@@ -229,8 +229,13 @@ test "a stack that reaches no group's header stays the compiler's"
     # The runtime's own header, the generated C, a file whose name only ends
     # like the group's header, and a second header with no stack above it.
     runtime = "In file included from build/tu-1/main.c:4:\nruntime/hero_os.h:4:10: fatal error: 'unistd.h' file not found\n"
-    assert reached_header(s, parsed.decls, line: "runtime/hero_os.h:4:10: fatal error: 'unistd.h' file not found", stderr: runtime, missing: "unistd.h").is_err(
-    )
+    assert reached_header(
+        s,
+        parsed.decls,
+        line: "runtime/hero_os.h:4:10: fatal error: 'unistd.h' file not found",
+        stderr: runtime,
+        missing: "unistd.h"
+    ).is_err()
     generated = "build/tu-1/main.c:5:10: fatal error: 'ghost.h' file not found"
     assert reached_header(s, parsed.decls, line: generated, stderr: generated, missing: "ghost.h").is_err()
     lookalike = "d1/xouter.h:2:10: fatal error: 'gone.h' file not found"

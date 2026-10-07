@@ -336,8 +336,11 @@ test "a probe's question hands back what clang said, a header's warning in it (d
     assert !process.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/warns.h", text: "#warning \"a header warning\"\n#define SEVEN 7\n").is_err()
     assert !write_file(path: dir + "/unit.c", text: "#include \"warns.h\"\nint seven(void) { return SEVEN; }\n").is_err()
-    said = asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/unit.c"], what: "a probe", err_path: dir + "/unit-stderr.txt").must(
-    )
+    said = asked_of_clang(
+        line: ["clang", "-fsyntax-only", dir + "/unit.c"],
+        what: "a probe",
+        err_path: dir + "/unit-stderr.txt"
+    ).must()
     assert strings.holds(text: said, needle: "a header warning")
 
 # Defect 337: clang prints a location's file name as it was given, and the
@@ -356,8 +359,11 @@ test "clang's words holding a byte that is not UTF-8 are kept whole, a refusal's
     assert !process.mkdir_all(dir).is_err()
     fixtures = "tests/golden/unsupported"
     assert !write_file(path: dir + "/fine.c", text: "#include \"fixedbugs-337-located.h\"\nint seven(void) { return 7; }\n").is_err()
-    said = asked_of_clang(line: ["clang", "-fsyntax-only", "-I", fixtures, dir + "/fine.c"], what: "a probe", err_path: dir + "/fine-stderr.txt").must(
-    )
+    said = asked_of_clang(
+        line: ["clang", "-fsyntax-only", "-I", fixtures, dir + "/fine.c"],
+        what: "a probe",
+        err_path: dir + "/fine-stderr.txt"
+    ).must()
     assert strings.holds(text: said, needle: "caf<0xE9>.h:1:2: warning: \"a warning the header carries\"")
     assert !write_file(path: dir + "/refused.c", text: "#include \"fixedbugs-337-located.h\"\n_Static_assert(0, \"heroes-ffi-return wide_count i32\");\n").is_err()
 

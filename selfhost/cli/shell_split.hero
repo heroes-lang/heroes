@@ -150,8 +150,10 @@ test "pkg-config's answer is read as a shell reads it, and nothing in it is expa
 
     # The quotes another pkg-config may keep, an empty word, a backslash
     # before a newline and one ending the answer.
-    quoted = words(package: "q", said: "-I'/inc/single quoted' -I\"/inc/double \\\"quoted\\\"\" '' -DX=\"$HOME\" -I/a\\\n/b -I/c\\").must(
-    )
+    quoted = words(
+        package: "q",
+        said: "-I'/inc/single quoted' -I\"/inc/double \\\"quoted\\\"\" '' -DX=\"$HOME\" -I/a\\\n/b -I/c\\"
+    ).must()
     assert quoted == ["-I/inc/single quoted", "-I/inc/double \"quoted\"", "", "-DX=$HOME", "-I/a/b", "-I/c\\"]
 
     # A quote left open is refused, naming it.

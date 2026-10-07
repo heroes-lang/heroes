@@ -337,11 +337,31 @@ test "a binary's home is named by every word of its link line, and an author's -
     memo: {str: str} @ {}
     told: {str: bool} @ {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
-    made = units.tu_object(t, module: "linkprobe", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
-    )
+    made = units.tu_object(
+        t,
+        module: "linkprobe",
+        tu_text: "int main(void) { return 0; }\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
     wanted = t.build + "/app" + process.exe_suffix()
-    binary = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(wanted), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must(
-    )
+    binary = link_objects(
+        t,
+        objects: [runtime, made],
+        module: "linkprobe",
+        output: ok(wanted),
+        level: "-O0",
+        sanitize: false,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    ).must()
     assert binary == wanted
     assert process.path_exists(wanted)
 
@@ -370,8 +390,17 @@ test "a binary's home is named by every word of its link line, and an author's -
 
     # An `-o` with no suffix lands under the platform's (defect 359): `.exe`
     # on Windows, the path as given elsewhere, and the answer names it.
-    bare = link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(t.build + "/bare"), level: "-O0", sanitize: false, search_library: none, package_flags: none, link_names: none).must(
-    )
+    bare = link_objects(
+        t,
+        objects: [runtime, made],
+        module: "linkprobe",
+        output: ok(t.build + "/bare"),
+        level: "-O0",
+        sanitize: false,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    ).must()
     assert bare == t.build + "/bare" + process.exe_suffix()
     assert process.path_exists(bare)
 
@@ -404,8 +433,19 @@ test "a link over a package's compile words carries none of them and prints noth
     memo: {str: str} @ {}
     told: {str: bool} @ {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
-    made = units.tu_object(t, module: "linkwords", tu_text: "int main(void) { return 0; }\n", level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
-    )
+    made = units.tu_object(
+        t,
+        module: "linkwords",
+        tu_text: "int main(void) { return 0; }\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
     words = ["-F" + t.build, "-I" + t.build, "-DHERO_LINK_WORDS=1", "-UHERO_LINK_WORDS"]
     line = link_line(
         objects: [runtime, made],

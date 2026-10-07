@@ -421,8 +421,12 @@ test "a function the header declares with no prototype is asked so, and told on 
     d = no_prototype(s, parsed.decls, low.program, line: line)
     assert d.must().code == "ffi_parameter_type"
     assert d.must().message == "`kr_write` is declared with 1 parameter, and `kr.h` declares it with no prototype — clang read the header, and a call converts nothing it hands C, so no parameter can be held to the header's own type"
-    assert no_prototype(s, parsed.decls, low.program, line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable kr_write p char *").is_err(
-    )
+    assert no_prototype(
+        s,
+        parsed.decls,
+        low.program,
+        line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable kr_write p char *"
+    ).is_err()
 
 # Defect 427: a lend that will cross cast is asked, on the same line, whether
 # its pointer points at a byte, and a refusal of that is read back onto the
@@ -457,5 +461,10 @@ test "a lend that crosses cast is asked for a byte, and a pointer to none is tol
     assert d.must().code == "ffi_parameter_type"
     assert source.span_text(s, d.must().span) == "p"
     assert source.span_text(s, d.must().fixes[0].span) == "cstr"
-    assert not_bytes(s, parsed.decls, parsed.tree, low.program, line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable f p int *").is_err(
-    )
+    assert not_bytes(
+        s,
+        parsed.decls,
+        parsed.tree,
+        low.program,
+        line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable f p int *"
+    ).is_err()

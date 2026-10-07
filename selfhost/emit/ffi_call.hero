@@ -271,10 +271,18 @@ test "the arity text is read into the author's declaration, with both counts"
     assert d.must().message == "`strtok` is declared with 3 parameters, and `string.h` gives it 2 — clang read the header, and the call this declaration implies does not fit it"
 
     # The call line names no extern, and a line that is not ours is refused.
-    assert call_shape(s, parsed.decls, low.program, line: "t.hero:5:5: error: too many arguments to function call, expected 2, have 3").is_err(
-    )
-    assert call_shape(s, parsed.decls, low.program, line: "t.hero:2:139: error: incompatible pointer types passing 'int *' to parameter of type 'long *'").is_err(
-    )
+    assert call_shape(
+        s,
+        parsed.decls,
+        low.program,
+        line: "t.hero:5:5: error: too many arguments to function call, expected 2, have 3"
+    ).is_err()
+    assert call_shape(
+        s,
+        parsed.decls,
+        low.program,
+        line: "t.hero:2:139: error: incompatible pointer types passing 'int *' to parameter of type 'long *'"
+    ).is_err()
 
 test "the format-security text lands on the declaration with the fixed-shape repair"
     text = "extern \"stdio.h\"\n    function printf(format: cstr) -> i32\n\nfunction main()\n    print(1)\n"
@@ -333,9 +341,21 @@ test "a name the header has as an object, a value or a type is told as what it i
 
     # The call's own line declares nothing, and a type the declaration does
     # not name is not this reading: both stay the compiler's.
-    assert not_a_function(s, parsed.decls, low.program, c, line: "t.hero:7:11: error: called object type 'int' is not a function or function pointer", values: values).is_err(
-    )
-    assert not_a_function(s, parsed.decls, low.program, c, line: "t.hero:4:62: error: unexpected type name 'size_t': expected expression", values: values).is_err(
-    )
+    assert not_a_function(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        line: "t.hero:7:11: error: called object type 'int' is not a function or function pointer",
+        values: values
+    ).is_err()
+    assert not_a_function(
+        s,
+        parsed.decls,
+        low.program,
+        c,
+        line: "t.hero:4:62: error: unexpected type name 'size_t': expected expression",
+        values: values
+    ).is_err()
     assert returning(c_type: "FILE *", callee: "hero_stdin") == "FILE *hero_stdin"
     assert returning(c_type: "char[10]", callee: "hero_buf") == "<its C type> hero_buf"

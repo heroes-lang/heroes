@@ -194,8 +194,11 @@ test "the identity is what this clang says it will run, and a flag moves it"
     # key (defect 122), asserted of the world rather than of this file.
     one = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11", "-O0"]).must()
     same = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11", "-O0"]).must()
-    other = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11", "-O0", "-DHEROES_KEY_PROBE=1"]).must(
-    )
+    other = identity(
+        build_dir: "build",
+        runtime: "runtime",
+        words: ["-std=gnu11", "-O0", "-DHEROES_KEY_PROBE=1"]
+    ).must()
     assert !major_of(banner(one)).is_err()
     assert one == same
     assert one != other

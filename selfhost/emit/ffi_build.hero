@@ -381,8 +381,12 @@ test "the driver's package line is read at its head, whatever a name or an answe
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     tick = "heroes-ffi-package `a`b` is not installed on this machine"
-    said = package_problem(s, parsed.decls, stderr: tick + "\n  pkg-config said: Package a`b was not found\n", line: tick).must(
-    )
+    said = package_problem(
+        s,
+        parsed.decls,
+        stderr: tick + "\n  pkg-config said: Package a`b was not found\n",
+        line: tick
+    ).must()
     assert source.span_text(s, said.span) == "\"a`b\""
     assert said.message == "the package `a`b` is not installed on this machine"
     assert said.notes[0] == "pkg-config said: Package a`b was not found"
@@ -397,7 +401,11 @@ test "the driver's package line is read at its head, whatever a name or an answe
     assert source.span_text(s, quoted.span) == "\"a\""
     assert quoted.message == "the package `a` answered with `heroes-ffi-package `a`b` is`, which this compiler does not pass on"
     later = "heroes-ffi-package `a` is not installed on this machine\nheroes-ffi-package `a`b` is not installed on this machine\n"
-    assert package_problem(s, parsed.decls, stderr: later, line: "heroes-ffi-package `a`b` is not installed on this machine").is_err(
-    )
+    assert package_problem(
+        s,
+        parsed.decls,
+        stderr: later,
+        line: "heroes-ffi-package `a`b` is not installed on this machine"
+    ).is_err()
     clang = "p.c:3:1: error: heroes-ffi-package `a` is not installed"
     assert package_problem(s, parsed.decls, stderr: clang, line: clang).is_err()

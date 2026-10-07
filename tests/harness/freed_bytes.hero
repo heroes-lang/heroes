@@ -120,8 +120,11 @@ test "the fill turns a C library's read of freed bytes into a wrong answer, and 
     compiler = shell.some_compiler().must()
 
     # ASan alone: the right answer, and nothing said. This is the blindness.
-    alone = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", dir + "/keeper.hero", "--sanitize", "-O0"]).must(
-    )
+    alone = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "run", dir + "/keeper.hero", "--sanitize", "-O0"]
+    ).must()
     assert alone.code == 0
     assert alone.out == "412\n"
     assert !strings.contains(text: alone.err, needle: "AddressSanitizer")
@@ -156,8 +159,11 @@ test "Guard Malloc stops a C library at its read of freed bytes, on Darwin (defe
     compiler = shell.some_compiler().must()
 
     for name in ["keeper", "in_time"]
-        built = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", dir + "/" + name + ".hero", "-o", dir + "/" + name + shell.exe_suffix()]).must(
-        )
+        built = shell.run(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "build", dir + "/" + name + ".hero", "-o", dir + "/" + name + shell.exe_suffix()]
+        ).must()
         assert built.code == 0
 
     stopped = guarded(binary: dir + "/keeper", library: library.must(), log: dir + "/keeper.gmalloc.txt")
