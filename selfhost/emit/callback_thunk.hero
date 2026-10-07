@@ -153,22 +153,26 @@ function forwarded_name(f: containers.Function, slot_id: i64) -> str
 # `extern` in the program takes a callback, even where no Heroes function's
 # address is taken, because the extern call's argument is passed through it
 # either way and an extern handed as a callback comes out unchanged.
-function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
-    if !callback_guard.takes_a_callback(p, c, decls)
+# `callbacks` is the program's answer, asked once (defect 497).
+function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callbacks: callback_guard.Callbacks)
+    if !callbacks.opened
         return
-    guarded_decls = callback_guard.guarded(p, c, decls)
     writer.at_generated(@w)
 
-    for f in p.functions
-        if guarded_decls[f.decl].is_err() || !is_ordinary(f)
+    for at in callbacks.functions
+        f = p.functions[at]
+
+        if !is_ordinary(f)
             continue
         signature.prototype(@w, f, c, names, s, decls)
         writer.line(@w, text: header(f, c, names, s, decls) + ";")
 
     writer.line(@w, text: "__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {")
 
-    for f in p.functions
-        if guarded_decls[f.decl].is_err() || !is_ordinary(f)
+    for at in callbacks.functions
+        f = p.functions[at]
+
+        if !is_ordinary(f)
             continue
         real = signature.instance_name(f, c, s, decls)
         writer.line(
@@ -256,7 +260,7 @@ test "an extern handed as a callback comes out of the table unchanged, a Heroes 
     names1 = ctype.with_options(names0, c: c, s: s, decls: p.decls)
     names = ctype.with_functions(names1, c: c, s: s, decls: p.decls, p: low)
     w: writer.Writer @ writer.new_writer("t")
-    lookup_table(@w, low, c, names, s, p.decls)
+    lookup_table(@w, low, c, names, s, p.decls, callbacks: callback_guard.callbacks_of(low, c, p.decls))
     got = writer.finish(w)
     assert has(text: got, needle: "void h_0cb_t_bye(void);")
     assert has(text: got, needle: "    if (f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;")

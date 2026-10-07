@@ -64,7 +64,6 @@ use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
-use emit/callback_guard
 use emit/callback_thunk
 
 # One module's translation unit. The caller has already run the gate
@@ -128,18 +127,19 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # program, never the TU's slice: a function this TU defines may have
     # its address taken in another module, and the fused path must reach
     # the same answer or the two emitters disagree about one program.
-    guarded_decls = callback_guard.guarded(p, c, decls)
+    # Asked once for the whole build and read here (defect 497).
+    guarded_decls = whole.callbacks.decls
 
     # The callback table names every one of them and its thunk in EVERY
     # TU that can hand C a function (panel 177's item 2), so their
     # signatures' types join the reach too, or a TU that never calls one
     # of them is missing the typedef its prototype names.
-    for f in p.functions
-        if !guarded_decls[f.decl].is_err()
-            reached[f.result] @ true
+    for at in whole.callbacks.functions
+        f = p.functions[at]
+        reached[f.result] @ true
 
-            for slot in f.params
-                reached[f.slots[slot].ty] @ true
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
 
     # ONE set feeds all four sections, and that is the invariant rather
     # than a tidiness. Every time a section got its own answer the TU
@@ -208,7 +208,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         if emit_decls.emitted(f, target: .program_build)
             signature.prototype(@w, f, c, names, s, decls)
 
-    callback_thunk.lookup_table(@w, p, c, names, s, decls)
+    callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: whole.callbacks)
 
     for at in keep
         f = p.functions[at]
