@@ -182,17 +182,20 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t1 = h0_loop;
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
+    hero_lend_local_name(ph1_t, "uv_timer_init", "h");
+#line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t2 = uv_timer_init(t1, &(*ph1_t));
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return t2;
-#line 189 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 191 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void) {
-#line 194 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 196 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     void * h0_loop;
-    struct uv_timer_s h1_a;
+    struct uv_timer_s *const hero_lend_h1_a = (struct uv_timer_s *)hero_lend_local(sizeof(struct uv_timer_s), "fixedbugs413libuvkeepseveryhandlesaddress.main", "a");
+#define h1_a (*hero_lend_h1_a)
     HeroArrayHeader * h2_ts = {0};
     HeroArrayHeader * h3_own3 = {0};
     void * t1;
@@ -260,15 +263,15 @@ bb0:
     t22 = h3_own3;
 #line 39 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     h3_own3 = t8;
-#line 264 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 267 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_decref(t22);
 #line 39 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t23 = h2_ts;
-#line 268 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 271 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_incref(t8);
 #line 39 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     h2_ts = t8;
-#line 272 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 275 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_decref(t23);
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t9 = h0_loop;
@@ -318,13 +321,15 @@ bb0:
     t21 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
-#line 322 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 325 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_decref(h2_ts);
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-#line 325 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 328 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_decref(h3_own3);
+    hero_lend_local_give(hero_lend_h1_a);
     return;
 }
+#undef h1_a
 HERO_TU_LOCAL bool h_fixedbugs413libuvkeepseveryhandlesaddress_UvTimer_eq(const struct uv_timer_s *a, const struct uv_timer_s *b) {
     hero_panic("h_fixedbugs413libuvkeepseveryhandlesaddress_UvTimer_eq: a partial record has no structural equality");
 }

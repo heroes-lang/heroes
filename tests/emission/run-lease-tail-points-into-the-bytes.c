@@ -112,17 +112,20 @@ bb0:
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     t1 = h0_s;
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
+    hero_lend_local_name(ph1_out, "after_dash", "tail");
+#line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     (void)after_dash(hero_cstr_nonnull(t1), &(*ph1_out));
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 119 "leasetailpointsintothebytes.c"
+#line 121 "leasetailpointsintothebytes.c"
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_main(void) {
-#line 124 "leasetailpointsintothebytes.c"
+#line 126 "leasetailpointsintothebytes.c"
     const char * h0_label;
-    const char * h1_tail;
+    const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail");
+#define h1_tail (*hero_lend_h1_tail)
     HeroStr t1;
     const char * t2;
     const char * t3;
@@ -156,9 +159,12 @@ bb0:
 #line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     hero_held_release(&h0_label);
 #line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
+    hero_lend_local_give(hero_lend_h1_tail);
+#line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 161 "leasetailpointsintothebytes.c"
+#line 166 "leasetailpointsintothebytes.c"
 }
+#undef h1_tail
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
