@@ -1,0 +1,51 @@
+# fixedbugs, defect 431, lane b13-zero401, 2026-10-07, found beside defect
+# 412.
+#
+# SYMPTOM: `f(x: @p)`, `p` bound with `=` and `f`'s parameter without `@`,
+# was told `not_mutable`, *a cell is declared with its type*, and
+# `marker_mismatch` only once `p` was made a cell, which was never the
+# repair; so through UFCS, a built-in, a function value, a field holding
+# one, a loop variable, a parameter and an extern.
+#
+# CAUSE: the name stage held every `@` argument to the rule of the left of
+# `@` before anything had asked whether the call takes an `@` there.
+#
+# FIX: where the walk has just resolved the callee, an `@` its parameter
+# takes none for is set aside, its value read and nothing written, and the
+# checker tells it once, `marker_mismatch`. An `@` a call does write back is
+# held to the rule as before (`fixedbugs-inout-on-an-immutable-corrupted-
+# the-heap`).
+
+extern "fixedbugs-431.h"
+    function touch(x: i32) -> i64
+
+record H
+    cb: (function(i64) -> i64)
+
+function f(x: i64) -> i64
+    return x
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function through_a_parameter(q: i64) -> i64
+    return f(@q)  #~ marker_mismatch
+
+function main()
+    p = 1
+    n = 2
+    t: i32 = 3
+    g = f
+    h = H(cb: f)
+    print(f(x: @p))  #~ marker_mismatch
+    print(f(@p))  #~ marker_mismatch
+    print(n.add(b: @p))  #~ marker_mismatch
+    print(@p)  #~ marker_mismatch
+    print(g(@p))  #~ marker_mismatch
+    print(h.cb(@p))  #~ marker_mismatch
+    print(touch(@t))  #~ marker_mismatch
+
+    for e in [1, 2]
+        print(f(@e))  #~ marker_mismatch
+
+    print(through_a_parameter(q: n))
