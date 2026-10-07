@@ -6,11 +6,15 @@
 # Windows root. Dropping C's brackets or quotes is the repair of exactly
 # the mistake the message names, and what it leaves is a name C reads as
 # itself, so the fix is certain (`.claude/rules/diagnostics-and-goldens.md`).
+#
+# 2026-10-07, defect 445: no NTFS file's name holds a `"` (defect 252's
+# measure), so the quotes carried in are `unwritable_name`, as the brackets
+# are, and `check --permissive` refuses them too; the fix stays certain.
 
 extern "<stdio.h>"    #~ unwritable_name
     function puts(s: cstr lent) -> i32
 
-extern "\"string.h\""    #~ undefined_header_name
+extern "\"string.h\""    #~ unwritable_name
     function strlen(s: cstr lent) -> u64
 
 function main()

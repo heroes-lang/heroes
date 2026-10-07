@@ -11,6 +11,9 @@
 # is told as `<` is since defect 235 and no longer as a version's comparison;
 # `=` and `!` still are. A rooted name keeps panel 055's message, a header's
 # `"` panel 188's, and a package's `/` passes, as the last three lines do.
+#
+# 2026-10-07, defect 445: a header's `"` is `unwritable_name` too, told
+# before panel 188's thesis rule, since no NTFS file's name holds one.
 
 extern "stdio.h" link "a>b"  #~ unwritable_name
     function l1() -> i32
@@ -42,7 +45,7 @@ extern "stdio.h" package "a!b"  #~ package_comparison
 extern "stdio.h" link "C:\\side\\m"  #~ machine_locked_path
     function l10() -> i32
 
-extern "a\"b.h"  #~ undefined_header_name
+extern "a\"b.h"  #~ unwritable_name
     function l11() -> i32
 
 extern "stdio.h" package "sub/seven"
