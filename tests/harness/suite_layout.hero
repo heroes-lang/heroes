@@ -452,6 +452,11 @@ constant CEILING: i64
 # emitter already holds. One field, its comment line, and the empty map the
 # constructor starts it from; the rest is in files with room
 # (`cli/header_types.hero`, `emit/lend_extent.hero`, `emit/lend_count.hero`).
+#
+# **One moved down on 2026-10-07, for defect 259.** `check/table.hero` 389 ->
+# **370**, what it measures in this suite's unit once lane b14-check split
+# defect 259's memo out into `check/type_fit.hero` (`b2be2c9c`): a ceiling
+# left above what its file measures is room for growth nobody sees.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -460,7 +465,7 @@ constant DECIDED: [str]
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 550"
-        "selfhost/check/table.hero 389"
+        "selfhost/check/table.hero 370"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"
         "selfhost/emit/ctype.hero 400"
