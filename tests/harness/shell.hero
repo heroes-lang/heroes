@@ -1101,9 +1101,18 @@ test "a command's two streams come back apart, with its status"
 # would still pass if the removal were broken? Nothing — the count is the
 # subject.
 #
-# The ceiling is 2 rather than 0 because a capture is alive between its
-# `CreateFileA` and its read, and a self-test is free to be the call that is
-# in flight. Anything above that is accumulation.
+# **IT COUNTED NOTHING UNTIL DEFECT 330** (2026-10-07). Its loop asked each
+# listed PATH, whole, whether it opened with `stdout-`, and a listing names
+# `<dir>/stdout-…`, so it counted 0 over any directory: measured with 2 and with
+# 24 captures planted beside its twelve runs, it read 0 and passed both. It
+# reads the names now, through `captures_left`, the count the tests of defects
+# 317 and 320 already asked, and it plants two captures and asks that count to
+# see them, so a count that stops seeing a capture fails here before it can
+# pass over a pile of them.
+#
+# **The ceiling is 0.** It was 2, for a capture in flight in a directory another
+# process shared; since defect 320 the directory is this test's own, the twelve
+# runs have ended when it is read, and nothing else writes a capture in it.
 test "the captures are removed, so a run cannot fill the disk with them"
     if !can_run_scripts()
         return
@@ -1115,18 +1124,15 @@ test "the captures are removed, so a run cannot fill the disk with them"
         said = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
         assert !said.is_err()
 
-    listed = list_entries(scratch: scratch, dir: scratch)
-    assert !listed.is_err()
-    left: i64 @ 0
-
-    for name in listed.must()
-        if strings.starts_with(text: name, prefix: "stdout-") || strings.starts_with(text: name, prefix: "stderr-")
-            left @ left + 1
-
     # Twelve spawns wrote twenty-four capture files. If the removal works the
     # directory holds none of them; if it does not, it holds twenty-four and a
     # real run holds thousands.
-    assert left <= 2
+    assert captures_left(scratch) == 0
+
+    # The count sees what a removal that stopped working would leave.
+    assert !write_file(path: scratch + "/stdout-planted", text: "").is_err()
+    assert !write_file(path: scratch + "/stderr-planted", text: "").is_err()
+    assert captures_left(scratch) == 2
     assert !remove_tree(scratch).is_err()
 
 test "the directory walk keeps a filename that contains a newline"
