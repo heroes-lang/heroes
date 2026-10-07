@@ -1,0 +1,18 @@
+# Defect 293, 2026-10-07. Symptom: the scanner asked of every character it
+# refused, and of every foreign word, whether a quote left out had moved it
+# out of a string (`lost_quote.lost_in`), and each asking walked back to its
+# line's start and on to the line's end: a line of 4,000 refused characters
+# cost `check` about a million instructions a character, its square. The
+# text is read once for that question now (`lost_reading.hero`), and every
+# message is what it was. Below, at a size the suite affords: a run past a
+# quote on a line whose strings close, told; the same run, and foreign
+# words, past a quote on a line that ends inside a literal, the literal's;
+# and characters past no quote, told one by one to the file's eight, the
+# rest counted. This file holds control characters on purpose.
+
+function main()
+    a = "a"  "b"  #~ unexpected_character
+    print("a",  "b)  #~ unterminated_string
+    print("a", fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn "b)  #~ unterminated_string
+    c =   #~ unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character
+    print(a, c)
