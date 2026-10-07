@@ -38,6 +38,12 @@
 # too (design.md §4.10, measured). So: lines land in `chunk`, every
 # CHUNK_LINES of them are joined into one str pushed onto `chunks`,
 # and finish joins once. Before/after: docs/measurements/012.
+#
+# That `push` copies every element is true through a field, and both
+# arrays were grown through `w`'s: each line copied its chunk and each
+# flush every chunk before it. Since defect 409 both are lent to
+# `add_line`, which grows them in place (design.md Part 8 wart 8's
+# spelling), so a line costs its own push and no other.
 
 use source
 use emit/c_text
@@ -58,17 +64,19 @@ variant Pending
         line: i64
     generated_line
 
-# One flush every this many lines. The inner array costs n*K/2 element
-# copies over n lines, the outer (n/K)^2/2; they balance at K = cuberoot(2n),
-# which is 115 for the compiler's own 764k lines. 128 stays within 2x of
-# that balance from 100k lines to 1M, and a small output never flushes.
+# One flush every this many lines. Chosen when both arrays were pushed
+# through the field: the inner then cost n*K/2 element copies over n lines,
+# the outer (n/K)^2/2, balanced at K = cuberoot(2n), 115 for the compiler's
+# own 764k lines. Grown in place (defect 409), neither copies, and K says
+# only how many lines' strs are alive before they are joined into one.
 constant CHUNK_LINES: i64
     128
 
 record Writer
     # The output. Neither a flat str (`+` copies both sides) nor a flat
-    # [str] (`push` copies every element) survives 764k lines; both are
-    # measured quadratic (design.md §4.10, docs/measurements/012).
+    # [str] pushed through this field (`push` copies every element)
+    # survives 764k lines; both are measured quadratic (design.md §4.10,
+    # docs/measurements/012). `add_line` grows both arrays in place.
     chunk: [str]
     chunks: [str]
     # Lines pushed so far. The next line's number in the generated file
@@ -140,16 +148,21 @@ function line(@w: Writer, text: str)
 # the #line itself must not ask whether a #line is needed. (push is a
 # builtin, hence the longer name.)
 function push_line(@w: Writer, text: str)
-    w.chunk @ w.chunk.push(text + "\n")
+    add_line(@w.chunk, text: text + "\n")
 
     if len(w.chunk) == CHUNK_LINES
-        w.chunks @ w.chunks.push(join(w.chunk, ""))
+        add_line(@w.chunks, text: join(w.chunk, ""))
         w.chunk @ []
     w.pushed @ w.pushed + 1
 
     match w.claim
         .at believed => w.claim @ .at(file: believed.file, line: believed.line + 1)
         .no_claim    => return
+
+# Lent, so the push grows the array in place (defect 409): through the
+# field, `w.chunk @ w.chunk.push(…)` copied the chunk at every line.
+function add_line(@lines: [str], text: str)
+    lines @ lines.push(text)
 
 # Re-state a claim the auto-increment has aged out from under. Same
 # bytes as directive, without touching intent — the intent is what is
@@ -360,6 +373,21 @@ test "a writer that ends exactly on a chunk boundary adds nothing"
         n @ n + 1
 
     assert finish(w) == repeat("y;\n", CHUNK_LINES.to_u64().must())
+
+test "defect 409: forty chunks and a ragged one keep every line once, in order"
+    # Both arrays are lent to `add_line` now; a line out of place, lost or
+    # written twice across forty flushes would show in the numbers.
+    w: Writer @ new_writer("m")
+    want: [str] @ []
+    n: i64 @ 0
+
+    while n < CHUNK_LINES * 40 + 5
+        line(@w, text: n.to_str())
+        want @ want.push(n.to_str() + "\n")
+        n @ n + 1
+
+    assert w.chunks.len() == 40
+    assert finish(w) == want.join("")
 
 test "a request no line follows writes no #line (defect 263)"
     # A retain or a release after a release asked for its instruction's
