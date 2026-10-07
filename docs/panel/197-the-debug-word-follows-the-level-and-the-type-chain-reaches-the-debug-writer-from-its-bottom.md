@@ -112,7 +112,7 @@ environment variable.
 - **(K).** Neither seat would land it here; the critic measured that UBSan's
   false column comes from the front end and survives (K); its own item.
 
-## The resolution — provisional, author ratification pending
+## The resolution — ratified by the author (below)
 
 The most robust and complete route at every disagreement (CLAUDE.md § 4,
 CL-040); what conservative would have been is below the list.
@@ -192,5 +192,10 @@ unchanged.
 
 ## Author's verdict
 
-Pending (CLAUDE.md § 4). The ratification issue is
+**RATIFIED, 2026-10-07**, R1 to R8 as written above, the author answering
+through the question widget after 17:21 by the clock read before the synthesis
+was written, choosing *ratify* over the conservative alternative (R1 alone) and
+over *I want to read it first*, on the coordinator's summary of the route;
+recorded as a reading (CLAUDE.md § 4). The ratification issue is
 `issues/2026-10/07/2026-10-07-1721-panel-197-ratify-amend-or-overturn-r1-to-r8-the-debug-word-follows.md`.
+The author may overturn it (CLAUDE.md § 4).
