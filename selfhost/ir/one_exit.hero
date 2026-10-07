@@ -36,6 +36,7 @@ use ir/uses
 use ir/survival
 use check/state
 use check/table
+use ir/agree
 use source
 use parse
 use resolve
@@ -255,7 +256,7 @@ function stored_types(f: containers.Function, blk: containers.Block, c: state.Ch
                     if st.place.root == root && st.value < f.values.len()
                         got = containers.value_type(f, st.value)
 
-                        if got != f.result && got != table.error_ty(c.types)
+                        if !agree.agree(c.types, value: got, lands: f.result) && got != table.error_ty(c.types)
                             problems @ problems.push(
                                 at + "returns " + slot + ", and bb" + index.to_str() + " stores a value of the wrong type into it"
                             )
