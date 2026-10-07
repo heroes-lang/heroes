@@ -20,6 +20,9 @@
 # written decision, `validated`, aside. The two `not_a_type` beside the type
 # parameter are the shape every built-in's name takes there, `len` and
 # `range` alike, reported apart.
+#
+# Corrected 2026-10-07, defect 460: the type parameter is told once now, its
+# uses left unresolved and silent; the two `not_a_type` are gone.
 
 function args_checked() -> [str?]  #~ builtin_name_taken
     return []
@@ -27,7 +30,7 @@ function args_checked() -> [str?]  #~ builtin_name_taken
 function f(args_checked: i64) -> i64  #~ builtin_name_taken
     return args_checked
 
-function g<args_checked>(x: args_checked) -> args_checked  #~ builtin_name_taken not_a_type not_a_type
+function g<args_checked>(x: args_checked) -> args_checked  #~ builtin_name_taken
     return x
 
 function main()
