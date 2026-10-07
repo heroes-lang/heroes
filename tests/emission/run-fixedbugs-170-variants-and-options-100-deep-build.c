@@ -2060,158 +2060,158 @@ typedef struct h_0opt_a8ea2 {
 } h_0opt_a8ea2;
 
 __attribute__((used)) static void hero_tu_type_order(void *at) {
-    { h_fixedbugs170variantsandoptions100deepbuild_R0 *p = at; (void)(p + 1); }
-    { h_0opt_5edba2ea *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R1 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R2 *p = at; (void)(p + 1); }
-    { h_0opt_4099fa43 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R3 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R4 *p = at; (void)(p + 1); }
-    { h_0opt_2258519c *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R5 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R6 *p = at; (void)(p + 1); }
-    { h_0opt_416a8f5 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R7 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R8 *p = at; (void)(p + 1); }
-    { h_0opt_65d5004d *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R9 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R10 *p = at; (void)(p + 1); }
-    { h_0opt_2ae91c55 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R11 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R12 *p = at; (void)(p + 1); }
-    { h_0opt_2f4fcdbd *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R13 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R14 *p = at; (void)(p + 1); }
-    { h_0opt_33b67f25 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R15 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R16 *p = at; (void)(p + 1); }
-    { h_0opt_381d308d *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R17 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R18 *p = at; (void)(p + 1); }
-    { h_0opt_3c83e1f5 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R19 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R20 *p = at; (void)(p + 1); }
-    { h_0opt_4b2f8073 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R21 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R22 *p = at; (void)(p + 1); }
-    { h_0opt_4f9631db *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R23 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R24 *p = at; (void)(p + 1); }
-    { h_0opt_53fce343 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R25 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R26 *p = at; (void)(p + 1); }
-    { h_0opt_586394ab *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R27 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R28 *p = at; (void)(p + 1); }
-    { h_0opt_5cca4613 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R29 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R30 *p = at; (void)(p + 1); }
-    { h_0opt_6b75e491 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R31 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R32 *p = at; (void)(p + 1); }
-    { h_0opt_6fdc95f9 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R33 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R34 *p = at; (void)(p + 1); }
-    { h_0opt_74434761 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R35 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R36 *p = at; (void)(p + 1); }
-    { h_0opt_78a9f8c9 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R37 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R38 *p = at; (void)(p + 1); }
-    { h_0opt_7d10aa31 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R39 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R40 *p = at; (void)(p + 1); }
-    { h_0opt_bbc48b0 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R41 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R42 *p = at; (void)(p + 1); }
-    { h_0opt_1022fa18 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R43 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R44 *p = at; (void)(p + 1); }
-    { h_0opt_1489ab80 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R45 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R46 *p = at; (void)(p + 1); }
-    { h_0opt_18f05ce8 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R47 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R48 *p = at; (void)(p + 1); }
-    { h_0opt_1d570e50 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R49 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R50 *p = at; (void)(p + 1); }
-    { h_0opt_2c02acce *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R51 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R52 *p = at; (void)(p + 1); }
-    { h_0opt_30695e36 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R53 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R54 *p = at; (void)(p + 1); }
-    { h_0opt_34d00f9e *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R55 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R56 *p = at; (void)(p + 1); }
-    { h_0opt_3936c106 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R57 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R58 *p = at; (void)(p + 1); }
-    { h_0opt_3d9d726e *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R59 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R60 *p = at; (void)(p + 1); }
-    { h_0opt_4c4910ec *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R61 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R62 *p = at; (void)(p + 1); }
-    { h_0opt_50afc254 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R63 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R64 *p = at; (void)(p + 1); }
-    { h_0opt_551673bc *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R65 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R66 *p = at; (void)(p + 1); }
-    { h_0opt_597d2524 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R67 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R68 *p = at; (void)(p + 1); }
-    { h_0opt_5de3d68c *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R69 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R70 *p = at; (void)(p + 1); }
-    { h_0opt_6c8f750a *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R71 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R72 *p = at; (void)(p + 1); }
-    { h_0opt_70f62672 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R73 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R74 *p = at; (void)(p + 1); }
-    { h_0opt_755cd7da *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R75 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R76 *p = at; (void)(p + 1); }
-    { h_0opt_79c38942 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R77 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R78 *p = at; (void)(p + 1); }
-    { h_0opt_7e2a3aaa *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R79 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R80 *p = at; (void)(p + 1); }
-    { h_0opt_cd5d929 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R81 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R82 *p = at; (void)(p + 1); }
-    { h_0opt_113c8a91 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R83 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R84 *p = at; (void)(p + 1); }
-    { h_0opt_15a33bf9 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R85 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R86 *p = at; (void)(p + 1); }
-    { h_0opt_1a09ed61 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R87 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R88 *p = at; (void)(p + 1); }
-    { h_0opt_1e709ec9 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R89 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R90 *p = at; (void)(p + 1); }
-    { h_0opt_2d1c3d47 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R91 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R92 *p = at; (void)(p + 1); }
-    { h_0opt_3182eeaf *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R93 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R94 *p = at; (void)(p + 1); }
-    { h_0opt_35e9a017 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R95 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R96 *p = at; (void)(p + 1); }
-    { h_0opt_3a50517f *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R97 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R98 *p = at; (void)(p + 1); }
-    { h_0opt_3eb702e7 *p = at; (void)(p + 1); }
-    { h_fixedbugs170variantsandoptions100deepbuild_R99 *p = at; (void)(p + 1); }
-    { h_0opt_f87774a *p = at; (void)(p + 1); }
-    { h_0opt_a8ea2 *p = at; (void)(p + 1); }
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R0 *)at + 1);
+    (void)((h_0opt_5edba2ea *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R1 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R2 *)at + 1);
+    (void)((h_0opt_4099fa43 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R3 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R4 *)at + 1);
+    (void)((h_0opt_2258519c *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R5 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R6 *)at + 1);
+    (void)((h_0opt_416a8f5 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R7 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R8 *)at + 1);
+    (void)((h_0opt_65d5004d *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R9 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R10 *)at + 1);
+    (void)((h_0opt_2ae91c55 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R11 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R12 *)at + 1);
+    (void)((h_0opt_2f4fcdbd *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R13 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R14 *)at + 1);
+    (void)((h_0opt_33b67f25 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R15 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R16 *)at + 1);
+    (void)((h_0opt_381d308d *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R17 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R18 *)at + 1);
+    (void)((h_0opt_3c83e1f5 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R19 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R20 *)at + 1);
+    (void)((h_0opt_4b2f8073 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R21 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R22 *)at + 1);
+    (void)((h_0opt_4f9631db *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R23 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R24 *)at + 1);
+    (void)((h_0opt_53fce343 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R25 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R26 *)at + 1);
+    (void)((h_0opt_586394ab *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R27 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R28 *)at + 1);
+    (void)((h_0opt_5cca4613 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R29 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R30 *)at + 1);
+    (void)((h_0opt_6b75e491 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R31 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R32 *)at + 1);
+    (void)((h_0opt_6fdc95f9 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R33 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R34 *)at + 1);
+    (void)((h_0opt_74434761 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R35 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R36 *)at + 1);
+    (void)((h_0opt_78a9f8c9 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R37 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R38 *)at + 1);
+    (void)((h_0opt_7d10aa31 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R39 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R40 *)at + 1);
+    (void)((h_0opt_bbc48b0 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R41 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R42 *)at + 1);
+    (void)((h_0opt_1022fa18 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R43 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R44 *)at + 1);
+    (void)((h_0opt_1489ab80 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R45 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R46 *)at + 1);
+    (void)((h_0opt_18f05ce8 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R47 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R48 *)at + 1);
+    (void)((h_0opt_1d570e50 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R49 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R50 *)at + 1);
+    (void)((h_0opt_2c02acce *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R51 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R52 *)at + 1);
+    (void)((h_0opt_30695e36 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R53 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R54 *)at + 1);
+    (void)((h_0opt_34d00f9e *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R55 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R56 *)at + 1);
+    (void)((h_0opt_3936c106 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R57 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R58 *)at + 1);
+    (void)((h_0opt_3d9d726e *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R59 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R60 *)at + 1);
+    (void)((h_0opt_4c4910ec *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R61 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R62 *)at + 1);
+    (void)((h_0opt_50afc254 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R63 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R64 *)at + 1);
+    (void)((h_0opt_551673bc *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R65 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R66 *)at + 1);
+    (void)((h_0opt_597d2524 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R67 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R68 *)at + 1);
+    (void)((h_0opt_5de3d68c *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R69 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R70 *)at + 1);
+    (void)((h_0opt_6c8f750a *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R71 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R72 *)at + 1);
+    (void)((h_0opt_70f62672 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R73 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R74 *)at + 1);
+    (void)((h_0opt_755cd7da *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R75 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R76 *)at + 1);
+    (void)((h_0opt_79c38942 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R77 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R78 *)at + 1);
+    (void)((h_0opt_7e2a3aaa *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R79 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R80 *)at + 1);
+    (void)((h_0opt_cd5d929 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R81 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R82 *)at + 1);
+    (void)((h_0opt_113c8a91 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R83 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R84 *)at + 1);
+    (void)((h_0opt_15a33bf9 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R85 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R86 *)at + 1);
+    (void)((h_0opt_1a09ed61 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R87 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R88 *)at + 1);
+    (void)((h_0opt_1e709ec9 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R89 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R90 *)at + 1);
+    (void)((h_0opt_2d1c3d47 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R91 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R92 *)at + 1);
+    (void)((h_0opt_3182eeaf *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R93 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R94 *)at + 1);
+    (void)((h_0opt_35e9a017 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R95 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R96 *)at + 1);
+    (void)((h_0opt_3a50517f *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R97 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R98 *)at + 1);
+    (void)((h_0opt_3eb702e7 *)at + 1);
+    (void)((h_fixedbugs170variantsandoptions100deepbuild_R99 *)at + 1);
+    (void)((h_0opt_f87774a *)at + 1);
+    (void)((h_0opt_a8ea2 *)at + 1);
 }
 
 #pragma clang diagnostic push
