@@ -32,6 +32,7 @@ use emit/handle_place
 use emit/handle_text
 use emit/callback_thunk
 use emit/printing
+use emit/lend_type
 use token
 use parse
 use resolve
@@ -151,7 +152,13 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # Written before the call rather than folded into it because a
             # `_Static_assert` is a declaration and the call is a statement.
             lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
-            guarded = guard_arguments(p, c, decls, decl: e.decl, arguments: arguments)
+
+            # A `cstr` lent to a pointer the check read crosses cast (defect 427).
+            guarded = lend_type.cast_lends(
+                names.lend_units,
+                name: extern_name,
+                arguments: guard_arguments(p, c, decls, decl: e.decl, arguments: arguments)
+            )
 
             # Where each argument was read from, for the poison a consuming
             # call leaves there (panel 177's item 1); and a Heroes function

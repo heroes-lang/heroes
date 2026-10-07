@@ -210,7 +210,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
 
     if parameters.is_err()
         return fail(code: "none", msg: "a parameter with no C spelling")
-    arguments = extern_probe.probe_arguments(f, c)
+    arguments = extern_probe.probe_arguments(f, c, names, callee: name)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)
     columns = probe_reply.argument_columns(
