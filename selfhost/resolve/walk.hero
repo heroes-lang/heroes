@@ -150,21 +150,25 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
         # (`resolve/built_marks`, defect 412).
         .call c =>
             expr(@r, a, s, decls, c.callee)
-            handed = built_marks.of_a_call(@r, a, s, decls, callee: c.callee, given: c.args)
+            handed = built_marks.of_a_call(@r, a, s, decls, callee: c.callee, receiver: false, given: c.args)
             arguments(@r, a, s, decls, handed)
             rest_zero.at_call(@r, a, s, decls, at: id, rest: c.rest)
         .method m =>
             # A module in receiver position is not a value, so it is
             # decided before the receiver is resolved as one (panel 031 Q2).
             if qualified.qualified(@r, a, s, decls, at: id, receiver: m.receiver, called: m.name)
-                handed = built_marks.of_a_call(@r, a, s, decls, callee: id, given: m.args)
+                handed = built_marks.of_a_call(@r, a, s, decls, callee: id, receiver: false, given: m.args)
                 arguments(@r, a, s, decls, handed)
                 rest_zero.at_call(@r, a, s, decls, at: id, rest: m.rest)
                 return
+
+            # The name first, so an `@` its function takes none for is known
+            # before the arguments are walked (defect 431).
             expr(@r, a, s, decls, m.receiver)
-            arguments(@r, a, s, decls, m.args)
-            rest_zero.at_call(@r, a, s, decls, at: id, rest: m.rest)
             names.method_name(@r, s, decls, at: id, called: m.name)
+            handed = built_marks.of_a_call(@r, a, s, decls, callee: id, receiver: true, given: m.args)
+            arguments(@r, a, s, decls, handed)
+            rest_zero.at_call(@r, a, s, decls, at: id, rest: m.rest)
         .variant_case v =>
             words_apart = rest_zero.apart(@r, a, s, name: v.name, given: v.args)
             arguments(@r, a, s, decls, built_marks.of_a_case(@r, a, s, name: v.name, given: words_apart))

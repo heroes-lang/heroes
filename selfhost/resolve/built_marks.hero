@@ -20,34 +20,70 @@
 # name bound with `=` is not told it should be a cell. A handle's construction
 # is unmarked and not told: it is refused whole, `@` and all, by
 # `check/handle_built.hero` (defect 397).
+#
+# **The same holds of a call that takes no `@` where one is written** (defect
+# 431): a function whose parameter at the argument's position has none, a
+# built-in but `end_lease`, a function value, which no `@` reaches. The `@`
+# is set aside unmarked and not told here: the checker tells it,
+# `marker_mismatch`, where the arguments meet the parameters, and the left of
+# `@` is asked only of an argument a call does write back. Asked of every
+# `@`, it told `f(x: @p)` that `p` bound with `=` should be a cell, which was
+# never the repair, and the `@` only once that was done.
 
 use token
 use ast
 use source
 use diag
 use handles
+use inventory
 use label_errors
 use resolve/state
 
 # The arguments of a call whose callee, the node at `callee` (the method node
-# itself for a qualified name), the walk has just resolved: each `@` a
-# construction is handed told and set aside. A call to a function is handed
-# back as it came, its markers the checker's (`marker_mismatch`).
-function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg]) -> [ast.Arg]
+# itself for a qualified name or UFCS), the walk has just resolved, each `@`
+# the callee takes none for set aside: told here for a construction, left to
+# the checker's `marker_mismatch` for anything else. `receiver` says a UFCS
+# receiver is the first parameter, so the arguments begin at the second.
+function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64, receiver: bool, given: [ast.Arg]) -> [ast.Arg]
+    if !any_marked(given)
+        return given
+
     match r.out.uses[callee]
         .top t =>
             match decls[t.at].kind
                 .record_decl =>
+                    # `x.Point(…)` is refused as no function already.
+                    if receiver
+                        return given
                     built = source.span_text(s, decls[t.at].name)
                     tell = !handles.is_handle(decls[t.at])
                     return unmarked(@r, a, s, built: built, what: "a `record`", tell: tell, given: given)
-                .constant_decl | .function_decl | .variant_decl | .test_decl => return given
-        .builtin =>
+                .function_decl fd =>
+                    first: i64 @ 0
+
+                    if receiver
+                        first @ 1
+                    return beside(fd.value.params, first: first, given: given)
+                .constant_decl | .variant_decl | .test_decl => return given
+        .builtin b =>
             if a.exprs[callee].kind == .name && is_a_constructor(source.span_text(s, a.exprs[callee].span))
                 built = source.span_text(s, a.exprs[callee].span)
                 return unmarked(@r, a, s, built: built, what: "a `T?`", tell: true, given: given)
-            return given
-        .unresolved | .local | .module => return given
+
+            # One built-in takes an `@`, `end_lease(@x)`, which empties the
+            # cell it frees (panel 125); no other changes an argument.
+            if inventory.table()[b.at].name == "end_lease"
+                return given
+            return unmarked(@r, a, s, built: "", what: "", tell: false, given: given)
+        # A function value: no function type carries an `@` (defect 398).
+        .local => return unmarked(@r, a, s, built: "", what: "", tell: false, given: given)
+        .unresolved =>
+            # A name that resolved to nothing is told already; any other
+            # callee unresolved is a value called, `pick()(x)` or a field.
+            if a.exprs[callee].kind == .name
+                return given
+            return unmarked(@r, a, s, built: "", what: "", tell: false, given: given)
+        .module => return given
 
 # The arguments of a variant case, `name` its case: all of them, since a case
 # is always built.
@@ -57,6 +93,29 @@ function of_a_case(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token
 
 function is_a_constructor(name: str) -> bool
     return name == "ok" || name == "fail"
+
+function any_marked(given: [ast.Arg]) -> bool
+    for arg in given
+        if arg.mutable
+            return true
+
+    return false
+
+# `given` against a function's parameters from `first`: an `@` where the
+# parameter at its position has none is taken off, untold. An argument past
+# the last parameter keeps its mark, the arity being the checker's to tell.
+function beside(params: [ast.Param], first: i64, given: [ast.Arg]) -> [ast.Arg]
+    kept: [ast.Arg] @ []
+    k: i64 @ first
+
+    for arg in given
+        if arg.mutable && k < params.len() && !params[k].mutable
+            kept @ kept.push(ast.Arg(name: arg.name, mutable: false, value: arg.value))
+        else
+            kept @ kept.push(arg)
+        k @ k + 1
+
+    return kept
 
 # `given` with every `@` told, where `tell`, and taken off; `built` is what
 # the construction names and `what` the kind of value it builds. A list
