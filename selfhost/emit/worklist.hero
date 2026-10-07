@@ -1,0 +1,70 @@
+# A worklist drained from its top without copying it (defect 498,
+# 2026-10-07; spec § 10, a slice is a NEW array; design.md §4.10).
+#
+# THE SHAPE IT REPLACES. `work @ work.slice(from: 0, to: work.len() - 1)`
+# pops by building a new array of every element but the last, so a drain of
+# n entries copied about n²/2 of them; and the list was then still shared at
+# its next push, which copied it whole a second time: 1,000 pushes copied
+# 999,000 elements (lane b14-p409's probe), and `builtins.reachable` alone
+# copied 2,091,585,474 on the compiler's own `--emit-c`, 1,899,160,831 at
+# its pops and 192,424,643 at its pushes.
+#
+# HOW. The live part of the list is its first `size` elements, and the
+# caller holds `size`: `take` lowers it and reads the element there, `put`
+# writes the slot past it, or appends where every slot is live, and raises
+# it. A bare `@` array written in place is its caller's own block (panel
+# 196's R1), so neither copies anything. The elements visited, and their
+# order, are the slicing drain's exactly, which is what keeps every
+# worklist's output, and the C it decides, what it was: the test below holds
+# the two drains to one sequence.
+
+# Put `value` at the top of a list whose live part is its first `size`
+# elements.
+function put(@items: [i64], @size: i64, value: i64)
+    if size < items.len()
+        items[size] @ value
+    else
+        items @ items.push(value)
+    size @ size + 1
+
+# The element at the top, which leaves the live part.
+function take(items: [i64], @size: i64) -> i64
+    size @ size - 1
+    return items[size]
+
+## Tests
+
+# The oracle is the slicing drain this module replaced, run beside it over
+# one sequence of pushes and pops: a push of each value's two successors
+# below a bound, so the list grows and shrinks and reuses its slots.
+test "a drain visits what the slicing drain visited, in its order (defect 498)"
+    sliced: [i64] @ [1, 2]
+    held: [i64] @ []
+    size: i64 @ 0
+
+    for one in [1, 2]
+        put(@held, size: @size, value: one)
+
+    old_order: [i64] @ []
+    new_order: [i64] @ []
+
+    while sliced.len() > 0
+        top = sliced[sliced.len() - 1]
+        sliced @ sliced.slice(from: 0, to: sliced.len() - 1)
+        old_order @ old_order.push(top)
+
+        if top < 40
+            sliced @ sliced.push(top * 2)
+            sliced @ sliced.push(top * 2 + 1)
+
+    while size > 0
+        top = take(held, size: @size)
+        new_order @ new_order.push(top)
+
+        if top < 40
+            put(@held, size: @size, value: top * 2)
+            put(@held, size: @size, value: top * 2 + 1)
+
+    assert old_order.len() > 40
+    assert new_order == old_order
+    assert held.len() < old_order.len()
