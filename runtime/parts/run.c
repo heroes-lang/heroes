@@ -36,6 +36,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/select.h>
 #include <sys/types.h>
 #include <time.h>
 #endif
@@ -214,6 +215,214 @@ static HeroStr hero_run_win_command_line(void) {
 #endif
 
 #if !defined(_WIN32)
+/* **WHEN THIS PROCESS IS ENDED, THE CHILDREN IT WAITS ON END FIRST** (defect
+ * 425, 2026-10-07).
+ *
+ * Every child gets a process group of its own (below), which is what lets the
+ * terminal's Ctrl-C reach the program in front and the sweep reach what it
+ * left behind. Its price was that a signal ending THIS process reached no
+ * child: `timeout 3 heroes run forever.hero` exited 124 and the program ran on
+ * with parent 1, and so did every program under a `heroes` the harness's
+ * watchdog ended. On 2026-10-06 one of them wrote 146 GB in 44 minutes and
+ * filled the disk every lane works on.
+ *
+ * So while a child is waited on, SIGTERM, SIGINT, SIGHUP and SIGQUIT are
+ * caught where this process had left them at their default, and the handler
+ * does what a shell does for its jobs: the same signal to every child's group,
+ * `HERO_RUN_GRACE_MS` for them to end, SIGKILL for any group still standing,
+ * the terminal handed back where a child held it, and then this process dies
+ * of the signal itself, its default restored, so whoever waits on it reads
+ * the status that signal means. A signal this process ignores stays ignored,
+ * and one a C library already handles stays its own: neither is caught.
+ *
+ * **Everything the handler touches is async-signal-safe**: `kill`, `waitid`,
+ * `select` as a sleep, `sigaction`, `tcsetpgrp`, and lock-free atomics
+ * (C11 7.14.1.1p5). The children it may signal are a table of pids rather
+ * than a list, so it allocates nothing and takes no lock.
+ *
+ * **Two races are closed by construction rather than by timing.**
+ *
+ * - A launch in flight: between its look at `hero_run_ending` and its pid in
+ *   the table, a thread counts itself in `hero_run_launching` with the four
+ *   signals blocked, so the handler never runs on it there; the handler,
+ *   having claimed `hero_run_ending` first, waits for that count to fall
+ *   before it reads the table. Either the launch saw the ending and started
+ *   nothing, or its child is in the table when the handler reads it.
+ * - A pid reused: a waiter leaves the table before it reaps, and once the
+ *   process is ending it does not reap at all (`hero_run_unless_ending`), so a
+ *   pid the handler read is still this process's unreaped child, its group's
+ *   number pinned, whatever it signals.
+ *
+ * A child is given its dispositions back before exec, and the mask the
+ * launch blocked, so a program never starts with a signal held.
+ *
+ * SIGKILL is not among them, and no process can be: a `heroes` killed with it
+ * still leaves its child, which only a watchdog that ends with SIGTERM first
+ * avoids (`HERO_RUN_WATCHDOG_GRACE_MS`). */
+
+/* How long a child forwarded the signal ending this process has to end before
+ * SIGKILL. */
+#define HERO_RUN_GRACE_MS 2000
+
+/* How long a child the watchdog asked to end with SIGTERM has before SIGKILL:
+ * longer than `HERO_RUN_GRACE_MS`, so a `heroes` the watchdog ends has ended
+ * its own child before it is killed. */
+#define HERO_RUN_WATCHDOG_GRACE_MS 5000
+
+/* Children waited on at once: one a thread, and `parts/spawn.c` starts 256. */
+#define HERO_RUN_LIVE 1024
+
+/* The pid of each child a `hero_run_go` is waiting on, 0 for a free slot. */
+static _Atomic int hero_run_live[HERO_RUN_LIVE];
+
+/* Launches between their look at `hero_run_ending` and their pid's slot. */
+static _Atomic int hero_run_launching = 0;
+
+/* The signal ending this process, 0 while none is. */
+static _Atomic int hero_run_ending = 0;
+
+/* The group to hand the terminal back to while a child holds it, 0 when none
+ * does. */
+static _Atomic int hero_run_tty_back = 0;
+
+/* Bits 0 to 3, which of the four this file caught; `HERO_RUN_CAUGHT` once they
+ * are installed, `HERO_RUN_CATCHING` while one thread installs them. */
+static _Atomic int hero_run_guard = 0;
+#define HERO_RUN_CATCHING 256
+#define HERO_RUN_CAUGHT 512
+
+/* The four signals that end a process and are its to answer, by index. */
+static int hero_run_ending_signal(int at) {
+    switch (at) {
+        case 0: return SIGTERM;
+        case 1: return SIGINT;
+        case 2: return SIGHUP;
+        default: return SIGQUIT;
+    }
+}
+
+static void hero_run_ending_set(sigset_t *set) {
+    sigemptyset(set);
+    for (int at = 0; at < 4; at += 1) sigaddset(set, hero_run_ending_signal(at));
+}
+
+/* A sleep a handler may take. */
+static void hero_run_nap(int ms) {
+    struct timeval wait;
+    wait.tv_sec = ms / 1000;
+    wait.tv_usec = (ms % 1000) * 1000;
+    (void)select(0, NULL, NULL, NULL, &wait);
+}
+
+static void hero_run_tty_give(pid_t group);
+
+/* Whether the child `pid` is still running: an exit not yet reaped answers no,
+ * and leaves it to be reaped. */
+static int hero_run_standing(int pid) {
+    siginfo_t seen;
+    memset(&seen, 0, sizeof seen);
+    if (waitid(P_PID, (id_t)pid, &seen, WEXITED | WNOHANG | WNOWAIT) != 0) return 0;
+    return seen.si_pid == 0;
+}
+
+static void hero_run_ended(int sig) {
+    int none = 0;
+    if (!atomic_compare_exchange_strong(&hero_run_ending, &none, sig)) return;
+
+    for (int i = 0; i < 2000 && atomic_load(&hero_run_launching) > 0; i += 1) hero_run_nap(1);
+
+    for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
+        int pid = atomic_load(&hero_run_live[i]);
+        if (pid > 0) kill(-(pid_t)pid, sig);
+    }
+    for (int waited = 0; waited < HERO_RUN_GRACE_MS; waited += 10) {
+        int standing = 0;
+        for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
+            int pid = atomic_load(&hero_run_live[i]);
+            if (pid > 0 && hero_run_standing(pid)) standing = 1;
+        }
+        if (!standing) break;
+        hero_run_nap(10);
+    }
+    for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
+        int pid = atomic_load(&hero_run_live[i]);
+        if (pid > 0) kill(-(pid_t)pid, SIGKILL);
+    }
+
+    int back = atomic_load(&hero_run_tty_back);
+    if (back > 0) hero_run_tty_give((pid_t)back);
+
+    struct sigaction plain;
+    memset(&plain, 0, sizeof plain);
+    plain.sa_handler = SIG_DFL;
+    sigemptyset(&plain.sa_mask);
+    sigaction(sig, &plain, NULL);
+    kill(getpid(), sig);
+}
+
+/* Catch the four where this process left them at their default, once for the
+ * process: a disposition is the process's, not a thread's. */
+static void hero_run_catch_endings(void) {
+    int state = atomic_load(&hero_run_guard);
+    if (state & HERO_RUN_CAUGHT) return;
+    int clear = 0;
+    if (!atomic_compare_exchange_strong(&hero_run_guard, &clear, HERO_RUN_CATCHING)) {
+        while (!(atomic_load(&hero_run_guard) & HERO_RUN_CAUGHT)) hero_run_nap(1);
+        return;
+    }
+    sigset_t all;
+    hero_run_ending_set(&all);
+    int caught = 0;
+    for (int at = 0; at < 4; at += 1) {
+        int sig = hero_run_ending_signal(at);
+        struct sigaction before;
+        if (sigaction(sig, NULL, &before) != 0) continue;
+        if ((before.sa_flags & SA_SIGINFO) || before.sa_handler != SIG_DFL) continue;
+        struct sigaction ours;
+        memset(&ours, 0, sizeof ours);
+        ours.sa_handler = hero_run_ended;
+        ours.sa_mask = all;
+        if (sigaction(sig, &ours, NULL) == 0) caught |= 1 << at;
+    }
+    atomic_store(&hero_run_guard, HERO_RUN_CAUGHT | caught);
+}
+
+/* In the child, before exec: the four this file caught back at their default,
+ * and the mask as it was before the launch blocked them. */
+static void hero_run_child_signals(const sigset_t *before) {
+    int caught = atomic_load(&hero_run_guard);
+    for (int at = 0; at < 4; at += 1) {
+        if (!(caught & (1 << at))) continue;
+        struct sigaction plain;
+        memset(&plain, 0, sizeof plain);
+        plain.sa_handler = SIG_DFL;
+        sigemptyset(&plain.sa_mask);
+        sigaction(hero_run_ending_signal(at), &plain, NULL);
+    }
+    sigprocmask(SIG_SETMASK, before, NULL);
+}
+
+/* The child's slot in the table, or -1 where every slot is taken. */
+static int hero_run_hold(pid_t child) {
+    for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
+        int free_slot = 0;
+        if (atomic_compare_exchange_strong(&hero_run_live[i], &free_slot, (int)child)) return i;
+    }
+    return -1;
+}
+
+/* Out of the table, before it is reaped. */
+static void hero_run_let_go(int slot) {
+    if (slot >= 0) atomic_store(&hero_run_live[slot], 0);
+}
+
+/* A waiter about to reap: while the process is ending it waits for the handler
+ * to end it instead, so no pid the handler may still hold is freed. */
+static void hero_run_unless_ending(void) {
+    if (atomic_load(&hero_run_ending) == 0) return;
+    for (;;) pause();
+}
+
 /* The child half of the POSIX arm: redirect, exec, and if the exec fails say so
  * down the pipe before dying. Never returns. */
 /* **THE CHILD ALWAYS GETS A GROUP, AND WHERE THERE IS A TERMINAL IT GETS THAT
@@ -299,7 +508,9 @@ static void hero_run_tty_give(pid_t group) {
  * `-std=gnu11` is what this project names rather than inherits
  * (`.claude/rules/generated-c.md`). The Windows arm never reaches here. */
 static void hero_run_tty_restore(pid_t *holder) {
-    if (*holder != -1) hero_run_tty_give(*holder);
+    if (*holder == -1) return;
+    atomic_store(&hero_run_tty_back, 0);
+    hero_run_tty_give(*holder);
 }
 
 /* Wait for the child, and sweep its group before its pid can be reused.
@@ -313,7 +524,7 @@ static void hero_run_tty_restore(pid_t *holder) {
  * `si_pid` is zeroed first because POSIX leaves it unspecified when WNOHANG
  * finds nothing; zero is then the documented way to tell "not yet" from "here
  * it is". */
-static pid_t hero_run_reap(pid_t child, int *wait_status, int nohang) {
+static pid_t hero_run_reap(pid_t child, int slot, int *wait_status, int nohang) {
     siginfo_t seen;
     memset(&seen, 0, sizeof seen);
     int flags = WEXITED | WNOWAIT | (nohang ? WNOHANG : 0);
@@ -324,17 +535,27 @@ static pid_t hero_run_reap(pid_t child, int *wait_status, int nohang) {
      * on the timeout: the recorded holder was left by a compiler driver whose
      * parent had finished. */
     kill(-child, SIGKILL);
+
+    /* Out of the table before it is reaped, and not reaped at all once this
+     * process is ending (defect 425). */
+    hero_run_let_go(slot);
+    hero_run_unless_ending();
     return waitpid(child, wait_status, 0);
 }
 
 static void hero_run_child(const char *program, int report, int tty,
                            const char *in_path, const char *out_path,
-                           const char *err_path, int64_t write_limit) {
+                           const char *err_path, int64_t write_limit,
+                           const sigset_t *before) {
     /* Between fork and exec is the only place this can go. The parent cannot
      * know the pid soon enough to win the race against the child's own first
      * spawn, so both sides set it and whichever runs first wins — the
      * documented way to close it. */
     setpgid(0, 0);
+
+    /* The dispositions this process caught given back, and the mask the
+     * launch held, before anything here can block (defect 425). */
+    hero_run_child_signals(before);
 
     /* The ceiling `hero_run_limit_writes` asked for, on this child alone: the
      * soft limit only, so the hard one the parent had is left as it was, and
@@ -792,9 +1013,31 @@ int64_t hero_run_go(const char *program, const char *in_path,
     pid_t tty_holder __attribute__((cleanup(hero_run_tty_restore))) =
         hero_run_tty_holder();
 
+    /* A signal ending this process reaches the child it is about to wait on
+     * (defect 425): the four caught where they were at their default, and held
+     * on this thread from the look at `hero_run_ending` until the child's pid
+     * is in the table, so the handler finds it there or the launch never
+     * happens. */
+    hero_run_catch_endings();
+    sigset_t endings;
+    sigset_t before;
+    hero_run_ending_set(&endings);
+    pthread_sigmask(SIG_BLOCK, &endings, &before);
+    atomic_fetch_add(&hero_run_launching, 1);
+    if (atomic_load(&hero_run_ending) != 0) {
+        atomic_fetch_sub(&hero_run_launching, 1);
+        pthread_sigmask(SIG_SETMASK, &before, NULL);
+        close(report[0]);
+        close(report[1]);
+        *status = HERO_OS_FAILED;
+        return -1;
+    }
+
     pid_t child = fork();
     if (child < 0) {
         hero_run_why_code = (int64_t)errno;
+        atomic_fetch_sub(&hero_run_launching, 1);
+        pthread_sigmask(SIG_SETMASK, &before, NULL);
         close(report[0]);
         close(report[1]);
         *status = HERO_OS_FAILED;
@@ -802,14 +1045,26 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit);
+        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit, &before);
     }
 
     /* The other half of the race: EACCES here means the child has already
      * exec'd, having set it itself, which is the outcome we wanted. */
     setpgid(child, child);
 
-    if (tty_holder != -1) hero_run_tty_give(child);
+    int slot = hero_run_hold(child);
+    atomic_fetch_sub(&hero_run_launching, 1);
+    if (slot < 0) {
+        kill(-child, SIGKILL);
+        while (waitpid(child, NULL, 0) < 0 && errno == EINTR) { }
+        hero_panic("more than 1024 children were waited on at once");
+    }
+
+    if (tty_holder != -1) {
+        atomic_store(&hero_run_tty_back, (int)tty_holder);
+        hero_run_tty_give(child);
+    }
+    pthread_sigmask(SIG_SETMASK, &before, NULL);
 
     close(report[1]);
     int failure = 0;
@@ -841,18 +1096,42 @@ int64_t hero_run_go(const char *program, const char *in_path,
         int64_t step_ms = 1;
         int64_t limit_ms = hero_run_limit_seconds * 1000;
         for (;;) {
-            pid_t seen = hero_run_reap(child, &wait_status, 1);
+            pid_t seen = hero_run_reap(child, slot, &wait_status, 1);
             if (seen == child) break;
             if (seen < 0 && errno != EINTR) {
                 hero_run_why_code = (int64_t)errno;
+                hero_run_let_go(slot);
                 *status = HERO_OS_FAILED;
                 return -1;
             }
             if (slept_ms >= limit_ms) {
                 /* The negative pid is the group, and the child is still alive,
-                 * so its pid is its own and cannot be anybody else's. */
-                kill(-child, SIGKILL);
-                while (waitpid(child, &wait_status, 0) < 0 && errno == EINTR) { }
+                 * so its pid is its own and cannot be anybody else's.
+                 *
+                 * **SIGTERM FIRST, SIGKILL AFTER A GRACE** (defect 425). A
+                 * child killed outright cannot end its own children, and
+                 * every child of `hero_run_go` is in a group of its own: a
+                 * `heroes` this watchdog killed left the program it ran,
+                 * which the harness then never saw. Asked with SIGTERM, a
+                 * `heroes` ends its child within `HERO_RUN_GRACE_MS`, and
+                 * this grace is longer. */
+                kill(-child, SIGTERM);
+                int64_t grace_ms = 0;
+                while (grace_ms < HERO_RUN_WATCHDOG_GRACE_MS) {
+                    seen = hero_run_reap(child, slot, &wait_status, 1);
+                    if (seen == child || (seen < 0 && errno != EINTR)) break;
+                    struct timespec pause_ms;
+                    pause_ms.tv_sec = 0;
+                    pause_ms.tv_nsec = 10L * 1000L * 1000L;
+                    nanosleep(&pause_ms, NULL);
+                    grace_ms += 10;
+                }
+                if (seen != child) {
+                    kill(-child, SIGKILL);
+                    hero_run_let_go(slot);
+                    hero_run_unless_ending();
+                    while (waitpid(child, &wait_status, 0) < 0 && errno == EINTR) { }
+                }
                 killed = 1;
                 break;
             }
@@ -864,9 +1143,10 @@ int64_t hero_run_go(const char *program, const char *in_path,
             if (step_ms < 50) step_ms *= 2;
         }
     } else {
-        while (hero_run_reap(child, &wait_status, 0) < 0) {
+        while (hero_run_reap(child, slot, &wait_status, 0) < 0) {
             if (errno != EINTR) {
                 hero_run_why_code = (int64_t)errno;
+                hero_run_let_go(slot);
                 *status = HERO_OS_FAILED;
                 return -1;
             }
