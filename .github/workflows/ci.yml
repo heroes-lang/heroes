@@ -315,6 +315,42 @@ jobs:
           # exact state the preamble above says this file exists to end.
           sudo apt-get install -y clang lldb pkg-config libsqlite3-dev libcurl4-openssl-dev
 
+      # **SDL3, for `tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero`
+      # and `examples/sdl/`** (defect 213, 2026-10-07): until this step both
+      # skipped on every leg but the author's Mac, told `ffi_package`. Ubuntu
+      # 24.04, which `ubuntu-latest` and `ubuntu-24.04-arm` were that day
+      # (runner-images' README), has no SDL3 package: `apt-cache policy
+      # libsdl3-dev` in `ubuntu:24.04` (24.04.5) printed nothing, where 26.04.1
+      # carries 3.4.2. So the release the Linux image carries, Debian 13's
+      # 3.2.10 (`docs/platforms/linux/Dockerfile.arm64`), is built from its
+      # source, the tag held to its commit so a moved tag stops the job rather
+      # than building other code. Neither program needs a display: the case
+      # initialises SDL's events alone, the example asks SDL's revision and
+      # counts the video drivers compiled in, so X11 and Wayland are left out
+      # and the build is the same whatever headers the runner carries.
+      # `SDL_RPATH=OFF` is not taste: with it on, `sdl3.pc` answered
+      # `-Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags`, and the compiler
+      # refused the second word, `ffi_package`, so both programs failed to
+      # build; `ldconfig` finds the library instead. Measured that day in
+      # `ubuntu:24.04` on arm64 with these lines: `pkg-config` answered
+      # `-I/usr/local/include -L/usr/local/lib -lSDL3`, and both programs gave
+      # their `.expected` at the `run` suite's three configurations,
+      # `--sanitize` quiet. The x86-64 leg is unrun with it.
+      - name: Build SDL3 from its source, the release the Linux image carries
+        if: runner.os == 'Linux'
+        run: |
+          sdl3="$RUNNER_TEMP/sdl3"
+          git -c advice.detachedHead=false clone --quiet --depth 1 --branch release-3.2.10 https://github.com/libsdl-org/SDL "$sdl3/src"
+          test "$(git -C "$sdl3/src" rev-parse HEAD)" = 877399b2b2cf21e67554ed9046410f268ce1d1b2 \
+            || { echo '::error::the tag release-3.2.10 of libsdl-org/SDL no longer names 877399b2, the commit this step was measured on'; exit 1; }
+          cmake -S "$sdl3/src" -B "$sdl3/build" -DCMAKE_BUILD_TYPE=Release -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_STATIC=OFF \
+            -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_RPATH=OFF
+          cmake --build "$sdl3/build" --parallel
+          sudo cmake --install "$sdl3/build"
+          sudo ldconfig
+          test "$(pkg-config --modversion sdl3)" = 3.2.10 \
+            || { echo '::error::pkg-config does not answer sdl3 3.2.10 after the install, so the SDL3 case would skip'; exit 1; }
+
       - name: Install what the FFI examples bind
         if: runner.os == 'macOS'
         env:
