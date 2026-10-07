@@ -1,0 +1,106 @@
+# Which names no program may declare (design.md §4.4, *Shadowing is
+# forbidden*; §1.11's two tiers; §4.20's inventory; defect 455).
+#
+# A name is taken everywhere when the language provides it: a built-in of
+# the inventory (`inventory.hero`), or a declaration of the library, which
+# every module reads unqualified (`state.top_visible`). Until defect 455
+# the check read the inventory alone, and the library declares a function
+# the inventory does not hold, `args_checked`, which spec § 11 lists beside
+# `args`: a program's own `args_checked` was accepted at the top level, as a
+# parameter, a type parameter and a local, and took every call in its
+# scope. So the check reads the library's own declarations beside the
+# inventory, and a function the library gains is taken the day it lands.
+#
+# An extern of the library is not taken: no module reaches one across its
+# boundary (panel 033 R5), so it names nothing a program can call. And one
+# declaration stays free, by a decision written where it was made
+# (`inventory.hero`, at panel 162's landing): `validated`, which the `owned`
+# machinery calls by name AND origin (`ir/owned_release.hero`), and which a
+# program may declare for its own, the compiler among them
+# (`emit/bytes_text.hero`). `FREE` holds it, and a test holds `FREE` to what
+# the library declares, so the exception cannot outlive its name.
+
+use ast
+use source
+use inventory
+use parse
+use library_source
+
+constant FREE: [str]
+    ["validated"]
+
+# Whether no program may declare `name`: a built-in's, or one of the
+# names `library` holds (`of_library`).
+function taken(library: {str: bool}, name: str) -> bool
+    return !inventory.index_of(name).is_err() || !library[name].is_err()
+
+# Every name the library declares, but an extern's and `FREE`'s.
+function of_library(s: source.Source, decls: [ast.Decl]) -> {str: bool}
+    names: {str: bool} @ {}
+
+    for d in decls
+        if source.is_library(s, d.name.start) && names_one(d)
+            name = source.span_text(s, d.name)
+
+            if !is_free(name)
+                names[name] @ true
+
+    return names
+
+# Whether a declaration gives the library a name a program can read: any
+# but an extern's, and but a test's, whose name is its title.
+function names_one(d: ast.Decl) -> bool
+    match d.kind
+        .function_decl fd => return !fd.value.is_extern
+        .constant_decl cd => return cd.header.is_err()
+        .record_decl rd   => return rd.header.is_err()
+        .variant_decl     => return true
+        .test_decl        => return false
+
+function is_free(name: str) -> bool
+    for one in FREE
+        if one == name
+            return true
+
+    return false
+
+## Tests
+
+# The library as every program reads it, beside a file of one function.
+function with_library() -> parse.ParseOutput
+    return parse.parse_source(library_beside())
+
+function library_beside() -> source.Source
+    return source.with_library(
+        name: "main.hero",
+        user: "function main()\n    print(1)\n",
+        library: library_source.text()
+    )
+
+test "what the library declares is taken, but its externs and validated"
+    s = library_beside()
+    names = of_library(s, with_library().decls)
+    assert taken(names, "args_checked")
+    assert taken(names, "args")
+    assert taken(names, "range")
+    assert taken(names, "print")
+    assert !taken(names, "validated")
+    assert !taken(names, "hero_exit")
+    assert !taken(names, "HERO_OS_OK")
+    assert !taken(names, "main")
+
+# The premise `FREE` rests on, where it can die: each name it holds is one
+# the library declares, not as an extern, and no built-in of the inventory.
+test "every name left free is a declaration of the library"
+    s = library_beside()
+    decls = with_library().decls
+
+    for one in FREE
+        found: bool @ false
+
+        for d in decls
+            if source.is_library(s, d.name.start) && names_one(d) && source.span_text(s, d.name) == one
+                found @ true
+
+        assert found
+        assert inventory.index_of(one).is_err()

@@ -21,6 +21,7 @@ use resolved
 use resolve/vocab
 use widths
 use resolve/state
+use resolve/did_you_mean
 use resolve/offered
 use resolve/errors
 use module/diagnostics
@@ -111,7 +112,7 @@ function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
 
         return
     candidates = type_candidates(@r, decls)
-    near = state.near_names(@r, name, candidates)
+    near = did_you_mean.near_names(@r, name, candidates)
     state.push_diagnostic(@r, errors.unknown_type(name, near, span))
 
 # The byte offset of the first `.`, or absent — Rust's `split_once` in the
@@ -156,7 +157,7 @@ function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls:
 
     if found.is_err()
         names = offered.kinded(@r.offered, r.out, module: module, decls: decls).types
-        near = state.near_names(@r, type_name, [names])
+        near = did_you_mean.near_names(@r, type_name, [names])
         state.push_diagnostic(
             @r,
             diagnostics.not_in_module(module: module, qualifier: wrote, name: type_name, near: near, span: span)

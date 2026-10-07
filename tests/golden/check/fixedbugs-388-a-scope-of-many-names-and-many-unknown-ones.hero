@@ -1,0 +1,106 @@
+# fixedbugs, defect 388, lane b14-resolve, 2026-10-07 (lane b12-fit12's
+# measurement): a name nothing answers was compared with every name in scope
+# near it in length, a band of the edit table each, so a scope of `n` names
+# and `n` unknown ones cost `n` squared bands. A list asked about enough is
+# now read through an index of every deletion of up to two bytes of its
+# names (`resolve/near_index.hero`), built once the bands walked against it
+# reach its entries: here the 40 locals are indexed after 17 questions, and
+# the far names after them and the slips of locals last are answered through
+# it, every message what the walk answered, byte for byte. The cost is the
+# lane's counts: 1,600 such names from 28.27 to 4.68 billion instructions.
+function main()
+    loc00 = 0
+    loc01 = 1
+    loc02 = 2
+    loc03 = 3
+    loc04 = 4
+    loc05 = 5
+    loc06 = 6
+    loc07 = 7
+    loc08 = 8
+    loc09 = 9
+    loc10 = 10
+    loc11 = 11
+    loc12 = 12
+    loc13 = 13
+    loc14 = 14
+    loc15 = 15
+    loc16 = 16
+    loc17 = 17
+    loc18 = 18
+    loc19 = 19
+    loc20 = 20
+    loc21 = 21
+    loc22 = 22
+    loc23 = 23
+    loc24 = 24
+    loc25 = 25
+    loc26 = 26
+    loc27 = 27
+    loc28 = 28
+    loc29 = 29
+    loc30 = 30
+    loc31 = 31
+    loc32 = 32
+    loc33 = 33
+    loc34 = 34
+    loc35 = 35
+    loc36 = 36
+    loc37 = 37
+    loc38 = 38
+    loc39 = 39
+    part0 = loc00 + loc01 + loc02 + loc03 + loc04 + loc05 + loc06 + loc07 + loc08 + loc09
+    part1 = loc10 + loc11 + loc12 + loc13 + loc14 + loc15 + loc16 + loc17 + loc18 + loc19
+    part2 = loc20 + loc21 + loc22 + loc23 + loc24 + loc25 + loc26 + loc27 + loc28 + loc29
+    part3 = loc30 + loc31 + loc32 + loc33 + loc34 + loc35 + loc36 + loc37 + loc38 + loc39
+    print(part0 + part1 + part2 + part3)
+    print(zq00xw)  #~ unknown_name
+    print(zq01xw)  #~ unknown_name
+    print(zq02xw)  #~ unknown_name
+    print(zq03xw)  #~ unknown_name
+    print(zq04xw)  #~ unknown_name
+    print(zq05xw)  #~ unknown_name
+    print(zq06xw)  #~ unknown_name
+    print(zq07xw)  #~ unknown_name
+    print(zq08xw)  #~ unknown_name
+    print(zq09xw)  #~ unknown_name
+    print(zq10xw)  #~ unknown_name
+    print(zq11xw)  #~ unknown_name
+    print(zq12xw)  #~ unknown_name
+    print(zq13xw)  #~ unknown_name
+    print(zq14xw)  #~ unknown_name
+    print(zq15xw)  #~ unknown_name
+    print(zq16xw)  #~ unknown_name
+    print(zq17xw)  #~ unknown_name
+    print(zq18xw)  #~ unknown_name
+    print(zq19xw)  #~ unknown_name
+    print(zq20xw)  #~ unknown_name
+    print(zq21xw)  #~ unknown_name
+    print(zq22xw)  #~ unknown_name
+    print(zq23xw)  #~ unknown_name
+    print(zq24xw)  #~ unknown_name
+    print(zq25xw)  #~ unknown_name
+    print(zq26xw)  #~ unknown_name
+    print(zq27xw)  #~ unknown_name
+    print(zq28xw)  #~ unknown_name
+    print(zq29xw)  #~ unknown_name
+    print(zq30xw)  #~ unknown_name
+    print(zq31xw)  #~ unknown_name
+    print(zq32xw)  #~ unknown_name
+    print(zq33xw)  #~ unknown_name
+    print(zq34xw)  #~ unknown_name
+    print(zq35xw)  #~ unknown_name
+    print(zq36xw)  #~ unknown_name
+    print(zq37xw)  #~ unknown_name
+    print(zq38xw)  #~ unknown_name
+    print(zq39xw)  #~ unknown_name
+    print(lco00)  #~ unknown_name
+    print(lco04)  #~ unknown_name
+    print(lco08)  #~ unknown_name
+    print(lco12)  #~ unknown_name
+    print(lco16)  #~ unknown_name
+    print(lco20)  #~ unknown_name
+    print(lco24)  #~ unknown_name
+    print(lco28)  #~ unknown_name
+    print(lco32)  #~ unknown_name
+    print(lco36)  #~ unknown_name

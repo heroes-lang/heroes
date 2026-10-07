@@ -21,6 +21,7 @@ use source
 use inventory
 use resolved
 use resolve/state
+use resolve/did_you_mean
 use resolve/offered
 use resolve/errors
 use resolve/qualified
@@ -114,7 +115,7 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
         state.push_diagnostic(@r, elsewhere.must())
         return
     candidates = read_candidates(@r)
-    near = state.near_names(@r, text, candidates)
+    near = did_you_mean.near_names(@r, text, candidates)
 
     if called
         state.push_diagnostic(@r, errors.unknown_called(text, near, span))
@@ -194,7 +195,7 @@ function method_name(@r: state.Resolver, s: source.Source, decls: [ast.Decl], at
         state.push_diagnostic(@r, elsewhere.must())
         return
     candidates = function_candidates(@r, decls)
-    near = state.near_names(@r, text, candidates)
+    near = did_you_mean.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_function(text, near, span: called))
 
 # Innermost first: the locals in scope, then the file's own declarations,

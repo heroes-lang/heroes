@@ -25,6 +25,7 @@ use ast
 use source
 use resolved
 use resolve/state
+use resolve/did_you_mean
 use resolve/offered
 use resolve/errors
 use module/diagnostics
@@ -72,7 +73,7 @@ function qualified(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 
         return true
     names = offered.named(@r.offered, r.out, module: module).names
-    near = state.near_names(@r, text, [names])
+    near = did_you_mean.near_names(@r, text, [names])
 
     # The qualifier is read off the RECEIVER, which is the name the author
     # actually wrote — their `as` name where they gave one. Deriving it from

@@ -18,7 +18,7 @@ use ast
 use source
 use resolved
 use resolve/vocab
-use inventory
+use resolve/builtin_names
 use parse
 use resolve/state
 use resolve/unused_sweep
@@ -99,7 +99,7 @@ function collect_generics(@r: state.Resolver, s: source.Source, decls: [ast.Decl
             position @ position + 1
             continue
 
-        if !vocab.primitive(name).is_err() || !inventory.index_of(name).is_err()
+        if !vocab.primitive(name).is_err() || builtin_names.taken(r.library, name)
             state.push_diagnostic(@r, errors.builtin_name_taken(name, span: span))
             position @ position + 1
             continue

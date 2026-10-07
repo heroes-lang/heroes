@@ -21,7 +21,7 @@
 use ast
 use source
 use resolved
-use inventory
+use resolve/builtin_names
 use parse
 use resolve/state
 use resolve/unused_sweep
@@ -30,6 +30,7 @@ use resolve/errors
 use module/diagnostics
 
 function collect(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
+    r.library @ builtin_names.of_library(s, decls)
     index: i64 @ 0
 
     for decl in decls
@@ -88,7 +89,7 @@ function enter(@r: state.Resolver, s: source.Source, decls: [ast.Decl], index: i
     # entry rather than the author's, so every CALL in the file still
     # resolves to something with the right signature: one mistake, one
     # diagnostic.
-    if !inventory.index_of(name).is_err() && !in_library
+    if builtin_names.taken(r.library, name) && !in_library
         state.push_diagnostic(@r, errors.builtin_name_taken(name, span: name_span))
         return
 

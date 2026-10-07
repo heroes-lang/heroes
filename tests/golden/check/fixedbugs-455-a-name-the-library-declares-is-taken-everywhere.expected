@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:24:10: error[builtin_name_taken]: `args_checked` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:27:12: error[builtin_name_taken]: `args_checked` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:30:12: error[builtin_name_taken]: `args_checked` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:30:29: error[not_a_type]: `args_checked` is a function, not a type
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:30:46: error[not_a_type]: `args_checked` is a function, not a type
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:34:5: error[builtin_name_taken]: `args_checked` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-455-a-name-the-library-declares-is-taken-everywhere.hero:39:5: error[no_mutable_globals]: `args_checked` is a built-in, and there are no mutable globals — pass what changes as an `@` parameter
