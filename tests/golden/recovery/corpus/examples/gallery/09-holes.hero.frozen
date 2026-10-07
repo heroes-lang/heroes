@@ -1,0 +1,35 @@
+## Working skeleton-first
+#
+# `???` is a valid expression anywhere and it is not an error: the compiler
+# says what belongs there — the type it expects, and what is in scope. A
+# file with holes checks everything else and produces no binary, so a
+# half-written program is still a program the compiler will talk about.
+
+record Entry
+    name: str
+    calories: i64
+
+# Written, tested, done.
+function total_calories(entries: [Entry]) -> i64
+    total: i64 @ 0
+
+    for e in entries
+        total @ total + e.calories
+
+    return total
+
+# Next up: the compiler will name the expected type and list `entries`,
+# `total_calories` and the fields of `Entry` when it reaches this.
+function heaviest(entries: [Entry]) -> Entry
+    ???
+
+# The hole can be one argument of an otherwise finished line.
+function summary_of(entries: [Entry]) -> str
+    return "total " + total_calories(entries).to_str() + ", heaviest " + ???
+
+test "the part that exists, works"
+    lunch = [Entry(name: "soup", calories: 120), Entry(name: "bread", calories: 250)]
+    assert total_calories(lunch) == 370
+
+function main()
+    print(summary_of([Entry(name: "tea", calories: 2)]))

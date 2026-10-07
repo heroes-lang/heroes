@@ -1,0 +1,228 @@
+# The frozen plan the recovery arm replays (panel 187's R2, defect 210):
+# what each mutant plants, which mutants are paired, and what the run that
+# cut the plan recorded of each, read from the folder that pins them.
+#
+# The folder is `tests/golden/recovery/` (`DEFAULT`), and it holds what
+# `scratchpad/inst-187/round10` held when the gate's instrument lived there:
+# `plan-singles.jsonl` and `plan-pairs.jsonl` byte for byte, and of that run's
+# 13.8 MB of results the four fields a replay reads, in `plan-base.jsonl`.
+# The base's `stage` says which stage told a mutant alone (`parse`, `later`,
+# `none`), and its classes are read for one word, `LEGAL`: a mutant the
+# specification reads as a legal program is LEGAL again when it is told
+# nothing, and SILENT otherwise (`replay.py`'s `klass`).
+#
+# Every line is read whole, and a field missing is a failure naming the
+# line: a plan that is not what was pinned is a run that cannot be made.
+
+use cli/digest
+use cli/process
+use mutate/hunks
+use mutate/json_fields
+use mutate/json_read
+
+constant DEFAULT: str
+    "tests/golden/recovery"
+
+# The three files of the plan as pinned on 2026-10-07, each by its digest
+# (`cli/digest.hero`): a run writes its plan's into `run.json`, and two runs
+# are read against each other only over one plan. Copied from
+# `scratchpad/inst-187/round10` byte for byte (sha1 `3625b4f3` and
+# `6afdde28`), and `plan-base.jsonl` cut from that run's `singles.jsonl`.
+constant PINNED: [str]
+    [
+        "plan-singles.jsonl 64c2003e30605cb8"
+        "plan-pairs.jsonl 656a459179018366"
+        "plan-base.jsonl 072c08b4400b7193"
+    ]
+
+constant PLAN_FILES: [str]
+    [
+        "plan-singles.jsonl"
+        "plan-pairs.jsonl"
+        "plan-base.jsonl"
+    ]
+
+# One planted mistake.
+record Single
+    key: str
+    op: str
+    file: str
+    hunks: [hunks.Hunk]
+    statements: [hunks.Lines]
+    stage: str
+    normal_legal: bool
+    control_legal: bool
+
+# Two mistakes in one program, `b` after `a`.
+record Pair
+    a: str
+    b: str
+    a_op: str
+    b_op: str
+    file: str
+
+record Plan
+    singles: [Single]
+    pairs: [Pair]
+
+function read_plan(dir: str) -> Plan?
+    singles_text = read_text(dir + "/plan-singles.jsonl")?
+    base_text = read_text(dir + "/plan-base.jsonl")?
+    pairs_text = read_text(dir + "/plan-pairs.jsonl")?
+    base: {str: json_read.Json} @ {}
+
+    for row in json_read.read_lines(base_text)?
+        base[json_fields.text_field(row, name: "key")?] @ row
+
+    singles: [Single] @ []
+    seen: {str: bool} @ {}
+    number: i64 @ 0
+
+    for row in json_read.read_lines(singles_text)?
+        number @ number + 1
+        one = single(row, base: base)
+
+        if one.is_err()
+            return fail(code: "bad_plan", msg: dir + "/plan-singles.jsonl, mutant " + number.to_str() + ": " + why(one))
+
+        if !seen[one.must().key].is_err()
+            return fail(
+                code: "bad_plan",
+                msg: dir + "/plan-singles.jsonl, mutant " + number.to_str() + ": its key is another's"
+            )
+        seen[one.must().key] @ true
+        singles @ singles.push(one.must())
+
+    pairs: [Pair] @ []
+    number @ 0
+
+    for row in json_read.read_lines(pairs_text)?
+        number @ number + 1
+        p = pair(row)
+
+        if p.is_err() || seen[p.must().a].is_err() || seen[p.must().b].is_err()
+            return fail(code: "bad_plan", msg: dir + "/plan-pairs.jsonl, pair " + number.to_str() + ": a half missing")
+        pairs @ pairs.push(p.must())
+
+    return ok(Plan(singles: singles, pairs: pairs))
+
+function read_text(path: str) -> str?
+    got = read_file(path)
+
+    if got.is_err()
+        return fail(code: "no_plan", msg: "cannot read " + path)
+    return got
+
+function single(row: json_read.Json, base: {str: json_read.Json}) -> Single?
+    key = json_fields.text_field(row, name: "key")?
+    measured = base[key]
+
+    if measured.is_err()
+        return fail(code: "bad_plan", msg: "`" + key + "` has no line in plan-base.jsonl")
+    found: [hunks.Hunk] @ []
+
+    for h in json_fields.items_field(row, name: "hunks")?
+        found @ found.push(
+            hunks.Hunk(start: json_fields.whole_field(h, name: "start")?, end: json_fields.whole_field(h, name: "end")?, lines: json_fields.texts_field(h, name: "new")?, site: json_fields.wholes_field(h, name: "site")?)
+        )
+
+    statements: [hunks.Lines] @ []
+
+    for range_of in json_fields.items_field(row, name: "stmt_lines")?
+        ends = json_fields.items_of(range_of)?
+
+        if ends.len() != 2
+            return fail(code: "bad_plan", msg: "a statement's lines are not two numbers")
+        statements @ statements.push(
+            hunks.Lines(first: json_fields.whole_of(ends[0])?, last: json_fields.whole_of(ends[1])?)
+        )
+
+    return ok(
+        Single(key: key, op: json_fields.text_field(row, name: "op")?, file: json_fields.text_field(row, name: "file")?, hunks: found, statements: statements, stage: json_fields.text_field(measured.must(), name: "stage")?, normal_legal: json_fields.text_field(measured.must(), name: "class_normal")? == "LEGAL", control_legal: json_fields.text_field(measured.must(), name: "class_control")? == "LEGAL")
+    )
+
+function pair(row: json_read.Json) -> Pair?
+    return ok(
+        Pair(a: json_fields.text_field(row, name: "a")?, b: json_fields.text_field(row, name: "b")?, a_op: json_fields.text_field(row, name: "a_op")?, b_op: json_fields.text_field(row, name: "b_op")?, file: json_fields.text_field(row, name: "file")?)
+    )
+
+# Each file of the plan in `dir` with its digest, as `PINNED` writes them.
+function digests(dir: str) -> [str]?
+    out: [str] @ []
+
+    for name in PLAN_FILES
+        out @ out.push(name + " " + digest.digest(read_text(dir + "/" + name)?))
+
+    return ok(out)
+
+# Every program the plan mutates, sorted, each once.
+function files(p: Plan) -> [str]
+    seen: {str: bool} @ {}
+
+    for one in p.singles
+        seen[one.file] @ true
+
+    # ORDER: by path, so the corpus is checked and written in one order on
+    # every run and every platform.
+    return sort(keys(seen))
+
+# The singles by key.
+function by_key(p: Plan) -> {str: Single}
+    out: {str: Single} @ {}
+
+    for one in p.singles
+        out[one.key] @ one
+
+    return out
+
+function why(got: Single?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+## Tests
+
+test "a plan's three files are read whole, and the base's LEGAL is each arm's"
+    dir = "build/selftest-recovery-plan"
+    assert !process.mkdir_all(dir).is_err()
+    single_line = "{\"op\": \"o\", \"file\": \"p.hero\", \"anchor\": \"S1\", \"context\": \"c\", \"stmts\": [0], \"hunks\": [{\"start\": 0, \"end\": 1, \"new\": [\"x\"], \"site\": [0]}], \"key\": \"k1\", \"extent\": [1, 1], \"stmt_lines\": [[1, 1]]}\n"
+    base_line = "{\"key\": \"k1\", \"stage\": \"parse\", \"class_normal\": \"LEGAL\", \"class_control\": \"ONE\"}\n"
+    pair_line = "{\"a\": \"k1\", \"b\": \"k1\", \"a_op\": \"o\", \"b_op\": \"o\", \"file\": \"p.hero\"}\n"
+    assert !write_file(path: dir + "/plan-singles.jsonl", text: single_line).is_err()
+    assert !write_file(path: dir + "/plan-base.jsonl", text: base_line).is_err()
+    assert !write_file(path: dir + "/plan-pairs.jsonl", text: pair_line).is_err()
+    p = read_plan(dir).must()
+    assert p.singles.len() == 1
+    assert p.singles[0].hunks[0].lines == ["x"]
+    assert p.singles[0].statements == [hunks.Lines(first: 1, last: 1)]
+    assert p.singles[0].stage == "parse"
+    assert p.singles[0].normal_legal
+    assert !p.singles[0].control_legal
+    assert p.pairs[0].b == "k1"
+    assert files(p) == ["p.hero"]
+
+    # A mutant the base never measured is a plan that is not the one pinned.
+    assert !write_file(path: dir + "/plan-base.jsonl", text: "").is_err()
+
+    match read_plan(dir)
+        .ok _  => assert false
+        .err e => assert e.msg == dir + "/plan-singles.jsonl, mutant 1: `k1` has no line in plan-base.jsonl"
+
+# The plan in the tree is the one pinned, whole: a frozen plan that moved is
+# a plan two runs of it can no longer be read against (panel 187's R2).
+test "the pinned plan is the one frozen on 2026-09-30, with every program it mutates in its corpus"
+    assert digests(DEFAULT).must() == PINNED
+    p = read_plan(DEFAULT).must()
+    assert p.singles.len() == 13594
+    assert p.pairs.len() == 16041
+    programs = files(p)
+    assert programs.len() == 634
+    walked = process.walk(DEFAULT + "/corpus").must()
+    assert walked.files.len() == 653
+    frozen: {str: bool} @ {}
+
+    for path in walked.files
+        frozen[path] @ true
+
+    for file in programs
+        assert !frozen[DEFAULT + "/corpus/" + file + ".frozen"].is_err()

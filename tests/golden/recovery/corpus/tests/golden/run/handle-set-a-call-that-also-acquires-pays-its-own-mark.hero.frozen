@@ -1,0 +1,18 @@
+# A call that consumes one handle and acquires the next — `freopen`, `realloc`
+# — ends a life owed to its own releaser and begins another owed to the same
+# one. The runtime lets it take back a handle whose set shares a name with
+# its own mark (panel 175's route A). Panel 176's `transfers` is the spelling
+# that will name this on purpose; until it lands, this is the rule.
+extern "handle-set-a-call-that-also-acquires-pays-its-own-mark.h"
+    record H tag hh
+    function h_open(n: i64) -> H acquires h_close
+    function h_reopen(x: H consumes, n: i64) -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_value(x: H) -> i64
+
+function main()
+    a = h_open(n: 3)
+    b = h_reopen(x: a, n: 5)
+    print(h_value(x: b))
+    h_close(x: b)
+    print("reopened and closed once")

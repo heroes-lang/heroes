@@ -1,0 +1,879 @@
+# CLAUDE.md §11's per-file ceiling, enforced instead of remembered.
+#
+# NOT a port. `layout.rs` walks `archive/bootstrap-rs/**/*.rs`; the compiler is
+# `selfhost/**/*.hero` now — flat until M-selfhost-nesting, ten directories
+# after it — and three things about it change the check itself. This is the
+# rewrite panel 085 R4 said it would have to be.
+#
+# 1. **A Heroes module holds its own tests.** The Rust excluded whole
+#    FILES — anything under a `tests/` directory, and any `tests.rs` —
+#    because §11's number "governs what a reader must hold in their head,
+#    and a test file is read one case at a time". In this language the
+#    cases live at the bottom of the module they test, so the exclusion
+#    has to be of SECTIONS rather than of files. Measured 2026-08-18, and
+#    the difference is the whole check: **30 of 144** files pass 300 lines
+#    counted whole, and **17** counted as code.
+#
+# 2. **The knot rule.** §11 yields entirely where the LANGUAGE forbids the
+#    seam: Heroes refuses module cycles (`module_cycle` fires on the `use`
+#    edge), and a recursive-descent grammar is mutually recursive by
+#    construction — so what is five files in the Rust is one file here,
+#    and no cut exists. `grammar_expr.hero` is that file.
+#
+# 3. **So a bare ceiling would go red on day one**, which is the shape §9
+#    calls a rule nobody can obey. What stands instead is a CEILING PER
+#    FILE: 300 by default, and for a file already past it the number it
+#    measures today. That number is a stop on growth, not an approval —
+#    the reasons are the author's to give (DECIDE.md), and until they are
+#    given this check says exactly what it knows: this file is this long,
+#    and it may not get longer.
+#
+# `tests/harness/` is excluded the way the Rust excluded `tests/`: it is
+# the net, not the compiler.
+
+use report
+use floors
+use shell
+use strings
+use growth
+
+constant COMPILER: str
+    "selfhost"
+
+# §11's number. A threshold to think at, not a limit to round.
+constant CEILING: i64
+    300
+
+# Files already past the ceiling. **A stop on growth rather than a
+# licence**: a file here that grows is red, exactly as `toolchain.rs`
+# reaching 425 against a decided 400 was red in the Rust.
+#
+# **RE-BASELINED ONCE, 2026-08-28**, when `selfhost/` became canonical:
+# every file went through `heroes fmt --in-place` and `code_lines` stopped
+# counting blank lines in the same commit (its own comment carries that
+# reason). Both halves of the table's meaning changed at once, so every
+# number was re-measured rather than nudged — and the table is the same
+# SIZE it was, 16 entries, with five files SMALLER than before and two
+# (`cursor.hero`, `source.hero`) dropping out entirely.
+#
+# This is a re-baseline and not a raise, and the difference is worth
+# stating because it is the only thing that keeps the ratchet honest: a
+# raise hides the growth of a file somebody edited, and every number here
+# moved because the metric and the layout both changed underneath all 165
+# files at once. It happens exactly once. From the next commit on, a file
+# here that grows is red again.
+#
+# The one number that WAS raised, four times on 2026-08-26 and -28:
+# `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for defect 003 (docs/work/DONE.md),
+# defect 004 (docs/work/DONE.md), panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
+# split, because the language refuses the only cut available — 003's two
+# functions read `power` and `wrapped`, so the seam runs print_bodies ->
+# print_fmt -> print_bodies and `module_cycle` fires on the `use` edge
+# (§11's knot clause).
+#
+# **It stands at 1150, a round number, by author decision 2026-08-28**
+# (`/decide`, answer `7c`), and the open question it was keeping is
+# retired. The argument FOR splitting was real and is recorded here rather
+# than lost: four of the five defects found in that module across three
+# days were one class — a measurement or a bookkeeping fact that
+# disagreed with what the printer prints. The author took the counter:
+# those repairs made the module sounder, so splitting now is risk with no
+# defect asking for it.
+#
+# The author chose **1100** against a measured 1083, and the same
+# session's own repairs took the file to **1106** before the commit landed
+# — the comments explaining `field_line`'s §4.1 discriminator and the
+# parser guard. So the ceiling is **1150**: it honours a decision taken
+# twenty minutes earlier with room in it, rather than asking the same
+# question again over six lines of comment. `grammar_expr.hero` went
+# 954 -> **1000** in the same commit, for `ends_the_expression` and the
+# paragraph naming panel 007's Amendment B as the rule it enforces.
+#
+# **Three numbers moved on 2026-09-02, for a ratified language feature and
+# not for creep** (panels 099 and 100: `use` paths, then `as` and per-file
+# uniqueness). `ast.hero` 449 -> **455** for one field on `record Use` plus
+# the two lines that say why it is total and not an `Option` — an AST is
+# mutually recursive by construction, so §11's knot clause applies and there
+# is no cut. `resolve_state.hero` 308 -> **315** for a did-you-mean list that
+# now offers local names. `parse_use.hero` is a NEW entry at **310** against
+# §11's 300: that file is one declaration and its five refusals, and the
+# refusals are its stated subject rather than an appendix, so the only cut
+# available would move the message away from the cursor that recovers from it.
+#
+# **A fifth moved the same day, for a DEFECT repair and not a feature**
+# (defect 028). `emit/ctype.hero` 370 -> **380**, measured 371: one line, the
+# `seen` map that `synth.collect` needs now that it walks a record's fields
+# rather than returning at `.named`. The guard exists because a record may hold
+# itself through `[T]` or `{K: V}` (spec § 3), so the walk has a cycle in it,
+# and it is a SECOND set rather than the existing one because `into` is the
+# list of function typedefs to emit and a named type in it would emit a typedef
+# for a record. Raised with room, as every entry here is, rather than to the
+# measured line.
+#
+# **Four moved on 2026-09-12, for a ratified surface form, and the number of
+# files is the story** (panel 132: `Point::x`, the field-name operator). The
+# form is one AST node, and a new node is a new arm in every exhaustive
+# `match` over `ExprKind` — **68 of them**, which the compiler listed one by
+# one and would not let a session forget. Four of the files holding those arms
+# were already over §11's 300, so four ceilings move: `ast.hero` 491 ->
+# **505** (measured 500), `check/walk.hero` 1842 -> **1870** (measured 1859,
+# and it carries the typing arm and the near-miss diagnostic as well as the
+# enumeration), `grammar_expr.hero` 1044 -> **1085** (measured 1075, the `::`
+# postfix and its own parser) and `ir/flatten.hero` 1123 -> **1150** (measured
+# 1139, where the form is ERASED to a literal, which is what makes it sugar).
+#
+# **The cost is the author's choice and the record says so rather than
+# rounding it.** A prototype spelled `Point.x` reused the existing field node
+# and cost +59 code lines in three files with no ceiling moved; the author
+# took `::` against it, because `.` already qualifies a module and already
+# reads a field from a value, and a third meaning would make the line legible
+# only to a reader who knows whether the base names a type or a value. `::`
+# has to be in the tree for the formatter to re-print it, so it is its own
+# node, and its own node is these four numbers.
+#
+# Each is raised with room rather than to the measured line, which is the
+# lesson `print_fmt.hero` paid for twice: a ceiling set at today's exact count
+# asks the same question again over six lines of comment. If panel 101 removes
+# the `as` clause, these fall on their own and the table should be re-measured
+# rather than left generous.
+#
+# **A fourth moved the same day, for a ratified REFUSAL rather than a feature**
+# (panel 102, ratified: a local may not take a module's name).
+# `resolve_state.hero` 315 -> **330** against a measured 325, for a fourth arm
+# on `declare`, which already had three of the same shape — a name refused
+# because another local holds it, because a built-in does, because a top-level
+# declaration does, and now because a `use` bound it. **The seat that priced
+# the change made this argument rather than the knot argument**, and it also
+# corrected the brief: this file's own module doc says it is one module
+# *"WITHOUT a cycle forcing it"*, so §11's language-forbids-the-seam clause does
+# not reach it. What reaches it is the plainer half — a reader holding the first
+# three arms holds the fourth for free, which is what the ~300 protects and what
+# this addition does not spend. The whole diagnostic is 8 lines of comment and
+# 3 of code; its argument lives on `docs/panel/102` instead, which is CLAUDE.md's
+# preamble applied to a comment for once.
+#
+# **Two moved on 2026-09-03, M-robustness-guards step 1** (`@` on an
+# immutable binding accepted and corrupting memory; `@bs[0]` on a cell
+# handed the callee the whole array). `ir/lower.hero` 1483 -> **1511**:
+# `lower_args` and `with_receiver` hand an `@` argument through an index to
+# the new `ir/inout.hero` and `emit_call` pays the write-back after the
+# instruction — 14 of the 28 lines are the formatter breaking two
+# `emit_call` sites whose argument list grew by one word. The mechanism
+# itself is 145 lines in its own module, which is the knot argument applied
+# in the right direction: the ring gained a hand-over, not a feature.
+# `grammar_expr.hero` 1000 -> **1002**: `@` before something that is not a
+# place is refused where `1 @ 2` already is, six lines of code beside
+# `is_place`, which is the function that decides both.
+#
+# **Four moved on 2026-09-09 for panel 121, M-interpolated-strings, and the
+# sitting predicted the first of them.** The `f"…"` literal is ONE AST node with
+# its holes as children (R4), and R5 measured that a helper module which calls
+# `parse_expr` closes a `use` cycle — so the hook that reads the holes stays in
+# the grammar's knot, which is the case CLAUDE.md §11's knot clause exists for.
+# `grammar_expr.hero` 1002 -> **1041**: `interpolation`, the loop that parses
+# each hole between two pieces, with its comment (17); `interp_render`, the
+# test section's fully-parenthesised re-print, which calls `render` and so
+# cannot leave the file either (15); one `use`, the hook in `primary`, one
+# token in the operator table and three arms joining a literal group. The
+# compiler seat's prediction at panel 121 — *strictly greater than 1002* — is
+# confirmed by this row. `check/walk.hero` 1700 -> **1708**: the typing arm,
+# which walks each hole by recursion only this knot can do and hands the type
+# to `check/interp.hero` to judge; one `use`. `ir/flatten.hero` 1110 -> **1114**:
+# the lowering arm, which lowers each hole by the recursion only this knot can
+# do and hands the values to `ir/interp.hero` for the concatenation; one `use`.
+# `ast.hero` 475 -> **484**: the node itself with its comment, and `holes_depth`
+# beside the test section's `depth`, which is where the tree's own tests
+# measure nesting. The three helper modules — `lex_interp.hero`, `check/interp.hero`,
+# `ir/interp.hero` — hold everything that needed no call back into a knot.
+#
+# **Two moved on 2026-09-03 for panel 105, ratified the evening it sat**: a
+# type parameter the arguments leave unbound takes the type the context asks
+# for. `check/walk.hero` 1583 -> **1700** against a measured 1664: `check()`'s
+# `.call` arm keeps its expectation instead of falling to `synth`, the
+# `.method` arm gets one, four call-dispatch functions carry `expected: i64?`,
+# and `user_call` binds from the context and reports what nothing bound — all
+# inside the checker's knot (check/synth/block/statement are mutually
+# recursive; §11's knot clause), and the paragraphs that say why are the
+# larger part of the growth, by CLAUDE.md §11's own rule that a comment
+# teaches the invariant. `ir/mono.hero` 367 -> **380** against a measured 368:
+# one field, `instantiated_at`, so the emitter's gate can report an instance
+# at the call that made it (the pragmatist's blocking condition 4). Raised
+# with room, as the precedents above were.
+# **Three moved on 2026-09-04, panel 106's repair** — the exit sweep stops
+# minting a load temporary per swept slot per returning block, which was 58.5%
+# of every declared frame in the emitted C. All three raises are the SAME
+# addition seen from three files, and in every one of them the code is small
+# and the comment is the reason: an op that carries a slot rather than a value
+# is a departure from what `ir.hero` had asserted for a year — *releasing a
+# slot IS a load followed by a decref, which keeps one form instead of two* —
+# so the file that made the claim is the file that has to withdraw it, in
+# writing, with the measurement. `ir.hero` is a NEW entry at **310** against a
+# measured 305: 4 lines of case and the paragraph that says why the old
+# sentence was true and expensive. `emit/inst.hero` 324 -> **350** against a
+# measured 343: the whole change there is one emitted arm plus the split of
+# `reference` into a value door and a name door, which exists so that the two
+# ways to reach a refcount call cannot learn a type apart. `ir/print.hero`
+# 460 -> **470** against a measured 465: one line prints the slot by name, and
+# four say why printing it as a decref of an invented temporary would make
+# `--dump-ir` describe a program the emitter no longer writes.
+# **One moved on 2026-09-04, defect 012's repair**: `emit/gate.hero` 341 ->
+# **365** against a measured 355. `function f(_: ())` reached clang as
+# `int64_t h_f(void h0_)` — *argument may not have 'void' type*, exit 2, the
+# compiler blaming itself — and the FIELD position of that same hole was
+# closed 2026-08-12, twelve lines below, by `unit_fields`. `_` is the one
+# spelling that got through: a named `()` parameter is `unused_binding` when
+# it is not read and `bound_unit` when it is, and `_` binds nothing so
+# neither rule fires. Five lines of check inside the loop that already walks
+# `f.params`, one route in `what_the_author_can_do`, and the comment that
+# says which sibling this is — the ceiling is what forced the count to be
+# read at all, which is the point of pinning it. Raised with room, as the
+# precedents above were.
+#
+# **TWO ROWS LEFT AND ONE ARRIVED ON 2026-09-06, M-declared-freer step 1**, and
+# the reason is a seat's condition rather than tidying: panel 109's `owned <C
+# function>` mark lands in both of those files and neither had a line of room.
+# `selfhost/ir/lower.hero` **1511 -> 174** and `selfhost/parse/decl.hero`
+# **638 -> 217**, both now under §11's own 300 and out of this table; the one
+# arrival is `selfhost/ir/flatten.hero` at **1110** against a measured 1104.
+#
+# **The two cuts are not the same kind of cut, and the difference is the
+# finding.** `parse/decl.hero` had NO knot — its call graph is a DAG — and the
+# ring its own module doc called unsplittable (*"one module because the
+# language leaves no choice"*) was a fact about where the shared tails LIVED,
+# never about the grammar. `file -> extern_group -> members -> constant_tail`
+# closes only while the tails sit beside the dispatcher. Moved into
+# `parse/tails.hero`, which neither of the other two is used by, the edges run
+# one way: **217 + 246 + 235**, no entry needed for any of the three. The
+# answer had been printing itself in `module_cycle`'s own note the whole time
+# — *"move what both modules need into a third one that neither uses"*.
+#
+# `ir/lower.hero` DOES have a knot, and it is why `flatten.hero` needs a row at
+# all: **25 functions, 990 code lines** by this file's own counting rule, all
+# reaching each other through `expr`. The declaration walk is the one part
+# that only ever calls INWARDS, so it stays behind as `ir/lower.hero` at 174
+# and keeps the name — which is why the **21** modules calling `lower.lower(…)`
+# did not move a character. What else could leave left by a mechanical rule
+# rather than a line count: `ir/questions.hero` (**149**) is everything with no
+# `@b` parameter, `ir/emissions.hero` (**185**) everything that emits one fixed
+# shape and never walks back into the tree.
+#
+# **That the knot cannot be cut is measured, not assumed** (CLAUDE.md §1: a
+# failed search is not an impossibility). The one route out of a mutually
+# recursive walk is to hand the recursion over as a function value, and this
+# walk threads its builder as `@b`: `(function(@Box) -> ())` is
+# `error[expected_type]: expected a type, found @`, so no such value exists to
+# hand over. Panel 109's coordinator predicted `ir/lower.hero` at **≤ 900**;
+# the entry landed at 174 and the knot beside it at 1104, and that prediction
+# is scored FALSE in the panel file with this number rather than argued around.
+# **`ast.hero` 455 -> 475 on 2026-09-06, M-declared-freer step 2**, against a
+# measured 466 and raised with room as every precedent above was. Two fields
+# for panel 109's ratified `owned <C function>`: `FunctionDecl.owned_result`
+# and `Param.owned`, each a `token.Span?` holding the freer's NAME so a
+# diagnostic about it can point at the word the author wrote. **The knot clause
+# is what applies here and it applies without argument** — an AST is mutually
+# recursive by construction, `Expr` through `Stmt` through `Block` and back, so
+# no cut exists and the file is one module or nothing (this is the same row
+# panels 099 and 100 raised for `use` paths, for the same reason). **The code
+# is 2 lines and the comments are 13**, which is the ratio §11 asks for: each
+# field's comment says why it rides where it does — the result's because a
+# diagnostic needs the span, the parameter's because two parameters of one
+# signature can be owned by different functions and because the cell is
+# out-only.
+# **One moved on 2026-09-11 for panel 128, and the seat that priced it predicted
+# the number before it built anything.** A label at a call through a function
+# value is refused now, six diff lines in `check/walk.hero`, and `heroes fmt`
+# broke the call across three: 1746 -> **1751**, which is the seat's own
+# prediction 2 scored on the instrument. Both places moved together this time,
+# the table and the assert below, because the day before they did not and the CI
+# went red on all three legs.
+#
+# **Five moved on 2026-09-11 for panel 127, defect 025, and every one of them
+# moved by a measured number rather than a chosen one.** The label rule reached
+# the two built-ins whose parameters share a type, so 1022 positional `fail(`
+# calls across the tree gained `code:` and `msg:`, and `heroes fmt` broke the
+# lines that passed its 120 columns: `check/walk.hero` 1708 -> **1746**, which
+# is the five call-site lines and the two helpers the certainty of a
+# `wrong_label` fix now asks for, plus the wraps; `ir/flatten.hero` 1114 ->
+# **1123**; `grammar_expr.hero` 1041 -> **1044**; `check/builtins.hero` 374 ->
+# **377**; `emit/ctype.hero` 365 -> **370**, which also lost a malformed code,
+# `"compiler bug"` becoming `compiler_bug`, found by the sitting's historian
+# predicting that one of the 1022 sites would be malformed. The compiler seat
+# predicted ten rows would move and the instrument says five: the wraps landed
+# in fewer files than the estimate, and the estimate is in `docs/panel/127-the-rule-that-did-not-reach-its-own-library.md`
+# beside this sentence so the gap is on the record rather than tidied away.
+#
+# **Two more moved on 2026-09-11, hours later, for M-named-callbacks**, the route
+# the author chose over panel 129's own recommendation. `check/table.hero` 371 ->
+# **389**: `fits` gained its second blank-filling case, a type carrying NO run of
+# names at all, without which a written type naming a position nothing can
+# confuse was uninhabited by any function in the language — panel 130's
+# spec-warden built its own compiler and ran the program rather than reading for
+# it. `selfhost/value_errors.hero` **334**, a new row: one diagnostic,
+# `callback_name`, with the note and the paragraph that says why no fix is
+# offered. It is not split, and the reason is the one §11 gives for a knot — a
+# diagnostics module is one concern read one message at a time, and cutting it by
+# line count would put two messages of one family in two files.
+#
+# **That row LEFT on 2026-09-16, at M-check-completeness step 3, and the sentence
+# above is why it could.** `generic_equality` took the file to 363 and this check
+# refused the growth. The split that followed was by FAMILY and not by line count,
+# which is exactly what the refusal above asks for: the five discard messages —
+# `discarded_value`, `answers`, `discarded_failure`,
+# `discarded_failure_parameter`, `bound_unit` — are one family and moved together,
+# with the tests and the `has` helper they need, to
+# `selfhost/discard_errors.hero`. Neither half needs a row now: `value_errors.hero`
+# measures **221** and `discard_errors.hero` **177**, both under §11's own 300, and
+# a row kept at 334 over a 221-line file would have handed it 113 lines of growth
+# nobody would see. Four call sites moved, in `check/discard.hero` and
+# `check/walk.hero`, and the language itself caught the leftover — `use
+# value_errors` in `check/discard.hero` became `unused_binding` at exit 1.
+#
+# **Three moved on 2026-09-11 for defect 026's repair**, the conservative route
+# panel 128 priced and scheduled: a function type carries its parameter names,
+# mandatory where two of them share a type, and the names are part of the type's
+# identity. The compiler seat's prediction 2 was written before anything was
+# built — *the net names both `check/walk.hero` and `ast.hero`, two or more
+# ceilings rise, and walk exceeds 1780* — and the instrument says 1842, so it
+# HELD on all three counts and named one file it did not: `check/table.hero`.
+# The numbers below are the ones measured AFTER the sitting, because three of
+# the five seats sent the work back: the labels became per position, `_` stopped
+# being a name, and a name used twice became an error.
+#
+# `check/walk.hero` 1751 -> **1842**: the call made through a function value now
+# asks §4.9's two questions instead of refusing every label, a declared function
+# carries its parameter names into its value type at the positions that need
+# them, and the two helpers those need. `ast.hero` 484 -> **491**: one field on the function-type node, with the
+# comment saying why the parser records the names and judges only their count.
+# `check/table.hero` **371**, a new row rather than a raised one: the names live
+# in an arena beside the parameter run, keyed the same way, the file gained the
+# one relation the checker has — `fits`, which is an id comparison in every case
+# but a parameter a declaration called `_` — and it passes 300 for the first
+# time. It is not split, and the reason is the one
+# `.claude/rules/module-shape.md` already ratifies for a 400-line module — the
+# cut would run straight through the shared canonical key, which is the single
+# thing this file exists to own, and two modules that both had to agree on
+# `ty_key` would be one module wearing two names.
+#
+# `print/fmt.hero` 1150 -> **1156** on 2026-09-13, M-handle-verdict step 5: the
+# `consumes` marker on a C parameter, four lines and a two-line comment. The
+# reason is CL-036's and it was MEASURED rather than argued — with the formatter
+# left alone, `heroes fmt` on a binding stripped the safety mark off it and said
+# nothing, which is the failure that rule exists to name: a tool that has not
+# learned a new form does not error, it drops it. Three lines of room are left
+# rather than none, because a ceiling set at exactly today's measure is the
+# pattern M-declared-thresholds spent a milestone removing.
+#
+# **Two moved on 2026-09-14, M-cleanup-verdict step 1, for a DEFECT repair**
+# (defect 032: `==` on a handle answered a constant `true`, so `h == nullptr`
+# was always taken and `h != nullptr` never was). The repair gives the two
+# generated walks a handle arm each and gives `ctype.Aggregate` the bit they
+# ask, and the shape of the cost is the point: `foreign` and `partial` already
+# travel from `new_names` to `Aggregate` through a `{i64: bool}`, so a third
+# fact of exactly that kind costs the same five lines in five places, and the
+# alternative — reading the handle off `c_type`'s trailing star — is a premise
+# about a SPELLING, which is what `.claude/rules/module-shape.md` refuses and
+# what `handles.hero` exists to keep in one place.
+# `emit/ctype.hero` 380 -> **395** (measured 388) and `emit/structural.hero` is
+# a NEW entry at **335** against §11's 300 (measured 323). That file is not cut
+# instead, and its own module doc says why: generated `eq` and generated `hash`
+# are ONE invariant and live where one diff shows both, so the only seam
+# available is the one the file was written to refuse.
+# **Two moved on 2026-09-14, M-marked-acquisition, for a RATIFIED surface form**
+# (panel 148 R2: `acquires <releaser>` on a handle result or `@` out-parameter).
+# `ast.hero` 505 -> **525** (measured 512) and `print/fmt.hero` 1156 -> **1175**
+# (measured 1161), each raised with room as every entry here is.
+#
+# **This table is the budget the sitting did not judge, and its own critic said
+# so.** Five seats priced the spec in tokens; the layout budget is the one the
+# form actually breaches, and the number that looked like a before-and-after —
+# *"`ast.hero` 505 -> 508"* — was a CEILING against a measure, not two measures.
+# Recorded here because a ceiling moved without a reader being told why is the
+# thing this table exists to prevent.
+#
+# **The mark rides both positions, which is where the two files come from**: the
+# AST carries it on a `Param` and on a `FunctionDecl`'s result, and the
+# formatter prints it in both — the second position added an hour after the
+# first, because the first pass taught `fmt` the parameter only and `heroes fmt`
+# **silently dropped the mark off a result**, which is CL-036 firing twice in one
+# day on one form.
+#
+# **One moved on 2026-09-17, by exactly one line, and the seat that asked for it
+# named the number first.** `check/builtins.hero` 377 -> **378**: panel 160's
+# refusal of `.is_err()` on a nested fallible is a new module,
+# `selfhost/check/nested.hero` at 40 lines, and this file's whole share of it is
+# the `use` that reaches it — the `is_err` arm is rewritten one line for one.
+# The sitting's compiler-engineer predicted *"`suite_layout.hero`'s row reads
+# `selfhost/check/builtins.hero 378`"* before building anything, which is the
+# shape a ratified exception should move in: a number somebody committed to in
+# advance, not one discovered when the check went red.
+#
+# **One moved on 2026-09-20, by two lines, and again the seat named the number
+# first.** `ast.hero` 525 -> **527**: panel 171's `lent`, the word for a C
+# parameter that keeps nothing, is one `bool` on `record Param` and the two
+# comment lines that say what it means — the same shape `counted_by` took at
+# panel 166, on a file that was already `DECIDED` and has no seam the language
+# allows (its module doc names the knot). The sitting's compiler-engineer wrote
+# *"`DECIDED` reads `selfhost/ast.hero 527` (±1)"* before anything was built,
+# measured it in its copy, and the landing reads exactly that. The word's other
+# files pay for themselves: `parse/members.hero` and `print/fmt.hero` each
+# collapsed two identical five-line marker functions into one, so the third bare
+# word costs them a line each rather than five.
+#
+# **One moved on 2026-09-24, M-agreed-retention step 11, for panels 176 and
+# 177's three words.** `ast.hero` 527 -> **550** (measured 548): `transfers` and
+# `retains` are two spans on `record Param`, `retains` and `when` two on
+# `record FunctionDecl`'s result, each with the comment that says what it
+# means — the shape `lent` and `counted_by` took, on the file whose module doc
+# names the knot. The other three files the step pushed past their ceilings
+# were CUT along a seam instead, and each seam is a question: `check/releasers.hero`
+# asks whether what a mark names RESOLVES (out of `acquiring.hero`, which asks
+# whether the binding SAYS how a handle begins), `emit/printing.hero` is
+# `print`, which is not a call (out of `ops.hero`), and `print/marks.hero` is
+# the one printer of the words after a parameter or a result, shared by `fmt`
+# and `dump`, which held two copies of five functions until today; `fmt.hero`
+# reads 1141 against its 1175 afterwards.
+constant DECIDED: [str]
+    [
+        "selfhost/check/walk.hero 1870"
+        "selfhost/print/fmt.hero 1175"
+        "selfhost/ir/flatten.hero 1150"
+        "selfhost/grammar_expr.hero 1085"
+        "selfhost/ir/print.hero 470"
+        "selfhost/ast.hero 550"
+        "selfhost/check/table.hero 389"
+        "selfhost/check/builtins.hero 378"
+        "selfhost/ir/mono.hero 380"
+        "selfhost/emit/ctype.hero 395"
+        "selfhost/emit/structural.hero 335"
+        "selfhost/emit/gate.hero 365"
+        "selfhost/resolve/cycles.hero 331"
+        "selfhost/resolve/state.hero 330"
+        "selfhost/emit/inst.hero 350"
+        "selfhost/ir.hero 310"
+        "selfhost/modules.hero 320"
+        "selfhost/parse/use_line.hero 310"
+    ]
+
+# The floor is the Rust's own idea —
+# `assert!(files.len() > 100, "the walk is not reaching the tree")` — and
+# it exists because a walk that finds nothing reports green.
+#
+# **140 against 144 modules on 2026-08-18, and 204 on 2026-09-12**, which is 64
+# of slack on a net written with four. It is RE-BASED to today's count rather
+# than nudged, and `floors.check` is what noticed: a floor's job is to catch a
+# PARTIAL walk, and a partial walk of a bigger tree returns a bigger number, so a
+# floor that stands still stops catching the thing it was written for. The
+# ratchet only ever goes up, and the day this number is wrong again the check
+# will say so with the number to write.
+#
+# **257 on 2026-09-26**, re-based when `floors.check` said so: the fourth round
+# of defects 099 and 101 added `print/headline.hero` and `print/groups.hero`
+# to a tree of 255, and 257 is past 204 by more than a quarter.
+#
+# **322 on 2026-09-29**, re-based when `floors.check` said so at the batch
+# gate of lanes X3 and X4: tonight's lanes of defects 129 to 133 added
+# their modules, the batch's eleven among them, and 322 is past 257 by more
+# than a quarter.
+constant LEAST: i64
+    322
+
+# THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
+# (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,
+# and the in-place store fires on a bare place only (design.md Part 8 wart 8,
+# which panel 144 left a wart because the cost is in the spelling): every such
+# append copies the whole array and resets its capacity. The lexer appended
+# the line-end token that way once per line, and lexing was quadratic in the
+# file, 91 s for 210 KB. `state.push_token` and `state.push_diagnostic` are
+# the spelling the ruling names; this reads every module for the other one,
+# outside comments, because a list of lexer files is a premise that would
+# expire the day a new one appends. `state.push_break` joined them for the
+# refused breaks (defect 129, 2026-09-28), and so did its slow spelling here.
+constant SLOW_APPENDS: [str]
+    [
+        "l.tokens @ l.tokens.push("
+        "l.diagnostics @ l.diagnostics.push("
+        "l.breaks @ l.breaks.push("
+    ]
+
+# A TEXT IS NEVER GROWN BY `+` WHERE THAT COPIES IT AT EVERY STEP (defect 105,
+# 2026-09-27): a `str` local grown inside a loop, a field grown by a line, a
+# lent `str` grown at all (`tests/harness/growth.hero`, which says what it
+# reads and what it cannot see). `heroes lex --dump-tokens` and `heroes fmt`
+# were quadratic in what they print that way, 194 s and 21 s on walk.hero
+# sixteen and thirty-two times over; every module is read, as for
+# `layout/appends`, because a list of the printers would expire the day a
+# new one prints.
+#
+# ONE ALLOWANCE, and it is checked both ways: a growth this list names must
+# be there, or the entry is stale and the check says so. `lvalue` is a C
+# lvalue, and every index step wraps the whole of it in a call, so each step
+# rebuilds it whatever the spelling and pieces would be joined at every one.
+# It grows by a field's name per step of one place's path.
+constant GROWTH_ALLOWED: [str]
+    [
+        "selfhost/emit/container.hero lvalue"
+    ]
+
+# `only` narrows the walk to the modules whose path holds it, which is how the
+# write-time hook asks about one file with the instrument's own unit
+# (`.claude/rules/verification.md`, the section on the suite as last judge); a narrowed run
+# asks no floor.
+function run_all(scratch: str, only: str) -> report.Report?
+    r: report.Report @ report.empty()
+
+    # **`list_tree`, not `list_entries`, and the difference is 133 files.**
+    # `list_entries` scans with `recursive: 0`, which was the whole tree until
+    # M-selfhost-nesting put 133 of 170 modules into ten directories. The
+    # ratchet would then have measured the 37 that stayed flat — including
+    # none of the four largest files in the table below. It does not fail
+    # quietly, because `LEAST` is a floor on the COUNT and 37 is under it, and
+    # that floor is the Rust's own idea for exactly this reason. But a check
+    # that survives a layout change by going red is a check somebody has to
+    # repair under pressure; this one recurses instead.
+    #
+    # **That last argument is still true and it is no longer safe, 2026-09-12.**
+    # It compares 37 against a floor of 140, and both numbers are from a tree of
+    # 144 modules. The tree is 202 now: the same flattening today would leave
+    # the 37 that never moved, which is still under the floor, but the margin is
+    # luck rather than design — a partial walk returning 150 of 202 passes, and
+    # that is three quarters of the compiler going unmeasured in green.
+    nothing: [str] = []
+    files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
+    modules: [str] @ []
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero") && (only == "" || strings.contains(text: path, needle: only))
+            modules @ modules.push(path)
+
+    if only == ""
+        floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
+    over: [str] @ []
+    slow: [str] @ []
+    grown_keys: [str] @ []
+    grown_lines: [str] @ []
+
+    for path in modules
+        text = read_file(path)
+
+        if text.is_err()
+            report.keep_failure(@r, label: "layout/" + strings.base_name(path: path), detail: "  cannot read " + path)
+            continue
+
+        for found in slow_appends(path: path, text: text.must())
+            slow @ slow.push(found)
+
+        for site in growth.sites(text.must())
+            key = path + " " + site.name
+            where = "    " + path + ":" + site.line.to_str() + ": " + site.code
+            grown_keys @ grown_keys.push(key)
+            grown_lines @ grown_lines.push(where)
+
+        lines = code_lines(text.must())
+        limit = ceiling_for(path)
+
+        if lines > limit
+            if limit == CEILING
+                over @ over.push(
+                    "    " + path + ": " + lines.to_str() + " lines of code, past §11's " + CEILING.to_str()
+                )
+            else
+                over @ over.push(
+                    "    " + path + ": " + lines.to_str() + " lines of code, past the " + limit.to_str() + " it measured when this check was written — a file already over the ceiling may not grow further"
+                )
+
+    # A narrowed walk (`only`) sees one file, so the two questions about the
+    # whole tree, the lexer's appends and the grown texts against their
+    # allow-lists, are not asked: an allow-list entry for a file that was not
+    # walked would read as *no longer grown there*, which is a false red.
+    if only == ""
+        if slow.len() > 0
+            report.keep_failure(
+                @r,
+                label: "layout/appends",
+                detail: "  the lexer's growing arrays are appended through `state.push_token(@l.tokens, t)` and `state.push_diagnostic(@l.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defect 103, design.md Part 8 wart 8):\n" + slow.join("\n")
+            )
+        else
+            report.keep_pass(@r)
+
+        grown = unallowed(found: grown_keys, written: grown_lines, allowed: GROWTH_ALLOWED)
+
+        if grown.len() > 0
+            report.keep_failure(
+                @r,
+                label: "layout/concat",
+                detail: "  a text is grown by pushing its pieces onto a `[str]` and joining once, never by `+` at every step, which copies all of it each time (defect 105, design.md Part 8 wart 8):\n" + grown.join("\n")
+            )
+        else
+            report.keep_pass(@r)
+
+    if over.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout",
+            detail: "  CLAUDE.md §11: *split a module before it passes ~300 lines*, because \"the author must be able to open any file and read it without drowning\":\n" + over.join("\n") + "\n  Split along a seam that names a concern, never at a line count. Where the LANGUAGE forbids the seam — a knot of mutually recursive functions, which cannot be two modules because Heroes refuses module cycles — the file stays and its module doc owes a map: the cycle, the entry points, which function calls which."
+        )
+    else
+        report.keep_pass(@r)
+    return ok(r)
+
+# The growths no allowance names, and each allowance no growth matched:
+# `found[i]` is `written[i]`'s module and name, as an allowance spells them.
+function unallowed(found: [str], written: [str], allowed: [str]) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+
+    for key in found
+        if !listed(allowed, key: key)
+            out @ out.push(written[index])
+        index @ index + 1
+
+    for entry in allowed
+        if !listed(found, key: entry)
+            stale = "    " + entry + ": allowed, and no longer grown there: remove the entry"
+            out @ out.push(stale)
+
+    return out
+
+# Is `key` one of `entries`?
+function listed(entries: [str], key: str) -> bool
+    for one in entries
+        if one == key
+            return true
+
+    return false
+
+# Every line of `text`, outside a comment, that appends to the lexer's state
+# through the field, as `path:line: the line`.
+function slow_appends(path: str, text: str) -> [str]
+    out: [str] @ []
+    at: i64 @ 0
+
+    for row in strings.split_on(text: text, byte: '\n')
+        at @ at + 1
+        code = strings.trimmed(row)
+
+        if strings.starts_with(text: code, prefix: "#")
+            continue
+
+        for needle in SLOW_APPENDS
+            if strings.contains(text: code, needle: needle)
+                out @ out.push("    " + path + ":" + at.to_str() + ": " + code)
+
+    return out
+
+# The lines a reader must hold in their head: everything outside a `test`
+# block, AND NOT A BLANK LINE.
+#
+# A `test "..."` at column 0 opens one, and the block ends at the next
+# line that starts at column 0 and is not a comment — which is the same
+# boundary the language uses, since a block is what is indented under its
+# header.
+#
+# BLANK LINES STOPPED COUNTING ON 2026-08-28, and the reason is §11's own
+# sentence: this number governs *"what a reader must hold in their head"*,
+# and a blank line is the one line nobody holds — it is what makes the
+# others holdable. Counting them was harmless while the formatter only
+# preserved the author's, and became perverse the day panel 095 had it
+# INSERT them: the ceiling would have punished exactly the change made to
+# make these files easier to read. Measured the day it changed, over the
+# swept `selfhost/`: **36 files past their ceiling counting blanks, 10
+# without**, and the re-baselined table is the same SIZE as the old one
+# (16 entries) with **five files measuring SMALLER than before** —
+# `ast.hero` 495 -> 449, `ir_print.hero` 485 -> 460, `resolve_state.hero`
+# 338 -> 308 — and two, `cursor.hero` and `source.hero`, leaving the
+# table entirely. That is what says the metric change is not a way to
+# hide growth: it moves numbers in both directions.
+function code_lines(text: str) -> i64
+    count: i64 @ 0
+    inside: bool @ false
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "test \"")
+            inside @ true
+            continue
+
+        if inside && row.len() > 0 && !starts_indented(row) && !strings.starts_with(text: row, prefix: "#")
+            inside @ false
+
+        if !inside && strings.trimmed(row).len() > 0
+            count @ count + 1
+
+    return count
+
+function starts_indented(row: str) -> bool
+    return row[0] == 32 || row[0] == 9
+
+# The ceiling this file is held to: its DECIDED number, or §11's.
+function ceiling_for(path: str) -> i64
+    for entry in DECIDED
+        parts = strings.words(entry)
+
+        if parts.len() == 2 && parts[0] == path
+            number = strings.to_number(parts[1])
+
+            if !number.is_err()
+                return number.must()
+
+    return CEILING
+
+test "code_lines counts what a reader holds and not the cases"
+    program = "function f() -> i64\n    return 1\n\ntest \"one\"\n    assert f() == 1\n    assert true\n\nfunction g() -> i64\n    return 2\n"
+
+    # FOUR: the two functions' four lines and nothing else. It was five
+    # until 2026-08-28, the fifth being the blank line before the test —
+    # blank lines stopped counting when the formatter started inserting
+    # them, and the reason is on `code_lines` itself. What the old comment
+    # said about the blank AFTER the test is still true and still the
+    # reason this is asserted rather than assumed: a blank line does not
+    # close a block, so that one belongs to the case either way.
+    assert code_lines(program) == 4
+    assert code_lines("function f()\n    print(1)\n") == 2
+    assert code_lines("test \"only a test\"\n    assert true\n") == 0
+
+    # And the property the change is FOR, asserted directly: air inside a
+    # body costs a reader nothing, so it costs this count nothing.
+    dense = "function f() -> i64\n    a = 1\n    b = 2\n    return a + b\n"
+    airy = "function f() -> i64\n    a = 1\n\n    b = 2\n\n    return a + b\n"
+    assert code_lines(dense) == code_lines(airy)
+
+test "a comment inside a test block does not close it"
+    program = "test \"one\"\n    assert true\n# a comment at column 0, still inside the case's paragraph\n    assert true\nfunction after()\n    print(1)\n"
+    assert code_lines(program) == 2
+
+test "the ceiling is per file, and a decided file keeps its own"
+    # **THE WITNESSES WERE TWO INCISED NUMBERS UNTIL 2026-09-12, AND THEY ARE
+    # THE WHOLE TABLE NOW.** What this case has to catch is a lookup that
+    # quietly returns CEILING for a file that IS in the table. Two hand-picked
+    # rows caught that for two files and cost a hand-edit at every raise; the
+    # property below catches it for all eighteen and costs none, because it
+    # rests on something the table cannot stop being true of itself:
+    #
+    #   **every row of DECIDED is above CEILING, by construction.** A file at
+    #   or under §11's own 300 has no reason to be in the table — that is the
+    #   condition under which a row LEAVES it, and two rows left that way on
+    #   2026-09-06 at 174 and 217 (below). So `> CEILING` for every row is a
+    #   fact about the table's meaning rather than about today's files, and a
+    #   lookup falling through to the fallback fails it on the first row.
+    #
+    # It catches strictly more than the two numbers did. A row somebody
+    # mistypes into three words, or whose number stops parsing, now fails here
+    # as well — `ceiling_for` returns CEILING for such a row, silently, and no
+    # assert reached that before.
+    #
+    # What is NOT weakened: the paragraphs below stay, because they are what
+    # this case cost to learn, and `DECIDED.len()` stays incised at the bottom
+    # for the opposite reason — that number is not a duplicate of the table,
+    # it is the notice that a row arrived or left.
+    #
+    # **AND THEY DID NOT, FOR SIX COMMITS.** This assert read `resolve_state`
+    # at 308 while the table said 315, so `heroes test tests/harness/main.hero`
+    # was 92/1 from `9599d97` to `d08062f` — and that commit's own diff says
+    # what it was doing, in the comment above DECIDED: *"`resolve_state.hero`
+    # 308 -> 315 ... `parse_use.hero` is a NEW entry at 310"*. The knowledge was
+    # written down two screens up. What was missing is a caller: this suite is
+    # in `docs/ROADMAP.md`'s verify block and was in neither CLAUDE.md
+    # § Commands nor `/step`'s close checklist, both of which named two suites.
+    # It is in both now, which is the actual repair — the numbers below are only
+    # the symptom. `DESIGN-LOG` had recorded the same failure on 2026-08-31
+    # (*"a suite that had never been run"*, 83 of 90) and left it without one.
+    #
+    # The witness is now the entry nearest CEILING **by lookup rather than by
+    # name**, which is what the sentence above always claimed it was.
+    #
+    # **AND THIS LINE IS WHY THE NUMBER WAS WRITTEN TWICE, paid for on
+    # 2026-09-11.** Panel 127 raised five DECIDED rows and this assert kept the
+    # old one, so the table said 1746 and the test said 1708. Every suite of the
+    # net was green and the CI went red on all three legs, because the net's own
+    # tests are the THIRD suite and the session had run the other two after its
+    # last edit. That is CL-054 exactly: run the suite you did not expect to
+    # move. The number stayed in two places on purpose — one the ceiling, the
+    # other the proof that the lookup reads it — and the cost of forgetting the
+    # second was three red legs rather than a silent pass. It was paid twice:
+    # 1842 -> 1870 on 2026-09-12 (panel 132's field-name operator) moved the
+    # table and this line with it.
+    #
+    # **The third time is what retired the duplication, 2026-09-12.** The
+    # defence above is sound about WHAT the second copy proves and says nothing
+    # about the form it has to take: the proof that the lookup reads the table
+    # can be read OUT of the table, and then no raise can forget it. Twice is
+    # the count that made the argument — a rule whose obedience costs a manual
+    # edit at every use is a rule that will be missed, and this one was, at the
+    # only two raises it has ever seen.
+    for entry in DECIDED
+        parts = strings.words(entry)
+
+        # The row is well formed, which nothing asserted before: a row of
+        # three words falls through `ceiling_for` to CEILING in silence.
+        assert parts.len() == 2
+        number = strings.to_number(parts[1])
+
+        assert !number.is_err()
+
+        # The property itself. A lookup that returns the fallback for a row
+        # that is IN the table fails here, on that row.
+        assert number.must() > CEILING
+        assert ceiling_for(parts[0]) == number.must()
+
+    assert ceiling_for("selfhost/anything-else.hero") == CEILING
+
+    # **16 since M-package-layout, and the direction is the point.** The table
+    # shrinks when a file is FIXED: `cli_verbs.hero` was in it at 358, the
+    # milestone split the produce pipeline out to `cli_produce.hero`, and 207
+    # code lines needs no entry — that took it to 15. A row leaving is the
+    # ratchet working. A row arriving is a file nobody could cut, and that is
+    # the author's to allow: `parse_use.hero` arrived at 310 in `9599d97`, when
+    # `use` learned to be a path.
+    #
+    # This count exists so neither direction happens quietly — it went red the
+    # moment the row was removed, which is exactly the notice it owes.
+    #
+    # **It was also red for six commits and nobody saw it**, because the assert
+    # above it fails first and Heroes stops a case at its first failed assert.
+    # One stale number hid a second one. Two lessons and both are cheap: a case
+    # that pins several independent facts hides all but the first, and the
+    # suite that holds it needs a caller (see above).
+    #
+    # **16 -> 17 on 2026-09-04**, `selfhost/ir.hero` at 310: panel 106's repair
+    # adds an `OpKind` case that carries a slot rather than a value, and the
+    # paragraph withdrawing what that file had asserted for a year is longer
+    # than the case. The count moved because a row was ADDED, which is the
+    # direction this assert notices least loudly — a removal takes the table
+    # below the number and a raise leaves it alone, so an addition is the one
+    # that has to be written down here on purpose.
+    #
+    # **17 -> 16 on 2026-09-06**, M-declared-freer step 1, and it is the good
+    # direction twice over: `ir/lower.hero` and `parse/decl.hero` were CUT out
+    # of this table — 1511 -> 174 and 638 -> 217, both under §11's own 300 —
+    # and only one row arrived, `ir/flatten.hero`, which is the knot the
+    # language refuses to split. Two rows out and one in is a net of minus one,
+    # and the ceiling that was the highest in the lowering fell from 1511 to
+    # 1110. The reason for each number is above DECIDED.
+    #
+    # **18 -> 19 on 2026-09-14**, M-cleanup-verdict step 1: `emit/structural.hero`
+    # arrives for defect 032's repair, an ADDITION, which is the direction this
+    # assert exists to make somebody type. The reason is above DECIDED.
+    assert DECIDED.len() == 18
+
+test "an append to the lexer's state through the field is found, and one in a comment is not"
+    text = "function f(@l: LexState)\n    l.tokens @ l.tokens.push(t)\n    # l.tokens @ l.tokens.push(t) is the slow spelling\n    push_token(@l.tokens, t)\n"
+    found = slow_appends(path: "x.hero", text: text)
+    assert found.len() == 1
+    assert strings.contains(text: found[0], needle: "x.hero:2:")
+
+# Defect 105's check, both ways: a growth no allowance names fails, one it
+# names passes, and an allowance no growth matches fails as stale.
+test "a growth the allowance names passes, any other fails, and a stale allowance fails"
+    found = ["selfhost/a.hero out", "selfhost/b.hero lvalue"]
+    written = ["    selfhost/a.hero:3: out @ out + x", "    selfhost/b.hero:9: lvalue @ lvalue + y"]
+    kept = unallowed(found: found, written: written, allowed: ["selfhost/b.hero lvalue"])
+    assert kept == ["    selfhost/a.hero:3: out @ out + x"]
+    none: [str] = []
+    stale = unallowed(found: none, written: none, allowed: ["selfhost/b.hero lvalue"])
+    assert stale.len() == 1
+    assert strings.contains(text: stale[0], needle: "no longer grown")
+
+    # Every allowance names a module of the compiler and one name in it.
+    for entry in GROWTH_ALLOWED
+        parts = strings.words(entry)
+        assert parts.len() == 2
+        assert strings.starts_with(text: parts[0], prefix: "selfhost/")

@@ -1,0 +1,13 @@
+# Panel 173 q4: a C library installs its own SIGABRT/SIGTRAP handler from a call
+# the program makes (after the runtime's own installer has run), then frees the
+# lease. Whose handler runs is the exit code: 77 is the library's.
+extern "libabrt.h"
+    function lib_install()
+    function lib_free(p: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    lib_install()
+    lib_free(p: c)
+    end_lease(@c)

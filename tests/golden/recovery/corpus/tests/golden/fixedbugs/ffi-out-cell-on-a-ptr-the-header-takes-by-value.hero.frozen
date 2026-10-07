@@ -1,0 +1,15 @@
+# DEFECT 083, the shape beside the handle: `@p: ptr` against `void *`.
+#
+# SYMPTOM: `check` 0, `build` 0, run 0, and C wrote eight zero bytes into the
+# program's cell — stack corruption at exit 0, measured on Darwin before the
+# repair. A `ptr` is cast to `(void *)` at the call and in the probe (panel
+# 103), so clang never saw the pointee.
+#
+# FIX: the same depth question as the handle's, and the same diagnostic.
+extern "ffi-out-cell-on-a-ptr-the-header-takes-by-value.h"
+    function wipe(@p: ptr)  #~ ffi_parameter_type
+
+function main()
+    p: ptr @ nullptr
+    wipe(@p)
+    print("after")

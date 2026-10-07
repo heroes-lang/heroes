@@ -1,0 +1,18 @@
+# The fixture panel 099 R5 owed (M-robustness-guards step 6): a nested program
+# whose leaf module reads a root module by a path, so that compiling the LEAF
+# directly — `heroes check tests/golden/surface-fixtures/nested/lib/leaf.hero` —
+# exercises the one hazard the root base carries. Every `use` is read from the
+# directory of the file you compile (R2, `spec`), so from the leaf's directory
+# `use util` reads `lib/util.hero`, which is a different file from the root's
+# `util.hero`. The rows in `tests/harness/suite_surface.hero` pin what that
+# costs and what it says: with `lib/util.hero` absent the leaf refuses at
+# `unknown_module` and names the directory it looked in and the file that
+# decided it; with `lib/util.hero` present (`lib/decoy/`) the leaf checks clean
+# against a DIFFERENT module, which is the shape the ergonomist built and the
+# historian's standing prediction (Zig #13970). The rule is stated, not silent.
+use util
+use lib/leaf
+
+function main()
+    print(util.scale())
+    print(leaf.scaled())

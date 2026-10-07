@@ -1,0 +1,10 @@
+# print's contract, now stated in the spec: NO separator between values, exactly
+# ONE trailing newline (panel 006, landed at M5a). So the first line below is
+# `123` and not `1 2 3`, and the last line is empty.
+# Bulk regression case.
+
+function main()
+    print(1, 2, 3)
+    print(true, false)
+    print()
+    print(0)

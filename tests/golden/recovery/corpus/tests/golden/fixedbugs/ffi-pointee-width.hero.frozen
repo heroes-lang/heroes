@@ -1,0 +1,34 @@
+# fixedbugs, M-robustness-guards step 3, 2026-09-03 (panels 096, 103).
+#
+# SYMPTOM: `extern function getline(@line: ptr, @n: i32, stream: ptr)` against
+# `ssize_t getline(char **, size_t *, FILE *)` built at exit 0 with five
+# `-Wincompatible-pointer-types` warnings and RAN: `getline` wrote 8 bytes into
+# the 4-byte slot `n`, and `--sanitize` was silent. Measured on the seed of
+# 2026-09-02 17:52, on the Mac; on Debian clang 22 the same program was refused
+# by clang's default, so the verdict differed by host.
+#
+# CAUSE: the spec exempted *what a pointer points at* from the width rule, and
+# the probe that checks parameters (`extern_probe.hero`) declared `@n` as
+# `int32_t *` — a pointer, so C's conversion rules applied and clang's
+# incompatible-pointer warning was the only witness, on one platform a
+# warning nobody read.
+#
+# FIX: `cli/pointee.hero` asks the header what the parameter points at (one
+# clang AST dump per build, the type text) and asserts `sizeof` and sign
+# against the declared type at THIS line; the failure is `ffi_parameter_type`
+# on the parameter with the header's width as the guess. The spec says it since
+# the same day: *what it points at is held to the same width and sign — `@n:
+# u64` where it says `size_t *`*.
+#
+# THE WITNESS IS `frexp` AND NOT `getline`, measured the same afternoon: the
+# Windows CRT has no `getline` (POSIX, not C), so on that leg the program is
+# `ffi_unknown_name` and this case would pin the wrong code. C89's
+# `frexp(double, int *)` exists everywhere, and `int` is 32 bits on all three
+# platforms, so `@e: i64` is the width mistake on every leg.
+extern "math.h"
+    function frexp(x: f64, @e: i64) -> f64  #~ ffi_parameter_type
+
+function main()
+    e: i64 @ 0
+    print(frexp(8.0, @e))
+    print(e)

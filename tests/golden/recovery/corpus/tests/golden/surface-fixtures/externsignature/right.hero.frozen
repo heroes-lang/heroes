@@ -1,0 +1,15 @@
+# The same program with the signature the header actually declares, so
+# the pair pins both directions: the refusal above, and that the shape it
+# refuses is otherwise ordinary and runs.
+#
+# `sqrt` of 16 is 4, and a float prints with a point (spec:181).
+
+use bindright
+
+function main()
+    print(bindright.root(x: 16.0))
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec:181 is spec § 11 Built-ins

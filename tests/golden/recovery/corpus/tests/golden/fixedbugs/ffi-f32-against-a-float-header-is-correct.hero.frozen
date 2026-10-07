@@ -1,0 +1,47 @@
+# fixedbugs, 2026-08-28 (panel 096, § Q2's mechanism was built and does not
+# work).
+#
+# SYMPTOM: a CORRECT binding refused. `extern function ColorAlpha(color: Color,
+# alpha: f32) -> Color` against raylib's own `float alpha` was
+#
+#     error[ffi_parameter_type]: `alpha` of `ColorAlpha` is declared wider
+#     than the header's `float`
+#
+# at exit 1, in `examples/raylib/main.hero:80` — a real binding in this tree
+# that had been accepted since it was written.
+#
+# CAUSE: panel 096's Q2 asked the probe to make C's default argument promotion
+# explicit at a variadic slot, so that `printf(format: cstr, value: f32)` —
+# which IS correct, because the promotion to `double` is the C ABI and is exact
+# — would stop being refused. The mechanism was
+#
+#     (void)__builtin_choose_expr(HERO_VARIADIC(call, f),
+#         (f)(a0, (double)a1),      /* variadic arm: the promotion */
+#         (f)(a0, a1));             /* fixed arm: the check survives */
+#
+# and it rests on clang not analysing the unselected arm. **It analyses both.**
+# Conversion warnings are emitted at expression FORMATION, so the `(double)`
+# the variadic case needs is itself a `double`-to-`float` conversion error
+# against every non-variadic callee whose header says `float`. Measured in nine
+# lines of C, and measured again with the cast moved inside the argument: the
+# same error either way.
+#
+# WHY NO SEAT CAUGHT IT: both judges reported adjacent shapes attacked 7/7, and
+# both attacked `f32` at a variadic slot and `f32` against a `double` header.
+# Neither attacked `f32` against a `float` header — the shape that was ALREADY
+# CORRECT, and the only one the promotion can break. CLAUDE.md §1's fourth rule
+# from the other side: here the class included the case that was already right.
+#
+# THIS CASE IS THE CONTROL. It must stay accepted, at exit 0, printing 7. If it
+# ever fails, something has put a conversion the real call does not make into
+# the probe — which is exactly what Q2's mechanism did.
+
+extern "math.h" link "m"
+    function fmaxf(x: f32, y: f32) -> f32
+
+function main()
+    # `fmaxf` is not variadic and its header takes two `float`s, so `f32` is
+    # the declaration §4.19 asks for: the header's own width and sign. Nothing
+    # converts, and the probe must be silent.
+    bigger = fmaxf(x: 3.5, y: 7.0)
+    print(bigger.to_i64().must().to_str())

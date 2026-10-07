@@ -1,0 +1,11 @@
+# `_ = ob_new()` begins a life the program can never end, and the runtime is
+# told so: owed at exit. Until the landing review (2026-09-24) the discarded
+# result was a comment in the C, nothing was owed, and the leak was exit 0.
+extern "fixedbugs-a-discarded-acquisition-is-owed-at-exit.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_put(o: Ob consumes)
+
+function main()
+    _ = ob_new()
+    print("acquired and dropped")

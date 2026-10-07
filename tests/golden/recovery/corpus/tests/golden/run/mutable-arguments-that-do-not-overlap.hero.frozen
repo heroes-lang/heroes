@@ -1,0 +1,72 @@
+# The ACCEPTED side of panel 010's alias refusal, and it exists because the
+# refusal was nearly written to reject these (panel 110, 2026-09-04).
+# design.md:1298 said *"comparing roots is a complete alias test"*, and a root
+# comparison makes every program below a compile error. Each one reaches
+# disjoint memory, and each one is clean under `--sanitize` with the value
+# SHARED — measured, both shapes, which is why the rule compares PLACES step
+# by step. The unshare is the mechanism: the first `@` argument takes the
+# refcount to 1, so the second moves nothing.
+#
+# The refusals are `tests/golden/check/fixedbugs-two-mutable-arguments-of-one-place.hero`.
+# What this file pins is the other half, so neither is a sentence.
+record P
+    x: i64
+    y: i64
+
+record Nest
+    inner: P
+    tag: i64
+
+function shift(@a: i64, @b: i64)
+    a @ a + 1
+    b @ b + 10
+
+function main()
+    # Two fields of one record: one root, two places.
+    p: P @ P(x: 0, y: 0)
+    shift(a: @p.x, b: @p.y)
+    print(p.x)
+    print(p.y)
+
+    # And the sharing that a root test would have called aliasing: `q` holds
+    # the old value, so the unshare happened and both writes landed.
+    q = p
+    shift(a: @p.x, b: @p.y)
+    print(p.x)
+    print(q.x)
+
+    # Two literal indices of one array.
+    xs: [i64] @ [0, 0, 0]
+    shift(a: @xs[0], b: @xs[1])
+    print(xs[0])
+    print(xs[1])
+    print(xs[2])
+    ys = xs
+    shift(a: @xs[0], b: @xs[2])
+    print(xs[0])
+    print(ys[0])
+
+    # Two steps deep, differing at the LAST step.
+    n: Nest @ Nest(inner: P(x: 0, y: 0), tag: 7)
+    shift(a: @n.inner.x, b: @n.inner.y)
+    print(n.inner.x)
+    print(n.inner.y)
+
+    # Differing at the FIRST step, with the rest identical.
+    shift(a: @n.inner.x, b: @n.tag)
+    print(n.inner.x)
+    print(n.tag)
+
+    # An index and then a field: distinct fields settle it whatever the
+    # indices are, because a field name is decidable and reached first here.
+    ps: [P] @ [P(x: 0, y: 0), P(x: 0, y: 0)]
+    shift(a: @ps[0].x, b: @ps[0].y)
+    print(ps[0].x)
+    print(ps[0].y)
+
+    # And two distinct roots, which was always legal.
+    u: i64 @ 0
+    v: i64 @ 0
+    shift(a: @u, b: @v)
+    print(u)
+    print(v)

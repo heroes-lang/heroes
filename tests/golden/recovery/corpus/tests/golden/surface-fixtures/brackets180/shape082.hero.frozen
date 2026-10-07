@@ -1,0 +1,11 @@
+# Panel 180 R5, shape 82 of the compiler-engineer's 117 (param list): a break
+# before ) then -> .
+# By the spec's opening paragraph, the line ends with `i64`, a name, so it
+# keeps its NEWLINE, which may stand before a closing bracket: accepted, exit
+# 0.
+function f(a: i64
+        ) -> i64
+    return a
+
+function shape()
+    print(1)

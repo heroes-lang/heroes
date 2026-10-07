@@ -1,0 +1,5 @@
+# The same leaf as `../../lib/leaf.hero`, beside a `util` of its own.
+use util
+
+function scaled() -> i64
+    return util.scale() * 10

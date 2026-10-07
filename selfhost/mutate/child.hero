@@ -1,0 +1,104 @@
+# A compiler run as a child of the recovery arm, bounded in time and in
+# bytes (panel 187's R2, defect 210; `.claude/rules/verification.md` § A
+# run that may not end).
+#
+# The arm judges ANOTHER compiler, the trunk's or a round's, so every check
+# is a child process: a parser that never returns is one of the class's
+# known failures (defect 130's widening of 2026-09-29), and a compiler that
+# prints without end is the shape that filled the disk on 2026-10-06
+# (defect 425). So each child runs under the runtime's watchdog, `LIMIT`
+# seconds as the Python instrument's `timeout=30`, and every file it writes
+# is held to `CAP` bytes, a write past it failing as a full disk fails
+# (`hero_run_limit_writes`; Windows has no such ceiling and the runtime
+# says so, where the watchdog alone bounds a child).
+#
+# The group below binds what `cli/process.hero`'s does and two calls more,
+# the two limits, which `cli/process.run` does not take: a group is this
+# module's own because an extern is never callable across a module boundary
+# (panel 033 R5), and the runtime keeps each of these per thread, so the
+# arm's workers each hold their own words and limits.
+
+use module/reading
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_limit_writes(bytes: i64) -> i64
+    # `lent`, as `cli/process.hero` declares it: read while it runs, kept never.
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+
+# Seconds before a child is called a hang: `replay.py`'s `timeout=30`.
+constant LIMIT: i64
+    30
+
+# Bytes any one file a child writes may hold: a check's document on a
+# corpus program is a few kilobytes, and `--apply` prints a program, the
+# largest of the corpus under 400 KB, so this bounds a runaway alone.
+constant CAP: i64
+    67108864
+
+# What a child answered. A child the watchdog ended answers `exit` -9, and
+# `err` `timeout`, which is what `replay.py` records for a check that did
+# not return (its `subprocess.TimeoutExpired` arm).
+record Answer
+    exit: i64
+    out: str
+    err: str
+
+# Run `program` with `words`, argv[0] among them, its two streams captured
+# in `capture` + `.out` and `.err`, files the caller's alone, written over
+# by each run. A program that never started, or captures that cannot be
+# read, is a failure: the arm cannot judge what it could not run.
+#
+# **The watchdog's 124 is read as the watchdog**, a premise about the child
+# written down (`.claude/rules/module-shape.md`): the runtime answers 124
+# for a child it ended, and a `heroes` exits 0, 1 or 2 by its contract
+# (`.claude/rules/cli-surface.md`) or 128 and a signal when it dies, so a
+# 124 from the compiler judged is the limit's and never its own.
+function bounded(program: str, words: [str], capture: str) -> Answer?
+    out_path = capture + ".out"
+    err_path = capture + ".err"
+    hero_run_reset()
+    hero_run_limit(seconds: LIMIT)
+    _ = hero_run_limit_writes(bytes: CAP)
+
+    for word in words
+        hero_run_arg(word: word)
+
+    status: i64 @ 0
+    code = hero_run_go(
+        program: program.cstr(),
+        in_path: "".cstr(),
+        out_path: out_path.cstr(),
+        err_path: err_path.cstr(),
+        @status
+    )
+    hero_run_reset()
+    hero_run_limit(seconds: 0)
+
+    if status != 0
+        return fail(code: "not_started", msg: "could not start " + program)
+
+    if code == 124
+        return ok(Answer(exit: -9, out: "", err: "timeout"))
+    return ok(Answer(exit: code, out: captured(out_path)?, err: captured(err_path)?))
+
+# A capture's text. Bytes that are not UTF-8 are read as the compiler reads
+# a source holding them, each shown and none fatal: the Python instrument
+# read them with `errors="replace"`, and neither drops the run.
+function captured(path: str) -> str?
+    got = reading.source_text(path)
+
+    if got.is_err()
+        return fail(code: "no_capture", msg: "cannot read the captured " + path)
+    return ok(got.must().text)
+
+## Tests
+
+test "a child's two streams and its exit come back, and a program that is not there is a failure"
+    dir = "build/selftest-recovery-child"
+    ran = bounded(program: "clang", words: ["clang", "--heroes-no-such-flag"], capture: dir + "-c").must()
+    assert ran.exit != 0
+    assert ran.err.len() > 0
+    assert bounded(program: "heroes-no-such-program", words: ["heroes-no-such-program"], capture: dir + "-n").is_err()

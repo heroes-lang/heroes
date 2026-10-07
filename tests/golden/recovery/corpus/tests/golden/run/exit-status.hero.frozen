@@ -1,0 +1,21 @@
+# `exit(code)` — and the defect it closes.
+#
+# Until M-ffi-ladder a program that went wrong still told the shell it had
+# succeeded: `main` may not declare a result (the checker refuses it, because a
+# fallible `main` returning `fail(…)` printed nothing and exited 0), so there was
+# no way for a Heroes program to report failure at all. The ROADMAP recorded it
+# as a defect that "shows up on the second page of any tour".
+#
+# `exit` is written in Heroes over `hero_exit`, which is `_Noreturn` — without
+# that, clang's flow analysis treats the code after the call as reachable, and C
+# itself took 22 years and WG14 N1453 to admit as much.
+#
+# The harness asserts stdout; the exit status is asserted by the CLI surface
+# test `exit_forwards_the_programs_own_status`, because a `run/` golden compares
+# output rather than status.
+# Bulk regression case.
+
+function main()
+    print("before")
+    exit(3)
+    print("after")

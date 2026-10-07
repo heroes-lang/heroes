@@ -1,0 +1,256 @@
+# What the next line holds, read from its text before it is lexed (design.md
+# §4.15; panel 181).
+#
+# `open_line` decides at a line break, and some of what it decides rests on
+# the line below, which the lexer has not reached: whether it binds, whether
+# it could stand alone as a statement, whether it holds an arm's `=>`. These
+# are the scans that answer, and they read the text and nothing else, which
+# is the seam: no lexer state, no tokens.
+#
+# **None of them decides whether a program compiles.** Each answer picks a
+# diagnostic, a fix's certainty, or whether a `-` is an arm's sign, and
+# every branch it picks refuses the program or leaves it as the parser reads
+# it. That is what makes a scan a quote could fool acceptable here, and each
+# one answers the cautious way on a doubt: a `guess` rather than a `certain`
+# fix, an interpolated literal read as a line that may stand alone.
+
+use token
+use keywords
+use bytes
+use foreign_at
+
+# Does the line from `from` bind or mutate: a lone `=` or an `@` outside
+# brackets?
+function holds_a_binding(text: str, from: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ from
+    quote: u8 @ 0
+
+    while i < text.len() && text[i] != '\n'
+        b = text[i]
+
+        if quote != 0
+            if b == '\\'
+                i @ i + 1
+            else if b == quote
+                quote @ 0
+        else if b == '#'
+            return false
+        else if b == '"' || b == '\''
+            quote @ b
+        else if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if (b == ')' || b == ']' || b == '}') && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && (b == '@' || b == '=' && lone_eq(text, at: i))
+            return true
+        i @ i + 1
+
+    return false
+
+# Does the line from `from` hold an arm's `=>` outside brackets?
+function holds_an_arrow(text: str, from: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ from
+    quote: u8 @ 0
+
+    while i + 1 < text.len() && text[i] != '\n'
+        b = text[i]
+
+        if quote != 0
+            if b == '\\'
+                i @ i + 1
+            else if b == quote
+                quote @ 0
+        else if b == '#'
+            return false
+        else if b == '"' || b == '\''
+            quote @ b
+        else if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if (b == ')' || b == ']' || b == '}') && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && b == '=' && text[i + 1] == '>'
+            return true
+        i @ i + 1
+
+    return false
+
+# Does nothing but spaces and a comment follow `from` on its line, and the
+# next line with words hold an arm's `=>`? Then a `-` before `from` signs the
+# pattern of an arm broken after its sign, `-` over `1 => 10` (defect 126):
+# the line that ends with it is refused as one that cannot end, and it is
+# never a subtraction going on with the arm above.
+function arrow_below(text: str, from: i64) -> bool
+    i: i64 @ past_the_line(text, from: past_blanks(text, from: from))
+
+    while i < text.len() && text[i] == '\n'
+        i @ past_blanks(text, from: i + 1)
+
+        if i < text.len() && text[i] != '\n' && text[i] != '#'
+            return holds_an_arrow(text, from: i)
+        i @ past_the_line(text, from: i)
+
+    return false
+
+# `from`, past spaces and carriage returns.
+function past_blanks(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\r')
+        i @ i + 1
+
+    return i
+
+# `from` past a comment to its line end; any other byte stays where it is.
+function past_the_line(text: str, from: i64) -> i64
+    if from >= text.len() || text[from] != '#'
+        return from
+    i: i64 @ from
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    return i
+
+# Could the line from `from`, read alone, be a statement of its own: a call,
+# a control form, a binding, a hole? Then the join may be the wrong repair.
+# Yes on any doubt, an interpolated literal included, whose holes hold quotes
+# this scan cannot follow.
+function stands_alone(text: str, from: i64) -> bool
+    first = keywords.keyword(word_at(text, at: from))
+
+    if !first.is_err() && (first.must() == .kw_if || first.must() == .kw_match)
+        return true
+    depth: i64 @ 0
+    i: i64 @ from
+    quote: u8 @ 0
+    last: u8 @ 0
+    called: bool @ false
+
+    while i < text.len() && text[i] != '\n' && (quote != 0 || text[i] != '#')
+        b = text[i]
+
+        if quote != 0
+            if b == '\\'
+                i @ i + 1
+            else if b == quote
+                quote @ 0
+        else if b == 'f' && i + 1 < text.len() && text[i + 1] == '"'
+            return true
+        else if b == '"' || b == '\''
+            quote @ b
+        else if b == '('
+            if depth == 0
+                called @ last != 0 && (bytes.is_alnum(last) || last == '_' || last == ')' || last == ']' || last == '?')
+            depth @ depth + 1
+        else if b == '[' || b == '{'
+            depth @ depth + 1
+        else if (b == ')' || b == ']' || b == '}') && depth > 0
+            depth @ depth - 1
+        else if depth == 0 && (b == '@' || b == '=' && lone_eq(text, at: i))
+            return true
+
+        if b != ' ' && b != '\r'
+            last @ b
+        i @ i + 1
+
+    return quote != 0 || (last == ')' || last == '?') && called || only_a_hole(text.slice(from: from, to: i))
+
+# `???` and nothing else but spaces.
+function only_a_hole(line: str) -> bool
+    start: i64 @ 0
+    end: i64 @ line.len()
+
+    while start < end && line[start] == ' '
+        start @ start + 1
+
+    while end > start && (line[end - 1] == ' ' || line[end - 1] == '\r')
+        end @ end - 1
+
+    return line.slice(from: start, to: end) == "???"
+
+# `=` alone, not a byte of `==`, `!=`, `<=`, `>=` or `=>`.
+function lone_eq(text: str, at: i64) -> bool
+    before: u8 @ 0
+
+    if at > 0
+        before @ text[at - 1]
+    after: u8 @ 0
+
+    if at + 1 < text.len()
+        after @ text[at + 1]
+    return before != '=' && before != '!' && before != '<' && before != '>' && after != '=' && after != '>'
+
+function word_at(text: str, at: i64) -> str
+    end: i64 @ at
+
+    while end < text.len() && (bytes.is_alnum(text[end]) || text[end] == '_')
+        end @ end + 1
+
+    return text.slice(from: at, to: end)
+
+# The keyword the line at `at` opens with: its first word's, or, for a word
+# the lexer refuses as foreign, the first word its certain swap writes, which
+# is how the parser reads it (`parse/swap_reading`). So `const B: i64` opens
+# its line as `constant B: i64` does, and `import geom` as `use geom`, where
+# either went on with an open line above it and was refused under another
+# code once `check --apply` wrote the swap (defect 132's class, lane 133's
+# finding). A hint or guidance names no word, and `int`'s swap is a name.
+function opening_keyword(text: str, at: i64) -> token.TokenKind?
+    word = word_at(text, at: at)
+    own = keywords.keyword(word)
+
+    if !own.is_err()
+        return own
+    swap = foreign_at.certain_swap(text, token.Span(start: at, end: at + word.len()))
+
+    if swap.is_err()
+        return own
+    return keywords.keyword(word_at(swap.must(), at: 0))
+
+# A word that begins a declaration or a statement and can continue nothing:
+# a line that begins with one is never the rest of the line above it.
+function starts_afresh(kind: token.TokenKind) -> bool
+    return match kind
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_test | .kw_extern | .kw_use => true
+        .kw_return | .kw_break | .kw_continue | .kw_assert | .kw_for | .kw_while | .kw_else      => true
+        .kw_match | .kw_if | .kw_in | .kw_nullptr | .kw_true | .kw_false | .kw_fail              => false
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                       => false
+        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe          => false
+        .hole | .question | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace        => false
+        .plus | .minus | .star | .slash | .percent                                               => false
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                                => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                         => false
+        .comment | .terminator | .indent | .dedent | .eof | .error                               => false
+
+test "the next line may stand alone when it calls, binds, holds a control form or a hole"
+    assert stands_alone("show(n: a)\n", from: 0)
+    assert stands_alone("xs.len()\n", from: 0)
+    assert stands_alone("show (n: a)  # note\n", from: 0)
+    assert stands_alone("f(x)?\n", from: 0)
+    assert stands_alone("if c\n", from: 0)
+    assert stands_alone("x = 1\n", from: 0)
+    assert stands_alone("???\n", from: 0)
+    assert stands_alone("f\"{a}\"\n", from: 0)
+    assert !stands_alone("1\n", from: 0)
+    assert !stands_alone("b && c\n", from: 0)
+    assert !stands_alone("(1 + 2)\n", from: 0)
+    assert !stands_alone("x == \")\"\n", from: 0)
+    assert !stands_alone("5  # (a note)\n", from: 0)
+
+test "an arm's arrow is found outside brackets and strings only"
+    assert holds_an_arrow("- 1 => \"one\"\n", from: 0)
+    assert !holds_an_arrow("- f(a => b)\n", from: 0)
+    assert !holds_an_arrow("- \"=>\"\n", from: 0)
+    assert !holds_an_arrow("- fee  # => note\n", from: 0)
+
+test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
+    assert arrow_below("-\n        1 => 10\n", from: 1)
+    assert arrow_below("-  # the sign\n        1 => 10\n", from: 1)
+    assert arrow_below("-\r\n        1 => 10\r\n", from: 1)
+    assert arrow_below("-\n\n        # a note\n        1 => 10\n", from: 1)
+    assert !arrow_below("- 1 => 10\n", from: 1)
+    assert !arrow_below("-\n        fee\n", from: 1)
+    assert !arrow_below("-\n        f(a => b)\n", from: 1)
+    assert !arrow_below("-", from: 1)

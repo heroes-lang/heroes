@@ -1,0 +1,12 @@
+# The decoy half of the R5 fixture: `lib/util.hero` exists here, so compiling
+# `lib/leaf.hero` directly resolves `use util` to it and checks clean — a
+# program legal under both bases, whose meaning depends on which file you
+# compile. `main.hero` reads the root's `util` (3); the leaf, compiled alone,
+# reads `lib/util` (4). This is the shape panel 099's ergonomist built and the
+# rule the sitting adopted knowing it; the row that pins it says so.
+use util
+use lib/leaf
+
+function main()
+    print(util.scale())
+    print(leaf.scaled())

@@ -1,0 +1,48 @@
+# The 10% that pay a copy, recorded with the claim that can retire it
+# (panel 058 condition 5, ratified 2026-08-15).
+#
+# `putenv(char *string)` does not write through its argument — it **retains** it,
+# and POSIX says the string becomes part of the environment. That is why the
+# diagnostic says *"C does not promise to leave it alone"* and not *"C would write
+# through it"*: the first wording was measured wrong on `free`, which deallocates,
+# and `putenv` is the second witness. The header declares a permission; only the
+# header knows which one is exercised. Heroes refuses the `cstr` spelling either
+# way, and this file records what that costs rather than claiming it costs nothing.
+#
+# THE MEASURED CLAIM, and it is falsifiable: of 186 plain `char *` parameters
+# across 17 headers, **159 (85%) genuinely write** and only **18 (10%)** are the
+# legacy const-incorrect class that pays a copy it does not need — ncurses'
+# five terminfo entry points, seven in OpenSSL, `cget*`, `rl_expand_prompt`.
+# The refusal is worth its cost at that ratio.
+#
+# WHAT RETIRES IT: measure the same ratio on a header a real Heroes program
+# binds. Above roughly 25% read-only, the refusal is costing more than it buys
+# and panel 058's resolution reopens on its own terms. Below, it stands.
+#
+# The repair is never "add `const`" — that is the header's to choose, not this
+# program's. It is `ptr` with a buffer C owns.
+#
+# **THE WITNESS IS `strtok` AND NOT `putenv`, and the swap is a fixed defect**
+# (2026-08-15). `putenv` was the case's only line, and `putenv` is POSIX: the MSVC
+# CRT spells it `_putenv` and takes `const char *`, so on the Windows leg this
+# refusal fired **nowhere** — and since this was the diagnostic's only case in the
+# corpus, `ffi_writable_parameter` had zero coverage on a third of CI without
+# anything going red about *that*. A check with no witness is worse than a check
+# that fails.
+#
+# `strtok(char *s1, const char *s2)` is **C11 §7.24.5.8** — the standard mandates
+# the unqualified `char *`, so every conforming implementation declares it that
+# way and the refusal cannot go quiet on a platform. That is the property being
+# bought, and it is deliberately independent of what any one libc does: the repair
+# does not rest on a claim about MSVC, it rests on the standard.
+#
+# `putenv` stays in the paragraphs above because it is what panel 058 measured and
+# why the message says *"does not promise to leave it alone"* rather than *"would
+# write through it"*. The record keeps the witness that taught the lesson; the test
+# uses the one that fires everywhere.
+
+extern "string.h"
+    function strtok(s1: cstr lent, s2: cstr lent) -> cstr  #~ ffi_writable_parameter
+
+function main()
+    print(strtok(s1: "a,b".cstr(), s2: ",".cstr()) == nullptr)

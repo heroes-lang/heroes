@@ -1,0 +1,8 @@
+extern "r1.h"
+    function fill_out(@out: cstr owned free_out)
+    function free_out(p: cstr)
+
+function main()
+    s: str? @ fail(code: "none", msg: "nothing yet")
+    fill_out(out: @s)
+    print("after")

@@ -1,0 +1,29 @@
+# `borrows` — the call hands back a handle it KEEPS, so the program owes nothing
+# for it (panel 148 R5, M-marked-acquisition).
+#
+# **This is the case that makes the other two words honest.** Twelve of the
+# nineteen real headers panel 148's ffi seat opened declare both a releaser for
+# a type and a function handing back a borrowed instance of that same type —
+# `sqlite3_next_stmt`, `cairo_get_target`, `SSL_get0_peer_certificate` beside
+# `SSL_get1_peer_certificate`, adjacent lines and identical to clang. Without a
+# word for the borrow, a binding author faced with one has two choices and both
+# are wrong: say `acquires` and the program is made to give back what was never
+# its own, or say nothing and the completeness rule refuses a correct binding.
+#
+# Below, `slot_open` and `slot_peek` return the same type with opposite
+# obligations, and the count stays balanced with ONE `slot_close` for the one
+# handle that was actually handed over.
+
+extern "ffi-borrows-owes-nothing.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_peek() -> Slot borrows
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    mine = slot_open(n: 3)
+    theirs = slot_peek()
+    print(slot_value(s: mine) + slot_value(s: theirs))
+    slot_close(mine)
+    print("the borrowed one was not given back")

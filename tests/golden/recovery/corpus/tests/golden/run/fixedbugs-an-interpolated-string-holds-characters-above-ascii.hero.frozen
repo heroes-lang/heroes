@@ -1,0 +1,35 @@
+# Defect 110, 2026-09-27: `print(f"é {x}")` passed `heroes check` and
+# aborted the compiler at `build` with `panic: string slice splits a
+# character`. `lex_interp.piece_text` decoded a piece of an interpolated
+# string by slicing it one byte at a time, and the first byte of `é` is
+# half a character. It cuts the text beside its doubled braces now, which
+# are one byte each and never inside another character. Here are characters
+# of two, three and four bytes before, after and between holes, beside
+# escapes and doubled braces, in a nested literal, in a function's result
+# and in a map's keys; the output must carry every one of them byte for
+# byte.
+
+function label(n: i64) -> str
+    return f"«{n}»"
+
+function main()
+    x = 7
+    word = "mot"
+    print(f"é {x}")
+    print(f"{x} é")
+    print(f"a{x}é{word}€{x}😀")
+    print(f"€ {x} € {x} €")
+    print(f"😀{x}😀")
+    print(f"\té\t{x}\\€\\")
+    print(f"\"é\" {x} \"€\"")
+    print(f"{{é}} {x} {{€}}")
+    print(f"é{{{x}}}é")
+    print(f"{x}{x}ü")
+    print(f"ñ{label(x)}ñ")
+    print(f"{f"ø{x}ø"} and {"å"}")
+    m: {str: i64} @ {}
+    m[f"clé{x}"] @ 1
+    m[f"ключ{x}"] @ 2
+    print(f"{m[f"clé{x}"].must()} {m[f"ключ{x}"].must()}")
+    print(f"日本語 {word} 中文")
+    print(f"é €")

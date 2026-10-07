@@ -1,0 +1,23 @@
+# Bulk regression case (assistant-written): the legal side of the pointee
+# check, on two real headers and three platforms (M-robustness-guards step 3,
+# panel 103). `frexp(double, int *)` takes `@e: i32`, the header's own width and
+# sign; `time(time_t *)` takes `@t: i64`, which is `long *` on the Mac and
+# Linux and `__int64 *` on Windows — the same 8 bytes and the same sign on all
+# three, and two different C types on the first two, which is exactly why the
+# emitter hands C `(void *)&t` after the compiler has checked it and not a
+# typed pointer for clang to compare by name. Under the strict flag without
+# that cast this program would be refused on macOS alone.
+extern "math.h"
+    function frexp(x: f64, @e: i32) -> f64
+
+extern "time.h"
+    function time(@t: i64) -> i64
+
+function main()
+    e: i32 @ 0
+    m = frexp(8.0, @e)
+    print(m)
+    print(e)
+    t: i64 @ 0
+    _ = time(@t)
+    print(t > 0)

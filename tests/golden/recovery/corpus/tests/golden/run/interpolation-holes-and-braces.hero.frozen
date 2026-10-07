@@ -1,0 +1,20 @@
+# M-interpolated-strings, panel 121 (ratified 2026-09-09): the form as a reader
+# writes it. A hole admits any expression (R1) — a name, a sum, a method call,
+# a map index made whole with `.must()`, a nested `f"…"`, a float, a `bool`, a
+# character (which is an integer, §4.3). `{{` writes one brace, and a `}` in
+# the text is text: this is the brace-run case the historian at panel 121
+# predicted would reach `DEFECTS.md` unless the spec stated the scan, and it is
+# pinned here instead. A plain `f"…"` with no hole and an empty one are legal.
+
+function main()
+    n = 3
+    word = "stars"
+    print(f"line {n}: {word}")
+    print(f"{n + 1} and {{braces}} and {word.len()}")
+    print(f"plain")
+    print(f"")
+    m: {str: i64} @ {"k": 7}
+    print(f"map {m["k"].must()} and nested {f"in {n}"}")
+    x = 2.5
+    flag = true
+    print(f"{x} {flag} {'a'}")

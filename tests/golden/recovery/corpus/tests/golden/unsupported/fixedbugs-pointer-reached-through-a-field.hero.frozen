@@ -1,0 +1,40 @@
+# **Symptom** (2026-08-16, panel 068, found by the ffi-pragmatist while judging
+# something else): a `ptr` or `cstr` reached **through a record field** — where
+# the record is a MAP KEY — passed `heroes check` at exit 0 and aborted at 134,
+# `panic: entered unreachable code — this is a compiler bug`. The generated
+# `_hash` said it plainly: `h = (h ^ (hero_unreachable(), UINT64_C(0))) * …`.
+#
+# **Cause**: panel 067's fix covered six shapes with the pointer as the DIRECT
+# element (`[ptr]`, `{i64: ptr}`, `{ptr: i64}` and their `cstr` twins), and
+# `check_element` asks about the element's own type. A record reaching one walks
+# straight past. CLAUDE.md §11's shape, and the third time in this file's
+# history: its own doc already reads *"panel 029 filed three types; the fix
+# covered one."*
+#
+# **Fix**: the gate walks transitively — fields, variant-case payloads, and
+# through `[T]`, `{K: V}` and `T?` — the shape `types/partial.rs` already uses
+# for the same class of question.
+#
+# **Only the key position, and that is measured rather than assumed.** The same
+# record is fine as a map VALUE and as an array element (both exit 0 today),
+# because `hash` is called only for a key. Refusing those would break programs
+# that work — so the walk runs where the hash is generated and nowhere else.
+#
+# **One shape per file**, because the build stops at the first refusal and a
+# second one below it would never be reached — the F8 lesson from panel 067,
+# where a case carried three lines that proved nothing for months. The
+# variant-case-payload route, which a per-shape list would have missed, is
+# `fixedbugs-pointer-reached-through-a-payload.hero`.
+
+extern "stdlib.h"
+    function malloc(size: u64) -> ptr
+
+record Slot
+    p: ptr
+    n: i64
+
+function main()
+    s = Slot(p: malloc(size: 8), n: 1)
+    by_slot: {Slot: i64} @ {}      #~ pointer_element
+    by_slot[s] @ 5
+    print(len(by_slot))

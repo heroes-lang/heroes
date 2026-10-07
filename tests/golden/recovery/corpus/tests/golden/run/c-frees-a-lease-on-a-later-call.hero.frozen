@@ -1,0 +1,17 @@
+# Defect 070's sixth shape (panel 172's completeness critic, 2026-09-21): C
+# stashes the lease and frees it on a later call with no pointer parameter.
+# `later_free()` has nowhere to write `lent`, `consumes` or any word, so no
+# rule on a declaration reaches this program; the runtime does, because the
+# lease is live when the allocator kills the process.
+
+extern "c-frees-a-lease-on-a-later-call.h"
+    function stash(s: cstr)
+    function later_free()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    stash(s: c)
+    print(3)
+    later_free()
+    end_lease(@c)

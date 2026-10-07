@@ -1,0 +1,336 @@
+# One mutant of the frozen plan, planted and judged by a compiler run as a
+# child: the recovery arm's verdict on a single and on a pair (panel 187's
+# R2, defect 210).
+#
+# Each rule is `replay.py`'s, the instrument the gate ran until this port,
+# so a record written here is the record it wrote:
+#
+# - a mutant is written beside its original in the run's mirror of the
+#   corpus, so its `use` lines resolve as the original's do, under a name
+#   its key alone decides (`zzm_<key>.hero`, `zzp_<a>_<b>.hero`), so two
+#   runs of two compilers name it alike and their messages compare word
+#   for word (the Python's held its process and thread ids);
+# - the normal arm is `check --json`, the control arm `check --permissive
+#   --json`, and a message is read from the document on stderr;
+# - one message within the site is ONE, outside it ELSEWHERE, more EXTRA;
+#   none is LEGAL where the plan's base says LEGAL, else SILENT; an exit
+#   other than 0 or 1, or an internal error, INTERNAL;
+# - where the normal arm told something, `check --apply` prints the program
+#   with every certain fix applied, and a code of the mutant's own that
+#   stands in what it printed is APPLY-SAME;
+# - a pair's second is told `hidden` where no message falls on its site,
+#   `same` where the codes there are its codes alone, `other` otherwise.
+#
+# **The child runs where this process stands, and the mirror's path is
+# taken off every text it tells.** The runtime starts a program in the
+# caller's directory and has no other (`hero_os.h`), where the Python ran
+# each check inside the tree; a message names the file as it was given, so
+# `<mirror>/` is removed from each, and the record reads as the Python's.
+
+use bytes
+use cli/process
+use mutate/child
+use mutate/json_fields
+use mutate/json_read
+
+# One message, its fields as the child wrote them.
+record Message
+    file: json_read.Json
+    line: json_read.Json
+    col: json_read.Json
+    code: json_read.Json
+    msg: json_read.Json
+
+# One arm's answer: the exit, the messages, and stderr's other lines.
+record Arm
+    exit: i64
+    messages: [Message]
+    other: [str]
+    # `<code>\t<line>` of each message that carries a `certain` fix: what
+    # `--apply` applies, which `mutate/applied.hero` asks after.
+    certain: [str]
+
+# Where a run judges: the compiler, the mirror, and this worker's captures.
+record Place
+    compiler: str
+    mirror: str
+    capture: str
+
+# A planted file: written into the mirror, and removed once judged, so the
+# mirror holds the corpus and, while a check runs, what that check reads.
+function plant(at: Place, rel: str, text: str) -> ()?
+    if write_file(path: at.mirror + "/" + rel, text: text).is_err()
+        return fail(code: "unwritable", msg: "cannot write " + at.mirror + "/" + rel)
+    return ok()
+
+function uproot(at: Place, rel: str) -> ()?
+    return process.remove_file(at.mirror + "/" + rel)
+
+# Check `rel` (a path inside the mirror) in one arm.
+function checked(at: Place, rel: str, permissive: bool) -> Arm?
+    words: [str] @ [at.compiler, "check"]
+
+    if permissive
+        words @ words.push("--permissive")
+    words @ words.push("--json")
+    words @ words.push(at.mirror + "/" + rel)
+    answer = child.bounded(program: at.compiler, words: words, capture: at.capture)?
+    return ok(read_arm(answer, prefix: at.mirror + "/"))
+
+# `check --apply` on `rel`: the program with every certain fix applied, on
+# its stdout.
+function child_apply(at: Place, rel: str) -> child.Answer?
+    return child.bounded(
+        program: at.compiler,
+        words: [at.compiler, "check", "--apply", at.mirror + "/" + rel],
+        capture: at.capture
+    )
+
+# A child's answer read as `replay.py`'s `diags_of` reads it: the document
+# from stderr's first `{`, every other non-blank line apart; where no
+# document parses, no message and every line apart.
+function read_arm(answer: child.Answer, prefix: str) -> Arm
+    err = without(text: answer.err, prefix: prefix)
+    none: [Message] = []
+    at = first_brace(err)
+
+    if at < 0
+        return Arm(exit: answer.exit, messages: none, other: told_lines(err), certain: [])
+    document = json_read.read_json(err.slice(from: at, to: err.len()))
+
+    if document.is_err()
+        return Arm(exit: answer.exit, messages: none, other: told_lines(err), certain: [])
+    out: [Message] @ []
+    certain: [str] @ []
+    no_fixes: [json_read.Json] = []
+
+    for d in json_fields.items_field(document.must(), name: "diagnostics").default(no_fixes)
+        m = Message(
+            file: absent_null(d, name: "file"),
+            line: absent_null(d, name: "line"),
+            col: absent_null(d, name: "col"),
+            code: absent_null(d, name: "code"),
+            msg: absent_null(d, name: "message")
+        )
+        out @ out.push(m)
+
+        for fix in json_fields.items_field(d, name: "fixes").default(no_fixes)
+            if json_fields.text_field(fix, name: "certainty").default("") == "certain"
+                certain @ certain.push(code_of(m) + "\t" + line_of(m).to_str())
+                break
+
+    return Arm(exit: answer.exit, messages: out, other: told_lines(err.slice(from: 0, to: at)), certain: certain)
+
+# A field's value, or `null` where it is absent, as Python's `dict.get`.
+function absent_null(d: json_read.Json, name: str) -> json_read.Json
+    return json_fields.field(d, name: name).default(.null_value)
+
+function first_brace(text: str) -> i64
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == '{'
+            return at
+        at @ at + 1
+
+    return -1
+
+# The lines of `text` that hold more than whitespace.
+function told_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == 10
+            line = text.slice(from: start, to: at)
+
+            if !blank(line)
+                out @ out.push(without_return(line))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+function without_return(line: str) -> str
+    if line.len() > 0 && line[line.len() - 1] == 13
+        return line.slice(from: 0, to: line.len() - 1)
+    return line
+
+# Asked a byte at a time, as `json_read.blank` is, for the same cost.
+function blank(line: str) -> bool
+    return json_read.blank(line)
+
+# `text` with every occurrence of `prefix` taken out, read left to right.
+function without(text: str, prefix: str) -> str
+    if prefix.len() == 0
+        return text
+    parts: [str] @ []
+    plain: i64 @ 0
+    at: i64 @ 0
+
+    while at + prefix.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: prefix)
+            parts @ parts.push(text.slice(from: plain, to: at))
+            at @ at + prefix.len()
+            plain @ at
+        else
+            at @ at + 1
+
+    if plain == 0
+        return text
+    parts @ parts.push(text.slice(from: plain, to: text.len()))
+    return parts.join("")
+
+# A message's line, or -1 where it wrote none: a message with no line is
+# within no site, the loud reading (it counts ELSEWHERE, never ONE).
+function line_of(m: Message) -> i64
+    return json_fields.whole_of(m.line).default(-1)
+
+function code_of(m: Message) -> str
+    return json_fields.text_of(m.code).default("")
+
+# The arm's class (`replay.py`'s `klass`).
+function class_of(arm: Arm, internal: bool, site: [i64], legal: bool) -> str
+    if arm.exit != 0 && arm.exit != 1 || internal
+        return "INTERNAL"
+
+    if arm.messages.len() == 0
+        if legal
+            return "LEGAL"
+        return "SILENT"
+
+    if arm.messages.len() > 1
+        return "EXTRA"
+
+    if site.len() > 0 && site[0] <= line_of(arm.messages[0]) && line_of(arm.messages[0]) <= site[site.len() - 1]
+        return "ONE"
+    return "ELSEWHERE"
+
+# Whether the normal arm tells an internal error, or ended as a check
+# never does.
+function internal_in(normal: Arm) -> bool
+    if normal.exit != 0 && normal.exit != 1
+        return true
+
+    for m in normal.messages
+        if contains(text: json_fields.text_of(m.msg).default(""), needle: "internal error")
+            return true
+
+    return false
+
+# Asked a byte at a time (`bytes.bytes_at`): a message holding a character
+# above ASCII must not split it (defect 296's shape).
+function contains(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return true
+        at @ at + 1
+
+    return false
+
+# The codes of an arm's messages whose line is in `site`'s span, sorted,
+# each once (`replay.py`'s `alone_codes` and a pair's `_b_codes`).
+function codes_within(arm: Arm, site: [i64]) -> [str]
+    seen: {str: bool} @ {}
+    none: [str] = []
+
+    if site.len() == 0
+        return none
+
+    for m in arm.messages
+        line = line_of(m)
+
+        if site[0] <= line && line <= site[site.len() - 1]
+            seen[code_of(m)] @ true
+
+    # ORDER: codes ascending by bytes, which is Python's `sorted` on ASCII codes.
+    return sort(keys(seen))
+
+# Every code of an arm's messages, each once.
+function codes_of(arm: Arm) -> {str: bool}
+    out: {str: bool} @ {}
+
+    for m in arm.messages
+        out[code_of(m)] @ true
+
+    return out
+
+# A pair's second, as told now against as told alone.
+function told(now: [str], alone: [str]) -> str
+    if now.len() == 0
+        return "hidden"
+
+    if now == alone
+        return "same"
+    return "other"
+
+## The record's own shapes
+
+function message_json(m: Message) -> json_read.Json
+    return .fields(
+        names: ["file", "line", "col", "kind", "code", "msg"],
+        values: [m.file, m.line, m.col, json_fields.string("error"), m.code, m.msg]
+    )
+
+function arm_json(arm: Arm) -> json_read.Json
+    messages: [json_read.Json] @ []
+
+    for m in arm.messages
+        messages @ messages.push(message_json(m))
+
+    return .fields(
+        names: ["exit", "diags", "other"],
+        values: [json_fields.whole(arm.exit), .items(all: messages), json_fields.strings(arm.other)]
+    )
+
+## Tests
+
+test "a child's document is read from its first brace, and the mirror's path leaves every text"
+    err = "{\"diagnostics\": [{\"code\": \"c1\", \"message\": \"in m/x/a.hero\", \"file\": \"m/x/a.hero\", \"line\": 3, \"col\": 2}]}"
+    arm = read_arm(child.Answer(exit: 1, out: "", err: err), prefix: "m/")
+    assert arm.messages.len() == 1
+    assert arm.messages[0].file == .text(v: "x/a.hero")
+    assert arm.messages[0].msg == .text(v: "in x/a.hero")
+    assert line_of(arm.messages[0]) == 3
+    assert arm.other.len() == 0
+    assert json_fields.written(arm_json(arm)) == "{\"exit\": 1, \"diags\": [{\"file\": \"x/a.hero\", \"line\": 3, \"col\": 2, \"kind\": \"error\", \"code\": \"c1\", \"msg\": \"in x/a.hero\"}], \"other\": []}"
+
+test "a stderr with no document is no message and every line apart"
+    arm = read_arm(child.Answer(exit: 2, out: "", err: "error: one\n\n  two {x\n"), prefix: "m/")
+    assert arm.messages.len() == 0
+    assert arm.other == ["error: one", "  two {x"]
+    assert read_arm(child.Answer(exit: -9, out: "", err: "timeout"), prefix: "m/").other == ["timeout"]
+
+test "the classes are replay.py's"
+    one = Message(
+        file: .null_value,
+        line: .number(written: "5"),
+        col: .null_value,
+        code: .text(v: "c"),
+        msg: .null_value
+    )
+    none: [Message] = []
+    assert class_of(Arm(exit: 1, messages: [one], other: [], certain: []), internal: false, site: [4, 6], legal: false) == "ONE"
+    assert class_of(Arm(exit: 1, messages: [one], other: [], certain: []), internal: false, site: [6, 7], legal: false) == "ELSEWHERE"
+    assert class_of(Arm(exit: 1, messages: [one, one], other: [], certain: []), internal: false, site: [5], legal: false) == "EXTRA"
+    assert class_of(Arm(exit: 0, messages: none, other: [], certain: []), internal: false, site: [5], legal: true) == "LEGAL"
+    assert class_of(Arm(exit: 0, messages: none, other: [], certain: []), internal: false, site: [5], legal: false) == "SILENT"
+    assert class_of(Arm(exit: 2, messages: none, other: [], certain: []), internal: false, site: [5], legal: false) == "INTERNAL"
+    assert class_of(Arm(exit: 1, messages: [one], other: [], certain: []), internal: true, site: [5], legal: false) == "INTERNAL"
+
+test "a second is hidden, the same, or told otherwise"
+    assert told(now: [], alone: ["a"]) == "hidden"
+    assert told(now: ["a"], alone: ["a"]) == "same"
+    assert told(now: ["a", "b"], alone: ["a"]) == "other"
+    assert without(text: "abcabc", prefix: "bc") == "aa"
+    assert without(text: "abc", prefix: "") == "abc"
+
+    # A character above ASCII is passed over whole, wherever the prefix
+    # would end inside it.
+    assert without(text: "é/m/xé", prefix: "/m/") == "éxé"
+    assert without(text: "a/é", prefix: "/éé") == "a/é"
+    assert contains(text: "an é internal error", needle: "internal error")
+    assert !contains(text: "é", needle: "ab")

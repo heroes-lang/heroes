@@ -1,0 +1,40 @@
+# A comment after a `.`, between a value and the name after it (62 of the 71
+# positions the second skeptic seat's bracket-break generator found over
+# e0e08d18): the printer opened the value's base and left the comment to the
+# next walk, refused at exit 2, where the trunk moved it at exit 0. The
+# one-line text breaks after the `.` now, the name going on four columns in:
+# after a method's, a field's, a variant case's, and a method's whose
+# arguments hold a comment too, the bracket opening from there. And a name
+# with a `(` on the next line of a list, which is no call: the lexer ends
+# the element there (§4.9), and the `(` was read as the call's.
+
+record P
+    x: i64
+
+variant Shape
+    circle
+        r: i64
+    empty
+
+function g(n: i64) -> i64
+    return n
+
+function f(t: [i64], p: P) -> i64
+    a = g(t.  # after a method's dot
+        len())
+    b = g(p.  # after a field's dot
+        x)
+    c = g(t.  # after the dot, with arguments
+        slice(  # and inside them
+            from: 0,
+            to: 1).len())
+    s: [Shape] = [.  # after a case's dot
+        circle(r: 1)]
+    return a + b + c + s.len()
+
+function l(n: i64) -> [i64]
+    return [n  # a name, and a list's next element
+        (1)]
+
+function main()
+    print(f(t: [1, 2], p: P(x: 3)) + l(n: 2).len())

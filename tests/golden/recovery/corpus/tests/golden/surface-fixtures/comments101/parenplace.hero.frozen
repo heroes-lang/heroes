@@ -1,0 +1,20 @@
+# A comment inside the author's parentheses around a mutated place (the
+# third skeptic seat's `pl1`, and 43 variants in the arms of
+# `examples/logs` and `examples/ledger`): the place's text stopped at its
+# name, the comment after it was outside, and `fmt` refused at exit 2. A
+# place begins and ends at its parentheses now, on a line and in a match
+# arm.
+
+function f(a: i64) -> i64
+    x: i64 @ 0
+    (x  # after the place
+    ) @ a
+
+    match a
+        0 => (x  # in an arm
+        ) @ 1
+        _ => x @ 2
+    return x
+
+function main()
+    print(f(a: 1))

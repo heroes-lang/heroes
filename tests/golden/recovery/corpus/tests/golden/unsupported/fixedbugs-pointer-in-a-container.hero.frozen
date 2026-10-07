@@ -1,0 +1,37 @@
+# **Symptom** (2026-08-16, panel 067, found by the ffi-pragmatist while
+# answering a different question): all six of these passed `heroes check` at
+# **exit 0** and then aborted at **exit 134** — `panic: entered unreachable
+# code — this is a compiler bug`. A correct program, compiled clean, crashing.
+#
+# **Cause**: `emit/descriptors.rs::pointer` answers `None` for `ptr` and `cstr`
+# — the runtime ships no descriptor row for a value that is an address the
+# program does not own — and `emit/gate_types.rs` let both past. The gate's own
+# doc claimed the opposite in so many words: *"an `[[ptr]]` is refused for its
+# `ptr` and says so once"*. A premise about the world, expired in silence, with
+# the comment still reading as correct (CLAUDE.md §11). Panel 029 filed three
+# types; the fix covered one.
+#
+# **Fix**: the gate refuses both, in every container position, at exit 1 with a
+# reason. It is a refusal and not a feature — the runtime *could* grow the two
+# descriptors, and that is a panel question with an ABI bump in it.
+#
+# **This case exists because the old one could not see it.** Its sibling,
+# `fixedbugs-container-element-reached-clang.hero`, carries `[ptr]`,
+# `{str: ptr}` and `[[ptr]]` — and its `[()]` line fires first and stops the
+# build, so those three lines were never reached (panel 067 F8). §9's annotation
+# invariant proves where a diagnostic points; it cannot prove that the lines
+# after the first firing one ran. So the six shapes get a file with **no `()`
+# in it**.
+#
+# (This comment says "annotation" rather than writing the marker out: the
+# golden harness scans every line for it, so quoting it in prose invents a
+# diagnostic code made of one backtick — measured, 2026-08-16.)
+
+function main()
+    handles: [ptr] @ []            #~ pointer_element
+    names: [cstr] @ []             #~ pointer_element
+    by_id: {i64: ptr} @ {}         #~ pointer_element
+    texts: {i64: cstr} @ {}        #~ pointer_element
+    tagged: {ptr: i64} @ {}        #~ pointer_element
+    counted: {cstr: i64} @ {}      #~ pointer_element
+    print(len(handles), len(names), len(by_id), len(texts), len(tagged), len(counted))

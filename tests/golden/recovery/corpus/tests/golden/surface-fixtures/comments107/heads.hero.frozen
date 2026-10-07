@@ -1,0 +1,42 @@
+# Defect 107 in the value of a line that opens a block: the condition of an
+# `if`, an `else if` and a `while`, what a `for` walks and what a `match`
+# reads, and a condition wrapped whole in the author's parentheses. Printed
+# with the parentheses dropped, the line after the break stood four columns
+# past the head's, and the lexer read it as a block the head opened, one
+# level too deep (`indentation_jump`), exit 2. The group is a head printed
+# across lines, so its lines after the first go eight columns further in
+# (`print/margins.hero`), as every head's do.
+
+record Point
+    x: i64
+    y: i64
+
+function main()
+    xs = [1, 2, 3]
+    p = Point(x: 4, y: 5)
+
+    if (xs.  # an if
+        len()) > 0
+        print(1)
+    else if (p.  # an else if
+        x) > 0
+        print(2)
+
+    if (xs.  # the whole condition
+        len() > 2)
+        print(3)
+    i: i64 @ 0
+
+    while i < (p.  # a while
+        x)
+        i @ i + 1
+
+    for j in (xs.  # a for
+        slice(from: 0, to: 2))
+        print(j)
+
+    match (p.  # a match
+        y)
+        5 => print(5)
+        _ => print(0)
+    print(i)

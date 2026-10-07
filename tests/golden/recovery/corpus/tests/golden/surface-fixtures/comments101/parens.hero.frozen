@@ -1,0 +1,53 @@
+# A comment inside parentheses, which the tree does not keep: the first
+# repair of defect 101 refused each shape here at exit 2, the trunk moved
+# each at exit 0, and over this file the trunk is no fixpoint (exit 2).
+# §4.15 breaks a long expression inside parentheses, so `fmt` keeps them
+# where a comment needs them: after an operator, the operands of the chain
+# one per line; after the `(` and before the `)`; nested; inside a call's
+# argument, an array's element and a match arm; after a unary operator.
+# Parentheses around no comment are still dropped where they bind nothing.
+
+function f(a: i64, b: i64, c: i64) -> i64
+    x = (a +  # after a plus
+        b +  # after another
+        c)
+    y = (a +
+        # own line
+        b) * 2
+    z = (  # after the paren
+        a - (b -  # nested
+            c)
+        # before the close
+    )
+    w = ((a +  # inner
+        b) *  # outer
+        2)
+    v = (-  # a minus alone
+        a)
+    u = (1 +
+        2)
+    return x + y + z + w + v + u
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function h(a: i64) -> [i64]
+    x = g(
+        a: (a +  # in an argument
+            1),
+        b: 2
+    )
+    return [
+        (a *  # in an element
+            2),
+        x
+    ]
+
+function k(n: i64) -> i64
+    match n
+        0 => return (n +  # in a match arm
+            1)
+        _ => return 0
+
+function main()
+    print(f(a: 1, b: 2, c: 3) + h(1)[0] + k(0))

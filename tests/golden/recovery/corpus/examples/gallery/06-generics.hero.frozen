@@ -1,0 +1,56 @@
+## Generics, and functions as values
+#
+# Generics live on functions only, take no constraints, and are never
+# written at the call site — they are inferred or they are an error. A
+# top-level function is a value, and its type is written with the same word
+# that declares one.
+
+# The parentheses around a function type are mandatory: without them
+# `f: function(A) -> B -> [B]` would be a guessing game.
+function each<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
+    out: [B] @ []
+
+    for x in xs
+        out @ out.push(f(x))
+
+    return out
+
+function keep_if<A>(xs: [A], ok_for: (function(A) -> bool)) -> [A]
+    out: [A] @ []
+
+    for x in xs
+        if ok_for(x)
+            out @ out.push(x)
+
+    return out
+
+# Two type parameters, and the accumulator is the one that names the result.
+function combine<A, B>(xs: [A], start: B, step: (function(B, A) -> B)) -> B
+    total: B @ start
+
+    for x in xs
+        total @ step(total, x)
+
+    return total
+
+# The functions passed above are ordinary declarations. No lambdas exist.
+function double(n: i64) -> i64
+    return n * 2
+
+function is_positive(n: i64) -> bool
+    return n > 0
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function label(n: i64) -> str
+    return n.to_str()
+
+test "one generic, three element types"
+    assert each([1, 2, 3], double) == [2, 4, 6]
+    assert each([1, 2], label) == ["1", "2"]
+    assert keep_if([-1, 2, -3, 4], is_positive) == [2, 4]
+    assert combine([1, 2, 3, 4], 0, add) == 10
+
+function main()
+    print(combine([1, 2, 3, 4], 0, add))

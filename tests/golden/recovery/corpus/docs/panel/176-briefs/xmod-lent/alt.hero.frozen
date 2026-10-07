@@ -1,0 +1,6 @@
+extern "../i2.h"
+    function keep(s: cstr lent) -> i32
+
+function run()
+    x = "payload"
+    print(to_str(keep(s: x.cstr())))

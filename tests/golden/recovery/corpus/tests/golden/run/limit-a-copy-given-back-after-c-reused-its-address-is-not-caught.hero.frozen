@@ -1,0 +1,28 @@
+# A LIMIT, pinned at exit 0 so that it cannot move in silence: panel 177's item
+# 4, and the shape of defect 077's own title reached through a copy. `kept` is a
+# copy of `a` made before `a` was given back; C then hands the same address out
+# again as `b`, and `kept` is given back. The name `a` is refused at check if it
+# is read again, and a copy is stopped before C while its address is still
+# dead, but here C has handed the address out again, so the runtime cannot tell
+# the stale copy from the live `b`: the release ends `b`'s life, and nothing
+# says so. § 13 states it, *unless C has since handed its address out again*.
+#
+# A later read of `b` reaches C at an address that is now dead, and that is
+# stopped; this program never reads it. Under `--sanitize` the same program
+# still runs 0, because this allocator is the program's own static cell, which
+# ASan's quarantine does not see.
+
+extern "limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.h"
+    record Cell tag cell
+    function cell_open() -> Cell acquires cell_close
+    function cell_close(c: Cell consumes)
+    function cell_value(c: Cell) -> i64
+
+function main()
+    a = cell_open()
+    kept = a
+    cell_close(c: a)
+    b = cell_open()
+    print("the new cell reads ", cell_value(c: b))
+    cell_close(c: kept)
+    print("the stale copy was given back, and the new cell's life ended with it")

@@ -1,0 +1,43 @@
+# DEFECT 090: a use-after-free inside C, reached through a stale copy of a
+# handle, was reported as a null handle reaching C (panel 177's
+# ffi-pragmatist, 2026-09-24, over real OpenSSL; this is the shape in a header
+# of its own, so it fires on every platform).
+#
+# The program keeps a copy of a handle, gives the original back, and reads
+# through the copy. C cleanses the object to zero before freeing it, as
+# OpenSSL does, so the read lands on a null field inside freed memory: a fault
+# at a small offset, exactly where a null handle's fault would be. The runtime
+# said `a handle or `ptr` holding `nullptr` reached C`, one line under the
+# program's own `null: false`. Panel 173's rule for the lease line — it says
+# what it saw and not why — is the rule that line broke. It now says what it
+# saw, the offset and the frame, and names the two things that put a null
+# where C read it, one of which is this program.
+#
+# The object lives in a C pool and is cleansed rather than freed, because over
+# `malloc` the freed block was handed out again before the stale read on the
+# Linux and Windows legs and the case printed a heap address at exit 0 (the
+# header says so, with the measurement). Under `--sanitize` the runtime is
+# silent and ASan reports the fault itself, which the case's `!sanitizer:`
+# line pins with the words the three platforms share.
+#
+# **Refused one check earlier since 2026-09-25 (panel 177's item 2).** The
+# runtime now remembers the address `release` ended until C hands it out
+# again, and the pool never does, so the read through `kept` is stopped at
+# its crossing into `value`, plain and under `--sanitize` alike, and the
+# fault never happens. The fault handler's own sentence, which this case used
+# to pin, is pinned by
+# `limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept`, where C
+# has handed the address out again first and the read goes through.
+extern "fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h"
+    record Outer tag outer
+    function make() -> Outer acquires release
+    function release(o: Outer consumes)
+    function value(o: Outer) -> i64
+
+function main()
+    a = make()
+    kept = a
+    print("before: ", value(o: a))
+    release(o: a)
+    print("null: ", kept == nullptr)
+    print("after: ", value(o: kept))

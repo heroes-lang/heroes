@@ -1,0 +1,24 @@
+# REGRESSION, 2026-08-04 (M4). Symptom: the dump held `store _ <- $t5` and the
+# slot's type printed as `?`. Cause: `_` binds NOTHING (§4.7 — "it binds nothing,
+# so it is never unused and may repeat"), and lowering read the payload anyway,
+# then asked the checker for the type of a binding it had never made. The same
+# bug had a twin in `for _ in xs`, found by looking for it once the shape was
+# known. This case holds both: no slot named `_` may appear below, and neither
+# may a `payload` or an element read that nobody consumes.
+variant Token
+    num
+        v: i64
+    plus
+
+function kind_of(t: Token) -> i64
+    return match t
+        .num _ => 0
+        .plus  => 1
+
+function count_of(xs: [i64]) -> i64
+    n: i64 @ 0
+
+    for _ in xs
+        n @ n + 1
+
+    return n

@@ -1,0 +1,185 @@
+# The diagnostics of the `cstr` LEND, and of the landing every lend shares
+# (design.md §4.19, §4.20; panels 121, 122, 171).
+#
+# WHY IT IS ITS OWN MODULE. `ffi_errors.hero` answers one question — what may
+# CROSS the boundary — and these answer a different one: what a pointer
+# already across may DO, and where it may stand. The checker has carried that
+# seam since panel 124 (`check/lending.hero` and `check/leasing.hero`, and
+# `check/lend_types.hero` since panel 164) and the diagnostics had not followed.
+# Panel 164's two new codes pushed the host past §11's 300 lines — `layout` said
+# 302 — and this is the cut, rather than a raised ceiling.
+#
+# AND IT WAS CUT TWICE MORE AT PANEL 171, along the checker's own seams. The
+# lease's three are `lease_errors.hero` (`check/leasing.hero` asks where a LEASE
+# may stand); the field lend's six are `field_lend_errors.hero` (an ADDRESS into
+# a record has a place rule, a header rule, an extent rule and a write rule a
+# `str`'s lend does not). What stays here is the `cstr` lend's three positions
+# and the two refusals every lend meets where it lands, `lend_needs_a_header`
+# and `lend_kept`, which `check/lend_landing.hero` asks.
+#
+# NO `Fix` ANYWHERE IN THIS FILE, and that is a decision rather than an
+# omission: every repair here is a different SHAPE of program — bind the record
+# first, answer the `str` and let the caller lend it — and `.claude/rules/
+# diagnostics-and-goldens.md` says a fix that leaves the defect standing is a
+# guess however well it compiles.
+
+use token
+use diag
+
+# A lent C pointer standing anywhere but in the call that reads it
+# (defect 022, found by the ffi-pragmatist at panel 121; author decision
+# 2026-09-09 for the strict rule over the escape-only one).
+#
+# ONE CODE AND NOT TWO, though the reader arrives by two roads. A lend
+# built from an expression is a use-after-free and a lend built from a
+# literal is sound, because a literal has static storage; the message
+# does not split them, because the two spellings are one brace apart and
+# a rule that held only for one of them would teach the difference
+# instead of the rule. The note carries the repair, which is a different
+# shape of program rather than a different expression, so there is no
+# `Fix` here: nothing mechanical turns an escaping pointer into a
+# correct one.
+#
+# THREE SENTENCES OF THIS DIAGNOSTIC WERE WRONG UNTIL PANEL 122, and the
+# spec-warden and the ffi seat caught them separately. It said "not an
+# argument of an EXTERN call", from a rule the sitting dropped. It said
+# the bytes are "released when the function that built it returns",
+# which is false in general — the slot is released on re-execution too,
+# so a loop frees the previous iteration — and false of every site where
+# it then fired, which were literals. And its note prescribed writing
+# `.cstr()` inside the extern call, which `extern_across_modules`
+# refuses: the two diagnostics pointed at each other, and a reader
+# following either arrived at the other.
+function cstr_escapes(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cstr_escapes",
+        message: "`.cstr()` lends this string to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "pass it directly as an argument of the call that reads it. The bytes belong to the `str`, and the slot holding one is released when its function returns OR when the same expression runs again, whichever comes first — so a lend kept past its call is reading freed memory by the next iteration. A wrapper that reaches C from another module takes a `str` and lends inside itself"
+    )
+
+    # **AND A RECORD'S CONSTRUCTION IS NOT ONE OF THOSE CALLS** (defect 067,
+    # 2026-09-20). The note above says *the call that reads it*, which was the
+    # whole rule until a group's `record` turned out to be an argument position
+    # that KEEPS: `return Box(p: s.cstr())` parks a pointer into a `str` that
+    # dies with the frame, at exit 0. A reader who follows the first note into
+    # that shape needs the second sentence, because the first one blesses it.
+    d.notes @ d.notes.push(
+        "building a `record` of an `extern` group is not such a call: the pointer becomes a field of a value the statement hands on, and it outlives the bytes. Copy the bytes with `x: cstr @ s.lease()` and hold the cell, or hold the `str` and lend at each call"
+    )
+    return d
+
+# A Heroes function whose result is `cstr` (panel 122 R3, defect 022).
+#
+# WHY A SIGNATURE AND NOT A FLOW ANALYSIS. `return pass(c: s.cstr())` puts the
+# lend in an argument position, which the position rule blesses, and returns a
+# call RESULT, which no rule about lends can see; both compiling seats built it
+# and it is heap-use-after-free under the sanitizer. Refusing the SIGNATURE
+# closes the whole route, and it was measured free: every `-> cstr` in this
+# tree is already inside an `extern` group.
+#
+# The repair is the one the corpus already ships, so the note names it rather
+# than guessing: answer the `str` and let the caller lend it. That is what
+# `tests/golden/surface-fixtures/externroute/bind.hero` does.
+function cstr_out_of_heroes(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cstr_out_of_heroes",
+        message: "`" + name + "` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (§4.19) — only a function inside an `extern` group may answer one",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "answer `str` and let the caller lend it with `.cstr()` at the call that reads it. A `cstr` handed out of a Heroes function points into bytes this function stops owning when it returns"
+    )
+    return d
+
+# A `cstr` field on a record that is not the header's (panel 122 R4).
+#
+# The reader's mistake differs from `cstr_out_of_heroes`, which is why this is
+# its own code: there the pointer leaves through a result, here it is PARKED,
+# and the repair is a different field type rather than a different signature.
+# Measured at the sitting: no such field exists in this tree, and the emitter's
+# `pointer_element` note used to send people here.
+function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cstr_in_a_record",
+        message: "`" + holder + "." + field + "` holds a `cstr`, and `" + holder + "` is not a record of an `extern` group — a C pointer parked in a Heroes record outlives the bytes it points into (§4.19)",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "hold a `str` in the field and lend it with `.cstr()` at the call that reads it. A group's `record` may hold a `cstr`, because there the fields are the header's and C owns the bytes"
+    )
+    return d
+
+# A `cstr` lend handed to anything but a function of an `extern` group (panel
+# 171, 2026-09-20; design.md §4.19).
+#
+# PANEL 122 DROPPED THIS DISCRIMINATOR FOR THE `cstr` LEND, on three grounds,
+# and the flip spends all three. It refused the wrapper §4.19 prescribes —
+# under the pessimistic default that wrapper's own `cstr` parameter is an
+# unmarked one, so the lend stops at it either way, and only THIS message can
+# carry the repair `lend_kept` cannot: take the `str` and lend inside the
+# wrapper, where a header is asked. It made legality depend on what another
+# file declares — under the flip that is true of every lend, because the mark
+# lives on the declaration. And it was the soundness clause the engineer's
+# veto turned on: `wrap(s: cstr)` forwarding to an unmarked C parameter,
+# called with `"12".cstr()`, hands C a kept pointer through a route no rule
+# reading the extern's parameter alone can see.
+function lend_needs_a_header(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "lend_needs_a_header",
+        message: "`.cstr()` lends a `str` to C for one call, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no declaration of this program can say what becomes of the pointer",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "lend at the call that reaches C: a wrapper takes the `str` and lends inside itself — `function say(text: str) -> i32` returning `puts(s: text.cstr())` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
+    )
+    return d
+
+# A lend landing on a C parameter whose declaration does not say it lets go
+# (panel 171; the author's ruling of 2026-09-20; design.md §1.12, §4.19).
+#
+# THE DEFAULT IS THE PESSIMISTIC ONE. A C pointer parameter is assumed to KEEP
+# what it is handed unless its declaration says `lent`, so the unmarked
+# parameter is refused and the marked one admitted — Swift's choice at its own
+# C boundary since SE-0103, never withdrawn, and D's `scope` on `getenv(scope
+# const char* name)` in exactly this shape. The author's condition was the
+# cost, measured before the ruling: a copy at every unmarked call is 33 ns at
+# worst and the mark costs nothing (`docs/measurements/038`).
+#
+# NO `Fix`, AND BOTH NOTES ARE A GUESS. Adding the word is a claim about C
+# the compiler cannot check — D's own WASI binding says `scope` about a
+# `putenv` that keeps — and a lease is wrong where C FREES what it is handed
+# (defect 070). So each note carries that last sentence, because a reader who
+# follows the first note onto a freeing callee gets `check` 0 and exit 134
+# with an empty stderr, which is the shape the sitting's critic measured.
+#
+# THE NOTES ARE SHAPED BY THE LEND. A `cstr` lend has a lease beside it; a
+# field's address has none — there is no lease of a field — and its mark is
+# spelled after the `counted_by` it already carries, since the extent question
+# is asked first. A note that offered `s.lease()` for `.ptr()` would send the
+# reader to a form that does not exist (the critic's gap 3).
+function lend_kept(lend: str, callee: str, parameter: str, count: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "lend_kept",
+        message: lend + " lends bytes to C for this call and no longer, and `" + parameter + "` of `" + callee + "` is not declared to let them go — a C parameter without `lent` is assumed to keep what it is handed, and bytes kept past the call are read after the program has changed or freed them",
+        span: span
+    )
+    spelling: str @ "`" + parameter + ": cstr lent`"
+
+    if count != ""
+        spelling @ "`" + parameter + ": ptr counted_by " + count + " lent`"
+    d.notes @ d.notes.push(
+        "if the header's function only reads or fills through the pointer while it runs, say so where it is declared: " + spelling + " — a claim about C that nothing here can check, which is why it is not written for you. If C FREES what it is handed, no mark and no lease makes the call sound, and nothing in the language yet declares that parameter"
+    )
+
+    if count != ""
+        d.notes @ d.notes.push(
+            "if C does keep the address, a field has no lease: hand C memory it owns — allocate through the header's own allocator, copy the bytes in, and let C dispose of it — because the field dies with its record and nothing extends that. And if C frees what it is handed, neither route works"
+        )
+    else
+        d.notes @ d.notes.push(
+            "if C does keep the pointer, hand it bytes that outlive the call: `x: cstr @ s.lease()`, and `end_lease(@x)` once C is done with them. And if C frees what it is handed, neither route works: a lease is freed by `end_lease` and nothing else"
+        )
+    return d

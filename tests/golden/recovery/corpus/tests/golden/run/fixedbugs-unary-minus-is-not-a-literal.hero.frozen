@@ -1,0 +1,55 @@
+# A FIXED DEFECT, named after it (Go's `test/fixedbugs`).
+#
+# SYMPTOM (2026-08-13, found by M-program-corpus writing the JSON reader's number
+# parser): two programs the language plainly allows were refused, both by the
+# checker's ⇐ side and both about unary minus applied to a **name**.
+#
+#     x: f64 @ 1.5
+#     x @ -x                  error[type_mismatch]: expected `f64`, found `i64`
+#
+#     function f(n: i64) -> i64?
+#         return ok(-n)       error[int_out_of_range]: `-n` does not fit an `i64`
+#
+# The second is the louder one: a *range* diagnostic about an expression that has
+# no value to range-check, naming a width the operand already had.
+#
+# CAUSE: `types/expect.rs` and `types/contextual.rs`'s `adopts` both matched
+# `ExprKind::Unary { op: Neg, .. }` **flatly** — the outermost node's shape, with
+# no look at what was under the sign — and so read every negation as a negative
+# number literal. `contextual` itself had the right rule all along and recursed
+# into the operand; two of its three readers did not. The module's own doc says
+# what that costs: "two readings of it would be two languages".
+#
+# FIX: one predicate, `contextual::number_literal`, which walks under the minus
+# signs, and all three rules call it. `-128` still reads as one literal with its
+# sign, which is the case the flat pattern was written for and the reason the
+# question is subtle: `128` does not fit an `i8` and `-128` does.
+#
+# The three arms below are the three shapes: the sign on a literal (which must
+# keep working), the sign on a name, and the sign on a call's result.
+# Bulk regression case.
+
+function negated(n: i64) -> i64?
+    return ok(-n)
+
+function scaled(v: f64) -> f64
+    return -v
+
+function main()
+    # A negative literal, at a width where the sign is what makes it fit.
+    small: i8 @ -128
+    print("literal ", small)
+
+    # The sign on a name, on both numeric types.
+    n: i64 @ 7
+    n @ -n
+    x: f64 @ 1.5
+    x @ -x
+    print("names ", n, " ", x)
+
+    # The sign under a checked position: `ok(…)` decides which `T?` it makes,
+    # and the operand is not a literal.
+    print("checked ", negated(9).must(), " ", scaled(0.25))
+
+    # And the sign on something with no literal anywhere under it.
+    print("nested ", -(n + 1), " ", -scaled(2.0))

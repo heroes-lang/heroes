@@ -1,0 +1,13 @@
+# Panel 172's `b_callback`: the disposer arrives as a VALUE, which is
+# measurement 037's own R5 construct with a lease where the `malloc` was.
+# `check` 0 under both compilers at that sitting; exit 133 with zero bytes on
+# the stock runtime.
+extern "beside.h"
+    function take_cb(s: cstr, cb: (function(cstr) -> ()))
+    function eat(s: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    take_cb(s: c, cb: eat)
+    end_lease(@c)

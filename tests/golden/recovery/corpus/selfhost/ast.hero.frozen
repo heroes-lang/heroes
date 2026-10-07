@@ -1,0 +1,737 @@
+# Bodies: blocks, statements, expressions and patterns (design.md §4.4
+# bindings, §4.6 `T?`, §4.7 control flow, §4.9 calls, §4.11 UFCS, §4.14
+# operators, §4.16 holes).
+# Port of archive/bootstrap-rs/heroes/src/syntax/ast/exprs.rs — **the third file**, and the
+# one that answers the port's last open measurement question: what does a
+# recursive tree cost in a language whose values are all by value?
+#
+# ## The answer: nothing, because the tree was never recursive
+#
+# Expressions and statements ARE recursive, so both live in arenas
+# (`Ast.exprs`, `Ast.stmts`) and link by index — the Rust file's own first
+# sentence. That decision was taken for Rust's reasons (no `Box` in a
+# Cyclone-rule tree), and it is exactly what design.md §4.10 asks of a Heroes
+# program: a record or variant holds its fields **by value**, so it may contain
+# itself only through `[T]` or `{K: V}`. An arena satisfies that rule by never
+# needing it.
+#
+# So the measurement is a negative with a number on it: **zero forms wanted**,
+# and the port is a transcription. What it did exercise, and none of it was
+# new:
+#
+# - a variant case whose payload is several **named** fields (`.binary op:,
+#   left:, right:`), which is how Rust's struct-like variants port;
+# - a payload field that is itself a **record** holding an array of indices
+#   (`.while_stmt cond:, block: Block`) — the shape the spec permits, reached
+#   through `[T]` exactly as §4.10 requires;
+# - a payload field that is a **fallible** (`.return_stmt value: i64?`), which
+#   is how Rust's tuple-style `Return(Option<ExprId>)` ports: Heroes payloads
+#   are named, so the name arrives and the `Option` becomes `T?`.
+#
+# Port note on the one name that could not survive: `loop` and `while` are not
+# Heroes keywords but `for`, `while`, `return`, `break`, `continue`, `match`
+# and `if` are — so the statement cases carry a `_stmt` suffix where the Rust
+# name is a keyword here. The **spelling** changes; the vocabulary does not.
+
+use token
+
+## Blocks
+
+# An indented body: its statements, and the source it covers.
+#
+# A block is also an EXPRESSION: its value is its last statement, when that
+# statement is an expression (§4.7 — one rule seen in two places, `if` as an
+# expression and long `match` arms). Nothing in the parser enforces that; it is
+# the checker's judgment.
+record Block
+    span: token.Span
+    # Indices into `Ast.stmts`.
+    stmts: [i64]
+
+## Statements
+
+record Stmt
+    kind: StmtKind
+    span: token.Span
+
+variant StmtKind
+    # `x = 5`, or `xs: [i64] = []` where an empty literal needs the annotation
+    # (§4.5). Binds once, forever.
+    bind
+        name: token.Span
+        ty: i64?
+        value: i64
+    # `v: i64 @ 0` — declares a mutable cell. The type is REQUIRED (§4.4):
+    # without it, `x @ 5` would not say whether it declares or mutates, and a
+    # typo would silently declare a new variable.
+    declare
+        name: token.Span
+        ty: i64
+        value: i64
+    # `v @ v + 1`, `l.pos @ l.pos + 1` — the left side is a PLACE: a name, or a
+    # field or index path rooted at one.
+    mutate
+        place: i64
+        value: i64
+    # `return e`, or bare `return` in a function that returns nothing.
+    return_stmt
+        value: i64?
+    break_stmt
+    continue_stmt
+    # `assert e` (§4.18). The source text of `e` is its span, which is why the
+    # failure message can quote the expression.
+    assert_stmt
+        value: i64
+    # `while cond` — the condition loop (§4.7; panel 018 gave it its own
+    # keyword).
+    while_stmt
+        cond: i64
+        block: Block
+    # `for x in xs` — iteration; sugar for a `while` with an index (Part 5).
+    for_in
+        name: token.Span
+        iterable: i64
+        block: Block
+    # An expression alone on a line. Its type must be `()` (§4.14, panel 003) —
+    # a TYPE judgment, not a parse error, so the parser accepts it and the
+    # checker rejects `xs.push(4)` with the `_ =` fix.
+    expr_stmt
+        value: i64
+    error
+
+## Expressions
+
+record Expr
+    kind: ExprKind
+    span: token.Span
+
+variant ExprKind
+    # Literals keep their text in `span`: `42`, `1.5`, `"hi"`, `'a'`, `true`.
+    # Decoding is the checker's job, and `escape.unescape` is already written.
+    int_lit
+    float_lit
+    str_lit
+    char_lit
+    bool_lit
+    # `f"line {n}: {word}"` — ONE node carrying the whole literal's span, its
+    # holes as children (panel 121 R4). `pieces` are the text spans between
+    # the holes, delimiters included, one more than `holes`; the desugar is
+    # the lowering's (`ir/interp.hero`). Never a payload on `str_lit`: a leaf
+    # with children nobody walks is how a name in a hole would go unresolved.
+    interp
+        pieces: [token.Span]
+        holes: [i64]
+    # `nullptr` — the one `ptr` value the language can write (§4.19).
+    null_ptr
+    # A bare name: a local, a parameter, a top-level function or constant.
+    # Which one is the resolver's question.
+    name
+    # `???` — the typed hole (§4.16). Not an error: the compiler reports what
+    # belongs here.
+    hole
+    unary
+        op: UnaryOp
+        operand: i64
+    binary
+        op: BinaryOp
+        left: i64
+        right: i64
+    # `p.x` — a field read.
+    field
+        base: i64
+        name: token.Span
+    # `Point::x` — the FIELD'S OWN NAME as a `str`, not its value. It exists
+    # so a program handing a field name to a foreign notation writes a name
+    # the checker resolves instead of a string nothing checks: `Point::witdh`
+    # does not compile (panel 132). Sugar: `ir/flatten.hero` erases it to a
+    # literal and nothing downstream sees a field.
+    field_name
+        base: i64
+        name: token.Span
+    # `xs[i]`, `m[k]`. Out of bounds aborts; a map yields `V?` (§4.9).
+    index
+        base: i64
+        index: i64
+    # `f(x)`, `Point(x: 3, y: 4)`, `fail("code", "msg")` — record construction
+    # IS a call with named arguments (§4.9), so it needs no node of its own.
+    call
+        callee: i64
+        args: [Arg]
+    # `x.f(y)` — UFCS, sugar for `f(x, y)` erased in the frontend (§4.11, Part
+    # 5). Kept here because errors must speak in the syntax written.
+    method
+        receiver: i64
+        name: token.Span
+        args: [Arg]
+    # `.plus`, `.num(v: 12)` — a variant case, its type coming from context
+    # (§4.5's ⇐ mode). Named `variant_case` because `case` is a FOREIGN word:
+    # the registry that exists to catch a model reaching for `switch`/`case`
+    # also refuses the compiler's own name for the thing (finding, this file).
+    variant_case
+        name: token.Span
+        args: [Arg]
+    # `[1, 2, 3]` — elements separated by commas on one line, or by newlines
+    # when the literal is written across several (§4.9).
+    array
+        elements: [i64]
+    # `{ "mario": 30 }`
+    map
+        entries: [MapEntry]
+    # `e?` — propagate the error to the caller (§4.6).
+    try_expr
+        value: i64
+    # `if c` / `else if c` / `else`, an expression like everything else (§4.7).
+    # `else` is absent when the `if` is used as a statement — and "absent" is a
+    # `Block?` here where Rust writes `Option<Block>`.
+    if_expr
+        branches: [Branch]
+        otherwise: Block?
+    # `match e` with its arms — the only destructuring construct, and
+    # exhaustive or a compile error (§4.7).
+    match_expr
+        scrutinee: i64
+        arms: [Arm]
+    error
+
+## Operators
+
+variant UnaryOp
+    # `-x`
+    neg
+    # `!x` — `bool` only, there is no truthiness (§4.14).
+    not
+    # `~x` — the bitwise complement, `i64` only (§4.14).
+    bit_not
+
+variant BinaryOp
+    add
+    sub
+    mul
+    div
+    rem
+    eq
+    ne
+    lt
+    le
+    gt
+    ge
+    # `&&` and `||` short-circuit and take `bool` only (§4.14).
+    and
+    or
+    # The bitwise set, `i64` only and NOT short-circuiting (§4.14). `|` is the
+    # same token as the match-pattern join; position tells them apart.
+    bit_and
+    bit_or
+    bit_xor
+    shl
+    shr
+
+## The pieces a call and a match are built from
+
+# One argument of a call. `name` is present when written `name: value`, which
+# §4.9 makes MANDATORY when two parameters share a type — the rule that spends
+# tokens exactly where argument inversion happens.
+record Arg
+    name: token.Span?
+    # `f(@l)` — the call site repeats the signature's `@` so the mutation is
+    # visible on the line (§4.8).
+    mutable: bool
+    value: i64
+
+record MapEntry
+    key: i64
+    value: i64
+
+# One `if` or `else if` — a condition and its block.
+record Branch
+    cond: i64
+    block: Block
+
+# One arm of a `match`: patterns joined by `|`, then an expression or a block
+# (§4.7).
+record Arm
+    patterns: [Pattern]
+    body: ArmBody
+    span: token.Span
+
+variant ArmBody
+    # One statement on the same line as `=>`. An expression statement's value
+    # is the arm's value, which is why this is not a second form: a block was
+    # already "its last expression" (panel 014).
+    one_stmt
+        at: i64
+    block
+        block: Block
+
+record Pattern
+    kind: PatternKind
+    span: token.Span
+
+variant PatternKind
+    # `.num n`, `.num _`, `.plus` — a variant case, optionally binding its
+    # payload. `_` as a payload NAME is allowed; `_` as a whole arm is not, on
+    # a variant (§4.7). `variant_case` for the reason `ExprKind` says.
+    variant_case
+        name: token.Span
+        binding: token.Span?
+    # `_` — the catch-all, legal only where exhaustiveness is impossible
+    # (`i64`, `str`). Rejecting it on variants is the checker's job: the parser
+    # records what was written.
+    wildcard
+    # An `i64` or `str` literal arm.
+    literal
+        value: i64
+    error
+
+## Written types
+
+# A written type. `span` covers the whole type as written (`[i64]` includes its
+# brackets); a `named` one's text is read through `type_text.named_text`.
+record TypeNode
+    kind: TypeKind
+    span: token.Span
+
+variant TypeKind
+    # `i64`, `str`, `Point`, `A` — a bare name. Whether it is built-in,
+    # user-declared or a generic parameter is the resolver's question; the
+    # parser only records that a name stood here.
+    named
+    # `()` — no value (§4.3). Also the result of a function written without
+    # `->`.
+    unit
+    # `[T]`
+    array_of
+        element: i64
+    # `i32[4]` — a FIXED-size array, and the length is part of the type (§4.19;
+    # panel 062). Not an `array_of`, and the difference is where the elements
+    # live: a `[T]` is a heap block with a count in a header before the bytes;
+    # this is the bytes themselves, inline, at an offset a C compiler chose.
+    fixed
+        element: i64
+        length: i64
+    # `{K: V}`
+    map_of
+        key: i64
+        value: i64
+    # `T?` — a `T` or an error (§4.6).
+    fallible
+        inner: i64
+    # `(function(A, B) -> C)` — the parentheses are mandatory (§4.13: without
+    # them `f: function A -> B -> [B]` would be ambiguous).
+    # `function_type`, not `func`: `func` is a foreign word the registry
+    # refuses (the second time it has met the compiler's own vocabulary —
+    # `variant_case` was the first).
+    function_type
+        params: [i64]
+        # The parameter NAMES, ONE ENTRY PER PARAMETER, and an empty span
+        # where that position was written without a name (defect 026). A name
+        # is owed exactly where the position shares its type with another and
+        # refused where it does not, but that is the checker's rule: only the
+        # lowering knows that two written spellings are one type. The parser
+        # records what was written and judges none of it.
+        labels: [token.Span]
+        result: i64
+    # Recovery: the type could not be read. A diagnostic says why, and the tree
+    # keeps its shape so the errors after this one are still found.
+    error
+
+## Declarations
+
+# `use geom` — the module named, and the whole line's extent. Separate from the
+# declarations because a `use` lowers to nothing (panel 031).
+# `use syntax/decl as sd`: `name` is the whole path and the module's identity,
+# `binding` is what THIS file calls it — total and never an `Option`, for the
+# measured reason `use_line.hero` carries beside the code that fills it.
+record Use
+    name: token.Span
+    binding: token.Span
+    span: token.Span
+
+## The declarations
+
+# Declarations are not recursive, so each one owns its members directly — no
+# arena, no indices.
+
+# A parameter. A parameter marked `@` is in-out: copy in, copy out (§4.8).
+record Param
+    name: token.Span
+    ty: i64
+    mutable: bool
+    # `@error: cstr owned sqlite3_free` — the freer for a string C writes
+    # THROUGH this parameter, which the header spells `char **` (§4.19, panel
+    # 109). It rides the parameter rather than the type because two parameters
+    # of one signature can be owned by different functions, and because the
+    # cell is out-only: nothing is copied in for the callee to observe.
+    owned: token.Span?
+    # `db: Db consumes` — the call ENDS this handle's life (panel 145, defect
+    # 031). The opposite direction to `owned`, which is why it is a second word.
+    consumes: bool
+    # `@statement: CStmt acquires sqlite3_finalize` — the call BEGINS this
+    # handle's life and NAMES the one that ends it (panel 148 R2). A SPAN and
+    # not a bool for `owned`'s reason: a diagnostic about the releaser has to
+    # point at the word the author wrote.
+    acquires: token.Span?
+    # `val: Json transfers json_object_put` — the call hands the value's life
+    # INTO another value, which ends it later with the releaser named (panel
+    # 176's item 2, the historian's V1c): the program owes nothing afterwards,
+    # and the handle's own set must name that releaser, or the call aborts
+    # before C runs. A span for the releaser set, like `acquires`.
+    transfers: token.Span?
+    # `a: X509 retains X509_free` — the call ADDS a reference to the handle it
+    # is handed (panel 176's item 4, panel 177's item 8): the program owes one
+    # more release, and the reference must share a releaser with the life it
+    # joins. The set's span, like `acquires`.
+    retains: token.Span?
+    # `s: CStmt borrows` — the call hands back one it KEEPS, so the program owes
+    # nothing for it (panel 148 R5). The word exists so that a producer of a
+    # consumed type has a legal way to say *not this one*: without it the
+    # completeness rule would refuse a correct binding, which is the objection
+    # that killed the inferred form at that same sitting.
+    borrows: bool
+    # `buf: ptr counted_by n` — the sibling that gives the extent (panel 166;
+    # `parse/members.hero` carries why, and this file is at its ceiling).
+    counted_by: token.Span?
+    # `s: cstr lent` — the call KEEPS NOTHING of what it is handed, so a lend
+    # may land here; absent, C is assumed to keep it (panel 171).
+    lent: bool
+
+# A record field, or a variant case's payload field. Fields carry doc comments
+# of their own — §4.1's adjacency rule is about declarations, and a field is
+# one.
+record Field
+    name: token.Span
+    ty: i64
+    doc: [token.Span]
+
+# One case of a variant. A case with fields IS a small record (§4.2) — which is
+# why the surface needs no separator syntax at all.
+record Case
+    name: token.Span
+    fields: [Field]
+    doc: [token.Span]
+
+# Where a group's symbols come from — **one of two, never both**, which is why
+# this is a variant and not two fallibles.
+#
+# The distinction is who answers the question. `link` is the program telling the
+# linker a name it already knows. `package` is the program asking the MACHINE
+# where something is and what else it needs, and getting back a different answer
+# on every platform — frameworks on macOS, `-lGL -lX11` on Linux — from one
+# spelling that never changes (panel 049).
+variant Library
+    # `link "sqlite3"` — reaches the linker as `-lsqlite3`, a name and never a
+    # flag, so no `.hero` file can hand clang an arbitrary argument.
+    link
+        name: token.Span
+    # `package "raylib"` — the machine is asked. What comes back is validated
+    # against a closed set before it reaches clang, because a package file is
+    # input this program did not write: Go shipped the same idea without that
+    # check and it became CVE-2018-6574.
+    package
+        name: token.Span
+
+## Declarations proper
+
+# Port of archive/bootstrap-rs/heroes/src/syntax/ast/decls.rs. Port note, and it is the
+# `_stmt` finding again at the top level: **all five of Rust's `DeclKind` case
+# names are Heroes keywords** (`constant`, `function`, `record`, `variant`,
+# `test`), so every case carries a `_decl` suffix. The spelling changes; the
+# vocabulary does not.
+
+# A top-level declaration. `span` covers the whole declaration, header and
+# body; `name` is just the name, which is what diagnostics point at.
+record Decl
+    name: token.Span
+    # The comment lines directly above, with no blank line between (§4.1 —
+    # adjacency IS the doc marker). A `##` heading stops the run.
+    doc: [token.Span]
+    span: token.Span
+    kind: DeclKind
+
+# What a `function` owns. Its own record rather than five payload fields,
+# because the passes after the parser hand "the function" around whole —
+# the Rust side is `DeclKind::Function(Function)` for the same reason.
+record FunctionDecl
+    # `function map<A, B>(…)` — type parameters, no constraints (§4.12).
+    generics: [token.Span]
+    params: [Param]
+    # The declared result. A signature without `->` gets a `unit` node, so
+    # later passes never ask "was the arrow there?".
+    result: i64
+    # Absent for an `extern`: the implementation comes from C (§4.19).
+    body: Block?
+    is_extern: bool
+    # The header this signature was declared under, quotes included, and the
+    # library to link — both from the group's head line, copied onto every
+    # member (§4.19, panel 036): the group is flattened in the parser and
+    # nowhere else, so a declaration's index stays function identity.
+    header: token.Span?
+    library: Library?
+    # `-> cstr owned sqlite3_free` — the C function that frees the string this
+    # one hands back, named by the declaration itself (§4.19, panel 109).
+    # A SPAN and not a name, because a diagnostic about the freer has to point
+    # at the word the author wrote; the text is read from the source like every
+    # other name. Absent everywhere else, which is the ordinary case: an
+    # unmarked pointer is never freed.
+    owned_result: token.Span?
+    # `-> Curl acquires curl_easy_cleanup` — the RESULT begins a handle's life
+    # and names what ends it (panel 148 R2). Both positions, as `owned` has
+    # both, because C hands a handle back either way.
+    acquires_result: token.Span?
+    # `-> Json retains json_object_put` — the result is one more reference to a
+    # handle the program may already hold, `json_object_get`'s shape, or a
+    # first life if it does not (panel 176's item 4).
+    retains_result: token.Span?
+    # `-> CStmt borrows` — the same for a result, which is the position C uses
+    # for a borrowed hand-back: `sqlite3_next_stmt`, `cairo_get_target`.
+    borrows_result: bool
+    # `-> i32 when 0` — the result that means the call succeeded, and every
+    # end, transfer and reference the call makes happens only then (panel 177's
+    # item 6; json-c's adders leave the child with the caller on failure, and
+    # `sqlite3_close` leaves the connection open on `SQLITE_BUSY`). The
+    # literal's span; `check/marks.hero` holds it to the result's type.
+    when_result: token.Span?
+    # Its last token, so `fmt` keeps a comment inside the list where it was (defect 095).
+    signature_end: token.Span
+
+variant DeclKind
+    # `constant MAX: i64` + body (§4.2), or — inside an `extern` group — no
+    # body, the value being the header's (§4.19, panel 038). One case rather
+    # than two: the Rust side measured that a sixth kind would silently break
+    # the one `matches!` that decides constant-ness.
+    constant_decl
+        ty: i64
+        body: Block?
+        header: token.Span?
+        library: Library?
+    function_decl
+        value: FunctionDecl
+    # `record Point` + fields — or, in a group, a struct the HEADER declares
+    # (panel 060): then the emitter writes no typedef and the layout is C's.
+    # `partial` names some of the fields and costs `==`/`hash`/map-key (panel
+    # 061); `tag` is C's struct tag when the header has no typedef (panel 074).
+    record_decl
+        fields: [Field]
+        header: token.Span?
+        library: Library?
+        partial: bool
+        tag: token.Span?
+    variant_decl
+        cases: [Case]
+    # `test "3-4-5 triangle"` + body (§4.18). `name` holds the string literal,
+    # quotes included — a title, not an identifier.
+    test_decl
+        body: Block
+
+## The arena
+
+record Ast
+    exprs: [Expr]
+    stmts: [Stmt]
+    types: [TypeNode]
+
+function new_ast() -> Ast
+    exprs: [Expr] = []
+    stmts: [Stmt] = []
+    types: [TypeNode] = []
+    return Ast(exprs: exprs, stmts: stmts, types: types)
+
+function push_type(@types: [TypeNode], node: TypeNode) -> i64
+    types @ types.push(node)
+    return types.len() - 1
+
+# Adds a node to the arena and hands back its index — the port of Rust's
+# `push_expr`/`push_stmt`, and the reason the tree never recurses.
+function push_expr(@exprs: [Expr], node: Expr) -> i64
+    exprs @ exprs.push(node)
+    return exprs.len() - 1
+
+function push_stmt(@stmts: [Stmt], node: Stmt) -> i64
+    stmts @ stmts.push(node)
+    return stmts.len() - 1
+
+## What the tree is for: reading it back
+
+# The depth of an expression, following the arena by index. It exists to prove
+# the point of this file: a tree that links by index is walked by an ordinary
+# recursive function, and the VALUE semantics never enter it — nothing is
+# copied but an `i64`.
+function depth(a: Ast, at: i64) -> i64
+    node = a.exprs[at]
+
+    # **Every case is named, and that is the point rather than the cost.** `_`
+    # is forbidden on a variant (§4.7), so a walk that cares about five shapes
+    # still says what it does with the other sixteen — and the day a
+    # twenty-second `ExprKind` arrives, this function stops compiling instead
+    # of quietly answering 1. The bootstrap has the same walk with a `_`, and
+    # the same walk is where the Rust lexer's `nullptr` defect came from.
+    return match node.kind
+        .unary u => 1 + depth(a, u.operand)
+        .binary b => 1 + max_of(a: depth(a, b.left), b: depth(a, b.right))
+        .field f => 1 + depth(a, f.base)
+        .field_name f => 1 + depth(a, f.base)
+        .index i => 1 + max_of(a: depth(a, i.base), b: depth(a, i.index))
+        .try_expr t => 1 + depth(a, t.value)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit => 1
+        .interp ip => 1 + holes_depth(a, ip.holes)
+        .null_ptr | .name | .hole | .error => 1
+        # The compound shapes a depth this simple does not descend into: they
+        # carry lists, and a list walk is the parser's own job rather than
+        # this measurement's.
+
+        .call | .method | .variant_case        => 1
+        .array | .map | .if_expr | .match_expr => 1
+
+# The deepest hole, or nothing: an interpolated literal is one node whose
+# children are its holes.
+function holes_depth(a: Ast, holes: [i64]) -> i64
+    deepest: i64 @ 0
+
+    for h in holes
+        d = depth(a, h)
+
+        if d > deepest
+            deepest @ d
+
+    return deepest
+
+function max_of(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+test "the arena hands back indices and the tree links by them"
+    a: Ast @ new_ast()
+    zero = token.Span(start: 0, end: 1)
+    left = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
+    right = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
+    sum = push_expr(@a.exprs, Expr(kind: .binary(op: .add, left: left, right: right), span: zero))
+    assert left == 0
+    assert right == 1
+    assert sum == 2
+    assert a.exprs.len() == 3
+
+test "a walk over the arena is an ordinary recursive function"
+    a: Ast @ new_ast()
+    zero = token.Span(start: 0, end: 1)
+    x = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
+    y = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
+    sum = push_expr(@a.exprs, Expr(kind: .binary(op: .add, left: x, right: y), span: zero))
+    neg = push_expr(@a.exprs, Expr(kind: .unary(op: .neg, operand: sum), span: zero))
+    tried = push_expr(@a.exprs, Expr(kind: .try_expr(value: neg), span: zero))
+    assert depth(a, x) == 1
+    assert depth(a, sum) == 2
+    assert depth(a, neg) == 3
+    assert depth(a, tried) == 4
+
+test "a statement's payload carries a record that carries an array"
+    a: Ast @ new_ast()
+    zero = token.Span(start: 0, end: 1)
+    cond = push_expr(@a.exprs, Expr(kind: .bool_lit, span: zero))
+    body = push_stmt(@a.stmts, Stmt(kind: .break_stmt, span: zero))
+    inner: [i64] = [body]
+    loop_stmt = push_stmt(
+        @a.stmts,
+        Stmt(kind: .while_stmt(cond: cond, block: Block(span: zero, stmts: inner)), span: zero)
+    )
+
+    match a.stmts[loop_stmt].kind
+        .while_stmt w =>
+            assert w.cond == cond
+            assert w.block.stmts.len() == 1
+            assert w.block.stmts[0] == body
+        .bind | .declare | .mutate | .return_stmt | .break_stmt       => assert false
+        .continue_stmt | .assert_stmt | .for_in | .expr_stmt | .error => assert false
+
+test "an optional payload is a fallible, and absence is a value"
+    a: Ast @ new_ast()
+    zero = token.Span(start: 0, end: 1)
+    value = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
+    with_value = push_stmt(@a.stmts, Stmt(kind: .return_stmt(value: ok(value)), span: zero))
+    bare = push_stmt(@a.stmts, Stmt(kind: .return_stmt(value: fail(code: "bare", msg: "no value")), span: zero))
+
+    match a.stmts[with_value].kind
+        .return_stmt r                                             => assert r.value.must() == value
+        .bind | .declare | .mutate | .break_stmt | .continue_stmt  => assert false
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
+
+    match a.stmts[bare].kind
+        .return_stmt r                                             => assert r.value.is_err()
+        .bind | .declare | .mutate | .break_stmt | .continue_stmt  => assert false
+        .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error => assert false
+
+test "the tree is copied by value, so a walk cannot disturb it"
+    a: Ast @ new_ast()
+    zero = token.Span(start: 0, end: 1)
+    _ = push_expr(@a.exprs, Expr(kind: .int_lit, span: zero))
+    b: Ast @ a
+    _ = push_expr(@b.exprs, Expr(kind: .float_lit, span: zero))
+    assert a.exprs.len() == 1
+    assert b.exprs.len() == 2
+    assert a.exprs[0].kind == .int_lit
+    assert b.exprs[1].kind == .float_lit
+
+test "a declaration owns its members directly, no arena"
+    zero = token.Span(start: 0, end: 1)
+    generics: [token.Span] = []
+    unowned: token.Span? = fail(code: "none", msg: "not owned")
+    ps: [Param] = [
+        Param(name: zero, ty: 0, mutable: false, owned: unowned, consumes: false, acquires: unowned, transfers: unowned, retains: unowned, borrows: false, counted_by: unowned, lent: false)
+    ]
+    doc: [token.Span] = []
+    f = FunctionDecl(
+        generics: generics,
+        params: ps,
+        result: 0,
+        body: fail(code: "absent", msg: "no body"),
+        is_extern: true,
+        header: ok(zero),
+        library: fail(code: "absent", msg: "none"),
+        owned_result: fail(code: "none", msg: "nothing to free"),
+        acquires_result: fail(code: "none", msg: "nothing to give back"),
+        retains_result: fail(code: "none", msg: "nothing to give back"),
+        borrows_result: false,
+        when_result: fail(code: "none", msg: "no success value"),
+        signature_end: zero
+    )
+    d = Decl(name: zero, doc: doc, span: zero, kind: .function_decl(value: f))
+
+    match d.kind
+        .function_decl fd =>
+            assert fd.value.is_extern
+            assert fd.value.params.len() == 1
+            assert fd.value.header.must() == zero
+            assert fd.value.body.is_err()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
+test "a group's record carries what the head line said"
+    zero = token.Span(start: 0, end: 1)
+    fields: [Field] = []
+    kind: DeclKind = .record_decl(
+        fields: fields,
+        header: ok(zero),
+        library: ok(.link(name: zero)),
+        partial: true,
+        tag: fail(code: "absent", msg: "no tag")
+    )
+
+    match kind
+        .record_decl r =>
+            assert r.partial
+            assert r.tag.is_err()
+
+            match r.library.must()
+                .link l  => assert l.name == zero
+                .package => assert false
+        .constant_decl | .function_decl | .variant_decl | .test_decl => assert false
+
+test "the operators are the language's own, spelled once"
+    # A case is contextual — `.shl`, never `BinaryOp.shl`, which is a type in
+    # value position and the compiler says so.
+    shift: BinaryOp @ .shl
+    assert shift != .shr
+    ops: [BinaryOp] = [.add, .sub, .mul, .div, .rem]
+    assert ops.len() == 5
+    assert ops[0] == .add
+    u: UnaryOp @ .bit_not
+    assert u != .neg

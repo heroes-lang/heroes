@@ -1,0 +1,55 @@
+## Copy in, copy out
+#
+# Every value behaves as an independent copy: after `b = a`, changing `b`
+# never changes `a`. Nothing aliases anything. A function that needs to
+# change its argument says so with `@`, in the signature and at the call
+# site, so a mutating call cannot look like a reading one.
+
+# A cursor over text. Travels through the reader as `@`.
+record Reader
+    text: str
+    pos: i64
+
+function at_end(r: Reader) -> bool
+    return r.pos >= r.text.len()
+
+function here(r: Reader) -> u8
+    return r.text[r.pos]
+
+# The `@` is the whole signature's news: this one moves.
+function advance(@r: Reader)
+    r.pos @ r.pos + 1
+
+# Consumes spaces. The caller sees `@r` and knows the reader moved.
+function skip_spaces(@r: Reader)
+    while !at_end(r) && here(r) == ' '
+        advance(@r)
+
+# Reads a run of letters and hands it back, leaving the reader after it.
+function word_at(@r: Reader) -> str
+    start = r.pos
+
+    while !at_end(r) && here(r) >= 'a' && here(r) <= 'z'
+        advance(@r)
+
+    return r.text.slice(from: start, to: r.pos)
+
+test "the reader walks, and the copy does not"
+    r: Reader @ Reader(text: "hi there", pos: 0)
+    first = word_at(@r)
+    skip_spaces(@r)
+    second = word_at(@r)
+    assert first == "hi"
+    assert second == "there"
+    assert at_end(r)
+
+test "values are copies"
+    a = [1, 2, 3]
+    b: [i64] @ a
+    b @ b.push(4)
+    assert a.len() == 3
+    assert b.len() == 4
+
+function main()
+    r: Reader @ Reader(text: "one two", pos: 0)
+    print(word_at(@r))

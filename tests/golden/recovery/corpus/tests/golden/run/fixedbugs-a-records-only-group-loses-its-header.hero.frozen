@@ -1,0 +1,31 @@
+# FIXED DEFECT, 2026-08-15 (panel 061), and it is the sibling of
+# `fixedbugs-a-group-record-in-every-container` rather than the same case: that one
+# is about two names, this one is about a walk.
+#
+# Symptom: an `extern` group whose members are ALL records emitted no `#include`
+# at all, so its own field assertions named a type nothing had declared —
+# `use of undeclared identifier 'Color'`, exit 2. Repairing that revealed the same
+# defect one level on: the `#include` was written and the `-I` that finds the
+# header was not, `fatal error: 'raylib.h' file not found`.
+#
+# Cause: `externs::headers` and `externs::named` both walk `program.functions`,
+# which was every group member until 2026-08-15. A `record` lowers to no function,
+# so no walk over the emitted program can see one; the answer is in the
+# declarations. The premise that expired here was never written down — it was the
+# **shape of the loop**, which is the form of CLAUDE.md §11's hazard that no
+# comment convention can catch, because there is no comment.
+#
+# The case is deliberately a group with NO function in it. A group with one would
+# have hidden both halves.
+
+extern "raylib.h" package "raylib"
+    record Color
+        r: u8
+        g: u8
+        b: u8
+        a: u8
+
+function main()
+    red = Color(r: 255, g: 0, b: 0, a: 255)
+    print(red.r)
+    print(red.a)

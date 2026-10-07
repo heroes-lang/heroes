@@ -1,0 +1,30 @@
+# DEFECT 077 as filed: a handle given back after C has handed its address out
+# again, and the second give-back landing on the NEW handle. The live set
+# keys on the address, so the stale `a` was accepted as the live `b`, `b`'s
+# life ended in its place, and the one correct release that could have
+# followed was the call that aborted. `check` 0 and `run` 0, three of three.
+#
+# Under panel 177's item 1 the second `node_free(n: a)` is refused before C
+# runs, because `a` no longer holds an address at all: `closed(@a)` ended the
+# life and the runtime emptied the cell, `@`'s copy-out carried the dead value
+# back, and the crossing is asked first. `b` is then given back correctly,
+# which this program never reaches. The helper is what keeps the read out of
+# the checker's half (item 3).
+
+extern "dead-handle-given-back-after-its-address-was-handed-out-again.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+
+function closed(@n: Node)
+    node_free(n: n)
+
+function main()
+    a: Node @ node_new()
+    closed(@a)
+    b = node_new()
+    print("the new node reads ", node_value(n: b))
+    node_free(n: a)
+    print("the stale one was given back, and nothing said")
+    node_free(n: b)

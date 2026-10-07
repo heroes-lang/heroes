@@ -1,0 +1,663 @@
+# The lexer: source text → tokens (design.md §4.15).
+# Port of the drive loop of archive/bootstrap-rs/heroes/src/lexer/mod.rs (`lex_one`).
+#
+# First station of the assembly line. It cuts the text into words and, because
+# Heroes has no braces and no semicolons, it also mints the two invisible
+# currencies structure travels in: indent/dedent (the margin) and terminator
+# (the line end that CAN end a statement).
+#
+# Two invariants hold everywhere, the Rust module's own two:
+# - THE LEXER NEVER STOPS. Errors become a diagnostic (+ an error token when
+#   something was skipped) and lexing continues.
+# - THE CYCLONE RULE, kept across the port: the source text enters every
+#   function as a parameter and never lives in a record. Tokens point into
+#   the source by byte offset.
+#
+# Port scope note (measurement 009): Rust's `lex` walks a multi-file Source —
+# each file lexed as its own text, spans moved back into compilation
+# coordinates, Eof at the end of the ROOT file. That loop needs the Source
+# record (source.rs), which is not lexer code; the probe ports `lex_one`
+# faithfully and the Source half is measured when a second file needs it.
+
+use token
+use diag
+use source
+use source_extent
+use state
+use layout
+use open_line
+use line_joins
+use scan
+use escape
+
+## The output
+
+record LexOutput
+    tokens: [token.Token]
+    diagnostics: [diag.Diagnostic]
+    # The line breaks refused and joined (`state.Break`, its `diagnostic` at
+    # least 0), in this file's own token indexes: where the parser reads a
+    # line the author broke, which `parse/apart` weighs (defect 132). The
+    # compilation's one stream carries none, since its indexes are no file's.
+    breaks: [state.Break]
+
+## The whole compilation's tokens
+
+# Every file lexed AS ITS OWN TEXT, then the spans moved back into the
+# compilation's coordinates. Bounding one walk over the concatenation
+# instead would be cheaper to write and wrong: the interesting state —
+# the indent `level` and the `open_brackets` list — is exactly what must
+# not survive a file boundary. Measured 2026-08-17, with the port doing
+# it the cheap way: `return (1 + 2` in one module swallowed the next
+# module AND the appended library, and the author's own unclosed
+# bracket came back as `internal error … exit 2` instead of two
+# diagnostics on their own line.
+#
+# EOF SITS AT THE END OF THE ROOT FILE, not of the text. Every parser
+# diagnostic that runs out of input anchors there, and the text ends
+# inside the library §1.11 appends — so an unclosed `(` at the end of a
+# file landed where the author cannot look. Same rule as
+# no_entry_point's caret: a diagnostic about the input as a whole
+# belongs to the file the reader named.
+function lex(s: source.Source) -> LexOutput
+    return joined(s, files: lex_files(s))
+
+# Every file's own stream, in the compilation's coordinates, each ending in
+# its OWN eof at its own end: what the parser reads, one file at a time.
+#
+# **The stream above is one, and a file's end was not in it** (found beside
+# defect 109, 2026-09-27). Each file's eof was dropped, so a file that ended
+# inside a declaration went on into the next file's tokens: `function
+# main()` alone in a file was `missing_body` found `function`, the
+# library's first word, and exit 2 blaming the compiler; a module ending
+# the same way was refused at the NEXT module's first line; and a module
+# ending in `function two() -> i64` took the next module's indented first
+# lines as its body, so a program of two modules each refused alone ran at
+# exit 0. The level and the open brackets already stopped at a file's end;
+# now the declarations do too.
+function lex_files(s: source.Source) -> [LexOutput]
+    out: [LexOutput] @ []
+    index: i64 @ 0
+
+    for entry in s.files
+        _ = entry
+        out @ out.push(moved(lex_one(source_extent.text_of(s, index)), offset: s.files[index].start))
+        index @ index + 1
+
+    return out
+
+# One file's stream moved from its own coordinates into the compilation's,
+# where its text begins at `offset`; a break's indexes are the stream's and
+# do not move.
+function moved(one: LexOutput, offset: i64) -> LexOutput
+    tokens: [token.Token] @ []
+
+    for t in one.tokens
+        tokens @ tokens.push(
+            token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset))
+        )
+
+    diagnostics: [diag.Diagnostic] @ []
+
+    for d in one.diagnostics
+        shifted: diag.Diagnostic @ d
+        shifted.span @ token.Span(start: d.span.start + offset, end: d.span.end + offset)
+        fixes: [diag.Fix] @ []
+
+        for fix in d.fixes
+            fixes @ fixes.push(
+                diag.Fix(title: fix.title, replacement: fix.replacement, span: token.Span(start: fix.span.start + offset, end: fix.span.end + offset), certainty: fix.certainty)
+            )
+
+        shifted.fixes @ fixes
+        diagnostics @ diagnostics.push(shifted)
+
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: one.breaks)
+
+# The files' streams as the compilation's ONE, for every reader but the
+# parser: each file's tokens but its own eof, and one eof at the root's end.
+function joined(s: source.Source, files: [LexOutput]) -> LexOutput
+    tokens: [token.Token] @ []
+    diagnostics: [diag.Diagnostic] @ []
+
+    for one in files
+        for t in one.tokens
+            # The `continue` belongs to THIS inner loop over tokens, not to
+            # the walk over files — the trap that cost five sites once.
+            if t.kind == .eof
+                continue
+            tokens @ tokens.push(t)
+
+        for d in one.diagnostics
+            diagnostics @ diagnostics.push(d)
+
+    at = source_extent.root_end(s)
+    tokens @ tokens.push(token.Token(kind: .eof, span: token.Span(start: at, end: at)))
+    none: [state.Break] = []
+    return LexOutput(tokens: tokens, diagnostics: diagnostics, breaks: none)
+
+## One file's tokens
+
+# One file's tokens, in that file's own coordinates. Never fails: errors are
+# in `diagnostics`, and the token stream is always complete through eof.
+function lex_one(text: str) -> LexOutput
+    return lexed(text, apart: false, bodies: false)
+
+# The same file with its lines read APART (defect 132): every break
+# `lex_one` refuses and joins is a line end here, whose next line's margin
+# is read, and a head that could only go on, the break itself, is left out.
+# It is what the author's lines say taken one at a time, which `parse/apart`
+# holds the joined reading against; the diagnostics are not its concern.
+function lex_apart(text: str) -> LexOutput
+    return lexed(text, apart: true, bodies: false)
+
+# The lines apart, and each line below a break at the margin of the line
+# above read one level deeper, as the body of the head that line may be
+# (defect 132): where `parse/apart` asks what a line below a bodiless head
+# holds of its own, read as the body it was likely meant to be.
+function lex_bodies(text: str) -> LexOutput
+    return lexed(text, apart: true, bodies: true)
+
+function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
+    l: state.LexState @ state.new_state()
+    l.apart @ apart
+    l.bodies @ bodies
+
+    while true
+        layout.line_start(@l, text)
+
+        if l.pos >= text.len()
+            break
+        scan.line_body(@l, text)
+
+    # EOF: terminate the last line if the file ended without a newline,
+    # report every opener that never closed (panel 007: otherwise one missing
+    # `)` silently swallows the rest of the file's layout), then close every
+    # block still open.
+    layout.maybe_terminator(@l)
+    open_line.settle(@l)
+
+    # The last line left open at the file's end is ended by it, and the parser
+    # says what it lacks (defect 129).
+    if l.open_line >= 0
+        open_line.ended(@l)
+
+    for span in l.open_brackets
+        state.push_diagnostic(
+            @l.diagnostics,
+            diag.new_diagnostic(code: "unclosed_bracket", message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed", span: span)
+        )
+
+    end = token.Span(start: l.pos, end: l.pos)
+
+    for _ in range(from: 0, to: l.level)
+        state.push_token(@l.tokens, token.Token(kind: .dedent, span: end))
+
+    state.push_token(@l.tokens, token.Token(kind: .eof, span: end))
+
+    # The joins of the lines left open, weighed now that every token of the
+    # joined lines exists (defect 129).
+    line_joins.weigh(@l, text)
+    refused: [state.Break] @ []
+
+    for b in l.breaks
+        if b.diagnostic >= 0
+            refused @ refused.push(b)
+
+    if l.heads.len() == 0
+        return LexOutput(tokens: l.tokens, diagnostics: l.diagnostics, breaks: refused)
+    return LexOutput(tokens: without_heads(l.tokens, heads: l.heads), diagnostics: l.diagnostics, breaks: refused)
+
+# The stream without the words that begin at `heads`, which ascend: the heads
+# a reading apart leaves out. Only a word goes, since a dedent begins where
+# its margin does, which at margin zero is the head's own first byte.
+function without_heads(tokens: [token.Token], heads: [i64]) -> [token.Token]
+    out: [token.Token] @ []
+    next: i64 @ 0
+
+    for t in tokens
+        if !is_layout(t.kind)
+            while next < heads.len() && heads[next] < t.span.start
+                next @ next + 1
+
+            if next < heads.len() && heads[next] == t.span.start
+                next @ next + 1
+                continue
+        out @ out.push(t)
+
+    return out
+
+function is_layout(kind: token.TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent || kind == .comment || kind == .eof
+
+## The stream, named
+
+# The kinds as one spaced line — the port's answer to the Rust snapshot
+# tests' rendering, and what keeps every end-to-end assertion readable.
+function kind_line(tokens: [token.Token]) -> str
+    names: [str] @ []
+
+    for t in tokens
+        names @ names.push(token.kind_name(t.kind))
+
+    return names.join(" ")
+
+test "a whole program lexes to the stream the parser expects"
+    out = lex_one("function main()\n    x = 5\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "kw_function ident lparen rparen terminator indent ident eq int terminator dedent eof"
+
+test "a file that ends without a newline still terminates its last line"
+    out = lex_one("x = 5")
+    assert kind_line(out.tokens) == "ident eq int terminator eof"
+
+test "an opener that never closes is a diagnostic, not a silent swallow"
+    out = lex_one("f(\ny = 1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unclosed_bracket"
+    assert out.diagnostics[0].span == token.Span(start: 1, end: 2)
+
+test "inside brackets the margin is free and the level is frozen"
+    out = lex_one("f(\n        1,\n        2)\nx = 1\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident lparen int comma int rparen terminator ident eq int terminator eof"
+
+test "blank and comment-only lines are layout-neutral"
+    out = lex_one("x = 1\n\n# note\ny = 2\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq int terminator comment ident eq int terminator eof"
+
+test "dedents close one level at a time and eof closes the rest"
+    out = lex_one("if a\n    if b\n        x = 1\n")
+
+    # A block header line ends in an ident, which IS a line ender — the
+    # terminator lands before the indent, and the parser reads both.
+    assert kind_line(out.tokens) == "kw_if ident terminator indent kw_if ident terminator indent ident eq int terminator dedent dedent eof"
+
+# UNVERIFIED — pending debrief
+test "an error never stops the lexer"
+    out = lex_one("let x = 0700 € \"open\n")
+    codes: [str] @ []
+
+    for d in out.diagnostics
+        codes @ codes.push(d.code)
+
+    assert codes == ["reserved_word", "leading_zero", "unexpected_character", "unterminated_string"]
+    assert out.tokens[out.tokens.len() - 1].kind == .eof
+
+## Parity with the Rust lexer's own suite (lexer/tests/)
+
+test "an empty file is just eof"
+    out = lex_one("")
+    assert kind_line(out.tokens) == "eof"
+    assert out.diagnostics.len() == 0
+
+test "a single ampersand is the bitwise operator, one token"
+    out = lex_one("x = 1 & 2\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq int amp int terminator eof"
+
+test "record and variant headers earn a terminator"
+    out = lex_one("record Point\n    x: i64\n")
+    assert kind_line(out.tokens) == "kw_record ident terminator indent ident colon ident terminator dedent eof"
+
+test "break, continue, the hole and the question mark end a line"
+    out = lex_one("break\ncontinue\n???\nx?\n")
+    assert kind_line(out.tokens) == "kw_break terminator kw_continue terminator hole terminator ident question terminator eof"
+
+# UNVERIFIED — pending debrief
+test "the residual windows path trap is on the record"
+    # Honest limit of panel 008: reserving the backslash makes "\d+" loud,
+    # but it CANNOT make "C:\temp" loud — \t is a legal escape, so the path
+    # silently becomes C:<TAB>emp. The fix is not more escapes but raw
+    # strings (deferred, out of scope for v1).
+    out = lex_one("p = \"C:\\temp\"\n")
+    assert out.diagnostics.len() == 0
+    assert escape.unescape("\"C:\\temp\"") == "C:\temp"
+    loud = lex_one("p = \"C:\\Users\"\n")
+    assert loud.diagnostics[0].code == "unknown_escape"
+
+# UNVERIFIED — pending debrief
+test "a backslash at end of line leaves the layout intact"
+    # The escape must not swallow the newline: doing so would destroy every
+    # indent and dedent that follows (§4.15).
+    out = lex_one("s = \"oops\\\n    x\n")
+    assert out.diagnostics[0].code == "unterminated_string"
+
+    # The `terminator` after `error` since 2026-09-28: an `error` token ends a
+    # line at depth zero (panel 181), so the malformed line cannot swallow the
+    # next one. The indent and dedent after it are the layout this test guards.
+    assert kind_line(out.tokens) == "ident eq error terminator indent ident terminator dedent eof"
+
+# UNVERIFIED — pending debrief
+test "a multibyte character after the backslash does not panic"
+    # The validator advances by the escaped character's UTF-8 length, not by
+    # one byte — a fixed stride would leave pos mid-character and the next
+    # slice would abort, a crash instead of a diagnostic.
+    out = lex_one("s = \"a\\èb\"\n")
+    assert out.diagnostics[0].code == "unknown_escape"
+    assert kind_line(out.tokens) == "ident eq str terminator eof"
+    assert escape.unescape("\"a\\èb\"") == "a\\èb"
+
+# A fixed defect gets a case named after it (CLAUDE.md §9). Symptom:
+# `return (1 + 2` in one module made the port swallow the next module
+# and the appended library, reporting the author's unclosed bracket as
+# `internal error … exit 2`. Cause: the port lexed the CONCATENATION,
+# so `open_brackets` and the indent level crossed the file boundary and
+# the single eof landed inside the library. Found 2026-08-17 by the
+# differential against the bootstrap over 257 corpus inputs, which
+# showed every multi-file dump missing its closing dedents.
+test "fixedbugs: a file's brackets and indent do not cross into the next"
+    broken = "function leaky() -> i64\n    return (1 + 2\n"
+    user = "use broken\n\nfunction main()\n    print(1)\n"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: user)
+        source.user_file(name: "broken.hero", text: broken)
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "constant HERO_OK: i64\n    0\n", is_library: true)
+    ]
+    s = source.from_files(inputs)
+    out = lex(s)
+
+    # The unclosed bracket is reported once, inside broken.hero.
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unclosed_bracket"
+    assert source.is_root(s, out.diagnostics[0].span.start) == false
+    assert source.file_at(s, out.diagnostics[0].span.start).name == "broken.hero"
+
+    # The one eof sits at the ROOT's end, never in the library.
+    last = out.tokens[out.tokens.len() - 1]
+    assert last.kind == .eof
+    assert last.span.start == source_extent.root_end(s)
+    assert source.is_root(s, last.span.start)
+
+# `f"…"` lexes as pieces with the holes' own tokens between them (panel 121;
+# `lex_interp.hero`). The kinds are the whole claim: a hole's tokens are the
+# tokens they would be anywhere, and a `}` inside a map literal in a hole does
+# not close the hole.
+test "an interpolated literal is pieces around ordinary tokens"
+    out = lex_one("s = f\"a {n} b\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece ident str_piece terminator eof"
+
+# A hole whose expression begins with `{` needs a space after the opener,
+# because `{{` is one brace of text — Python's rule, for Python's reason.
+test "a map literal inside a hole keeps its own braces, and a nested literal is a plain string"
+    out = lex_one("s = f\"{m[\"k\"]} and {{x}} { {1: 2}[1]}\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece ident lbracket str rbracket str_piece lbrace int colon int rbrace lbracket int rbracket str_piece terminator eof"
+
+test "a doubled brace at a hole's edge is text, not a hole"
+    out = lex_one("s = f\"{{1: 2}[1]}\"\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "ident eq str_piece terminator eof"
+
+test "a hole the line does not close is an unterminated string, and the next line starts clean"
+    out = lex_one("s = f\"a {n\ny = 1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "unterminated_string"
+
+# Panel 181: outside brackets a line ends its statement, in both directions,
+# and the parser is handed the one line the author broke (`open_line.hero`).
+test "a line that cannot end is refused at every margin, and the parser is handed the one line"
+    out = lex_one("y = a +\n1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "continuation_outside_brackets"
+    assert out.diagnostics[0].fixes[0].certainty == .certain
+    assert out.diagnostics[0].fixes[0].replacement == " "
+    assert kind_line(out.tokens) == "ident eq ident plus int terminator eof"
+    deeper = lex_one("y = xs.\n    len\nz = 2\n")
+    assert deeper.diagnostics.len() == 1
+    assert deeper.diagnostics[0].fixes[0].replacement == ""
+    assert kind_line(deeper.tokens) == "ident eq ident dot ident terminator ident eq int terminator eof"
+    shallower = lex_one("if a\n    y = a +\nb\n")
+    assert shallower.diagnostics[0].fixes[0].certainty == .guess
+    assert kind_line(shallower.tokens) == "kw_if ident terminator indent ident eq ident plus ident terminator dedent eof"
+    commented = lex_one("y = a +  # c\n1\n")
+    assert commented.diagnostics.len() == 1
+    assert commented.diagnostics[0].fixes.len() == 0
+    blank = lex_one("y = a +\n\n1\n")
+    assert blank.diagnostics.len() == 1
+    crlf = lex_one("y = a +\r\n1\r\n")
+    assert crlf.diagnostics.len() == 1
+    assert crlf.diagnostics[0].fixes[0].span == token.Span(start: 7, end: 9)
+
+test "the join is a guess where the next line could stand alone"
+    for text in ["y = a +\nshow(n: a)\n", "y = a +\nif c\n", "y = xs.\nlen()\n", "y = a +\n???\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() == 1
+        assert out.diagnostics[0].fixes[0].certainty == .guess
+
+test "a line that can only go on with the line above is refused, and joined to it"
+    out = lex_one("total = base\n- fee\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "continuation_outside_brackets"
+    assert out.diagnostics[0].span == token.Span(start: 13, end: 14)
+    assert out.diagnostics[0].fixes[0].certainty == .certain
+    assert kind_line(out.tokens) == "ident eq ident minus ident terminator eof"
+    propagated = lex_one("x = f()\n?\n")
+    assert propagated.diagnostics[0].fixes[0].replacement == ""
+    assert kind_line(propagated.tokens) == "ident eq ident lparen rparen question terminator eof"
+    after_a_block = lex_one("x = if c\n    1\nelse\n    2\n+ 3\n")
+    assert after_a_block.diagnostics.len() == 1
+    assert after_a_block.diagnostics[0].fixes[0].certainty == .guess
+    assert kind_line(after_a_block.tokens) == "ident eq kw_if ident terminator indent int terminator dedent kw_else indent int plus int terminator dedent eof"
+
+test "a line that begins a statement of its own is never a continuation"
+    for text in ["y = a\n(a + b).print()\n", "y = a\n[1, 2].len().print()\n", "y = a\n-a\n", "k = match s\n    0 => 1\n    -1 => 2\n", "k = match s\n    0 => 1\n    - 1 => 2\n", "k = match s\n    .a => 1\n    .b => 2\n", "y = a\n???\n", "f(x)\n-> i64\n"]
+        assert lex_one(text).diagnostics.len() == 0
+
+test "after a whole statement the next line is its own, whatever it begins with"
+    assert kind_line(lex_one("return\n+ 1\n").tokens) == "kw_return terminator plus int terminator eof"
+    assert kind_line(lex_one("break\n- b\n").tokens) == "kw_break terminator minus ident terminator eof"
+    assert kind_line(lex_one("use a\n/b\n").tokens) == "kw_use ident terminator slash ident terminator eof"
+    assert kind_line(lex_one("function f()\n+ 1\n").tokens) == "kw_function ident lparen rparen terminator plus int terminator eof"
+    assert lex_one("return\n+ 1\n").diagnostics.len() == 0
+
+test "else, an arm's arrow and the colon habit still open a block"
+    out = lex_one("else\n    x = 1\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "kw_else indent ident eq int terminator dedent eof"
+    arm = lex_one(".a =>\n    1\n")
+    assert arm.diagnostics.len() == 0
+    assert kind_line(arm.tokens) == "dot ident fat_arrow indent int terminator dedent eof"
+    colon = lex_one("if a:\n    x = 1\n")
+    assert colon.diagnostics.len() == 0
+
+test "a line left unfinished before a fresh one or a binding is ended there, and the parser says what it lacks"
+    out = lex_one("use shapes/\n\nfunction main()\n")
+    assert out.diagnostics.len() == 0
+    assert kind_line(out.tokens) == "kw_use ident slash terminator kw_function ident lparen rparen terminator eof"
+    split = lex_one("else\nif b\n")
+    assert split.diagnostics.len() == 1
+    alone = lex_one("else\nx = 1\n")
+    assert alone.diagnostics.len() == 0
+    assert kind_line(alone.tokens) == "kw_else terminator ident eq int terminator eof"
+    two = lex_one("total @ total +\ncount @ count + 1\n")
+    assert two.diagnostics.len() == 0
+    assert kind_line(two.tokens) == "ident at ident plus terminator ident at ident plus int terminator eof"
+    ret = lex_one("return a +\nx = 1\n")
+    assert ret.diagnostics.len() == 0
+    typed = lex_one("y:\ni64 = 5\n")
+    assert typed.diagnostics.len() == 1
+    assert typed.diagnostics[0].code == "continuation_outside_brackets"
+
+test "an error token ends a line at depth zero, so the next line is parsed on its own"
+    out = lex_one("a = 0X10\nb = 1\n")
+    assert kind_line(out.tokens) == "ident eq error terminator ident eq int terminator eof"
+
+test "after an arm's arrow a line is refused and joined as its body, never ended"
+    out = lex_one(".dot =>\nreturn 1\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "continuation_outside_brackets"
+    assert kind_line(out.tokens) == "dot ident fat_arrow kw_return int terminator eof"
+
+test "inside brackets the rule is not this one"
+    out = lex_one("y = (a +\n1)\nz = [1,\n2]\n")
+    assert out.diagnostics.len() == 0
+
+# Defect 129 (A): the joins of one statement broken at several line ends are
+# one repair, and they take one certainty, the weakest; a break with no join
+# makes the others a `guess`. The diagnostics stay one per break.
+test "the joins of one statement take the certainty of the weakest among them"
+    for text in ["x = y +\nz +\nprint(x)\n", "x = a\n-\nprint(x)\n", "x = y\n+ z +\nprint(x)\n", "x = y +\r\nz +\r\nprint(x)\r\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() == 2
+        assert out.diagnostics[0].fixes[0].certainty == .guess
+        assert out.diagnostics[1].fixes[0].certainty == .guess
+
+    commented = lex_one("x = y +\nz +  # note\nw\n")
+    assert commented.diagnostics.len() == 2
+    assert commented.diagnostics[0].fixes[0].certainty == .guess
+    assert commented.diagnostics[1].fixes.len() == 0
+
+    for text in ["x = y +\nz +\nw\n", "x = a\n-\nb\n", "x = a\n+ b\n+ c\n", "k = match n\n    0 => 5\n    *\n    2\n", "x = y +\r\nz +\r\nw\r\n"]
+        whole = lex_one(text)
+        assert whole.diagnostics.len() == 2
+        assert whole.diagnostics[0].fixes[0].certainty == .certain
+        assert whole.diagnostics[1].fixes[0].certainty == .certain
+
+    # A terminator between two breaks ends the first statement, and the second
+    # break's `guess` stays its own.
+    two = lex_one("x = a +\nb\ny = a +\nprint(a)\n")
+    assert two.diagnostics[0].fixes[0].certainty == .certain
+    assert two.diagnostics[1].fixes[0].certainty == .guess
+
+# Defect 129 (B): a join is `certain` only where its operator takes the literal
+# it writes beside it, by the checker's families (`operand_families`), and two
+# literal operands only of one family.
+test "a join is certain only where the operator takes the literal it is written against"
+    for text in ["x = a &&\n1\n", "x = a\n- \"s\"\n", "k = match n\n    0 => 5\n    -\n    \"=>\"\n", "k = match s\n    -\n    \"a\" => 10\n", "x = \"s\"\n- 1\n", "x = \"s\" +\n1\n", "if\n1\n    f()\n", "k = match n\n    0 => 5 -\n    1 => 10\n", "x = a -\n\"s\" + \"t\"\n", "x = a && true\n+ 1\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .guess
+
+    for text in ["x = s +\n\"b\"\n", "k = match n\n    -\n    'a' => 10\n", "x = a &&\ntrue\n", "x = b &&\n1\n== 1\n", "x = a +\n1 * 2\n", "x = a\n- f(\"s\")\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .certain
+
+# Defect 129 (A), the coordinator's widening: a statement that opens a block
+# is still one statement after it, so the break before the block and the one
+# the block's last line goes on with are one repair. It ends at its own
+# terminator, at its own level, or where its block closes on anything but
+# `else`; a break in a sibling statement after a block is its own.
+test "the joins of a statement take one certainty across a block of its own"
+    across = lex_one("x = a +\na + if c\n    a\nelse\n    a\n- a\nprint(x)\n")
+    assert across.diagnostics.len() == 2
+    assert across.diagnostics[0].fixes[0].certainty == .guess
+    assert across.diagnostics[1].fixes[0].certainty == .guess
+    arms = lex_one("x = a +\na + match n\n    0 => 1\n    _ => 2\n- a\nprint(x)\n")
+    assert arms.diagnostics[0].fixes[0].certainty == .guess
+    nested = lex_one("x = a +\na + if c\n    if d\n        1\n    else\n        2\nelse\n    3\n- a\n")
+    assert nested.diagnostics[0].fixes[0].certainty == .guess
+    siblings = lex_one("x = a +\nif c\n    1\nelse\n    2\ny = 3 +\n4\n")
+    assert siblings.diagnostics.len() == 2
+    assert siblings.diagnostics[1].fixes[0].certainty == .certain
+
+    # A line left open that the lexer ends rather than refuses, before a fresh
+    # statement or at the file's end, is a break no join repairs: the parser
+    # refuses it, so the statement's other joins are a `guess`.
+    for text in ["x = a +\nb +\nreturn 1\n", "x = a +\na + if c\n    a\nelse\n    a +\n", "x = a +\nb +"]
+        ended = lex_one(text)
+        assert ended.diagnostics.len() == 1
+        assert ended.diagnostics[0].fixes[0].certainty == .guess
+
+    alone = lex_one("x = a +\nb\ny = c +\nreturn 1\n")
+    assert alone.diagnostics[0].fixes[0].certainty == .certain
+
+# Defect 129 (B), widened: an operand made of literals has a family too, a
+# prefix operator's, a bracketed run's and a binary run's that binds tighter
+# than the join, by the checker's table, and a name beside a literal takes the
+# literal's; the whole expression the join writes is judged as well, so a join
+# that re-associates its line is a `guess`. A name alone leaves the join as its
+# break gave it, and so does a side refused on its own, `1 + "s"`, which is
+# that line's defect and not the join's.
+test "a join is judged against an operand built of literals alone"
+    for text in ["x = a &&\n-1\n", "x = a &&\n1 + 2\n", "x = a -\n(\"s\")\n", "x = a &&\n!1\n", "x = a +\n(1 + \"s\")\n", "while\n1 + 2\n    f()\n", "x = \"s\" + \"t\"\n- 1\n", "x = (1)\n+ \"s\"\n", "x = a &&\n1 + b\n", "x = a &&\nxs[0] * 2\n", "x = v ==\n1 == 2\n", "x = v <\n1 < 2\n", "if a +\n1\n    f()\n", "x = a && b\n+ 1\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .guess
+
+    for text in ["x = a &&\n1 == 2\n", "x = a +\n-1\n", "x = s +\n\"a\" + \"b\"\n", "x = a &&\n(1 < 2)\n", "x = a &&\n!true\n", "x = a +\n-b\n", "x = a &&\nb.len() > 0\n", "x = 1 * 2\n+ 3\n", "x = a +\ns\n", "x = a +\n1 + \"s\"\n", "x = v ==\n1 && c\n"]
+        out = lex_one(text)
+        assert out.diagnostics.len() > 0
+
+        for d in out.diagnostics
+            assert d.fixes[0].certainty == .certain
+
+# Defect 132: the lines read apart, which `parse/apart` holds the joined
+# reading against. Each break `lex_one` refuses and joins is a line end, the
+# next line's margin read; a head that could only go on is the break itself,
+# and it is left out; and `lex_one` hands on the breaks it refused.
+test "read apart, a refused break is a line end, and a head that goes on is left out"
+    assert kind_line(lex_apart("y = a +\n1\n").tokens) == "ident eq ident plus terminator int terminator eof"
+    assert kind_line(lex_apart("y = a +\n    1\nz = 2\n").tokens) == "ident eq ident plus terminator indent int terminator dedent ident eq int terminator eof"
+    assert kind_line(lex_apart("total = base\n- fee\n").tokens) == "ident eq ident terminator ident terminator eof"
+    assert kind_line(lex_apart("k = match n\n    0 => 5\n    | 1 => 10\n").tokens) == "ident eq kw_match ident terminator indent int fat_arrow int terminator int fat_arrow int terminator dedent eof"
+    assert kind_line(lex_apart("y = a +\r\n1\r\n").tokens) == "ident eq ident plus terminator int terminator eof"
+    assert lex_apart("y = a +\n1\n").diagnostics.len() == 0
+    broken = lex_one("y = a +\n1\nx = b\n+ c\nz = d +\nreturn 1\n")
+    assert broken.breaks.len() == 2
+    assert !broken.breaks[0].head
+    assert broken.breaks[1].head
+    assert broken.tokens[broken.breaks[0].after].kind == .int_lit
+    assert broken.tokens[broken.breaks[1].after].kind == .plus
+
+    # A line the lexer does not refuse is the same line read apart.
+    for text in ["x = 1\ny = 2\n", "f(a +\n    b)\n", "if a\n    x = 1\nelse\n    x = 2\n", "use a/\n\nfunction main()\n"]
+        assert kind_line(lex_apart(text).tokens) == kind_line(lex_one(text).tokens)
+        assert lex_one(text).breaks.len() == 0
+
+# Defect 132, beside it: a line left open over a line whose margin holds a tab
+# went on into it in silence, the tab the one report; it is ended there, and
+# the parser says what it lacks. A block's head is not ended, since the tabbed
+# line is read as its body.
+test "a line left open over a tabbed line is ended, and a block's head keeps its body"
+    out = lex_one("x = a +\n\tb\n")
+    assert out.diagnostics.len() == 1
+    assert out.diagnostics[0].code == "tab_in_indentation"
+    assert kind_line(out.tokens) == "ident eq ident plus terminator ident terminator eof"
+    named = lex_one("function\n\ty = 3\n")
+    assert kind_line(named.tokens) == "kw_function terminator ident eq int terminator eof"
+    assert kind_line(lex_one("else\n\tx = 1\n").tokens) == "kw_else ident eq int terminator eof"
+    assert kind_line(lex_one(".a =>\n\tx = 1\n").tokens) == "dot ident fat_arrow ident eq int terminator eof"
+    assert kind_line(lex_one("if a:\n\tx = 1\n").tokens) == "kw_if ident colon ident eq int terminator eof"
+
+# Defect 132's class, lane 133's finding: a word the lexer refuses at the head
+# of a line opens that line as its certain swap would, so the line above it
+# is ended there and not joined; a swap that writes a name, and a word with no
+# swap, are asked nothing.
+test "a foreign word at a line's head opens it as its swap would"
+    for text in ["constant A:\nconst B: i64\n    5\n", "record P\n    x:\nstruct Q\n", "use\nimport geom\n", "x = a +\nfn f()\n"]
+        out = lex_one(text)
+        assert out.breaks.len() == 0
+        assert out.diagnostics[0].code == "reserved_word"
+
+    named = lex_one("v:\nint @ 0\n")
+    assert named.breaks.len() == 1
+    guidance = lex_one("record P\n    x:\nclass Q\n")
+    assert guidance.breaks.len() == 1
+
+# Defect 132's class, lane 133's second finding: a line a refused word heads is
+# that word's mistake, which the parser drops whole, so its tokens open no
+# break: its end is a line end, and a line below that can only go on is its
+# own. A word read as its certain swap heads the line its swap does.
+test "a line a refused word heads opens no break"
+    for text in ["include <stdio.h>\nprint(1)\n", "let x = a +\nprint(1) )\n", "function f()\n    import java.util.*\n    x\n", "x = a +\ninclude <stdio.h>\nprint(1)\n", "case 1 =>\nprint(1)\n", "let y = a +\r\nprint(1)\r\n"]
+        out = lex_one(text)
+
+        for d in out.diagnostics
+            assert d.code != "continuation_outside_brackets" || d.span.start == 6
+
+    assert kind_line(lex_one("include <stdio.h>\nprint(1)\n").tokens) == "error lt ident dot ident gt terminator ident lparen int rparen terminator eof"
+    assert kind_line(lex_one("let x = 5\n+ 1\n").tokens) == "error ident eq int terminator plus int terminator eof"
+    assert kind_line(lex_apart("include <stdio.h>\nprint(1)\n").tokens) == kind_line(lex_one("include <stdio.h>\nprint(1)\n").tokens)
+    swapped = lex_one("fn main() ->\ni64\n")
+    assert swapped.diagnostics[1].code == "continuation_outside_brackets"
+    assert kind_line(swapped.tokens) == "error ident lparen rparen arrow ident terminator eof"

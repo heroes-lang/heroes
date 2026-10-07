@@ -1,0 +1,12 @@
+# UNVERIFIED — pending debrief
+# Adversarial case for evaluation order under short-circuit (§4.14). `a && b ||
+# c` groups as `(a && b) || c`, so `c` is evaluated exactly when `a && b` is
+# false — and `b` exactly when `a` is true. Each of the three calls records
+# whether it ran, so a lowering that evaluated an operand eagerly would give a
+# different answer and not a crash.
+function loud(tag: str, answer: bool) -> bool
+    print(tag)
+    return answer
+
+function decide(a: bool, b: bool, c: bool) -> bool
+    return loud("a", a) && loud("b", b) || loud("c", c)

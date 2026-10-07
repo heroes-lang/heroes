@@ -1,0 +1,11 @@
+# The caller. Nothing here is wrong, and that is the point of the case:
+# the mistake is one module over, and the verdict must still be exit 1
+# with the caret on `bind.hero`'s own line.
+#
+# This file carries no `#~` of its own — the annotation belongs where the
+# span lands, and the span lands in `bind.hero`.
+
+use bind
+
+function main()
+    print(bind.root(x: 16))

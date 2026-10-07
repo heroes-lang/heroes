@@ -1,0 +1,9 @@
+# Panel 173 q3: libc's own `free(void *)` on the lease, spelled `cstr`.
+extern "stdlib.h"
+    function free(p: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    free(p: c)
+    end_lease(@c)

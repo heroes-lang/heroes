@@ -1,0 +1,9 @@
+# `slice` out of range on a `str`. The behaviour existed; the sentence licensing
+# it landed with panel 027 R5, and panel 025 R2 held it back until it could be
+# verified on BOTH operand types — which is this case and the next one.
+# Bulk regression case.
+
+function main()
+    s = "abcde"
+    print(slice(s, from: 1, to: 3))
+    print(slice(s, from: 1, to: 9))

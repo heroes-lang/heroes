@@ -1,0 +1,30 @@
+# The ffi-pragmatist's `sqlite_copies` at panel 177, shape 1 of 4: the copy
+# lives inside the `Db?` the opener returned, read back with `.must()` after
+# the close. A payload is no binding, so neither the checker's half nor the
+# poison reaches it; the dead set refuses the copy at the crossing, since the
+# pool never hands an address out twice.
+
+extern "dead-address-copy-inside-a-fallible-value.h"
+    record CDb tag cdb
+    function db_open(path: cstr lent, @out: CDb acquires db_close) -> i64
+    function db_close(db: CDb consumes) -> i64
+    function db_changes(db: CDb) -> i32
+
+record Db
+    handle: CDb
+
+function opened() -> Db?
+    db: CDb @ nullptr
+
+    if db_open(path: ":memory:".cstr(), out: @db) != 0
+        return fail(code: "cannot_open", msg: "no")
+    return ok(Db(handle: db))
+
+function closed(@db: Db) -> i64
+    return db_close(db: db.handle)
+
+function main()
+    result = opened()
+    db: Db @ result.must()
+    _ = closed(@db)
+    print(db_changes(db: result.must().handle))

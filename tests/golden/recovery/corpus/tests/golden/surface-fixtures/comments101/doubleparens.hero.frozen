@@ -1,0 +1,20 @@
+# Two of the author's pairs of parentheses around one value, a comment just
+# inside the outer one (the third skeptic seat's `dp1`): `fmt` kept the
+# outer pair for the comment and dropped the inner, which the output guard,
+# counting the innermost of several pairs, refused at exit 2. Every pair of
+# the author's inside a pair kept for a comment is kept too: after the inner
+# `)`, after the outer `(`, and in a `return`.
+
+function f(a: i64) -> i64
+    x = ((a)  # after the inner paren
+    )
+    y = (  # after the outer paren
+        (a))
+    return x + y
+
+function g(a: i64) -> i64
+    return ((a)  # in a return
+    )
+
+function main()
+    print(f(a: 1) + g(a: 2))

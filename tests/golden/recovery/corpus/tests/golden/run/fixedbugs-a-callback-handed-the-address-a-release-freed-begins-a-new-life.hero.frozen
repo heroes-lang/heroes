@@ -1,0 +1,46 @@
+# DEFECT 098's interleaving, made deterministic on one thread: C frees the
+# node inside `sn_free_then` and calls back into the program BEFORE the call
+# returns, and the callback is handed that same address as a new node. The
+# runtime replaced the live entry with the new life, and the release's end,
+# landing after the callback, deleted it and remembered the address as dead:
+# the new node, taken back after the release, was then a stray at its correct
+# give-back. `check` 0, `run` 134 on Darwin arm64.
+#
+# Since runtime ABI 26 the release's end carries the number of the life it
+# was announced for, so it ends `a` and poisons `a`'s place, and the new
+# node's life stands until the program gives it back. The second callback is
+# the shape beside it: a REFERENCE taken at that address, `sn_find` marked
+# `retains sn_put`, by a call that ends nothing itself, begins the new life
+# rather than joining the one being given back, whose releasers it does not
+# share; it aborted as a wrong join.
+
+extern "fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.h"
+    record S tag sn
+    function sn_new() -> S acquires sn_free | sn_free_then
+    function sn_free(n: S consumes)
+    function sn_value(n: S) -> i64
+    function sn_free_then(n: S consumes, then: (function(i64) -> i64)) -> i64
+    function sn_park(n: S)
+    function sn_unpark() -> S borrows
+    function sn_find() -> S retains sn_put
+    function sn_put(n: S consumes)
+
+function again(offset: i64) -> i64
+    m = sn_new()
+    sn_park(n: m)
+    return sn_value(n: m) + offset
+
+function found(offset: i64) -> i64
+    r = sn_find()
+    v = sn_value(n: r)
+    sn_put(n: r)
+    return v + offset
+
+function main()
+    a = sn_new()
+    print("inside the release, the new node reads ", sn_free_then(n: a, then: again))
+    b = sn_unpark()
+    print("after it, the new node still reads ", sn_value(n: b))
+    sn_free(n: b)
+    c = sn_new()
+    print("inside the next release, a reference to the new node reads ", sn_free_then(n: c, then: found))

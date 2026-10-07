@@ -1,0 +1,17 @@
+# Defect 070's fifth shape (panel 172's completeness critic, 2026-09-21): C
+# frees the lease through a callback handed over as a value. `check` 0 under
+# every compiler this repository has shipped, because there is nothing to mark:
+# the freeing function is an ARGUMENT, and measurement 037's correct give-away
+# is one substitution away from this. The runtime names the lease anyway,
+# because a lease is live when the allocator kills the process.
+
+extern "c-frees-a-lease-through-a-callback.h"
+    function take_cb(s: cstr, cb: (function(cstr) -> ()))
+    function eat(s: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    print(2)
+    take_cb(s: c, cb: eat)
+    end_lease(@c)

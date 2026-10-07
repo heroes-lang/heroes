@@ -1,0 +1,26 @@
+# A transfer whose receiver is the handle the call hands back is not made
+# when that handle is NULL, C's failure for a pointer result (panel 177's
+# item 6): `realloc` that failed leaves the block with the caller, who still
+# owes it. No `when` is written, because NULL is what a handle result says on
+# its own. The successful path hands the old block over and the new one is
+# what the program frees.
+extern "handle-transfer-into-a-null-result-is-not-made.h"
+    record Mem tag mem
+    function mem_new(size: i64) -> Mem acquires mem_free
+    function grow(old: Mem transfers mem_free, size: i64) -> Mem acquires mem_free
+    function mem_free(m: Mem consumes)
+    function mem_size(m: Mem) -> i64
+
+function main()
+    p = mem_new(size: 8)
+    q = grow(old: p, size: 100)
+
+    if q == nullptr
+        print("grow failed, block kept: ", mem_size(m: p))
+        mem_free(m: p)
+    r = mem_new(size: 8)
+    t = grow(old: r, size: 32)
+
+    if t != nullptr
+        print("grown: ", mem_size(m: t))
+        mem_free(m: t)

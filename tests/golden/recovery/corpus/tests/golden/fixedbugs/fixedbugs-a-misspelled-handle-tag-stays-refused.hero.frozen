@@ -1,0 +1,22 @@
+# The shape NEXT to defect 037's repair, pinned so the repair cannot widen into
+# it (panel 152 R2; measured 2026-09-15 before and after the repair landed).
+#
+# The compiler now supplies `struct` in front of a handle's tag when clang
+# refuses the bare word with *must use 'struct' tag to refer to type 'X'*. That
+# message is produced only when X names a struct tag of exactly that spelling.
+# A MISSPELLED tag gets a different sentence — *unknown type name 'addrinfoo'*
+# — and this file is the witness that the compiler keeps the two apart: the
+# misspelling stays refused, on the author's own line, and is never dressed as
+# `struct addrinfoo *`, which C would accept as a brand-new empty type and
+# clang would never mention again. That silent acceptance is the reason panel
+# 152 refused a one-bit probe: `struct nosuchtype *p;` compiles at exit 0.
+#
+# This file must NOT compile. Its emission is blessed with the misspelled word
+# written bare, which is what the author wrote.
+
+extern "netdb.h"
+    record AI tag addrinfoo  #~ ffi_unknown_name
+    function freeaddrinfo(ai: AI consumes)
+
+function main()
+    print(0)

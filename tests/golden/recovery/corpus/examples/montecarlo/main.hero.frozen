@@ -1,0 +1,89 @@
+# Estimating pi by counting darts, one thread per seed — and the lesson is
+# what a thread is given instead of a stream of numbers.
+#
+# A parallel Monte Carlo in most languages hands each worker a random source.
+# Here nothing but an `i64` crosses a thread boundary, so what each thread gets
+# is its SEED, and it makes its own stream from that. The answer is therefore
+# the same on every run and on every machine, which is what lets this program
+# carry a `main.expected` at all: a program whose output is the machine's would
+# have to be checked only for not failing (examples/README.md).
+#
+# THE GENERATOR IS MINSTD, published: `x = 16807 * x % 2147483647`, Lewis,
+# Goodman and Miller 1969, the one Park and Miller called a minimal standard in
+# 1988. It is not a good generator by modern standards and it is a HONEST one
+# for this: every constant is in the open, the period is known, and nothing here
+# depends on it being unpredictable — only on it being the same everywhere.
+#
+# The arithmetic stays in `i64` on purpose. `16807 * x` with `x` below 2^31 is
+# at most 2^45, so nothing overflows, and Heroes aborts on overflow at every
+# width rather than wrapping (spec § Types) — a silent wrap here would move the
+# answer without moving the test.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant THREADS: i64
+    8
+
+constant DARTS: i64
+    20000
+
+# The largest x with x*x + y*y still comfortably inside an i64.
+constant SIDE: i64
+    46340
+
+function next_of(x: i64) -> i64
+    return 16807 * x % 2147483647
+
+# How many of this thread's darts land inside the quarter circle. The seed is
+# the only thing that came in.
+function inside_for(seed: i64) -> i64
+    hits: i64 @ 0
+    x: i64 @ seed * 7919 + 1
+    n: i64 @ 0
+
+    while n < DARTS
+        x @ next_of(x: x)
+        a = x % SIDE
+        x @ next_of(x: x)
+        b = x % SIDE
+
+        if a * a + b * b <= SIDE * SIDE
+            hits @ hits + 1
+        n @ n + 1
+
+    return hits
+
+function estimate() -> f64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < THREADS
+        handles @ handles.push(hero_thread_spawn(body: inside_for, arg: i))
+        i @ i + 1
+
+    hits: i64 @ 0
+
+    for h in handles
+        hits @ hits + hero_thread_join(handle: h)
+
+    return to_f64(hits * 4) / to_f64(THREADS * DARTS)
+
+function main()
+    print("pi from ", THREADS * DARTS, " darts on ", THREADS, " threads: ", estimate())
+
+test "the estimate is near pi, which is all a hundred and sixty thousand darts buy"
+    e = estimate()
+    assert e > 3.0
+    assert e < 3.3
+
+test "the generator is the published one"
+    assert next_of(x: 1) == 16807
+    assert next_of(x: 16807) == 282475249
+
+test "two seeds give two different streams, which is the point of a seed"
+    assert inside_for(seed: 0) != inside_for(seed: 5)
+
+test "and one seed gives the same stream twice, which is why this program has an expected output"
+    assert inside_for(seed: 3) == inside_for(seed: 3)

@@ -1,0 +1,21 @@
+# A comment inside the result type of a signature with no parameters (the
+# second skeptic seat's `function list() -> [  # c`): the parameter list was
+# opened for it and the comment went after the list's `(`, refused at exit
+# 2, where the trunk moved it at exit 0. A list written on one line stays
+# on one, and the result's type breaks after the token the comment
+# follows: a list's bracket, a map's brace, a key's type.
+
+function list() -> [  # after the list's bracket
+        i64]
+    return [1]
+
+function table() -> {  # after the map's brace
+        str: i64}
+    return {"a": 1}
+
+function keyed() -> {str:  # after the key's type
+        i64}
+    return {"b": 2}
+
+function main()
+    print(list().len() + table().len() + keyed().len())

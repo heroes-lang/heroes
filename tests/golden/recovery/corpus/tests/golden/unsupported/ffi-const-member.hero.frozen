@@ -1,0 +1,54 @@
+# DEFECT 060, found 2026-09-17 by panel 161's ffi-pragmatist beside the `char`
+# question, reproduced and repaired 2026-09-18.
+#
+# SYMPTOM: a header struct with any `const` member could not be built from
+# Heroes, and the compiler said so in its own voice: `internal error: compiling
+# the generated C failed`, exit 2, followed by clang's raw wording about a
+# variable `t3` the author never wrote. That is the compiler taking the blame
+# for an `extern` in a `.hero` file — three of the four things design.md §4.17
+# exists to prevent, in one message, and the exact shape CLAUDE.md §7's named
+# exception is for.
+#
+# CAUSE: every Heroes value is built by ASSIGNMENT — the emitter writes
+# `Locked t3; t3 = (Locked){…};` — and C11 6.5.16.1 forbids assigning to a
+# struct with a const-qualified member. clang says
+# `cannot assign to variable 't3' with const-qualified data member 'id'`, on a
+# `#line` that already points at the author's own file. So the LOCATION was
+# right all along and only the verdict was wrong: `emit/ffi.hero`'s `explain()`
+# walks clang's stderr through twenty readers and not one of them recognised
+# this wording, so it returned nothing, `blamed()` answered no, and the failure
+# fell through to exit 2.
+#
+# FIX: a twenty-first reader, `emit/ffi_field.const_member`. It recovers the
+# member name from clang's error line and asks which of THIS program's group
+# records declares a field of that name — §7's `declaration()` narrowing
+# unchanged, so a `const` member in anybody else's struct still stays exit 2 and
+# the compiler's fault. It reads the ERROR line alone and never the warnings
+# above it, because clang names the struct's type only there and holding state
+# across clang's output is a premise about clang's layout that panel 038 already
+# paid for once.
+#
+# WHY NO SITTING: the repair does not move the line between accepted and
+# refused. This program was refused before and is refused after; what changed is
+# who is blamed and what the message says. A new member of an existing class
+# whose own narrowing rule admits it, and the judgement is written here so a
+# later reader can disagree with it.
+#
+# THE SHAPES BESIDE IT, and two are still unrun (CL-061): a `const` member in a
+# `partial` record, a nested record holding one, and a `const` ARRAY member —
+# panel 161's ffi-pragmatist measured that `const char[N]` is refused at every
+# spelling and that it is the `const` and not the `char`, since
+# `const int32_t n[4]` is refused too. Whether those carry a good message or
+# this same internal error is not measured here.
+
+extern "ffi-const-member.h"
+    record Locked
+        id: i32  #~ ffi_const_field
+        n: i32
+    function locked_id(l: Locked) -> i32
+
+function main()
+    # Reading a `Locked` the library hands back is sound and is not what this
+    # case is about; BUILDING one is what C refuses.
+    x = Locked(id: 7, n: 1)
+    print(x.locked_id().to_i64().must())

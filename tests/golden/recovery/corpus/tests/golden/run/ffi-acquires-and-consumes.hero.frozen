@@ -1,0 +1,23 @@
+# The mark that says a C call hands a handle over, and names the one that takes
+# it back (panel 148 R2, M-marked-acquisition).
+#
+# `acquires <releaser>` is the shape `owned <freer>` already had one line away,
+# and the shape GCC ships as `__attribute__((malloc (fclose, 1)))`. The compiler
+# PLACES the counting and chooses neither end: both words are the binding
+# author's. This case is the pair balancing — the leak is
+# `abort-handle-never-given-back.hero` and the unpaired binding is
+# `abort-handle-given-back-unmarked.hero`.
+
+extern "ffi-acquires-and-consumes.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    a = slot_open(n: 7)
+    b = slot_open(n: 9)
+    print(slot_value(s: a) + slot_value(s: b))
+    slot_close(a)
+    slot_close(b)
+    print("both given back")
