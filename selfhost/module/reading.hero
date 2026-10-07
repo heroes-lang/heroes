@@ -117,7 +117,7 @@ function placed(s: source.Source, modules: [[source.Fault]]) -> source.Source
 
     for faults in modules
         for one in faults
-            out.faults @ out.faults.push(source.Fault(at: one.at + s.files[index].start, byte: one.byte))
+            add_fault(@out.faults, source.Fault(at: one.at + s.files[index].start, byte: one.byte))
 
         index @ index + 1
 
@@ -130,9 +130,15 @@ function rooted(s: source.Source, root: [source.Fault]) -> source.Source
     out.faults @ root
 
     for one in s.faults
-        out.faults @ out.faults.push(one)
+        add_fault(@out.faults, one)
 
     return out
+
+# Lent, so the list grows in place (defect 409): pushed through `out.faults`,
+# each fault copied every one before it, and a module holding 40,000 bytes
+# that are not UTF-8 cost 800 million copies before it was told.
+function add_fault(@faults: [source.Fault], one: source.Fault)
+    faults @ faults.push(one)
 
 # `ok()` where nothing is at `opened`, nor can be, which the loader takes for
 # an absent module and `modules.errors` tells on the `use` line; where
@@ -228,6 +234,29 @@ test "a compilation's faults stand in its text, the root's first"
     assert both.faults[0].at == 2
     assert both.faults[1].at == s.files[1].start + 1
     assert both.faults[1].byte == 233
+
+test "defect 409: a module's three hundred faults stand after the root's, each moved and in order"
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "# ab\n")
+        source.user_file(name: "geom.hero", text: "x".repeat(300) + "\n")
+    ]
+    s = source.from_files(inputs)
+    in_geom: [source.Fault] @ []
+    k: i64 @ 0
+
+    while k < 300
+        in_geom @ in_geom.push(source.Fault(at: k, byte: 200 + k % 50))
+        k @ k + 1
+
+    both = rooted(placed(s, modules: [in_geom]), root: [source.Fault(at: 2, byte: 255)])
+    assert both.faults.len() == 301
+    assert both.faults[0].at == 2 && both.faults[0].byte == 255
+    k @ 0
+
+    while k < 300
+        assert both.faults[k + 1].at == s.files[1].start + k
+        assert both.faults[k + 1].byte == 200 + k % 50
+        k @ k + 1
 
 test "a file of text keys as its text's digest, and a missing file fails as read_file does"
     assert !write_file(path: "build/selftest-reading-key.h", text: "int x;\n").is_err()
