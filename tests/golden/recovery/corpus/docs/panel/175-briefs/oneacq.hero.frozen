@@ -1,0 +1,10 @@
+extern "i2.h"
+    record H tag hh
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_close2(x: H consumes)
+
+function main()
+    h = h_open()
+    h_close2(x: h)
+    print("closed by the other one")

@@ -1,0 +1,324 @@
+# Scanning: the part of the lexer that reads *words* instead of shape.
+# Port of archive/bootstrap-rs/heroes/src/lexer/scan.rs.
+#
+# `line_body` walks one physical line and dispatches on the first byte of
+# each token: `#` comment, `"` string, `'` char, digit, letter, or
+# punctuation. Every scanner follows the same contract: it advances `l.pos`
+# past exactly what it consumed; on success it calls `state.emit` (which also
+# tracks bracket depth); on failure it calls `state.error_token` and KEEPS
+# LEXING — one bad literal must not hide every error after it.
+#
+# Port note: Rust's punct matches a (b0, Option<b1>, Option<b2>) tuple in one
+# `match`; Heroes has no tuple patterns, so the longest-match rule is an
+# if/else ladder in the same order — three-byte forms, then two, then one.
+# The order IS the rule, so the ladder keeps Rust's exact sequence. It lives
+# in `punctuation.hero` since panel 181, because the layout asks it too.
+
+use token
+use diag
+use state
+use layout
+use keywords
+use foreign_at
+use number
+use literals
+use lex_interp
+use bytes
+use shown_char
+use punctuation
+use open_line
+
+## One line of words
+
+# Lex tokens until the end of the physical line (inclusive).
+function line_body(@l: state.LexState, text: str)
+    while true
+        if l.pos >= text.len()
+            return
+        b = text[l.pos]
+
+        if b == ' '
+            l.pos @ l.pos + 1
+        else if b == '\t'
+            # A tab between tokens is as illegal as one in the margin.
+            span = token.Span(start: l.pos, end: l.pos + 1)
+            state.push_diagnostic(
+                @l.diagnostics,
+                diag.new_diagnostic(code: "tab_in_line", message: "a tab is a compile error — use spaces", span: span)
+            )
+            l.pos @ l.pos + 1
+        else if b == layout.CR
+            # A carriage return is tolerated ONLY as part of `\r\n`: a lone
+            # one merged two statements onto one reported line, and a terminal
+            # eats the CR too (2026-08-12, sweep 001 audit S6).
+            if number.byte_at(text, l.pos + 1) != '\n'
+                span = token.Span(start: l.pos, end: l.pos + 1)
+                state.push_diagnostic(
+                    @l.diagnostics,
+                    diag.new_diagnostic(code: "stray_carriage_return", message: "a carriage return that is not part of a line ending — delete it, or end the line", span: span)
+                )
+            l.pos @ l.pos + 1
+        else if b == '\n'
+            lex_interp.line_ends(@l, at: l.pos)
+            layout.maybe_terminator(@l)
+            l.pos @ l.pos + 1
+            l.last_significant @ fail(code: state.ERR_NO_SIGNIFICANT, msg: "line ended")
+            return
+        else if b == '#'
+            comment(@l, text)
+        else if b == '"'
+            literals.string(@l, text)
+        else if b == 'f' && number.byte_at(text, l.pos + 1) == '"'
+            # `f"…"` — an interpolated literal, lexed as pieces with the holes'
+            # own tokens between them (panel 121; `lex_interp.hero`).
+            lex_interp.head(@l, text)
+        else if b == '\''
+            literals.char_lit(@l, text)
+        else if bytes.is_digit(b)
+            number.number(@l, text)
+        else if bytes.is_alpha(b) || b == '_'
+            ident(@l, text)
+        else if b == '}' && lex_interp.closes_a_hole(l)
+            # This `}` closes a hole and not a map: the piece after it is text.
+            lex_interp.piece(@l, text)
+        else
+            punct(@l, text)
+
+## The comment
+
+# `# …` to end of line, retained as a token (doc comments and `##` section
+# headings are the parser's reading of the same span). Comments never
+# influence terminator insertion, so this bypasses `emit` and leaves
+# `last_significant` alone.
+function comment(@l: state.LexState, text: str)
+    start = l.pos
+
+    while l.pos < text.len() && text[l.pos] != '\n'
+        l.pos @ l.pos + 1
+
+    end: i64 @ l.pos
+
+    # Don't let a trailing \r into the comment's text.
+    if end > start && text[end - 1] == layout.CR
+        end @ end - 1
+    t = token.Token(kind: .comment, span: token.Span(start: start, end: end))
+
+    # A comment line after one that owes its terminator is held, so that it
+    # follows the terminator as it always did (`open_line`).
+    if l.owed >= 0
+        state.push_token(@l.held, t)
+    else
+        state.push_token(@l.tokens, t)
+
+## The word
+
+# A word: Heroes keyword, foreign reserved word (loud failure with the repair
+# pre-written — the thesis, executable), or plain identifier.
+function ident(@l: state.LexState, text: str)
+    start = l.pos
+
+    while l.pos < text.len() && (bytes.is_alnum(text[l.pos]) || text[l.pos] == '_')
+        l.pos @ l.pos + 1
+
+    word = text.slice(from: start, to: l.pos)
+    kw = keywords.keyword(word)
+
+    if !kw.is_err()
+        state.emit(@l, kw.must(), start)
+        return
+
+    # **The character after the word decides the repair** (defect 015). A
+    # word-for-word swap that is right where the word DECLARES something is
+    # wrong where it is CALLED — `int(3)` repaired to `i64(3)` is
+    # `error[unknown_name]`, and `--apply` wrote it. The lexer cannot know a
+    # position, but it can read the next byte, and that is a fact about the text
+    # in hand rather than a premise about the program around it (CLAUDE.md §11).
+    # `foreign_at.repair_at` reads that byte, and the parser asks the same
+    # function when it reads a construct as the swap writes it (defect 133).
+    #
+    # **The token stays `error` even where the swap is certain** (defect 133):
+    # the parser reads the swap only where it dispatches on the keyword the
+    # swap writes (`parse/swap_reading.hero`), and every other reader of the
+    # stream goes on seeing a word the lexer refused.
+    span = token.Span(start: start, end: l.pos)
+    foreign = foreign_at.repair_at(text, span)
+
+    if !foreign.is_err()
+        found = foreign.must()
+        d: diag.Diagnostic @ diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
+
+        d.fixes @ match found.repair
+            .swap fix => d.fixes.push(
+                diag.Fix(title: "replace `" + word + "` with `" + fix.word + "`", replacement: fix.word, span: span, certainty: .certain)
+            )
+            .hint fix => d.fixes.push(
+                diag.Fix(title: "`" + fix.word + "` is where to look", replacement: fix.word, span: span, certainty: .guess)
+            )
+            .drop => d.fixes.push(
+                diag.Fix(title: "drop `" + word + "`", replacement: "", span: token.Span(start: start, end: past_spaces(text, from: l.pos)), certainty: .guess)
+            )
+            .guidance => d.fixes
+
+        state.error_token(@l, d)
+        return
+    state.emit(@l, .ident, start)
+
+# The offset past the spaces that follow `from` on its line.
+function past_spaces(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i
+
+## The punctuation
+
+# Punctuation and operators, longest match first, from the one table
+# (`punctuation.hero`, which the layout reads too). Anything unmatched is
+# skipped one whole character at a time (UTF-8-safe) with a diagnostic.
+function punct(@l: state.LexState, text: str)
+    start = l.pos
+    found = punctuation.punct_at(text, at: start)
+
+    if found.width > 0
+        finish(@l, found.kind, start: start, width: found.width)
+        return
+
+    # Not in the language. Skip one whole character, UTF-8-safe.
+    ch = bytes.char_at(text, start)
+    l.pos @ l.pos + ch.len()
+    span = token.Span(start: start, end: l.pos)
+
+    # Not "(ASCII-only)": that read as an encoding fault for `&`, which is
+    # ASCII, and sent the reader hunting for one (panel 036). The syntax is
+    # ASCII-only, and this character is not in it — two different claims, and
+    # only the second is the error.
+    state.error_token(
+        @l,
+        diag.new_diagnostic(code: "unexpected_character", message: shown_char.named(ch) + " is not part of the language's syntax", span: span)
+    )
+
+function finish(@l: state.LexState, kind: token.TokenKind, start: i64, width: i64)
+    l.pos @ start + width
+    state.emit(@l, kind, start)
+
+# A line that ends with a value owes its terminator until the next line with
+# words or the file's end (panel 181, `open_line.owe`), so a test that lexes
+# one line alone ends the file itself, as `lexer.lex_one` does.
+test "a line of words dispatches on first bytes"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "x = f(12, \"s\")\n")
+    open_line.settle(@l)
+    kinds: [token.TokenKind] = [.ident, .eq, .ident, .lparen, .int_lit, .comma, .str_lit, .rparen, .terminator]
+    assert l.tokens.len() == kinds.len()
+    i: i64 @ 0
+
+    while i < kinds.len()
+        assert l.tokens[i].kind == kinds[i]
+        i @ i + 1
+
+    assert l.diagnostics.len() == 0
+
+test "longest match wins and the hole beats the question mark"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "??? -> => == != <= >= && || << >> ?")
+    kinds: [token.TokenKind] = [
+        .hole
+        .arrow
+        .fat_arrow
+        .eq_eq
+        .bang_eq
+        .le
+        .ge
+        .and_and
+        .or_or
+        .shl
+        .shr
+        .question
+    ]
+    assert l.tokens.len() == kinds.len()
+    i: i64 @ 0
+
+    while i < kinds.len()
+        assert l.tokens[i].kind == kinds[i]
+        i @ i + 1
+
+test "a keyword is not an identifier and a foreign word repairs itself"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "fn main()")
+    assert l.tokens[0].kind == .error
+    assert l.diagnostics[0].code == "reserved_word"
+    assert l.diagnostics[0].fixes[0].replacement == "function"
+    assert l.diagnostics[0].fixes[0].certainty == .certain
+    assert l.tokens[1].kind == .ident
+
+    # Where the word it writes is wrong, the swap is not offered as certain
+    # (defect 133's second round): `while function x` is no program.
+    w: state.LexState @ state.new_state()
+    line_body(@w, "while fn x")
+    assert w.tokens[0].kind == .kw_while
+    assert w.tokens[1].kind == .error
+    assert w.diagnostics[0].code == "reserved_word"
+    assert w.diagnostics[0].fixes.len() == 0
+    assert w.tokens[2].kind == .ident
+
+test "a comment is retained and plants no terminator"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "# a heading\n")
+    assert l.tokens.len() == 1
+    assert l.tokens[0].kind == .comment
+    v: state.LexState @ state.new_state()
+    line_body(@v, "x # trailing\n")
+    open_line.settle(@v)
+    assert v.tokens[0].kind == .ident
+    assert v.tokens[1].kind == .comment
+    assert v.tokens[2].kind == .terminator
+
+test "what is not in the language is skipped whole with its name"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "x € y\n")
+    open_line.settle(@l)
+    assert l.tokens[1].kind == .error
+    assert l.diagnostics[0].code == "unexpected_character"
+    assert l.tokens[3].kind == .terminator
+    assert l.tokens[2].kind == .ident
+
+test "a tab between tokens is named"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "x\ty\n")
+    assert l.diagnostics[0].code == "tab_in_line"
+    assert l.tokens[0].kind == .ident
+    assert l.tokens[1].kind == .ident
+
+# This test could not be written until panel 066, and the note that said so
+# stood right here: provoking the path needs a CR inside a test string, and
+# byte 13 had no spelling. It has one now, so the port tests BOTH directions —
+# the stray one, which is a diagnostic, and the tolerated `\r\n`, which was
+# untested on either side of the port (the compiler-engineer's finding).
+test "a stray carriage return is named and a crlf line ending is tolerated"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "print(1)\rprint(2)\n")
+    assert l.diagnostics.len() == 1
+    assert l.diagnostics[0].code == "stray_carriage_return"
+    crlf: state.LexState @ state.new_state()
+    line_body(@crlf, "x = 1\r\n")
+    open_line.settle(@crlf)
+    assert crlf.diagnostics.len() == 0
+    assert crlf.tokens[crlf.tokens.len() - 1].kind == .terminator
+
+test "a raw carriage return inside a literal is refused with the escape as its repair"
+    l: state.LexState @ state.new_state()
+    line_body(@l, "s = \"a\rb\"\n")
+    assert l.diagnostics.len() == 1
+    assert l.diagnostics[0].code == "raw_carriage_return"
+    assert l.diagnostics[0].fixes[0].replacement == "\\r"
+    assert l.diagnostics[0].fixes[0].certainty == .certain
+
+    # The token keeps its kind — one mistake, one diagnostic (panel 007).
+    assert l.tokens[2].kind == .str_lit
+
+    # And the escape spelling is clean, which is the whole point.
+    clean: state.LexState @ state.new_state()
+    line_body(@clean, "s = \"a\\rb\"\n")
+    assert clean.diagnostics.len() == 0

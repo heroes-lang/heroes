@@ -1,0 +1,32 @@
+# THE LIMIT THAT STAYS, on the callback route (panel 177's item 4; design.md
+# Part 8 wart 20; the landing's skeptic, probe `e4`, 2026-09-25). C keeps a
+# pointer the program handed it and a callback; the program gives the node
+# back; C calls back with the pointer it kept. The thunk C was handed SEES
+# the address, and it must clear the mark: a C library that makes a node of
+# its own at an address the program just gave back and hands it to the
+# callback (`dead-address-callback-hand-back-clears-the-mark`) is the same
+# address arriving the same way, and refusing it would refuse a correct
+# program. So the callback reads the freed node's word, -1, at exit 0, plain
+# and under `--sanitize` alike, since the pool is static; over a real
+# allocator ASan reports `heap-use-after-free` (the skeptic's `e4m`). If a
+# later route tells the two apart, this case goes red, and wart 20's
+# sentence is what must change with it.
+
+extern "limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+    function store_cb(cb: (function(Node) -> i64))
+    function store_node(n: Node)
+    function call_stored() -> i64
+
+function seen(n: Node) -> i64
+    return node_value(n: n)
+
+function main()
+    a = node_new()
+    store_cb(cb: seen)
+    store_node(n: a)
+    node_free(n: a)
+    print("the callback read after the release: ", call_stored())

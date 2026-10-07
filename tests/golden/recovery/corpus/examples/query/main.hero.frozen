@@ -1,0 +1,224 @@
+# A relational engine over a table this program writes: five thousand rows
+# out to a file, read back, filtered, joined, ordered, grouped and counted.
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth — the milestone's rung
+# between a program and the compiler. What it is here to exercise is not a
+# language form: every form has had a program since M-corpus-coverage. It is
+# **shape**, and three shapes in particular, each of them measured absent
+# from this corpus before it was written:
+#
+#   1. **Data at volume.** The largest input any corpus program reads is 28
+#      lines. This one generates 5,000 rows and hands them to copy-on-write
+#      (design.md §4.10) whole, several times per query — filtered, sliced,
+#      merged, grouped — under `-O0`, `-O2` and `--sanitize` alike.
+#   2. **A file this program made.** `examples/todo/` is the only other
+#      program in the corpus that writes one, and it writes four lines. This
+#      one writes its whole table and reads it back through a strict reader,
+#      so the round trip is a claim something checks rather than a hope.
+#   3. **Two shapes with no program**: `sort` on a `bool`, and a **map keyed
+#      by a record** — where the generated `hash` and `eq` walk fields
+#      rather than bytes (CLAUDE.md §7), so two keys built apart are one key.
+#
+# HOW IT IS CHECKED, and this is the part worth copying. Every number this
+# program prints is computed **twice, by two routes that share no line**:
+# the engine's aggregates against a plain loop over the same rows, the
+# grouped totals against the ungrouped ones, the joined count against the
+# unjoined one. `examples/sieve/` checks its answers against numbers
+# somebody else published; there is no published answer for a table this
+# program invented, so the second opinion has to be built rather than
+# fetched. A program that asserts only what its own functions produce
+# catches a change and not a mistake.
+#
+# WHAT IS DELIBERATELY NOT HERE: a query LANGUAGE. The corpus already holds
+# three programs that read one — `calculator/`, `json/` and `interpreter/` —
+# and a fourth parser would measure nothing new. A query here is a value
+# (`query/plan.hero`), which is a shape the corpus did not have: a `variant`
+# used as an instruction set, where the checker forces the engine to handle
+# every case it can be handed.
+
+use data/row
+use data/table
+use fmt/report
+use query/plan
+use run/engine
+
+constant DEFAULT_PATH: str
+    "build/query-table.csv"
+
+function main()
+    given = args()
+    path: str @ DEFAULT_PATH
+
+    if given.len() > 0
+        path @ given[0]
+    made = row.generated(row.ROWS)
+
+    match write_file(path: path, text: row.written(made))
+        .ok _  => print("wrote ", made.len().to_str(), " rows to ", path)
+        .err e => print("cannot write ", path, ": ", e.msg)
+
+    text = read_file(path)
+
+    if text.is_err()
+        print("cannot read back ", path)
+        exit(1)
+    rows = table.read(text.must())
+
+    if rows.is_err()
+        print("the table this program wrote does not read back — that is a defect, not bad input")
+        exit(1)
+    back = rows.must()
+    print("read back ", back.len().to_str(), " rows")
+
+    # The round trip, asserted at run time and not only in a test: the file
+    # is what the program will answer from, so a difference here makes every
+    # number below meaningless.
+    if back != made
+        print("the round trip changed the table")
+        exit(1)
+    print("")
+    report_of(back)
+
+# The whole report. One function so that `main` stays a shape a reader can
+# take in: what it does is decide the path, do the round trip, and hand the
+# rows here.
+function report_of(rows: [row.Row])
+    # 1. The top of the table by score, joined to its region.
+    print("the ten highest scores, with their region")
+    top = engine.limited(engine.ordered(rows, .by_score_high_first), 10)
+    columns: [plan.Column] = [.id, .team, .name, .score]
+    print(report.joined_table(columns, engine.joined_with(top, row.teams())))
+    print("")
+
+    # 2. One team, active only, by name — the filter that composes.
+    print("argo's active players, by name, first five")
+    both: [plan.Where] = [.team_is(team: "argo"), .active_is(want: true)]
+    argo = engine.limited(engine.ordered(engine.filtered(rows, .both(left: both)), .by_name), 5)
+    by_name: [plan.Column] = [.name, .score, .rate]
+    print(report.table(by_name, argo))
+    print("")
+
+    # 3. The groups, in the fixed order the map does not have.
+    print("every team, active and idle")
+    print(report.GROUP_HEADING)
+    groups = engine.grouped(rows)
+
+    for key in engine.group_order(groups)
+        print(report.group_line(key, groups[key].must()))
+
+    print("")
+
+    # 4. The aggregates over the whole table, and the same numbers again by
+    # a route that shares no line with the engine.
+    print("the whole table")
+    print("rows   ", engine.aggregate(rows, .how_many).to_str())
+    print("total  ", engine.aggregate(rows, .total_score).to_str())
+    print("best   ", engine.aggregate(rows, .best_score).to_str())
+
+    counted: i64 @ 0
+    summed: i64 @ 0
+
+    for r in rows
+        counted @ counted + 1
+        summed @ summed + r.score
+
+    print(
+        "agree  ",
+        agreement(counted == engine.aggregate(rows, .how_many) && summed == engine.aggregate(rows, .total_score))
+    )
+
+# The word a check prints. A `bool` printed as `true`/`false` would read as
+# data; this reads as a verdict.
+function agreement(holds: bool) -> str
+    if holds
+        return "yes"
+    return "no"
+
+test "the table this program writes reads back as the table it wrote"
+    made = row.generated(300)
+    back = table.read(row.written(made)).must()
+    assert back == made
+
+test "a file the program writes is the file the program reads"
+    path = "build/query-selftest.csv"
+    made = row.generated(120)
+    write_file(path: path, text: row.written(made)).must()
+    back = table.read(read_file(path).must()).must()
+    assert back == made
+
+    # And writing it again is the same bytes, which is what makes
+    # `main.expected` stable.
+    write_file(path: path, text: row.written(made)).must()
+    assert read_file(path).must() == row.written(made)
+
+test "the grouped totals add up to the ungrouped ones"
+    rows = row.generated(1000)
+    groups = engine.grouped(rows)
+    counted: i64 @ 0
+    summed: i64 @ 0
+
+    for key in engine.group_order(groups)
+        s = groups[key].must()
+        counted @ counted + s.rows
+        summed @ summed + s.total
+
+    assert counted == engine.aggregate(rows, .how_many)
+    assert summed == engine.aggregate(rows, .total_score)
+
+test "the engine's aggregates agree with a plain loop over the same rows"
+    rows = engine.filtered(row.generated(800), .active_is(want: true))
+    counted: i64 @ 0
+    summed: i64 @ 0
+    best: i64 @ -1
+
+    for r in rows
+        counted @ counted + 1
+        summed @ summed + r.score
+
+        if r.score > best
+            best @ r.score
+
+    assert engine.aggregate(rows, .how_many) == counted
+    assert engine.aggregate(rows, .total_score) == summed
+    assert engine.aggregate(rows, .best_score) == best
+
+test "filtering then ordering answers the same rows as ordering then filtering"
+    rows = row.generated(600)
+    keep: plan.Where = .score_at_least(least: 500)
+    first_filtered = engine.ordered(engine.filtered(rows, keep), .by_score_high_first)
+    first_ordered = engine.filtered(engine.ordered(rows, .by_score_high_first), keep)
+    assert first_filtered == first_ordered
+
+test "the join neither invents nor loses a row, and every region is a real one"
+    rows = row.generated(500)
+    with_region = engine.joined_with(rows, row.teams())
+    assert with_region.len() == rows.len()
+    regions: {str: bool} @ {}
+
+    for j in with_region
+        regions[j.region] @ true
+
+    assert regions.keys().sort() == ["east", "north", "south", "west"]
+
+test "the whole table at its real size, which is the size the report prints"
+    rows = row.generated(row.ROWS)
+    assert rows.len() == 5000
+    ordered = engine.ordered(rows, .by_score_high_first)
+    assert ordered.len() == 5000
+    assert ordered[0].score >= ordered[4999].score
+
+    # The top row really is the highest, checked against a plain scan.
+    best: i64 @ -1
+
+    for r in rows
+        if r.score > best
+            best @ r.score
+
+    assert ordered[0].score == best
+
+test "the report's first line is its heading and its last row is a row"
+    rows = row.generated(20)
+    columns: [plan.Column] = [.id, .name]
+    text = report.table(columns, rows)
+    assert text.slice(from: 0, to: 2) == "id"
+    assert text.len() > 20

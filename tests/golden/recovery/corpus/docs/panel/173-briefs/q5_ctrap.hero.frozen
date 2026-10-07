@@ -1,0 +1,10 @@
+# Panel 173 q5: a C library hits its own `__builtin_trap()` while a lease is
+# live. Nothing freed anything.
+extern "libabrt.h"
+    function lib_trap()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    lib_trap()
+    end_lease(@c)

@@ -1,0 +1,177 @@
+# The generated C compiles with NO warnings at all — over the goldens and
+# over the corpus.
+#
+# Ports golden.rs:811 and corpus.rs:382. Two directories of cases and
+# fourteen real programs, each through `build` (-O0) and `run` (-O2),
+# because the two verbs are the two optimisation levels and clang's
+# warnings reach stderr even on success — a warning nobody sees cannot
+# falsify anything.
+#
+# WHY A ZERO-WARNING BAR AND NOT A LIST OF ACCEPTABLE ONES: the flag set
+# has `-Werror=` on four warnings and plain `-W` on
+# `-Wconditional-uninitialized`, which panel 020 adopted with a falsifiable
+# disposition — zero fires across the corpus promotes it to `-Werror=`,
+# one fire is a lowering bug and gets a case named after it. This test is
+# that measurement, standing. If it ever fails, read the warning before
+# touching it: clang has found something about the emitter.
+#
+# `tests/golden/run/` was held to this from M-scalars-run and the corpus
+# was not, which is how a dead temporary reached a real program — `_ =
+# f(x)?` on a fallible left an `int64_t t72;` that nothing read, and clang
+# said so on every build of `examples/maze/` while every golden stayed
+# silent.
+#
+# THERE IS NO EXEMPTION, AND THERE WAS ONE UNTIL 2026-09-03. A program
+# that handed C an `@` parameter of type `ptr` emitted `void **` where the
+# header wanted `sqlite3 **`, and C converts `void *` to any object pointer
+# but never `void **`; that warning was TRUE, so this suite forwarded it and
+# asserted BOTH ways — a program lending a `ptr` HAD to warn, and only with
+# that text. The premise under it was an M-ffi-ladder decision: a cast the
+# emitter inserted would compile clean and hide a real limit of `ptr`.
+# Panel 103 overturned it on a measurement: clang 22 made that warning an
+# ERROR by default, so the same program was refused on two of the three
+# platforms and accepted on the third, and the emitter now passes
+# `(void *)&x` for a `ptr` out-parameter — the one pointee the spec leaves
+# to the header — while a NUMERIC `@` is checked by the compiler itself
+# (`cli/pointee.hero`). The second half of this suite fired on
+# `examples/sqlite` the same afternoon, exactly as the sentence above it
+# promised, and the exemption was deleted by the step that made it obsolete.
+
+use cases
+use report
+use shell
+use strings
+
+constant GOLDEN_DIRS: [str]
+    [
+        "tests/golden/run"
+        "tests/golden/emit"
+    ]
+
+constant EXAMPLES: str
+    "examples"
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+
+    for dir in GOLDEN_DIRS
+        for item in cases.collect(scratch: scratch, dir: dir)?
+            judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
+
+    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+        main = dir + "/main.hero"
+
+        if read_file(main).is_err()
+            continue
+        judge(@r, scratch: scratch, compiler: compiler, label: "warnings/" + strings.base_name(path: dir), main: main)
+
+    return ok(r)
+
+# One program under both verbs, and no warning under either.
+function judge(@r: report.Report, scratch: str, compiler: str, label: str, main: str)
+    for verb in ["build", "run"]
+        said = shell.run_guarded(
+            scratch: scratch,
+            words: [compiler, verb, main]
+        )
+
+        if said.is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot run the compiler on " + main)
+            return
+
+        if shell.machine_lacks_the_library(said.must().err)
+            return
+        noise = warnings_in(said.must().err)
+
+        if noise.len() > 0
+            blamed = foreign_program(noise: noise, main: main)
+
+            if blamed.len() > 0
+                report.keep_failure(
+                    @r,
+                    label: label + " under `" + verb + "`",
+                    detail: "  this invocation was building " + main + " and its stderr carried warnings about " + blamed + ":\n    " + noise.join("\n    ") + "\n  a warning names the program it is about, so one program's warnings reaching another's\n  stderr is a misattribution and not a finding (defect 057). Look for a file two clang\n  invocations share: before 2026-09-17 every one of them wrote `build/clang-stderr.txt`."
+                )
+                return
+            report.keep_failure(
+                @r,
+                label: label + " under `" + verb + "`",
+                detail: "  " + main + " produced clang warnings:\n    " + noise.join("\n    ")
+            )
+            return
+
+    report.keep_pass(@r)
+
+function warnings_in(err: str) -> [str]
+    found: [str] @ []
+
+    for row in strings.lines(err)
+        if strings.contains(text: row, needle: "warning:")
+            found @ found.push(row)
+
+    return found
+
+test "a warning line is found wherever clang puts it, and nothing else is"
+    said = "x.c:3:5: warning: unused variable 'a' [-Wunused-variable]\nx.c:9:1: note: here\n"
+    assert warnings_in(said).len() == 1
+    assert warnings_in("").len() == 0
+    assert warnings_in("no warnings here\n").len() == 0
+
+# **A warning names the program it is about, and this suite had no way to say
+# so** (defect 057, 2026-09-17). One net run reported three warnings against
+# `examples/curl` that named `tests/golden/ir/regression-extern-parameter-types`,
+# a program curl does not touch, and the row read as curl's own defect. The
+# repair is in the compiler, where every clang invocation now writes its own
+# stderr file instead of the build directory's one; this is the half that makes
+# the next occurrence say what it is rather than blame the nearest program.
+#
+# A `use` starts at the directory of the file being compiled (spec § 1), so
+# every module a program reaches is under that program's own directory. A
+# `.hero` path outside it, in this invocation's stderr, is therefore another
+# program's — and a C or header path is not evidence either way, since a
+# program may legitimately warn about a header it includes from anywhere.
+function foreign_program(noise: [str], main: str) -> str
+    home = directory_of(main)
+
+    for row in noise
+        for word in strings.words(row)
+            if !strings.contains(text: word, needle: ".hero")
+                continue
+            at = strings.index_of(text: word, needle: ".hero").must()
+            named = word.slice(from: 0, to: at + 5)
+
+            if named == main
+                continue
+
+            if home.len() > 0 && strings.starts_with(text: named, prefix: home + "/")
+                continue
+            return named
+
+    return ""
+
+# The directory a path sits in, or "" for a bare name.
+function directory_of(path: str) -> str
+    name = strings.base_name(path: path)
+
+    if name.len() >= path.len()
+        return ""
+    return path.slice(from: 0, to: path.len() - name.len() - 1)
+
+test "a warning naming another program is told apart from one naming this program's own modules"
+    mine = "examples/curl/main.hero"
+    own = ["examples/curl/http.hero:4:9: warning: unused variable 'a'"]
+    theirs = ["tests/golden/ir/regression-extern-parameter-types.hero:14:109: warning: absolute value"]
+    generated = ["build/tu-08401abe1c35d47d/x.c:28:29: warning: absolute value function 'abs'"]
+    assert foreign_program(noise: own, main: mine) == ""
+    assert foreign_program(noise: theirs, main: mine) == "tests/golden/ir/regression-extern-parameter-types.hero"
+
+    # A C path names no program, so it is not evidence: the `.hero` line beside
+    # it is what says whose compile this was.
+    assert foreign_program(noise: generated, main: mine) == ""
+    assert foreign_program(noise: [], main: mine) == ""
+    assert directory_of("examples/curl/main.hero") == "examples/curl"
+    assert directory_of("main.hero") == ""
+
+    # A `note:` mentioning the word is not a warning line; a real warning
+    # line always carries `warning:` itself.
+    assert warnings_in("  note: this warning: is quoted\n").len() == 1

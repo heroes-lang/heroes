@@ -1,0 +1,410 @@
+# Every temporary the emitted C defines is written WHOLE before any part
+# of it is written, over the blessed bytes and the seed, with no compiler
+# run at all (panel 182's item 3).
+#
+# WHY IT EXISTS. Since panel 182 the prologue gives a temporary no
+# initialiser (`selfhost/emit/body.hero`): its one definition precedes
+# every read, which the verifier proves of the IR. That is a fact about the
+# IR's definition, and the C has to carry it out whole for the fact to
+# reach the bytes. The map lookup's found path did not: it wrote
+# `t3.tag = INT64_C(0);` and then copied the payload into `t3.as.ok`, so
+# the rest of the union and the padding kept what the prologue left. When
+# the prologue zeroed every temporary that was zeros; after panel 182 it
+# is indeterminate memory inside a value the IR calls defined. 132 such
+# sites in the seed and 83 in the blessed corpus at `64003edd`, measured
+# by this suite before the repair, and seen by nothing else: the verifier
+# sees one definition, clang does not warn about a partly written
+# aggregate, ASan does not track uninitialised bytes, and the panel's own
+# first analyser read the lookup's `if`/`else` as straight-line code.
+#
+# WHAT IT COUNTS, textually, which is what makes it an instrument rather
+# than a second copy of the emitter's logic. A temporary is a name the
+# mangler spells `t<N>` (`emit/mangle.value`). A PART of one is written
+# when a statement assigns to `t<N>.…` or `t<N>[…]`, or when `&t<N>.…`,
+# `&t<N>[…]` or `&(t<N>.…` is handed to anything, which may write through
+# it. Such a write is legal only after a WHOLE write, `t<N> = …;`, in the
+# same brace scope or one enclosing it, since the start of that scope or
+# of the basic block (`bb<N>:`) the scope sits in. A whole write in a
+# sibling branch does not count, and that is the shape the lookup had:
+# `if (found == NULL) { t3 = …; } else { t3.tag = …; }`.
+#
+# WHAT IT DOES NOT SEE, said rather than implied. A callee handed `&t<N>`
+# whole that writes only part of it (every such call in the seed today is
+# a retain, a release, an `eq` or an overflow builtin, grepped
+# 2026-09-28); and a slot's partial write, which is a place store into a
+# value the author already initialised whole (spec § 5) rather than a
+# definition. A part READ through an address after a whole write in an
+# earlier block would be reported, which is the loud direction: none exists
+# today, and one that appears is a question to answer here.
+#
+# WHY OVER THE BLESSED BYTES, as `suite_descriptors` does and for its
+# reasons: they are what `emission` pins byte for byte, so this covers
+# every program that suite covers, plus the seed, for the cost of reading
+# files.
+
+use report
+use shell
+use strings
+
+constant EMISSIONS: str
+    "tests/emission"
+
+constant SEED: str
+    "seed/heroes.c"
+
+# How many findings a failure quotes, so a regression across the corpus
+# names its sites without drowning the report.
+constant QUOTED: i64
+    5
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @ report.empty()
+    judged: i64 @ 0
+
+    for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
+        if !strings.ends_with(text: entry, suffix: ".c")
+            continue
+        text = read_file(entry)
+        label = "wholes/" + strings.base_name(path: entry)
+
+        if text.is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot read " + entry)
+            continue
+        judge(@r, label: label, c: text.must())
+        judged @ judged + 1
+
+    # A walk that finds nothing reports green, so the store's absence is a
+    # failure rather than a smaller pass.
+    if judged == 0
+        report.keep_failure(@r, label: "wholes/store", detail: "  no blessed emission under " + EMISSIONS)
+    seed = read_file(SEED)
+
+    if seed.is_err()
+        report.keep_failure(@r, label: "wholes/seed", detail: "  cannot read " + SEED)
+    else
+        judge(@r, label: "wholes/seed", c: seed.must())
+    return ok(r)
+
+function judge(@r: report.Report, label: str, c: str)
+    found = partial_writes(c)
+
+    if found.len() == 0
+        report.keep_pass(@r)
+        return
+    quoted: [str] @ []
+
+    for one in found
+        if quoted.len() < QUOTED
+            quoted @ quoted.push("    line " + one.line.to_str() + ": " + strings.trimmed(one.text))
+
+    report.keep_failure(
+        @r,
+        label: label,
+        detail: "  " + found.len().to_str() + " writes into a part of a temporary that nothing wrote whole on that path:\n" + quoted.join("\n") + "\n  The bytes such a write does not name keep what the prologue left, and since panel 182 the prologue gives a temporary no initialiser (`emit/body.hero`). Write the aggregate whole first, `t = (T){.tag = ...};`, and then the part, as `emit/container.hero`'s `map_get` does"
+    )
+
+record Finding
+    line: i64
+    text: str
+
+# Where the walk stands: inside a literal or a comment, nothing is code.
+variant Mode
+    code
+    string
+    character
+    comment
+
+# Every partial write that no whole write precedes on its path, in text
+# order. A byte walk and never a split into lines: the seed is 30 MB, and
+# `suite_descriptors` measured `split_on` on it never finishing. A line is
+# materialised only for a finding.
+function partial_writes(c: str) -> [Finding]
+    found: [Finding] @ []
+
+    # One set per open brace: the temporaries written whole in it so far.
+    # Index 0 is outside every function and holds nothing.
+    scopes: [{i64: bool}] @ [{}]
+    mode: Mode @ .code
+    n = c.len()
+    at: i64 @ 0
+    line: i64 @ 1
+    line_start: i64 @ 0
+
+    # Whether the next code byte begins a statement: after a line's
+    # indentation, a `{`, a `}` or a `;`.
+    fresh: bool @ true
+
+    while at < n
+        b = c[at]
+
+        if b == '\n'
+            line @ line + 1
+            line_start @ at + 1
+            fresh @ true
+
+            # A string or character literal never spans a line in the
+            # emitted C; a block comment may.
+            match mode
+                .string | .character => mode @ .code
+                .code | .comment     => mode @ mode
+
+            at @ at + 1
+            continue
+
+        match mode
+            .string =>
+                if b == '\\'
+                    at @ at + 2
+                    continue
+
+                if b == '"'
+                    mode @ .code
+                at @ at + 1
+                continue
+            .character =>
+                if b == '\\'
+                    at @ at + 2
+                    continue
+
+                if b == '\''
+                    mode @ .code
+                at @ at + 1
+                continue
+            .comment =>
+                if b == '*' && at + 1 < n && c[at + 1] == '/'
+                    mode @ .code
+                    at @ at + 2
+                    continue
+                at @ at + 1
+                continue
+            .code => mode @ mode
+
+        # A preprocessor line (`#line`, `#include`) is not code the walk reads.
+        if b == '#' && at == line_start
+            at @ skip_line(c: c, at: at)
+            continue
+
+        if b == ' '
+            at @ at + 1
+            continue
+
+        if b == '"'
+            mode @ .string
+            fresh @ false
+            at @ at + 1
+            continue
+
+        if b == '\''
+            mode @ .character
+            fresh @ false
+            at @ at + 1
+            continue
+
+        if b == '/' && at + 1 < n && c[at + 1] == '*'
+            mode @ .comment
+            at @ at + 2
+            continue
+
+        if b == '/' && at + 1 < n && c[at + 1] == '/'
+            at @ skip_line(c: c, at: at)
+            continue
+
+        if b == '{'
+            scopes @ scopes.push({})
+            fresh @ true
+            at @ at + 1
+            continue
+
+        if b == '}'
+            if scopes.len() > 1
+                scopes @ scopes.slice(from: 0, to: scopes.len() - 1)
+            fresh @ true
+            at @ at + 1
+            continue
+
+        if b == ';'
+            fresh @ true
+            at @ at + 1
+            continue
+
+        # A basic block's label at a function's own depth starts a path the
+        # whole writes above it may not be on.
+        if fresh && scopes.len() == 2 && is_label(c: c, at: at)
+            scopes[1] @ {}
+            at @ skip_line(c: c, at: at)
+            continue
+
+        # `&t<N>.`, `&t<N>[` and `&(t<N>.`: the address of a part, handed on.
+        if b == '&'
+            name_at: i64 @ at + 1
+
+            if name_at < n && c[name_at] == '('
+                name_at @ name_at + 1
+            end = temporary_end(c: c, at: name_at)
+
+            if end > name_at && end < n && (c[end] == '.' || c[end] == '[')
+                if !written_whole(scopes: scopes, value: number_of(c: c, from: name_at + 1, to: end))
+                    found @ found.push(Finding(line: line, text: line_text(c: c, start: line_start)))
+            fresh @ false
+            at @ at + 1
+            continue
+
+        if fresh && b == 't'
+            end = temporary_end(c: c, at: at)
+
+            if end > at
+                value = number_of(c: c, from: at + 1, to: end)
+
+                if at_whole_assignment(c: c, at: end)
+                    top = scopes.len() - 1
+                    scopes[top][value] @ true
+                else if end < n && (c[end] == '.' || c[end] == '[') && assigns_before_end(c: c, at: end)
+                    if !written_whole(scopes: scopes, value: value)
+                        found @ found.push(Finding(line: line, text: line_text(c: c, start: line_start)))
+
+        fresh @ false
+        at @ at + 1
+
+    return found
+
+# Where a temporary's name `t<N>` starting at `at` ends, or `at` when none
+# starts there. The byte before must not continue an identifier, which the
+# callers ensure by asking only at a statement start or after `&` or `(`.
+function temporary_end(c: str, at: i64) -> i64
+    if at >= c.len() || c[at] != 't'
+        return at
+    end: i64 @ at + 1
+
+    while end < c.len() && c[end] >= '0' && c[end] <= '9'
+        end @ end + 1
+
+    if end == at + 1
+        return at
+
+    # `t12x` is somebody else's identifier, not a temporary.
+    if end < c.len() && is_name_byte(c[end])
+        return at
+    return end
+
+function number_of(c: str, from: i64, to: i64) -> i64
+    value: i64 @ 0
+    at: i64 @ from
+
+    while at < to
+        value @ value * 10 + (c[at] - '0').to_i64().must()
+        at @ at + 1
+
+    return value
+
+# ` = ` right after the name, and not `==`.
+function at_whole_assignment(c: str, at: i64) -> bool
+    return at + 3 < c.len() && c[at] == ' ' && c[at + 1] == '=' && c[at + 2] == ' '
+
+# Whether the statement that begins with a part of a temporary assigns to
+# it: a ` = ` before its `;`, outside any literal. `==`, `!=`, `<=` and
+# `>=` are not one, since each has a byte other than a space before its `=`
+# or an `=` after it.
+function assigns_before_end(c: str, at: i64) -> bool
+    k: i64 @ at
+
+    while k + 2 < c.len()
+        b = c[k]
+
+        if b == ';' || b == '\n' || b == '"' || b == '\''
+            return false
+
+        if b == ' ' && c[k + 1] == '=' && c[k + 2] == ' '
+            return true
+        k @ k + 1
+
+    return false
+
+function written_whole(scopes: [{i64: bool}], value: i64) -> bool
+    for scope in scopes
+        if !scope[value].is_err()
+            return true
+
+    return false
+
+# `bb<N>:` alone on its line.
+function is_label(c: str, at: i64) -> bool
+    if at + 3 >= c.len() || c[at] != 'b' || c[at + 1] != 'b'
+        return false
+    k: i64 @ at + 2
+
+    while k < c.len() && c[k] >= '0' && c[k] <= '9'
+        k @ k + 1
+
+    return k > at + 2 && k < c.len() && c[k] == ':'
+
+function skip_line(c: str, at: i64) -> i64
+    k: i64 @ at
+
+    while k < c.len() && c[k] != '\n'
+        k @ k + 1
+
+    return k
+
+# The line a finding sits on. Sliced at line boundaries only, which are
+# character boundaries whatever the bytes between.
+function line_text(c: str, start: i64) -> str
+    return c.slice(from: start, to: skip_line(c: c, at: start))
+
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+## Tests
+
+test "the lookup's old found path is the finding, and its whole write is the repair"
+    # Byte for byte what `emit/container.hero` printed until panel 182.
+    old = "int f(void) {\n    goto bb0;\nbb0:\n{\n  const void *found = hero_map_find(t1, &t2);\n  if (found == NULL) {\n    t3 = (opt){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};\n  } else {\n    t3.tag = INT64_C(0);\n    (&hero_desc_int)->copy(&t3.as.ok, found);\n  }\n}\n}\n"
+    got = partial_writes(old)
+
+    # Both the tag and the payload's address: the whole write is in the
+    # sibling branch, which is not this path.
+    assert got.len() == 2
+    assert got[0].line == 9
+    assert strings.trimmed(got[0].text) == "t3.tag = INT64_C(0);"
+    assert got[1].line == 10
+
+    fixed = "int f(void) {\n    goto bb0;\nbb0:\n{\n  const void *found = hero_map_find(t1, &t2);\n  if (found == NULL) {\n    t3 = (opt){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};\n  } else {\n    t3 = (opt){.tag = INT64_C(0)};\n    (&hero_desc_int)->copy(&t3.as.ok, found);\n  }\n}\n}\n"
+    assert partial_writes(fixed).len() == 0
+
+test "a whole write reaches the scopes inside it and stops at a label"
+    # Written whole in the block, then a part inside a nested brace: legal.
+    nested = "int f(void) {\nbb0:\n    t4 = make();\n    { fill(&t4.as.ok); }\n}\n"
+    assert partial_writes(nested).len() == 0
+
+    # The same part after a label: another path, so it is reported.
+    across = "int f(void) {\nbb0:\n    t4 = make();\n    goto bb1;\nbb1:\n    t4.tag = INT64_C(0);\n}\n"
+    assert partial_writes(across).len() == 1
+
+    # Two statements on one line, the whole write first.
+    one_line = "int f(void) {\nbb0:\n    t5 = make(); t5.f_x = t1;\n}\n"
+    assert partial_writes(one_line).len() == 0
+
+    # A whole write in a closed scope does not reach past its brace.
+    closed = "int f(void) {\nbb0:\n    { t6 = make(); }\n    t6.f_x = t1;\n}\n"
+    assert partial_writes(closed).len() == 1
+
+test "reads, pointers, slots, literals and comments are not partial writes"
+    # A comparison of a part, a read of a part, a pointer's member written
+    # THROUGH the pointer, a slot's field (a place store), and every shape
+    # inside a string, a character literal and a comment.
+    text = "int f(void) {\nbb0:\n    t7 = t3.tag == INT64_C(0);\n    t8 = t3.as.ok;\n    t9->f_x = t1;\n    h0_p.f_x = t1;\n    t10 = HERO_STR_LIT(\"t3.tag = 1; &t3.as.ok\");\n    t11 = '{';\n    /* t3.tag = 1; &t3.as { */\n    t12 = hero_str_eq(t3, t4);\n}\n#line 4 \"&t3.as.ok\"\n"
+    assert partial_writes(text).len() == 0
+
+    # `t12x` is not a temporary; `&(t3.f)` is the address of a part.
+    assert partial_writes("int f(void) {\nbb0:\n    t12x.f = 1;\n}\n").len() == 0
+    assert partial_writes("int f(void) {\nbb0:\n    g(&(t3.f_x));\n}\n").len() == 1
+
+test "a failure names the count and the sites, and a clean text passes"
+    clean: report.Report @ report.empty()
+    judge(@clean, label: "clean", c: "int f(void) {\nbb0:\n    t1 = g();\n}\n")
+    assert clean.passed == 1
+    assert clean.failed == 0
+    bad: report.Report @ report.empty()
+    judge(@bad, label: "bad", c: "int f(void) {\nbb0:\n    t1.tag = INT64_C(0);\n}\n")
+    assert bad.failed == 1
+    assert strings.contains(text: bad.failures[0], needle: "1 writes into a part of a temporary")
+    assert strings.contains(text: bad.failures[0], needle: "line 3: t1.tag = INT64_C(0);")

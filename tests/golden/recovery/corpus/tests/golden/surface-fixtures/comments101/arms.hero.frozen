@@ -1,0 +1,23 @@
+# Defect 101's third shape: a blank line under a comment between two `match`
+# arms, and under the last line of a block arm, which the source does not
+# have. The match-arm walk counted lines, so the comment's own line was a gap;
+# it asks the source now, as every other walk does. This file is canonical:
+# `fmt` prints it back byte for byte.
+
+function f(n: i64)
+    match n
+        0 => print(0)
+        # between two arms, at the arms' column
+        1 => print(1)
+
+        # between two arms, a blank line above
+        2 =>
+            print(2)
+            # at the end of a block arm, at its body's column
+        3 =>
+            print(3)
+        # after a block arm, at the arms' column
+        _ => print(4)
+
+function main()
+    f(n: 1)

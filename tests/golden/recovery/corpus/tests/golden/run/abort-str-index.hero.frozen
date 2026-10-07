@@ -1,0 +1,10 @@
+# Spec line 129: "An out-of-bounds index or slice aborts". Four of the five cases
+# that sentence covers had NO test at all until M6 step 3 — including this one,
+# which the spec has claimed since v0. Panel 025 R3's third tooth is what found
+# that: "the warden verifies, on every type the sentence covers".
+# Bulk regression case.
+
+function main()
+    s = "abc"
+    print(s[2])
+    print(s[9])

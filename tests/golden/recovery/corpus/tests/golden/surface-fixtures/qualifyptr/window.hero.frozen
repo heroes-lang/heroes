@@ -1,0 +1,11 @@
+# The FFI's most natural spelling, and the program that found a `certain` fix
+# reproducing itself (panel 102's ffi-pragmatist, unasked; re-measured
+# 2026-09-03 on the seed of 2026-09-02 17:52): a local `window: ptr` beside
+# `use window`, and `window.destroy()` — `ptr` has no fields, so the dot falls
+# to the module path, and the repair `needs_qualifying` offered prepended the
+# qualifier the line already had: `window.window.destroy()`, then
+# `window.window.window.destroy()`. The fix is a guess since M-robustness-guards
+# step 2, and `check --apply` leaves `main.hero` untouched.
+function destroy(handle: ptr) -> i64
+    _ = handle
+    return 0

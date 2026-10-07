@@ -1,0 +1,43 @@
+# Defect 099's own class, found by the skeptic seat over 832478b3: a comment
+# after a block's last statement, when that statement ends with the author's
+# `)` alone on its line. `fmt` did not count the `)` line as part of the
+# statement, saw code between the statement and the comment, and printed
+# the comment at the next item's column, outside the block, at exit 0: after
+# a body (`m1`), after an `if` block's last statement (`s2`), after a
+# match's last arm (`s5`), after a loop's body. A `)` alone on its line is
+# part of the statement it closes now, and each comment stays in its block.
+
+function f(a: i64) -> i64
+    return (a
+    )
+    # the last word of f
+
+function g(c: bool, a: i64, b: i64) -> i64
+    x: i64 @ 0
+
+    if c
+        x @ (a +
+            b
+        )
+        # still in the if block
+    return x
+
+function h(x: i64, a: i64, b: i64) -> i64
+    y = match x
+        0 => 1
+        _ => (a +
+            b
+        )
+        # after the last arm, inside the match
+    return y
+
+function k(a: i64)
+    for i in range(from: 0, to: 3)
+        print((a +
+            i
+        ))
+        # after the loop's last statement
+
+function main()
+    print(f(a: 1) + g(c: true, a: 1, b: 2) + h(x: 0, a: 1, b: 2))
+    k(a: 1)

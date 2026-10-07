@@ -1,0 +1,155 @@
+# One run of the recovery arm as a reading reads it, and each mutant's own
+# messages in it (panel 187's R2, defect 210): `mutate/differential.hero`
+# compares two of these; this module reads one, record by record.
+#
+# A run's records are `singles.jsonl` and `pairs.jsonl`, as `replay.py`
+# wrote them or as `heroes mutate --recovery` writes them, and its
+# `corpus.jsonl`, which only the arm writes. A mutant's messages of its own
+# are its messages less its program's, unmutated (`mutate/own.hero`), where
+# the run recorded its corpus; a pair's second is told of its own from the
+# pair's messages where the run kept them, the arm's records, and as the
+# record says otherwise.
+
+use mutate/hunks
+use mutate/json_fields
+use mutate/json_read
+use mutate/own
+use mutate/plan
+
+# One run's records, by key, and its corpus by program.
+record Run
+    singles: {str: json_read.Json}
+    pairs: {str: json_read.Json}
+    corpus: {str: json_read.Json}
+    # The digests of the plan the run replayed (`plan.digests`), from its
+    # `run.json`; none for a run that wrote no such file, the Python's.
+    plan_digests: [str]
+
+function read_run(dir: str) -> Run?
+    by_single: {str: json_read.Json} @ {}
+    by_pair: {str: json_read.Json} @ {}
+
+    for row in json_read.read_lines(text_at(dir + "/singles.jsonl")?)?
+        by_single[json_fields.text_field(row, name: "key")?] @ row
+
+    for row in json_read.read_lines(text_at(dir + "/pairs.jsonl")?)?
+        by_pair[json_fields.text_field(row, name: "key")?] @ row
+
+    digests: [str] @ []
+    meta = read_file(dir + "/run.json")
+
+    if !meta.is_err()
+        digests @ json_fields.texts_field(json_read.read_json(meta.must())?, name: "plan_digests")?
+    return ok(Run(singles: by_single, pairs: by_pair, corpus: own.read_corpus(dir)?, plan_digests: digests))
+
+function text_at(path: str) -> str?
+    got = read_file(path)
+
+    if got.is_err()
+        return fail(code: "no_run", msg: "cannot read " + path)
+    return got
+
+# Where the two runs read the plan's own text and hunks from.
+record Frozen
+    plan: {str: plan.Single}
+    dir: str
+
+# The stage the plan's base measured the second at, from its single's row.
+function stage_of(key: str, base: Run) -> str
+    row = base.singles[key]
+
+    if row.is_err()
+        return ""
+    return json_fields.text_field(row.must(), name: "stage").default("")
+
+function used_of(row: json_read.Json) -> str
+    return json_fields.text_field(row, name: "path_used").default("")
+
+# A single's own messages in `arm`.
+function own_single(row: json_read.Json, arm: str, run: Run, frozen: Frozen, @texts: {str: str}) -> [json_read.Json]?
+    diags = json_fields.items_field(json_fields.field(row, name: arm)?, name: "diags")?
+    key = json_fields.text_field(row, name: "key")?
+    file = json_fields.text_field(row, name: "file")?
+    theirs = own.program_diags(run.corpus, file: file, arm: arm)
+
+    if theirs.len() == 0
+        return ok(diags)
+    one = frozen.plan[key]?
+    applied = hunks.apply(hunks.lines_of(original(frozen, file: file, @texts)?), sets: [hunks.Tagged(tag: "a", hunks: one.hunks)])?
+    return ok(
+        own.own(diags: diags, used: used_of(row), theirs: theirs, their_used: own.program_used(run.corpus, file: file), applied: applied)
+    )
+
+# A pair's second as told, of its own: from the pair's messages where the
+# run kept them (this arm's records), else as the record says (a Python
+# run's, whose corpus is unrecorded and whose messages are all their own).
+function own_told(row: json_read.Json, arm: str, run: Run, frozen: Frozen, @texts: {str: str}) -> str?
+    recorded = json_fields.text_field(row, name: arm + "_b_told")?
+    diags = json_fields.items_field(row, name: arm + "_diags")
+
+    if diags.is_err()
+        return ok(recorded)
+    file = json_fields.text_field(row, name: "file")?
+    theirs = own.program_diags(run.corpus, file: file, arm: arm)
+
+    if theirs.len() == 0
+        return ok(recorded)
+    a = frozen.plan[json_fields.text_field(row, name: "a")?]?
+    b = frozen.plan[json_fields.text_field(row, name: "b")?]?
+    sets = [hunks.Tagged(tag: "a", hunks: a.hunks), hunks.Tagged(tag: "b", hunks: b.hunks)]
+    applied = hunks.apply(hunks.lines_of(original(frozen, file: file, @texts)?), sets: sets)?
+    mine = own.own(
+        diags: diags.must(),
+        used: used_of(row),
+        theirs: theirs,
+        their_used: own.program_used(run.corpus, file: file),
+        applied: applied
+    )
+    site = json_fields.wholes_field(row, name: "site_b")?
+    alone_row = run.singles[b.key]?
+    alone_site = json_fields.wholes_field(alone_row, name: "site")?
+    alone = within(own_single(alone_row, arm: arm, run: run, frozen: frozen, @texts)?, site: alone_site)
+    now = within(mine, site: site)
+
+    if now.len() == 0
+        return ok("hidden")
+
+    if now == alone
+        return ok("same")
+    return ok("other")
+
+# The codes of `diags` whose line is in `site`'s span, sorted, each once.
+function within(diags: [json_read.Json], site: [i64]) -> [str]
+    seen: {str: bool} @ {}
+    none: [str] = []
+
+    if site.len() == 0
+        return none
+
+    for d in diags
+        line = json_fields.whole_field(d, name: "line").default(-1)
+
+        if site[0] <= line && line <= site[site.len() - 1]
+            seen[json_fields.text_field(d, name: "code").default("")] @ true
+
+    # ORDER: codes ascending by bytes, as a pair's recorded codes are.
+    return sort(keys(seen))
+
+function original(frozen: Frozen, file: str, @texts: {str: str}) -> str?
+    held = texts[file]
+
+    if !held.is_err()
+        return held
+    got = text_at(frozen.dir + "/corpus/" + file + ".frozen")?
+    texts[file] @ got
+    return ok(got)
+
+# Messages as compared across two runs: each written whole, the planted
+# file's name made one.
+function alike(diags: [json_read.Json], used: str) -> [str]
+    out: [str] @ []
+
+    for d in diags
+        out @ out.push(own.named_alike(text: json_fields.written(d), used: used))
+
+    return out

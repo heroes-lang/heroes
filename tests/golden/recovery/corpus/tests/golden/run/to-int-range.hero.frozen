@@ -1,0 +1,25 @@
+# `to_i64` on an `f64`: fallible, and it used to abort.
+#
+# **This case asserted an abort until 2026-08-13**, and the change is worth
+# reading rather than a diff. `to_i64` took the `to_` scheme with the seven other
+# widths, and one name cannot carry two failure models — so converting to an
+# `i64` is fallible whether the source is a float above 2^63 or a `u64` above it.
+# The runtime's `hero_panic` became a `fail`, which is a value the program can
+# read instead of an ending it cannot.
+#
+# What did NOT change is the predicate, and it is the reason this case exists.
+# `hero_f64_fits_int` tests `v >= -0x1p63 && v < 0x1p63`, written that way because
+# two plausible spellings are WRONG: `v <= (double)INT64_MAX` accepts 2^63,
+# because that cast rounds UP, and `v > -9223372036854775809.0` rejects INT64_MIN.
+# On arm64 an unchecked cast does not trap — `fcvtzs` saturates — so that
+# predicate is the only thing between a caller and a silent INT64_MAX.
+#
+# Bulk regression case.
+
+function main()
+    print(to_i64(1.5).must())
+    print(to_i64(-1.5).must())
+    print(to_i64(9223372036854774784.0).must())
+    print(to_i64(9223372036854775808.0).is_err())
+    print(to_i64(-9223372036854775808.0).must())
+    print(to_i64(0.0 / 0.0).is_err())

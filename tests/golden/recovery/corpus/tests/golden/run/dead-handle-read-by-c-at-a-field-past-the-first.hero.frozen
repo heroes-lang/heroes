@@ -1,0 +1,25 @@
+# WRONG on purpose, and the shape beside
+# `dead-handle-read-by-c-through-a-cell-it-should-only-write`: the same wrong
+# binding, and C reads a field 72 bytes into the object instead of its first.
+# The dead value points at 64 KiB this runtime maps with no access, so the read
+# faults 0x48 bytes into it, and the handler says so. Defect 115, 2026-09-27:
+# on Windows the handler named the dead handle and printed no offset at all,
+# where Linux and the Mac print it, and nothing asked for an offset other
+# than zero on any platform. Under `--sanitize` ASan's own handler reports the
+# fault.
+
+extern "dead-handle-read-by-c-at-a-field-past-the-first.h"
+    record X509 tag ob
+    function ob_new() -> X509 acquires ob_put
+    function ob_far_cell(@a: X509 retains ob_put) -> i32 when 1
+    function ob_put(a: X509 consumes)
+    function ob_refs(a: X509) -> i64
+    function one() -> i64
+
+function main()
+    cert: X509 @ ob_new()
+
+    if one() == 1
+        ob_put(a: cert)
+    assert ob_far_cell(a: @cert) == 1
+    print("references held: ", ob_refs(a: cert))

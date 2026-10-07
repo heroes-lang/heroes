@@ -1,0 +1,13 @@
+extern "json-c/json.h" link "json-c"
+    record Json tag json_object
+    function json_object_new_object() -> Json acquires json_object_put
+    function json_object_object_add(obj: Json, key: cstr lent, val: Json consumes) -> i32
+    function json_object_object_length(obj: Json) -> i32
+    function json_object_put(obj: Json consumes) -> i32
+
+function main()
+    root = json_object_new_object()
+    child = json_object_new_object()
+    rc = json_object_object_add(obj: root, key: "child".cstr(), val: child)
+    print("add ", rc, " fields ", json_object_object_length(obj: root))
+    print("put ", json_object_put(obj: root))

@@ -1,0 +1,162 @@
+# A single, a pair, and an unmutated program of the corpus, each planted in
+# the run's mirror, judged in both arms, and written as its record (panel
+# 187's R2, defect 210). `mutate/judged.hero` holds the rules a verdict
+# follows; this module puts the files where a check reads them and builds
+# the records in `replay.py`'s field order.
+#
+# Every file planted here is removed once judged: the mirror holds the
+# corpus and, while a check runs, the one mutant it reads, as the Python's
+# tree held one per worker, so no planted file can answer another's `use`.
+
+use mutate/applied as printed_by
+use mutate/hunks
+use mutate/json_fields
+use mutate/json_read
+use mutate/judged
+use mutate/plan
+
+# A single's record, and the codes it was told on its own site in each arm,
+# which its pairs compare their second against.
+record Single
+    row: json_read.Json
+    normal_codes: [str]
+    control_codes: [str]
+
+# The directory of a corpus path, "" at the top.
+function directory_of(path: str) -> str
+    at: i64 @ path.len() - 1
+
+    while at >= 0
+        if path[at] == '/'
+            return path.slice(from: 0, to: at)
+        at @ at - 1
+
+    return ""
+
+function beside(path: str, name: str) -> str
+    d = directory_of(path)
+
+    if d.len() == 0
+        return name
+    return d + "/" + name
+
+# One mutant alone. `original` is its program's text.
+function single(at: judged.Place, one: plan.Single, original: str) -> Single?
+    applied = hunks.apply(hunks.lines_of(original), sets: [hunks.Tagged(tag: "a", hunks: one.hunks)])?
+    site = hunks.statement_site(applied, tag: "a", statements: one.statements)
+    text = hunks.text_of(applied.lines, newline: hunks.ends_newline(original))
+    rel = beside(path: one.file, name: "zzm_" + one.key + ".hero")
+    judged.plant(at, rel: rel, text: text)?
+    normal = judged.checked(at, rel: rel, permissive: false)?
+    control = judged.checked(at, rel: rel, permissive: true)?
+    internal = judged.internal_in(normal)
+    flags: [str] @ []
+    apply: json_read.Json @ .null_value
+
+    full: [str] @ []
+
+    if normal.messages.len() > 0
+        answer = judged.child_apply(at, rel: rel)?
+        printed = printed_by.judged_apply(at, applied_rel: beside(path: one.file, name: "zzm_" + one.key + "_applied.hero"), original_rel: beside(path: one.file, name: "zzm_" + one.key + "_original.hero"), text: text, original: original, normal: normal, answer: answer)?
+        names: [str] @ ["exit", "changed"]
+        values: [json_read.Json] @ [json_fields.whole(answer.exit), .truth(v: printed.changed)]
+
+        if printed.changed
+            names @ names.push("stands_code")
+            values @ values.push(json_fields.strings(printed.stands))
+
+            if printed.stands.len() > 0
+                flags @ flags.push("APPLY-SAME")
+        apply @ .fields(names: names, values: values)
+        full @ printed.flags
+    judged.uproot(at, rel: rel)?
+    row: json_read.Json = .fields(
+        names: ["path_used", "stage", "normal", "control", "class_normal", "class_control", "internal", "key", "op", "file", "site", "flags", "apply", "apply_flags"],
+        values: [json_fields.string(rel), json_fields.string(one.stage), judged.arm_json(normal), judged.arm_json(control), json_fields.string(judged.class_of(normal, internal: internal, site: site, legal: one.normal_legal)), json_fields.string(judged.class_of(control, internal: internal, site: site, legal: one.control_legal)), .truth(v: internal), json_fields.string(one.key), json_fields.string(one.op), json_fields.string(one.file), json_fields.wholes(site), json_fields.strings(flags), apply, json_fields.strings(full)]
+    )
+    return ok(
+        Single(row: row, normal_codes: judged.codes_within(normal, site: site), control_codes: judged.codes_within(control, site: site))
+    )
+
+# Two mutants in one program, `b` after `a`; `alone` holds each single's
+# codes on its own site, by key, the normal arm's first.
+function pair(at: judged.Place, p: plan.Pair, a: plan.Single, b: plan.Single, original: str, alone: {str: [[str]]}) -> json_read.Json?
+    key = p.a + "+" + p.b
+    sets = [hunks.Tagged(tag: "a", hunks: a.hunks), hunks.Tagged(tag: "b", hunks: b.hunks)]
+    made = hunks.apply(hunks.lines_of(original), sets: sets)
+
+    if made.is_err()
+        return ok(.fields(names: ["key", "error"], values: [json_fields.string(key), json_fields.string("overlap")]))
+    applied = made.must()
+    text = hunks.text_of(applied.lines, newline: hunks.ends_newline(original))
+    rel = beside(path: p.file, name: "zzp_" + p.a + "_" + p.b + ".hero")
+    judged.plant(at, rel: rel, text: text)?
+    normal = judged.checked(at, rel: rel, permissive: false)?
+    control = judged.checked(at, rel: rel, permissive: true)?
+    judged.uproot(at, rel: rel)?
+    site_b = hunks.statement_site(applied, tag: "b", statements: b.statements)
+    names: [str] @ ["key", "a", "b", "a_op", "b_op", "file", "site_a", "site_b"]
+    values: [json_read.Json] @ [
+        json_fields.string(key)
+        json_fields.string(p.a)
+        json_fields.string(p.b)
+        json_fields.string(p.a_op)
+        json_fields.string(p.b_op)
+        json_fields.string(p.file)
+        json_fields.wholes(hunks.site_of(applied, tag: "a"))
+        json_fields.wholes(site_b)
+    ]
+    arms = [normal, control]
+    none: [[str]] = [[], []]
+    by_arm = alone[p.b].default(none)
+
+    for index in range(from: 0, to: 2)
+        name = ["normal", "control"][index]
+        codes = judged.codes_within(arms[index], site: site_b)
+        names @ names.push(name + "_b_alone_codes")
+        values @ values.push(json_fields.strings(by_arm[index]))
+        names @ names.push(name + "_b_codes")
+        values @ values.push(json_fields.strings(codes))
+        names @ names.push(name + "_b_told")
+        values @ values.push(json_fields.string(judged.told(now: codes, alone: by_arm[index])))
+
+    # Three fields `replay.py` never wrote, after all of its own: the name the
+    # pair was planted under and every message of each arm, which a reading
+    # needs to take the corpus's own messages out of a pair's (its records
+    # kept only the codes on the second's site).
+    names @ names.push("path_used")
+    values @ values.push(json_fields.string(rel))
+    names @ names.push("normal_diags")
+    values @ values.push(diags_json(normal))
+    names @ names.push("control_diags")
+    values @ values.push(diags_json(control))
+    return ok(.fields(names: names, values: values))
+
+function diags_json(arm: judged.Arm) -> json_read.Json
+    out: [json_read.Json] @ []
+
+    for m in arm.messages
+        out @ out.push(judged.message_json(m))
+
+    return .items(all: out)
+
+# An unmutated program, copied beside itself under `zzb_<index>.hero` as a
+# mutant is planted, judged in both arms: the corpus's own messages, which a
+# reading subtracts before it calls a mutant's messages its own.
+function unmutated(at: judged.Place, file: str, index: i64, original: str) -> json_read.Json?
+    rel = beside(path: file, name: "zzb_" + index.to_str() + ".hero")
+    judged.plant(at, rel: rel, text: original)?
+    normal = judged.checked(at, rel: rel, permissive: false)?
+    control = judged.checked(at, rel: rel, permissive: true)?
+    judged.uproot(at, rel: rel)?
+    return ok(
+        .fields(names: ["file", "path_used", "normal", "control"], values: [json_fields.string(file), json_fields.string(rel), judged.arm_json(normal), judged.arm_json(control)])
+    )
+
+## Tests
+
+test "a planted file sits beside its original, at the top as well"
+    assert beside(path: "examples/gallery/a.hero", name: "zzm_k.hero") == "examples/gallery/zzm_k.hero"
+    assert beside(path: "a.hero", name: "zzm_k.hero") == "zzm_k.hero"
+    assert directory_of("x/y/z.hero") == "x/y"
+    assert directory_of("z.hero") == ""

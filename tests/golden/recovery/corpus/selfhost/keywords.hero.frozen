@@ -1,0 +1,423 @@
+# The two word tables: Heroes' own keywords, and the foreign words that fail
+# loudly with the repair pre-written.
+# Port of archive/bootstrap-rs/heroes/src/lexer/keywords.rs (M-selfhost-probe).
+#
+# `keyword` is the closed list from spec/reserved-words.md § keywords — these
+# can never be identifiers. `foreign_word` is the registry's other half and the
+# language's first executable thesis feature: the likeliest mistake from a
+# model on autopilot is a keyword imported from another language, so each one
+# is a compile error carrying its own solution.
+#
+# Port notes:
+# - Rust returns `Option<TokenKind>` and `Option<(&str, Option<&str>)>`; Heroes
+#   has `T?`, so "not in the table" is a `fail` with its own code — the miss is
+#   the common case at every call site, and both callers already match on it.
+# - Rust's `(&str, Option<&str>)` pair becomes a record holding the message and
+#   a `Repair` variant: `swap` carries the machine-applicable replacement
+#   (design.md §4.17's `Certain`), `guidance` carries nothing — a repair a
+#   model would blindly apply is worse than explaining.
+# - Every message is byte-identical to the Rust table: the check/ goldens pin
+#   the exact text, and the fixpoint's own frontend must reproduce it.
+
+use token
+
+## Error codes
+
+constant ERR_NOT_A_KEYWORD: str
+    "not_a_keyword"
+
+constant ERR_NOT_FOREIGN: str
+    "not_foreign"
+
+## The keywords
+
+# The closed list, as a LIST, for the one caller that must enumerate what
+# `keyword` below can only be asked about one word at a time: `heroes grammar`,
+# which prints the language's terminals from the compiler's own tables rather
+# than from a document somebody kept up to date (panel 133 R1).
+#
+# **Two spellings of one fact, and what holds them together is not a comment.**
+# Heroes has no reflection, so this list cannot be derived from the match below
+# and a word added to one and not the other would be a silence. The test at the
+# foot of this file asserts every entry here is a keyword; the `grammar` suite
+# asserts the other direction, reading the ARMS of `keyword` out of this file as
+# text and comparing them to what the command prints. A word added to the match
+# alone turns that check red, which is the direction a comment could never hold.
+function keywords() -> [str]
+    return [
+        "constant"
+        "function"
+        "record"
+        "variant"
+        "match"
+        "if"
+        "else"
+        "for"
+        "while"
+        "in"
+        "break"
+        "continue"
+        "return"
+        "test"
+        "assert"
+        "extern"
+        "nullptr"
+        "use"
+        "true"
+        "false"
+        "fail"
+    ]
+
+## The contextual words
+
+# A word the parser reads in ONE position and nowhere else, so a program may
+# still call anything `owned` or `tag`. There were eleven of them and `heroes
+# grammar` printed six (defect 087, panel 176's compiler-engineer): the words
+# were literals at eleven sites in four parser files, and the command had no
+# table to print, so its sentence was a count somebody had kept up to date until
+# the day they had not. Each word is a constant here and the parser reads the
+# constant, never a literal, so this file is the one spelling; `contextual()`
+# lists them in declaration order for the command to print, and the `grammar`
+# suite reads these declarations as text, holds the printed list to them, and
+# holds `selfhost/parse/` to reading each one — the direction a comment could
+# never hold.
+constant WORD_AS: str
+    "as"
+
+constant WORD_LINK: str
+    "link"
+
+constant WORD_PACKAGE: str
+    "package"
+
+constant WORD_TAG: str
+    "tag"
+
+constant WORD_PARTIAL: str
+    "partial"
+
+constant WORD_OWNED: str
+    "owned"
+
+constant WORD_COUNTED_BY: str
+    "counted_by"
+
+constant WORD_LENT: str
+    "lent"
+
+constant WORD_CONSUMES: str
+    "consumes"
+
+constant WORD_ACQUIRES: str
+    "acquires"
+
+constant WORD_BORROWS: str
+    "borrows"
+
+constant WORD_TRANSFERS: str
+    "transfers"
+
+constant WORD_RETAINS: str
+    "retains"
+
+constant WORD_WHEN: str
+    "when"
+
+# In declaration order, which is the order the command prints and the suite
+# compares as a sequence.
+function contextual() -> [str]
+    return [
+        WORD_AS
+        WORD_LINK
+        WORD_PACKAGE
+        WORD_TAG
+        WORD_PARTIAL
+        WORD_OWNED
+        WORD_COUNTED_BY
+        WORD_LENT
+        WORD_CONSUMES
+        WORD_ACQUIRES
+        WORD_BORROWS
+        WORD_TRANSFERS
+        WORD_RETAINS
+        WORD_WHEN
+    ]
+
+# The closed list. A miss means the word is an ordinary identifier.
+function keyword(text: str) -> token.TokenKind?
+    return match text
+        "constant" => ok(.kw_constant)
+        "function" => ok(.kw_function)
+        "record"   => ok(.kw_record)
+        "variant"  => ok(.kw_variant)
+        "match"    => ok(.kw_match)
+        "if"       => ok(.kw_if)
+        "else"     => ok(.kw_else)
+        "for"      => ok(.kw_for)
+        "while"    => ok(.kw_while)
+        "in"       => ok(.kw_in)
+        "break"    => ok(.kw_break)
+        "continue" => ok(.kw_continue)
+        "return"   => ok(.kw_return)
+        "test"     => ok(.kw_test)
+        "assert"   => ok(.kw_assert)
+        "extern"   => ok(.kw_extern)
+        "nullptr"  => ok(.kw_nullptr)
+        "use"      => ok(.kw_use)
+        "true"     => ok(.kw_true)
+        "false"    => ok(.kw_false)
+        "fail"     => ok(.kw_fail)
+        _          => fail(code: ERR_NOT_A_KEYWORD, msg: text)
+
+## The foreign words
+
+variant Repair
+    swap
+        word: str
+    # A replacement that POINTS somewhere right without being right on its own,
+    # so it is shown and never machine-applied (defect 015, 2026-09-06). It
+    # exists because a word-for-word swap that is correct where the word
+    # DECLARES something is wrong where the word is CALLED, and the difference
+    # is not visible to the table below — only to the character after the word.
+    hint
+        word: str
+    # The word goes, and the spaces after it: shown, never machine-applied,
+    # where what is right is the line without it (`const x = 5` in a body is
+    # `x = 5`; defect 133, 2026-09-29).
+    drop
+    guidance
+
+record ForeignWord
+    message: str
+    repair: Repair
+
+# The prescribed message (spec/reserved-words.md — the registry is the single
+# source; the golden tests in check/ pin the exact text) and, where the repair
+# is a pure word-for-word swap, the replacement to attach as a `Certain`,
+# machine-applicable fix (design.md §4.17).
+# **`called` says the very next character is `(`, and it changes the ANSWER**
+# (defect 015, 2026-09-06). Every repair in the table below is a word-for-word
+# swap that is right where the word declares something. Measured, all three are
+# wrong where the word is called, and each one produced a `certain` fix that
+# `--apply` turned into a program which does not compile:
+#
+#     n @ int(3)     -> n @ i64(3)        error[unknown_name]
+#     n @ switch(3)  -> n @ match(3)      error[missing_match_arms]
+#     n @ fn(3)      -> n @ function(3)   error[expected_expression]
+#
+# CLAUDE.md §8 says only `certain` is machine-applicable, so a `certain` fix that
+# introduces an error OF ITS OWN is the promise broken rather than a rough edge.
+# In call position the swap is therefore never certain.
+#
+# `int(` is the one that also gets a better ANSWER rather than only a quieter
+# one, and it is a hint rather than a swap because the honest repair does not fit
+# in one word: `to_i64` gives an `i64?` — measured, `n @ to_i64(a)` is
+# `error[type_mismatch]: expected i64, found i64?` — so the reader still has to
+# choose `.must()` or `.default(v)`, which is the message's job and not a fix's.
+function foreign_word(text: str, called: bool) -> ForeignWord?
+    if called
+        return called_word(text)
+    return declared_word(text)
+
+# The word with a `(` after it.
+#
+# **AND A `(` IS NOT A CALL, which is what the first draft of this got wrong and
+# an adversarial case the author ratified on 2026-08-04 is what caught it.**
+# `function apply(f: (fn(i64) -> i64), x: i64)` is a function TYPE, and there
+# `fn` -> `function` is exactly right — the case's own words are *"`fn` is one
+# word with one meaning, an error, in BOTH positions, and the same certain fix
+# repairs both"*. A blunt rule that dropped every fix after a `(` broke it.
+#
+# So the question is not where the word STANDS, which the lexer cannot know. It
+# is whether the REPLACEMENT may legally precede a `(`, which is a fact about the
+# table below. `function` may: a function type is spelled `function(A) -> B`.
+# `i64`, `record`, `variant`, `constant`, `match` and `use` may not, so a swap to
+# one of them in front of a `(` produces a program with a NEW error, which is
+# CLAUDE.md §8's promise broken rather than a rough edge.
+function called_word(text: str) -> ForeignWord?
+    if text == "int"
+        return ok(
+            ForeignWord(message: "`int` is not a word in this language — to make an integer out of a float, `to_i64` truncates toward zero and gives an `i64?` because the value may not fit: `to_i64(x).must()`. As a TYPE an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .hint(word: "to_i64"))
+        )
+    found = declared_word(text)
+
+    if found.is_err()
+        return found
+    one = found.must()
+
+    return match one.repair
+        .swap fix => if fix.word == "function"
+            ok(one)
+        else
+            ok(ForeignWord(message: one.message, repair: .guidance))
+        .hint _   => ok(one)
+        .drop     => ok(one)
+        .guidance => ok(one)
+
+function declared_word(text: str) -> ForeignWord?
+    return match text
+        "int" => ok(
+            ForeignWord(message: "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`", repair: .swap(word: "i64"))
+        )
+        "struct" => ok(
+            ForeignWord(message: "`struct` is not a word in this language — use `record`: `record Point`", repair: .swap(word: "record"))
+        )
+        "enum" => ok(
+            ForeignWord(message: "`enum` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant"))
+        )
+        "union" => ok(
+            ForeignWord(message: "`union` is not a word in this language — use `variant`: `variant Token`", repair: .swap(word: "variant"))
+        )
+        "class" => ok(
+            ForeignWord(message: "`class` is not a word in this language — use `record` (there is no inheritance)", repair: .guidance)
+        )
+        "fn" => ok(
+            ForeignWord(message: "`fn` is not a word in this language — use `function`: `function f(x: i64) -> i64`", repair: .swap(word: "function"))
+        )
+        "func" => ok(
+            ForeignWord(message: "`func` is not a word in this language — use `function`", repair: .swap(word: "function"))
+        )
+        "def" => ok(
+            ForeignWord(message: "`def` is not a word in this language — use `function`", repair: .swap(word: "function"))
+        )
+        "let" => ok(
+            ForeignWord(message: "`let` is not a word in this language — bind with `=`: `x = 5`", repair: .guidance)
+        )
+        "var" => ok(
+            ForeignWord(message: "`var` is not a word in this language — declare a mutable with `@`: `v: i64 @ 0`", repair: .guidance)
+        )
+        "const" => ok(
+            ForeignWord(message: "`const` is not a word in this language — use `constant`: `constant MAX: i64`", repair: .swap(word: "constant"))
+        )
+        "elif" => ok(
+            ForeignWord(message: "`elif` is not a word in this language — write `else if`", repair: .swap(word: "else if"))
+        )
+        "switch" => ok(
+            ForeignWord(message: "`switch` is not a word in this language — use `match`", repair: .swap(word: "match"))
+        )
+        "case" => ok(
+            ForeignWord(message: "`case` is not a word in this language — a `match` arm is `.name => expr`", repair: .guidance)
+        )
+        "null" | "nil" | "None" => ok(
+            ForeignWord(message: "there is no null in this language — absence is a fallible type: `i64?`, and a C pointer's zero is `nullptr`", repair: .guidance)
+        )
+        "try" | "catch" | "throw" | "raise" => ok(
+            ForeignWord(message: "there are no exceptions in this language — errors are values: `fail(code, msg)`, propagate with `?`", repair: .guidance)
+        )
+        "import" | "include" => ok(
+            ForeignWord(message: "`import` and `include` are not words in this language — a module is named with `use`: `use geom`", repair: .swap(word: "use"))
+        )
+        _ => fail(code: ERR_NOT_FOREIGN, msg: text)
+
+test "every keyword resolves and an identifier does not"
+    assert keyword("function").must() == .kw_function
+    assert keyword("nullptr").must() == .kw_nullptr
+    assert keyword("fail").must() == .kw_fail
+    assert keyword("main").is_err()
+    assert keyword("Function").is_err()
+
+    # The list and the match, one direction. Every word the list offers IS a
+    # keyword, so the list can never advertise one the lexer does not reserve.
+    # The other direction is the `grammar` suite's, which reads the arms out of
+    # this file as text: together they leave no silence.
+    for word in keywords()
+        assert !keyword(word).is_err()
+
+    # And the count, pinned, because a word DELETED from the list would pass the
+    # loop above in silence. Twenty-one since the language reached its fixpoint;
+    # it moves in the commit that adds or removes a keyword, never on its own.
+    assert keywords().len() == 21
+
+test "a contextual word is never a keyword, and each is listed once"
+    words = contextual()
+    assert words.len() == 14
+
+    for word in words
+        assert keyword(word).is_err()
+
+    i: i64 @ 0
+
+    while i < words.len()
+        j: i64 @ i + 1
+
+        while j < words.len()
+            assert words[i] != words[j]
+            j @ j + 1
+
+        i @ i + 1
+
+test "a foreign word arrives with its repair"
+    fw = foreign_word(text: "int", called: false).must()
+    assert fw.repair == .swap(word: "i64")
+
+    match foreign_word(text: "let", called: false).must().repair
+        .swap _   => assert false
+        .hint _   => assert false
+        .drop     => assert false
+        .guidance => assert true
+
+test "the three spellings of null share one answer"
+    a = foreign_word(text: "null", called: false).must()
+    b = foreign_word(text: "nil", called: false).must()
+    c = foreign_word(text: "None", called: false).must()
+    assert a == b
+    assert b == c
+    assert foreign_word(text: "hello", called: false).is_err()
+
+# Defect 015: the same word, one character apart, is a different answer.
+test "a foreign word that is CALLED loses its certain swap"
+    # `int(` is the one with a better answer rather than only a quieter one, and
+    # it is a hint because `to_i64` gives an `i64?` and the reader still has to
+    # choose `.must()` or `.default(v)`.
+    called = foreign_word(text: "int", called: true).must()
+    assert called.repair == .hint(word: "to_i64")
+    assert strings_has(text: called.message, needle: "to_i64")
+
+    # A row whose replacement cannot precede a `(` keeps its message and loses
+    # its fix: `match(3)`, `record(3)` and `use(3)` are all programs with a NEW
+    # error, which is the promise this defect broke.
+    for word in ["switch", "struct", "union", "enum", "const", "import"]
+        one = foreign_word(text: word, called: true).must()
+        assert one.repair == .guidance
+        assert one.message == foreign_word(text: word, called: false).must().message
+
+    # **And `fn` is the exception, because a `(` is not a call.** `(fn(i64) ->
+    # i64)` is a function TYPE and `function(i64) -> i64` is exactly right there,
+    # which an adversarial case ratified 2026-08-04 asserts in both positions.
+    # The first draft of this repair dropped the fix here and broke it.
+    for word in ["fn", "func", "def"]
+        assert foreign_word(text: word, called: true).must() == foreign_word(text: word, called: false).must()
+
+    # A word with no fix to lose is unchanged in both positions.
+    assert foreign_word(text: "let", called: true).must() == foreign_word(text: "let", called: false).must()
+
+    # And a word that is not foreign is still not foreign with a `(` after it.
+    assert foreign_word(text: "hello", called: true).is_err()
+
+# `text` contains `needle` — the whole test above needs one substring check and
+# this module has no other reason to depend on a string library.
+#
+# **Byte by byte, and never `slice`**: the messages above carry an em dash, which
+# is three bytes, so slicing at an arbitrary offset splits a character and the
+# language aborts by design (spec § Failure). Measured the first time this
+# function was written: `panic: string slice splits a character`.
+function strings_has(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        i: i64 @ 0
+        same: bool @ true
+
+        while i < needle.len()
+            if text[at + i] != needle[i]
+                same @ false
+                break
+            i @ i + 1
+
+        if same
+            return true
+        at @ at + 1
+
+    return false

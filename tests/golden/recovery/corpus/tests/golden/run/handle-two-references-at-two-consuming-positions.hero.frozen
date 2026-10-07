@@ -1,0 +1,26 @@
+# One call, two consuming positions, one handle that holds TWO references:
+# each position takes one, and C takes two. Defect 084's refusal is of a call
+# announcing more ends than the address holds, and this call announces
+# exactly as many, so it runs. The shape beside
+# `fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so`.
+#
+# The count after the call is read from the pool and never through the handle
+# (since 2026-09-25, panel 177's item 1): both references ended in that call,
+# so `a` and `b` are dead, and handing either to `ob_refs` would be refused
+# before C, which `dead-handle-*` pins. What this case pins is that the call
+# RUNS and C sees both ends.
+extern "handle-two-references-at-two-consuming-positions.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put | both_put
+    function ob_get(o: Ob) -> Ob retains ob_put | both_put
+    function ob_put(o: Ob consumes)
+    function both_put(a: Ob consumes, b: Ob consumes)
+    function ob_refs(o: Ob) -> i64
+    function ob_last_refs() -> i64
+
+function main()
+    a = ob_new()
+    b = ob_get(o: a)
+    print("refs: ", ob_refs(o: a))
+    both_put(a: a, b: b)
+    print("refs after: ", ob_last_refs())

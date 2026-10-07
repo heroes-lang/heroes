@@ -1,0 +1,83 @@
+# FIXED DEFECTS, 2026-08-15, both found by re-measuring hours after they shipped,
+# and both were REFUSALS WITH NO ESCAPE — a diagnostic naming a repair the author
+# cannot perform, which is the shape panel 061 cited against option E and which
+# this project then shipped twice in one afternoon.
+#
+# (1) THE COMPLETENESS PROBE MIS-COUNTED A NESTED RECORD. It wrote one flat `0`
+# per named field, and C's brace elision spends those zeros on the INNER struct's
+# members: `Camera2D v = {0,0,0,0}` fills `offset.x`, `offset.y`, `target.x`,
+# `target.y`, and clang then reports `rotation` missing on a record that names all
+# four of its fields. Ten of raylib's thirty-five structs were unbindable for that
+# alone. The repair is one token — `{0}` is the universal zero initialiser, which
+# clang exempts — chosen over expanding the inner record recursively because that
+# breaks the moment the inner record is itself `partial`.
+#
+# (2) `ptr` ASKED THE WRONG QUESTION. `_Generic(&f, void **: 1, …)` refuses
+# `Rectangle *`, and there is no other spelling — `Font.recs` had no type to
+# correct it to. Twenty-eight typed-pointer fields across ten structs were
+# unreachable. `ptr` is opaque in this language: nothing dereferences it, indexes
+# it or knows its pointee, so the pointee type carries no obligation a check could
+# enforce. The question is now *is this a pointer at all*.
+#
+# WHAT THE WIDENING DOES NOT GIVE UP, and it is the reason for the exact form:
+# an array field is still refused, by `_Generic`'s own decay rather than by a size
+# test. `__builtin_classify_type` decays an array and would let `float[4]` through;
+# the association `__typeof__(f)` is an array type and can never match a decayed
+# controlling expression, so it falls to `default: 0`. That matters concretely —
+# six of raylib's array fields are `float[2]`, EXACTLY `sizeof(void *)`, so a
+# widening that leaned on `sizeof` would have bound eight bytes of a two-element
+# array and said nothing.
+#
+# `Font` is the witness for both at once: four scalars, one nested `Texture`, and
+# two typed pointers. It bound under neither rule before today.
+
+extern "raylib.h" package "raylib"
+    record Texture
+        id: u32
+        width: i32
+        height: i32
+        mipmaps: i32
+        format: i32
+    record Font
+        baseSize: i32
+        glyphCount: i32
+        glyphPadding: i32
+        texture: Texture
+        recs: ptr
+        glyphs: ptr
+    record Vector2
+        x: f32
+        y: f32
+    record Camera2D
+        offset: Vector2
+        target: Vector2
+        rotation: f32
+        zoom: f32
+    function IsFontValid(font: Font) -> bool
+    function GetWorldToScreen2D(position: Vector2, camera: Camera2D) -> Vector2
+
+function main()
+    # A record whose every field is named, two of them nested records. Refused
+    # before (1) with a message naming a field it DID name.
+    c = Camera2D(
+        offset: Vector2(x: 0.0, y: 0.0),
+        target: Vector2(x: 0.0, y: 0.0),
+        rotation: 0.0,
+        zoom: 1.0
+    )
+    p = GetWorldToScreen2D(position: Vector2(x: 3.0, y: 4.0), camera: c)
+    print(p.x)
+    print(p.y)
+
+    # A record with two typed-pointer fields. Refused before (2) with no spelling
+    # that would have worked. Built here rather than fetched, so the case needs no
+    # window: `IsFontValid` reads `texture.id` and the glyph count.
+    empty = Font(
+        baseSize: 0,
+        glyphCount: 0,
+        glyphPadding: 0,
+        texture: Texture(id: 0, width: 0, height: 0, mipmaps: 0, format: 0),
+        recs: nullptr,
+        glyphs: nullptr
+    )
+    print(IsFontValid(font: empty))

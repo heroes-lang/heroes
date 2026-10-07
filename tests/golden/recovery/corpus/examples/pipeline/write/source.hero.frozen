@@ -1,0 +1,36 @@
+# Where a report GOES. The second module whose path ends in `source`, and the
+# reason this program is the one that shows what `as` is for.
+#
+# `spec:11` says a file may not bind one name twice, and two files may name
+# the same module differently. Both halves are load-bearing here: `main.hero`
+# binds `read/source` and `write/source` in one file, so one of them MUST be
+# renamed, and there is no rename that would work for both — which is panel
+# 100's recorded warrant for the feature, in a program rather than in prose.
+
+record Sink
+    rows: [str]
+
+function new_sink() -> Sink
+    empty: [str] = []
+    return Sink(rows: empty)
+
+function emit(@s: Sink, row: str)
+    s.rows @ s.rows.push(row)
+
+function rendered(s: Sink) -> str
+    return join(s.rows, "\n")
+
+function count(s: Sink) -> i64
+    return s.rows.len()
+
+test "a sink keeps what it is given, in order"
+    s: Sink @ new_sink()
+    emit(@s, "first")
+    emit(@s, "second")
+    assert s.count() == 2
+    assert s.rendered() == "first\nsecond"
+
+test "an empty sink renders as nothing"
+    s: Sink @ new_sink()
+    assert s.count() == 0
+    assert s.rendered() == ""

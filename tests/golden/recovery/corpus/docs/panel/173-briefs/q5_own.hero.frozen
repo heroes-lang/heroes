@@ -1,0 +1,10 @@
+# Panel 173 q5: a C library double-frees its OWN pointer while a lease is live.
+# The allocator refuses a free, and the lease's bytes are untouched.
+extern "libabrt.h"
+    function lib_double_free_own()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    lib_double_free_own()
+    end_lease(@c)

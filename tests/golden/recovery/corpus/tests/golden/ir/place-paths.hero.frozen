@@ -1,0 +1,16 @@
+# A place is a slot plus a path, and §4.8's sentence is the whole specification:
+# "every place has exactly one root". This one has four steps — two fields and
+# two indices — and every step is named in the dump, which is what made a defect
+# visible: the field after an index printed as `.0` until the path started
+# carrying each field's own type forward.
+record Row
+    cells: [i64]
+
+record Grid
+    rows: [Row]
+
+function set_cell(@g: Grid, r: i64, c: i64, v: i64)
+    g.rows[r].cells[c] @ v
+
+function cell_of(g: Grid, r: i64, c: i64) -> i64
+    return g.rows[r].cells[c]

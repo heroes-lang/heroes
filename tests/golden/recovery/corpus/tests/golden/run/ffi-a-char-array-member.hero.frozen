@@ -1,0 +1,44 @@
+# FIXED DEFECT, 2026-08-16 (panel 081 R4). Symptom: a C `char[N]` struct member
+# could not be bound at ANY of Heroes' eight integer widths — `ffi_field_type`
+# eight times over — so `uname()` was unreachable at any price, and its `partial`
+# escape hatch was refused as `empty_record` because `struct utsname` is nothing
+# but `char` arrays. Cause: `emit/extern_field.rs` asked **class, width and sign**
+# of a scalar integer (panel 064) and **`_Generic` type identity** of an array
+# element, and C's `char` is a THIRD type, distinct from both `signed char` and
+# `unsigned char` — so `&t.name` is `char (*)[4]` and never matches
+# `int8_t (*)[4]`. Panel 064's own argument, one type late: C's integer ABI is
+# width and sign, and C's type identity is finer than its ABI.
+#
+# Scale, from a clang AST walk over eleven POSIX headers plus raylib, SDL3,
+# sqlite3, zlib and curl: 26 of 81 fixed-array struct fields are `char[N]` — a
+# third of them. CLAUDE.md §12 asks the FFI to be complete as well as bug-proof,
+# and "a library Heroes cannot bind is a library the author must leave C code
+# around for". Named after the defect, per Go's `test/fixedbugs` (CLAUDE.md §9).
+#
+# What the repair must NOT relax, all four measured before this case was written:
+#   u8[4]  against char[4]  -> refused, `char` is signed here
+#   i16[4] against char[4]  -> refused, wrong width
+#   i8[8]  against char[4]  -> refused, wrong length
+#   i8[2]  against char[4]  -> refused, wrong length
+# and a flexible array member (`char data[]`) keeps panel 079's own message,
+# `ffi_flexible_array_member`, rather than being told to correct a length that
+# does not exist. The length conjunct is asked of the field's OWN element type
+# (`__typeof__(place[0])[n]`), which is what makes it exact and sign-agnostic at
+# once: it decides the count and never re-litigates the element.
+#
+# The header is local rather than `<sys/utsname.h>`: Windows has no `utsname`,
+# and a real one needs a 256-element literal to construct, which is the separate
+# gap panel 081 recorded and this case does not claim to close.
+
+extern "ffi-a-char-array-member.h"
+    record Tag
+        name: i8[4]
+        id: i32
+    function tag_first(t: Tag) -> i32
+
+function main()
+    # 68 is `D`. Nothing here is about the value — it is about the field binding
+    # at all, which it did not before today.
+    t = Tag(name: [68, 0, 0, 0], id: 7)
+    print(t.tag_first().to_i64().must())
+    print(t.name[0].to_i64().must(), " ", t.id.to_i64().must())

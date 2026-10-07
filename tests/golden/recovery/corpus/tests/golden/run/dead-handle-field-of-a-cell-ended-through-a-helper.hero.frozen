@@ -1,0 +1,33 @@
+# The ffi-pragmatist's `sqlite_copies` at panel 177, shape 4 of 4, and the
+# one the POISON catches: the read is through the same cell's field the
+# helper ended the life through. `closed(@db)` gives `db_close` the field
+# `db.handle` of its copy of the cell; when the runtime says the life ended,
+# that FIELD is overwritten with the dead value, `@`'s copy-out carries the
+# record back, and `db.handle` in `main` is dead where it lies. The checker's
+# half (item 3) tracks bindings and not fields through a helper, so this is
+# the runtime's, and the message names the binding as emptied rather than
+# the address as remembered.
+
+extern "dead-handle-field-of-a-cell-ended-through-a-helper.h"
+    record CDb tag cdb
+    function db_open(path: cstr lent, @out: CDb acquires db_close) -> i64
+    function db_close(db: CDb consumes) -> i64
+    function db_changes(db: CDb) -> i32
+
+record Db
+    handle: CDb
+
+function opened() -> Db?
+    db: CDb @ nullptr
+
+    if db_open(path: ":memory:".cstr(), out: @db) != 0
+        return fail(code: "cannot_open", msg: "no")
+    return ok(Db(handle: db))
+
+function closed(@db: Db) -> i64
+    return db_close(db: db.handle)
+
+function main()
+    db: Db @ opened().must()
+    _ = closed(@db)
+    print(db_changes(db: db.handle))

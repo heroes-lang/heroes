@@ -1,0 +1,59 @@
+# A value that comes from a header and is written nowhere in this file
+# (design.md §4.19, panel 038).
+#
+# Every number printed below is `math.h`'s or `stdio.h`'s. Nothing here can be
+# copied wrong, because nothing here is copied: the emitter reads the name where
+# the preprocessor can see it, and clang checks its type against the real header
+# with the same `_Static_assert` an `extern function` gets.
+#
+# Two headers on purpose. The `#include` walk used to ask `FnKind` whether a
+# declaration came from a header — and an `extern constant` lowers to
+# `FnKind::Constant`, not `FnKind::Extern`, so a group holding *only* constants
+# would have had its `#include` silently dropped. `stdio.h` here holds no
+# function, which is the shape that catches it.
+#
+# It is also the case that makes the double-emit determinism test non-vacuous for
+# this form: that test walks `tests/golden/emit` and `tests/golden/run` only
+# (`golden.rs`), so before this file the accessor and its two assertions were
+# emitted by nothing the test could see (panel 038, compiler-engineer's condition).
+#
+# **AND A FIXED DEFECT, named after it** (Go's `test/fixedbugs`), 2026-08-13 —
+# whose symptom is a **platform** rather than a program, which is why it is
+# written here instead of in a case of its own.
+#
+# SYMPTOM: this file passed on Darwin and failed on Linux, on the first CI run
+# this project ever had, with `error[ffi_unknown_name]: `math.h` declares no
+# `M_PI``. The compiler was right both times.
+#
+# CAUSE: `M_PI` is **not in ISO C** — it is POSIX/XSI — and glibc guards it
+# behind `__USE_MISC`, which `-std=c11` switches off by defining
+# `__STRICT_ANSI__`. Darwin's `math.h` does not guard it at all. So the flags,
+# not the types, decided whether a correct binding compiled.
+#
+# FIX: `-std=gnu11` (panel 047). The two dialects differ by exactly one
+# predefined macro, and on glibc that macro's only effect is to hide `M_PI`,
+# `strdup`, `fileno`, `setenv` and nine others — most of what §1.11 says a
+# program binds.
+#
+# **Do not delete the `M_PI` binding as gratuitous.** It is the only line in the
+# repository that fails when the dialect is wrong: everything else the corpus
+# binds — `sqrt`, `pow`, `floor`, `puts`, `getenv`, `abs`, `SEEK_SET` — is ISO C
+# and compiles under either. Measured: 63 of 63 `run/` goldens cross-compile for
+# `x86_64-linux-gnu` under `gnu11`, and 62 of 63 under `c11`. This is the one.
+
+extern "math.h" link "m"
+    constant M_PI: f64
+    function sqrt(x: f64) -> f64
+
+extern "stdio.h"
+    constant SEEK_SET: i64
+    constant SEEK_END: i64
+
+function main()
+    # `3.14159…` is in `math.h`, and the program says only its name.
+    print(M_PI)
+    print(sqrt(M_PI * M_PI))
+
+    # Two `i64` macros, and the arithmetic is the language's own.
+    print(SEEK_SET)
+    print(SEEK_END - SEEK_SET)

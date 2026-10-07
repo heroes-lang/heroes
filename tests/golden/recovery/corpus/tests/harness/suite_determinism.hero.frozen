@@ -1,0 +1,213 @@
+# Same input, same bytes — twice, and through `-o`.
+#
+# Ports golden.rs:261 (the IR dump) and golden.rs:652 (the emitted C,
+# which CLAUDE.md §7 says "stays green at all times"). Two artifacts, one
+# property, so one module.
+#
+# THE ANCESTOR IS NAMED RATHER THAN INVENTED: GCC's bootstrap compares
+# stage2 and stage3 objects, and its manual says a mismatch "normally
+# indicates that the stage2 compiler has compiled GCC incorrectly" — the
+# fixpoint this project reached at M-selfhost-fixpoint, thirty years
+# earlier. Determinism is what makes that comparison mean anything: two
+# runs that differ turn every later byte-for-byte claim into noise, and
+# this repository now has one that matters — `seed/heroes.c` is checked by
+# `cmp` against what the seed-built compiler emits, in CI's *The seed is
+# what today's source emits*, Linux at tags. That sentence stood here for
+# four days while the check DID NOT EXIST (panel 087, found by two
+# independent greps); it is true from 2026-08-23, and the reason it is
+# named with its home is that a comment asserting an instrument is worth
+# nothing without one — CLAUDE.md §11's premise that expires in silence.
+# It runs at the tag and not here because the emission is 15m41s.
+#
+# The `-o` leg is a second property with its own reason: the C is
+# identical whether it goes to stdout or through `-o`, BECAUSE the emitted
+# text never mentions the output path (§7). A compiler that stamped its
+# own output filename into a comment would pass the twice-test and fail
+# this one.
+#
+# For the IR, determinism is the ONLY promise panel 019 made about the
+# artifact — it is explicitly not version-stable, which is LLVM's stance
+# on `.ll` — and a promise nothing checks is not a promise.
+
+use cases
+use report
+use shell
+
+constant IR_DIR: str
+    "tests/golden/ir"
+
+# Every case that has an emittable program: `emit/` and `run/`.
+constant C_DIRS: [str]
+    [
+        "tests/golden/emit"
+        "tests/golden/run"
+    ]
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    written = scratch + "/determinism"
+    shell.mkdir_all(written)?
+    skipped: i64 @ 0
+    total: i64 @ 0
+
+    for item in cases.collect(scratch: scratch, dir: IR_DIR)?
+        total @ total + 1
+        first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
+        second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
+
+        if first.is_err() || second.is_err()
+            report.keep_failure(
+                @r,
+                label: "determinism/ir/" + item.name,
+                detail: "  cannot dump " + item.source + ":\n    " + last_error(first) + last_error(second)
+            )
+        else if first.must() != second.must()
+            report.keep_failure(
+                @r,
+                label: "determinism/ir/" + item.name,
+                detail: "  " + item.source + " dumps differently twice — the one promise panel 019 made about this artifact"
+            )
+        else
+            report.keep_pass(@r)
+
+    for dir in C_DIRS
+        for item in cases.collect(scratch: scratch, dir: dir)?
+            total @ total + 1
+            first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
+
+            if first.is_err()
+                # A case this machine cannot emit because a header is
+                # missing is the machine's answer, not the compiler's —
+                # the same rule the other suites carry, and floored below.
+                if shell.machine_lacks_the_library(last_error(first))
+                    skipped @ skipped + 1
+                else
+                    report.keep_failure(
+                        @r,
+                        label: "determinism/c/" + item.name,
+                        detail: "  cannot emit " + item.source + ":\n" + last_error(first)
+                    )
+                continue
+            second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
+
+            if second.is_err() || first.must() != second.must()
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  " + item.source + " emits differently twice — §7 says this stays green at all times"
+                )
+                continue
+            target = written + "/" + item.name + ".c"
+            through = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: target)
+
+            if through.is_err()
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  cannot emit " + item.source + " through -o"
+                )
+                continue
+            kept = read_file(target)
+
+            if kept.is_err()
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  -o wrote nothing readable at " + target
+                )
+            else if kept.must() != first.must()
+                report.keep_failure(
+                    @r,
+                    label: "determinism/c/" + item.name,
+                    detail: "  " + item.source + " differs between stdout and -o: the C mentions its own output path"
+                )
+            else
+                report.keep_pass(@r)
+
+    if skipped > 0 && skipped * 3 >= total
+        report.keep_failure(
+            @r,
+            label: "determinism",
+            detail: "  " + skipped.to_str() + " of " + total.to_str() + " cases were skipped for a missing library — this machine is not checking determinism"
+        )
+    return ok(r)
+
+# One emission, as text. `into` empty means stdout, which is what the
+# comparison uses; a non-empty `into` writes through `-o` and the answer
+# is read from the file instead.
+function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: str) -> str?
+    line: [str] @ [compiler, "build", item.source, flag]
+
+    if into.len() > 0
+        line @ line.push("-o")
+        line @ line.push(into)
+    said = shell.run(scratch: scratch, program: compiler, words: line)?
+
+    if said.code != 0
+        return fail(code: "cannot_emit", msg: said.err)
+    return ok(said.out)
+
+# The compiler's own words about the emission that failed, "" where it did not.
+#
+# **It used to read `scratch + "/stderr"` by name**, which was the one
+# dependency on that path outside `shell.hero` — and it was reading whatever
+# process had written there last rather than this case's. A skip decision rests
+# on it (`machine_lacks_the_library`), so the wrong words there turn a failure
+# into a SKIP. `dumped` already carries the stderr in its own failure message,
+# so the answer is in the value the caller is holding (panel 174, route B).
+function last_error(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "the determinism suite passes identical emissions and catches a wobbling one"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (can_run_scripts carries the measurement).
+    if !shell.can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    tree = scratch + "/determinism-case"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/x.hero", text: "function main()\n    print(1)\n").is_err()
+    assert !write_file(path: tree + "/x.expected", text: "").is_err()
+    item = cases.Case(source: tree + "/x.hero", expected: tree + "/x.expected", name: "x")
+
+    # The real compiler, twice: this is the property itself.
+    one = dumped(scratch: scratch, compiler: shell.some_compiler(), item: item, flag: "--emit-c", into: "")
+    two = dumped(scratch: scratch, compiler: shell.some_compiler(), item: item, flag: "--emit-c", into: "")
+    assert !one.is_err()
+    assert one.must() == two.must()
+    assert one.must().len() > 0
+
+    # A stand-in that answers differently every time — a compiler with a
+    # hash seed, an address in a comment, a timestamp. It must be caught.
+    #
+    # **The stand-in read the clock until 2026-08-30, and on the CI's macOS it
+    # stood still.** `date +%s%N` asks for nanoseconds, `%N` is a GNU coreutils
+    # extension, and BSD `date` prints the letter instead: the Darwin leg failed
+    # with `left: 1788126203N` and `right: 1788126203N`, two calls inside one
+    # second answering the same string, so the wobbler this test exists to catch
+    # was not wobbling. It passed on the author's machine because Darwin 25's
+    # `date` does support `%N` — a defect a newer laptop hides from the runner
+    # that finds it. Eight bytes of `/dev/urandom` ask no calendar and no
+    # platform: 200 calls, 200 distinct answers, measured.
+    wobbler = scratch + "/stub-wobble.sh"
+    assert !write_file(path: wobbler, text: "#!/bin/sh\nod -An -N8 -tx1 /dev/urandom\n").is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", wobbler]).is_err()
+    a = dumped(scratch: scratch, compiler: wobbler, item: item, flag: "--emit-c", into: "")
+    b = dumped(scratch: scratch, compiler: wobbler, item: item, flag: "--emit-c", into: "")
+    assert !a.is_err()
+    assert !b.is_err()
+    assert a.must() != b.must()
+
+test "an emission that fails is an error carrying the compiler's words"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/determinism-broken"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/b.hero", text: "function main()\n    print(nope)\n").is_err()
+    assert !write_file(path: tree + "/b.expected", text: "").is_err()
+    item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
+    got = dumped(scratch: scratch, compiler: shell.some_compiler(), item: item, flag: "--emit-c", into: "")
+    assert got.is_err()

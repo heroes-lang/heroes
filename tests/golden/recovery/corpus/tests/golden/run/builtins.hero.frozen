@@ -1,0 +1,59 @@
+# The five built-ins that reach C at M6 step 3, plus the array half of `slice`.
+# Bulk regression case.
+#
+# What each line pins:
+#   - `sort` is STABLE and ascending, on four of the element types that have an
+#     order, and it returns a NEW array — the argument is still readable after.
+#     `bool` is the one panel 068 added (ratified 2026-08-16), and it is here
+#     rather than only in the checker's refusal list because a set the compiler
+#     names and no program exercises is a set that rots — which is exactly what
+#     happened to the emitter's old "`i64`, `f64` or `str`", stale from panel 042
+#     until this sitting found it.
+#   - `slice` on an array copies through the element descriptor, so a `[str]`
+#     slice owns its own references and the leak counter sees it.
+#   - `join` is one allocation, and the empty and single-element cases are the
+#     two a hand-rolled loop gets wrong.
+#   - `chars` is TOTAL, and the law it buys: `join(chars(s), "") == s`.
+#   - `to_i64` truncates toward zero on both signs and is fallible; `to_f64` renders with a point.
+
+function main()
+    xs = [3, 1, 2]
+    sorted = sort(xs)
+    print(sorted[0], sorted[1], sorted[2])
+
+    # A new array: the argument kept its order.
+    print(xs[0], xs[1], xs[2])
+
+    names = ["pearl", "aladdin", "sane", "aladdin"]
+    print(join(sort(names), "|"))
+
+    fs = [2.5, 0.5, 1.5]
+    print(sort(fs)[0], " ", sort(fs)[2])
+
+    # `false` before `true`, and stability shown the only way a two-valued type
+    # can show it: the count of each is preserved.
+    flags = [true, false, true, false, true]
+    ordered = sort(flags)
+    print(ordered[0], ordered[1], ordered[2], ordered[3], ordered[4])
+
+    # `slice` on an array, `to` excluded, and the empty slice at both ends.
+    tail = slice(names, from: 1, to: 3)
+    print(len(tail), join(tail, "-"))
+    print(len(slice(names, from: 0, to: 0)), len(slice(names, from: 4, to: 4)))
+
+    # `join` on nothing and on one, where an eager separator would show.
+    empty: [str] = []
+    print("[", join(empty, ","), "]")
+    print("[", join(["only"], ","), "]")
+
+    # `chars` yields one `str` per character, not per byte: `caffè` is 6 bytes.
+    word = "caffè"
+    print(len(word), " ", len(chars(word)))
+    print(join(chars(word), "."))
+
+    # The law, stated as a program: the pieces put back together are the string.
+    print(join(chars(word), "") == word)
+    print(join(chars(""), "") == "")
+
+    print(to_i64(3.9).must(), to_i64(-3.9).must(), to_i64(0.0).must())
+    print(to_f64(3), " ", to_f64(-1))

@@ -1,0 +1,24 @@
+# WRONG on purpose, and the shape beside
+# `dead-handle-read-by-c-through-a-cell-it-should-only-write`: the same wrong
+# binding, and C WRITES the object's second field through the cell rather than
+# reading its first. A write into the dead region faults as a read does, 0x8
+# bytes into it, and takes the same sentence: Windows' exception record says
+# which access it was, and the handler deliberately does not read it. Defect
+# 115, 2026-09-27: on Windows the handler printed no offset at all. Under
+# `--sanitize` ASan's own handler reports the fault.
+
+extern "dead-handle-written-by-c-through-a-cell-it-should-only-write.h"
+    record X509 tag ob
+    function ob_new() -> X509 acquires ob_put
+    function ob_mark_cell(@a: X509 retains ob_put) -> i32 when 1
+    function ob_put(a: X509 consumes)
+    function ob_refs(a: X509) -> i64
+    function one() -> i64
+
+function main()
+    cert: X509 @ ob_new()
+
+    if one() == 1
+        ob_put(a: cert)
+    assert ob_mark_cell(a: @cert) == 1
+    print("references held: ", ob_refs(a: cert))

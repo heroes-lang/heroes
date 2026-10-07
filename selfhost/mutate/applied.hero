@@ -1,0 +1,136 @@
+# What `check --apply` printed of a mutant, judged twice: as `replay.py`
+# judged it, and as the instrument judged it before the reboot of
+# 2026-10-05 (panel 187's R2, defect 210).
+#
+# **R2 names any APPLY flag a finding, and the replay the gate has run
+# since that reboot computes one of four.** `judge.py`'s `flags_of` made
+# APPLY-NEW (a code the mutant was never told stands in what `--apply`
+# wrote), APPLY-SAME (a message of the mutant's stands there, at its line,
+# or anywhere where the fix moved lines), APPLY-SAME-OWN (a message whose
+# own certain fix was applied stands at its line) and APPLY-OTHER (what
+# `--apply` wrote checks clean and is neither the program nor the program
+# laid out another way, `fmt` comparing the two: a certain fix that compiles
+# and means something else, defect 172's class, `blocking`). `replay.py`,
+# rebuilt from batch 10's results, kept the second alone and widened it:
+# APPLY-SAME wherever a code of the mutant's stands, whatever moved. Its
+# `flags` are written as it wrote them, so the two instruments' records
+# stay comparable; `judge.py`'s four are written beside them, as
+# `apply_flags`, and a reading treats a move of either as a finding.
+
+use mutate/child
+use mutate/hunks
+use mutate/judged
+
+# What the two judgements found.
+record Printed
+    # `replay.py`'s `changed`, and the codes it found standing.
+    changed: bool
+    stands: [str]
+    # `judge.py`'s flags, in its order.
+    flags: [str]
+
+# `answer` is `check --apply` on the mutant `text`, of the program
+# `original`; `normal` is the mutant's normal arm. What `--apply` printed
+# is planted under `applied_rel`, and the program, where `fmt` must compare
+# the two, under `original_rel`.
+function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, text: str, original: str, normal: judged.Arm, answer: child.Answer) -> Printed?
+    printed = answer.out
+    none: [str] = []
+    changed = answer.exit == 0 && printed != text && printed != ""
+
+    # `judge.py`'s `same_text`: `--apply` prints a final newline, so a text
+    # with none that comes back with one is the same text.
+    same = printed == text || !hunks.ends_newline(text) && printed == text + "\n"
+    moved = answer.exit == 0 && !same
+
+    if !changed && !moved
+        return ok(Printed(changed: false, stands: none, flags: none))
+    judged.plant(at, rel: applied_rel, text: printed)?
+    after = judged.checked(at, rel: applied_rel, permissive: false)?
+    mine = judged.codes_of(normal)
+    theirs = judged.codes_of(after)
+    stands: {str: bool} @ {}
+    fresh: {str: bool} @ {}
+
+    # ORDER: none observed; each code only joins a set.
+    for code in keys(theirs)
+        if !mine[code].is_err()
+            stands[code] @ true
+        else
+            fresh[code] @ true
+
+    flags: [str] @ []
+
+    if moved
+        if fresh.len() > 0
+            flags @ flags.push("APPLY-NEW")
+        after_places = places(after)
+        exact = shared_place(a: places(normal), b: after_places)
+        delta = newlines(printed) - newlines(text)
+
+        if exact || delta != 0 && stands.len() > 0
+            flags @ flags.push("APPLY-SAME")
+
+            if shared_place(a: normal.certain, b: after_places)
+                flags @ flags.push("APPLY-SAME-OWN")
+        clean = after.exit == 0 && after.messages.len() == 0
+
+        if clean && printed != original && another_program(at, applied_rel: applied_rel, original_rel: original_rel, original: original)?
+            flags @ flags.push("APPLY-OTHER")
+    judged.uproot(at, rel: applied_rel)?
+    found: [str] @ none
+
+    if changed
+        # ORDER: codes ascending by bytes, Python's `sorted` over ASCII codes.
+        found @ sort(keys(stands))
+    return ok(Printed(changed: changed, stands: found, flags: flags))
+
+# Whether the program `--apply` wrote, planted under `applied_rel`, is
+# another program than `original`: `fmt` prints the two otherwise. Where
+# `fmt` refuses either, nothing is known and nothing is said (`judge.py`'s
+# `same_program` answered `None`, which flags nothing).
+function another_program(at: judged.Place, applied_rel: str, original_rel: str, original: str) -> bool?
+    judged.plant(at, rel: original_rel, text: original)?
+    a = child.bounded(program: at.compiler, words: [at.compiler, "fmt", at.mirror + "/" + applied_rel], capture: at.capture)?
+    b = child.bounded(program: at.compiler, words: [at.compiler, "fmt", at.mirror + "/" + original_rel], capture: at.capture)?
+    judged.uproot(at, rel: original_rel)?
+
+    if a.exit != 0 || b.exit != 0
+        return ok(false)
+    return ok(a.out != b.out)
+
+# `<code>\t<line>` of every message of an arm.
+function places(arm: judged.Arm) -> [str]
+    out: [str] @ []
+
+    for m in arm.messages
+        out @ out.push(judged.code_of(m) + "\t" + judged.line_of(m).to_str())
+
+    return out
+
+function shared_place(a: [str], b: [str]) -> bool
+    for x in a
+        for y in b
+            if x == y
+                return true
+
+    return false
+
+function newlines(text: str) -> i64
+    n: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        if text[at] == 10
+            n @ n + 1
+        at @ at + 1
+
+    return n
+
+## Tests
+
+test "a place is a code and a line, and two lists share one or not"
+    assert shared_place(a: ["c\t3", "d\t4"], b: ["d\t4"])
+    assert !shared_place(a: ["c\t3"], b: ["c\t4"])
+    assert newlines("a\nb\n") == 2
+    assert newlines("") == 0

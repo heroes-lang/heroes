@@ -1,0 +1,26 @@
+# DEFECT 076, the lease's half, found by attacking the string's at the shape
+# beside it (M-agreed-retention, 2026-09-23).
+#
+# `clobber_held` writes over the bytes before the lease it is handed, where the
+# lease's block keeps its mark, and `end_lease` then finds the mark gone.
+#
+# **The line it printed until this case was written was false too.** It said
+# *the checker admits `end_lease` only on a lease cell, so this is a compiler
+# bug*, and the runtime's own comment above it said the check was *never the
+# guard against a program*. Both were measured wrong here: a program reaches it
+# on every run, at -O0 and -O2 and under ASan, with a compiler that did nothing
+# wrong. The defect was filed with this shape written down as UNRUN; running it
+# is what made the class two sites rather than one.
+#
+# The parameter carries no `lent` on purpose: a lease is a copy C may keep, and
+# C keeping it is exactly what lets C write near it.
+
+extern "fixedbugs-c-writes-over-a-leases-header.h"
+    function clobber_held(s: cstr)
+
+function main()
+    word = repeat("ab", 4)
+    x: cstr @ word.lease()
+    clobber_held(s: x)
+    end_lease(@x)
+    print(word)

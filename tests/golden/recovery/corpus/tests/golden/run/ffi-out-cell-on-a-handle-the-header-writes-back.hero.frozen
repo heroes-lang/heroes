@@ -1,0 +1,19 @@
+# Defect 083's control (2026-09-24): an `@` cell holding a handle against a
+# header that spells the parameter `T **` and writes a pointer into it. The
+# depth question `cli/pointee.hero` now asks must accept both spellings — a
+# bare `void **` and a typedef of the pointer, `handle_t *`, which clang reads
+# through — and the program must run: two handles made through the cells, two
+# given back, nothing owed at exit.
+extern "ffi-out-cell-on-a-handle-the-header-writes-back.h"
+    record Mem tag void
+    function make_into(@out: Mem acquires eat) -> i32
+    function make_typedef(@out: Mem acquires eat) -> i32
+    function eat(p: Mem consumes)
+
+function main()
+    a: Mem @ nullptr
+    b: Mem @ nullptr
+    print(make_into(@a) + make_typedef(@b))
+    eat(a)
+    eat(b)
+    print("both given back")

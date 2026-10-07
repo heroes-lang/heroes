@@ -1,0 +1,410 @@
+# Reading the spec as a document: its code spans, the names it offers, and
+# what it holds above ASCII.
+#
+# Port of the text machinery inside archive/bootstrap-rs/heroes/src/measure/spec.rs. It is
+# a module of its own because the checks that use it are about three
+# different things (the budget, the built-ins, the lexer) and this is the one
+# thing they share: *where in the spec a claim about the language is made*.
+#
+# THE ANSWER IS "IN A CODE SPAN", AND THAT IS NOT A STYLE CHOICE. The spec's
+# prose contains the English words `all`, `has`, `find` and `map`; its code
+# spans contain the language's own names. A check that searched the prose
+# would fire on a sentence rather than on a claim, so every scan here is over
+# fenced blocks and backticked fragments only.
+#
+# EVERYTHING HERE WALKS CHARACTERS, NOT BYTES, AND THE FIRST DRAFT DID NOT.
+# `slice` aborts when it splits a character (spec § 10 Strings, arrays, maps), so a scan that indexes
+# bytes and then slices one — the obvious port of Rust's `char_indices` — dies
+# on the spec's own em dash: `panic: string slice splits a character`, measured
+# on the real document the first time this ran. `chars()` gives one-character
+# strings that can be compared and joined without ever cutting one in half,
+# which is why every function below takes `[str]` where the Rust takes `&str`.
+
+use strings
+
+# Every identifier written inside a code span — a backticked fragment or a
+# fenced block — in the order met, duplicates included.
+#
+# THREE states since 2026-09-12, and the third is the grammar's. A fence flips
+# whether we are inside a block and a lone backtick flips whether we are inside
+# a span, exactly as the Rust's `split("```")` and `split('`')` did together.
+# The third is an INDENTED BLOCK outside a fence, which is where the spec's
+# production rules live: `.claude/rules/spec-shape.md` refuses a grammar in a
+# fence, because the `rejected` check reads every fence as Heroes source, and an
+# indented block was the way out — but invisible was the easy answer and not the
+# right one. A production names only Heroes' own terminals, so no refused word
+# can appear in one; reading them costs no false positive and buys the terminals
+# the same check every other code span gets (panel 133).
+function identifiers_in_code(text: str) -> [str]
+    cs = text.chars()
+    found: [str] @ []
+    in_block: bool @ false
+    in_span: bool @ false
+    in_indent: bool @ false
+    at_line_start: bool @ true
+    word: [str] @ []
+    i: i64 @ 0
+
+    while i < cs.len()
+        if at_line_start && !in_block
+            in_indent @ opens_indented(cs: cs, at: i, was: in_indent)
+        at_line_start @ false
+
+        if fence_at(cs: cs, at: i)
+            in_block @ !in_block
+            in_span @ false
+            in_indent @ false
+            found @ flushed(found: found, word: word)
+            word @ word.slice(from: 0, to: 0)
+            i @ i + 3
+            continue
+
+        if cs[i] == "`"
+            if !in_block
+                in_span @ !in_span
+            found @ flushed(found: found, word: word)
+            word @ word.slice(from: 0, to: 0)
+            i @ i + 1
+            continue
+
+        if cs[i] == "\n"
+            at_line_start @ true
+
+        if (in_block || in_span || in_indent) && is_word_char(cs[i])
+            word @ word.push(cs[i])
+        else
+            found @ flushed(found: found, word: word)
+            word @ word.slice(from: 0, to: 0)
+        i @ i + 1
+
+    return flushed(found: found, word: word)
+
+function flushed(found: [str], word: [str]) -> [str]
+    if word.len() == 0
+        return found
+    return found.push(word.join(""))
+
+# Does the line starting at `at` open an indented block, four spaces deep and
+# outside a fence?
+#
+# **A BLANK line keeps whatever the block already was**, and that is the whole
+# subtlety: a production block breathes between its groups, so a blank line is a
+# gap inside one and never the end of it. A line with any other content at
+# column 0 ends it.
+function opens_indented(cs: [str], at: i64, was: bool) -> bool
+    if at < cs.len() && cs[at] == "\n"
+        return was
+
+    if at + 4 > cs.len()
+        return false
+    j: i64 @ at
+
+    while j < at + 4
+        if cs[j] != " "
+            return false
+        j @ j + 1
+
+    return true
+
+function fence_at(cs: [str], at: i64) -> bool
+    if at + 3 > cs.len()
+        return false
+    return cs[at] == "`" && cs[at + 1] == "`" && cs[at + 2] == "`"
+
+# `A-Z a-z 0-9 _` — what an identifier is made of, and the boundary the
+# Rust's `split(|c| !c.is_alphanumeric() && c != '_')` draws. A character
+# above ASCII is not one of them, which is right here for the reason it is
+# right in the pre-tokeniser: this document's non-ASCII characters are
+# punctuation (suite_spec.hero pins that).
+function is_word_char(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    b = ch[0]
+
+    if b >= 65 && b <= 90
+        return true
+
+    if b >= 97 && b <= 122
+        return true
+
+    if b >= 48 && b <= 57
+        return true
+    return b == 95
+
+# The names the spec offers as built-ins: the one sentence that opens with
+# `Built-ins:`, read as the backticked fragments inside it.
+#
+# THIS PARSER HAS A HISTORY AND IT IS THE POINT OF THE FUNCTION. Its Rust
+# ancestor used to end the list at the literal text of the *next* sentence,
+# with a blank line as a fallback its own comment admitted was wrong. Panel
+# 081 then spent that very sentence as a named removal — and the parser
+# dropped onto the condemned fallback, read `inf` out of the float-printing
+# sentence, and reported it as a missing built-in. Nothing about the language
+# had changed; a sentence somewhere else had. So the end is asked of the
+# value in hand: **this sentence's own full stop**, outside a code span
+# (CLAUDE.md §11).
+function offered_builtins(text: str) -> [str]?
+    cs = text.chars()
+    opens = at_marker(cs: cs, needle: "Built-ins:")
+
+    if opens.is_err()
+        return fail(code: "no_list", msg: "the spec has no `Built-ins:` sentence")
+    from = opens.must()
+    tail = cs.slice(from: from, to: cs.len())
+    sentence = tail.slice(from: 0, to: end_of_sentence(tail))
+    kept = without_prose_parentheses(sentence)
+    names: [str] @ []
+    inside: bool @ false
+    piece: [str] @ []
+    i: i64 @ 0
+
+    while i < kept.len()
+        if kept[i] == "`"
+            if inside
+                name = strings.trimmed(piece.join(""))
+                bare = strings.without_suffix(text: name, suffix: "(...)")
+
+                if bare.len() > 0 && !strings.contains(text: bare, needle: " ")
+                    names @ names.push(bare)
+                piece @ piece.slice(from: 0, to: 0)
+            inside @ !inside
+        else if inside
+            piece @ piece.push(kept[i])
+        i @ i + 1
+
+    return ok(names)
+
+# Where `needle` starts, in characters.
+function at_marker(cs: [str], needle: str) -> i64?
+    wanted = needle.chars()
+
+    if wanted.len() == 0 || wanted.len() > cs.len()
+        return fail(code: "absent", msg: "the marker is not there")
+    limit = cs.len() - wanted.len()
+    at: i64 @ 0
+
+    while at <= limit
+        if cs.slice(from: at, to: at + wanted.len()) == wanted
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "absent", msg: "the marker is not there")
+
+# How many characters this sentence runs to, counting only full stops OUTSIDE
+# a code span — `print(...)` and `slice(from:, to:)` carry dots of their own
+# and end nothing. A stop counts only when whitespace follows it, which is
+# what keeps `1.33` and `§1.6` from ending a sentence either.
+function end_of_sentence(cs: [str]) -> i64
+    in_span: bool @ false
+    i: i64 @ 0
+
+    while i < cs.len()
+        if cs[i] == "`"
+            in_span @ !in_span
+        else if cs[i] == "." && !in_span
+            if i + 1 >= cs.len()
+                return i
+            after = cs[i + 1]
+
+            if after == " " || after == "\n" || after == "\t" || after == "\r"
+                return i
+        i @ i + 1
+
+    return cs.len()
+
+# Every `(…)` group that is not inside a code span, dropped. The
+# `slice(from:, to:)` entry gained "(`to` excluded)" at M-strings-ownership,
+# and `to` is a word ABOUT a built-in rather than the name of one; code spans
+# are kept whole, so `print(...)` survives.
+function without_prose_parentheses(cs: [str]) -> [str]
+    out: [str] @ []
+    in_code: bool @ false
+    depth: i64 @ 0
+    i: i64 @ 0
+
+    while i < cs.len()
+        ch = cs[i]
+
+        if ch == "`"
+            in_code @ !in_code
+
+        if !in_code && ch == "("
+            depth @ depth + 1
+            i @ i + 1
+            continue
+
+        if !in_code && ch == ")" && depth > 0
+            depth @ depth - 1
+            i @ i + 1
+            continue
+
+        if depth == 0
+            out @ out.push(ch)
+        i @ i + 1
+
+    return out
+
+# Every distinct character above ASCII in `text`, sorted, one entry each.
+#
+# This exists for one claim in one file: `selfhost/measure/pieces.hero` reads
+# a letter as `A-Z a-z` and a digit as `0-9`, where the Rust it ports asks
+# Unicode. The two agree only while the spec's non-ASCII characters are
+# punctuation, so this is that premise's falsifier — and it pins the SET
+# rather than the count, because another em dash is not news and a letter is.
+function above_ascii(text: str) -> [str]
+    seen: {str: bool} @ {}
+
+    for ch in text.chars()
+        if ch.len() > 1
+            seen[ch] @ true
+
+    return keys(seen).sort()
+
+# Where the section called `name` begins, in bytes: the start of the `## `
+# line whose title is `name`, with or without a section number in front of it.
+#
+# The spec's headings carry a number since M-anchored-spec, `## 13. FFI`, and
+# the reader that looked for the bare text `## FFI` would have stopped finding
+# the section the day the number arrived, silently and with the sqlite example
+# unrun. So the number is what this function looks past, and nothing else. A
+# byte offset is safe here because a line starts right after a newline, one
+# byte, so a slice from it never splits a character.
+function section_named(text: str, name: str) -> i64?
+    at: i64 @ 0
+    in_fence: bool @ false
+
+    for line in strings.lines(text)
+        # A `## ` inside a fenced block is a Heroes section heading, which the
+        # spec's own § 1 says exists, and not a heading of the spec (panel 126's
+        # compiler seat, with a probe).
+        if strings.starts_with(text: line, prefix: "```")
+            in_fence @ !in_fence
+
+        if !in_fence && strings.starts_with(text: line, prefix: "## ")
+            title = strings.without_prefix(text: line, prefix: "## ")
+
+            if strings.trimmed(without_number(title)) == name
+                return ok(at)
+        at @ at + line.len() + 1
+
+    return fail(code: "absent", msg: "no `## " + name + "` section, numbered or not")
+
+# `13. FFI` becomes `FFI`; `FFI` stays. A number is digits, a full stop and a
+# space, and nothing else is looked past, so `1.0 release` keeps its title.
+function without_number(title: str) -> str
+    cs = title.chars()
+    i: i64 @ 0
+
+    while i < cs.len() && is_digit(cs[i])
+        i @ i + 1
+
+    if i == 0 || i + 1 >= cs.len()
+        return title
+
+    if cs[i] != "." || cs[i + 1] != " "
+        return title
+    return cs.slice(from: i + 2, to: cs.len()).join("")
+
+function is_digit(ch: str) -> bool
+    if ch.len() != 1
+        return false
+    return ch[0] >= 48 && ch[0] <= 57
+
+test "identifiers are read out of code spans and fences, never out of prose"
+    assert identifiers_in_code("plain words only").len() == 0
+    assert identifiers_in_code("a `len` and a `push`") == ["len", "push"]
+
+    # A fenced block: every identifier inside it, and the fence itself is
+    # not one.
+    fenced = "text\n```\nx = len(xs)\n```\nmore text\n"
+    assert identifiers_in_code(fenced) == ["x", "len", "xs"]
+
+    # `to_str` keeps its underscore; a dotted call is two names.
+    assert identifiers_in_code("`a.to_str()`") == ["a", "to_str"]
+
+    # The em dash that killed the byte-slicing draft, in a code span.
+    assert identifiers_in_code("`a — b`") == ["a", "b"]
+
+test "an indented block is code, and prose at column zero is not"
+    # The shape the spec's production rules take: four spaces, no fence.
+    block = "prose here\n\n    Bind = ident \"=\" Expression .\n\nmore prose\n"
+    assert identifiers_in_code(block) == ["Bind", "ident", "Expression"]
+
+    # The prose around it stays invisible, which is the whole point of the
+    # column-zero rule: `more prose` above contributed nothing.
+    assert identifiers_in_code("prose only\nstill prose\n").len() == 0
+
+    # A BLANK line does not close the block — a production block breathes
+    # between its groups, and this is the case that would have silently
+    # halved every grammar section.
+    breathing = "    One = a .\n\n    Two = b .\n"
+    assert identifiers_in_code(breathing) == ["One", "a", "Two", "b"]
+
+    # A line at column zero DOES close it, blank line or not.
+    closed = "    One = a .\nback at zero\n    Two = b .\n"
+    assert identifiers_in_code(closed) == ["One", "a", "Two", "b"]
+    ended = "    One = a .\nback at zero and it ends\n"
+    assert identifiers_in_code(ended) == ["One", "a"]
+
+    # Three spaces is not four, so it is prose.
+    assert identifiers_in_code("   Three = spaces .\n").len() == 0
+
+    # Indentation INSIDE a fence changes nothing: the fence already owns it,
+    # and this is what keeps the eight fences the spec already has reading
+    # exactly as they did.
+    inside = "```\nx = a\n    y = b\n```\n"
+    assert identifiers_in_code(inside) == ["x", "a", "y", "b"]
+
+test "a sentence ends at its own full stop, not inside a code span"
+    assert end_of_sentence("one. two".chars()) == 3
+    assert end_of_sentence("`a.b` then. rest".chars()) == 10
+
+    # A decimal point ends nothing: no whitespace follows it.
+    assert end_of_sentence("1.33 and 2.5 end. here".chars()) == 16
+    assert end_of_sentence("no stop at all".chars()) == 14
+
+    # A full stop after a multi-byte character is still found, and counted
+    # in characters rather than in bytes.
+    assert end_of_sentence("a — b. c".chars()) == 5
+
+test "prose parentheses go, code spans stay"
+    assert without_prose_parentheses("a (dropped) b".chars()).join("") == "a  b"
+    assert without_prose_parentheses("`print(...)` stays".chars()).join("") == "`print(...)` stays"
+    assert without_prose_parentheses("a (b (c) d) e".chars()).join("") == "a  e"
+
+test "the built-in sentence is read out of the real spec"
+    text = read_file("spec/heroes-spec.md")
+    assert !text.is_err()
+    offered = offered_builtins(text.must())
+    assert !offered.is_err()
+    names = offered.must()
+
+    # The list is long, and it ENDS at `range` by construction — the pin
+    # that makes a shortened sentence loud instead of merely smaller.
+    assert names.len() > 10
+    assert names[names.len() - 1] == "range"
+    assert offered_builtins("a document with no such sentence").is_err()
+
+test "the marker is found in character space"
+    assert at_marker(cs: "a — Built-ins: x".chars(), needle: "Built-ins:").default(-1) == 4
+    assert at_marker(cs: "nothing".chars(), needle: "Built-ins:").is_err()
+
+test "the characters above ASCII are a set, sorted"
+    assert above_ascii("plain").len() == 0
+    assert above_ascii("a — b · c —") == ["·", "—"]
+
+test "a section is found with or without its number, at the start of its line"
+    plain = "intro\n\n## FFI\nbody\n"
+    numbered = "intro\n\n## 13. FFI\nbody\n"
+    assert section_named(text: plain, name: "FFI").default(-1) == 7
+    assert section_named(text: numbered, name: "FFI").default(-1) == 7
+    assert section_named(text: numbered, name: "Types").is_err()
+
+    # The title has to be the whole title: `FFI` is not a prefix match.
+    assert section_named(text: "## FFI and more\n", name: "FFI").is_err()
+
+    # A number is digits, a stop and a space; anything else is the title.
+    assert without_number("13. FFI") == "FFI"
+    assert without_number("FFI") == "FFI"
+    assert without_number("1.0 release") == "1.0 release"
+    assert without_number("7.Types") == "7.Types"

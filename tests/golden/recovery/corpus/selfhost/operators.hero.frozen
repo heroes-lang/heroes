@@ -1,0 +1,145 @@
+# The operators, as data: which tokens are binary ones, what each is called in
+# the tree, and how each is spelled (design.md §4.14).
+#
+# **Its own module since 2026-09-12, and the seam is a concern rather than a
+# line count.** These tables say what an operator IS. `grammar_expr.hero` says
+# how a stream of them is CLIMBED, and it is a knot of mutually recursive
+# functions that Heroes forbids splitting — which is exactly why anything in it
+# that is not part of the ring belongs out here. `op_text` and `unary_text` had
+# been sitting under that file's test heading, described as a helper, while
+# being the only spelling table in the compiler; `heroes grammar` needed them
+# and found them in the one place a caller would not look.
+#
+# **The order of `binary_tokens()` is the fact.** It is the precedence order, loosest
+# first, the order the climber's powers put them in, and `heroes grammar` prints
+# it straight through. `tests/harness/suite_grammar.hero` compares that printed
+# sequence against `binary_op`'s arms read out of the neighbour as text, in
+# order, so a row moved between two arms is caught and not only a row lost.
+#
+# What NONE of this can see is an arm pairing the right spelling with the wrong
+# operator — `.percent => .add`, panel 067's defect — because every table here
+# is keyed by the operator the match already chose. That is closed one level
+# down, by the unit test in `cli/grammar.hero` which asserts that the operator
+# `%` resolves to spells `%` again.
+
+use token
+use ast
+
+# Every token that is a binary operator, weakest binding first. The powers
+# themselves stay with the climber that asks for them, in
+# `grammar_expr.binary_op`: this is the enumeration Heroes has no reflection to
+# derive, and nothing more.
+function binary_tokens() -> [token.TokenKind]
+    return [
+        .or_or
+        .and_and
+        .eq_eq
+        .bang_eq
+        .lt
+        .le
+        .gt
+        .ge
+        .pipe
+        .caret
+        .amp
+        .shl
+        .shr
+        .plus
+        .minus
+        .star
+        .slash
+        .percent
+    ]
+
+# The tree's own name for an operator, which is the half `spelling` cannot say
+# and the half panel 067's defect lived in. `.percent => .add` left `%` parsing
+# as `+` with every test green, because the spelling was right, the power was
+# right, and only the operator was wrong. `heroes grammar` prints this beside
+# the spelling so the pairing is on the page rather than in a reader's head.
+function name(op: ast.BinaryOp) -> str
+    return match op
+        .add     => "add"
+        .sub     => "sub"
+        .mul     => "mul"
+        .div     => "div"
+        .rem     => "rem"
+        .eq      => "eq"
+        .ne      => "ne"
+        .lt      => "lt"
+        .le      => "le"
+        .gt      => "gt"
+        .ge      => "ge"
+        .and     => "and"
+        .or      => "or"
+        .bit_and => "bit_and"
+        .bit_or  => "bit_or"
+        .bit_xor => "bit_xor"
+        .shl     => "shl"
+        .shr     => "shr"
+
+# How an operator is written in a program. The one spelling table in the
+# compiler, and every other tool that needs one asks here.
+function spelling(op: ast.BinaryOp) -> str
+    return match op
+        .add     => "+"
+        .sub     => "-"
+        .mul     => "*"
+        .div     => "/"
+        .rem     => "%"
+        .eq      => "=="
+        .ne      => "!="
+        .lt      => "<"
+        .le      => "<="
+        .gt      => ">"
+        .ge      => ">="
+        .and     => "&&"
+        .or      => "||"
+        .bit_and => "&"
+        .bit_or  => "|"
+        .bit_xor => "^"
+        .shl     => "<<"
+        .shr     => ">>"
+
+function unary_spelling(op: ast.UnaryOp) -> str
+    return match op
+        .neg     => "-"
+        .not     => "!"
+        .bit_not => "~"
+
+test "every binary operator has a distinct spelling and a distinct name"
+    seen_text: {str: bool} @ {}
+    seen_name: {str: bool} @ {}
+    ops: [ast.BinaryOp] = [
+        .add
+        .sub
+        .mul
+        .div
+        .rem
+        .eq
+        .ne
+        .lt
+        .le
+        .gt
+        .ge
+        .and
+        .or
+        .bit_and
+        .bit_or
+        .bit_xor
+        .shl
+        .shr
+    ]
+
+    for op in ops
+        assert seen_text[spelling(op)].is_err()
+        assert seen_name[name(op)].is_err()
+        seen_text[spelling(op)] @ true
+        seen_name[name(op)] @ true
+
+    assert ops.len() == 18
+    assert binary_tokens().len() == 18
+
+test "the three prefix operators are spelled as the language writes them"
+    assert unary_spelling(.neg) == "-"
+    assert unary_spelling(.not) == "!"
+    assert unary_spelling(.bit_not) == "~"

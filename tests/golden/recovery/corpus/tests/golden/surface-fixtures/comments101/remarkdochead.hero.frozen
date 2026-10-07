@@ -1,0 +1,23 @@
+# The same family, and older than the repair (the skeptic seat's `y_r4`): a
+# remark after a group's last member, then a doc directly above a second head
+# with the same header and a blank line under it. Merged, the remark and the
+# doc are printed at the members' column, one run the re-parse would read as
+# the doc of both, so the remark takes the blank line that keeps it a remark
+# and the doc gains none. The trunk refused it at exit 2, and the first repair
+# too; the same with the remark at column 2 is the shape beside it.
+
+extern "x.h"
+    record Ob tag ob
+    # a remark about Ob, at the members' column
+# the doc of Pool
+extern "x.h"
+
+    record Pool tag pool
+  # a remark about Pool, at column 2
+# the doc of pool_new
+extern "x.h"
+
+    function pool_new() -> Pool
+
+function main()
+    print(0)

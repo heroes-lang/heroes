@@ -1,0 +1,291 @@
+# The shapes a parsed program has, and the arena that holds them.
+#
+# Part of `examples/interpreter/` — the root `main.hero` carries the program's
+# argument. This module declares the vocabulary and the storage; `syn/expr.hero`
+# and `syn/parse.hero` fill it, `run/` walks it, and nobody outside builds a
+# node without going through `added_expr`/`added_stmt`.
+#
+# WHY AN ARENA AND NOT A RECURSIVE VARIANT. Both work — `examples/binarytrees/`
+# is a recursive `variant` and `examples/tree/` is an arena — and the choice
+# here is the one a real front end makes, for a reason this program can
+# demonstrate: a node is referred to from two places (a `while`'s test is read
+# once per turn of the loop) and the parser builds children before parents, so
+# an index is what the two want. It also makes the depth test cheap: a
+# 500-deep parenthesised expression is 500 entries in one array rather than 500
+# nested values that copy on every read.
+#
+# THE TWO ARENAS ARE SEPARATE on purpose. An expression index and a statement
+# index are both `i64`, and putting them in one array would make them
+# interchangeable to the type system while remaining different in fact. Two
+# arrays cannot stop somebody passing one for the other either — that would
+# want two distinct types, which this language does not have a cheap way to
+# spell — but it does mean every `t.exprs[id]` and `t.stmts[id]` says which
+# kind of index it just used, and a mistake is then visible in the line rather
+# than only at run time.
+
+# An operator with two sides. A variant rather than a `str`, so that the
+# evaluator's `match` is exhaustive and a new operator cannot be added to the
+# scanner without breaking every place that has to handle it.
+variant Op
+    add
+    subtract
+    multiply
+    divide
+    remainder
+    less
+    less_equal
+    greater
+    greater_equal
+    equal
+    unequal
+    both
+    either
+
+# One expression. Children are indices into `Tree.exprs`.
+variant Expr
+    number
+        value: i64
+    text
+        value: str
+    truth
+        value: bool
+    name
+        value: str
+    negate
+        on: i64
+    invert
+        on: i64
+    binary
+        op: Op
+        left: i64
+        right: i64
+    call
+        name: str
+        args: [i64]
+
+# One statement. `then`, `otherwise` and `body` are lists of statement indices;
+# `value` and `condition` are expression indices.
+#
+# `condition` and not the obvious `test`, because `test` opens a test block in
+# Heroes and a field may not take it: `error[expected_field]: expected a field
+# name, found `test``, met on this file's first compile. A keyword list is a
+# language's smallest surface and this is where a program meets it.
+variant Stmt
+    bind
+        name: str
+        value: i64
+    say
+        value: i64
+    when
+        condition: i64
+        then: [i64]
+        otherwise: [i64]
+    while_loop
+        condition: i64
+        body: [i64]
+    give
+        value: i64
+    stop
+        code: i64
+    define
+        name: str
+        params: [str]
+        body: [i64]
+    evaluate
+        value: i64
+
+# Every node of one program, and the top-level statements in order.
+record Tree
+    exprs: [Expr]
+    stmts: [Stmt]
+    top: [i64]
+
+function empty() -> Tree
+    no_exprs: [Expr] = []
+    no_stmts: [Stmt] = []
+    no_top: [i64] = []
+    return Tree(exprs: no_exprs, stmts: no_stmts, top: no_top)
+
+# Put an expression in the arena and hand back its index. The `@` parameter is
+# the language's answer to *this function changes the thing you passed it*, and
+# the index is returned rather than read back off the record, because a caller
+# that computes `len(t.exprs) - 1` itself is a caller that will one day compute
+# it after another push.
+function added_expr(@t: Tree, e: Expr) -> i64
+    t.exprs @ t.exprs.push(e)
+    return t.exprs.len() - 1
+
+function added_stmt(@t: Tree, s: Stmt) -> i64
+    t.stmts @ t.stmts.push(s)
+    return t.stmts.len() - 1
+
+# How deep the expression at `id` nests. The 500-deep case in `main.hero`'s
+# tests reads this, and so does the guard in `run/expr.hero`.
+function expr_depth(t: Tree, id: i64) -> i64
+    return match t.exprs[id]
+        .number _ | .text _ | .truth _ | .name _ => 1
+        .negate u                                => 1 + expr_depth(t, u.on)
+        .invert u                                => 1 + expr_depth(t, u.on)
+        .binary b                                => 1 + deeper(a: expr_depth(t, b.left), b: expr_depth(t, b.right))
+        .call c                                  => 1 + deepest_of(t, c.args)
+
+function deeper(a: i64, b: i64) -> i64
+    if a > b
+        return a
+
+    return b
+
+function deepest_of(t: Tree, ids: [i64]) -> i64
+    most: i64 @ 0
+
+    for id in ids
+        most @ deeper(a: most, b: expr_depth(t, id))
+
+    return most
+
+# The operator a token spells, for the two tokens per operator that the
+# scanner produces. `syn/expr.hero` asks this; keeping it here means the
+# mapping and the `Op` cases are in one file and a new case cannot be added
+# without meeting its spelling.
+function shown_op(op: Op) -> str
+    return match op
+        .add           => "+"
+        .subtract      => "-"
+        .multiply      => "*"
+        .divide        => "/"
+        .remainder     => "%"
+        .less          => "<"
+        .less_equal    => "<="
+        .greater       => ">"
+        .greater_equal => ">="
+        .equal         => "=="
+        .unequal       => "!="
+        .both          => "&&"
+        .either        => "||"
+
+# An expression written back out as text, parenthesised at every step so that
+# the rendering says what the TREE holds rather than what the source said.
+# `main.hero`'s tests read this: it is how a parse is checked without asserting
+# on indices.
+function shown_expr(t: Tree, id: i64) -> str
+    return match t.exprs[id]
+        .number n => n.value.to_str()
+        .text x   => "\"" + x.value + "\""
+        .truth b  => b.value.to_str()
+        .name n   => n.value
+        .negate u => "(-" + shown_expr(t, u.on) + ")"
+        .invert u => "(!" + shown_expr(t, u.on) + ")"
+        .binary b => "(" + shown_expr(t, b.left) + " " + shown_op(b.op) + " " + shown_expr(t, b.right) + ")"
+        .call c   => c.name + "(" + shown_args(t, c.args) + ")"
+
+function shown_args(t: Tree, ids: [i64]) -> str
+    pieces: [str] @ []
+
+    for id in ids
+        pieces @ pieces.push(shown_expr(t, id))
+
+    return join(pieces, ", ")
+
+test "an arena hands back the index it just filled, and it is the last one"
+    t: Tree @ empty()
+    one = added_expr(@t, .number(value: 1))
+    two = added_expr(@t, .number(value: 2))
+    assert one == 0
+    assert two == 1
+    assert t.exprs.len() == 2
+    sum = added_expr(@t, .binary(op: .add, left: one, right: two))
+    assert sum == 2
+    assert shown_expr(t, sum) == "(1 + 2)"
+
+test "the two arenas count separately"
+    t: Tree @ empty()
+    e = added_expr(@t, .number(value: 7))
+    s = added_stmt(@t, .say(value: e))
+    assert e == 0
+    assert s == 0
+    assert t.exprs.len() == 1
+    assert t.stmts.len() == 1
+
+test "every operator has a spelling, and no two share one"
+    ops: [Op] = [
+        .add
+        .subtract
+        .multiply
+        .divide
+        .remainder
+        .less
+        .less_equal
+        .greater
+        .greater_equal
+        .equal
+        .unequal
+        .both
+        .either
+    ]
+    seen: {str: i64} @ {}
+
+    for op in ops
+        written = shown_op(op)
+        assert written.len() > 0
+        assert seen[written].is_err()
+        seen[written] @ 1
+
+    assert len(seen) == 13
+
+test "a rendered expression says what the tree holds, not what the source said"
+    # The rendering is fully parenthesised on purpose: `1 + 2 * 3` and
+    # `(1 + 2) * 3` are different trees and must be different text, or the
+    # parser's tests would pass on either.
+    t: Tree @ empty()
+    one = added_expr(@t, .number(value: 1))
+    two = added_expr(@t, .number(value: 2))
+    three = added_expr(@t, .number(value: 3))
+    product = added_expr(@t, .binary(op: .multiply, left: two, right: three))
+    left_first = added_expr(@t, .binary(op: .add, left: one, right: product))
+    assert shown_expr(t, left_first) == "(1 + (2 * 3))"
+    sum = added_expr(@t, .binary(op: .add, left: one, right: two))
+    right_first = added_expr(@t, .binary(op: .multiply, left: sum, right: three))
+    assert shown_expr(t, right_first) == "((1 + 2) * 3)"
+
+test "a call renders its arguments in order, and no arguments is empty parentheses"
+    t: Tree @ empty()
+    a = added_expr(@t, .number(value: 1))
+    b = added_expr(@t, .name(value: "x"))
+    two_args = added_expr(@t, .call(name: "f", args: [a, b]))
+    assert shown_expr(t, two_args) == "f(1, x)"
+    none: [i64] = []
+    no_args = added_expr(@t, .call(name: "now", args: none))
+    assert shown_expr(t, no_args) == "now()"
+
+test "depth counts the nesting and a leaf is one"
+    t: Tree @ empty()
+    leaf = added_expr(@t, .number(value: 1))
+    assert expr_depth(t, leaf) == 1
+    once = added_expr(@t, .negate(on: leaf))
+    assert expr_depth(t, once) == 2
+    twice = added_expr(@t, .invert(on: once))
+    assert expr_depth(t, twice) == 3
+
+    # A binary node takes the deeper of its two sides, not their sum.
+    wide = added_expr(@t, .binary(op: .add, left: leaf, right: twice))
+    assert expr_depth(t, wide) == 4
+
+test "a thousand nodes deep is a number and not a crash"
+    # Built by hand here; `main.hero` builds the same shape through the PARSER,
+    # which is the case panel 104's stack guard is a positive witness for.
+    t: Tree @ empty()
+    at: i64 @ added_expr(@t, .number(value: 0))
+    i: i64 @ 0
+
+    while i < 999
+        at @ added_expr(@t, .negate(on: at))
+        i @ i + 1
+
+    assert t.exprs.len() == 1000
+    assert expr_depth(t, at) == 1000
+
+test "the empty tree is empty in all three of its parts"
+    t = empty()
+    assert t.exprs.len() == 0
+    assert t.stmts.len() == 0
+    assert t.top.len() == 0

@@ -1,0 +1,17 @@
+# `when` governs an END too (panel 177's item 6, measured on real SQLite by
+# its compiler-engineer): a close that returns busy leaves the connection
+# open, so a `consumes` that ended the obligation whatever C returned refused
+# the correct program at the second, successful close. With `when 0` the first
+# close ends nothing and the second ends the life.
+extern "handle-end-only-on-success-keeps-the-connection-owed.h"
+    record Db tag db
+    function db_open() -> Db acquires db_close
+    function db_finalize(d: Db)
+    function db_close(d: Db consumes) -> i32 when 0
+
+function main()
+    d = db_open()
+    first = db_close(d: d)
+    db_finalize(d: d)
+    second = db_close(d: d)
+    print("first close: ", first, " second close: ", second)

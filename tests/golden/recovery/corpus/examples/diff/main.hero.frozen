@@ -1,0 +1,254 @@
+# What changed between two versions — the longest common subsequence, and
+# the table it is computed in.
+#
+# Corpus and regression material (CLAUDE.md §9). It closes no measured form
+# gap. It is here because it is the one algorithm in this corpus that fills a
+# TABLE rather than walking a list: a grid of `[[i64]]` where every cell is
+# decided by the three cells above and left of it, and where a reader who is
+# off by one anywhere gets an answer that is plausible and wrong.
+#
+# `examples/board/` also holds a `[[i64]]`, and the difference is the point:
+# there the grid is the subject and the program reads it, here the grid is
+# scaffolding and the program's answer is a list. That is the shape behind
+# every version-control tool anybody has used.
+#
+# WHY THE LCS AND NOT A SIMPLER DIFF. A line-by-line comparison finds
+# CHANGES; only a longest-common-subsequence finds the change that a person
+# would have made. Given `a b c` and `a x b c`, a naive walk reports three
+# lines changed from position 2 on; the LCS reports one line inserted. The
+# tests below name that exact pair, because it is the whole reason the table
+# exists.
+#
+# WHAT IS DELIBERATELY MISSING: any notion of a hunk, a context line, or the
+# `@@` header. Those are a FORMAT, and this program is about the algorithm —
+# adding the format would double the file and test nothing new.
+
+variant Edit
+    kept
+        line: str
+    added
+        line: str
+    removed
+        line: str
+
+# The table: `same[i][j]` is the length of the longest common subsequence of
+# the first `i` lines of `old` and the first `j` of `new`. One row longer and
+# one column wider than the inputs, so the empty prefixes have a cell and no
+# branch is needed for them — which is the trick that makes this readable.
+function table(old: [str], new: [str]) -> [[i64]]
+    same: [[i64]] @ []
+    i: i64 @ 0
+
+    while i <= old.len()
+        row: [i64] @ []
+        j: i64 @ 0
+
+        while j <= new.len()
+            row @ row.push(0)
+            j @ j + 1
+
+        same @ same.push(row)
+        i @ i + 1
+
+    i @ 1
+
+    while i <= old.len()
+        j: i64 @ 1
+
+        while j <= new.len()
+            if old[i - 1] == new[j - 1]
+                same[i][j] @ same[i - 1][j - 1] + 1
+            else
+                left = same[i][j - 1]
+                up = same[i - 1][j]
+
+                same[i][j] @ if left > up
+                    left
+                else
+                    up
+            j @ j + 1
+
+        i @ i + 1
+
+    return same
+
+# The edits, walked BACKWARDS out of the table and then turned round. The
+# direction matters: forwards there is no way to know which of two equal
+# cells the answer came from, and backwards the table itself says.
+function edits(old: [str], new: [str]) -> [Edit]
+    same = table(old: old, new: new)
+    backwards: [Edit] @ []
+    i: i64 @ old.len()
+    j: i64 @ new.len()
+
+    while i > 0 || j > 0
+        if i > 0 && j > 0 && old[i - 1] == new[j - 1]
+            backwards @ backwards.push(.kept(line: old[i - 1]))
+            i @ i - 1
+            j @ j - 1
+            continue
+
+        # The tie is broken toward `added` on purpose: with `a` against
+        # `b`, reporting the addition first and the removal second is what
+        # every diff tool does, and a program that chose the other way would
+        # print the same edits in a surprising order.
+        if j > 0 && (i == 0 || same[i][j - 1] >= same[i - 1][j])
+            backwards @ backwards.push(.added(line: new[j - 1]))
+            j @ j - 1
+            continue
+        backwards @ backwards.push(.removed(line: old[i - 1]))
+        i @ i - 1
+
+    out: [Edit] @ []
+    at: i64 @ backwards.len() - 1
+
+    while at >= 0
+        out @ out.push(backwards[at])
+        at @ at - 1
+
+    return out
+
+function common_length(old: [str], new: [str]) -> i64
+    return table(old: old, new: new)[old.len()][new.len()]
+
+function shown(one: Edit) -> str
+    return match one
+        .kept k    => "  " + k.line
+        .added a   => "+ " + a.line
+        .removed r => "- " + r.line
+
+function rendered(old: [str], new: [str]) -> str
+    rows: [str] @ []
+
+    for one in edits(old: old, new: new)
+        rows @ rows.push(shown(one))
+
+    return join(rows, "\n")
+
+function counted(old: [str], new: [str], of: str) -> i64
+    total: i64 @ 0
+
+    for one in edits(old: old, new: new)
+        if kind_of(one) == of
+            total @ total + 1
+
+    return total
+
+function kind_of(one: Edit) -> str
+    return match one
+        .kept _    => "kept"
+        .added _   => "added"
+        .removed _ => "removed"
+
+function main()
+    before: [str] = ["the first line", "the second line", "the third line"]
+    after: [str] = ["the first line", "a new line", "the third line"]
+
+    print(rendered(old: before, new: after))
+    print(common_length(old: before, new: after))
+
+    # The pair that is the whole reason the table exists: one insertion, not
+    # three changed lines.
+    print(rendered(old: ["a", "b", "c"], new: ["a", "x", "b", "c"]))
+    print(counted(old: ["a", "b", "c"], new: ["a", "x", "b", "c"], of: "added"))
+    print(counted(old: ["a", "b", "c"], new: ["a", "x", "b", "c"], of: "removed"))
+
+    empty: [str] = []
+    print(rendered(old: empty, new: ["only"]))
+    print(rendered(old: ["only"], new: empty))
+    print(common_length(old: empty, new: empty))
+
+test "an insertion is one insertion and not three changes"
+    # The naive walk reports every line from position 2 on as changed. The
+    # LCS reports one line added, which is what a person would have written.
+    old: [str] = ["a", "b", "c"]
+    new: [str] = ["a", "x", "b", "c"]
+    assert counted(old: old, new: new, of: "added") == 1
+    assert counted(old: old, new: new, of: "removed") == 0
+    assert counted(old: old, new: new, of: "kept") == 3
+    assert common_length(old: old, new: new) == 3
+
+test "a deletion is the same thing the other way round"
+    old: [str] = ["a", "x", "b", "c"]
+    new: [str] = ["a", "b", "c"]
+    assert counted(old: old, new: new, of: "removed") == 1
+    assert counted(old: old, new: new, of: "added") == 0
+    assert counted(old: old, new: new, of: "kept") == 3
+
+test "two identical files have no edits at all"
+    same: [str] = ["a", "b", "c"]
+    assert counted(old: same, new: same, of: "added") == 0
+    assert counted(old: same, new: same, of: "removed") == 0
+    assert counted(old: same, new: same, of: "kept") == 3
+    assert common_length(old: same, new: same) == 3
+    assert rendered(old: same, new: same) == "  a\n  b\n  c"
+
+test "two files with nothing in common keep nothing"
+    old: [str] = ["a", "b"]
+    new: [str] = ["x", "y"]
+    assert common_length(old: old, new: new) == 0
+    assert counted(old: old, new: new, of: "kept") == 0
+    assert counted(old: old, new: new, of: "added") == 2
+    assert counted(old: old, new: new, of: "removed") == 2
+
+test "an empty side is all additions or all removals"
+    empty: [str] = []
+    assert rendered(old: empty, new: ["one", "two"]) == "+ one\n+ two"
+    assert rendered(old: ["one", "two"], new: empty) == "- one\n- two"
+    assert rendered(old: empty, new: empty) == ""
+    assert common_length(old: empty, new: ["a"]) == 0
+
+test "the common length is symmetric even though the edits are not"
+    old: [str] = ["a", "b", "c", "d"]
+    new: [str] = ["b", "d", "e"]
+    assert common_length(old: old, new: new) == common_length(old: new, new: old)
+    assert common_length(old: old, new: new) == 2
+
+    # The edits are NOT symmetric: what is added one way is removed the other.
+    assert counted(old: old, new: new, of: "removed") == counted(old: new, new: old, of: "added")
+    assert counted(old: old, new: new, of: "added") == counted(old: new, new: old, of: "removed")
+
+test "every kept line appears in both files, and the counts add up"
+    # The property that makes the answer a diff rather than a list: applying
+    # the edits to `old` must produce `new`.
+    old: [str] = ["one", "two", "three", "four"]
+    new: [str] = ["one", "three", "3.5", "four", "five"]
+    rebuilt: [str] @ []
+
+    for one in edits(old: old, new: new)
+        match one
+            .kept k    => rebuilt @ rebuilt.push(k.line)
+            .added a   => rebuilt @ rebuilt.push(a.line)
+            .removed _ => rebuilt @ rebuilt
+
+    assert rebuilt == new
+
+    # And the other direction: dropping the additions gives back `old`.
+    original: [str] @ []
+
+    for one in edits(old: old, new: new)
+        match one
+            .kept k    => original @ original.push(k.line)
+            .removed r => original @ original.push(r.line)
+            .added _   => original @ original
+
+    assert original == old
+
+test "a repeated line is matched once per occurrence and no more"
+    old: [str] = ["a", "a", "b"]
+    new: [str] = ["a", "b"]
+    assert common_length(old: old, new: new) == 2
+    assert counted(old: old, new: new, of: "removed") == 1
+    assert counted(old: old, new: new, of: "kept") == 2
+
+test "the table is one row and one column bigger than the inputs"
+    # The trick that removes every empty-prefix branch, asserted so that a
+    # later simplification cannot quietly undo it.
+    old: [str] = ["a", "b"]
+    new: [str] = ["x"]
+    grid = table(old: old, new: new)
+    assert grid.len() == 3
+    assert grid[0].len() == 2
+    assert grid[0][0] == 0
+    assert grid[0][1] == 0
+    assert grid[1][0] == 0

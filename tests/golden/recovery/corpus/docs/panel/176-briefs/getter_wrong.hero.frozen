@@ -1,0 +1,12 @@
+extern "g.h"
+    record G tag gg
+    function g_open() -> G acquires g_close
+    function g_same(x: G) -> G acquires g_close
+    function g_close(x: G consumes)
+
+function main()
+    a = g_open()
+    b = g_same(x: a)
+    print(a == b)
+    g_close(x: a)
+    print("closed once")

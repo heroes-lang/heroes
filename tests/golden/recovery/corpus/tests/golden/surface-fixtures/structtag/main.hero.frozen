@@ -1,0 +1,6 @@
+use net
+
+function main()
+    p: net.Probe @ net.open(n: 7)
+    print(net.value(p))
+    net.close(@p)
