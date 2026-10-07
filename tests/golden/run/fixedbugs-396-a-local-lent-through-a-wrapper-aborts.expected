@@ -1,0 +1,3 @@
+before 7
+!sanitizer: on unknown address
+!panic: C reached past the local `m` of `fixedbugs396alocallentthroughawrapperaborts.main`, the one element lent to `md` of `digest32`

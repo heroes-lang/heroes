@@ -68,8 +68,12 @@ constant WALK: str
 # table itself (`resolved.module_declaring`, `check/holes.nearby`) became one
 # over the index (`resolved.modules_declaring`), which both callers sort. A
 # walk removed by a repair is the one reason a walks floor moves down.
+#
+# **30 marks on 2026-10-07**, measured by this suite: batch 13's round had put
+# 28 in the tree, and panel 196's R7 (`emit/lend_local.hero`) added two, which
+# took the count past a quarter above 23, so `floors.check` asked for it here.
 constant LEAST_MARKS: i64
-    23
+    30
 
 constant LEAST_WALKS: i64
     21

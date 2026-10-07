@@ -23,6 +23,8 @@ static inline int64_t fill_void(void *buf, uint64_t n) { memset(buf, 0x41, (size
 static inline int64_t fill_one_more(void *buf, uint64_t n) { memset(buf, 0x41, (size_t)n + 1); return (int64_t)n; }
 /* `fgets`'s shape with the bytes a canary would hold: `n` of 0xA5. */
 static inline void fill_a5(char *s, int32_t n) { memset(s, 0xA5, (size_t)n); }
+/* `getsockopt`'s shape: the count read through a pointer, `*n` bytes. */
+static inline int64_t fill_cell(void *buf, int32_t *n) { memset(buf, 0x43, (size_t)*n); return (int64_t)*n; }
 /* Four `int32_t`s, two records, three doubles. */
 static inline void fill_ints4(int32_t *p) { for (int k = 0; k < 4; k++) p[k] = -(k + 1); }
 static inline void fill_pairs2(struct pair *p) { p[0].a = 1; p[0].b = 2; p[1].a = 3; p[1].b = 4; }
@@ -40,5 +42,17 @@ static inline void stamp32(unsigned char *md, uint64_t seed) {
 /* The defect's own field shape, kept inside its record: 16 bytes through a
    one-byte cell, over the seven beside it and the field after them. */
 static inline int digest_cell(unsigned char *md) { memset(md, 0x41, 16); return 1; }
+
+/* Panel 196's R7: one `int32_t` written, one counted up, one written after a
+   callback into the program, and two where one was lent. */
+static inline void put_one(int32_t *x, int32_t v) { *x = v; }
+static inline void count_up(int32_t *x) { *x += 1; }
+static inline void put_after(int32_t *x, void (*cb)(void)) { cb(); *x = 99; }
+static inline void put_two(int32_t *x) { x[0] = 1; x[1] = 2; }
+/* A record C knows by its address, as zlib knows a stream: it keeps the
+   address in the record and checks it on the next call. */
+struct keeper { struct keeper *self; int64_t count; };
+static inline void keeper_init(struct keeper *k) { k->self = k; k->count = 0; }
+static inline int keeper_step(struct keeper *k) { if (k->self != k) return -2; k->count += 1; return 0; }
 
 #endif

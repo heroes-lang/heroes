@@ -42,6 +42,7 @@ use ir/lower
 use ir/mono
 use ir/own
 use ir/place_store
+use emit/lend_local
 
 # What came out. Exactly one of the two is interesting: with any
 # diagnostic the C is empty, because a translation unit missing the
@@ -251,7 +252,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
-    names.lend_units @ lend_units
+    names.lend_units @ lend_local.with_flows(lend_units, p, c)
 
     # Every type's flags, found once for the loops over the arena below
     # (defect 229): a type is no longer walked again for each of them.

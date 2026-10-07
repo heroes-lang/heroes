@@ -90,7 +90,7 @@ record Names
     # the type: int64_t (*f)(int64_t). One typedef keeps the
     # <type> <name> rule everywhere else.
     funcs: {i64: str}
-    # A counted parameter's header type by `<C name> <position>` (`emit/lend_extent`).
+    # A counted parameter's header type by `<C name> <position>` (`emit/lend_extent`), and `@<decl> <position>` where an `@` parameter reaches C (`emit/lend_local`).
     lend_units: {str: str}
 
 # What separates a name the EMITTER invents from a name an author could

@@ -183,8 +183,10 @@ bb0:
 #line 80 "examples/sqlite/main.hero"
 int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 186 "main.c"
-    sqlite3_stmt * h2_statement;
-    __attribute__((unused)) const char * h3_tail;
+    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "main.first_int", "statement");
+#define h2_statement (*hero_lend_h2_statement)
+    const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "main.first_int", "tail");
+#define h3_tail (*hero_lend_h3_tail)
     int64_t h4_rc;
     int64_t h5_value;
     int64_t h6_ret0;
@@ -232,6 +234,10 @@ bb0:
     t5 = hero_str_lend(t4);
 #line 86 "examples/sqlite/main.hero"
     t6 = INT64_C(-1);
+#line 83 "examples/sqlite/main.hero"
+    hero_lend_local_name(hero_lend_h2_statement, "sqlite3_prepare_v2", "statement");
+#line 83 "examples/sqlite/main.hero"
+    hero_lend_local_name(hero_lend_h3_tail, "sqlite3_prepare_v2", "tail");
 #line 83 "examples/sqlite/main.hero"
     hero_handle_alive(t3, "the argument `db` of `sqlite3_prepare_v2`");
 #line 83 "examples/sqlite/main.hero"
@@ -331,14 +337,21 @@ bb7:
 #line 80 "examples/sqlite/main.hero"
     t27 = h6_ret0;
 #line 80 "examples/sqlite/main.hero"
+    hero_lend_local_give(hero_lend_h3_tail);
+#line 80 "examples/sqlite/main.hero"
+    hero_lend_local_give(hero_lend_h2_statement);
+#line 80 "examples/sqlite/main.hero"
     return t27;
-#line 336 "main.c"
+#line 346 "main.c"
 }
+#undef h2_statement
+#undef h3_tail
 
 #line 100 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 341 "main.c"
-    sqlite3 * h0_db;
+#line 353 "main.c"
+    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db");
+#define h0_db (*hero_lend_h0_db)
     sqlite3 * t1;
     HeroStr t2;
     const char * t3;
@@ -370,6 +383,8 @@ bb0:
     t2 = HERO_STR_LIT(hero_str_41b4cad0);
 #line 103 "examples/sqlite/main.hero"
     t3 = hero_str_lend(t2);
+#line 103 "examples/sqlite/main.hero"
+    hero_lend_local_name(hero_lend_h0_db, "sqlite3_open", "out");
 #line 103 "examples/sqlite/main.hero"
     t4 = sqlite3_open(hero_cstr_nonnull(t3), &h0_db);
 #line 103 "examples/sqlite/main.hero"
@@ -469,9 +484,12 @@ bb3:
 #line 113 "examples/sqlite/main.hero"
 bb4:
 #line 113 "examples/sqlite/main.hero"
+    hero_lend_local_give(hero_lend_h0_db);
+#line 113 "examples/sqlite/main.hero"
     return;
-#line 474 "main.c"
+#line 491 "main.c"
 }
+#undef h0_db
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
     return hero_handle_eq(*a, *b);
 }

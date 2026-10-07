@@ -439,7 +439,8 @@ int64_t h_library_HERO_STR_OK(void) {
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 442 "ffireadbackacstr.c"
-    int64_t h1_status;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status");
+#define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
     h_0opt_f87774a h3_ret0 = {0};
     HeroStr h4_own4 = {0};
@@ -488,20 +489,22 @@ bb1:
 #line 157 "<heroes library>"
     t8 = h0_c;
 #line 157 "<heroes library>"
+    hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status");
+#line 157 "<heroes library>"
     t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status);
 #line 157 "<heroes library>"
     t19 = h4_own4;
 #line 157 "<heroes library>"
     h4_own4 = t9;
-#line 497 "ffireadbackacstr.c"
+#line 500 "ffireadbackacstr.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t20 = h2_text;
-#line 501 "ffireadbackacstr.c"
+#line 504 "ffireadbackacstr.c"
     hero_str_incref(t9);
 #line 157 "<heroes library>"
     h2_text = t9;
-#line 505 "ffireadbackacstr.c"
+#line 508 "ffireadbackacstr.c"
     hero_str_decref(t20);
 #line 158 "<heroes library>"
     t10 = h1_status;
@@ -517,10 +520,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 155 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 521 "ffireadbackacstr.c"
+#line 524 "ffireadbackacstr.c"
     hero_str_incref(t4);
 #line 155 "<heroes library>"
-#line 524 "ffireadbackacstr.c"
+#line 527 "ffireadbackacstr.c"
     hero_str_incref(t5);
 #line 155 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -528,7 +531,7 @@ bb2:
     t21 = h5_own5;
 #line 155 "<heroes library>"
     h5_own5 = t6;
-#line 532 "ffireadbackacstr.c"
+#line 535 "ffireadbackacstr.c"
     h_0opt_f87774a_release(&t21);
 #line 155 "<heroes library>"
     h3_ret0 = t6;
@@ -544,10 +547,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 160 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 548 "ffireadbackacstr.c"
+#line 551 "ffireadbackacstr.c"
     hero_str_incref(t15);
 #line 160 "<heroes library>"
-#line 551 "ffireadbackacstr.c"
+#line 554 "ffireadbackacstr.c"
     hero_str_incref(t16);
 #line 160 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -555,7 +558,7 @@ bb4:
     t22 = h6_own6;
 #line 160 "<heroes library>"
     h6_own6 = t17;
-#line 559 "ffireadbackacstr.c"
+#line 562 "ffireadbackacstr.c"
     h_0opt_f87774a_release(&t22);
 #line 160 "<heroes library>"
     h3_ret0 = t17;
@@ -565,7 +568,7 @@ bb4:
 bb5:
 #line 159 "<heroes library>"
     t13 = h2_text;
-#line 569 "ffireadbackacstr.c"
+#line 572 "ffireadbackacstr.c"
     hero_str_incref(t13);
 #line 159 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -573,7 +576,7 @@ bb5:
     t23 = h7_own7;
 #line 159 "<heroes library>"
     h7_own7 = t14;
-#line 577 "ffireadbackacstr.c"
+#line 580 "ffireadbackacstr.c"
     h_0opt_f87774a_release(&t23);
 #line 159 "<heroes library>"
     h3_ret0 = t14;
@@ -587,25 +590,27 @@ bb6:
 bb7:
 #line 153 "<heroes library>"
     t18 = h3_ret0;
-#line 591 "ffireadbackacstr.c"
+#line 594 "ffireadbackacstr.c"
     h_0opt_f87774a_retain(&t18);
 #line 153 "<heroes library>"
-#line 594 "ffireadbackacstr.c"
+#line 597 "ffireadbackacstr.c"
     hero_str_decref(h2_text);
 #line 153 "<heroes library>"
-#line 597 "ffireadbackacstr.c"
+#line 600 "ffireadbackacstr.c"
     hero_str_decref(h4_own4);
 #line 153 "<heroes library>"
-#line 600 "ffireadbackacstr.c"
+#line 603 "ffireadbackacstr.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 153 "<heroes library>"
-#line 603 "ffireadbackacstr.c"
+#line 606 "ffireadbackacstr.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 153 "<heroes library>"
-#line 606 "ffireadbackacstr.c"
+#line 609 "ffireadbackacstr.c"
     h_0opt_f87774a_release(&h7_own7);
+    hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }
+#undef h1_status
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

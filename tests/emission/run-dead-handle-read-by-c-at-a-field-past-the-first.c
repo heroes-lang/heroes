@@ -113,7 +113,8 @@ void h_deadhandlereadbycatafieldpastthefirst_main(void);
 #line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 void h_deadhandlereadbycatafieldpastthefirst_main(void) {
 #line 116 "deadhandlereadbycatafieldpastthefirst.c"
-    ob * h0_cert;
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatafieldpastthefirst.main", "cert");
+#define h0_cert (*hero_lend_h0_cert)
     ob * t1;
     int64_t t2;
     int64_t t3;
@@ -146,6 +147,8 @@ bb0:
 bb1:
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
     t6 = HERO_STR_LIT(hero_str_1d67a62c);
+#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
+    hero_lend_local_name(hero_lend_h0_cert, "ob_far_cell", "a");
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
     t7 = ob_far_cell(&h0_cert);
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
@@ -201,14 +204,17 @@ bb4:
 #line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
     hero_print_end();
 #line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
+    hero_lend_local_give(hero_lend_h0_cert);
+#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
     return;
 #line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 bb5:
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-#line 209 "deadhandlereadbycatafieldpastthefirst.c"
+#line 214 "deadhandlereadbycatafieldpastthefirst.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
+#undef h0_cert
 HERO_TU_LOCAL bool h_deadhandlereadbycatafieldpastthefirst_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

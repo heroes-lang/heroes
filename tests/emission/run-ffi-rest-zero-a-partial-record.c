@@ -128,7 +128,8 @@ bb0:
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 void h_ffirestzeroapartialrecord_main(void) {
 #line 131 "ffirestzeroapartialrecord.c"
-    SP h0_s;
+    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s");
+#define h0_s (*hero_lend_h0_s)
     SP t1;
     SP t2;
     int32_t t3;
@@ -149,6 +150,8 @@ bb0:
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t4 = HERO_STR_LIT(hero_str_20);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    hero_lend_local_name(hero_lend_h0_s, "sp_union", "s");
+#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t5 = sp_union(&h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_print_int(t3);
@@ -159,9 +162,12 @@ bb0:
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_print_end();
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    hero_lend_local_give(hero_lend_h0_s);
+#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 164 "ffirestzeroapartialrecord.c"
+#line 169 "ffirestzeroapartialrecord.c"
 }
+#undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {
     hero_panic("h_ffirestzeroapartialrecord_SP_eq: a partial record has no structural equality");
 }

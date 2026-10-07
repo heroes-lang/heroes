@@ -71,6 +71,7 @@ use emit/term
 use emit/unread
 use emit/record_constant
 use emit/writer
+use emit/lend_local
 use parse
 use resolve
 use checker
@@ -138,8 +139,10 @@ function built(@w: writer.Writer, p: containers.Program, c: state.Checked, names
     callback_guard.entry(@w, s, f, guarded_decls: guarded_decls)
     live = reachable(f)
     read = unread.emitted_reads(f, c)
-    prologue(@w, c, names, f, live: live, read: read)
+    owner = source.component_at(s, decls[f.decl].span.start) + "." + f.name
+    prologue(@w, c, names, f, live: live, read: read, owner: owner)
     writer.line(@w, text: "    goto " + mangle.block(0) + ";")
+    released = lend_local.releases(c, names, f)
     index: i64 @ 0
 
     for blk in f.blocks
@@ -149,11 +152,15 @@ function built(@w: writer.Writer, p: containers.Program, c: state.Checked, names
             for one in blk.insts
                 inst.emit(@w, p, c, names, s, decls, f, inst: one, live_values: read)
 
-            term.emit(@w, f, c, term: blk.term)
+            term.emit(@w, f, c, term: blk.term, released: released)
         index @ index + 1
 
     writer.at_generated(@w)
     writer.line(@w, text: "}")
+
+    # A local lent in place has its name defined for this body alone (panel
+    # 196's R7, `emit/lend_local.hero`).
+    lend_local.undefine(@w, c, names, f)
 
     # The thunk C is handed instead of this function's own address (panel
     # 177's item 2), beside the definition it wraps, so the two are one
@@ -172,13 +179,21 @@ function reachable(f: containers.Function) -> [bool]
 
     return live
 
-function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool})
+function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool}, owner: str)
     # What every declaration below asks of the function, read once
     # (defect 112): the first live writer of each temporary, and which
     # slots the emitted C reads.
     d = unread.defs(f, live)
     slots_read = unread.slots_read(f, live, d, read)
     index: i64 @ 0
+
+    # A local an `extern` call is lent whole through `@` lives in a guarded
+    # region instead of this frame (panel 196's R7), declared where its slot
+    # would be.
+    in_place: {i64: bool} @ {}
+
+    for at in lend_local.guarded(c, names, f)
+        in_place[at] @ true
 
     for slot in f.slots
         # A parameter is already declared by the signature: a plain one as
@@ -191,6 +206,11 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
                 is_param @ true
 
         if is_param
+            index @ index + 1
+            continue
+
+        if !in_place[index].is_err()
+            lend_local.declare(@w, c, names, f, at: index, owner: owner)
             index @ index + 1
             continue
         spelled = ctype.c_type(names, c: c, ty: slot.ty)

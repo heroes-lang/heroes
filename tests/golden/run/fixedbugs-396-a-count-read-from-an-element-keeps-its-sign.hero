@@ -1,0 +1,16 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: a buffer whose extent
+# is a sibling C reads through a pointer, `@n: i32`, lent as an ARRAY'S
+# ELEMENT, which panel 196's R1 hands C in place. The count's type was read
+# as the array's (lane land-addr's finding in `emit/lend_count.hero`'s
+# `place_type`), so -1 in a signed element was taken as an unsigned count
+# and refused as more elements than the runtime can count; it is the
+# element's `i32` now, and -1 is refused as below zero, before C runs.
+extern "fixedbugs-396-buffers.h"
+    function fill_cell(@buf: [u8] counted_by n lent, @n: i32) -> i64
+
+function main()
+    counts: [i32] @ [3, -1]
+    buf: [u8] @ []
+    print(fill_cell(@buf, @counts[0]), " ", buf.len(), " ", buf[2])
+    print(fill_cell(@buf, @counts[1]))
+    print("not reached")

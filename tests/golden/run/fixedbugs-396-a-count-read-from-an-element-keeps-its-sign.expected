@@ -1,0 +1,2 @@
+3 3 67
+!panic: `buf` of `fill_cell` was to be lent a buffer of -1 elements, and an extent is a number of elements, never below zero

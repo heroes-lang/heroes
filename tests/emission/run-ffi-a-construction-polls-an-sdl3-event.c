@@ -164,13 +164,15 @@ void h_ffiaconstructionpollsansdl3event_main(void);
 #line 45 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 void h_ffiaconstructionpollsansdl3event_main(void) {
 #line 167 "ffiaconstructionpollsansdl3event.c"
-    __attribute__((unused)) SDL_Event h0_sent;
+    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent");
+#define h0_sent (*hero_lend_h0_sent)
     bool h1_found;
     int32_t h2_code;
     uint32_t h3_keyed;
     int64_t h4_tries;
     bool h5_b0;
-    SDL_Event h6_got;
+    SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got");
+#define h6_got (*hero_lend_h6_got)
     bool h7_b1;
     uint32_t t1;
     bool t2;
@@ -248,6 +250,8 @@ bb0:
 #line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h0_sent = t11;
 #line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event");
+#line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t12 = SDL_PushEvent(&h0_sent);
 #line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_bool(t12);
@@ -290,6 +294,8 @@ bb2:
 #line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h6_got = t24;
 #line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event");
+#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t25 = SDL_PollEvent(&h6_got);
 #line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h7_b1 = t25;
@@ -321,6 +327,10 @@ bb3:
     hero_print_end();
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     (void)SDL_Quit();
+#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    hero_lend_local_give(hero_lend_h6_got);
+#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    hero_lend_local_give(hero_lend_h0_sent);
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     return;
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
@@ -401,8 +411,10 @@ bb9:
 bb10:
 #line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 405 "ffiaconstructionpollsansdl3event.c"
+#line 415 "ffiaconstructionpollsansdl3event.c"
 }
+#undef h0_sent
+#undef h6_got
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_eq(const SDL_KeyboardEvent *a, const SDL_KeyboardEvent *b) {
     if (!(a->type == b->type)) return false;
     if (!(a->reserved == b->reserved)) return false;

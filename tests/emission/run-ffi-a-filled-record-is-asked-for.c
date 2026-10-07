@@ -158,7 +158,8 @@ bb0:
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 void h_ffiafilledrecordisaskedfor_main(void) {
 #line 161 "ffiafilledrecordisaskedfor.c"
-    struct slot h0_s;
+    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s");
+#define h0_s (*hero_lend_h0_s)
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_f87774a h2_f1 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -193,6 +194,8 @@ bb0:
 #line 46 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h0_s = t1;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
+    hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s");
+#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t2 = slot_fill(&h0_s);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2};
@@ -200,15 +203,15 @@ bb0:
     t23 = h3_own3;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h3_own3 = t3;
-#line 204 "ffiafilledrecordisaskedfor.c"
+#line 207 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&t23);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t24 = h1_f0;
-#line 208 "ffiafilledrecordisaskedfor.c"
+#line 211 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_retain(&t3);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h1_f0 = t3;
-#line 212 "ffiafilledrecordisaskedfor.c"
+#line 215 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&t24);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t4 = h1_f0;
@@ -246,15 +249,15 @@ bb1:
     t25 = h4_own4;
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h4_own4 = t14;
-#line 250 "ffiafilledrecordisaskedfor.c"
+#line 253 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&t25);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t26 = h2_f1;
-#line 254 "ffiafilledrecordisaskedfor.c"
+#line 257 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_retain(&t14);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h2_f1 = t14;
-#line 258 "ffiafilledrecordisaskedfor.c"
+#line 261 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&t26);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t15 = h2_f1;
@@ -272,7 +275,7 @@ bb2:
     t8 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t9 = t8.as.err;
-#line 276 "ffiafilledrecordisaskedfor.c"
+#line 279 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -284,27 +287,29 @@ bb3:
     hero_print_str(t22);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     hero_print_end();
-#line 288 "ffiafilledrecordisaskedfor.c"
+#line 291 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&h1_f0);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-#line 291 "ffiafilledrecordisaskedfor.c"
+#line 294 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&h2_f1);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-#line 294 "ffiafilledrecordisaskedfor.c"
+#line 297 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(&h3_own3);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-#line 297 "ffiafilledrecordisaskedfor.c"
+#line 300 "ffiafilledrecordisaskedfor.c"
     h_0opt_f87774a_release(&h4_own4);
+    hero_lend_local_give(hero_lend_h0_s);
     return;
 bb4:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t19 = h2_f1;
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t20 = t19.as.err;
-#line 305 "ffiafilledrecordisaskedfor.c"
+#line 309 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t20);
     hero_unreachable();
 }
+#undef h0_s
 HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_Slot_eq(const struct slot *a, const struct slot *b) {
     hero_panic("h_ffiafilledrecordisaskedfor_Slot_eq: a partial record has no structural equality");
 }
