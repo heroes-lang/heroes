@@ -480,7 +480,8 @@ function escaped(p: [str], at: i64, to: i64) -> str?
                 code: "unread",
                 msg: "`\\x" + p[at + 2] + p[at + 3] + "`, which this reader reads only below 0x80"
             )
-        return ok(ascii.slice(from: code - 32, to: code - 31))
+        byte: [u8] = [to_u8(code).must()]
+        return ok(byte.validated_bytes().must())
 
     if c.len() == 1 && is_alnum(c[0])
         return fail(
@@ -580,11 +581,6 @@ function next_member(p: [str], at: i64) -> i64
 
 ## Characters
 
-# The printable ASCII characters from the space, so a code below 0x80 names
-# its character by a slice rather than by a conversion the language lacks.
-constant ascii: str
-    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-
 # One character's code, from its UTF-8 bytes.
 function code_of(c: str) -> i64
     if c.len() == 0
@@ -643,6 +639,13 @@ test "a pattern is run, and the match taken is the one the engine prefers"
     assert ends(pattern: "\\{\\{|\\}\\}", text: "}}", at: 0).must() == [2]
     assert ends(pattern: "'[\\x20-\\x7E]'", text: "'~'", at: 0).must() == [3]
     assert ends(pattern: "'[\\x20-\\x7E]'", text: "'\t'", at: 0).must().len() == 0
+
+    # A code below the space names its control character, as it does in a
+    # class above, rather than a slice of printable text that has none.
+    assert ends(pattern: "[\\x00-\\x1f]", text: "\t", at: 0).must() == [1]
+    assert ends(pattern: "\\x09", text: "\tz", at: 0).must() == [1]
+    assert ends(pattern: "\\x7f", text: "~", at: 0).must().len() == 0
+    assert ends(pattern: "\\x80", text: "z", at: 0).is_err()
     assert ends(pattern: "x{2,}", text: "xxxy", at: 0).must() == [3, 2]
 
 test "a construct the reader does not know is refused, never read as another"
