@@ -603,6 +603,11 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   lane's root, whatever the session's directory; a file outside every tree is
   asked only whether it parses and is canonical, by the session's tree's
   compiler; and a tree with no compiler built is told so, its file not judged.
+  **And the age of that compiler is asked before a refusal of it is read**
+  (defect 384): a compiler built before a source of its tree was written, the
+  file written aside, has its refusal told as its age, with the rebuild and
+  its words beneath, never as *does not parse*; an older compiler that accepts
+  the file says nothing.
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets

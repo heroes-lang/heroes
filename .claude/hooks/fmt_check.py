@@ -109,6 +109,37 @@ def head(text, lines=40):
     return "\n".join(rows)
 
 
+def refused(place, verdict, said):
+    """Put the compiler's refusal of the file in front, exit 2: `verdict` and
+    what the compiler `said` when it is as new as the sources of the tree it
+    judges for, and its age instead when it is older (defect 384).
+
+    The age is asked before the verdict is read. A compiler built before a
+    source of its tree was written may not know a form the tree's language
+    now writes: on 2026-10-06 a file holding panel 192's `\\u{1b}` escape, under
+    a tree whose compiler predated the escape, was told *does not parse* and
+    *this language has no escape for one by its code*, two false sentences,
+    where the round's compiler formatted it at exit 0. The file written is
+    left out of the question, being the subject rather than the language; and
+    a refusal alone asks it, so an older compiler that accepts the file costs
+    nothing and says nothing."""
+    old = trees.older_than_tree(place.compiler, place.home, besides=place.path)
+    if old is None:
+        print(verdict + ("; the compiler says:\n" + said if said else "") + "\n" + LAYER, file=sys.stderr)
+        return 2
+    where, built, wrote = old
+    print(
+        place.shown + " was refused by a compiler older than its tree: " + place.compiler
+        + " was built at " + trees.stamp(built) + ", before " + where + " was written at "
+        + trees.stamp(wrote) + ", so the refusal may be that compiler's age rather than the "
+        "file. Rebuild it in " + place.home + ", " + trees.rebuild_hint(where)
+        + ", and write the file again. What the older compiler said:\n"
+        + (said or "(nothing; its canonical form differs from the file)") + "\n" + LAYER,
+        file=sys.stderr,
+    )
+    return 2
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -155,25 +186,21 @@ def main():
         # the expectation instead, which is the question the case asks.
         return marks_against_expectation(compiler, place)
     if fmt.returncode != 0:
-        print(
-            place.shown + " does not parse; the compiler says:\n" + head(fmt.stderr) + "\n" + LAYER,
-            file=sys.stderr,
-        )
-        return 2
+        return refused(place, place.shown + " does not parse", head(fmt.stderr))
     try:
         with open(path, "rb") as handle:
             on_disk = handle.read()
     except OSError:
         return 0
     if fmt.stdout != on_disk:
-        print(
+        return refused(
+            place,
             place.shown + " is not canonical: run `heroes fmt " + path + " --in-place`.\n"
             "The `canonical` suite fails on it otherwise, and design.md §4.15 "
             "rests on a textual difference meaning a semantic one "
-            "(CLAUDE.md § Verification).",
-            file=sys.stderr,
+            "(CLAUDE.md § Verification)",
+            "",
         )
-        return 2
 
     # 2. Names and types: the whole compiler for one of its modules, the one
     #    file for a harness module, each in the tree the file stands in.
@@ -187,11 +214,7 @@ def main():
         check = None
         subject = ""
     if check is not None and check.returncode != 0:
-        print(
-            subject + " does not check; the compiler says:\n" + head(check.stderr) + "\n" + LAYER,
-            file=sys.stderr,
-        )
-        return 2
+        return refused(place, subject + " does not check", head(check.stderr))
 
     # 3. The line ceiling, by the mirror; the `layout` suite is the judge.
     if place.rel is not None:
@@ -244,14 +267,13 @@ def marks_against_expectation(compiler, place):
         if row.startswith("FAIL ") or row.startswith("harness:") or not row.startswith("  "):
             break
         rows.append(row)
-    print(
-        place.shown[: place.shown.rfind(".")] + "'s marks and its expectation disagree; the `annotations` suite says:\n"
-        + "\n".join(rows) + "\n"
+    return refused(
+        place,
+        place.shown[: place.shown.rfind(".")] + "'s marks and its expectation disagree. "
         "Change whichever side is wrong; if the `.expected` is being rewritten "
-        "next, this clears when it is.\n" + LAYER,
-        file=sys.stderr,
+        "next, this clears when it is",
+        "\n".join(rows),
     )
-    return 2
 
 
 if __name__ == "__main__":
