@@ -40,6 +40,7 @@ use cli/strings
 use cli/clang_died
 use cli/runtime_places
 use cli/read_back
+use cli/served
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
 # `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
@@ -273,7 +274,8 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     memo: {str: str} @ {}
     known = deps.vouched(listed, @memo)
 
-    if !known.is_err() && process.path_exists(stem + "-" + known.must() + ".o")
+    # Served only as its compile wrote it (defect 443, `cli/served.hero`).
+    if !known.is_err() && served.serves(stem + "-" + known.must() + ".o")
         return ok(stem + "-" + known.must() + ".o")
     depfile = publish.private_name(stem + ".d")
     staged = publish.private_name(stem + ".o")
@@ -300,6 +302,7 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
         return fail(code: "failed", msg: "cannot record what the runtime's translation unit read")
     listing = deps.pointer_text(rows.must())
     object = stem + "-" + listing.slice(from: 0, to: 16) + ".o"
+    served.seal(staged: staged, object: object)?
     publish.publish(staged: staged, path: object, keyed: true)?
     publish.write_whole(path: listed, text: listing, keyed: true)?
     return ok(object)
@@ -335,7 +338,7 @@ test "a probe's question hands back what clang said, a header's warning in it (d
     assert !write_file(path: dir + "/unit.c", text: "#include \"warns.h\"\nint seven(void) { return SEVEN; }\n").is_err()
     said = asked_of_clang(line: ["clang", "-fsyntax-only", dir + "/unit.c"], what: "a probe", err_path: dir + "/unit-stderr.txt").must(
     )
-    assert has_text(text: said, needle: "a header warning")
+    assert strings.holds(text: said, needle: "a header warning")
 
 # Defect 337: clang prints a location's file name as it was given, and the
 # fixture header's `#line` gives it `caf` and the byte 0xE9. **The byte stands
@@ -355,15 +358,15 @@ test "clang's words holding a byte that is not UTF-8 are kept whole, a refusal's
     assert !write_file(path: dir + "/fine.c", text: "#include \"fixedbugs-337-located.h\"\nint seven(void) { return 7; }\n").is_err()
     said = asked_of_clang(line: ["clang", "-fsyntax-only", "-I", fixtures, dir + "/fine.c"], what: "a probe", err_path: dir + "/fine-stderr.txt").must(
     )
-    assert has_text(text: said, needle: "caf<0xE9>.h:1:2: warning: \"a warning the header carries\"")
+    assert strings.holds(text: said, needle: "caf<0xE9>.h:1:2: warning: \"a warning the header carries\"")
     assert !write_file(path: dir + "/refused.c", text: "#include \"fixedbugs-337-located.h\"\n_Static_assert(0, \"heroes-ffi-return wide_count i32\");\n").is_err()
 
     match asked_of_clang(line: ["clang", "-fsyntax-only", "-I", fixtures, dir + "/refused.c"], what: "compiling the generated C", err_path: dir + "/refused-stderr.txt")
         .ok => assert false
         .err e =>
             assert e.code == "clang"
-            assert has_text(text: e.msg, needle: "caf<0xE9>.h:1:2: warning:")
-            assert has_text(text: e.msg, needle: "heroes-ffi-return wide_count i32")
+            assert strings.holds(text: e.msg, needle: "caf<0xE9>.h:1:2: warning:")
+            assert strings.holds(text: e.msg, needle: "heroes-ffi-return wide_count i32")
 
 # Defect 326's shape at clang: a refusal with no word in it, or only line ends,
 # says so and how clang exited, where `linking failed:` stood over an empty
@@ -399,7 +402,7 @@ test "the toolchain finds the real runtime and compiles it through system()"
         .ok => assert false
         .err e =>
             assert e.code == "clang"
-            assert has_text(text: e.msg, needle: "undeclared_name")
+            assert strings.holds(text: e.msg, needle: "undeclared_name")
 
 test "the runtime's object is named by what it read, beside the record that names it, and nothing private is left (defect 134)"
     t: Toolchain @ locate_toolchain(hint: "", fingerprint: "port-test").must()
@@ -408,13 +411,14 @@ test "the runtime's object is named by what it read, beside the record that name
     object = runtime_object(t, level: "-O0", sanitize: false).must()
     listed = process.files_under(t.build).must()
 
-    # The object and the record, and no third name: clang's stderr, its
-    # dependency listing and the staged object were private and are gone.
-    assert listed.len() == 2
+    # The object, its seal (defect 443) and the record, and no fourth name:
+    # clang's stderr, its dependency listing and the staged object were
+    # private and are gone.
+    assert listed.len() == 3
 
     for path in listed
         assert !strings.ends_with(text: path, suffix: ".tmp")
-        assert path == object || strings.ends_with(text: path, suffix: ".deps.txt")
+        assert path == object || path == served.seal_of(object) || strings.ends_with(text: path, suffix: ".deps.txt")
 
     assert runtime_object(t, level: "-O0", sanitize: false).must() == object
 
@@ -474,30 +478,3 @@ test "an object compiled under one clang answer is never served under another (d
     # And so do the sanitizer's flags, which were one bit.
     assert build_words(level: "-O0", sanitize: true) == "-O0|-fsanitize=address,undefined"
     assert build_words(level: "-O2", sanitize: false) == "-O2|"
-
-function has_text(text: str, needle: str) -> bool
-    cs = text.chars()
-    needle_cs = needle.chars()
-
-    if needle_cs.len() == 0
-        return true
-
-    if needle_cs.len() > cs.len()
-        return false
-    start: i64 @ 0
-
-    while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
-
-        while offset < needle_cs.len()
-            if cs[start + offset] != needle_cs[offset]
-                matched @ false
-                break
-            offset @ offset + 1
-
-        if matched
-            return true
-        start @ start + 1
-
-    return false

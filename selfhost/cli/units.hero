@@ -54,6 +54,7 @@ use cli/compiling
 use cli/strings
 use cli/clang_told
 use cli/kept
+use cli/served
 
 # The distinct components of a compilation, in file-table order: the
 # root first, then each `use`d module, then the library. The order is
@@ -131,7 +132,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         warned = kept.read(warnings_of(dir: dir, sum: known.must()))
         object = object_of(dir: dir, module: module, sum: known.must())
 
-        if process.path_exists(object) && !warned.is_err()
+        # **And only as its compile wrote it** (defect 443): its bytes are
+        # held to the seal beside it (`cli/served.hero`), and one a power cut
+        # zeroed, cut or replaced is said and compiled again below.
+        if !warned.is_err() && served.serves(object)
             replayed = clang_told.fresh(warned.must(), @told)
 
             if replayed.len() > 0
@@ -221,6 +225,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # files it lists. Both are keyed: the directory names the text and the
     # configuration, the digest every file the compile read.
     object = object_of(dir: dir, module: module, sum: sum)
+
+    # The seal is of what clang wrote, taken before the object is published
+    # and published before the record (defect 443).
+    served.seal(staged: staged, object: object)?
     publish.publish(staged: staged, path: object, keyed: true)?
     kept.write(path: warnings_of(dir: dir, sum: sum), text: said)?
 
