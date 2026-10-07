@@ -51,8 +51,17 @@ FROM --platform=linux/arm64 silkeh/clang:22
 # which the net's own tests carry a red case and the `records` suite cannot run
 # at all. raylib is left out on purpose, exactly as in CI, so `examples/raylib/`
 # keeps exercising the skip rule.
+#
+# `libsdl3-dev` is the sixth since 2026-10-07 (defect 213): Debian 13's own
+# package, 3.2.10+ds-1 by `apt-cache policy` that day, for
+# `tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero` and
+# `examples/sdl/`, which skipped here and ran on the author's Mac alone. Both
+# need no display: the case initialises SDL's events alone, and the example
+# asks for SDL's revision and counts the video drivers compiled in. The CI's
+# Linux legs build the same release from its source, Ubuntu 24.04 carrying no
+# SDL3 package (`.github/workflows/ci.yml`, the Linux install step).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git lldb-22 pkg-config libsqlite3-dev libcurl4-openssl-dev \
+ && apt-get install -y --no-install-recommends git lldb-22 pkg-config libsqlite3-dev libcurl4-openssl-dev libsdl3-dev \
  && ([ -e /usr/bin/lldb ] || ln -s /usr/bin/lldb-22 /usr/bin/lldb) \
  && rm -rf /var/lib/apt/lists/*
 

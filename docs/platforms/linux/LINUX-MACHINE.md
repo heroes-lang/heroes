@@ -99,6 +99,19 @@ lines are run from the repository root, and both took a first build of the same
 shape: **16.5 s for x86-64** on 2026-09-03, apt layer included, and the arm64
 figure above. A rebuild with nothing changed is served from the cache.
 
+**`libsdl3-dev` is the sixth since 2026-10-07** (defect 213), in both files:
+Debian 13's own package, 3.2.10+ds-1 by `apt-cache policy` that day, for
+`tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero` and
+`examples/sdl/`, which skipped here and ran on the author's Mac alone. The
+arm64 file was rebuilt that day under a new tag beside the old,
+`heroes-linux-arm64:sdl3-b14` (`75742c2bf90b`, 3.42 GB against 3.1), and in it
+both programs built from the seed's compiler gave their `.expected` at the
+`run` suite's three configurations, `--sanitize` with LeakSanitizer reporting
+nothing; LeakSanitizer does run in this container, a C program leaking 77
+bytes read *detected memory leaks* there the same hour. Neither program needs a
+display. The x86-64 file carries the package unbuilt, so the two still differ
+on the platform alone.
+
 Each file's first line is a parser directive that
 switches off one lint, `FromPlatformFlagConstDisallowed`: Docker warns that
 the `FROM` names a constant platform, and it does, in both files and for the
