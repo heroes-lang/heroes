@@ -1131,7 +1131,6 @@ bb4:
 #line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_bump(int64_t *ph0_n) {
 #line 1134 "fixedbugs174avaluearmorblockthatendsitspath.c"
-    int64_t h0_n;
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1140,19 +1139,18 @@ int64_t h_fixedbugs174avaluearmorblockthatendsitspath_bump(int64_t *ph0_n) {
     bool t6;
     int64_t t7;
     int64_t t8;
-    h0_n = *ph0_n;
     goto bb0;
 bb0:
 #line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t1 = h0_n;
+    t1 = (*ph0_n);
 #line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t2 = INT64_C(1);
 #line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h0_n = t3;
+    (*ph0_n) = t3;
 #line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = h0_n;
+    t4 = (*ph0_n);
 #line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t5 = INT64_C(0);
 #line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
@@ -1170,12 +1168,14 @@ bb1:
 #line 144 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb2:
 #line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h0_n;
-#line 1175 "fixedbugs174avaluearmorblockthatendsitspath.c"
-    *ph0_n = h0_n;
+    t7 = (*ph0_n);
+#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     return t7;
+#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb3:
+#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     goto bb1;
+#line 1179 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"

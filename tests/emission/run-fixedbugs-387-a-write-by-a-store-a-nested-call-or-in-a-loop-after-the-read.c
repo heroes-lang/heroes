@@ -219,30 +219,27 @@ bb4:
 #line 14 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(HeroArrayHeader * *ph0_xs) {
 #line 222 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    HeroArrayHeader * h0_xs;
     int64_t t2;
     HeroArrayHeader * t4;
     int64_t t5;
-    h0_xs = *ph0_xs;
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t2 = INT64_C(100);
 #line 15 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    hero_array_push_owned(&h0_xs, &t2);
+    hero_array_push_owned(&(*ph0_xs), &t2);
 #line 16 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    t4 = h0_xs;
+    t4 = (*ph0_xs);
 #line 16 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t5 = hero_array_len(t4);
-#line 238 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    *ph0_xs = h0_xs;
+#line 16 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     return t5;
+#line 238 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(HeroArrayHeader * *ph0_xs) {
-#line 245 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    HeroArrayHeader * h0_xs;
+#line 243 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     HeroArrayHeader * h1_own1 = {0};
     int64_t t1;
     int64_t t2;
@@ -251,7 +248,6 @@ int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(HeroA
     int64_t t5;
     HeroArrayHeader * t6;
     HeroArrayHeader * t7;
-    h0_xs = *ph0_xs;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
@@ -272,29 +268,27 @@ bb0:
     t6 = h1_own1;
 #line 19 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h1_own1 = t4;
-#line 276 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 272 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t6);
 #line 19 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    t7 = h0_xs;
-#line 280 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    t7 = (*ph0_xs);
+#line 276 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t4);
 #line 19 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    h0_xs = t4;
-#line 284 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+    (*ph0_xs) = t4;
+#line 280 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t7);
 #line 20 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t5 = INT64_C(0);
-#line 288 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    *ph0_xs = h0_xs;
 #line 18 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 291 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 285 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h1_own1);
     return t5;
 }
 
 #line 22 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(HeroArrayHeader * h0_xs, int64_t h1_n) {
-#line 298 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 292 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
@@ -317,12 +311,12 @@ bb0:
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 23 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     return t6;
-#line 321 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 315 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_later(int64_t h0_n, HeroArrayHeader * h1_xs) {
-#line 326 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 320 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
@@ -345,12 +339,12 @@ bb0:
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 26 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     return t6;
-#line 349 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 343 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 void h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_main(void) {
-#line 354 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 348 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     HeroArrayHeader * h0_a = {0};
     h_0opt_e201354 h1_f0 = {0};
     HeroArrayHeader * h2_b = {0};
@@ -498,15 +492,15 @@ bb0:
     t101 = h12_own12;
 #line 29 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h12_own12 = t1;
-#line 502 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 496 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t101);
 #line 29 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t102 = h0_a;
-#line 506 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 500 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t1);
 #line 29 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h0_a = t1;
-#line 510 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 504 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t102);
 #line 30 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t3 = INT64_C(5);
@@ -514,13 +508,13 @@ bb0:
     hero_array_push_owned(&h0_a, &t3);
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t5 = h0_a;
-#line 518 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 512 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t5);
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t103 = h13_own13;
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h13_own13 = t5;
-#line 524 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 518 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t103);
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t6 = INT64_C(4);
@@ -530,15 +524,15 @@ bb0:
     t104 = h14_own14;
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h14_own14 = t7;
-#line 534 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 528 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t104);
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t105 = h1_f0;
-#line 538 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 532 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_retain(&t7);
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h1_f0 = t7;
-#line 542 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 536 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t105);
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t8 = h1_f0;
@@ -582,15 +576,15 @@ bb1:
     t106 = h15_own15;
 #line 32 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h15_own15 = t22;
-#line 586 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 580 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t106);
 #line 32 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t107 = h2_b;
-#line 590 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 584 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t22);
 #line 32 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h2_b = t22;
-#line 594 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 588 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t107);
 #line 33 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t24 = INT64_C(5);
@@ -598,13 +592,13 @@ bb1:
     hero_array_push_owned(&h2_b, &t24);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t26 = h2_b;
-#line 602 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 596 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t26);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t108 = h16_own16;
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h16_own16 = t26;
-#line 608 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 602 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t108);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t27 = INT64_C(4);
@@ -614,15 +608,15 @@ bb1:
     t109 = h17_own17;
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h17_own17 = t28;
-#line 618 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 612 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t109);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t110 = h3_f1;
-#line 622 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 616 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_retain(&t28);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h3_f1 = t28;
-#line 626 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 620 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t110);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t29 = h3_f1;
@@ -640,7 +634,7 @@ bb2:
     t12 = h1_f0;
 #line 31 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t13 = t12.as.err;
-#line 644 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 638 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_panic_must(t13);
     hero_unreachable();
 bb3:
@@ -650,13 +644,13 @@ bb3:
     t36 = t35.as.ok;
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t37 = h2_b;
-#line 654 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 648 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t37);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t111 = h18_own18;
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h18_own18 = t37;
-#line 660 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 654 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t111);
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t38 = h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(&h2_b);
@@ -676,15 +670,15 @@ bb3:
     t112 = h19_own19;
 #line 35 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h19_own19 = t42;
-#line 680 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 674 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t112);
 #line 35 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t113 = h4_c;
-#line 684 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 678 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t42);
 #line 35 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h4_c = t42;
-#line 688 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 682 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t113);
 #line 36 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t44 = INT64_C(5);
@@ -700,15 +694,15 @@ bb3:
     t114 = h20_own20;
 #line 37 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h20_own20 = t48;
-#line 704 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 698 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t114);
 #line 37 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t115 = h5_f2;
-#line 708 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 702 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_retain(&t48);
 #line 37 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h5_f2 = t48;
-#line 712 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 706 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t115);
 #line 37 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t49 = h5_f2;
@@ -726,7 +720,7 @@ bb4:
     t33 = h3_f1;
 #line 34 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t34 = t33.as.err;
-#line 730 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 724 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_panic_must(t34);
     hero_unreachable();
 bb5:
@@ -750,15 +744,15 @@ bb5:
     t116 = h21_own21;
 #line 38 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h21_own21 = t60;
-#line 754 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 748 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t116);
 #line 38 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t117 = h6_d;
-#line 758 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 752 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t60);
 #line 38 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h6_d = t60;
-#line 762 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 756 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t117);
 #line 39 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t62 = INT64_C(5);
@@ -778,15 +772,15 @@ bb5:
     t118 = h22_own22;
 #line 42 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h22_own22 = t67;
-#line 782 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 776 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t118);
 #line 42 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t119 = h8_xs0;
-#line 786 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 780 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t67);
 #line 42 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h8_xs0 = t67;
-#line 790 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 784 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t119);
 #line 42 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t68 = INT64_C(0);
@@ -800,7 +794,7 @@ bb6:
     t53 = h5_f2;
 #line 37 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t54 = t53.as.err;
-#line 804 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 798 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_panic_must(t54);
     hero_unreachable();
 bb7:
@@ -828,13 +822,13 @@ bb8:
     t76 = h7_sum;
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t77 = h6_d;
-#line 832 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 826 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t77);
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t120 = h23_own23;
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h23_own23 = t77;
-#line 838 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 832 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t120);
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t78 = h10_at;
@@ -848,15 +842,15 @@ bb8:
     t121 = h24_own24;
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h24_own24 = t81;
-#line 852 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 846 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t121);
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t122 = h11_f3;
-#line 856 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 850 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_retain(&t81);
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     h11_f3 = t81;
-#line 860 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 854 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&t122);
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t82 = h11_f3;
@@ -898,70 +892,70 @@ bb10:
     hero_print_int(t100);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     hero_print_end();
-#line 902 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 896 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h0_a);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 905 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 899 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h1_f0);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 908 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 902 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h2_b);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 911 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 905 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h3_f1);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 914 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 908 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h4_c);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 917 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 911 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h5_f2);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 920 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 914 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h6_d);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 923 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 917 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h8_xs0);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 926 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 920 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h11_f3);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 929 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 923 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h12_own12);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 932 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 926 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h13_own13);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 935 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 929 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h14_own14);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 938 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 932 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h15_own15);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 941 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 935 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h16_own16);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 944 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 938 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h17_own17);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 947 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 941 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h18_own18);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 950 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 944 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h19_own19);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 953 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 947 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h20_own20);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 956 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 950 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h21_own21);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 959 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 953 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h22_own22);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 962 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 956 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h23_own23);
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-#line 965 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 959 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     h_0opt_e201354_release(&h24_own24);
     return;
 bb11:
@@ -987,14 +981,14 @@ bb12:
     t86 = h11_f3;
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t87 = t86.as.err;
-#line 991 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 985 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_panic_must(t87);
     hero_unreachable();
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 998 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 992 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -1018,15 +1012,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 1022 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 1016 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 1026 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 1020 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 1030 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 1024 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -1064,13 +1058,13 @@ bb2:
 bb3:
 #line 32 "<heroes library>"
     t12 = h2_out;
-#line 1068 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 1062 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t12);
 #line 32 "<heroes library>"
-#line 1071 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 1065 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h2_out);
 #line 32 "<heroes library>"
-#line 1074 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
+#line 1068 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_decref(h4_own4);
     return t12;
 }

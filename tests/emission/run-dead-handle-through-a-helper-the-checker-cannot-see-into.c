@@ -109,13 +109,11 @@ void h_deadhandlethroughahelperthecheckercannotseeinto_main(void);
 #line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 void h_deadhandlethroughahelperthecheckercannotseeinto_finish(Obj * *ph0_j) {
 #line 112 "deadhandlethroughahelperthecheckercannotseeinto.c"
-    Obj * h0_j;
     Obj * t1;
-    h0_j = *ph0_j;
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    t1 = h0_j;
+    t1 = (*ph0_j);
 #line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
     {
 #line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
@@ -125,17 +123,17 @@ bb0:
 #line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
     (void)obj_delete(t1);
 #line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    if (hero_handle_ended(t1, hero_life_0_0) && h0_j == t1) h0_j = hero_handle_dead();
+    if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_j) == t1) (*ph0_j) = hero_handle_dead();
 #line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
     }
-#line 132 "deadhandlethroughahelperthecheckercannotseeinto.c"
-    *ph0_j = h0_j;
+#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
     return;
+#line 132 "deadhandlethroughahelperthecheckercannotseeinto.c"
 }
 
 #line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 void h_deadhandlethroughahelperthecheckercannotseeinto_main(void) {
-#line 139 "deadhandlethroughahelperthecheckercannotseeinto.c"
+#line 137 "deadhandlethroughahelperthecheckercannotseeinto.c"
     Obj * h0_a;
     Obj * h1_b;
     Obj * t1;
@@ -199,7 +197,7 @@ bb0:
     }
 #line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
     return;
-#line 203 "deadhandlethroughahelperthecheckercannotseeinto.c"
+#line 201 "deadhandlethroughahelperthecheckercannotseeinto.c"
 }
 HERO_TU_LOCAL bool h_deadhandlethroughahelperthecheckercannotseeinto_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

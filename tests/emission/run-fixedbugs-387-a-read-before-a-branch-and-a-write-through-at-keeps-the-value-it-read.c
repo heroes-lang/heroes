@@ -222,49 +222,45 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_bump(HeroArrayHeader * *ph0_xs) {
 #line 225 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
-    HeroArrayHeader * h0_xs;
     int64_t t2;
     HeroArrayHeader * t4;
     int64_t t5;
-    h0_xs = *ph0_xs;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t2 = INT64_C(100);
 #line 19 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    hero_array_push_owned(&h0_xs, &t2);
+    hero_array_push_owned(&(*ph0_xs), &t2);
 #line 20 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    t4 = h0_xs;
+    t4 = (*ph0_xs);
 #line 20 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = hero_array_len(t4);
-#line 241 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
-    *ph0_xs = h0_xs;
+#line 20 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     return t5;
+#line 241 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bool h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_bumped(HeroArrayHeader * *ph0_xs) {
-#line 248 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
-    HeroArrayHeader * h0_xs;
+#line 246 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     int64_t t2;
     bool t4;
-    h0_xs = *ph0_xs;
     goto bb0;
 bb0:
 #line 23 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t2 = INT64_C(100);
 #line 23 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    hero_array_push_owned(&h0_xs, &t2);
+    hero_array_push_owned(&(*ph0_xs), &t2);
 #line 24 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t4 = true;
-#line 261 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
-    *ph0_xs = h0_xs;
+#line 24 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     return t4;
+#line 259 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_total(HeroArrayHeader * h0_xs, int64_t h1_n) {
-#line 268 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 264 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
@@ -287,12 +283,12 @@ bb0:
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 27 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     return t6;
-#line 291 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 287 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
 }
 
 #line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_sure(HeroArrayHeader * h0_xs, bool h1_b) {
-#line 296 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 292 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     int64_t h2_ret0;
     bool t1;
     HeroArrayHeader * t2;
@@ -354,12 +350,12 @@ bb4:
     t12 = h2_ret0;
 #line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     return t12;
-#line 358 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 354 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_must(void) {
-#line 363 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 359 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * h0_out = {0};
     h_0opt_e201354 h1_f0 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -394,15 +390,15 @@ bb0:
     t19 = h2_own2;
 #line 35 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h2_own2 = t1;
-#line 398 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 394 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t19);
 #line 35 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t20 = h0_out;
-#line 402 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 398 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t1);
 #line 35 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h0_out = t1;
-#line 406 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 402 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t20);
 #line 36 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(5);
@@ -410,13 +406,13 @@ bb0:
     hero_array_push_owned(&h0_out, &t3);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = h0_out;
-#line 414 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 410 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t5);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t21 = h3_own3;
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h3_own3 = t5;
-#line 420 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 416 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t21);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = INT64_C(4);
@@ -426,15 +422,15 @@ bb0:
     t22 = h4_own4;
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h4_own4 = t7;
-#line 430 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 426 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t22);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t23 = h1_f0;
-#line 434 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 430 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t7);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h1_f0 = t7;
-#line 438 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 434 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t23);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = h1_f0;
@@ -458,19 +454,19 @@ bb1:
     if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t18 = h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_total(t5, t17);
-#line 462 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 458 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 465 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 461 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h1_f0);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 468 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 464 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h2_own2);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 471 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 467 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 474 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 470 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h4_own4);
     return t18;
 bb2:
@@ -478,14 +474,14 @@ bb2:
     t12 = h1_f0;
 #line 37 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t13 = t12.as.err;
-#line 482 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 478 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_panic_must(t13);
     hero_unreachable();
 }
 
 #line 39 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_default(void) {
-#line 489 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 485 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * h0_out = {0};
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_r0;
@@ -521,15 +517,15 @@ bb0:
     t19 = h3_own3;
 #line 40 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h3_own3 = t1;
-#line 525 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 521 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t19);
 #line 40 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t20 = h0_out;
-#line 529 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 525 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t1);
 #line 40 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h0_out = t1;
-#line 533 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 529 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t20);
 #line 41 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(5);
@@ -537,13 +533,13 @@ bb0:
     hero_array_push_owned(&h0_out, &t3);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = h0_out;
-#line 541 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 537 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t5);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t21 = h4_own4;
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h4_own4 = t5;
-#line 547 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 543 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t21);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = INT64_C(3);
@@ -553,15 +549,15 @@ bb0:
     t22 = h5_own5;
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h5_own5 = t7;
-#line 557 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 553 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t22);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t23 = h1_f0;
-#line 561 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 557 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t7);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h1_f0 = t7;
-#line 565 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 561 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t23);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = h1_f0;
@@ -601,26 +597,26 @@ bb3:
     if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t18 = h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_total(t5, t17);
-#line 605 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 601 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 608 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 604 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h1_f0);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 611 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 607 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 614 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 610 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h4_own4);
 #line 42 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 617 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 613 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h5_own5);
     return t18;
 }
 
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 h_0opt_e201354 h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_question(void) {
-#line 624 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 620 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * h0_out = {0};
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_ret0 = {0};
@@ -663,15 +659,15 @@ bb0:
     t22 = h3_own3;
 #line 45 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h3_own3 = t1;
-#line 667 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 663 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t22);
 #line 45 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t23 = h0_out;
-#line 671 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 667 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t1);
 #line 45 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h0_out = t1;
-#line 675 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 671 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t23);
 #line 46 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(5);
@@ -679,13 +675,13 @@ bb0:
     hero_array_push_owned(&h0_out, &t3);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = h0_out;
-#line 683 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 679 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t5);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t24 = h4_own4;
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h4_own4 = t5;
-#line 689 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 685 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t24);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = INT64_C(4);
@@ -695,15 +691,15 @@ bb0:
     t25 = h5_own5;
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h5_own5 = t7;
-#line 699 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 695 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t25);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t26 = h1_f0;
-#line 703 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 699 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t7);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h1_f0 = t7;
-#line 707 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 703 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t26);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = h1_f0;
@@ -733,7 +729,7 @@ bb1:
     t27 = h6_own6;
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h6_own6 = t20;
-#line 737 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 733 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t27);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h2_ret0 = t20;
@@ -745,7 +741,7 @@ bb2:
     t12 = h1_f0;
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t13 = t12.as.err;
-#line 749 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 745 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_failure_retain(&t13);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t14 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t13};
@@ -753,7 +749,7 @@ bb2:
     t28 = h7_own7;
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h7_own7 = t14;
-#line 757 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 753 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t28);
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h2_ret0 = t14;
@@ -763,35 +759,35 @@ bb2:
 bb3:
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t21 = h2_ret0;
-#line 767 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 763 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t21);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 770 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 766 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 773 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 769 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h1_f0);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 776 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 772 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 779 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 775 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h4_own4);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 782 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 778 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h5_own5);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 785 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 781 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h6_own6);
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 788 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 784 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h7_own7);
     return t21;
 }
 
 #line 49 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_and(void) {
-#line 795 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 791 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * h0_out = {0};
     bool h1_b0;
     HeroArrayHeader * h2_own2 = {0};
@@ -817,15 +813,15 @@ bb0:
     t13 = h2_own2;
 #line 50 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h2_own2 = t1;
-#line 821 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 817 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t13);
 #line 50 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t14 = h0_out;
-#line 825 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 821 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t1);
 #line 50 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h0_out = t1;
-#line 829 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 825 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t14);
 #line 51 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(5);
@@ -833,13 +829,13 @@ bb0:
     hero_array_push_owned(&h0_out, &t3);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = h0_out;
-#line 837 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 833 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t5);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t15 = h3_own3;
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h3_own3 = t5;
-#line 843 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 839 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t15);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = h0_out;
@@ -867,20 +863,20 @@ bb2:
     t11 = h1_b0;
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t12 = h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_sure(t5, t11);
-#line 871 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 867 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 874 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 870 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h2_own2);
 #line 52 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 877 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 873 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
     return t12;
 }
 
 #line 54 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_or(void) {
-#line 884 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 880 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * h0_out = {0};
     bool h1_b0;
     HeroArrayHeader * h2_own2 = {0};
@@ -906,15 +902,15 @@ bb0:
     t13 = h2_own2;
 #line 55 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h2_own2 = t1;
-#line 910 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 906 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t13);
 #line 55 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t14 = h0_out;
-#line 914 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 910 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t1);
 #line 55 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h0_out = t1;
-#line 918 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 914 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t14);
 #line 56 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(5);
@@ -922,13 +918,13 @@ bb0:
     hero_array_push_owned(&h0_out, &t3);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = h0_out;
-#line 926 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 922 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t5);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t15 = h3_own3;
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h3_own3 = t5;
-#line 932 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 928 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t15);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = h0_out;
@@ -956,20 +952,20 @@ bb2:
     t11 = h1_b0;
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t12 = h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_sure(t5, t11);
-#line 960 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 956 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 963 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 959 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h2_own2);
 #line 57 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 966 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 962 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
     return t12;
 }
 
 #line 59 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 void h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_main(void) {
-#line 973 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 969 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     HeroArrayHeader * h0_out = {0};
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_f1 = {0};
@@ -1021,15 +1017,15 @@ bb0:
     t32 = h3_own3;
 #line 60 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h3_own3 = t1;
-#line 1025 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1021 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t32);
 #line 60 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t33 = h0_out;
-#line 1029 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1025 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t1);
 #line 60 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h0_out = t1;
-#line 1033 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1029 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t33);
 #line 61 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t3 = INT64_C(5);
@@ -1037,13 +1033,13 @@ bb0:
     hero_array_push_owned(&h0_out, &t3);
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t5 = h0_out;
-#line 1041 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1037 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_incref(t5);
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t34 = h4_own4;
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h4_own4 = t5;
-#line 1047 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1043 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(t34);
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t6 = INT64_C(4);
@@ -1053,15 +1049,15 @@ bb0:
     t35 = h5_own5;
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h5_own5 = t7;
-#line 1057 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1053 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t35);
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t36 = h1_f0;
-#line 1061 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1057 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t7);
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h1_f0 = t7;
-#line 1065 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1061 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t36);
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t8 = h1_f0;
@@ -1107,15 +1103,15 @@ bb1:
     t37 = h6_own6;
 #line 65 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h6_own6 = t21;
-#line 1111 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1107 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t37);
 #line 65 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t38 = h2_f1;
-#line 1115 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1111 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t21);
 #line 65 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     h2_f1 = t21;
-#line 1119 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1115 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&t38);
 #line 65 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t22 = h2_f1;
@@ -1133,7 +1129,7 @@ bb2:
     t12 = h1_f0;
 #line 62 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t13 = t12.as.err;
-#line 1137 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1133 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_panic_must(t13);
     hero_unreachable();
 bb3:
@@ -1157,25 +1153,25 @@ bb3:
     hero_print_int(t31);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     hero_print_end();
-#line 1161 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1157 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 1164 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1160 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h1_f0);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 1167 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1163 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h2_f1);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 1170 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1166 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 1173 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1169 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h4_own4);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 1176 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1172 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h5_own5);
 #line 67 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-#line 1179 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1175 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h6_own6);
     return;
 bb4:
@@ -1183,7 +1179,7 @@ bb4:
     t26 = h2_f1;
 #line 65 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t27 = t26.as.err;
-#line 1187 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
+#line 1183 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_panic_must(t27);
     hero_unreachable();
 }
