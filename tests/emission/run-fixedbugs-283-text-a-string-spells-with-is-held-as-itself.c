@@ -81,17 +81,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 92 "fixedbugs283textastringspellswithisheldasitself.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -109,7 +106,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 10 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
 HeroStr h_fixedbugs283textastringspellswithisheldasitself_bytes_of(HeroStr h0_s) {
-#line 113 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 110 "fixedbugs283textastringspellswithisheldasitself.c"
     HeroStr h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -156,11 +153,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 11 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t26 = h1_out;
-#line 160 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 157 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_incref(t1);
 #line 11 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h1_out = t1;
-#line 164 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 161 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t26);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t2 = INT64_C(0);
@@ -174,15 +171,15 @@ bb0:
     t27 = h5_own5;
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h5_own5 = t5;
-#line 178 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 175 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(t27);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t28 = h2_xs0;
-#line 182 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 179 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_incref(t5);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h2_xs0 = t5;
-#line 186 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 183 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(t28);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t6 = INT64_C(0);
@@ -212,7 +209,6 @@ bb2:
     t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h4_i = t13;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t14 = h1_out;
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t15 = HERO_STR_LIT(hero_str_20);
@@ -222,7 +218,7 @@ bb2:
     t29 = h6_own6;
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h6_own6 = t16;
-#line 226 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 222 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t29);
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t17 = h0_s;
@@ -236,7 +232,7 @@ bb2:
     t30 = h7_own7;
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h7_own7 = t20;
-#line 240 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 236 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t30);
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t21 = hero_str_concat(t16, t20);
@@ -244,15 +240,15 @@ bb2:
     t31 = h8_own8;
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h8_own8 = t21;
-#line 248 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 244 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t31);
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t32 = h1_out;
-#line 252 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 248 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_incref(t21);
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h1_out = t21;
-#line 256 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 252 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t32);
     goto bb3;
 bb3:
@@ -270,32 +266,20 @@ bb3:
 bb4:
 #line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t25 = h1_out;
-#line 274 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 270 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_incref(t25);
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 277 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h1_out);
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 280 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(h2_xs0);
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 283 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(h5_own5);
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 286 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h6_own6);
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 289 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h7_own7);
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 292 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h8_own8);
     return t25;
 }
 
 #line 18 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
 void h_fixedbugs283textastringspellswithisheldasitself_main(void) {
-#line 299 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 283 "fixedbugs283textastringspellswithisheldasitself.c"
     HeroStr h0_own0 = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -338,7 +322,7 @@ bb0:
     t19 = h0_own0;
 #line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h0_own0 = t3;
-#line 342 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 326 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_str(t1);
@@ -346,7 +330,6 @@ bb0:
     hero_print_str(t3);
 #line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_end();
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t4 = HERO_STR_LIT(hero_str_4c45f684);
 #line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t5 = HERO_STR_LIT(hero_str_5e529a7);
@@ -356,7 +339,7 @@ bb0:
     t20 = h1_own1;
 #line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h1_own1 = t6;
-#line 360 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 343 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t20);
 #line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_str(t4);
@@ -364,7 +347,6 @@ bb0:
     hero_print_str(t6);
 #line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t7 = HERO_STR_LIT(hero_str_343b2199);
 #line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t8 = HERO_STR_LIT(hero_str_2fb9cd2f);
@@ -374,7 +356,7 @@ bb0:
     t21 = h2_own2;
 #line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h2_own2 = t9;
-#line 378 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 360 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t21);
 #line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_str(t7);
@@ -382,7 +364,6 @@ bb0:
     hero_print_str(t9);
 #line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_end();
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t10 = HERO_STR_LIT(hero_str_9506771);
 #line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t11 = HERO_STR_LIT(hero_str_2ca7000d);
@@ -392,7 +373,7 @@ bb0:
     t22 = h3_own3;
 #line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h3_own3 = t12;
-#line 396 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 377 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t22);
 #line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_str(t10);
@@ -400,7 +381,6 @@ bb0:
     hero_print_str(t12);
 #line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t13 = HERO_STR_LIT(hero_str_24829e4a);
 #line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t14 = HERO_STR_LIT(hero_str_451c6397);
@@ -410,7 +390,7 @@ bb0:
     t23 = h4_own4;
 #line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h4_own4 = t15;
-#line 414 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 394 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t23);
 #line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_str(t13);
@@ -418,7 +398,6 @@ bb0:
     hero_print_str(t15);
 #line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t16 = HERO_STR_LIT(hero_str_22cdf42d);
 #line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t17 = HERO_STR_LIT(hero_str_d3286cf);
@@ -428,7 +407,7 @@ bb0:
     t24 = h5_own5;
 #line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h5_own5 = t18;
-#line 432 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 411 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(t24);
 #line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_str(t16);
@@ -436,29 +415,19 @@ bb0:
     hero_print_str(t18);
 #line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     hero_print_end();
-#line 440 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 419 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h0_own0);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 443 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h1_own1);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 446 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h2_own2);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 449 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h3_own3);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 452 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h4_own4);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-#line 455 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_decref(h5_own5);
     return;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 462 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 431 "fixedbugs283textastringspellswithisheldasitself.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -482,15 +451,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 486 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 455 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 490 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 459 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 494 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 463 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -500,7 +469,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -510,11 +478,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -526,15 +492,10 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 532 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 497 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 535 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 538 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_decref(h4_own4);
     return t12;
 }

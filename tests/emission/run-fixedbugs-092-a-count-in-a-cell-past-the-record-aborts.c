@@ -76,17 +76,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs092acountinacellpasttherecordaborts_fill_len(struct one * a0, uint32_t * a1) { (void)(fill_len)(a0, (void *)a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 87 "fixedbugs092acountinacellpasttherecordaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092acountinacellpasttherecordaborts_One_eq(const struct one *a, const struct one *b);
@@ -104,7 +101,7 @@ void h_fixedbugs092acountinacellpasttherecordaborts_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void) {
-#line 108 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 105 "fixedbugs092acountinacellpasttherecordaborts.c"
     struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o");
 #define h0_o (*hero_lend_h0_o)
     uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n");
@@ -125,11 +122,9 @@ bb0:
     t2 = (struct one){.a = t1};
 #line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     h0_o = t2;
-#line 16 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t3 = UINT64_C(4096);
 #line 16 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     h1_n = t3;
-#line 17 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t4 = h0_o;
 #line 17 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t5 = t4.a;
@@ -137,7 +132,6 @@ bb0:
     hero_print_int(t5);
 #line 17 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     if ((uint64_t)(h1_n) > (uint64_t)(sizeof(h0_o) / sizeof(*(void *)0))) hero_panic(sizeof(*(void *)0) == 1 ? "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero:18: `fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in bytes" : "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero:18: `fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in what the header's `void *` points at");
 #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     hero_lend_local_name(hero_lend_h0_o, "fill_len", "buf");
@@ -149,7 +143,6 @@ bb0:
     hero_print_int(t6);
 #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     hero_print_end();
-#line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t7 = h0_o;
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t8 = t7.a;
@@ -163,7 +156,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 167 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 160 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

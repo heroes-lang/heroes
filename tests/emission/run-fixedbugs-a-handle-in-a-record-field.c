@@ -14,11 +14,9 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 44 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 _Static_assert(_Generic(&((Slot *)0)->handle, Thing * *: 1, default: 0) && sizeof(((Slot *)0)->handle) == sizeof(Thing *), "heroes-ffi-field Slot handle");
-#line 45 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 _Static_assert(_Generic(&((Slot *)0)->ratio, double *: 1, default: 0) && sizeof(((Slot *)0)->ratio) == sizeof(double), "heroes-ffi-field Slot ratio");
-#line 46 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 _Static_assert(__builtin_classify_type(((Slot *)0)->count) == 1 && sizeof(((Slot *)0)->count) == sizeof(int64_t) && (_Generic(((Slot *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot count");
-#line 22 "fixedbugsahandleinarecordfield.c"
+#line 20 "fixedbugsahandleinarecordfield.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -80,21 +78,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 47 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsahandleinarecordfield_slot_make(int64_t a0) { (void)(slot_make)(a0); }
-#line 48 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsahandleinarecordfield_slot_count(Slot a0) { (void)(slot_count)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugsahandleinarecordfield.c"
+#line 92 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b);
@@ -114,7 +108,7 @@ void h_fixedbugsahandleinarecordfield_main(void);
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) {
-#line 118 "fixedbugsahandleinarecordfield.c"
+#line 112 "fixedbugsahandleinarecordfield.c"
     Slot h0_s;
     int64_t t1;
     Slot t2;
@@ -134,7 +128,6 @@ bb0:
     t2 = slot_make(t1);
 #line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     h0_s = t2;
-#line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t3 = h0_s;
 #line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     hero_handle_alive(t3.handle, "the argument `s` of `slot_count`, at `.handle`");
@@ -156,7 +149,6 @@ bb0:
     hero_print_bool(t8);
 #line 56 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     hero_print_end();
-#line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t9 = h0_s;
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t10 = t9.ratio;
@@ -166,7 +158,7 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 170 "fixedbugsahandleinarecordfield.c"
+#line 162 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

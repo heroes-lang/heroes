@@ -76,17 +76,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fficallbacktypedefreachestheprobe_atexit(h_0fn_294870dd a0) { (void)(atexit)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "fficallbacktypedefreachestheprobe.c"
+#line 87 "fficallbacktypedefreachestheprobe.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -110,7 +107,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 27 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
 void h_fficallbacktypedefreachestheprobe_bye(void) {
-#line 114 "fficallbacktypedefreachestheprobe.c"
+#line 111 "fficallbacktypedefreachestheprobe.c"
     hero_thread_guard("fficallbacktypedefreachestheprobe.bye");
     HeroStr t1;
     goto bb0;
@@ -123,7 +120,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     return;
-#line 127 "fficallbacktypedefreachestheprobe.c"
+#line 124 "fficallbacktypedefreachestheprobe.c"
 }
 
 void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
@@ -132,7 +129,7 @@ void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
 
 #line 30 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
 void h_fficallbacktypedefreachestheprobe_main(void) {
-#line 136 "fficallbacktypedefreachestheprobe.c"
+#line 133 "fficallbacktypedefreachestheprobe.c"
     h_0fn_294870dd t1;
     int32_t t2;
     int32_t t3;
@@ -156,7 +153,6 @@ bb1:
     return;
 #line 31 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
 bb2:
-#line 32 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     t5 = HERO_STR_LIT(hero_str_7bcd5f24);
 #line 32 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     hero_print_str(t5);
@@ -168,7 +164,7 @@ bb2:
 bb3:
 #line 32 "tests/golden/fixedbugs/ffi-callback-typedef-reaches-the-probe.hero"
     goto bb1;
-#line 172 "fficallbacktypedefreachestheprobe.c"
+#line 168 "fficallbacktypedefreachestheprobe.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

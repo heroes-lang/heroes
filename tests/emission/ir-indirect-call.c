@@ -67,17 +67,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "indirectcall.c"
+#line 78 "indirectcall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +92,7 @@ void h_indirectcall_main(void);
 
 #line 6 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_double(int64_t h0_n) {
-#line 99 "indirectcall.c"
+#line 96 "indirectcall.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -109,12 +106,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 7 "tests/golden/ir/indirect-call.hero"
     return t3;
-#line 113 "indirectcall.c"
+#line 110 "indirectcall.c"
 }
 
 #line 9 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f) {
-#line 118 "indirectcall.c"
+#line 115 "indirectcall.c"
     h_0fn_48ac9712 t1;
     h_0fn_48ac9712 t2;
     int64_t t3;
@@ -134,12 +131,12 @@ bb0:
     t5 = t1(t4);
 #line 10 "tests/golden/ir/indirect-call.hero"
     return t5;
-#line 138 "indirectcall.c"
+#line 135 "indirectcall.c"
 }
 
 #line 12 "tests/golden/ir/indirect-call.hero"
 void h_indirectcall_main(void) {
-#line 143 "indirectcall.c"
+#line 140 "indirectcall.c"
     int64_t t1;
     h_0fn_48ac9712 t2;
     int64_t t3;
@@ -157,7 +154,7 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/ir/indirect-call.hero"
     return;
-#line 161 "indirectcall.c"
+#line 158 "indirectcall.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

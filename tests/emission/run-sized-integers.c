@@ -107,17 +107,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "sizedintegers.c"
+#line 118 "sizedintegers.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -149,7 +146,7 @@ void h_sizedintegers_main(void);
 
 #line 27 "tests/golden/run/sized-integers.hero"
 void h_sizedintegers_main(void) {
-#line 153 "sizedintegers.c"
+#line 150 "sizedintegers.c"
     uint8_t h0_a;
     int8_t h1_b;
     int32_t h2_c;
@@ -257,19 +254,15 @@ bb0:
     t1 = UINT64_C(200);
 #line 28 "tests/golden/run/sized-integers.hero"
     h0_a = t1;
-#line 29 "tests/golden/run/sized-integers.hero"
     t2 = INT64_C(-128);
 #line 29 "tests/golden/run/sized-integers.hero"
     h1_b = t2;
-#line 30 "tests/golden/run/sized-integers.hero"
     t3 = INT64_C(-70000);
 #line 30 "tests/golden/run/sized-integers.hero"
     h2_c = t3;
-#line 31 "tests/golden/run/sized-integers.hero"
     t4 = UINT64_C(65535);
 #line 31 "tests/golden/run/sized-integers.hero"
     h3_d = t4;
-#line 32 "tests/golden/run/sized-integers.hero"
     t5 = HERO_STR_LIT(hero_str_2e07432);
 #line 32 "tests/golden/run/sized-integers.hero"
     t6 = h0_a;
@@ -307,11 +300,9 @@ bb0:
     t13 = UINT64_C(18446744073709551615);
 #line 34 "tests/golden/run/sized-integers.hero"
     h4_top = t13;
-#line 35 "tests/golden/run/sized-integers.hero"
     t14 = UINT64_C(18446744073709551615);
 #line 35 "tests/golden/run/sized-integers.hero"
     h5_hex = t14;
-#line 36 "tests/golden/run/sized-integers.hero"
     t15 = HERO_STR_LIT(hero_str_fa87493);
 #line 36 "tests/golden/run/sized-integers.hero"
     t16 = h4_top;
@@ -345,7 +336,6 @@ bb0:
     t23 = UINT64_C(7);
 #line 38 "tests/golden/run/sized-integers.hero"
     h6_byte = t23;
-#line 39 "tests/golden/run/sized-integers.hero"
     t24 = HERO_STR_LIT(hero_str_2b1fdd99);
 #line 39 "tests/golden/run/sized-integers.hero"
     t25 = h6_byte;
@@ -355,15 +345,15 @@ bb0:
     t77 = h12_own12;
 #line 39 "tests/golden/run/sized-integers.hero"
     h12_own12 = t26;
-#line 359 "sizedintegers.c"
+#line 349 "sizedintegers.c"
     h_0opt_e201354_release(&t77);
 #line 39 "tests/golden/run/sized-integers.hero"
     t78 = h7_f0;
-#line 363 "sizedintegers.c"
+#line 353 "sizedintegers.c"
     h_0opt_e201354_retain(&t26);
 #line 39 "tests/golden/run/sized-integers.hero"
     h7_f0 = t26;
-#line 367 "sizedintegers.c"
+#line 357 "sizedintegers.c"
     h_0opt_e201354_release(&t78);
 #line 39 "tests/golden/run/sized-integers.hero"
     t27 = h7_f0;
@@ -391,7 +381,6 @@ bb1:
     hero_print_int(t36);
 #line 39 "tests/golden/run/sized-integers.hero"
     hero_print_end();
-#line 40 "tests/golden/run/sized-integers.hero"
     t37 = HERO_STR_LIT(hero_str_526294ee);
 #line 40 "tests/golden/run/sized-integers.hero"
     t38 = INT64_C(300);
@@ -409,15 +398,15 @@ bb1:
     t79 = h13_own13;
 #line 40 "tests/golden/run/sized-integers.hero"
     h13_own13 = t39;
-#line 413 "sizedintegers.c"
+#line 402 "sizedintegers.c"
     h_0opt_1ec004_release(&t79);
 #line 40 "tests/golden/run/sized-integers.hero"
     t80 = h8_f1;
-#line 417 "sizedintegers.c"
+#line 406 "sizedintegers.c"
     h_0opt_1ec004_retain(&t39);
 #line 40 "tests/golden/run/sized-integers.hero"
     h8_f1 = t39;
-#line 421 "sizedintegers.c"
+#line 410 "sizedintegers.c"
     h_0opt_1ec004_release(&t80);
 #line 40 "tests/golden/run/sized-integers.hero"
     t40 = h8_f1;
@@ -445,15 +434,15 @@ bb1:
     t81 = h14_own14;
 #line 40 "tests/golden/run/sized-integers.hero"
     h14_own14 = t46;
-#line 449 "sizedintegers.c"
+#line 438 "sizedintegers.c"
     h_0opt_1ec004_release(&t81);
 #line 40 "tests/golden/run/sized-integers.hero"
     t82 = h9_f2;
-#line 453 "sizedintegers.c"
+#line 442 "sizedintegers.c"
     h_0opt_1ec004_retain(&t46);
 #line 40 "tests/golden/run/sized-integers.hero"
     h9_f2 = t46;
-#line 457 "sizedintegers.c"
+#line 446 "sizedintegers.c"
     h_0opt_1ec004_release(&t82);
 #line 40 "tests/golden/run/sized-integers.hero"
     t47 = h9_f2;
@@ -471,7 +460,7 @@ bb2:
     t31 = h7_f0;
 #line 39 "tests/golden/run/sized-integers.hero"
     t32 = t31.as.err;
-#line 475 "sizedintegers.c"
+#line 464 "sizedintegers.c"
     hero_panic_must(t32);
     hero_unreachable();
 bb3:
@@ -489,7 +478,6 @@ bb3:
     hero_print_int(t54);
 #line 40 "tests/golden/run/sized-integers.hero"
     hero_print_end();
-#line 41 "tests/golden/run/sized-integers.hero"
     t55 = HERO_STR_LIT(hero_str_745f764e);
 #line 41 "tests/golden/run/sized-integers.hero"
     t56 = INT64_C(-1);
@@ -507,15 +495,15 @@ bb3:
     t83 = h15_own15;
 #line 41 "tests/golden/run/sized-integers.hero"
     h15_own15 = t57;
-#line 511 "sizedintegers.c"
+#line 499 "sizedintegers.c"
     h_0opt_1ec004_release(&t83);
 #line 41 "tests/golden/run/sized-integers.hero"
     t84 = h10_f3;
-#line 515 "sizedintegers.c"
+#line 503 "sizedintegers.c"
     h_0opt_1ec004_retain(&t57);
 #line 41 "tests/golden/run/sized-integers.hero"
     h10_f3 = t57;
-#line 519 "sizedintegers.c"
+#line 507 "sizedintegers.c"
     h_0opt_1ec004_release(&t84);
 #line 41 "tests/golden/run/sized-integers.hero"
     t58 = h10_f3;
@@ -535,11 +523,11 @@ bb3:
     t62 = HERO_STR_LIT(hero_str_217c);
 #line 43 "tests/golden/run/sized-integers.hero"
     t85 = h11_text;
-#line 539 "sizedintegers.c"
+#line 527 "sizedintegers.c"
     hero_str_incref(t62);
 #line 43 "tests/golden/run/sized-integers.hero"
     h11_text = t62;
-#line 543 "sizedintegers.c"
+#line 531 "sizedintegers.c"
     hero_str_decref(t85);
 #line 44 "tests/golden/run/sized-integers.hero"
     t63 = HERO_STR_LIT(hero_str_2445ed02);
@@ -583,31 +571,15 @@ bb3:
     hero_print_bool(t76);
 #line 44 "tests/golden/run/sized-integers.hero"
     hero_print_end();
-#line 587 "sizedintegers.c"
+#line 575 "sizedintegers.c"
     h_0opt_e201354_release(&h7_f0);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 590 "sizedintegers.c"
     h_0opt_1ec004_release(&h8_f1);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 593 "sizedintegers.c"
     h_0opt_1ec004_release(&h9_f2);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 596 "sizedintegers.c"
     h_0opt_1ec004_release(&h10_f3);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 599 "sizedintegers.c"
     hero_str_decref(h11_text);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 602 "sizedintegers.c"
     h_0opt_e201354_release(&h12_own12);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 605 "sizedintegers.c"
     h_0opt_1ec004_release(&h13_own13);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 608 "sizedintegers.c"
     h_0opt_1ec004_release(&h14_own14);
-#line 44 "tests/golden/run/sized-integers.hero"
-#line 611 "sizedintegers.c"
     h_0opt_1ec004_release(&h15_own15);
     return;
 bb4:
@@ -615,7 +587,7 @@ bb4:
     t51 = h9_f2;
 #line 40 "tests/golden/run/sized-integers.hero"
     t52 = t51.as.err;
-#line 619 "sizedintegers.c"
+#line 591 "sizedintegers.c"
     hero_panic_must(t52);
     hero_unreachable();
 }

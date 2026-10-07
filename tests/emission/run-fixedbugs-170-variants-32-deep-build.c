@@ -578,17 +578,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 592 "fixedbugs170variants32deepbuild.c"
+#line 589 "fixedbugs170variants32deepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_R0_c_a_eq(const h_fixedbugs170variants32deepbuild_R0_c_a *a, const h_fixedbugs170variants32deepbuild_R0_c_a *b);
@@ -749,7 +746,7 @@ void h_fixedbugs170variants32deepbuild_main(void);
 
 #line 170 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
 void h_fixedbugs170variants32deepbuild_main(void) {
-#line 753 "fixedbugs170variants32deepbuild.c"
+#line 750 "fixedbugs170variants32deepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -768,15 +765,15 @@ bb0:
     t7 = h1_own1;
 #line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     h1_own1 = t1;
-#line 772 "fixedbugs170variants32deepbuild.c"
+#line 769 "fixedbugs170variants32deepbuild.c"
     hero_array_decref(t7);
 #line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t8 = h0_xs;
-#line 776 "fixedbugs170variants32deepbuild.c"
+#line 773 "fixedbugs170variants32deepbuild.c"
     hero_array_incref(t1);
 #line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     h0_xs = t1;
-#line 780 "fixedbugs170variants32deepbuild.c"
+#line 777 "fixedbugs170variants32deepbuild.c"
     hero_array_decref(t8);
 #line 172 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t2 = h0_xs;
@@ -786,7 +783,6 @@ bb0:
     hero_print_int(t3);
 #line 172 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     hero_print_end();
-#line 173 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t4 = h0_xs;
 #line 173 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t5 = h0_xs;
@@ -796,10 +792,8 @@ bb0:
     hero_print_bool(t6);
 #line 173 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     hero_print_end();
-#line 800 "fixedbugs170variants32deepbuild.c"
+#line 796 "fixedbugs170variants32deepbuild.c"
     hero_array_decref(h0_xs);
-#line 173 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
-#line 803 "fixedbugs170variants32deepbuild.c"
     hero_array_decref(h1_own1);
     return;
 }

@@ -16,13 +16,12 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a");
 #line 19 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
-#line 20 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(__builtin_classify_type(((struct nums *)0)->after) == 1 && sizeof(((struct nums *)0)->after) == sizeof(int64_t) && (_Generic(((struct nums *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nums after");
-#line 22 "abortafixedarrayelementwrittenpastitslength.c"
+#line 21 "abortafixedarrayelementwrittenpastitslength.c"
 
 #line 18 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 _Static_assert(__builtin_classify_type(*(struct nums *)0) != 13, "heroes-ffi-union Nums a after");
-#line 26 "abortafixedarrayelementwrittenpastitslength.c"
+#line 25 "abortafixedarrayelementwrittenpastitslength.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -90,17 +89,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_abortafixedarrayelementwrittenpastitslength_nums_after(struct nums a0) { (void)(nums_after)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 104 "abortafixedarrayelementwrittenpastitslength.c"
+#line 100 "abortafixedarrayelementwrittenpastitslength.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_Nums_eq(const struct nums *a, const struct nums *b);
@@ -119,7 +115,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 void h_abortafixedarrayelementwrittenpastitslength_main(void) {
-#line 123 "abortafixedarrayelementwrittenpastitslength.c"
+#line 119 "abortafixedarrayelementwrittenpastitslength.c"
     struct nums h0_n;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -186,15 +182,15 @@ bb0:
     t36 = h4_own4;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h4_own4 = t10;
-#line 190 "abortafixedarrayelementwrittenpastitslength.c"
+#line 186 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t36);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t37 = h1_xs0;
-#line 194 "abortafixedarrayelementwrittenpastitslength.c"
+#line 190 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t10);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h1_xs0 = t10;
-#line 198 "abortafixedarrayelementwrittenpastitslength.c"
+#line 194 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t37);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t11 = INT64_C(0);
@@ -224,7 +220,6 @@ bb2:
     t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h3_i = t18;
-#line 27 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t19 = HERO_STR_LIT(hero_str_3043d2a7);
 #line 27 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t20 = h0_n;
@@ -244,7 +239,6 @@ bb2:
     hero_print_int(t23);
 #line 27 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 28 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t24 = h3_i;
 #line 28 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t25 = h3_i;
@@ -284,17 +278,15 @@ bb4:
     hero_print_int(t35);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 288 "abortafixedarrayelementwrittenpastitslength.c"
+#line 282 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h1_xs0);
-#line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-#line 291 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h4_own4);
     return;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 298 "abortafixedarrayelementwrittenpastitslength.c"
+#line 290 "abortafixedarrayelementwrittenpastitslength.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -318,15 +310,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 322 "abortafixedarrayelementwrittenpastitslength.c"
+#line 314 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 326 "abortafixedarrayelementwrittenpastitslength.c"
+#line 318 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 330 "abortafixedarrayelementwrittenpastitslength.c"
+#line 322 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -336,7 +328,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -346,11 +337,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -362,15 +351,10 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 368 "abortafixedarrayelementwrittenpastitslength.c"
+#line 356 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 371 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 374 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_decref(h4_own4);
     return t12;
 }

@@ -92,17 +92,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 106 "main.c"
+#line 103 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Date_eq(const h_main_Date *a, const h_main_Date *b);
@@ -135,7 +132,7 @@ void h_main_main(void);
 
 #line 32 "examples/dates/main.hero"
 bool h_main_is_leap(int64_t h0_year) {
-#line 139 "main.c"
+#line 136 "main.c"
     bool h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -237,16 +234,14 @@ bb6:
     goto bb4;
 #line 37 "examples/dates/main.hero"
 bb7:
-#line 34 "examples/dates/main.hero"
+#line 238 "main.c"
     t18 = h1_ret0;
-#line 34 "examples/dates/main.hero"
     return t18;
-#line 245 "main.c"
 }
 
 #line 41 "examples/dates/main.hero"
 int64_t h_main_days_in_month(int64_t h0_year, int64_t h1_month) {
-#line 250 "main.c"
+#line 245 "main.c"
     int64_t h2_r0;
     int64_t h3_s0;
     int64_t h4_r1;
@@ -316,7 +311,6 @@ bb1:
     h3_s0 = t9;
 #line 48 "examples/dates/main.hero"
     t10 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t11 = INT64_C(1);
 #line 48 "examples/dates/main.hero"
     t12 = t10 == t11;
@@ -344,7 +338,6 @@ bb4:
     goto bb22;
 #line 43 "examples/dates/main.hero"
 bb5:
-#line 44 "examples/dates/main.hero"
     t6 = INT64_C(29);
 #line 43 "examples/dates/main.hero"
     h2_r0 = t6;
@@ -368,7 +361,6 @@ bb7:
     goto bb22;
 #line 48 "examples/dates/main.hero"
 bb8:
-#line 49 "examples/dates/main.hero"
     t43 = INT64_C(31);
 #line 48 "examples/dates/main.hero"
     h4_r1 = t43;
@@ -378,7 +370,6 @@ bb8:
 bb9:
 #line 48 "examples/dates/main.hero"
     t13 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t14 = INT64_C(3);
 #line 48 "examples/dates/main.hero"
     t15 = t13 == t14;
@@ -388,7 +379,6 @@ bb9:
 bb10:
 #line 48 "examples/dates/main.hero"
     t16 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t17 = INT64_C(5);
 #line 48 "examples/dates/main.hero"
     t18 = t16 == t17;
@@ -398,7 +388,6 @@ bb10:
 bb11:
 #line 48 "examples/dates/main.hero"
     t19 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t20 = INT64_C(7);
 #line 48 "examples/dates/main.hero"
     t21 = t19 == t20;
@@ -408,7 +397,6 @@ bb11:
 bb12:
 #line 48 "examples/dates/main.hero"
     t22 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t23 = INT64_C(8);
 #line 48 "examples/dates/main.hero"
     t24 = t22 == t23;
@@ -418,7 +406,6 @@ bb12:
 bb13:
 #line 48 "examples/dates/main.hero"
     t25 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t26 = INT64_C(10);
 #line 48 "examples/dates/main.hero"
     t27 = t25 == t26;
@@ -428,7 +415,6 @@ bb13:
 bb14:
 #line 48 "examples/dates/main.hero"
     t28 = h3_s0;
-#line 49 "examples/dates/main.hero"
     t29 = INT64_C(12);
 #line 48 "examples/dates/main.hero"
     t30 = t28 == t29;
@@ -496,16 +482,14 @@ bb21:
     goto bb7;
 #line 48 "examples/dates/main.hero"
 bb22:
-#line 43 "examples/dates/main.hero"
+#line 486 "main.c"
     t47 = h5_ret0;
-#line 43 "examples/dates/main.hero"
     return t47;
-#line 504 "main.c"
 }
 
 #line 53 "examples/dates/main.hero"
 int64_t h_main_days_in_year(int64_t h0_year) {
-#line 509 "main.c"
+#line 493 "main.c"
     int64_t h1_r0;
     int64_t t1;
     bool t2;
@@ -528,7 +512,6 @@ bb1:
     return t5;
 #line 54 "examples/dates/main.hero"
 bb2:
-#line 55 "examples/dates/main.hero"
     t3 = INT64_C(366);
 #line 54 "examples/dates/main.hero"
     h1_r0 = t3;
@@ -542,12 +525,12 @@ bb3:
     h1_r0 = t4;
 #line 54 "examples/dates/main.hero"
     goto bb1;
-#line 546 "main.c"
+#line 529 "main.c"
 }
 
 #line 59 "examples/dates/main.hero"
 bool h_main_valid(h_main_Date h0_d) {
-#line 551 "main.c"
+#line 534 "main.c"
     bool h1_b0;
     bool h2_ret0;
     h_main_Date t1;
@@ -622,7 +605,6 @@ bb3:
     if (t9) goto bb4; else goto bb5;
 #line 60 "examples/dates/main.hero"
 bb4:
-#line 61 "examples/dates/main.hero"
     t10 = false;
 #line 61 "examples/dates/main.hero"
     h2_ret0 = t10;
@@ -668,16 +650,14 @@ bb8:
     goto bb6;
 #line 64 "examples/dates/main.hero"
 bb9:
-#line 61 "examples/dates/main.hero"
+#line 654 "main.c"
     t24 = h2_ret0;
-#line 61 "examples/dates/main.hero"
     return t24;
-#line 676 "main.c"
 }
 
 #line 70 "examples/dates/main.hero"
 h_0opt_e201354 h_main_day_of_year(h_main_Date h0_d) {
-#line 681 "main.c"
+#line 661 "main.c"
     int64_t h1_total;
     int64_t h2_month;
     h_0opt_e201354 h3_ret0 = {0};
@@ -728,7 +708,6 @@ bb1:
     t8 = t7.f_day;
 #line 73 "examples/dates/main.hero"
     h1_total = t8;
-#line 74 "examples/dates/main.hero"
     t9 = INT64_C(1);
 #line 74 "examples/dates/main.hero"
     h2_month = t9;
@@ -740,10 +719,8 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_7f352bd5);
 #line 72 "examples/dates/main.hero"
     t5 = HERO_STR_LIT(hero_str_800adfc);
-#line 744 "main.c"
+#line 723 "main.c"
     hero_str_incref(t4);
-#line 72 "examples/dates/main.hero"
-#line 747 "main.c"
     hero_str_incref(t5);
 #line 72 "examples/dates/main.hero"
     t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -751,7 +728,7 @@ bb2:
     t26 = h4_own4;
 #line 72 "examples/dates/main.hero"
     h4_own4 = t6;
-#line 755 "main.c"
+#line 732 "main.c"
     h_0opt_e201354_release(&t26);
 #line 72 "examples/dates/main.hero"
     h3_ret0 = t6;
@@ -775,7 +752,6 @@ bb4:
     if (t13) goto bb5; else goto bb6;
 #line 76 "examples/dates/main.hero"
 bb5:
-#line 77 "examples/dates/main.hero"
     t14 = h1_total;
 #line 77 "examples/dates/main.hero"
     t15 = h0_d;
@@ -789,7 +765,6 @@ bb5:
     if (__builtin_add_overflow(t14, t18, &t19)) hero_panic_overflow();
 #line 77 "examples/dates/main.hero"
     h1_total = t19;
-#line 78 "examples/dates/main.hero"
     t20 = h2_month;
 #line 78 "examples/dates/main.hero"
     t21 = INT64_C(1);
@@ -809,7 +784,7 @@ bb6:
     t27 = h5_own5;
 #line 80 "examples/dates/main.hero"
     h5_own5 = t24;
-#line 813 "main.c"
+#line 788 "main.c"
     h_0opt_e201354_release(&t27);
 #line 80 "examples/dates/main.hero"
     h3_ret0 = t24;
@@ -817,22 +792,17 @@ bb6:
     goto bb7;
 #line 80 "examples/dates/main.hero"
 bb7:
-#line 72 "examples/dates/main.hero"
+#line 796 "main.c"
     t25 = h3_ret0;
-#line 823 "main.c"
     h_0opt_e201354_retain(&t25);
-#line 72 "examples/dates/main.hero"
-#line 826 "main.c"
     h_0opt_e201354_release(&h4_own4);
-#line 72 "examples/dates/main.hero"
-#line 829 "main.c"
     h_0opt_e201354_release(&h5_own5);
     return t25;
 }
 
 #line 86 "examples/dates/main.hero"
 h_0opt_e201354 h_main_days_before(h_main_Date h0_d) {
-#line 836 "main.c"
+#line 806 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_inside;
     int64_t h3_years;
@@ -892,15 +862,15 @@ bb0:
     t38 = h6_own6;
 #line 87 "examples/dates/main.hero"
     h6_own6 = t2;
-#line 896 "main.c"
+#line 866 "main.c"
     h_0opt_e201354_release(&t38);
 #line 87 "examples/dates/main.hero"
     t39 = h1_f0;
-#line 900 "main.c"
+#line 870 "main.c"
     h_0opt_e201354_retain(&t2);
 #line 87 "examples/dates/main.hero"
     h1_f0 = t2;
-#line 904 "main.c"
+#line 874 "main.c"
     h_0opt_e201354_release(&t39);
 #line 87 "examples/dates/main.hero"
     t3 = h1_f0;
@@ -920,7 +890,6 @@ bb1:
     t11 = t10.as.ok;
 #line 87 "examples/dates/main.hero"
     h2_inside = t11;
-#line 88 "examples/dates/main.hero"
     t12 = h0_d;
 #line 88 "examples/dates/main.hero"
     t13 = t12.f_year;
@@ -966,7 +935,6 @@ bb1:
     if (__builtin_add_overflow(t22, t25, &t26)) hero_panic_overflow();
 #line 93 "examples/dates/main.hero"
     h4_leaps = t26;
-#line 94 "examples/dates/main.hero"
     t27 = h3_years;
 #line 94 "examples/dates/main.hero"
     t28 = INT64_C(365);
@@ -990,7 +958,7 @@ bb1:
     t40 = h7_own7;
 #line 94 "examples/dates/main.hero"
     h7_own7 = t36;
-#line 994 "main.c"
+#line 962 "main.c"
     h_0opt_e201354_release(&t40);
 #line 94 "examples/dates/main.hero"
     h5_ret0 = t36;
@@ -1002,7 +970,7 @@ bb2:
     t7 = h1_f0;
 #line 87 "examples/dates/main.hero"
     t8 = t7.as.err;
-#line 1006 "main.c"
+#line 974 "main.c"
     hero_failure_retain(&t8);
 #line 87 "examples/dates/main.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -1010,7 +978,7 @@ bb2:
     t41 = h8_own8;
 #line 87 "examples/dates/main.hero"
     h8_own8 = t9;
-#line 1014 "main.c"
+#line 982 "main.c"
     h_0opt_e201354_release(&t41);
 #line 87 "examples/dates/main.hero"
     h5_ret0 = t9;
@@ -1018,28 +986,19 @@ bb2:
     goto bb3;
 #line 87 "examples/dates/main.hero"
 bb3:
-#line 87 "examples/dates/main.hero"
+#line 990 "main.c"
     t37 = h5_ret0;
-#line 1024 "main.c"
     h_0opt_e201354_retain(&t37);
-#line 87 "examples/dates/main.hero"
-#line 1027 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 87 "examples/dates/main.hero"
-#line 1030 "main.c"
     h_0opt_e201354_release(&h6_own6);
-#line 87 "examples/dates/main.hero"
-#line 1033 "main.c"
     h_0opt_e201354_release(&h7_own7);
-#line 87 "examples/dates/main.hero"
-#line 1036 "main.c"
     h_0opt_e201354_release(&h8_own8);
     return t37;
 }
 
 #line 96 "examples/dates/main.hero"
 h_0opt_e201354 h_main_between(h_main_Date h0_from, h_main_Date h1_to) {
-#line 1043 "main.c"
+#line 1002 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_first;
     h_0opt_e201354 h4_f1 = {0};
@@ -1094,15 +1053,15 @@ bb0:
     t28 = h7_own7;
 #line 97 "examples/dates/main.hero"
     h7_own7 = t2;
-#line 1098 "main.c"
+#line 1057 "main.c"
     h_0opt_e201354_release(&t28);
 #line 97 "examples/dates/main.hero"
     t29 = h2_f0;
-#line 1102 "main.c"
+#line 1061 "main.c"
     h_0opt_e201354_retain(&t2);
 #line 97 "examples/dates/main.hero"
     h2_f0 = t2;
-#line 1106 "main.c"
+#line 1065 "main.c"
     h_0opt_e201354_release(&t29);
 #line 97 "examples/dates/main.hero"
     t3 = h2_f0;
@@ -1122,7 +1081,6 @@ bb1:
     t11 = t10.as.ok;
 #line 97 "examples/dates/main.hero"
     h3_first = t11;
-#line 98 "examples/dates/main.hero"
     t12 = h1_to;
 #line 98 "examples/dates/main.hero"
     t13 = h_main_days_before(t12);
@@ -1130,15 +1088,15 @@ bb1:
     t30 = h8_own8;
 #line 98 "examples/dates/main.hero"
     h8_own8 = t13;
-#line 1134 "main.c"
+#line 1092 "main.c"
     h_0opt_e201354_release(&t30);
 #line 98 "examples/dates/main.hero"
     t31 = h4_f1;
-#line 1138 "main.c"
+#line 1096 "main.c"
     h_0opt_e201354_retain(&t13);
 #line 98 "examples/dates/main.hero"
     h4_f1 = t13;
-#line 1142 "main.c"
+#line 1100 "main.c"
     h_0opt_e201354_release(&t31);
 #line 98 "examples/dates/main.hero"
     t14 = h4_f1;
@@ -1156,7 +1114,7 @@ bb2:
     t7 = h2_f0;
 #line 97 "examples/dates/main.hero"
     t8 = t7.as.err;
-#line 1160 "main.c"
+#line 1118 "main.c"
     hero_failure_retain(&t8);
 #line 97 "examples/dates/main.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -1164,7 +1122,7 @@ bb2:
     t32 = h9_own9;
 #line 97 "examples/dates/main.hero"
     h9_own9 = t9;
-#line 1168 "main.c"
+#line 1126 "main.c"
     h_0opt_e201354_release(&t32);
 #line 97 "examples/dates/main.hero"
     h6_ret0 = t9;
@@ -1172,13 +1130,11 @@ bb2:
     goto bb5;
 #line 97 "examples/dates/main.hero"
 bb3:
-#line 98 "examples/dates/main.hero"
     t21 = h4_f1;
 #line 98 "examples/dates/main.hero"
     t22 = t21.as.ok;
 #line 98 "examples/dates/main.hero"
     h5_second = t22;
-#line 99 "examples/dates/main.hero"
     t23 = h5_second;
 #line 99 "examples/dates/main.hero"
     t24 = h3_first;
@@ -1190,7 +1146,7 @@ bb3:
     t33 = h10_own10;
 #line 99 "examples/dates/main.hero"
     h10_own10 = t26;
-#line 1194 "main.c"
+#line 1150 "main.c"
     h_0opt_e201354_release(&t33);
 #line 99 "examples/dates/main.hero"
     h6_ret0 = t26;
@@ -1202,7 +1158,7 @@ bb4:
     t18 = h4_f1;
 #line 98 "examples/dates/main.hero"
     t19 = t18.as.err;
-#line 1206 "main.c"
+#line 1162 "main.c"
     hero_failure_retain(&t19);
 #line 98 "examples/dates/main.hero"
     t20 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t19};
@@ -1210,7 +1166,7 @@ bb4:
     t34 = h11_own11;
 #line 98 "examples/dates/main.hero"
     h11_own11 = t20;
-#line 1214 "main.c"
+#line 1170 "main.c"
     h_0opt_e201354_release(&t34);
 #line 98 "examples/dates/main.hero"
     h6_ret0 = t20;
@@ -1218,37 +1174,22 @@ bb4:
     goto bb5;
 #line 98 "examples/dates/main.hero"
 bb5:
-#line 97 "examples/dates/main.hero"
+#line 1178 "main.c"
     t27 = h6_ret0;
-#line 1224 "main.c"
     h_0opt_e201354_retain(&t27);
-#line 97 "examples/dates/main.hero"
-#line 1227 "main.c"
     h_0opt_e201354_release(&h2_f0);
-#line 97 "examples/dates/main.hero"
-#line 1230 "main.c"
     h_0opt_e201354_release(&h4_f1);
-#line 97 "examples/dates/main.hero"
-#line 1233 "main.c"
     h_0opt_e201354_release(&h7_own7);
-#line 97 "examples/dates/main.hero"
-#line 1236 "main.c"
     h_0opt_e201354_release(&h8_own8);
-#line 97 "examples/dates/main.hero"
-#line 1239 "main.c"
     h_0opt_e201354_release(&h9_own9);
-#line 97 "examples/dates/main.hero"
-#line 1242 "main.c"
     h_0opt_e201354_release(&h10_own10);
-#line 97 "examples/dates/main.hero"
-#line 1245 "main.c"
     h_0opt_e201354_release(&h11_own11);
     return t27;
 }
 
 #line 104 "examples/dates/main.hero"
 h_0opt_e201354 h_main_weekday(h_main_Date h0_d) {
-#line 1252 "main.c"
+#line 1193 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_ret0 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -1283,15 +1224,15 @@ bb0:
     t16 = h3_own3;
 #line 105 "examples/dates/main.hero"
     h3_own3 = t2;
-#line 1287 "main.c"
+#line 1228 "main.c"
     h_0opt_e201354_release(&t16);
 #line 105 "examples/dates/main.hero"
     t17 = h1_f0;
-#line 1291 "main.c"
+#line 1232 "main.c"
     h_0opt_e201354_retain(&t2);
 #line 105 "examples/dates/main.hero"
     h1_f0 = t2;
-#line 1295 "main.c"
+#line 1236 "main.c"
     h_0opt_e201354_release(&t17);
 #line 105 "examples/dates/main.hero"
     t3 = h1_f0;
@@ -1323,7 +1264,7 @@ bb1:
     t18 = h4_own4;
 #line 105 "examples/dates/main.hero"
     h4_own4 = t14;
-#line 1327 "main.c"
+#line 1268 "main.c"
     h_0opt_e201354_release(&t18);
 #line 105 "examples/dates/main.hero"
     h2_ret0 = t14;
@@ -1335,7 +1276,7 @@ bb2:
     t7 = h1_f0;
 #line 105 "examples/dates/main.hero"
     t8 = t7.as.err;
-#line 1339 "main.c"
+#line 1280 "main.c"
     hero_failure_retain(&t8);
 #line 105 "examples/dates/main.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -1343,7 +1284,7 @@ bb2:
     t19 = h5_own5;
 #line 105 "examples/dates/main.hero"
     h5_own5 = t9;
-#line 1347 "main.c"
+#line 1288 "main.c"
     h_0opt_e201354_release(&t19);
 #line 105 "examples/dates/main.hero"
     h2_ret0 = t9;
@@ -1351,28 +1292,19 @@ bb2:
     goto bb3;
 #line 105 "examples/dates/main.hero"
 bb3:
-#line 105 "examples/dates/main.hero"
+#line 1296 "main.c"
     t15 = h2_ret0;
-#line 1357 "main.c"
     h_0opt_e201354_retain(&t15);
-#line 105 "examples/dates/main.hero"
-#line 1360 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 105 "examples/dates/main.hero"
-#line 1363 "main.c"
     h_0opt_e201354_release(&h3_own3);
-#line 105 "examples/dates/main.hero"
-#line 1366 "main.c"
     h_0opt_e201354_release(&h4_own4);
-#line 105 "examples/dates/main.hero"
-#line 1369 "main.c"
     h_0opt_e201354_release(&h5_own5);
     return t15;
 }
 
 #line 107 "examples/dates/main.hero"
 h_0opt_f87774a h_main_weekday_name(h_main_Date h0_d) {
-#line 1376 "main.c"
+#line 1308 "main.c"
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_day;
     int64_t h3_s0;
@@ -1445,15 +1377,15 @@ bb0:
     t42 = h7_own7;
 #line 112 "examples/dates/main.hero"
     h7_own7 = t2;
-#line 1449 "main.c"
+#line 1381 "main.c"
     h_0opt_e201354_release(&t42);
 #line 112 "examples/dates/main.hero"
     t43 = h1_f0;
-#line 1453 "main.c"
+#line 1385 "main.c"
     h_0opt_e201354_retain(&t2);
 #line 112 "examples/dates/main.hero"
     h1_f0 = t2;
-#line 1457 "main.c"
+#line 1389 "main.c"
     h_0opt_e201354_release(&t43);
 #line 112 "examples/dates/main.hero"
     t3 = h1_f0;
@@ -1479,7 +1411,6 @@ bb1:
     h3_s0 = t12;
 #line 114 "examples/dates/main.hero"
     t13 = h3_s0;
-#line 115 "examples/dates/main.hero"
     t14 = INT64_C(0);
 #line 114 "examples/dates/main.hero"
     t15 = t13 == t14;
@@ -1491,7 +1422,7 @@ bb2:
     t7 = h1_f0;
 #line 112 "examples/dates/main.hero"
     t8 = t7.as.err;
-#line 1495 "main.c"
+#line 1426 "main.c"
     hero_failure_retain(&t8);
 #line 112 "examples/dates/main.hero"
     t9 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t8};
@@ -1499,7 +1430,7 @@ bb2:
     t44 = h8_own8;
 #line 112 "examples/dates/main.hero"
     h8_own8 = t9;
-#line 1503 "main.c"
+#line 1434 "main.c"
     h_0opt_f87774a_release(&t44);
 #line 112 "examples/dates/main.hero"
     h6_ret0 = t9;
@@ -1511,15 +1442,15 @@ bb3:
     t38 = h4_r0;
 #line 114 "examples/dates/main.hero"
     t45 = h5_name;
-#line 1515 "main.c"
+#line 1446 "main.c"
     hero_str_incref(t38);
 #line 114 "examples/dates/main.hero"
     h5_name = t38;
-#line 1519 "main.c"
+#line 1450 "main.c"
     hero_str_decref(t45);
 #line 123 "examples/dates/main.hero"
     t39 = h5_name;
-#line 1523 "main.c"
+#line 1454 "main.c"
     hero_str_incref(t39);
 #line 123 "examples/dates/main.hero"
     t40 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t39};
@@ -1527,7 +1458,7 @@ bb3:
     t46 = h9_own9;
 #line 123 "examples/dates/main.hero"
     h9_own9 = t40;
-#line 1531 "main.c"
+#line 1462 "main.c"
     h_0opt_f87774a_release(&t46);
 #line 123 "examples/dates/main.hero"
     h6_ret0 = t40;
@@ -1539,11 +1470,11 @@ bb4:
     t31 = HERO_STR_LIT(hero_str_52147e66);
 #line 114 "examples/dates/main.hero"
     t47 = h4_r0;
-#line 1543 "main.c"
+#line 1474 "main.c"
     hero_str_incref(t31);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t31;
-#line 1547 "main.c"
+#line 1478 "main.c"
     hero_str_decref(t47);
     goto bb3;
 bb5:
@@ -1561,11 +1492,11 @@ bb6:
     t32 = HERO_STR_LIT(hero_str_3a80d773);
 #line 114 "examples/dates/main.hero"
     t48 = h4_r0;
-#line 1565 "main.c"
+#line 1496 "main.c"
     hero_str_incref(t32);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t32;
-#line 1569 "main.c"
+#line 1500 "main.c"
     hero_str_decref(t48);
     goto bb3;
 bb7:
@@ -1583,11 +1514,11 @@ bb8:
     t33 = HERO_STR_LIT(hero_str_1859d93c);
 #line 114 "examples/dates/main.hero"
     t49 = h4_r0;
-#line 1587 "main.c"
+#line 1518 "main.c"
     hero_str_incref(t33);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t33;
-#line 1591 "main.c"
+#line 1522 "main.c"
     hero_str_decref(t49);
     goto bb3;
 bb9:
@@ -1605,11 +1536,11 @@ bb10:
     t34 = HERO_STR_LIT(hero_str_6b9629ec);
 #line 114 "examples/dates/main.hero"
     t50 = h4_r0;
-#line 1609 "main.c"
+#line 1540 "main.c"
     hero_str_incref(t34);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t34;
-#line 1613 "main.c"
+#line 1544 "main.c"
     hero_str_decref(t50);
     goto bb3;
 bb11:
@@ -1627,11 +1558,11 @@ bb12:
     t35 = HERO_STR_LIT(hero_str_25740cb0);
 #line 114 "examples/dates/main.hero"
     t51 = h4_r0;
-#line 1631 "main.c"
+#line 1562 "main.c"
     hero_str_incref(t35);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t35;
-#line 1635 "main.c"
+#line 1566 "main.c"
     hero_str_decref(t51);
     goto bb3;
 bb13:
@@ -1649,11 +1580,11 @@ bb14:
     t36 = HERO_STR_LIT(hero_str_3c4bbc23);
 #line 114 "examples/dates/main.hero"
     t52 = h4_r0;
-#line 1653 "main.c"
+#line 1584 "main.c"
     hero_str_incref(t36);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t36;
-#line 1657 "main.c"
+#line 1588 "main.c"
     hero_str_decref(t52);
     goto bb3;
 bb15:
@@ -1663,42 +1594,28 @@ bb16:
     t37 = HERO_STR_LIT(hero_str_2080896b);
 #line 114 "examples/dates/main.hero"
     t53 = h4_r0;
-#line 1667 "main.c"
+#line 1598 "main.c"
     hero_str_incref(t37);
 #line 114 "examples/dates/main.hero"
     h4_r0 = t37;
-#line 1671 "main.c"
+#line 1602 "main.c"
     hero_str_decref(t53);
     goto bb3;
 bb17:
-#line 112 "examples/dates/main.hero"
     t41 = h6_ret0;
-#line 1677 "main.c"
     h_0opt_f87774a_retain(&t41);
-#line 112 "examples/dates/main.hero"
-#line 1680 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 112 "examples/dates/main.hero"
-#line 1683 "main.c"
     hero_str_decref(h4_r0);
-#line 112 "examples/dates/main.hero"
-#line 1686 "main.c"
     hero_str_decref(h5_name);
-#line 112 "examples/dates/main.hero"
-#line 1689 "main.c"
     h_0opt_e201354_release(&h7_own7);
-#line 112 "examples/dates/main.hero"
-#line 1692 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 112 "examples/dates/main.hero"
-#line 1695 "main.c"
     h_0opt_f87774a_release(&h9_own9);
     return t41;
 }
 
 #line 125 "examples/dates/main.hero"
 HeroStr h_main_shown(h_main_Date h0_d) {
-#line 1702 "main.c"
+#line 1619 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -1740,7 +1657,7 @@ bb0:
     t16 = h1_own1;
 #line 126 "examples/dates/main.hero"
     h1_own1 = t3;
-#line 1744 "main.c"
+#line 1661 "main.c"
     hero_str_decref(t16);
 #line 126 "examples/dates/main.hero"
     t4 = HERO_STR_LIT(hero_str_2d);
@@ -1750,7 +1667,7 @@ bb0:
     t17 = h2_own2;
 #line 126 "examples/dates/main.hero"
     h2_own2 = t5;
-#line 1754 "main.c"
+#line 1671 "main.c"
     hero_str_decref(t17);
 #line 126 "examples/dates/main.hero"
     t6 = h0_d;
@@ -1762,7 +1679,7 @@ bb0:
     t18 = h3_own3;
 #line 126 "examples/dates/main.hero"
     h3_own3 = t8;
-#line 1766 "main.c"
+#line 1683 "main.c"
     hero_str_decref(t18);
 #line 126 "examples/dates/main.hero"
     t9 = hero_str_concat(t5, t8);
@@ -1770,7 +1687,7 @@ bb0:
     t19 = h4_own4;
 #line 126 "examples/dates/main.hero"
     h4_own4 = t9;
-#line 1774 "main.c"
+#line 1691 "main.c"
     hero_str_decref(t19);
 #line 126 "examples/dates/main.hero"
     t10 = HERO_STR_LIT(hero_str_2d);
@@ -1780,7 +1697,7 @@ bb0:
     t20 = h5_own5;
 #line 126 "examples/dates/main.hero"
     h5_own5 = t11;
-#line 1784 "main.c"
+#line 1701 "main.c"
     hero_str_decref(t20);
 #line 126 "examples/dates/main.hero"
     t12 = h0_d;
@@ -1792,7 +1709,7 @@ bb0:
     t21 = h6_own6;
 #line 126 "examples/dates/main.hero"
     h6_own6 = t14;
-#line 1796 "main.c"
+#line 1713 "main.c"
     hero_str_decref(t21);
 #line 126 "examples/dates/main.hero"
     t15 = hero_str_concat(t11, t14);
@@ -1800,38 +1717,22 @@ bb0:
     t22 = h7_own7;
 #line 126 "examples/dates/main.hero"
     h7_own7 = t15;
-#line 1804 "main.c"
+#line 1721 "main.c"
     hero_str_decref(t22);
-#line 126 "examples/dates/main.hero"
-#line 1807 "main.c"
     hero_str_incref(t15);
-#line 126 "examples/dates/main.hero"
-#line 1810 "main.c"
     hero_str_decref(h1_own1);
-#line 126 "examples/dates/main.hero"
-#line 1813 "main.c"
     hero_str_decref(h2_own2);
-#line 126 "examples/dates/main.hero"
-#line 1816 "main.c"
     hero_str_decref(h3_own3);
-#line 126 "examples/dates/main.hero"
-#line 1819 "main.c"
     hero_str_decref(h4_own4);
-#line 126 "examples/dates/main.hero"
-#line 1822 "main.c"
     hero_str_decref(h5_own5);
-#line 126 "examples/dates/main.hero"
-#line 1825 "main.c"
     hero_str_decref(h6_own6);
-#line 126 "examples/dates/main.hero"
-#line 1828 "main.c"
     hero_str_decref(h7_own7);
     return t15;
 }
 
 #line 128 "examples/dates/main.hero"
 HeroStr h_main_padded(int64_t h0_n) {
-#line 1835 "main.c"
+#line 1736 "main.c"
     HeroStr h1_r0 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -1865,19 +1766,11 @@ bb0:
 bb1:
 #line 129 "examples/dates/main.hero"
     t10 = h1_r0;
-#line 1869 "main.c"
+#line 1770 "main.c"
     hero_str_incref(t10);
-#line 129 "examples/dates/main.hero"
-#line 1872 "main.c"
     hero_str_decref(h1_r0);
-#line 129 "examples/dates/main.hero"
-#line 1875 "main.c"
     hero_str_decref(h2_own2);
-#line 129 "examples/dates/main.hero"
-#line 1878 "main.c"
     hero_str_decref(h3_own3);
-#line 129 "examples/dates/main.hero"
-#line 1881 "main.c"
     hero_str_decref(h4_own4);
     return t10;
 bb2:
@@ -1891,7 +1784,7 @@ bb2:
     t11 = h2_own2;
 #line 130 "examples/dates/main.hero"
     h2_own2 = t6;
-#line 1895 "main.c"
+#line 1788 "main.c"
     hero_str_decref(t11);
 #line 130 "examples/dates/main.hero"
     t7 = hero_str_concat(t4, t6);
@@ -1899,15 +1792,15 @@ bb2:
     t12 = h3_own3;
 #line 130 "examples/dates/main.hero"
     h3_own3 = t7;
-#line 1903 "main.c"
+#line 1796 "main.c"
     hero_str_decref(t12);
 #line 129 "examples/dates/main.hero"
     t13 = h1_r0;
-#line 1907 "main.c"
+#line 1800 "main.c"
     hero_str_incref(t7);
 #line 129 "examples/dates/main.hero"
     h1_r0 = t7;
-#line 1911 "main.c"
+#line 1804 "main.c"
     hero_str_decref(t13);
     goto bb1;
 bb3:
@@ -1919,22 +1812,22 @@ bb3:
     t14 = h4_own4;
 #line 132 "examples/dates/main.hero"
     h4_own4 = t9;
-#line 1923 "main.c"
+#line 1816 "main.c"
     hero_str_decref(t14);
 #line 129 "examples/dates/main.hero"
     t15 = h1_r0;
-#line 1927 "main.c"
+#line 1820 "main.c"
     hero_str_incref(t9);
 #line 129 "examples/dates/main.hero"
     h1_r0 = t9;
-#line 1931 "main.c"
+#line 1824 "main.c"
     hero_str_decref(t15);
     goto bb1;
 }
 
 #line 134 "examples/dates/main.hero"
 void h_main_main(void) {
-#line 1938 "main.c"
+#line 1831 "main.c"
     h_main_Date h0_landing;
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_f87774a h2_f1 = {0};
@@ -2088,7 +1981,6 @@ bb0:
     hero_print_bool(t2);
 #line 136 "examples/dates/main.hero"
     hero_print_end();
-#line 137 "examples/dates/main.hero"
     t3 = INT64_C(1900);
 #line 137 "examples/dates/main.hero"
     t4 = h_main_is_leap(t3);
@@ -2096,7 +1988,6 @@ bb0:
     hero_print_bool(t4);
 #line 137 "examples/dates/main.hero"
     hero_print_end();
-#line 138 "examples/dates/main.hero"
     t5 = INT64_C(2000);
 #line 138 "examples/dates/main.hero"
     t6 = h_main_is_leap(t5);
@@ -2104,7 +1995,6 @@ bb0:
     hero_print_bool(t6);
 #line 138 "examples/dates/main.hero"
     hero_print_end();
-#line 139 "examples/dates/main.hero"
     t7 = INT64_C(2023);
 #line 139 "examples/dates/main.hero"
     t8 = h_main_is_leap(t7);
@@ -2122,7 +2012,6 @@ bb0:
     hero_print_int(t11);
 #line 141 "examples/dates/main.hero"
     hero_print_end();
-#line 142 "examples/dates/main.hero"
     t12 = INT64_C(1900);
 #line 142 "examples/dates/main.hero"
     t13 = INT64_C(2);
@@ -2132,7 +2021,6 @@ bb0:
     hero_print_int(t14);
 #line 142 "examples/dates/main.hero"
     hero_print_end();
-#line 143 "examples/dates/main.hero"
     t15 = INT64_C(2024);
 #line 143 "examples/dates/main.hero"
     t16 = h_main_days_in_year(t15);
@@ -2140,7 +2028,6 @@ bb0:
     hero_print_int(t16);
 #line 143 "examples/dates/main.hero"
     hero_print_end();
-#line 144 "examples/dates/main.hero"
     t17 = INT64_C(1900);
 #line 144 "examples/dates/main.hero"
     t18 = h_main_days_in_year(t17);
@@ -2158,7 +2045,6 @@ bb0:
     t22 = (h_main_Date){.f_year = t19, .f_month = t20, .f_day = t21};
 #line 146 "examples/dates/main.hero"
     h0_landing = t22;
-#line 147 "examples/dates/main.hero"
     t23 = h0_landing;
 #line 147 "examples/dates/main.hero"
     t24 = h_main_shown(t23);
@@ -2166,13 +2052,12 @@ bb0:
     t112 = h9_own9;
 #line 147 "examples/dates/main.hero"
     h9_own9 = t24;
-#line 2170 "main.c"
+#line 2056 "main.c"
     hero_str_decref(t112);
 #line 147 "examples/dates/main.hero"
     hero_print_str(t24);
 #line 147 "examples/dates/main.hero"
     hero_print_end();
-#line 148 "examples/dates/main.hero"
     t25 = h0_landing;
 #line 148 "examples/dates/main.hero"
     t26 = h_main_day_of_year(t25);
@@ -2180,15 +2065,15 @@ bb0:
     t113 = h10_own10;
 #line 148 "examples/dates/main.hero"
     h10_own10 = t26;
-#line 2184 "main.c"
+#line 2069 "main.c"
     h_0opt_e201354_release(&t113);
 #line 148 "examples/dates/main.hero"
     t114 = h1_f0;
-#line 2188 "main.c"
+#line 2073 "main.c"
     h_0opt_e201354_retain(&t26);
 #line 148 "examples/dates/main.hero"
     h1_f0 = t26;
-#line 2192 "main.c"
+#line 2077 "main.c"
     h_0opt_e201354_release(&t114);
 #line 148 "examples/dates/main.hero"
     t27 = h1_f0;
@@ -2210,7 +2095,6 @@ bb1:
     hero_print_int(t34);
 #line 148 "examples/dates/main.hero"
     hero_print_end();
-#line 149 "examples/dates/main.hero"
     t35 = h0_landing;
 #line 149 "examples/dates/main.hero"
     t36 = h_main_weekday_name(t35);
@@ -2218,15 +2102,15 @@ bb1:
     t115 = h11_own11;
 #line 149 "examples/dates/main.hero"
     h11_own11 = t36;
-#line 2222 "main.c"
+#line 2106 "main.c"
     h_0opt_f87774a_release(&t115);
 #line 149 "examples/dates/main.hero"
     t116 = h2_f1;
-#line 2226 "main.c"
+#line 2110 "main.c"
     h_0opt_f87774a_retain(&t36);
 #line 149 "examples/dates/main.hero"
     h2_f1 = t36;
-#line 2230 "main.c"
+#line 2114 "main.c"
     h_0opt_f87774a_release(&t116);
 #line 149 "examples/dates/main.hero"
     t37 = h2_f1;
@@ -2244,7 +2128,7 @@ bb2:
     t31 = h1_f0;
 #line 148 "examples/dates/main.hero"
     t32 = t31.as.err;
-#line 2248 "main.c"
+#line 2132 "main.c"
     hero_panic_must(t32);
     hero_unreachable();
 bb3:
@@ -2266,7 +2150,6 @@ bb3:
     t48 = (h_main_Date){.f_year = t45, .f_month = t46, .f_day = t47};
 #line 152 "examples/dates/main.hero"
     h3_millennium = t48;
-#line 153 "examples/dates/main.hero"
     t49 = h0_landing;
 #line 153 "examples/dates/main.hero"
     t50 = h3_millennium;
@@ -2276,15 +2159,15 @@ bb3:
     t117 = h12_own12;
 #line 153 "examples/dates/main.hero"
     h12_own12 = t51;
-#line 2280 "main.c"
+#line 2163 "main.c"
     h_0opt_e201354_release(&t117);
 #line 153 "examples/dates/main.hero"
     t118 = h4_f2;
-#line 2284 "main.c"
+#line 2167 "main.c"
     h_0opt_e201354_retain(&t51);
 #line 153 "examples/dates/main.hero"
     h4_f2 = t51;
-#line 2288 "main.c"
+#line 2171 "main.c"
     h_0opt_e201354_release(&t118);
 #line 153 "examples/dates/main.hero"
     t52 = h4_f2;
@@ -2302,7 +2185,7 @@ bb4:
     t41 = h2_f1;
 #line 149 "examples/dates/main.hero"
     t42 = t41.as.err;
-#line 2306 "main.c"
+#line 2189 "main.c"
     hero_panic_must(t42);
     hero_unreachable();
 bb5:
@@ -2336,15 +2219,15 @@ bb5:
     t119 = h13_own13;
 #line 156 "examples/dates/main.hero"
     h13_own13 = t68;
-#line 2340 "main.c"
+#line 2223 "main.c"
     h_0opt_e201354_release(&t119);
 #line 156 "examples/dates/main.hero"
     t120 = h5_f3;
-#line 2344 "main.c"
+#line 2227 "main.c"
     h_0opt_e201354_retain(&t68);
 #line 156 "examples/dates/main.hero"
     h5_f3 = t68;
-#line 2348 "main.c"
+#line 2231 "main.c"
     h_0opt_e201354_release(&t120);
 #line 156 "examples/dates/main.hero"
     t69 = h5_f3;
@@ -2362,7 +2245,7 @@ bb6:
     t56 = h4_f2;
 #line 153 "examples/dates/main.hero"
     t57 = t56.as.err;
-#line 2366 "main.c"
+#line 2249 "main.c"
     hero_panic_must(t57);
     hero_unreachable();
 bb7:
@@ -2374,7 +2257,6 @@ bb7:
     hero_print_int(t76);
 #line 156 "examples/dates/main.hero"
     hero_print_end();
-#line 157 "examples/dates/main.hero"
     t77 = INT64_C(2023);
 #line 157 "examples/dates/main.hero"
     t78 = INT64_C(2);
@@ -2396,15 +2278,15 @@ bb7:
     t121 = h14_own14;
 #line 157 "examples/dates/main.hero"
     h14_own14 = t85;
-#line 2400 "main.c"
+#line 2282 "main.c"
     h_0opt_e201354_release(&t121);
 #line 157 "examples/dates/main.hero"
     t122 = h6_f4;
-#line 2404 "main.c"
+#line 2286 "main.c"
     h_0opt_e201354_retain(&t85);
 #line 157 "examples/dates/main.hero"
     h6_f4 = t85;
-#line 2408 "main.c"
+#line 2290 "main.c"
     h_0opt_e201354_release(&t122);
 #line 157 "examples/dates/main.hero"
     t86 = h6_f4;
@@ -2422,7 +2304,7 @@ bb8:
     t73 = h5_f3;
 #line 156 "examples/dates/main.hero"
     t74 = t73.as.err;
-#line 2426 "main.c"
+#line 2308 "main.c"
     hero_panic_must(t74);
     hero_unreachable();
 bb9:
@@ -2448,15 +2330,15 @@ bb9:
     t123 = h15_own15;
 #line 160 "examples/dates/main.hero"
     h15_own15 = t98;
-#line 2452 "main.c"
+#line 2334 "main.c"
     h_0opt_e201354_release(&t123);
 #line 160 "examples/dates/main.hero"
     t124 = h7_f5;
-#line 2456 "main.c"
+#line 2338 "main.c"
     h_0opt_e201354_retain(&t98);
 #line 160 "examples/dates/main.hero"
     h7_f5 = t98;
-#line 2460 "main.c"
+#line 2342 "main.c"
     h_0opt_e201354_release(&t124);
 #line 160 "examples/dates/main.hero"
     t99 = h7_f5;
@@ -2470,7 +2352,6 @@ bb9:
     hero_print_bool(t102);
 #line 160 "examples/dates/main.hero"
     hero_print_end();
-#line 161 "examples/dates/main.hero"
     t103 = INT64_C(2024);
 #line 161 "examples/dates/main.hero"
     t104 = INT64_C(2);
@@ -2484,15 +2365,15 @@ bb9:
     t125 = h16_own16;
 #line 161 "examples/dates/main.hero"
     h16_own16 = t107;
-#line 2488 "main.c"
+#line 2369 "main.c"
     h_0opt_e201354_release(&t125);
 #line 161 "examples/dates/main.hero"
     t126 = h8_f6;
-#line 2492 "main.c"
+#line 2373 "main.c"
     h_0opt_e201354_retain(&t107);
 #line 161 "examples/dates/main.hero"
     h8_f6 = t107;
-#line 2496 "main.c"
+#line 2377 "main.c"
     h_0opt_e201354_release(&t126);
 #line 161 "examples/dates/main.hero"
     t108 = h8_f6;
@@ -2506,49 +2387,21 @@ bb9:
     hero_print_bool(t111);
 #line 161 "examples/dates/main.hero"
     hero_print_end();
-#line 2510 "main.c"
+#line 2391 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 161 "examples/dates/main.hero"
-#line 2513 "main.c"
     h_0opt_f87774a_release(&h2_f1);
-#line 161 "examples/dates/main.hero"
-#line 2516 "main.c"
     h_0opt_e201354_release(&h4_f2);
-#line 161 "examples/dates/main.hero"
-#line 2519 "main.c"
     h_0opt_e201354_release(&h5_f3);
-#line 161 "examples/dates/main.hero"
-#line 2522 "main.c"
     h_0opt_e201354_release(&h6_f4);
-#line 161 "examples/dates/main.hero"
-#line 2525 "main.c"
     h_0opt_e201354_release(&h7_f5);
-#line 161 "examples/dates/main.hero"
-#line 2528 "main.c"
     h_0opt_e201354_release(&h8_f6);
-#line 161 "examples/dates/main.hero"
-#line 2531 "main.c"
     hero_str_decref(h9_own9);
-#line 161 "examples/dates/main.hero"
-#line 2534 "main.c"
     h_0opt_e201354_release(&h10_own10);
-#line 161 "examples/dates/main.hero"
-#line 2537 "main.c"
     h_0opt_f87774a_release(&h11_own11);
-#line 161 "examples/dates/main.hero"
-#line 2540 "main.c"
     h_0opt_e201354_release(&h12_own12);
-#line 161 "examples/dates/main.hero"
-#line 2543 "main.c"
     h_0opt_e201354_release(&h13_own13);
-#line 161 "examples/dates/main.hero"
-#line 2546 "main.c"
     h_0opt_e201354_release(&h14_own14);
-#line 161 "examples/dates/main.hero"
-#line 2549 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 161 "examples/dates/main.hero"
-#line 2552 "main.c"
     h_0opt_e201354_release(&h16_own16);
     return;
 bb10:
@@ -2556,7 +2409,7 @@ bb10:
     t90 = h6_f4;
 #line 157 "examples/dates/main.hero"
     t91 = t90.as.err;
-#line 2560 "main.c"
+#line 2413 "main.c"
     hero_panic_must(t91);
     hero_unreachable();
 }

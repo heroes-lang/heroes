@@ -17,13 +17,11 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct big) - __builtin_offsetof(struct big, name) != 0, "heroes-ffi-flex Big name");
 #line 13 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 _Static_assert(_Generic(&((struct big *)0)->name, _Bool (*)[256]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[256]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[256]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[256]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[256]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[256]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[256]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[256]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[256]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[256]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[256]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[256]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Big name");
-#line 14 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 _Static_assert(__builtin_classify_type(((struct big *)0)->n) == 1 && sizeof(((struct big *)0)->n) == sizeof(int32_t) && (_Generic(((struct big *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Big n");
-#line 15 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 _Static_assert(sizeof(struct big) - __builtin_offsetof(struct big, tail) != 0, "heroes-ffi-flex Big tail");
 #line 15 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 _Static_assert(_Generic(&((struct big *)0)->tail, _Bool (*)[100]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[100]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[100]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[100]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[100]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[100]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[100]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[100]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[100]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[100]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[100]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[100]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Big tail");
-#line 27 "ffirestzeroarecordoflongarrays.c"
+#line 25 "ffirestzeroarecordoflongarrays.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -88,17 +86,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_ffirestzeroarecordoflongarrays_big_arrays(struct big * a0) { (void)(big_arrays)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "ffirestzeroarecordoflongarrays.c"
+#line 97 "ffirestzeroarecordoflongarrays.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_Big_eq(const struct big *a, const struct big *b);
@@ -118,7 +113,7 @@ void h_ffirestzeroarecordoflongarrays_main(void);
 
 #line 19 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 struct big h_ffirestzeroarecordoflongarrays_one_named(void) {
-#line 122 "ffirestzeroarecordoflongarrays.c"
+#line 117 "ffirestzeroarecordoflongarrays.c"
     int32_t t1;
     struct big t2;
     goto bb0;
@@ -133,12 +128,12 @@ bb0:
     t2.n = t1;
 #line 20 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return t2;
-#line 137 "ffirestzeroarecordoflongarrays.c"
+#line 132 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 struct big h_ffirestzeroarecordoflongarrays_none_named(void) {
-#line 142 "ffirestzeroarecordoflongarrays.c"
+#line 137 "ffirestzeroarecordoflongarrays.c"
     struct big t1;
     goto bb0;
 bb0:
@@ -148,12 +143,12 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 27 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return t1;
-#line 152 "ffirestzeroarecordoflongarrays.c"
+#line 147 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 void h_ffirestzeroarecordoflongarrays_main(void) {
-#line 157 "ffirestzeroarecordoflongarrays.c"
+#line 152 "ffirestzeroarecordoflongarrays.c"
     struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a");
 #define h0_a (*hero_lend_h0_a)
     struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b");
@@ -172,11 +167,9 @@ void h_ffirestzeroarecordoflongarrays_main(void) {
 bb0:
 #line 30 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     (void)dirty();
-#line 31 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t1 = h_ffirestzeroarecordoflongarrays_one_named();
 #line 31 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     h0_a = t1;
-#line 32 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t2 = h0_a;
 #line 32 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t3 = t2.n;
@@ -194,13 +187,10 @@ bb0:
     hero_print_int(t5);
 #line 32 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     hero_print_end();
-#line 33 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     (void)dirty();
-#line 34 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t6 = h_ffirestzeroarecordoflongarrays_none_named();
 #line 34 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     h1_b = t6;
-#line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t7 = h1_b;
 #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t8 = t7.n;
@@ -224,7 +214,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return;
-#line 228 "ffirestzeroarecordoflongarrays.c"
+#line 218 "ffirestzeroarecordoflongarrays.c"
 }
 #undef h0_a
 #undef h1_b

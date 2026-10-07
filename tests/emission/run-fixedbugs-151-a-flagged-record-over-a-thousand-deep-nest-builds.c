@@ -2015,9 +2015,8 @@ _Static_assert(_Generic(&((G998 *)0)->inner, G997 *: 1, default: 0) && sizeof(((
 _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((G999 *)0)->inner) == sizeof(G998), "heroes-ffi-field G999 inner");
 #line 2027 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 _Static_assert(_Generic(&((TOP *)0)->inner, G999 *: 1, default: 0) && sizeof(((TOP *)0)->inner) == sizeof(G999), "heroes-ffi-field TOP inner");
-#line 2028 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 _Static_assert(__builtin_classify_type(((TOP *)0)->i) == 1 && sizeof(((TOP *)0)->i) == sizeof(int32_t) && (_Generic(((TOP *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field TOP i");
-#line 2021 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 2020 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -2078,17 +2077,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2092 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 2088 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_G0_eq(const G0 *a, const G0 *b);
@@ -4106,7 +4102,7 @@ void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void);
 
 #line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void) {
-#line 4110 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 4106 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
     TOP t1;
     int32_t t2;
     goto bb0;
@@ -4121,7 +4117,7 @@ bb0:
     hero_print_end();
 #line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
     return;
-#line 4125 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 4121 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;

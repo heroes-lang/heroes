@@ -73,21 +73,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 7 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396alocalisnamedbythecallthatoverrunsit_put_one(int32_t * a0, int32_t a1) { (void)(put_one)((void *)a0, a1); }
-#line 8 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396alocalisnamedbythecallthatoverrunsit_put_two(int32_t * a0) { (void)(put_two)((void *)a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 87 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -103,7 +99,7 @@ void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void) {
-#line 107 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 103 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
     int32_t *const hero_lend_h0_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocalisnamedbythecallthatoverrunsit.main", "x");
 #define h0_x (*hero_lend_h0_x)
     int32_t t1;
@@ -117,23 +113,19 @@ bb0:
     t1 = INT64_C(0);
 #line 11 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     h0_x = t1;
-#line 12 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     t2 = INT64_C(7);
 #line 12 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     hero_lend_local_name(hero_lend_h0_x, "put_one", "x");
 #line 12 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     (void)put_one((void *)&h0_x, t2);
-#line 13 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     t3 = h0_x;
 #line 13 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     hero_print_int(t3);
 #line 13 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     hero_print_end();
-#line 14 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     hero_lend_local_name(hero_lend_h0_x, "put_two", "x");
 #line 14 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     (void)put_two((void *)&h0_x);
-#line 15 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     t4 = HERO_STR_LIT(hero_str_5687795c);
 #line 15 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     t5 = h0_x;
@@ -147,7 +139,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_x);
 #line 15 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     return;
-#line 151 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 143 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
 }
 #undef h0_x
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

@@ -72,21 +72,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 18 "examples/nqueens/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_spawn(h_0fn_48ac9712 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
-#line 19 "examples/nqueens/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "main.c"
+#line 86 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -115,7 +111,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 21 "examples/nqueens/main.hero"
 int64_t h_main_SIZE(void) {
-#line 119 "main.c"
+#line 115 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -123,12 +119,12 @@ bb0:
     t1 = INT64_C(8);
 #line 22 "examples/nqueens/main.hero"
     return t1;
-#line 127 "main.c"
+#line 123 "main.c"
 }
 
 #line 26 "examples/nqueens/main.hero"
 bool h_main_fits(HeroArrayHeader * h0_placed, int64_t h1_col) {
-#line 132 "main.c"
+#line 128 "main.c"
     int64_t h2_row;
     int64_t h3_other;
     int64_t h4_down;
@@ -189,7 +185,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "examples/nqueens/main.hero"
 bb2:
-#line 30 "examples/nqueens/main.hero"
     t6 = h0_placed;
 #line 30 "examples/nqueens/main.hero"
     t7 = h2_row;
@@ -287,7 +282,6 @@ bb9:
     if (t27) goto bb10; else goto bb11;
 #line 36 "examples/nqueens/main.hero"
 bb10:
-#line 37 "examples/nqueens/main.hero"
     t28 = false;
 #line 37 "examples/nqueens/main.hero"
     h6_ret0 = t28;
@@ -299,16 +293,14 @@ bb11:
     goto bb7;
 #line 37 "examples/nqueens/main.hero"
 bb12:
-#line 33 "examples/nqueens/main.hero"
+#line 297 "main.c"
     t33 = h6_ret0;
-#line 33 "examples/nqueens/main.hero"
     return t33;
-#line 307 "main.c"
 }
 
 #line 43 "examples/nqueens/main.hero"
 int64_t h_main_solutions_from(HeroArrayHeader * h0_placed) {
-#line 312 "main.c"
+#line 304 "main.c"
     int64_t h1_found;
     int64_t h2_col;
     HeroArrayHeader * h3_deeper = {0};
@@ -356,7 +348,6 @@ bb1:
     t6 = INT64_C(0);
 #line 46 "examples/nqueens/main.hero"
     h1_found = t6;
-#line 47 "examples/nqueens/main.hero"
     t7 = INT64_C(0);
 #line 47 "examples/nqueens/main.hero"
     h2_col = t7;
@@ -386,7 +377,6 @@ bb4:
     if (t10) goto bb5; else goto bb6;
 #line 49 "examples/nqueens/main.hero"
 bb5:
-#line 50 "examples/nqueens/main.hero"
     t11 = h0_placed;
 #line 50 "examples/nqueens/main.hero"
     t12 = h2_col;
@@ -420,17 +410,16 @@ bb8:
     t14 = h0_placed;
 #line 51 "examples/nqueens/main.hero"
     t27 = h3_deeper;
-#line 424 "main.c"
+#line 414 "main.c"
     hero_array_incref(t14);
 #line 51 "examples/nqueens/main.hero"
     h3_deeper = t14;
-#line 428 "main.c"
+#line 418 "main.c"
     hero_array_decref(t27);
 #line 52 "examples/nqueens/main.hero"
     t16 = h2_col;
 #line 52 "examples/nqueens/main.hero"
     hero_array_push_owned(&h3_deeper, &t16);
-#line 53 "examples/nqueens/main.hero"
     t18 = h1_found;
 #line 53 "examples/nqueens/main.hero"
     t19 = h3_deeper;
@@ -448,16 +437,15 @@ bb9:
     goto bb7;
 #line 53 "examples/nqueens/main.hero"
 bb10:
-#line 45 "examples/nqueens/main.hero"
+#line 441 "main.c"
     t26 = h4_ret0;
-#line 454 "main.c"
     hero_array_decref(h3_deeper);
     return t26;
 }
 
 #line 59 "examples/nqueens/main.hero"
 int64_t h_main_from_column(int64_t h0_col) {
-#line 461 "main.c"
+#line 449 "main.c"
     hero_thread_guard("main.from_column");
     HeroArrayHeader * h1_start = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -479,24 +467,22 @@ bb0:
     t5 = h2_own2;
 #line 60 "examples/nqueens/main.hero"
     h2_own2 = t2;
-#line 483 "main.c"
+#line 471 "main.c"
     hero_array_decref(t5);
 #line 60 "examples/nqueens/main.hero"
     t6 = h1_start;
-#line 487 "main.c"
+#line 475 "main.c"
     hero_array_incref(t2);
 #line 60 "examples/nqueens/main.hero"
     h1_start = t2;
-#line 491 "main.c"
+#line 479 "main.c"
     hero_array_decref(t6);
 #line 61 "examples/nqueens/main.hero"
     t3 = h1_start;
 #line 61 "examples/nqueens/main.hero"
     t4 = h_main_solutions_from(t3);
-#line 497 "main.c"
+#line 485 "main.c"
     hero_array_decref(h1_start);
-#line 61 "examples/nqueens/main.hero"
-#line 500 "main.c"
     hero_array_decref(h2_own2);
     return t4;
 }
@@ -508,7 +494,7 @@ int64_t h_0cb_main_from_column(int64_t h0_col) {
 
 #line 63 "examples/nqueens/main.hero"
 int64_t h_main_together(void) {
-#line 512 "main.c"
+#line 498 "main.c"
     HeroArrayHeader * h0_handles = {0};
     int64_t h1_c;
     int64_t h2_found;
@@ -556,15 +542,15 @@ bb0:
     t32 = h6_own6;
 #line 64 "examples/nqueens/main.hero"
     h6_own6 = t1;
-#line 560 "main.c"
+#line 546 "main.c"
     hero_array_decref(t32);
 #line 64 "examples/nqueens/main.hero"
     t33 = h0_handles;
-#line 564 "main.c"
+#line 550 "main.c"
     hero_array_incref(t1);
 #line 64 "examples/nqueens/main.hero"
     h0_handles = t1;
-#line 568 "main.c"
+#line 554 "main.c"
     hero_array_decref(t33);
 #line 65 "examples/nqueens/main.hero"
     t2 = INT64_C(0);
@@ -584,7 +570,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 67 "examples/nqueens/main.hero"
 bb2:
-#line 68 "examples/nqueens/main.hero"
     t7 = h_main_from_column;
 #line 68 "examples/nqueens/main.hero"
     t8 = h1_c;
@@ -592,7 +577,6 @@ bb2:
     t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 68 "examples/nqueens/main.hero"
     hero_array_push_owned(&h0_handles, &t9);
-#line 69 "examples/nqueens/main.hero"
     t11 = h1_c;
 #line 69 "examples/nqueens/main.hero"
     t12 = INT64_C(1);
@@ -612,11 +596,11 @@ bb3:
     t15 = h0_handles;
 #line 73 "examples/nqueens/main.hero"
     t34 = h3_xs0;
-#line 616 "main.c"
+#line 600 "main.c"
     hero_array_incref(t15);
 #line 73 "examples/nqueens/main.hero"
     h3_xs0 = t15;
-#line 620 "main.c"
+#line 604 "main.c"
     hero_array_decref(t34);
 #line 73 "examples/nqueens/main.hero"
     t16 = INT64_C(0);
@@ -646,7 +630,6 @@ bb5:
     t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 73 "examples/nqueens/main.hero"
     h5_h = t23;
-#line 74 "examples/nqueens/main.hero"
     t24 = h2_found;
 #line 74 "examples/nqueens/main.hero"
     t25 = h5_h;
@@ -674,20 +657,16 @@ bb6:
 bb7:
 #line 76 "examples/nqueens/main.hero"
     t31 = h2_found;
-#line 678 "main.c"
+#line 661 "main.c"
     hero_array_decref(h0_handles);
-#line 76 "examples/nqueens/main.hero"
-#line 681 "main.c"
     hero_array_decref(h3_xs0);
-#line 76 "examples/nqueens/main.hero"
-#line 684 "main.c"
     hero_array_decref(h6_own6);
     return t31;
 }
 
 #line 78 "examples/nqueens/main.hero"
 int64_t h_main_alone(void) {
-#line 691 "main.c"
+#line 670 "main.c"
     HeroArrayHeader * h0_empty = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -703,31 +682,29 @@ bb0:
     t4 = h1_own1;
 #line 79 "examples/nqueens/main.hero"
     h1_own1 = t1;
-#line 707 "main.c"
+#line 686 "main.c"
     hero_array_decref(t4);
 #line 79 "examples/nqueens/main.hero"
     t5 = h0_empty;
-#line 711 "main.c"
+#line 690 "main.c"
     hero_array_incref(t1);
 #line 79 "examples/nqueens/main.hero"
     h0_empty = t1;
-#line 715 "main.c"
+#line 694 "main.c"
     hero_array_decref(t5);
 #line 80 "examples/nqueens/main.hero"
     t2 = h0_empty;
 #line 80 "examples/nqueens/main.hero"
     t3 = h_main_solutions_from(t2);
-#line 721 "main.c"
+#line 700 "main.c"
     hero_array_decref(h0_empty);
-#line 80 "examples/nqueens/main.hero"
-#line 724 "main.c"
     hero_array_decref(h1_own1);
     return t3;
 }
 
 #line 82 "examples/nqueens/main.hero"
 void h_main_main(void) {
-#line 731 "main.c"
+#line 708 "main.c"
     HeroStr t1;
     int64_t t2;
     HeroStr t3;
@@ -754,7 +731,7 @@ bb0:
     hero_print_end();
 #line 83 "examples/nqueens/main.hero"
     return;
-#line 758 "main.c"
+#line 735 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -79,23 +79,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 11 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handlealivethroughareferencereleasedtwice_cert_up_ref(x509 * a0) { (void)(cert_up_ref)(a0); }
-#line 12 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handlealivethroughareferencereleasedtwice_cert_free(x509 * a0) { (void)(cert_free)(a0); }
-#line 13 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handlealivethroughareferencereleasedtwice_cert_refs(x509 * a0) { (void)(cert_refs)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "handlealivethroughareferencereleasedtwice.c"
+#line 94 "handlealivethroughareferencereleasedtwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b);
@@ -113,7 +108,7 @@ void h_handlealivethroughareferencereleasedtwice_main(void);
 
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 void h_handlealivethroughareferencereleasedtwice_main(void) {
-#line 117 "handlealivethroughareferencereleasedtwice.c"
+#line 112 "handlealivethroughareferencereleasedtwice.c"
     x509 * h0_cert;
     int32_t h1_rc;
     x509 * t1;
@@ -138,7 +133,6 @@ bb0:
     hero_handle_acquired(t1, "cert_free");
 #line 16 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     h0_cert = t1;
-#line 17 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t2 = h0_cert;
 #line 17 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     hero_handle_alive(t2, "the argument `a` of `cert_up_ref`");
@@ -154,7 +148,6 @@ bb0:
     }
 #line 17 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     h1_rc = t3;
-#line 18 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t4 = HERO_STR_LIT(hero_str_56a606ee);
 #line 18 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t5 = h1_rc;
@@ -176,7 +169,6 @@ bb0:
     hero_print_int(t8);
 #line 18 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     hero_print_end();
-#line 19 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t9 = h0_cert;
 #line 19 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     {
@@ -190,7 +182,6 @@ bb0:
     if (hero_handle_ended(t9, hero_life_0_0) && h0_cert == t9) h0_cert = hero_handle_dead();
 #line 19 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     }
-#line 20 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t10 = HERO_STR_LIT(hero_str_7b9bb5d3);
 #line 20 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t11 = h0_cert;
@@ -204,7 +195,6 @@ bb0:
     hero_print_int(t12);
 #line 20 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     hero_print_end();
-#line 21 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t13 = h0_cert;
 #line 21 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     {
@@ -218,7 +208,6 @@ bb0:
     if (hero_handle_ended(t13, hero_life_0_0) && h0_cert == t13) h0_cert = hero_handle_dead();
 #line 21 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     }
-#line 22 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t14 = HERO_STR_LIT(hero_str_58753951);
 #line 22 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     hero_print_str(t14);
@@ -226,7 +215,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     return;
-#line 230 "handlealivethroughareferencereleasedtwice.c"
+#line 219 "handlealivethroughareferencereleasedtwice.c"
 }
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b) {
     return hero_handle_eq(*a, *b);

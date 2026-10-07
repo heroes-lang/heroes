@@ -15,17 +15,14 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 23 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *)0)->r) == sizeof(uint8_t) && (_Generic(((Color *)0)->r, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color r");
-#line 24 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
-#line 25 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
-#line 26 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 25 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 22 "fixedbugsarecordsonlygrouplosesitsheader.c"
 
 #line 22 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
-#line 29 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 26 "fixedbugsarecordsonlygrouplosesitsheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -86,17 +83,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 94 "fixedbugsarecordsonlygrouplosesitsheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b);
@@ -114,7 +108,7 @@ void h_fixedbugsarecordsonlygrouplosesitsheader_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
-#line 118 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 112 "fixedbugsarecordsonlygrouplosesitsheader.c"
     Color h0_red;
     uint8_t t1;
     uint8_t t2;
@@ -139,7 +133,6 @@ bb0:
     t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4};
 #line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     h0_red = t5;
-#line 30 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t6 = h0_red;
 #line 30 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t7 = t6.r;
@@ -147,7 +140,6 @@ bb0:
     hero_print_int(t7);
 #line 30 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     hero_print_end();
-#line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t8 = h0_red;
 #line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t9 = t8.a;
@@ -157,7 +149,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     return;
-#line 161 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 153 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

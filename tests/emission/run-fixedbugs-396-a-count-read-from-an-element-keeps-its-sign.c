@@ -75,17 +75,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396acountreadfromanelementkeepsitssign_fill_cell(uint8_t * a0, int32_t * a1) { (void)(fill_cell)((void *)a0, (void *)a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 86 "fixedbugs396acountreadfromanelementkeepsitssign.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -101,7 +98,7 @@ void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
 void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void) {
-#line 105 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 102 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     HeroArrayHeader * h0_counts = {0};
     HeroArrayHeader * h1_buf = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -142,15 +139,15 @@ bb0:
     t17 = h2_own2;
 #line 12 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     h2_own2 = t3;
-#line 146 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 143 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(t17);
 #line 12 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t18 = h0_counts;
-#line 150 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 147 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_incref(t3);
 #line 12 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     h0_counts = t3;
-#line 154 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 151 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(t18);
 #line 13 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t4 = hero_array_new(&hero_desc_u8, 1);
@@ -158,15 +155,15 @@ bb0:
     t19 = h3_own3;
 #line 13 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     h3_own3 = t4;
-#line 162 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 159 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(t19);
 #line 13 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t20 = h1_buf;
-#line 166 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 163 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_incref(t4);
 #line 13 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     h1_buf = t4;
-#line 170 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 167 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(t20);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t5 = INT64_C(0);
@@ -212,7 +209,6 @@ bb0:
     hero_print_int(t13);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_end();
-#line 15 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t14 = INT64_C(1);
 #line 15 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_array_unshare(&(h0_counts));
@@ -234,22 +230,15 @@ bb0:
     hero_print_int(t15);
 #line 15 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_end();
-#line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t16 = HERO_STR_LIT(hero_str_4414937d);
 #line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_str(t16);
 #line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_end();
-#line 244 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 239 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(h0_counts);
-#line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
-#line 247 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(h1_buf);
-#line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
-#line 250 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(h2_own2);
-#line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
-#line 253 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_decref(h3_own3);
     return;
 }

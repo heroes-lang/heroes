@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 77 "fixedbugs169brackets2000deepbuildandrun.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +92,7 @@ void h_fixedbugs169brackets2000deepbuildandrun_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
 int64_t h_fixedbugs169brackets2000deepbuildandrun_g(int64_t h0_v) {
-#line 99 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 96 "fixedbugs169brackets2000deepbuildandrun.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -103,12 +100,12 @@ bb0:
     t1 = h0_v;
 #line 17 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     return t1;
-#line 107 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 104 "fixedbugs169brackets2000deepbuildandrun.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
 int64_t h_fixedbugs169brackets2000deepbuildandrun_calls(void) {
-#line 112 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 109 "fixedbugs169brackets2000deepbuildandrun.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -6116,12 +6113,12 @@ bb0:
     t2001 = h_fixedbugs169brackets2000deepbuildandrun_g(t2000);
 #line 20 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     return t2001;
-#line 6120 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6117 "fixedbugs169brackets2000deepbuildandrun.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
 HeroStr h_fixedbugs169brackets2000deepbuildandrun_holes(void) {
-#line 6125 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6122 "fixedbugs169brackets2000deepbuildandrun.c"
     HeroStr h0_own0 = {0};
     int64_t t1;
     HeroStr t2;
@@ -6136,20 +6133,16 @@ bb0:
     t3 = h0_own0;
 #line 25 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     h0_own0 = t2;
-#line 6140 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6137 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_decref(t3);
-#line 25 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
-#line 6143 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_incref(t2);
-#line 25 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
-#line 6146 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_decref(h0_own0);
     return t2;
 }
 
 #line 27 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
 void h_fixedbugs169brackets2000deepbuildandrun_main(void) {
-#line 6153 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6146 "fixedbugs169brackets2000deepbuildandrun.c"
     HeroStr h0_own0 = {0};
     int64_t t1;
     HeroStr t2;
@@ -6162,19 +6155,18 @@ bb0:
     hero_print_int(t1);
 #line 28 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     t2 = h_fixedbugs169brackets2000deepbuildandrun_holes();
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     t3 = h0_own0;
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     h0_own0 = t2;
-#line 6172 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6164 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_decref(t3);
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_print_str(t2);
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_print_end();
-#line 6178 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6170 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_decref(h0_own0);
     return;
 }

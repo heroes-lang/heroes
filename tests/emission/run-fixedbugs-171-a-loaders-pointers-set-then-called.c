@@ -72,21 +72,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 12 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs171aloaderspointerssetthencalled_vkAdd(int32_t a0, int32_t a1) { (void)(vkAdd)(a0, a1); }
-#line 13 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs171aloaderspointerssetthencalled_glAdd(int32_t a0, int32_t a1) { (void)(glAdd)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 86 "fixedbugs171aloaderspointerssetthencalled.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -102,7 +98,7 @@ void h_fixedbugs171aloaderspointerssetthencalled_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 void h_fixedbugs171aloaderspointerssetthencalled_main(void) {
-#line 106 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 102 "fixedbugs171aloaderspointerssetthencalled.c"
     int32_t t1;
     int32_t t2;
     int32_t t3;
@@ -113,7 +109,6 @@ void h_fixedbugs171aloaderspointerssetthencalled_main(void) {
 bb0:
 #line 16 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     (void)load_all();
-#line 17 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     t1 = INT64_C(2);
 #line 17 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     t2 = INT64_C(3);
@@ -123,7 +118,6 @@ bb0:
     hero_print_int(t3);
 #line 17 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     t4 = INT64_C(4);
 #line 18 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     t5 = INT64_C(5);
@@ -135,7 +129,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     return;
-#line 139 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 133 "fixedbugs171aloaderspointerssetthencalled.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

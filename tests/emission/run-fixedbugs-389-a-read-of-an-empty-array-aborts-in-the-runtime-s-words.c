@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 77 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void);
 
 #line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void) {
-#line 96 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 93 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     HeroArrayHeader * h0_empty = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -111,15 +108,15 @@ bb0:
     t7 = h1_own1;
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     h1_own1 = t1;
-#line 115 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 112 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_decref(t7);
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t8 = h0_empty;
-#line 119 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 116 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_incref(t1);
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     h0_empty = t1;
-#line 123 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 120 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_decref(t8);
 #line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t2 = h0_empty;
@@ -129,7 +126,6 @@ bb0:
     hero_print_int(t3);
 #line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t4 = h0_empty;
 #line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t5 = INT64_C(0);
@@ -139,10 +135,8 @@ bb0:
     hero_print_int(t6);
 #line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 143 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 139 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_decref(h0_empty);
-#line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-#line 146 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_decref(h1_own1);
     return;
 }

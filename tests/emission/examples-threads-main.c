@@ -79,17 +79,14 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_spawn(h_0f
 __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "main.c"
+#line 90 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -120,7 +117,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 48 "examples/threads/main.hero"
 int64_t h_main_band(int64_t h0_index) {
-#line 124 "main.c"
+#line 121 "main.c"
     hero_thread_guard("main.band");
     int64_t h1_total;
     int64_t h2_n;
@@ -150,7 +147,6 @@ bb0:
     t1 = INT64_C(0);
 #line 49 "examples/threads/main.hero"
     h1_total = t1;
-#line 50 "examples/threads/main.hero"
     t2 = h0_index;
 #line 50 "examples/threads/main.hero"
     t3 = INT64_C(1000);
@@ -180,7 +176,6 @@ bb1:
     if (t11) goto bb2; else goto bb3;
 #line 52 "examples/threads/main.hero"
 bb2:
-#line 53 "examples/threads/main.hero"
     t12 = h1_total;
 #line 53 "examples/threads/main.hero"
     t13 = h2_n;
@@ -192,7 +187,6 @@ bb2:
     if (__builtin_add_overflow(t12, t15, &t16)) hero_panic_overflow();
 #line 53 "examples/threads/main.hero"
     h1_total = t16;
-#line 54 "examples/threads/main.hero"
     t17 = h2_n;
 #line 54 "examples/threads/main.hero"
     t18 = INT64_C(1);
@@ -208,7 +202,7 @@ bb3:
     t20 = h1_total;
 #line 56 "examples/threads/main.hero"
     return t20;
-#line 212 "main.c"
+#line 206 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -218,7 +212,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 
 #line 74 "examples/threads/main.hero"
 int64_t h_main_descend(int64_t h0_n) {
-#line 222 "main.c"
+#line 216 "main.c"
     int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -273,16 +267,14 @@ bb3:
     goto bb1;
 #line 76 "examples/threads/main.hero"
 bb4:
-#line 76 "examples/threads/main.hero"
+#line 271 "main.c"
     t11 = h1_ret0;
-#line 76 "examples/threads/main.hero"
     return t11;
-#line 281 "main.c"
 }
 
 #line 81 "examples/threads/main.hero"
 int64_t h_main_deep(int64_t h0_levels) {
-#line 286 "main.c"
+#line 278 "main.c"
     hero_thread_guard("main.deep");
     int64_t t1;
     int64_t t2;
@@ -294,7 +286,7 @@ bb0:
     t2 = h_main_descend(t1);
 #line 82 "examples/threads/main.hero"
     return t2;
-#line 298 "main.c"
+#line 290 "main.c"
 }
 
 int64_t h_0cb_main_deep(int64_t h0_levels) {
@@ -304,7 +296,7 @@ int64_t h_0cb_main_deep(int64_t h0_levels) {
 
 #line 86 "examples/threads/main.hero"
 int64_t h_main_whole(int64_t h0_bands) {
-#line 308 "main.c"
+#line 300 "main.c"
     int64_t h1_total;
     int64_t h2_n;
     int64_t t1;
@@ -329,7 +321,6 @@ bb0:
     t1 = INT64_C(0);
 #line 87 "examples/threads/main.hero"
     h1_total = t1;
-#line 88 "examples/threads/main.hero"
     t2 = INT64_C(0);
 #line 88 "examples/threads/main.hero"
     h2_n = t2;
@@ -351,7 +342,6 @@ bb1:
     if (t7) goto bb2; else goto bb3;
 #line 90 "examples/threads/main.hero"
 bb2:
-#line 91 "examples/threads/main.hero"
     t8 = h1_total;
 #line 91 "examples/threads/main.hero"
     t9 = h2_n;
@@ -363,7 +353,6 @@ bb2:
     if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow();
 #line 91 "examples/threads/main.hero"
     h1_total = t12;
-#line 92 "examples/threads/main.hero"
     t13 = h2_n;
 #line 92 "examples/threads/main.hero"
     t14 = INT64_C(1);
@@ -379,12 +368,12 @@ bb3:
     t16 = h1_total;
 #line 94 "examples/threads/main.hero"
     return t16;
-#line 383 "main.c"
+#line 372 "main.c"
 }
 
 #line 96 "examples/threads/main.hero"
 int64_t h_main_in_parallel(int64_t h0_bands) {
-#line 388 "main.c"
+#line 377 "main.c"
     HeroArrayHeader * h1_handles = {0};
     int64_t h2_i;
     int64_t h3_total;
@@ -432,15 +421,15 @@ bb0:
     t32 = h7_own7;
 #line 97 "examples/threads/main.hero"
     h7_own7 = t1;
-#line 436 "main.c"
+#line 425 "main.c"
     hero_array_decref(t32);
 #line 97 "examples/threads/main.hero"
     t33 = h1_handles;
-#line 440 "main.c"
+#line 429 "main.c"
     hero_array_incref(t1);
 #line 97 "examples/threads/main.hero"
     h1_handles = t1;
-#line 444 "main.c"
+#line 433 "main.c"
     hero_array_decref(t33);
 #line 98 "examples/threads/main.hero"
     t2 = INT64_C(0);
@@ -460,7 +449,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 100 "examples/threads/main.hero"
 bb2:
-#line 101 "examples/threads/main.hero"
     t7 = h_main_band;
 #line 101 "examples/threads/main.hero"
     t8 = h2_i;
@@ -468,7 +456,6 @@ bb2:
     t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
 #line 101 "examples/threads/main.hero"
     hero_array_push_owned(&h1_handles, &t9);
-#line 102 "examples/threads/main.hero"
     t11 = h2_i;
 #line 102 "examples/threads/main.hero"
     t12 = INT64_C(1);
@@ -488,11 +475,11 @@ bb3:
     t15 = h1_handles;
 #line 106 "examples/threads/main.hero"
     t34 = h4_xs0;
-#line 492 "main.c"
+#line 479 "main.c"
     hero_array_incref(t15);
 #line 106 "examples/threads/main.hero"
     h4_xs0 = t15;
-#line 496 "main.c"
+#line 483 "main.c"
     hero_array_decref(t34);
 #line 106 "examples/threads/main.hero"
     t16 = INT64_C(0);
@@ -522,7 +509,6 @@ bb5:
     t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 106 "examples/threads/main.hero"
     h6_h = t23;
-#line 107 "examples/threads/main.hero"
     t24 = h3_total;
 #line 107 "examples/threads/main.hero"
     t25 = h6_h;
@@ -550,20 +536,16 @@ bb6:
 bb7:
 #line 109 "examples/threads/main.hero"
     t31 = h3_total;
-#line 554 "main.c"
+#line 540 "main.c"
     hero_array_decref(h1_handles);
-#line 109 "examples/threads/main.hero"
-#line 557 "main.c"
     hero_array_decref(h4_xs0);
-#line 109 "examples/threads/main.hero"
-#line 560 "main.c"
     hero_array_decref(h7_own7);
     return t31;
 }
 
 #line 111 "examples/threads/main.hero"
 void h_main_main(void) {
-#line 567 "main.c"
+#line 549 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -587,7 +569,6 @@ bb0:
     hero_print_int(t3);
 #line 112 "examples/threads/main.hero"
     hero_print_end();
-#line 113 "examples/threads/main.hero"
     t4 = HERO_STR_LIT(hero_str_4ddb55bc);
 #line 113 "examples/threads/main.hero"
     t5 = INT64_C(8);
@@ -599,7 +580,6 @@ bb0:
     hero_print_int(t6);
 #line 113 "examples/threads/main.hero"
     hero_print_end();
-#line 114 "examples/threads/main.hero"
     t7 = HERO_STR_LIT(hero_str_1926ec6c);
 #line 114 "examples/threads/main.hero"
     t8 = hero_thread_limit();
@@ -615,7 +595,7 @@ bb0:
     hero_print_end();
 #line 114 "examples/threads/main.hero"
     return;
-#line 619 "main.c"
+#line 599 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -76,6 +76,24 @@ function emit(@w: writer.Writer, f: containers.Function, c: state.Checked, term:
 
         .open => writer.line(@w, text: "    hero_unreachable(); /* a block was left open */")
 
+# Whether `op` reads the whole of the function's return slot, which only a
+# merged exit does (`ir/one_exit.hero`, defect 335, 2026-10-07). One exit
+# serves every `return` of such a function, so no one of their lines is its
+# own, and lldb stepping from any `return` but the first landed on the
+# first's. So the load, and what follows it, the releases and this file's
+# `return`, are written under the generated file, as a one-exit function's
+# cleanup is (design.md §3.1), and a step from any `return` goes straight to
+# the cleanup.
+function loads_return_slot(f: containers.Function, op: ir.OpKind) -> bool
+    match op
+        .load ld => return ld.place.path.length == 0 && containers.is_return_slot(f.slots[ld.place.root])
+        .lit | .store | .push_owned | .unary | .binary | .cast | .call | .construct => return false
+        .field | .index | .map_get | .len_of | .tag_of | .payload => return false
+        .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot => return false
+        .hole | .missing => return false
+
+    return false
+
 ## Tests
 
 test "both branch edges are written, and a switch carries C's default"

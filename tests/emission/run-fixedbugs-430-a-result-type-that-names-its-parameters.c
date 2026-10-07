@@ -74,17 +74,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 85 "fixedbugs430aresulttypethatnamesitsparameters.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs430aresulttypethatnamesitsparameters_Holder_eq(const h_fixedbugs430aresulttypethatnamesitsparameters_Holder *a, const h_fixedbugs430aresulttypethatnamesitsparameters_Holder *b);
@@ -119,7 +116,7 @@ HERO_TU_LOCAL int64_t h_fixedbugs430aresulttypethatnamesitsparameters_ident_1b9a
 
 #line 20 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 int64_t h_fixedbugs430aresulttypethatnamesitsparameters_inc(int64_t h0_x) {
-#line 123 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 120 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -133,12 +130,12 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 21 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t3;
-#line 137 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 134 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 int64_t h_fixedbugs430aresulttypethatnamesitsparameters_dec(int64_t h0_x) {
-#line 142 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 139 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -152,12 +149,12 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 24 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t3;
-#line 156 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 153 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 int64_t h_fixedbugs430aresulttypethatnamesitsparameters_first(int64_t h0_, int64_t h1_b) {
-#line 161 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 158 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -165,12 +162,12 @@ bb0:
     t1 = h1_b;
 #line 27 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 169 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 166 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 29 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 int64_t h_fixedbugs430aresulttypethatnamesitsparameters_sub(int64_t h0_a, int64_t h1_b) {
-#line 174 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 171 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -184,12 +181,12 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t3;
-#line 188 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 185 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 35 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 int64_t h_fixedbugs430aresulttypethatnamesitsparameters_other(int64_t h0_y) {
-#line 193 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 190 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -203,12 +200,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t3;
-#line 207 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 204 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 38 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_48ac9712 h_fixedbugs430aresulttypethatnamesitsparameters_plain(void) {
-#line 212 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 209 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_48ac9712 t1;
     goto bb0;
 bb0:
@@ -216,12 +213,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 39 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 220 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 217 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 41 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_by_name(void) {
-#line 225 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 222 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_48ac9712 t1;
     goto bb0;
 bb0:
@@ -229,12 +226,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 42 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 233 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 230 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 44 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_through_a_local(void) {
-#line 238 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 235 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_48ac9712 h0_f;
     h_0fn_48ac9712 t1;
     h_0fn_48ac9712 t2;
@@ -244,16 +241,15 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 45 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     h0_f = t1;
-#line 46 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t2 = h0_f;
 #line 46 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t2;
-#line 252 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 248 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_from_a_call(void) {
-#line 257 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 253 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_48ac9712 t1;
     goto bb0;
 bb0:
@@ -261,12 +257,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_plain();
 #line 49 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 265 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 261 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_2e6a42a3 h_fixedbugs430aresulttypethatnamesitsparameters_unnamed_position(void) {
-#line 270 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 266 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_53b967b3 t1;
     goto bb0;
 bb0:
@@ -274,12 +270,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_first;
 #line 52 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 278 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 274 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_an_instance(void) {
-#line 283 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 279 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_48ac9712 t1;
     goto bb0;
 bb0:
@@ -287,12 +283,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_ident_1b9a87;
 #line 55 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 291 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 287 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 57 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_by_arm(int64_t h0_n) {
-#line 296 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 292 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t h1_s0;
     h_0fn_65e16c85 h2_ret0;
     int64_t t1;
@@ -310,7 +306,6 @@ bb0:
     h1_s0 = t1;
 #line 58 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t2 = h1_s0;
-#line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t3 = INT64_C(0);
 #line 58 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t4 = t2 == t3;
@@ -318,7 +313,6 @@ bb0:
     if (t4) goto bb2; else goto bb3;
 #line 58 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 bb2:
-#line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t5 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     h2_ret0 = t5;
@@ -330,7 +324,6 @@ bb3:
     goto bb4;
 #line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 bb4:
-#line 60 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t6 = h_fixedbugs430aresulttypethatnamesitsparameters_dec;
 #line 60 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     h2_ret0 = t6;
@@ -338,16 +331,14 @@ bb4:
     goto bb5;
 #line 60 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 bb5:
-#line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
+#line 335 "fixedbugs430aresulttypethatnamesitsparameters.c"
     t7 = h2_ret0;
-#line 59 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t7;
-#line 346 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 62 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_by_if(bool h0_up) {
-#line 351 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 342 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_65e16c85 h1_r0;
     bool t1;
     h_0fn_48ac9712 t2;
@@ -367,7 +358,6 @@ bb1:
     return t4;
 #line 63 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 bb2:
-#line 64 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t2 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 63 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     h1_r0 = t2;
@@ -381,12 +371,12 @@ bb3:
     h1_r0 = t3;
 #line 63 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     goto bb1;
-#line 385 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 375 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 68 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_2e6a42a3 h_fixedbugs430aresulttypethatnamesitsparameters_agreeing(void) {
-#line 390 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 380 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_2e6a42a3 t1;
     goto bb0;
 bb0:
@@ -394,12 +384,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_sub;
 #line 69 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 398 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 388 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 71 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 h_0fn_65e16c85 h_fixedbugs430aresulttypethatnamesitsparameters_a_lone_name_otherwise(void) {
-#line 403 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 393 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_48ac9712 t1;
     goto bb0;
 bb0:
@@ -407,12 +397,12 @@ bb0:
     t1 = h_fixedbugs430aresulttypethatnamesitsparameters_other;
 #line 72 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 411 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 401 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 74 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 int64_t h_fixedbugs430aresulttypethatnamesitsparameters_apply(h_0fn_65e16c85 h0_f, int64_t h1_v) {
-#line 416 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 406 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_65e16c85 t1;
     int64_t t2;
     int64_t t3;
@@ -426,12 +416,12 @@ bb0:
     t3 = t1(t2);
 #line 75 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t3;
-#line 430 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 420 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 77 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 void h_fixedbugs430aresulttypethatnamesitsparameters_main(void) {
-#line 435 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 425 "fixedbugs430aresulttypethatnamesitsparameters.c"
     h_0fn_65e16c85 h0_bound;
     h_fixedbugs430aresulttypethatnamesitsparameters_Holder h1_h;
     h_0fn_65e16c85 t1;
@@ -494,7 +484,6 @@ bb0:
     hero_print_int(t3);
 #line 78 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 79 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t4 = h_fixedbugs430aresulttypethatnamesitsparameters_through_a_local();
 #line 79 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t5 = INT64_C(2);
@@ -504,7 +493,6 @@ bb0:
     hero_print_int(t6);
 #line 79 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 80 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t7 = h_fixedbugs430aresulttypethatnamesitsparameters_from_a_call();
 #line 80 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t8 = INT64_C(3);
@@ -514,7 +502,6 @@ bb0:
     hero_print_int(t9);
 #line 80 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 81 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t10 = h_fixedbugs430aresulttypethatnamesitsparameters_unnamed_position();
 #line 81 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t11 = INT64_C(0);
@@ -526,7 +513,6 @@ bb0:
     hero_print_int(t13);
 #line 81 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 82 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t14 = h_fixedbugs430aresulttypethatnamesitsparameters_an_instance();
 #line 82 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t15 = INT64_C(5);
@@ -536,7 +522,6 @@ bb0:
     hero_print_int(t16);
 #line 82 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 83 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t17 = INT64_C(0);
 #line 83 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t18 = h_fixedbugs430aresulttypethatnamesitsparameters_by_arm(t17);
@@ -548,7 +533,6 @@ bb0:
     hero_print_int(t20);
 #line 83 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 84 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t21 = INT64_C(1);
 #line 84 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t22 = h_fixedbugs430aresulttypethatnamesitsparameters_by_arm(t21);
@@ -560,7 +544,6 @@ bb0:
     hero_print_int(t24);
 #line 84 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 85 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t25 = true;
 #line 85 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t26 = h_fixedbugs430aresulttypethatnamesitsparameters_by_if(t25);
@@ -572,7 +555,6 @@ bb0:
     hero_print_int(t28);
 #line 85 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 86 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t29 = h_fixedbugs430aresulttypethatnamesitsparameters_agreeing();
 #line 86 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t30 = INT64_C(10);
@@ -584,7 +566,6 @@ bb0:
     hero_print_int(t32);
 #line 86 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 87 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t33 = h_fixedbugs430aresulttypethatnamesitsparameters_a_lone_name_otherwise();
 #line 87 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t34 = INT64_C(6);
@@ -594,11 +575,9 @@ bb0:
     hero_print_int(t35);
 #line 87 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 88 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t36 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 88 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     h0_bound = t36;
-#line 89 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t37 = h0_bound;
 #line 89 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t38 = INT64_C(8);
@@ -608,13 +587,11 @@ bb0:
     hero_print_int(t39);
 #line 89 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 90 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t40 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 90 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t41 = (h_fixedbugs430aresulttypethatnamesitsparameters_Holder){.f_f = t40};
 #line 90 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     h1_h = t41;
-#line 91 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t42 = h1_h;
 #line 91 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t43 = t42.f_f;
@@ -626,7 +603,6 @@ bb0:
     hero_print_int(t45);
 #line 91 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     hero_print_end();
-#line 92 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t46 = h_fixedbugs430aresulttypethatnamesitsparameters_inc;
 #line 92 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     t47 = INT64_C(10);
@@ -638,14 +614,14 @@ bb0:
     hero_print_end();
 #line 92 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return;
-#line 642 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 618 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 /* ident<i64> */
 #line 32 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs430aresulttypethatnamesitsparameters_ident_1b9a87(int64_t h0_x) {
-#line 649 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 625 "fixedbugs430aresulttypethatnamesitsparameters.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -653,7 +629,7 @@ bb0:
     t1 = h0_x;
 #line 33 "tests/golden/run/fixedbugs-430-a-result-type-that-names-its-parameters.hero"
     return t1;
-#line 657 "fixedbugs430aresulttypethatnamesitsparameters.c"
+#line 633 "fixedbugs430aresulttypethatnamesitsparameters.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs430aresulttypethatnamesitsparameters_Holder_eq(const h_fixedbugs430aresulttypethatnamesitsparameters_Holder *a, const h_fixedbugs430aresulttypethatnamesitsparameters_Holder *b) {
     if (!(a->f_f == b->f_f)) return false;

@@ -76,21 +76,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 18 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_limitacopygivenbackaftercreuseditsaddressisnotcaught_cell_close(cell * a0) { (void)(cell_close)(a0); }
-#line 19 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_limitacopygivenbackaftercreuseditsaddressisnotcaught_cell_value(cell * a0) { (void)(cell_value)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 90 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_eq(cell * const *a, cell * const *b);
@@ -108,7 +104,7 @@ void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void);
 
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void) {
-#line 112 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 108 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
     cell * h0_a;
     cell * h1_kept;
     cell * h2_b;
@@ -129,11 +125,9 @@ bb0:
     hero_handle_acquired(t1, "cell_close");
 #line 22 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     h0_a = t1;
-#line 23 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t2 = h0_a;
 #line 23 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     h1_kept = t2;
-#line 24 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t3 = h0_a;
 #line 24 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     {
@@ -147,13 +141,11 @@ bb0:
     if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
 #line 24 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     }
-#line 25 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t4 = cell_open();
 #line 25 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     hero_handle_acquired(t4, "cell_close");
 #line 25 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     h2_b = t4;
-#line 26 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t5 = HERO_STR_LIT(hero_str_7a4a137a);
 #line 26 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t6 = h2_b;
@@ -167,7 +159,6 @@ bb0:
     hero_print_int(t7);
 #line 26 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     hero_print_end();
-#line 27 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t8 = h1_kept;
 #line 27 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     {
@@ -181,7 +172,6 @@ bb0:
     if (hero_handle_ended(t8, hero_life_0_0) && h1_kept == t8) h1_kept = hero_handle_dead();
 #line 27 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     }
-#line 28 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     t9 = HERO_STR_LIT(hero_str_1a39e328);
 #line 28 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     hero_print_str(t9);
@@ -189,7 +179,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     return;
-#line 193 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 183 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_eq(cell * const *a, cell * const *b) {
     return hero_handle_eq(*a, *b);

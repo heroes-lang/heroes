@@ -68,17 +68,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 79 "fixedbugs218astrof1500piecesbuildsandruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +91,7 @@ void h_fixedbugs218astrof1500piecesbuildsandruns_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
 void h_fixedbugs218astrof1500piecesbuildsandruns_main(void) {
-#line 98 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 95 "fixedbugs218astrof1500piecesbuildsandruns.c"
     HeroStr h0_s = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -6108,7 +6105,7 @@ bb0:
     t3002 = h1_own1;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1_own1 = t3;
-#line 6112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3002);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t4 = HERO_STR_LIT(hero_str_61);
@@ -6118,7 +6115,7 @@ bb0:
     t3003 = h2_own2;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h2_own2 = t5;
-#line 6122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3003);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t6 = HERO_STR_LIT(hero_str_61);
@@ -6128,7 +6125,7 @@ bb0:
     t3004 = h3_own3;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h3_own3 = t7;
-#line 6132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3004);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t8 = HERO_STR_LIT(hero_str_61);
@@ -6138,7 +6135,7 @@ bb0:
     t3005 = h4_own4;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h4_own4 = t9;
-#line 6142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3005);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t10 = HERO_STR_LIT(hero_str_61);
@@ -6148,7 +6145,7 @@ bb0:
     t3006 = h5_own5;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h5_own5 = t11;
-#line 6152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3006);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t12 = HERO_STR_LIT(hero_str_61);
@@ -6158,7 +6155,7 @@ bb0:
     t3007 = h6_own6;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h6_own6 = t13;
-#line 6162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3007);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t14 = HERO_STR_LIT(hero_str_61);
@@ -6168,7 +6165,7 @@ bb0:
     t3008 = h7_own7;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h7_own7 = t15;
-#line 6172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3008);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t16 = HERO_STR_LIT(hero_str_61);
@@ -6178,7 +6175,7 @@ bb0:
     t3009 = h8_own8;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h8_own8 = t17;
-#line 6182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3009);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t18 = HERO_STR_LIT(hero_str_61);
@@ -6188,7 +6185,7 @@ bb0:
     t3010 = h9_own9;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h9_own9 = t19;
-#line 6192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3010);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t20 = HERO_STR_LIT(hero_str_61);
@@ -6198,7 +6195,7 @@ bb0:
     t3011 = h10_own10;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h10_own10 = t21;
-#line 6202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3011);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t22 = HERO_STR_LIT(hero_str_61);
@@ -6208,7 +6205,7 @@ bb0:
     t3012 = h11_own11;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h11_own11 = t23;
-#line 6212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3012);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t24 = HERO_STR_LIT(hero_str_61);
@@ -6218,7 +6215,7 @@ bb0:
     t3013 = h12_own12;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h12_own12 = t25;
-#line 6222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3013);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t26 = HERO_STR_LIT(hero_str_61);
@@ -6228,7 +6225,7 @@ bb0:
     t3014 = h13_own13;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h13_own13 = t27;
-#line 6232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3014);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t28 = HERO_STR_LIT(hero_str_61);
@@ -6238,7 +6235,7 @@ bb0:
     t3015 = h14_own14;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h14_own14 = t29;
-#line 6242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3015);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t30 = HERO_STR_LIT(hero_str_61);
@@ -6248,7 +6245,7 @@ bb0:
     t3016 = h15_own15;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h15_own15 = t31;
-#line 6252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3016);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t32 = HERO_STR_LIT(hero_str_61);
@@ -6258,7 +6255,7 @@ bb0:
     t3017 = h16_own16;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h16_own16 = t33;
-#line 6262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3017);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t34 = HERO_STR_LIT(hero_str_61);
@@ -6268,7 +6265,7 @@ bb0:
     t3018 = h17_own17;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h17_own17 = t35;
-#line 6272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3018);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t36 = HERO_STR_LIT(hero_str_61);
@@ -6278,7 +6275,7 @@ bb0:
     t3019 = h18_own18;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h18_own18 = t37;
-#line 6282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3019);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t38 = HERO_STR_LIT(hero_str_61);
@@ -6288,7 +6285,7 @@ bb0:
     t3020 = h19_own19;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h19_own19 = t39;
-#line 6292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3020);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t40 = HERO_STR_LIT(hero_str_61);
@@ -6298,7 +6295,7 @@ bb0:
     t3021 = h20_own20;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h20_own20 = t41;
-#line 6302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3021);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t42 = HERO_STR_LIT(hero_str_61);
@@ -6308,7 +6305,7 @@ bb0:
     t3022 = h21_own21;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h21_own21 = t43;
-#line 6312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3022);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t44 = HERO_STR_LIT(hero_str_61);
@@ -6318,7 +6315,7 @@ bb0:
     t3023 = h22_own22;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h22_own22 = t45;
-#line 6322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3023);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t46 = HERO_STR_LIT(hero_str_61);
@@ -6328,7 +6325,7 @@ bb0:
     t3024 = h23_own23;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h23_own23 = t47;
-#line 6332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3024);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t48 = HERO_STR_LIT(hero_str_61);
@@ -6338,7 +6335,7 @@ bb0:
     t3025 = h24_own24;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h24_own24 = t49;
-#line 6342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3025);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t50 = HERO_STR_LIT(hero_str_61);
@@ -6348,7 +6345,7 @@ bb0:
     t3026 = h25_own25;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h25_own25 = t51;
-#line 6352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3026);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t52 = HERO_STR_LIT(hero_str_61);
@@ -6358,7 +6355,7 @@ bb0:
     t3027 = h26_own26;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h26_own26 = t53;
-#line 6362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3027);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t54 = HERO_STR_LIT(hero_str_61);
@@ -6368,7 +6365,7 @@ bb0:
     t3028 = h27_own27;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h27_own27 = t55;
-#line 6372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3028);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t56 = HERO_STR_LIT(hero_str_61);
@@ -6378,7 +6375,7 @@ bb0:
     t3029 = h28_own28;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h28_own28 = t57;
-#line 6382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3029);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t58 = HERO_STR_LIT(hero_str_61);
@@ -6388,7 +6385,7 @@ bb0:
     t3030 = h29_own29;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h29_own29 = t59;
-#line 6392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3030);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t60 = HERO_STR_LIT(hero_str_61);
@@ -6398,7 +6395,7 @@ bb0:
     t3031 = h30_own30;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h30_own30 = t61;
-#line 6402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3031);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t62 = HERO_STR_LIT(hero_str_61);
@@ -6408,7 +6405,7 @@ bb0:
     t3032 = h31_own31;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h31_own31 = t63;
-#line 6412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3032);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t64 = HERO_STR_LIT(hero_str_61);
@@ -6418,7 +6415,7 @@ bb0:
     t3033 = h32_own32;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h32_own32 = t65;
-#line 6422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3033);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t66 = HERO_STR_LIT(hero_str_61);
@@ -6428,7 +6425,7 @@ bb0:
     t3034 = h33_own33;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h33_own33 = t67;
-#line 6432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3034);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t68 = HERO_STR_LIT(hero_str_61);
@@ -6438,7 +6435,7 @@ bb0:
     t3035 = h34_own34;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h34_own34 = t69;
-#line 6442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3035);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t70 = HERO_STR_LIT(hero_str_61);
@@ -6448,7 +6445,7 @@ bb0:
     t3036 = h35_own35;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h35_own35 = t71;
-#line 6452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3036);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t72 = HERO_STR_LIT(hero_str_61);
@@ -6458,7 +6455,7 @@ bb0:
     t3037 = h36_own36;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h36_own36 = t73;
-#line 6462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3037);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t74 = HERO_STR_LIT(hero_str_61);
@@ -6468,7 +6465,7 @@ bb0:
     t3038 = h37_own37;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h37_own37 = t75;
-#line 6472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3038);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t76 = HERO_STR_LIT(hero_str_61);
@@ -6478,7 +6475,7 @@ bb0:
     t3039 = h38_own38;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h38_own38 = t77;
-#line 6482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3039);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t78 = HERO_STR_LIT(hero_str_61);
@@ -6488,7 +6485,7 @@ bb0:
     t3040 = h39_own39;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h39_own39 = t79;
-#line 6492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3040);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t80 = HERO_STR_LIT(hero_str_61);
@@ -6498,7 +6495,7 @@ bb0:
     t3041 = h40_own40;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h40_own40 = t81;
-#line 6502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3041);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t82 = HERO_STR_LIT(hero_str_61);
@@ -6508,7 +6505,7 @@ bb0:
     t3042 = h41_own41;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h41_own41 = t83;
-#line 6512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3042);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t84 = HERO_STR_LIT(hero_str_61);
@@ -6518,7 +6515,7 @@ bb0:
     t3043 = h42_own42;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h42_own42 = t85;
-#line 6522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3043);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t86 = HERO_STR_LIT(hero_str_61);
@@ -6528,7 +6525,7 @@ bb0:
     t3044 = h43_own43;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h43_own43 = t87;
-#line 6532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3044);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t88 = HERO_STR_LIT(hero_str_61);
@@ -6538,7 +6535,7 @@ bb0:
     t3045 = h44_own44;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h44_own44 = t89;
-#line 6542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3045);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t90 = HERO_STR_LIT(hero_str_61);
@@ -6548,7 +6545,7 @@ bb0:
     t3046 = h45_own45;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h45_own45 = t91;
-#line 6552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3046);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t92 = HERO_STR_LIT(hero_str_61);
@@ -6558,7 +6555,7 @@ bb0:
     t3047 = h46_own46;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h46_own46 = t93;
-#line 6562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3047);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t94 = HERO_STR_LIT(hero_str_61);
@@ -6568,7 +6565,7 @@ bb0:
     t3048 = h47_own47;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h47_own47 = t95;
-#line 6572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3048);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t96 = HERO_STR_LIT(hero_str_61);
@@ -6578,7 +6575,7 @@ bb0:
     t3049 = h48_own48;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h48_own48 = t97;
-#line 6582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3049);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t98 = HERO_STR_LIT(hero_str_61);
@@ -6588,7 +6585,7 @@ bb0:
     t3050 = h49_own49;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h49_own49 = t99;
-#line 6592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3050);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t100 = HERO_STR_LIT(hero_str_61);
@@ -6598,7 +6595,7 @@ bb0:
     t3051 = h50_own50;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h50_own50 = t101;
-#line 6602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3051);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t102 = HERO_STR_LIT(hero_str_61);
@@ -6608,7 +6605,7 @@ bb0:
     t3052 = h51_own51;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h51_own51 = t103;
-#line 6612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3052);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t104 = HERO_STR_LIT(hero_str_61);
@@ -6618,7 +6615,7 @@ bb0:
     t3053 = h52_own52;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h52_own52 = t105;
-#line 6622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3053);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t106 = HERO_STR_LIT(hero_str_61);
@@ -6628,7 +6625,7 @@ bb0:
     t3054 = h53_own53;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h53_own53 = t107;
-#line 6632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3054);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t108 = HERO_STR_LIT(hero_str_61);
@@ -6638,7 +6635,7 @@ bb0:
     t3055 = h54_own54;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h54_own54 = t109;
-#line 6642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3055);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t110 = HERO_STR_LIT(hero_str_61);
@@ -6648,7 +6645,7 @@ bb0:
     t3056 = h55_own55;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h55_own55 = t111;
-#line 6652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3056);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t112 = HERO_STR_LIT(hero_str_61);
@@ -6658,7 +6655,7 @@ bb0:
     t3057 = h56_own56;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h56_own56 = t113;
-#line 6662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3057);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t114 = HERO_STR_LIT(hero_str_61);
@@ -6668,7 +6665,7 @@ bb0:
     t3058 = h57_own57;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h57_own57 = t115;
-#line 6672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3058);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t116 = HERO_STR_LIT(hero_str_61);
@@ -6678,7 +6675,7 @@ bb0:
     t3059 = h58_own58;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h58_own58 = t117;
-#line 6682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3059);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t118 = HERO_STR_LIT(hero_str_61);
@@ -6688,7 +6685,7 @@ bb0:
     t3060 = h59_own59;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h59_own59 = t119;
-#line 6692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3060);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t120 = HERO_STR_LIT(hero_str_61);
@@ -6698,7 +6695,7 @@ bb0:
     t3061 = h60_own60;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h60_own60 = t121;
-#line 6702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3061);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t122 = HERO_STR_LIT(hero_str_61);
@@ -6708,7 +6705,7 @@ bb0:
     t3062 = h61_own61;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h61_own61 = t123;
-#line 6712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3062);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t124 = HERO_STR_LIT(hero_str_61);
@@ -6718,7 +6715,7 @@ bb0:
     t3063 = h62_own62;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h62_own62 = t125;
-#line 6722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3063);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t126 = HERO_STR_LIT(hero_str_61);
@@ -6728,7 +6725,7 @@ bb0:
     t3064 = h63_own63;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h63_own63 = t127;
-#line 6732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3064);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t128 = HERO_STR_LIT(hero_str_61);
@@ -6738,7 +6735,7 @@ bb0:
     t3065 = h64_own64;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h64_own64 = t129;
-#line 6742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3065);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t130 = HERO_STR_LIT(hero_str_61);
@@ -6748,7 +6745,7 @@ bb0:
     t3066 = h65_own65;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h65_own65 = t131;
-#line 6752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3066);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t132 = HERO_STR_LIT(hero_str_61);
@@ -6758,7 +6755,7 @@ bb0:
     t3067 = h66_own66;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h66_own66 = t133;
-#line 6762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3067);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t134 = HERO_STR_LIT(hero_str_61);
@@ -6768,7 +6765,7 @@ bb0:
     t3068 = h67_own67;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h67_own67 = t135;
-#line 6772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3068);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t136 = HERO_STR_LIT(hero_str_61);
@@ -6778,7 +6775,7 @@ bb0:
     t3069 = h68_own68;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h68_own68 = t137;
-#line 6782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3069);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t138 = HERO_STR_LIT(hero_str_61);
@@ -6788,7 +6785,7 @@ bb0:
     t3070 = h69_own69;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h69_own69 = t139;
-#line 6792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3070);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t140 = HERO_STR_LIT(hero_str_61);
@@ -6798,7 +6795,7 @@ bb0:
     t3071 = h70_own70;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h70_own70 = t141;
-#line 6802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3071);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t142 = HERO_STR_LIT(hero_str_61);
@@ -6808,7 +6805,7 @@ bb0:
     t3072 = h71_own71;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h71_own71 = t143;
-#line 6812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3072);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t144 = HERO_STR_LIT(hero_str_61);
@@ -6818,7 +6815,7 @@ bb0:
     t3073 = h72_own72;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h72_own72 = t145;
-#line 6822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3073);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t146 = HERO_STR_LIT(hero_str_61);
@@ -6828,7 +6825,7 @@ bb0:
     t3074 = h73_own73;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h73_own73 = t147;
-#line 6832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3074);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t148 = HERO_STR_LIT(hero_str_61);
@@ -6838,7 +6835,7 @@ bb0:
     t3075 = h74_own74;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h74_own74 = t149;
-#line 6842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3075);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t150 = HERO_STR_LIT(hero_str_61);
@@ -6848,7 +6845,7 @@ bb0:
     t3076 = h75_own75;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h75_own75 = t151;
-#line 6852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3076);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t152 = HERO_STR_LIT(hero_str_61);
@@ -6858,7 +6855,7 @@ bb0:
     t3077 = h76_own76;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h76_own76 = t153;
-#line 6862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3077);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t154 = HERO_STR_LIT(hero_str_61);
@@ -6868,7 +6865,7 @@ bb0:
     t3078 = h77_own77;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h77_own77 = t155;
-#line 6872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3078);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t156 = HERO_STR_LIT(hero_str_61);
@@ -6878,7 +6875,7 @@ bb0:
     t3079 = h78_own78;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h78_own78 = t157;
-#line 6882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3079);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t158 = HERO_STR_LIT(hero_str_61);
@@ -6888,7 +6885,7 @@ bb0:
     t3080 = h79_own79;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h79_own79 = t159;
-#line 6892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3080);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t160 = HERO_STR_LIT(hero_str_61);
@@ -6898,7 +6895,7 @@ bb0:
     t3081 = h80_own80;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h80_own80 = t161;
-#line 6902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3081);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t162 = HERO_STR_LIT(hero_str_61);
@@ -6908,7 +6905,7 @@ bb0:
     t3082 = h81_own81;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h81_own81 = t163;
-#line 6912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3082);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t164 = HERO_STR_LIT(hero_str_61);
@@ -6918,7 +6915,7 @@ bb0:
     t3083 = h82_own82;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h82_own82 = t165;
-#line 6922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3083);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t166 = HERO_STR_LIT(hero_str_61);
@@ -6928,7 +6925,7 @@ bb0:
     t3084 = h83_own83;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h83_own83 = t167;
-#line 6932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3084);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t168 = HERO_STR_LIT(hero_str_61);
@@ -6938,7 +6935,7 @@ bb0:
     t3085 = h84_own84;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h84_own84 = t169;
-#line 6942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3085);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t170 = HERO_STR_LIT(hero_str_61);
@@ -6948,7 +6945,7 @@ bb0:
     t3086 = h85_own85;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h85_own85 = t171;
-#line 6952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3086);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t172 = HERO_STR_LIT(hero_str_61);
@@ -6958,7 +6955,7 @@ bb0:
     t3087 = h86_own86;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h86_own86 = t173;
-#line 6962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3087);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t174 = HERO_STR_LIT(hero_str_61);
@@ -6968,7 +6965,7 @@ bb0:
     t3088 = h87_own87;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h87_own87 = t175;
-#line 6972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3088);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t176 = HERO_STR_LIT(hero_str_61);
@@ -6978,7 +6975,7 @@ bb0:
     t3089 = h88_own88;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h88_own88 = t177;
-#line 6982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3089);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t178 = HERO_STR_LIT(hero_str_61);
@@ -6988,7 +6985,7 @@ bb0:
     t3090 = h89_own89;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h89_own89 = t179;
-#line 6992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3090);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t180 = HERO_STR_LIT(hero_str_61);
@@ -6998,7 +6995,7 @@ bb0:
     t3091 = h90_own90;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h90_own90 = t181;
-#line 7002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 6999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3091);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t182 = HERO_STR_LIT(hero_str_61);
@@ -7008,7 +7005,7 @@ bb0:
     t3092 = h91_own91;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h91_own91 = t183;
-#line 7012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3092);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t184 = HERO_STR_LIT(hero_str_61);
@@ -7018,7 +7015,7 @@ bb0:
     t3093 = h92_own92;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h92_own92 = t185;
-#line 7022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3093);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t186 = HERO_STR_LIT(hero_str_61);
@@ -7028,7 +7025,7 @@ bb0:
     t3094 = h93_own93;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h93_own93 = t187;
-#line 7032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3094);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t188 = HERO_STR_LIT(hero_str_61);
@@ -7038,7 +7035,7 @@ bb0:
     t3095 = h94_own94;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h94_own94 = t189;
-#line 7042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3095);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t190 = HERO_STR_LIT(hero_str_61);
@@ -7048,7 +7045,7 @@ bb0:
     t3096 = h95_own95;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h95_own95 = t191;
-#line 7052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3096);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t192 = HERO_STR_LIT(hero_str_61);
@@ -7058,7 +7055,7 @@ bb0:
     t3097 = h96_own96;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h96_own96 = t193;
-#line 7062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3097);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t194 = HERO_STR_LIT(hero_str_61);
@@ -7068,7 +7065,7 @@ bb0:
     t3098 = h97_own97;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h97_own97 = t195;
-#line 7072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3098);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t196 = HERO_STR_LIT(hero_str_61);
@@ -7078,7 +7075,7 @@ bb0:
     t3099 = h98_own98;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h98_own98 = t197;
-#line 7082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3099);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t198 = HERO_STR_LIT(hero_str_61);
@@ -7088,7 +7085,7 @@ bb0:
     t3100 = h99_own99;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h99_own99 = t199;
-#line 7092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3100);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t200 = HERO_STR_LIT(hero_str_61);
@@ -7098,7 +7095,7 @@ bb0:
     t3101 = h100_own100;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h100_own100 = t201;
-#line 7102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3101);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t202 = HERO_STR_LIT(hero_str_61);
@@ -7108,7 +7105,7 @@ bb0:
     t3102 = h101_own101;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h101_own101 = t203;
-#line 7112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3102);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t204 = HERO_STR_LIT(hero_str_61);
@@ -7118,7 +7115,7 @@ bb0:
     t3103 = h102_own102;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h102_own102 = t205;
-#line 7122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3103);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t206 = HERO_STR_LIT(hero_str_61);
@@ -7128,7 +7125,7 @@ bb0:
     t3104 = h103_own103;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h103_own103 = t207;
-#line 7132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3104);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t208 = HERO_STR_LIT(hero_str_61);
@@ -7138,7 +7135,7 @@ bb0:
     t3105 = h104_own104;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h104_own104 = t209;
-#line 7142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3105);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t210 = HERO_STR_LIT(hero_str_61);
@@ -7148,7 +7145,7 @@ bb0:
     t3106 = h105_own105;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h105_own105 = t211;
-#line 7152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3106);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t212 = HERO_STR_LIT(hero_str_61);
@@ -7158,7 +7155,7 @@ bb0:
     t3107 = h106_own106;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h106_own106 = t213;
-#line 7162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3107);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t214 = HERO_STR_LIT(hero_str_61);
@@ -7168,7 +7165,7 @@ bb0:
     t3108 = h107_own107;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h107_own107 = t215;
-#line 7172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3108);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t216 = HERO_STR_LIT(hero_str_61);
@@ -7178,7 +7175,7 @@ bb0:
     t3109 = h108_own108;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h108_own108 = t217;
-#line 7182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3109);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t218 = HERO_STR_LIT(hero_str_61);
@@ -7188,7 +7185,7 @@ bb0:
     t3110 = h109_own109;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h109_own109 = t219;
-#line 7192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3110);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t220 = HERO_STR_LIT(hero_str_61);
@@ -7198,7 +7195,7 @@ bb0:
     t3111 = h110_own110;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h110_own110 = t221;
-#line 7202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3111);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t222 = HERO_STR_LIT(hero_str_61);
@@ -7208,7 +7205,7 @@ bb0:
     t3112 = h111_own111;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h111_own111 = t223;
-#line 7212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3112);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t224 = HERO_STR_LIT(hero_str_61);
@@ -7218,7 +7215,7 @@ bb0:
     t3113 = h112_own112;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h112_own112 = t225;
-#line 7222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3113);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t226 = HERO_STR_LIT(hero_str_61);
@@ -7228,7 +7225,7 @@ bb0:
     t3114 = h113_own113;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h113_own113 = t227;
-#line 7232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3114);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t228 = HERO_STR_LIT(hero_str_61);
@@ -7238,7 +7235,7 @@ bb0:
     t3115 = h114_own114;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h114_own114 = t229;
-#line 7242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3115);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t230 = HERO_STR_LIT(hero_str_61);
@@ -7248,7 +7245,7 @@ bb0:
     t3116 = h115_own115;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h115_own115 = t231;
-#line 7252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3116);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t232 = HERO_STR_LIT(hero_str_61);
@@ -7258,7 +7255,7 @@ bb0:
     t3117 = h116_own116;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h116_own116 = t233;
-#line 7262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3117);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t234 = HERO_STR_LIT(hero_str_61);
@@ -7268,7 +7265,7 @@ bb0:
     t3118 = h117_own117;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h117_own117 = t235;
-#line 7272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3118);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t236 = HERO_STR_LIT(hero_str_61);
@@ -7278,7 +7275,7 @@ bb0:
     t3119 = h118_own118;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h118_own118 = t237;
-#line 7282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3119);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t238 = HERO_STR_LIT(hero_str_61);
@@ -7288,7 +7285,7 @@ bb0:
     t3120 = h119_own119;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h119_own119 = t239;
-#line 7292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3120);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t240 = HERO_STR_LIT(hero_str_61);
@@ -7298,7 +7295,7 @@ bb0:
     t3121 = h120_own120;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h120_own120 = t241;
-#line 7302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3121);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t242 = HERO_STR_LIT(hero_str_61);
@@ -7308,7 +7305,7 @@ bb0:
     t3122 = h121_own121;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h121_own121 = t243;
-#line 7312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3122);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t244 = HERO_STR_LIT(hero_str_61);
@@ -7318,7 +7315,7 @@ bb0:
     t3123 = h122_own122;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h122_own122 = t245;
-#line 7322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3123);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t246 = HERO_STR_LIT(hero_str_61);
@@ -7328,7 +7325,7 @@ bb0:
     t3124 = h123_own123;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h123_own123 = t247;
-#line 7332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3124);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t248 = HERO_STR_LIT(hero_str_61);
@@ -7338,7 +7335,7 @@ bb0:
     t3125 = h124_own124;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h124_own124 = t249;
-#line 7342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3125);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t250 = HERO_STR_LIT(hero_str_61);
@@ -7348,7 +7345,7 @@ bb0:
     t3126 = h125_own125;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h125_own125 = t251;
-#line 7352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3126);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t252 = HERO_STR_LIT(hero_str_61);
@@ -7358,7 +7355,7 @@ bb0:
     t3127 = h126_own126;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h126_own126 = t253;
-#line 7362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3127);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t254 = HERO_STR_LIT(hero_str_61);
@@ -7368,7 +7365,7 @@ bb0:
     t3128 = h127_own127;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h127_own127 = t255;
-#line 7372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3128);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t256 = HERO_STR_LIT(hero_str_61);
@@ -7378,7 +7375,7 @@ bb0:
     t3129 = h128_own128;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h128_own128 = t257;
-#line 7382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3129);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t258 = HERO_STR_LIT(hero_str_61);
@@ -7388,7 +7385,7 @@ bb0:
     t3130 = h129_own129;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h129_own129 = t259;
-#line 7392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3130);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t260 = HERO_STR_LIT(hero_str_61);
@@ -7398,7 +7395,7 @@ bb0:
     t3131 = h130_own130;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h130_own130 = t261;
-#line 7402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3131);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t262 = HERO_STR_LIT(hero_str_61);
@@ -7408,7 +7405,7 @@ bb0:
     t3132 = h131_own131;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h131_own131 = t263;
-#line 7412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3132);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t264 = HERO_STR_LIT(hero_str_61);
@@ -7418,7 +7415,7 @@ bb0:
     t3133 = h132_own132;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h132_own132 = t265;
-#line 7422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3133);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t266 = HERO_STR_LIT(hero_str_61);
@@ -7428,7 +7425,7 @@ bb0:
     t3134 = h133_own133;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h133_own133 = t267;
-#line 7432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3134);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t268 = HERO_STR_LIT(hero_str_61);
@@ -7438,7 +7435,7 @@ bb0:
     t3135 = h134_own134;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h134_own134 = t269;
-#line 7442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3135);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t270 = HERO_STR_LIT(hero_str_61);
@@ -7448,7 +7445,7 @@ bb0:
     t3136 = h135_own135;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h135_own135 = t271;
-#line 7452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3136);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t272 = HERO_STR_LIT(hero_str_61);
@@ -7458,7 +7455,7 @@ bb0:
     t3137 = h136_own136;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h136_own136 = t273;
-#line 7462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3137);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t274 = HERO_STR_LIT(hero_str_61);
@@ -7468,7 +7465,7 @@ bb0:
     t3138 = h137_own137;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h137_own137 = t275;
-#line 7472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3138);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t276 = HERO_STR_LIT(hero_str_61);
@@ -7478,7 +7475,7 @@ bb0:
     t3139 = h138_own138;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h138_own138 = t277;
-#line 7482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3139);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t278 = HERO_STR_LIT(hero_str_61);
@@ -7488,7 +7485,7 @@ bb0:
     t3140 = h139_own139;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h139_own139 = t279;
-#line 7492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3140);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t280 = HERO_STR_LIT(hero_str_61);
@@ -7498,7 +7495,7 @@ bb0:
     t3141 = h140_own140;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h140_own140 = t281;
-#line 7502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3141);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t282 = HERO_STR_LIT(hero_str_61);
@@ -7508,7 +7505,7 @@ bb0:
     t3142 = h141_own141;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h141_own141 = t283;
-#line 7512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3142);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t284 = HERO_STR_LIT(hero_str_61);
@@ -7518,7 +7515,7 @@ bb0:
     t3143 = h142_own142;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h142_own142 = t285;
-#line 7522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3143);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t286 = HERO_STR_LIT(hero_str_61);
@@ -7528,7 +7525,7 @@ bb0:
     t3144 = h143_own143;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h143_own143 = t287;
-#line 7532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3144);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t288 = HERO_STR_LIT(hero_str_61);
@@ -7538,7 +7535,7 @@ bb0:
     t3145 = h144_own144;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h144_own144 = t289;
-#line 7542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3145);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t290 = HERO_STR_LIT(hero_str_61);
@@ -7548,7 +7545,7 @@ bb0:
     t3146 = h145_own145;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h145_own145 = t291;
-#line 7552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3146);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t292 = HERO_STR_LIT(hero_str_61);
@@ -7558,7 +7555,7 @@ bb0:
     t3147 = h146_own146;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h146_own146 = t293;
-#line 7562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3147);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t294 = HERO_STR_LIT(hero_str_61);
@@ -7568,7 +7565,7 @@ bb0:
     t3148 = h147_own147;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h147_own147 = t295;
-#line 7572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3148);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t296 = HERO_STR_LIT(hero_str_61);
@@ -7578,7 +7575,7 @@ bb0:
     t3149 = h148_own148;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h148_own148 = t297;
-#line 7582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3149);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t298 = HERO_STR_LIT(hero_str_61);
@@ -7588,7 +7585,7 @@ bb0:
     t3150 = h149_own149;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h149_own149 = t299;
-#line 7592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3150);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t300 = HERO_STR_LIT(hero_str_61);
@@ -7598,7 +7595,7 @@ bb0:
     t3151 = h150_own150;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h150_own150 = t301;
-#line 7602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3151);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t302 = HERO_STR_LIT(hero_str_61);
@@ -7608,7 +7605,7 @@ bb0:
     t3152 = h151_own151;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h151_own151 = t303;
-#line 7612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3152);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t304 = HERO_STR_LIT(hero_str_61);
@@ -7618,7 +7615,7 @@ bb0:
     t3153 = h152_own152;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h152_own152 = t305;
-#line 7622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3153);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t306 = HERO_STR_LIT(hero_str_61);
@@ -7628,7 +7625,7 @@ bb0:
     t3154 = h153_own153;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h153_own153 = t307;
-#line 7632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3154);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t308 = HERO_STR_LIT(hero_str_61);
@@ -7638,7 +7635,7 @@ bb0:
     t3155 = h154_own154;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h154_own154 = t309;
-#line 7642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3155);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t310 = HERO_STR_LIT(hero_str_61);
@@ -7648,7 +7645,7 @@ bb0:
     t3156 = h155_own155;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h155_own155 = t311;
-#line 7652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3156);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t312 = HERO_STR_LIT(hero_str_61);
@@ -7658,7 +7655,7 @@ bb0:
     t3157 = h156_own156;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h156_own156 = t313;
-#line 7662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3157);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t314 = HERO_STR_LIT(hero_str_61);
@@ -7668,7 +7665,7 @@ bb0:
     t3158 = h157_own157;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h157_own157 = t315;
-#line 7672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3158);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t316 = HERO_STR_LIT(hero_str_61);
@@ -7678,7 +7675,7 @@ bb0:
     t3159 = h158_own158;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h158_own158 = t317;
-#line 7682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3159);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t318 = HERO_STR_LIT(hero_str_61);
@@ -7688,7 +7685,7 @@ bb0:
     t3160 = h159_own159;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h159_own159 = t319;
-#line 7692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3160);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t320 = HERO_STR_LIT(hero_str_61);
@@ -7698,7 +7695,7 @@ bb0:
     t3161 = h160_own160;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h160_own160 = t321;
-#line 7702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3161);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t322 = HERO_STR_LIT(hero_str_61);
@@ -7708,7 +7705,7 @@ bb0:
     t3162 = h161_own161;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h161_own161 = t323;
-#line 7712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3162);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t324 = HERO_STR_LIT(hero_str_61);
@@ -7718,7 +7715,7 @@ bb0:
     t3163 = h162_own162;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h162_own162 = t325;
-#line 7722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3163);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t326 = HERO_STR_LIT(hero_str_61);
@@ -7728,7 +7725,7 @@ bb0:
     t3164 = h163_own163;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h163_own163 = t327;
-#line 7732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3164);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t328 = HERO_STR_LIT(hero_str_61);
@@ -7738,7 +7735,7 @@ bb0:
     t3165 = h164_own164;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h164_own164 = t329;
-#line 7742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3165);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t330 = HERO_STR_LIT(hero_str_61);
@@ -7748,7 +7745,7 @@ bb0:
     t3166 = h165_own165;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h165_own165 = t331;
-#line 7752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3166);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t332 = HERO_STR_LIT(hero_str_61);
@@ -7758,7 +7755,7 @@ bb0:
     t3167 = h166_own166;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h166_own166 = t333;
-#line 7762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3167);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t334 = HERO_STR_LIT(hero_str_61);
@@ -7768,7 +7765,7 @@ bb0:
     t3168 = h167_own167;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h167_own167 = t335;
-#line 7772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3168);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t336 = HERO_STR_LIT(hero_str_61);
@@ -7778,7 +7775,7 @@ bb0:
     t3169 = h168_own168;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h168_own168 = t337;
-#line 7782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3169);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t338 = HERO_STR_LIT(hero_str_61);
@@ -7788,7 +7785,7 @@ bb0:
     t3170 = h169_own169;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h169_own169 = t339;
-#line 7792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3170);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t340 = HERO_STR_LIT(hero_str_61);
@@ -7798,7 +7795,7 @@ bb0:
     t3171 = h170_own170;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h170_own170 = t341;
-#line 7802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3171);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t342 = HERO_STR_LIT(hero_str_61);
@@ -7808,7 +7805,7 @@ bb0:
     t3172 = h171_own171;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h171_own171 = t343;
-#line 7812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3172);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t344 = HERO_STR_LIT(hero_str_61);
@@ -7818,7 +7815,7 @@ bb0:
     t3173 = h172_own172;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h172_own172 = t345;
-#line 7822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3173);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t346 = HERO_STR_LIT(hero_str_61);
@@ -7828,7 +7825,7 @@ bb0:
     t3174 = h173_own173;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h173_own173 = t347;
-#line 7832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3174);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t348 = HERO_STR_LIT(hero_str_61);
@@ -7838,7 +7835,7 @@ bb0:
     t3175 = h174_own174;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h174_own174 = t349;
-#line 7842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3175);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t350 = HERO_STR_LIT(hero_str_61);
@@ -7848,7 +7845,7 @@ bb0:
     t3176 = h175_own175;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h175_own175 = t351;
-#line 7852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3176);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t352 = HERO_STR_LIT(hero_str_61);
@@ -7858,7 +7855,7 @@ bb0:
     t3177 = h176_own176;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h176_own176 = t353;
-#line 7862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3177);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t354 = HERO_STR_LIT(hero_str_61);
@@ -7868,7 +7865,7 @@ bb0:
     t3178 = h177_own177;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h177_own177 = t355;
-#line 7872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3178);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t356 = HERO_STR_LIT(hero_str_61);
@@ -7878,7 +7875,7 @@ bb0:
     t3179 = h178_own178;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h178_own178 = t357;
-#line 7882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3179);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t358 = HERO_STR_LIT(hero_str_61);
@@ -7888,7 +7885,7 @@ bb0:
     t3180 = h179_own179;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h179_own179 = t359;
-#line 7892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3180);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t360 = HERO_STR_LIT(hero_str_61);
@@ -7898,7 +7895,7 @@ bb0:
     t3181 = h180_own180;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h180_own180 = t361;
-#line 7902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3181);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t362 = HERO_STR_LIT(hero_str_61);
@@ -7908,7 +7905,7 @@ bb0:
     t3182 = h181_own181;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h181_own181 = t363;
-#line 7912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3182);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t364 = HERO_STR_LIT(hero_str_61);
@@ -7918,7 +7915,7 @@ bb0:
     t3183 = h182_own182;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h182_own182 = t365;
-#line 7922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3183);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t366 = HERO_STR_LIT(hero_str_61);
@@ -7928,7 +7925,7 @@ bb0:
     t3184 = h183_own183;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h183_own183 = t367;
-#line 7932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3184);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t368 = HERO_STR_LIT(hero_str_61);
@@ -7938,7 +7935,7 @@ bb0:
     t3185 = h184_own184;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h184_own184 = t369;
-#line 7942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3185);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t370 = HERO_STR_LIT(hero_str_61);
@@ -7948,7 +7945,7 @@ bb0:
     t3186 = h185_own185;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h185_own185 = t371;
-#line 7952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3186);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t372 = HERO_STR_LIT(hero_str_61);
@@ -7958,7 +7955,7 @@ bb0:
     t3187 = h186_own186;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h186_own186 = t373;
-#line 7962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3187);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t374 = HERO_STR_LIT(hero_str_61);
@@ -7968,7 +7965,7 @@ bb0:
     t3188 = h187_own187;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h187_own187 = t375;
-#line 7972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3188);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t376 = HERO_STR_LIT(hero_str_61);
@@ -7978,7 +7975,7 @@ bb0:
     t3189 = h188_own188;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h188_own188 = t377;
-#line 7982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3189);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t378 = HERO_STR_LIT(hero_str_61);
@@ -7988,7 +7985,7 @@ bb0:
     t3190 = h189_own189;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h189_own189 = t379;
-#line 7992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3190);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t380 = HERO_STR_LIT(hero_str_61);
@@ -7998,7 +7995,7 @@ bb0:
     t3191 = h190_own190;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h190_own190 = t381;
-#line 8002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 7999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3191);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t382 = HERO_STR_LIT(hero_str_61);
@@ -8008,7 +8005,7 @@ bb0:
     t3192 = h191_own191;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h191_own191 = t383;
-#line 8012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3192);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t384 = HERO_STR_LIT(hero_str_61);
@@ -8018,7 +8015,7 @@ bb0:
     t3193 = h192_own192;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h192_own192 = t385;
-#line 8022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3193);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t386 = HERO_STR_LIT(hero_str_61);
@@ -8028,7 +8025,7 @@ bb0:
     t3194 = h193_own193;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h193_own193 = t387;
-#line 8032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3194);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t388 = HERO_STR_LIT(hero_str_61);
@@ -8038,7 +8035,7 @@ bb0:
     t3195 = h194_own194;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h194_own194 = t389;
-#line 8042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3195);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t390 = HERO_STR_LIT(hero_str_61);
@@ -8048,7 +8045,7 @@ bb0:
     t3196 = h195_own195;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h195_own195 = t391;
-#line 8052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3196);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t392 = HERO_STR_LIT(hero_str_61);
@@ -8058,7 +8055,7 @@ bb0:
     t3197 = h196_own196;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h196_own196 = t393;
-#line 8062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3197);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t394 = HERO_STR_LIT(hero_str_61);
@@ -8068,7 +8065,7 @@ bb0:
     t3198 = h197_own197;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h197_own197 = t395;
-#line 8072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3198);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t396 = HERO_STR_LIT(hero_str_61);
@@ -8078,7 +8075,7 @@ bb0:
     t3199 = h198_own198;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h198_own198 = t397;
-#line 8082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3199);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t398 = HERO_STR_LIT(hero_str_61);
@@ -8088,7 +8085,7 @@ bb0:
     t3200 = h199_own199;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h199_own199 = t399;
-#line 8092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3200);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t400 = HERO_STR_LIT(hero_str_61);
@@ -8098,7 +8095,7 @@ bb0:
     t3201 = h200_own200;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h200_own200 = t401;
-#line 8102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3201);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t402 = HERO_STR_LIT(hero_str_61);
@@ -8108,7 +8105,7 @@ bb0:
     t3202 = h201_own201;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h201_own201 = t403;
-#line 8112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3202);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t404 = HERO_STR_LIT(hero_str_61);
@@ -8118,7 +8115,7 @@ bb0:
     t3203 = h202_own202;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h202_own202 = t405;
-#line 8122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3203);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t406 = HERO_STR_LIT(hero_str_61);
@@ -8128,7 +8125,7 @@ bb0:
     t3204 = h203_own203;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h203_own203 = t407;
-#line 8132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3204);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t408 = HERO_STR_LIT(hero_str_61);
@@ -8138,7 +8135,7 @@ bb0:
     t3205 = h204_own204;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h204_own204 = t409;
-#line 8142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3205);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t410 = HERO_STR_LIT(hero_str_61);
@@ -8148,7 +8145,7 @@ bb0:
     t3206 = h205_own205;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h205_own205 = t411;
-#line 8152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3206);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t412 = HERO_STR_LIT(hero_str_61);
@@ -8158,7 +8155,7 @@ bb0:
     t3207 = h206_own206;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h206_own206 = t413;
-#line 8162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3207);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t414 = HERO_STR_LIT(hero_str_61);
@@ -8168,7 +8165,7 @@ bb0:
     t3208 = h207_own207;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h207_own207 = t415;
-#line 8172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3208);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t416 = HERO_STR_LIT(hero_str_61);
@@ -8178,7 +8175,7 @@ bb0:
     t3209 = h208_own208;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h208_own208 = t417;
-#line 8182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3209);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t418 = HERO_STR_LIT(hero_str_61);
@@ -8188,7 +8185,7 @@ bb0:
     t3210 = h209_own209;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h209_own209 = t419;
-#line 8192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3210);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t420 = HERO_STR_LIT(hero_str_61);
@@ -8198,7 +8195,7 @@ bb0:
     t3211 = h210_own210;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h210_own210 = t421;
-#line 8202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3211);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t422 = HERO_STR_LIT(hero_str_61);
@@ -8208,7 +8205,7 @@ bb0:
     t3212 = h211_own211;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h211_own211 = t423;
-#line 8212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3212);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t424 = HERO_STR_LIT(hero_str_61);
@@ -8218,7 +8215,7 @@ bb0:
     t3213 = h212_own212;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h212_own212 = t425;
-#line 8222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3213);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t426 = HERO_STR_LIT(hero_str_61);
@@ -8228,7 +8225,7 @@ bb0:
     t3214 = h213_own213;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h213_own213 = t427;
-#line 8232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3214);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t428 = HERO_STR_LIT(hero_str_61);
@@ -8238,7 +8235,7 @@ bb0:
     t3215 = h214_own214;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h214_own214 = t429;
-#line 8242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3215);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t430 = HERO_STR_LIT(hero_str_61);
@@ -8248,7 +8245,7 @@ bb0:
     t3216 = h215_own215;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h215_own215 = t431;
-#line 8252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3216);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t432 = HERO_STR_LIT(hero_str_61);
@@ -8258,7 +8255,7 @@ bb0:
     t3217 = h216_own216;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h216_own216 = t433;
-#line 8262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3217);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t434 = HERO_STR_LIT(hero_str_61);
@@ -8268,7 +8265,7 @@ bb0:
     t3218 = h217_own217;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h217_own217 = t435;
-#line 8272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3218);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t436 = HERO_STR_LIT(hero_str_61);
@@ -8278,7 +8275,7 @@ bb0:
     t3219 = h218_own218;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h218_own218 = t437;
-#line 8282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3219);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t438 = HERO_STR_LIT(hero_str_61);
@@ -8288,7 +8285,7 @@ bb0:
     t3220 = h219_own219;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h219_own219 = t439;
-#line 8292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3220);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t440 = HERO_STR_LIT(hero_str_61);
@@ -8298,7 +8295,7 @@ bb0:
     t3221 = h220_own220;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h220_own220 = t441;
-#line 8302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3221);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t442 = HERO_STR_LIT(hero_str_61);
@@ -8308,7 +8305,7 @@ bb0:
     t3222 = h221_own221;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h221_own221 = t443;
-#line 8312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3222);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t444 = HERO_STR_LIT(hero_str_61);
@@ -8318,7 +8315,7 @@ bb0:
     t3223 = h222_own222;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h222_own222 = t445;
-#line 8322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3223);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t446 = HERO_STR_LIT(hero_str_61);
@@ -8328,7 +8325,7 @@ bb0:
     t3224 = h223_own223;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h223_own223 = t447;
-#line 8332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3224);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t448 = HERO_STR_LIT(hero_str_61);
@@ -8338,7 +8335,7 @@ bb0:
     t3225 = h224_own224;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h224_own224 = t449;
-#line 8342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3225);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t450 = HERO_STR_LIT(hero_str_61);
@@ -8348,7 +8345,7 @@ bb0:
     t3226 = h225_own225;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h225_own225 = t451;
-#line 8352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3226);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t452 = HERO_STR_LIT(hero_str_61);
@@ -8358,7 +8355,7 @@ bb0:
     t3227 = h226_own226;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h226_own226 = t453;
-#line 8362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3227);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t454 = HERO_STR_LIT(hero_str_61);
@@ -8368,7 +8365,7 @@ bb0:
     t3228 = h227_own227;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h227_own227 = t455;
-#line 8372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3228);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t456 = HERO_STR_LIT(hero_str_61);
@@ -8378,7 +8375,7 @@ bb0:
     t3229 = h228_own228;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h228_own228 = t457;
-#line 8382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3229);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t458 = HERO_STR_LIT(hero_str_61);
@@ -8388,7 +8385,7 @@ bb0:
     t3230 = h229_own229;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h229_own229 = t459;
-#line 8392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3230);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t460 = HERO_STR_LIT(hero_str_61);
@@ -8398,7 +8395,7 @@ bb0:
     t3231 = h230_own230;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h230_own230 = t461;
-#line 8402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3231);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t462 = HERO_STR_LIT(hero_str_61);
@@ -8408,7 +8405,7 @@ bb0:
     t3232 = h231_own231;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h231_own231 = t463;
-#line 8412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3232);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t464 = HERO_STR_LIT(hero_str_61);
@@ -8418,7 +8415,7 @@ bb0:
     t3233 = h232_own232;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h232_own232 = t465;
-#line 8422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3233);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t466 = HERO_STR_LIT(hero_str_61);
@@ -8428,7 +8425,7 @@ bb0:
     t3234 = h233_own233;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h233_own233 = t467;
-#line 8432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3234);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t468 = HERO_STR_LIT(hero_str_61);
@@ -8438,7 +8435,7 @@ bb0:
     t3235 = h234_own234;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h234_own234 = t469;
-#line 8442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3235);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t470 = HERO_STR_LIT(hero_str_61);
@@ -8448,7 +8445,7 @@ bb0:
     t3236 = h235_own235;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h235_own235 = t471;
-#line 8452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3236);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t472 = HERO_STR_LIT(hero_str_61);
@@ -8458,7 +8455,7 @@ bb0:
     t3237 = h236_own236;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h236_own236 = t473;
-#line 8462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3237);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t474 = HERO_STR_LIT(hero_str_61);
@@ -8468,7 +8465,7 @@ bb0:
     t3238 = h237_own237;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h237_own237 = t475;
-#line 8472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3238);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t476 = HERO_STR_LIT(hero_str_61);
@@ -8478,7 +8475,7 @@ bb0:
     t3239 = h238_own238;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h238_own238 = t477;
-#line 8482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3239);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t478 = HERO_STR_LIT(hero_str_61);
@@ -8488,7 +8485,7 @@ bb0:
     t3240 = h239_own239;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h239_own239 = t479;
-#line 8492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3240);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t480 = HERO_STR_LIT(hero_str_61);
@@ -8498,7 +8495,7 @@ bb0:
     t3241 = h240_own240;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h240_own240 = t481;
-#line 8502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3241);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t482 = HERO_STR_LIT(hero_str_61);
@@ -8508,7 +8505,7 @@ bb0:
     t3242 = h241_own241;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h241_own241 = t483;
-#line 8512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3242);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t484 = HERO_STR_LIT(hero_str_61);
@@ -8518,7 +8515,7 @@ bb0:
     t3243 = h242_own242;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h242_own242 = t485;
-#line 8522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3243);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t486 = HERO_STR_LIT(hero_str_61);
@@ -8528,7 +8525,7 @@ bb0:
     t3244 = h243_own243;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h243_own243 = t487;
-#line 8532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3244);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t488 = HERO_STR_LIT(hero_str_61);
@@ -8538,7 +8535,7 @@ bb0:
     t3245 = h244_own244;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h244_own244 = t489;
-#line 8542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3245);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t490 = HERO_STR_LIT(hero_str_61);
@@ -8548,7 +8545,7 @@ bb0:
     t3246 = h245_own245;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h245_own245 = t491;
-#line 8552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3246);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t492 = HERO_STR_LIT(hero_str_61);
@@ -8558,7 +8555,7 @@ bb0:
     t3247 = h246_own246;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h246_own246 = t493;
-#line 8562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3247);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t494 = HERO_STR_LIT(hero_str_61);
@@ -8568,7 +8565,7 @@ bb0:
     t3248 = h247_own247;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h247_own247 = t495;
-#line 8572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3248);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t496 = HERO_STR_LIT(hero_str_61);
@@ -8578,7 +8575,7 @@ bb0:
     t3249 = h248_own248;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h248_own248 = t497;
-#line 8582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3249);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t498 = HERO_STR_LIT(hero_str_61);
@@ -8588,7 +8585,7 @@ bb0:
     t3250 = h249_own249;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h249_own249 = t499;
-#line 8592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3250);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t500 = HERO_STR_LIT(hero_str_61);
@@ -8598,7 +8595,7 @@ bb0:
     t3251 = h250_own250;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h250_own250 = t501;
-#line 8602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3251);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t502 = HERO_STR_LIT(hero_str_61);
@@ -8608,7 +8605,7 @@ bb0:
     t3252 = h251_own251;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h251_own251 = t503;
-#line 8612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3252);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t504 = HERO_STR_LIT(hero_str_61);
@@ -8618,7 +8615,7 @@ bb0:
     t3253 = h252_own252;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h252_own252 = t505;
-#line 8622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3253);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t506 = HERO_STR_LIT(hero_str_61);
@@ -8628,7 +8625,7 @@ bb0:
     t3254 = h253_own253;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h253_own253 = t507;
-#line 8632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3254);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t508 = HERO_STR_LIT(hero_str_61);
@@ -8638,7 +8635,7 @@ bb0:
     t3255 = h254_own254;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h254_own254 = t509;
-#line 8642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3255);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t510 = HERO_STR_LIT(hero_str_61);
@@ -8648,7 +8645,7 @@ bb0:
     t3256 = h255_own255;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h255_own255 = t511;
-#line 8652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3256);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t512 = HERO_STR_LIT(hero_str_61);
@@ -8658,7 +8655,7 @@ bb0:
     t3257 = h256_own256;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h256_own256 = t513;
-#line 8662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3257);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t514 = HERO_STR_LIT(hero_str_61);
@@ -8668,7 +8665,7 @@ bb0:
     t3258 = h257_own257;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h257_own257 = t515;
-#line 8672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3258);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t516 = HERO_STR_LIT(hero_str_61);
@@ -8678,7 +8675,7 @@ bb0:
     t3259 = h258_own258;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h258_own258 = t517;
-#line 8682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3259);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t518 = HERO_STR_LIT(hero_str_61);
@@ -8688,7 +8685,7 @@ bb0:
     t3260 = h259_own259;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h259_own259 = t519;
-#line 8692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3260);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t520 = HERO_STR_LIT(hero_str_61);
@@ -8698,7 +8695,7 @@ bb0:
     t3261 = h260_own260;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h260_own260 = t521;
-#line 8702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3261);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t522 = HERO_STR_LIT(hero_str_61);
@@ -8708,7 +8705,7 @@ bb0:
     t3262 = h261_own261;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h261_own261 = t523;
-#line 8712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3262);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t524 = HERO_STR_LIT(hero_str_61);
@@ -8718,7 +8715,7 @@ bb0:
     t3263 = h262_own262;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h262_own262 = t525;
-#line 8722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3263);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t526 = HERO_STR_LIT(hero_str_61);
@@ -8728,7 +8725,7 @@ bb0:
     t3264 = h263_own263;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h263_own263 = t527;
-#line 8732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3264);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t528 = HERO_STR_LIT(hero_str_61);
@@ -8738,7 +8735,7 @@ bb0:
     t3265 = h264_own264;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h264_own264 = t529;
-#line 8742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3265);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t530 = HERO_STR_LIT(hero_str_61);
@@ -8748,7 +8745,7 @@ bb0:
     t3266 = h265_own265;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h265_own265 = t531;
-#line 8752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3266);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t532 = HERO_STR_LIT(hero_str_61);
@@ -8758,7 +8755,7 @@ bb0:
     t3267 = h266_own266;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h266_own266 = t533;
-#line 8762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3267);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t534 = HERO_STR_LIT(hero_str_61);
@@ -8768,7 +8765,7 @@ bb0:
     t3268 = h267_own267;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h267_own267 = t535;
-#line 8772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3268);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t536 = HERO_STR_LIT(hero_str_61);
@@ -8778,7 +8775,7 @@ bb0:
     t3269 = h268_own268;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h268_own268 = t537;
-#line 8782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3269);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t538 = HERO_STR_LIT(hero_str_61);
@@ -8788,7 +8785,7 @@ bb0:
     t3270 = h269_own269;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h269_own269 = t539;
-#line 8792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3270);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t540 = HERO_STR_LIT(hero_str_61);
@@ -8798,7 +8795,7 @@ bb0:
     t3271 = h270_own270;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h270_own270 = t541;
-#line 8802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3271);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t542 = HERO_STR_LIT(hero_str_61);
@@ -8808,7 +8805,7 @@ bb0:
     t3272 = h271_own271;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h271_own271 = t543;
-#line 8812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3272);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t544 = HERO_STR_LIT(hero_str_61);
@@ -8818,7 +8815,7 @@ bb0:
     t3273 = h272_own272;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h272_own272 = t545;
-#line 8822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3273);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t546 = HERO_STR_LIT(hero_str_61);
@@ -8828,7 +8825,7 @@ bb0:
     t3274 = h273_own273;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h273_own273 = t547;
-#line 8832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3274);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t548 = HERO_STR_LIT(hero_str_61);
@@ -8838,7 +8835,7 @@ bb0:
     t3275 = h274_own274;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h274_own274 = t549;
-#line 8842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3275);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t550 = HERO_STR_LIT(hero_str_61);
@@ -8848,7 +8845,7 @@ bb0:
     t3276 = h275_own275;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h275_own275 = t551;
-#line 8852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3276);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t552 = HERO_STR_LIT(hero_str_61);
@@ -8858,7 +8855,7 @@ bb0:
     t3277 = h276_own276;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h276_own276 = t553;
-#line 8862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3277);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t554 = HERO_STR_LIT(hero_str_61);
@@ -8868,7 +8865,7 @@ bb0:
     t3278 = h277_own277;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h277_own277 = t555;
-#line 8872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3278);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t556 = HERO_STR_LIT(hero_str_61);
@@ -8878,7 +8875,7 @@ bb0:
     t3279 = h278_own278;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h278_own278 = t557;
-#line 8882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3279);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t558 = HERO_STR_LIT(hero_str_61);
@@ -8888,7 +8885,7 @@ bb0:
     t3280 = h279_own279;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h279_own279 = t559;
-#line 8892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3280);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t560 = HERO_STR_LIT(hero_str_61);
@@ -8898,7 +8895,7 @@ bb0:
     t3281 = h280_own280;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h280_own280 = t561;
-#line 8902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3281);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t562 = HERO_STR_LIT(hero_str_61);
@@ -8908,7 +8905,7 @@ bb0:
     t3282 = h281_own281;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h281_own281 = t563;
-#line 8912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3282);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t564 = HERO_STR_LIT(hero_str_61);
@@ -8918,7 +8915,7 @@ bb0:
     t3283 = h282_own282;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h282_own282 = t565;
-#line 8922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3283);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t566 = HERO_STR_LIT(hero_str_61);
@@ -8928,7 +8925,7 @@ bb0:
     t3284 = h283_own283;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h283_own283 = t567;
-#line 8932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3284);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t568 = HERO_STR_LIT(hero_str_61);
@@ -8938,7 +8935,7 @@ bb0:
     t3285 = h284_own284;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h284_own284 = t569;
-#line 8942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3285);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t570 = HERO_STR_LIT(hero_str_61);
@@ -8948,7 +8945,7 @@ bb0:
     t3286 = h285_own285;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h285_own285 = t571;
-#line 8952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3286);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t572 = HERO_STR_LIT(hero_str_61);
@@ -8958,7 +8955,7 @@ bb0:
     t3287 = h286_own286;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h286_own286 = t573;
-#line 8962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3287);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t574 = HERO_STR_LIT(hero_str_61);
@@ -8968,7 +8965,7 @@ bb0:
     t3288 = h287_own287;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h287_own287 = t575;
-#line 8972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3288);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t576 = HERO_STR_LIT(hero_str_61);
@@ -8978,7 +8975,7 @@ bb0:
     t3289 = h288_own288;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h288_own288 = t577;
-#line 8982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3289);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t578 = HERO_STR_LIT(hero_str_61);
@@ -8988,7 +8985,7 @@ bb0:
     t3290 = h289_own289;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h289_own289 = t579;
-#line 8992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3290);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t580 = HERO_STR_LIT(hero_str_61);
@@ -8998,7 +8995,7 @@ bb0:
     t3291 = h290_own290;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h290_own290 = t581;
-#line 9002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 8999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3291);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t582 = HERO_STR_LIT(hero_str_61);
@@ -9008,7 +9005,7 @@ bb0:
     t3292 = h291_own291;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h291_own291 = t583;
-#line 9012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3292);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t584 = HERO_STR_LIT(hero_str_61);
@@ -9018,7 +9015,7 @@ bb0:
     t3293 = h292_own292;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h292_own292 = t585;
-#line 9022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3293);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t586 = HERO_STR_LIT(hero_str_61);
@@ -9028,7 +9025,7 @@ bb0:
     t3294 = h293_own293;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h293_own293 = t587;
-#line 9032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3294);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t588 = HERO_STR_LIT(hero_str_61);
@@ -9038,7 +9035,7 @@ bb0:
     t3295 = h294_own294;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h294_own294 = t589;
-#line 9042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3295);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t590 = HERO_STR_LIT(hero_str_61);
@@ -9048,7 +9045,7 @@ bb0:
     t3296 = h295_own295;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h295_own295 = t591;
-#line 9052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3296);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t592 = HERO_STR_LIT(hero_str_61);
@@ -9058,7 +9055,7 @@ bb0:
     t3297 = h296_own296;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h296_own296 = t593;
-#line 9062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3297);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t594 = HERO_STR_LIT(hero_str_61);
@@ -9068,7 +9065,7 @@ bb0:
     t3298 = h297_own297;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h297_own297 = t595;
-#line 9072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3298);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t596 = HERO_STR_LIT(hero_str_61);
@@ -9078,7 +9075,7 @@ bb0:
     t3299 = h298_own298;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h298_own298 = t597;
-#line 9082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3299);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t598 = HERO_STR_LIT(hero_str_61);
@@ -9088,7 +9085,7 @@ bb0:
     t3300 = h299_own299;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h299_own299 = t599;
-#line 9092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3300);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t600 = HERO_STR_LIT(hero_str_61);
@@ -9098,7 +9095,7 @@ bb0:
     t3301 = h300_own300;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h300_own300 = t601;
-#line 9102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3301);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t602 = HERO_STR_LIT(hero_str_61);
@@ -9108,7 +9105,7 @@ bb0:
     t3302 = h301_own301;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h301_own301 = t603;
-#line 9112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3302);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t604 = HERO_STR_LIT(hero_str_61);
@@ -9118,7 +9115,7 @@ bb0:
     t3303 = h302_own302;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h302_own302 = t605;
-#line 9122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3303);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t606 = HERO_STR_LIT(hero_str_61);
@@ -9128,7 +9125,7 @@ bb0:
     t3304 = h303_own303;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h303_own303 = t607;
-#line 9132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3304);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t608 = HERO_STR_LIT(hero_str_61);
@@ -9138,7 +9135,7 @@ bb0:
     t3305 = h304_own304;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h304_own304 = t609;
-#line 9142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3305);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t610 = HERO_STR_LIT(hero_str_61);
@@ -9148,7 +9145,7 @@ bb0:
     t3306 = h305_own305;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h305_own305 = t611;
-#line 9152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3306);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t612 = HERO_STR_LIT(hero_str_61);
@@ -9158,7 +9155,7 @@ bb0:
     t3307 = h306_own306;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h306_own306 = t613;
-#line 9162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3307);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t614 = HERO_STR_LIT(hero_str_61);
@@ -9168,7 +9165,7 @@ bb0:
     t3308 = h307_own307;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h307_own307 = t615;
-#line 9172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3308);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t616 = HERO_STR_LIT(hero_str_61);
@@ -9178,7 +9175,7 @@ bb0:
     t3309 = h308_own308;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h308_own308 = t617;
-#line 9182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3309);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t618 = HERO_STR_LIT(hero_str_61);
@@ -9188,7 +9185,7 @@ bb0:
     t3310 = h309_own309;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h309_own309 = t619;
-#line 9192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3310);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t620 = HERO_STR_LIT(hero_str_61);
@@ -9198,7 +9195,7 @@ bb0:
     t3311 = h310_own310;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h310_own310 = t621;
-#line 9202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3311);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t622 = HERO_STR_LIT(hero_str_61);
@@ -9208,7 +9205,7 @@ bb0:
     t3312 = h311_own311;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h311_own311 = t623;
-#line 9212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3312);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t624 = HERO_STR_LIT(hero_str_61);
@@ -9218,7 +9215,7 @@ bb0:
     t3313 = h312_own312;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h312_own312 = t625;
-#line 9222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3313);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t626 = HERO_STR_LIT(hero_str_61);
@@ -9228,7 +9225,7 @@ bb0:
     t3314 = h313_own313;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h313_own313 = t627;
-#line 9232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3314);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t628 = HERO_STR_LIT(hero_str_61);
@@ -9238,7 +9235,7 @@ bb0:
     t3315 = h314_own314;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h314_own314 = t629;
-#line 9242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3315);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t630 = HERO_STR_LIT(hero_str_61);
@@ -9248,7 +9245,7 @@ bb0:
     t3316 = h315_own315;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h315_own315 = t631;
-#line 9252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3316);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t632 = HERO_STR_LIT(hero_str_61);
@@ -9258,7 +9255,7 @@ bb0:
     t3317 = h316_own316;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h316_own316 = t633;
-#line 9262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3317);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t634 = HERO_STR_LIT(hero_str_61);
@@ -9268,7 +9265,7 @@ bb0:
     t3318 = h317_own317;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h317_own317 = t635;
-#line 9272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3318);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t636 = HERO_STR_LIT(hero_str_61);
@@ -9278,7 +9275,7 @@ bb0:
     t3319 = h318_own318;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h318_own318 = t637;
-#line 9282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3319);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t638 = HERO_STR_LIT(hero_str_61);
@@ -9288,7 +9285,7 @@ bb0:
     t3320 = h319_own319;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h319_own319 = t639;
-#line 9292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3320);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t640 = HERO_STR_LIT(hero_str_61);
@@ -9298,7 +9295,7 @@ bb0:
     t3321 = h320_own320;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h320_own320 = t641;
-#line 9302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3321);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t642 = HERO_STR_LIT(hero_str_61);
@@ -9308,7 +9305,7 @@ bb0:
     t3322 = h321_own321;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h321_own321 = t643;
-#line 9312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3322);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t644 = HERO_STR_LIT(hero_str_61);
@@ -9318,7 +9315,7 @@ bb0:
     t3323 = h322_own322;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h322_own322 = t645;
-#line 9322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3323);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t646 = HERO_STR_LIT(hero_str_61);
@@ -9328,7 +9325,7 @@ bb0:
     t3324 = h323_own323;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h323_own323 = t647;
-#line 9332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3324);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t648 = HERO_STR_LIT(hero_str_61);
@@ -9338,7 +9335,7 @@ bb0:
     t3325 = h324_own324;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h324_own324 = t649;
-#line 9342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3325);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t650 = HERO_STR_LIT(hero_str_61);
@@ -9348,7 +9345,7 @@ bb0:
     t3326 = h325_own325;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h325_own325 = t651;
-#line 9352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3326);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t652 = HERO_STR_LIT(hero_str_61);
@@ -9358,7 +9355,7 @@ bb0:
     t3327 = h326_own326;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h326_own326 = t653;
-#line 9362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3327);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t654 = HERO_STR_LIT(hero_str_61);
@@ -9368,7 +9365,7 @@ bb0:
     t3328 = h327_own327;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h327_own327 = t655;
-#line 9372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3328);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t656 = HERO_STR_LIT(hero_str_61);
@@ -9378,7 +9375,7 @@ bb0:
     t3329 = h328_own328;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h328_own328 = t657;
-#line 9382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3329);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t658 = HERO_STR_LIT(hero_str_61);
@@ -9388,7 +9385,7 @@ bb0:
     t3330 = h329_own329;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h329_own329 = t659;
-#line 9392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3330);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t660 = HERO_STR_LIT(hero_str_61);
@@ -9398,7 +9395,7 @@ bb0:
     t3331 = h330_own330;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h330_own330 = t661;
-#line 9402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3331);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t662 = HERO_STR_LIT(hero_str_61);
@@ -9408,7 +9405,7 @@ bb0:
     t3332 = h331_own331;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h331_own331 = t663;
-#line 9412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3332);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t664 = HERO_STR_LIT(hero_str_61);
@@ -9418,7 +9415,7 @@ bb0:
     t3333 = h332_own332;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h332_own332 = t665;
-#line 9422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3333);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t666 = HERO_STR_LIT(hero_str_61);
@@ -9428,7 +9425,7 @@ bb0:
     t3334 = h333_own333;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h333_own333 = t667;
-#line 9432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3334);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t668 = HERO_STR_LIT(hero_str_61);
@@ -9438,7 +9435,7 @@ bb0:
     t3335 = h334_own334;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h334_own334 = t669;
-#line 9442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3335);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t670 = HERO_STR_LIT(hero_str_61);
@@ -9448,7 +9445,7 @@ bb0:
     t3336 = h335_own335;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h335_own335 = t671;
-#line 9452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3336);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t672 = HERO_STR_LIT(hero_str_61);
@@ -9458,7 +9455,7 @@ bb0:
     t3337 = h336_own336;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h336_own336 = t673;
-#line 9462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3337);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t674 = HERO_STR_LIT(hero_str_61);
@@ -9468,7 +9465,7 @@ bb0:
     t3338 = h337_own337;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h337_own337 = t675;
-#line 9472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3338);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t676 = HERO_STR_LIT(hero_str_61);
@@ -9478,7 +9475,7 @@ bb0:
     t3339 = h338_own338;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h338_own338 = t677;
-#line 9482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3339);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t678 = HERO_STR_LIT(hero_str_61);
@@ -9488,7 +9485,7 @@ bb0:
     t3340 = h339_own339;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h339_own339 = t679;
-#line 9492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3340);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t680 = HERO_STR_LIT(hero_str_61);
@@ -9498,7 +9495,7 @@ bb0:
     t3341 = h340_own340;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h340_own340 = t681;
-#line 9502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3341);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t682 = HERO_STR_LIT(hero_str_61);
@@ -9508,7 +9505,7 @@ bb0:
     t3342 = h341_own341;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h341_own341 = t683;
-#line 9512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3342);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t684 = HERO_STR_LIT(hero_str_61);
@@ -9518,7 +9515,7 @@ bb0:
     t3343 = h342_own342;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h342_own342 = t685;
-#line 9522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3343);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t686 = HERO_STR_LIT(hero_str_61);
@@ -9528,7 +9525,7 @@ bb0:
     t3344 = h343_own343;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h343_own343 = t687;
-#line 9532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3344);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t688 = HERO_STR_LIT(hero_str_61);
@@ -9538,7 +9535,7 @@ bb0:
     t3345 = h344_own344;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h344_own344 = t689;
-#line 9542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3345);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t690 = HERO_STR_LIT(hero_str_61);
@@ -9548,7 +9545,7 @@ bb0:
     t3346 = h345_own345;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h345_own345 = t691;
-#line 9552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3346);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t692 = HERO_STR_LIT(hero_str_61);
@@ -9558,7 +9555,7 @@ bb0:
     t3347 = h346_own346;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h346_own346 = t693;
-#line 9562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3347);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t694 = HERO_STR_LIT(hero_str_61);
@@ -9568,7 +9565,7 @@ bb0:
     t3348 = h347_own347;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h347_own347 = t695;
-#line 9572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3348);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t696 = HERO_STR_LIT(hero_str_61);
@@ -9578,7 +9575,7 @@ bb0:
     t3349 = h348_own348;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h348_own348 = t697;
-#line 9582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3349);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t698 = HERO_STR_LIT(hero_str_61);
@@ -9588,7 +9585,7 @@ bb0:
     t3350 = h349_own349;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h349_own349 = t699;
-#line 9592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3350);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t700 = HERO_STR_LIT(hero_str_61);
@@ -9598,7 +9595,7 @@ bb0:
     t3351 = h350_own350;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h350_own350 = t701;
-#line 9602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3351);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t702 = HERO_STR_LIT(hero_str_61);
@@ -9608,7 +9605,7 @@ bb0:
     t3352 = h351_own351;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h351_own351 = t703;
-#line 9612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3352);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t704 = HERO_STR_LIT(hero_str_61);
@@ -9618,7 +9615,7 @@ bb0:
     t3353 = h352_own352;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h352_own352 = t705;
-#line 9622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3353);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t706 = HERO_STR_LIT(hero_str_61);
@@ -9628,7 +9625,7 @@ bb0:
     t3354 = h353_own353;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h353_own353 = t707;
-#line 9632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3354);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t708 = HERO_STR_LIT(hero_str_61);
@@ -9638,7 +9635,7 @@ bb0:
     t3355 = h354_own354;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h354_own354 = t709;
-#line 9642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3355);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t710 = HERO_STR_LIT(hero_str_61);
@@ -9648,7 +9645,7 @@ bb0:
     t3356 = h355_own355;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h355_own355 = t711;
-#line 9652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3356);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t712 = HERO_STR_LIT(hero_str_61);
@@ -9658,7 +9655,7 @@ bb0:
     t3357 = h356_own356;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h356_own356 = t713;
-#line 9662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3357);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t714 = HERO_STR_LIT(hero_str_61);
@@ -9668,7 +9665,7 @@ bb0:
     t3358 = h357_own357;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h357_own357 = t715;
-#line 9672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3358);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t716 = HERO_STR_LIT(hero_str_61);
@@ -9678,7 +9675,7 @@ bb0:
     t3359 = h358_own358;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h358_own358 = t717;
-#line 9682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3359);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t718 = HERO_STR_LIT(hero_str_61);
@@ -9688,7 +9685,7 @@ bb0:
     t3360 = h359_own359;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h359_own359 = t719;
-#line 9692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3360);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t720 = HERO_STR_LIT(hero_str_61);
@@ -9698,7 +9695,7 @@ bb0:
     t3361 = h360_own360;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h360_own360 = t721;
-#line 9702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3361);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t722 = HERO_STR_LIT(hero_str_61);
@@ -9708,7 +9705,7 @@ bb0:
     t3362 = h361_own361;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h361_own361 = t723;
-#line 9712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3362);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t724 = HERO_STR_LIT(hero_str_61);
@@ -9718,7 +9715,7 @@ bb0:
     t3363 = h362_own362;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h362_own362 = t725;
-#line 9722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3363);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t726 = HERO_STR_LIT(hero_str_61);
@@ -9728,7 +9725,7 @@ bb0:
     t3364 = h363_own363;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h363_own363 = t727;
-#line 9732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3364);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t728 = HERO_STR_LIT(hero_str_61);
@@ -9738,7 +9735,7 @@ bb0:
     t3365 = h364_own364;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h364_own364 = t729;
-#line 9742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3365);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t730 = HERO_STR_LIT(hero_str_61);
@@ -9748,7 +9745,7 @@ bb0:
     t3366 = h365_own365;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h365_own365 = t731;
-#line 9752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3366);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t732 = HERO_STR_LIT(hero_str_61);
@@ -9758,7 +9755,7 @@ bb0:
     t3367 = h366_own366;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h366_own366 = t733;
-#line 9762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3367);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t734 = HERO_STR_LIT(hero_str_61);
@@ -9768,7 +9765,7 @@ bb0:
     t3368 = h367_own367;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h367_own367 = t735;
-#line 9772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3368);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t736 = HERO_STR_LIT(hero_str_61);
@@ -9778,7 +9775,7 @@ bb0:
     t3369 = h368_own368;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h368_own368 = t737;
-#line 9782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3369);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t738 = HERO_STR_LIT(hero_str_61);
@@ -9788,7 +9785,7 @@ bb0:
     t3370 = h369_own369;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h369_own369 = t739;
-#line 9792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3370);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t740 = HERO_STR_LIT(hero_str_61);
@@ -9798,7 +9795,7 @@ bb0:
     t3371 = h370_own370;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h370_own370 = t741;
-#line 9802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3371);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t742 = HERO_STR_LIT(hero_str_61);
@@ -9808,7 +9805,7 @@ bb0:
     t3372 = h371_own371;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h371_own371 = t743;
-#line 9812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3372);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t744 = HERO_STR_LIT(hero_str_61);
@@ -9818,7 +9815,7 @@ bb0:
     t3373 = h372_own372;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h372_own372 = t745;
-#line 9822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3373);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t746 = HERO_STR_LIT(hero_str_61);
@@ -9828,7 +9825,7 @@ bb0:
     t3374 = h373_own373;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h373_own373 = t747;
-#line 9832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3374);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t748 = HERO_STR_LIT(hero_str_61);
@@ -9838,7 +9835,7 @@ bb0:
     t3375 = h374_own374;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h374_own374 = t749;
-#line 9842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3375);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t750 = HERO_STR_LIT(hero_str_61);
@@ -9848,7 +9845,7 @@ bb0:
     t3376 = h375_own375;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h375_own375 = t751;
-#line 9852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3376);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t752 = HERO_STR_LIT(hero_str_61);
@@ -9858,7 +9855,7 @@ bb0:
     t3377 = h376_own376;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h376_own376 = t753;
-#line 9862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3377);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t754 = HERO_STR_LIT(hero_str_61);
@@ -9868,7 +9865,7 @@ bb0:
     t3378 = h377_own377;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h377_own377 = t755;
-#line 9872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3378);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t756 = HERO_STR_LIT(hero_str_61);
@@ -9878,7 +9875,7 @@ bb0:
     t3379 = h378_own378;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h378_own378 = t757;
-#line 9882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3379);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t758 = HERO_STR_LIT(hero_str_61);
@@ -9888,7 +9885,7 @@ bb0:
     t3380 = h379_own379;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h379_own379 = t759;
-#line 9892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3380);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t760 = HERO_STR_LIT(hero_str_61);
@@ -9898,7 +9895,7 @@ bb0:
     t3381 = h380_own380;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h380_own380 = t761;
-#line 9902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3381);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t762 = HERO_STR_LIT(hero_str_61);
@@ -9908,7 +9905,7 @@ bb0:
     t3382 = h381_own381;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h381_own381 = t763;
-#line 9912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3382);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t764 = HERO_STR_LIT(hero_str_61);
@@ -9918,7 +9915,7 @@ bb0:
     t3383 = h382_own382;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h382_own382 = t765;
-#line 9922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3383);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t766 = HERO_STR_LIT(hero_str_61);
@@ -9928,7 +9925,7 @@ bb0:
     t3384 = h383_own383;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h383_own383 = t767;
-#line 9932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3384);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t768 = HERO_STR_LIT(hero_str_61);
@@ -9938,7 +9935,7 @@ bb0:
     t3385 = h384_own384;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h384_own384 = t769;
-#line 9942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3385);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t770 = HERO_STR_LIT(hero_str_61);
@@ -9948,7 +9945,7 @@ bb0:
     t3386 = h385_own385;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h385_own385 = t771;
-#line 9952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3386);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t772 = HERO_STR_LIT(hero_str_61);
@@ -9958,7 +9955,7 @@ bb0:
     t3387 = h386_own386;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h386_own386 = t773;
-#line 9962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3387);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t774 = HERO_STR_LIT(hero_str_61);
@@ -9968,7 +9965,7 @@ bb0:
     t3388 = h387_own387;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h387_own387 = t775;
-#line 9972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3388);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t776 = HERO_STR_LIT(hero_str_61);
@@ -9978,7 +9975,7 @@ bb0:
     t3389 = h388_own388;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h388_own388 = t777;
-#line 9982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3389);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t778 = HERO_STR_LIT(hero_str_61);
@@ -9988,7 +9985,7 @@ bb0:
     t3390 = h389_own389;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h389_own389 = t779;
-#line 9992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3390);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t780 = HERO_STR_LIT(hero_str_61);
@@ -9998,7 +9995,7 @@ bb0:
     t3391 = h390_own390;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h390_own390 = t781;
-#line 10002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 9999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3391);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t782 = HERO_STR_LIT(hero_str_61);
@@ -10008,7 +10005,7 @@ bb0:
     t3392 = h391_own391;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h391_own391 = t783;
-#line 10012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3392);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t784 = HERO_STR_LIT(hero_str_61);
@@ -10018,7 +10015,7 @@ bb0:
     t3393 = h392_own392;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h392_own392 = t785;
-#line 10022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3393);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t786 = HERO_STR_LIT(hero_str_61);
@@ -10028,7 +10025,7 @@ bb0:
     t3394 = h393_own393;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h393_own393 = t787;
-#line 10032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3394);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t788 = HERO_STR_LIT(hero_str_61);
@@ -10038,7 +10035,7 @@ bb0:
     t3395 = h394_own394;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h394_own394 = t789;
-#line 10042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3395);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t790 = HERO_STR_LIT(hero_str_61);
@@ -10048,7 +10045,7 @@ bb0:
     t3396 = h395_own395;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h395_own395 = t791;
-#line 10052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3396);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t792 = HERO_STR_LIT(hero_str_61);
@@ -10058,7 +10055,7 @@ bb0:
     t3397 = h396_own396;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h396_own396 = t793;
-#line 10062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3397);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t794 = HERO_STR_LIT(hero_str_61);
@@ -10068,7 +10065,7 @@ bb0:
     t3398 = h397_own397;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h397_own397 = t795;
-#line 10072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3398);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t796 = HERO_STR_LIT(hero_str_61);
@@ -10078,7 +10075,7 @@ bb0:
     t3399 = h398_own398;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h398_own398 = t797;
-#line 10082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3399);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t798 = HERO_STR_LIT(hero_str_61);
@@ -10088,7 +10085,7 @@ bb0:
     t3400 = h399_own399;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h399_own399 = t799;
-#line 10092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3400);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t800 = HERO_STR_LIT(hero_str_61);
@@ -10098,7 +10095,7 @@ bb0:
     t3401 = h400_own400;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h400_own400 = t801;
-#line 10102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3401);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t802 = HERO_STR_LIT(hero_str_61);
@@ -10108,7 +10105,7 @@ bb0:
     t3402 = h401_own401;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h401_own401 = t803;
-#line 10112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3402);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t804 = HERO_STR_LIT(hero_str_61);
@@ -10118,7 +10115,7 @@ bb0:
     t3403 = h402_own402;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h402_own402 = t805;
-#line 10122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3403);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t806 = HERO_STR_LIT(hero_str_61);
@@ -10128,7 +10125,7 @@ bb0:
     t3404 = h403_own403;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h403_own403 = t807;
-#line 10132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3404);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t808 = HERO_STR_LIT(hero_str_61);
@@ -10138,7 +10135,7 @@ bb0:
     t3405 = h404_own404;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h404_own404 = t809;
-#line 10142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3405);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t810 = HERO_STR_LIT(hero_str_61);
@@ -10148,7 +10145,7 @@ bb0:
     t3406 = h405_own405;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h405_own405 = t811;
-#line 10152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3406);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t812 = HERO_STR_LIT(hero_str_61);
@@ -10158,7 +10155,7 @@ bb0:
     t3407 = h406_own406;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h406_own406 = t813;
-#line 10162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3407);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t814 = HERO_STR_LIT(hero_str_61);
@@ -10168,7 +10165,7 @@ bb0:
     t3408 = h407_own407;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h407_own407 = t815;
-#line 10172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3408);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t816 = HERO_STR_LIT(hero_str_61);
@@ -10178,7 +10175,7 @@ bb0:
     t3409 = h408_own408;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h408_own408 = t817;
-#line 10182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3409);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t818 = HERO_STR_LIT(hero_str_61);
@@ -10188,7 +10185,7 @@ bb0:
     t3410 = h409_own409;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h409_own409 = t819;
-#line 10192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3410);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t820 = HERO_STR_LIT(hero_str_61);
@@ -10198,7 +10195,7 @@ bb0:
     t3411 = h410_own410;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h410_own410 = t821;
-#line 10202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3411);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t822 = HERO_STR_LIT(hero_str_61);
@@ -10208,7 +10205,7 @@ bb0:
     t3412 = h411_own411;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h411_own411 = t823;
-#line 10212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3412);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t824 = HERO_STR_LIT(hero_str_61);
@@ -10218,7 +10215,7 @@ bb0:
     t3413 = h412_own412;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h412_own412 = t825;
-#line 10222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3413);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t826 = HERO_STR_LIT(hero_str_61);
@@ -10228,7 +10225,7 @@ bb0:
     t3414 = h413_own413;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h413_own413 = t827;
-#line 10232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3414);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t828 = HERO_STR_LIT(hero_str_61);
@@ -10238,7 +10235,7 @@ bb0:
     t3415 = h414_own414;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h414_own414 = t829;
-#line 10242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3415);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t830 = HERO_STR_LIT(hero_str_61);
@@ -10248,7 +10245,7 @@ bb0:
     t3416 = h415_own415;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h415_own415 = t831;
-#line 10252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3416);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t832 = HERO_STR_LIT(hero_str_61);
@@ -10258,7 +10255,7 @@ bb0:
     t3417 = h416_own416;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h416_own416 = t833;
-#line 10262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3417);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t834 = HERO_STR_LIT(hero_str_61);
@@ -10268,7 +10265,7 @@ bb0:
     t3418 = h417_own417;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h417_own417 = t835;
-#line 10272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3418);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t836 = HERO_STR_LIT(hero_str_61);
@@ -10278,7 +10275,7 @@ bb0:
     t3419 = h418_own418;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h418_own418 = t837;
-#line 10282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3419);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t838 = HERO_STR_LIT(hero_str_61);
@@ -10288,7 +10285,7 @@ bb0:
     t3420 = h419_own419;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h419_own419 = t839;
-#line 10292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3420);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t840 = HERO_STR_LIT(hero_str_61);
@@ -10298,7 +10295,7 @@ bb0:
     t3421 = h420_own420;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h420_own420 = t841;
-#line 10302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3421);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t842 = HERO_STR_LIT(hero_str_61);
@@ -10308,7 +10305,7 @@ bb0:
     t3422 = h421_own421;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h421_own421 = t843;
-#line 10312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3422);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t844 = HERO_STR_LIT(hero_str_61);
@@ -10318,7 +10315,7 @@ bb0:
     t3423 = h422_own422;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h422_own422 = t845;
-#line 10322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3423);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t846 = HERO_STR_LIT(hero_str_61);
@@ -10328,7 +10325,7 @@ bb0:
     t3424 = h423_own423;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h423_own423 = t847;
-#line 10332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3424);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t848 = HERO_STR_LIT(hero_str_61);
@@ -10338,7 +10335,7 @@ bb0:
     t3425 = h424_own424;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h424_own424 = t849;
-#line 10342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3425);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t850 = HERO_STR_LIT(hero_str_61);
@@ -10348,7 +10345,7 @@ bb0:
     t3426 = h425_own425;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h425_own425 = t851;
-#line 10352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3426);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t852 = HERO_STR_LIT(hero_str_61);
@@ -10358,7 +10355,7 @@ bb0:
     t3427 = h426_own426;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h426_own426 = t853;
-#line 10362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3427);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t854 = HERO_STR_LIT(hero_str_61);
@@ -10368,7 +10365,7 @@ bb0:
     t3428 = h427_own427;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h427_own427 = t855;
-#line 10372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3428);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t856 = HERO_STR_LIT(hero_str_61);
@@ -10378,7 +10375,7 @@ bb0:
     t3429 = h428_own428;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h428_own428 = t857;
-#line 10382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3429);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t858 = HERO_STR_LIT(hero_str_61);
@@ -10388,7 +10385,7 @@ bb0:
     t3430 = h429_own429;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h429_own429 = t859;
-#line 10392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3430);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t860 = HERO_STR_LIT(hero_str_61);
@@ -10398,7 +10395,7 @@ bb0:
     t3431 = h430_own430;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h430_own430 = t861;
-#line 10402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3431);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t862 = HERO_STR_LIT(hero_str_61);
@@ -10408,7 +10405,7 @@ bb0:
     t3432 = h431_own431;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h431_own431 = t863;
-#line 10412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3432);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t864 = HERO_STR_LIT(hero_str_61);
@@ -10418,7 +10415,7 @@ bb0:
     t3433 = h432_own432;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h432_own432 = t865;
-#line 10422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3433);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t866 = HERO_STR_LIT(hero_str_61);
@@ -10428,7 +10425,7 @@ bb0:
     t3434 = h433_own433;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h433_own433 = t867;
-#line 10432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3434);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t868 = HERO_STR_LIT(hero_str_61);
@@ -10438,7 +10435,7 @@ bb0:
     t3435 = h434_own434;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h434_own434 = t869;
-#line 10442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3435);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t870 = HERO_STR_LIT(hero_str_61);
@@ -10448,7 +10445,7 @@ bb0:
     t3436 = h435_own435;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h435_own435 = t871;
-#line 10452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3436);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t872 = HERO_STR_LIT(hero_str_61);
@@ -10458,7 +10455,7 @@ bb0:
     t3437 = h436_own436;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h436_own436 = t873;
-#line 10462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3437);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t874 = HERO_STR_LIT(hero_str_61);
@@ -10468,7 +10465,7 @@ bb0:
     t3438 = h437_own437;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h437_own437 = t875;
-#line 10472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3438);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t876 = HERO_STR_LIT(hero_str_61);
@@ -10478,7 +10475,7 @@ bb0:
     t3439 = h438_own438;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h438_own438 = t877;
-#line 10482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3439);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t878 = HERO_STR_LIT(hero_str_61);
@@ -10488,7 +10485,7 @@ bb0:
     t3440 = h439_own439;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h439_own439 = t879;
-#line 10492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3440);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t880 = HERO_STR_LIT(hero_str_61);
@@ -10498,7 +10495,7 @@ bb0:
     t3441 = h440_own440;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h440_own440 = t881;
-#line 10502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3441);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t882 = HERO_STR_LIT(hero_str_61);
@@ -10508,7 +10505,7 @@ bb0:
     t3442 = h441_own441;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h441_own441 = t883;
-#line 10512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3442);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t884 = HERO_STR_LIT(hero_str_61);
@@ -10518,7 +10515,7 @@ bb0:
     t3443 = h442_own442;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h442_own442 = t885;
-#line 10522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3443);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t886 = HERO_STR_LIT(hero_str_61);
@@ -10528,7 +10525,7 @@ bb0:
     t3444 = h443_own443;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h443_own443 = t887;
-#line 10532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3444);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t888 = HERO_STR_LIT(hero_str_61);
@@ -10538,7 +10535,7 @@ bb0:
     t3445 = h444_own444;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h444_own444 = t889;
-#line 10542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3445);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t890 = HERO_STR_LIT(hero_str_61);
@@ -10548,7 +10545,7 @@ bb0:
     t3446 = h445_own445;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h445_own445 = t891;
-#line 10552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3446);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t892 = HERO_STR_LIT(hero_str_61);
@@ -10558,7 +10555,7 @@ bb0:
     t3447 = h446_own446;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h446_own446 = t893;
-#line 10562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3447);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t894 = HERO_STR_LIT(hero_str_61);
@@ -10568,7 +10565,7 @@ bb0:
     t3448 = h447_own447;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h447_own447 = t895;
-#line 10572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3448);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t896 = HERO_STR_LIT(hero_str_61);
@@ -10578,7 +10575,7 @@ bb0:
     t3449 = h448_own448;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h448_own448 = t897;
-#line 10582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3449);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t898 = HERO_STR_LIT(hero_str_61);
@@ -10588,7 +10585,7 @@ bb0:
     t3450 = h449_own449;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h449_own449 = t899;
-#line 10592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3450);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t900 = HERO_STR_LIT(hero_str_61);
@@ -10598,7 +10595,7 @@ bb0:
     t3451 = h450_own450;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h450_own450 = t901;
-#line 10602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3451);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t902 = HERO_STR_LIT(hero_str_61);
@@ -10608,7 +10605,7 @@ bb0:
     t3452 = h451_own451;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h451_own451 = t903;
-#line 10612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3452);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t904 = HERO_STR_LIT(hero_str_61);
@@ -10618,7 +10615,7 @@ bb0:
     t3453 = h452_own452;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h452_own452 = t905;
-#line 10622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3453);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t906 = HERO_STR_LIT(hero_str_61);
@@ -10628,7 +10625,7 @@ bb0:
     t3454 = h453_own453;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h453_own453 = t907;
-#line 10632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3454);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t908 = HERO_STR_LIT(hero_str_61);
@@ -10638,7 +10635,7 @@ bb0:
     t3455 = h454_own454;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h454_own454 = t909;
-#line 10642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3455);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t910 = HERO_STR_LIT(hero_str_61);
@@ -10648,7 +10645,7 @@ bb0:
     t3456 = h455_own455;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h455_own455 = t911;
-#line 10652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3456);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t912 = HERO_STR_LIT(hero_str_61);
@@ -10658,7 +10655,7 @@ bb0:
     t3457 = h456_own456;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h456_own456 = t913;
-#line 10662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3457);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t914 = HERO_STR_LIT(hero_str_61);
@@ -10668,7 +10665,7 @@ bb0:
     t3458 = h457_own457;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h457_own457 = t915;
-#line 10672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3458);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t916 = HERO_STR_LIT(hero_str_61);
@@ -10678,7 +10675,7 @@ bb0:
     t3459 = h458_own458;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h458_own458 = t917;
-#line 10682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3459);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t918 = HERO_STR_LIT(hero_str_61);
@@ -10688,7 +10685,7 @@ bb0:
     t3460 = h459_own459;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h459_own459 = t919;
-#line 10692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3460);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t920 = HERO_STR_LIT(hero_str_61);
@@ -10698,7 +10695,7 @@ bb0:
     t3461 = h460_own460;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h460_own460 = t921;
-#line 10702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3461);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t922 = HERO_STR_LIT(hero_str_61);
@@ -10708,7 +10705,7 @@ bb0:
     t3462 = h461_own461;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h461_own461 = t923;
-#line 10712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3462);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t924 = HERO_STR_LIT(hero_str_61);
@@ -10718,7 +10715,7 @@ bb0:
     t3463 = h462_own462;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h462_own462 = t925;
-#line 10722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3463);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t926 = HERO_STR_LIT(hero_str_61);
@@ -10728,7 +10725,7 @@ bb0:
     t3464 = h463_own463;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h463_own463 = t927;
-#line 10732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3464);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t928 = HERO_STR_LIT(hero_str_61);
@@ -10738,7 +10735,7 @@ bb0:
     t3465 = h464_own464;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h464_own464 = t929;
-#line 10742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3465);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t930 = HERO_STR_LIT(hero_str_61);
@@ -10748,7 +10745,7 @@ bb0:
     t3466 = h465_own465;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h465_own465 = t931;
-#line 10752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3466);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t932 = HERO_STR_LIT(hero_str_61);
@@ -10758,7 +10755,7 @@ bb0:
     t3467 = h466_own466;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h466_own466 = t933;
-#line 10762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3467);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t934 = HERO_STR_LIT(hero_str_61);
@@ -10768,7 +10765,7 @@ bb0:
     t3468 = h467_own467;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h467_own467 = t935;
-#line 10772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3468);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t936 = HERO_STR_LIT(hero_str_61);
@@ -10778,7 +10775,7 @@ bb0:
     t3469 = h468_own468;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h468_own468 = t937;
-#line 10782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3469);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t938 = HERO_STR_LIT(hero_str_61);
@@ -10788,7 +10785,7 @@ bb0:
     t3470 = h469_own469;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h469_own469 = t939;
-#line 10792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3470);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t940 = HERO_STR_LIT(hero_str_61);
@@ -10798,7 +10795,7 @@ bb0:
     t3471 = h470_own470;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h470_own470 = t941;
-#line 10802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3471);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t942 = HERO_STR_LIT(hero_str_61);
@@ -10808,7 +10805,7 @@ bb0:
     t3472 = h471_own471;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h471_own471 = t943;
-#line 10812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3472);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t944 = HERO_STR_LIT(hero_str_61);
@@ -10818,7 +10815,7 @@ bb0:
     t3473 = h472_own472;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h472_own472 = t945;
-#line 10822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3473);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t946 = HERO_STR_LIT(hero_str_61);
@@ -10828,7 +10825,7 @@ bb0:
     t3474 = h473_own473;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h473_own473 = t947;
-#line 10832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3474);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t948 = HERO_STR_LIT(hero_str_61);
@@ -10838,7 +10835,7 @@ bb0:
     t3475 = h474_own474;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h474_own474 = t949;
-#line 10842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3475);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t950 = HERO_STR_LIT(hero_str_61);
@@ -10848,7 +10845,7 @@ bb0:
     t3476 = h475_own475;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h475_own475 = t951;
-#line 10852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3476);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t952 = HERO_STR_LIT(hero_str_61);
@@ -10858,7 +10855,7 @@ bb0:
     t3477 = h476_own476;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h476_own476 = t953;
-#line 10862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3477);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t954 = HERO_STR_LIT(hero_str_61);
@@ -10868,7 +10865,7 @@ bb0:
     t3478 = h477_own477;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h477_own477 = t955;
-#line 10872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3478);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t956 = HERO_STR_LIT(hero_str_61);
@@ -10878,7 +10875,7 @@ bb0:
     t3479 = h478_own478;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h478_own478 = t957;
-#line 10882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3479);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t958 = HERO_STR_LIT(hero_str_61);
@@ -10888,7 +10885,7 @@ bb0:
     t3480 = h479_own479;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h479_own479 = t959;
-#line 10892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3480);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t960 = HERO_STR_LIT(hero_str_61);
@@ -10898,7 +10895,7 @@ bb0:
     t3481 = h480_own480;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h480_own480 = t961;
-#line 10902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3481);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t962 = HERO_STR_LIT(hero_str_61);
@@ -10908,7 +10905,7 @@ bb0:
     t3482 = h481_own481;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h481_own481 = t963;
-#line 10912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3482);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t964 = HERO_STR_LIT(hero_str_61);
@@ -10918,7 +10915,7 @@ bb0:
     t3483 = h482_own482;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h482_own482 = t965;
-#line 10922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3483);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t966 = HERO_STR_LIT(hero_str_61);
@@ -10928,7 +10925,7 @@ bb0:
     t3484 = h483_own483;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h483_own483 = t967;
-#line 10932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3484);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t968 = HERO_STR_LIT(hero_str_61);
@@ -10938,7 +10935,7 @@ bb0:
     t3485 = h484_own484;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h484_own484 = t969;
-#line 10942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3485);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t970 = HERO_STR_LIT(hero_str_61);
@@ -10948,7 +10945,7 @@ bb0:
     t3486 = h485_own485;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h485_own485 = t971;
-#line 10952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3486);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t972 = HERO_STR_LIT(hero_str_61);
@@ -10958,7 +10955,7 @@ bb0:
     t3487 = h486_own486;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h486_own486 = t973;
-#line 10962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3487);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t974 = HERO_STR_LIT(hero_str_61);
@@ -10968,7 +10965,7 @@ bb0:
     t3488 = h487_own487;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h487_own487 = t975;
-#line 10972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3488);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t976 = HERO_STR_LIT(hero_str_61);
@@ -10978,7 +10975,7 @@ bb0:
     t3489 = h488_own488;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h488_own488 = t977;
-#line 10982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3489);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t978 = HERO_STR_LIT(hero_str_61);
@@ -10988,7 +10985,7 @@ bb0:
     t3490 = h489_own489;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h489_own489 = t979;
-#line 10992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3490);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t980 = HERO_STR_LIT(hero_str_61);
@@ -10998,7 +10995,7 @@ bb0:
     t3491 = h490_own490;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h490_own490 = t981;
-#line 11002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 10999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3491);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t982 = HERO_STR_LIT(hero_str_61);
@@ -11008,7 +11005,7 @@ bb0:
     t3492 = h491_own491;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h491_own491 = t983;
-#line 11012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3492);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t984 = HERO_STR_LIT(hero_str_61);
@@ -11018,7 +11015,7 @@ bb0:
     t3493 = h492_own492;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h492_own492 = t985;
-#line 11022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3493);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t986 = HERO_STR_LIT(hero_str_61);
@@ -11028,7 +11025,7 @@ bb0:
     t3494 = h493_own493;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h493_own493 = t987;
-#line 11032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3494);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t988 = HERO_STR_LIT(hero_str_61);
@@ -11038,7 +11035,7 @@ bb0:
     t3495 = h494_own494;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h494_own494 = t989;
-#line 11042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3495);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t990 = HERO_STR_LIT(hero_str_61);
@@ -11048,7 +11045,7 @@ bb0:
     t3496 = h495_own495;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h495_own495 = t991;
-#line 11052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3496);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t992 = HERO_STR_LIT(hero_str_61);
@@ -11058,7 +11055,7 @@ bb0:
     t3497 = h496_own496;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h496_own496 = t993;
-#line 11062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3497);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t994 = HERO_STR_LIT(hero_str_61);
@@ -11068,7 +11065,7 @@ bb0:
     t3498 = h497_own497;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h497_own497 = t995;
-#line 11072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3498);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t996 = HERO_STR_LIT(hero_str_61);
@@ -11078,7 +11075,7 @@ bb0:
     t3499 = h498_own498;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h498_own498 = t997;
-#line 11082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3499);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t998 = HERO_STR_LIT(hero_str_61);
@@ -11088,7 +11085,7 @@ bb0:
     t3500 = h499_own499;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h499_own499 = t999;
-#line 11092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3500);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1000 = HERO_STR_LIT(hero_str_61);
@@ -11098,7 +11095,7 @@ bb0:
     t3501 = h500_own500;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h500_own500 = t1001;
-#line 11102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3501);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1002 = HERO_STR_LIT(hero_str_61);
@@ -11108,7 +11105,7 @@ bb0:
     t3502 = h501_own501;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h501_own501 = t1003;
-#line 11112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3502);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1004 = HERO_STR_LIT(hero_str_61);
@@ -11118,7 +11115,7 @@ bb0:
     t3503 = h502_own502;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h502_own502 = t1005;
-#line 11122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3503);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1006 = HERO_STR_LIT(hero_str_61);
@@ -11128,7 +11125,7 @@ bb0:
     t3504 = h503_own503;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h503_own503 = t1007;
-#line 11132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3504);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1008 = HERO_STR_LIT(hero_str_61);
@@ -11138,7 +11135,7 @@ bb0:
     t3505 = h504_own504;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h504_own504 = t1009;
-#line 11142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3505);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1010 = HERO_STR_LIT(hero_str_61);
@@ -11148,7 +11145,7 @@ bb0:
     t3506 = h505_own505;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h505_own505 = t1011;
-#line 11152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3506);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1012 = HERO_STR_LIT(hero_str_61);
@@ -11158,7 +11155,7 @@ bb0:
     t3507 = h506_own506;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h506_own506 = t1013;
-#line 11162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3507);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1014 = HERO_STR_LIT(hero_str_61);
@@ -11168,7 +11165,7 @@ bb0:
     t3508 = h507_own507;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h507_own507 = t1015;
-#line 11172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3508);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1016 = HERO_STR_LIT(hero_str_61);
@@ -11178,7 +11175,7 @@ bb0:
     t3509 = h508_own508;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h508_own508 = t1017;
-#line 11182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3509);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1018 = HERO_STR_LIT(hero_str_61);
@@ -11188,7 +11185,7 @@ bb0:
     t3510 = h509_own509;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h509_own509 = t1019;
-#line 11192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3510);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1020 = HERO_STR_LIT(hero_str_61);
@@ -11198,7 +11195,7 @@ bb0:
     t3511 = h510_own510;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h510_own510 = t1021;
-#line 11202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3511);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1022 = HERO_STR_LIT(hero_str_61);
@@ -11208,7 +11205,7 @@ bb0:
     t3512 = h511_own511;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h511_own511 = t1023;
-#line 11212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3512);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1024 = HERO_STR_LIT(hero_str_61);
@@ -11218,7 +11215,7 @@ bb0:
     t3513 = h512_own512;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h512_own512 = t1025;
-#line 11222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3513);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1026 = HERO_STR_LIT(hero_str_61);
@@ -11228,7 +11225,7 @@ bb0:
     t3514 = h513_own513;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h513_own513 = t1027;
-#line 11232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3514);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1028 = HERO_STR_LIT(hero_str_61);
@@ -11238,7 +11235,7 @@ bb0:
     t3515 = h514_own514;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h514_own514 = t1029;
-#line 11242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3515);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1030 = HERO_STR_LIT(hero_str_61);
@@ -11248,7 +11245,7 @@ bb0:
     t3516 = h515_own515;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h515_own515 = t1031;
-#line 11252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3516);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1032 = HERO_STR_LIT(hero_str_61);
@@ -11258,7 +11255,7 @@ bb0:
     t3517 = h516_own516;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h516_own516 = t1033;
-#line 11262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3517);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1034 = HERO_STR_LIT(hero_str_61);
@@ -11268,7 +11265,7 @@ bb0:
     t3518 = h517_own517;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h517_own517 = t1035;
-#line 11272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3518);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1036 = HERO_STR_LIT(hero_str_61);
@@ -11278,7 +11275,7 @@ bb0:
     t3519 = h518_own518;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h518_own518 = t1037;
-#line 11282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3519);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1038 = HERO_STR_LIT(hero_str_61);
@@ -11288,7 +11285,7 @@ bb0:
     t3520 = h519_own519;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h519_own519 = t1039;
-#line 11292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3520);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1040 = HERO_STR_LIT(hero_str_61);
@@ -11298,7 +11295,7 @@ bb0:
     t3521 = h520_own520;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h520_own520 = t1041;
-#line 11302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3521);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1042 = HERO_STR_LIT(hero_str_61);
@@ -11308,7 +11305,7 @@ bb0:
     t3522 = h521_own521;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h521_own521 = t1043;
-#line 11312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3522);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1044 = HERO_STR_LIT(hero_str_61);
@@ -11318,7 +11315,7 @@ bb0:
     t3523 = h522_own522;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h522_own522 = t1045;
-#line 11322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3523);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1046 = HERO_STR_LIT(hero_str_61);
@@ -11328,7 +11325,7 @@ bb0:
     t3524 = h523_own523;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h523_own523 = t1047;
-#line 11332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3524);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1048 = HERO_STR_LIT(hero_str_61);
@@ -11338,7 +11335,7 @@ bb0:
     t3525 = h524_own524;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h524_own524 = t1049;
-#line 11342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3525);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1050 = HERO_STR_LIT(hero_str_61);
@@ -11348,7 +11345,7 @@ bb0:
     t3526 = h525_own525;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h525_own525 = t1051;
-#line 11352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3526);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1052 = HERO_STR_LIT(hero_str_61);
@@ -11358,7 +11355,7 @@ bb0:
     t3527 = h526_own526;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h526_own526 = t1053;
-#line 11362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3527);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1054 = HERO_STR_LIT(hero_str_61);
@@ -11368,7 +11365,7 @@ bb0:
     t3528 = h527_own527;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h527_own527 = t1055;
-#line 11372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3528);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1056 = HERO_STR_LIT(hero_str_61);
@@ -11378,7 +11375,7 @@ bb0:
     t3529 = h528_own528;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h528_own528 = t1057;
-#line 11382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3529);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1058 = HERO_STR_LIT(hero_str_61);
@@ -11388,7 +11385,7 @@ bb0:
     t3530 = h529_own529;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h529_own529 = t1059;
-#line 11392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3530);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1060 = HERO_STR_LIT(hero_str_61);
@@ -11398,7 +11395,7 @@ bb0:
     t3531 = h530_own530;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h530_own530 = t1061;
-#line 11402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3531);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1062 = HERO_STR_LIT(hero_str_61);
@@ -11408,7 +11405,7 @@ bb0:
     t3532 = h531_own531;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h531_own531 = t1063;
-#line 11412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3532);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1064 = HERO_STR_LIT(hero_str_61);
@@ -11418,7 +11415,7 @@ bb0:
     t3533 = h532_own532;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h532_own532 = t1065;
-#line 11422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3533);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1066 = HERO_STR_LIT(hero_str_61);
@@ -11428,7 +11425,7 @@ bb0:
     t3534 = h533_own533;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h533_own533 = t1067;
-#line 11432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3534);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1068 = HERO_STR_LIT(hero_str_61);
@@ -11438,7 +11435,7 @@ bb0:
     t3535 = h534_own534;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h534_own534 = t1069;
-#line 11442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3535);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1070 = HERO_STR_LIT(hero_str_61);
@@ -11448,7 +11445,7 @@ bb0:
     t3536 = h535_own535;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h535_own535 = t1071;
-#line 11452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3536);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1072 = HERO_STR_LIT(hero_str_61);
@@ -11458,7 +11455,7 @@ bb0:
     t3537 = h536_own536;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h536_own536 = t1073;
-#line 11462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3537);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1074 = HERO_STR_LIT(hero_str_61);
@@ -11468,7 +11465,7 @@ bb0:
     t3538 = h537_own537;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h537_own537 = t1075;
-#line 11472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3538);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1076 = HERO_STR_LIT(hero_str_61);
@@ -11478,7 +11475,7 @@ bb0:
     t3539 = h538_own538;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h538_own538 = t1077;
-#line 11482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3539);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1078 = HERO_STR_LIT(hero_str_61);
@@ -11488,7 +11485,7 @@ bb0:
     t3540 = h539_own539;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h539_own539 = t1079;
-#line 11492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3540);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1080 = HERO_STR_LIT(hero_str_61);
@@ -11498,7 +11495,7 @@ bb0:
     t3541 = h540_own540;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h540_own540 = t1081;
-#line 11502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3541);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1082 = HERO_STR_LIT(hero_str_61);
@@ -11508,7 +11505,7 @@ bb0:
     t3542 = h541_own541;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h541_own541 = t1083;
-#line 11512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3542);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1084 = HERO_STR_LIT(hero_str_61);
@@ -11518,7 +11515,7 @@ bb0:
     t3543 = h542_own542;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h542_own542 = t1085;
-#line 11522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3543);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1086 = HERO_STR_LIT(hero_str_61);
@@ -11528,7 +11525,7 @@ bb0:
     t3544 = h543_own543;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h543_own543 = t1087;
-#line 11532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3544);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1088 = HERO_STR_LIT(hero_str_61);
@@ -11538,7 +11535,7 @@ bb0:
     t3545 = h544_own544;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h544_own544 = t1089;
-#line 11542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3545);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1090 = HERO_STR_LIT(hero_str_61);
@@ -11548,7 +11545,7 @@ bb0:
     t3546 = h545_own545;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h545_own545 = t1091;
-#line 11552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3546);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1092 = HERO_STR_LIT(hero_str_61);
@@ -11558,7 +11555,7 @@ bb0:
     t3547 = h546_own546;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h546_own546 = t1093;
-#line 11562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3547);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1094 = HERO_STR_LIT(hero_str_61);
@@ -11568,7 +11565,7 @@ bb0:
     t3548 = h547_own547;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h547_own547 = t1095;
-#line 11572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3548);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1096 = HERO_STR_LIT(hero_str_61);
@@ -11578,7 +11575,7 @@ bb0:
     t3549 = h548_own548;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h548_own548 = t1097;
-#line 11582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3549);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1098 = HERO_STR_LIT(hero_str_61);
@@ -11588,7 +11585,7 @@ bb0:
     t3550 = h549_own549;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h549_own549 = t1099;
-#line 11592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3550);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1100 = HERO_STR_LIT(hero_str_61);
@@ -11598,7 +11595,7 @@ bb0:
     t3551 = h550_own550;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h550_own550 = t1101;
-#line 11602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3551);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1102 = HERO_STR_LIT(hero_str_61);
@@ -11608,7 +11605,7 @@ bb0:
     t3552 = h551_own551;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h551_own551 = t1103;
-#line 11612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3552);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1104 = HERO_STR_LIT(hero_str_61);
@@ -11618,7 +11615,7 @@ bb0:
     t3553 = h552_own552;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h552_own552 = t1105;
-#line 11622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3553);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1106 = HERO_STR_LIT(hero_str_61);
@@ -11628,7 +11625,7 @@ bb0:
     t3554 = h553_own553;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h553_own553 = t1107;
-#line 11632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3554);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1108 = HERO_STR_LIT(hero_str_61);
@@ -11638,7 +11635,7 @@ bb0:
     t3555 = h554_own554;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h554_own554 = t1109;
-#line 11642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3555);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1110 = HERO_STR_LIT(hero_str_61);
@@ -11648,7 +11645,7 @@ bb0:
     t3556 = h555_own555;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h555_own555 = t1111;
-#line 11652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3556);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1112 = HERO_STR_LIT(hero_str_61);
@@ -11658,7 +11655,7 @@ bb0:
     t3557 = h556_own556;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h556_own556 = t1113;
-#line 11662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3557);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1114 = HERO_STR_LIT(hero_str_61);
@@ -11668,7 +11665,7 @@ bb0:
     t3558 = h557_own557;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h557_own557 = t1115;
-#line 11672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3558);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1116 = HERO_STR_LIT(hero_str_61);
@@ -11678,7 +11675,7 @@ bb0:
     t3559 = h558_own558;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h558_own558 = t1117;
-#line 11682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3559);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1118 = HERO_STR_LIT(hero_str_61);
@@ -11688,7 +11685,7 @@ bb0:
     t3560 = h559_own559;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h559_own559 = t1119;
-#line 11692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3560);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1120 = HERO_STR_LIT(hero_str_61);
@@ -11698,7 +11695,7 @@ bb0:
     t3561 = h560_own560;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h560_own560 = t1121;
-#line 11702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3561);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1122 = HERO_STR_LIT(hero_str_61);
@@ -11708,7 +11705,7 @@ bb0:
     t3562 = h561_own561;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h561_own561 = t1123;
-#line 11712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3562);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1124 = HERO_STR_LIT(hero_str_61);
@@ -11718,7 +11715,7 @@ bb0:
     t3563 = h562_own562;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h562_own562 = t1125;
-#line 11722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3563);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1126 = HERO_STR_LIT(hero_str_61);
@@ -11728,7 +11725,7 @@ bb0:
     t3564 = h563_own563;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h563_own563 = t1127;
-#line 11732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3564);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1128 = HERO_STR_LIT(hero_str_61);
@@ -11738,7 +11735,7 @@ bb0:
     t3565 = h564_own564;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h564_own564 = t1129;
-#line 11742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3565);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1130 = HERO_STR_LIT(hero_str_61);
@@ -11748,7 +11745,7 @@ bb0:
     t3566 = h565_own565;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h565_own565 = t1131;
-#line 11752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3566);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1132 = HERO_STR_LIT(hero_str_61);
@@ -11758,7 +11755,7 @@ bb0:
     t3567 = h566_own566;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h566_own566 = t1133;
-#line 11762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3567);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1134 = HERO_STR_LIT(hero_str_61);
@@ -11768,7 +11765,7 @@ bb0:
     t3568 = h567_own567;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h567_own567 = t1135;
-#line 11772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3568);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1136 = HERO_STR_LIT(hero_str_61);
@@ -11778,7 +11775,7 @@ bb0:
     t3569 = h568_own568;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h568_own568 = t1137;
-#line 11782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3569);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1138 = HERO_STR_LIT(hero_str_61);
@@ -11788,7 +11785,7 @@ bb0:
     t3570 = h569_own569;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h569_own569 = t1139;
-#line 11792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3570);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1140 = HERO_STR_LIT(hero_str_61);
@@ -11798,7 +11795,7 @@ bb0:
     t3571 = h570_own570;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h570_own570 = t1141;
-#line 11802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3571);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1142 = HERO_STR_LIT(hero_str_61);
@@ -11808,7 +11805,7 @@ bb0:
     t3572 = h571_own571;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h571_own571 = t1143;
-#line 11812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3572);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1144 = HERO_STR_LIT(hero_str_61);
@@ -11818,7 +11815,7 @@ bb0:
     t3573 = h572_own572;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h572_own572 = t1145;
-#line 11822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3573);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1146 = HERO_STR_LIT(hero_str_61);
@@ -11828,7 +11825,7 @@ bb0:
     t3574 = h573_own573;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h573_own573 = t1147;
-#line 11832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3574);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1148 = HERO_STR_LIT(hero_str_61);
@@ -11838,7 +11835,7 @@ bb0:
     t3575 = h574_own574;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h574_own574 = t1149;
-#line 11842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3575);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1150 = HERO_STR_LIT(hero_str_61);
@@ -11848,7 +11845,7 @@ bb0:
     t3576 = h575_own575;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h575_own575 = t1151;
-#line 11852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3576);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1152 = HERO_STR_LIT(hero_str_61);
@@ -11858,7 +11855,7 @@ bb0:
     t3577 = h576_own576;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h576_own576 = t1153;
-#line 11862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3577);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1154 = HERO_STR_LIT(hero_str_61);
@@ -11868,7 +11865,7 @@ bb0:
     t3578 = h577_own577;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h577_own577 = t1155;
-#line 11872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3578);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1156 = HERO_STR_LIT(hero_str_61);
@@ -11878,7 +11875,7 @@ bb0:
     t3579 = h578_own578;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h578_own578 = t1157;
-#line 11882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3579);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1158 = HERO_STR_LIT(hero_str_61);
@@ -11888,7 +11885,7 @@ bb0:
     t3580 = h579_own579;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h579_own579 = t1159;
-#line 11892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3580);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1160 = HERO_STR_LIT(hero_str_61);
@@ -11898,7 +11895,7 @@ bb0:
     t3581 = h580_own580;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h580_own580 = t1161;
-#line 11902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3581);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1162 = HERO_STR_LIT(hero_str_61);
@@ -11908,7 +11905,7 @@ bb0:
     t3582 = h581_own581;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h581_own581 = t1163;
-#line 11912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3582);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1164 = HERO_STR_LIT(hero_str_61);
@@ -11918,7 +11915,7 @@ bb0:
     t3583 = h582_own582;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h582_own582 = t1165;
-#line 11922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3583);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1166 = HERO_STR_LIT(hero_str_61);
@@ -11928,7 +11925,7 @@ bb0:
     t3584 = h583_own583;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h583_own583 = t1167;
-#line 11932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3584);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1168 = HERO_STR_LIT(hero_str_61);
@@ -11938,7 +11935,7 @@ bb0:
     t3585 = h584_own584;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h584_own584 = t1169;
-#line 11942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3585);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1170 = HERO_STR_LIT(hero_str_61);
@@ -11948,7 +11945,7 @@ bb0:
     t3586 = h585_own585;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h585_own585 = t1171;
-#line 11952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3586);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1172 = HERO_STR_LIT(hero_str_61);
@@ -11958,7 +11955,7 @@ bb0:
     t3587 = h586_own586;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h586_own586 = t1173;
-#line 11962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3587);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1174 = HERO_STR_LIT(hero_str_61);
@@ -11968,7 +11965,7 @@ bb0:
     t3588 = h587_own587;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h587_own587 = t1175;
-#line 11972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3588);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1176 = HERO_STR_LIT(hero_str_61);
@@ -11978,7 +11975,7 @@ bb0:
     t3589 = h588_own588;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h588_own588 = t1177;
-#line 11982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3589);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1178 = HERO_STR_LIT(hero_str_61);
@@ -11988,7 +11985,7 @@ bb0:
     t3590 = h589_own589;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h589_own589 = t1179;
-#line 11992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3590);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1180 = HERO_STR_LIT(hero_str_61);
@@ -11998,7 +11995,7 @@ bb0:
     t3591 = h590_own590;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h590_own590 = t1181;
-#line 12002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 11999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3591);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1182 = HERO_STR_LIT(hero_str_61);
@@ -12008,7 +12005,7 @@ bb0:
     t3592 = h591_own591;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h591_own591 = t1183;
-#line 12012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3592);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1184 = HERO_STR_LIT(hero_str_61);
@@ -12018,7 +12015,7 @@ bb0:
     t3593 = h592_own592;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h592_own592 = t1185;
-#line 12022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3593);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1186 = HERO_STR_LIT(hero_str_61);
@@ -12028,7 +12025,7 @@ bb0:
     t3594 = h593_own593;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h593_own593 = t1187;
-#line 12032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3594);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1188 = HERO_STR_LIT(hero_str_61);
@@ -12038,7 +12035,7 @@ bb0:
     t3595 = h594_own594;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h594_own594 = t1189;
-#line 12042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3595);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1190 = HERO_STR_LIT(hero_str_61);
@@ -12048,7 +12045,7 @@ bb0:
     t3596 = h595_own595;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h595_own595 = t1191;
-#line 12052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3596);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1192 = HERO_STR_LIT(hero_str_61);
@@ -12058,7 +12055,7 @@ bb0:
     t3597 = h596_own596;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h596_own596 = t1193;
-#line 12062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3597);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1194 = HERO_STR_LIT(hero_str_61);
@@ -12068,7 +12065,7 @@ bb0:
     t3598 = h597_own597;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h597_own597 = t1195;
-#line 12072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3598);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1196 = HERO_STR_LIT(hero_str_61);
@@ -12078,7 +12075,7 @@ bb0:
     t3599 = h598_own598;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h598_own598 = t1197;
-#line 12082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3599);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1198 = HERO_STR_LIT(hero_str_61);
@@ -12088,7 +12085,7 @@ bb0:
     t3600 = h599_own599;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h599_own599 = t1199;
-#line 12092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3600);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1200 = HERO_STR_LIT(hero_str_61);
@@ -12098,7 +12095,7 @@ bb0:
     t3601 = h600_own600;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h600_own600 = t1201;
-#line 12102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3601);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1202 = HERO_STR_LIT(hero_str_61);
@@ -12108,7 +12105,7 @@ bb0:
     t3602 = h601_own601;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h601_own601 = t1203;
-#line 12112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3602);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1204 = HERO_STR_LIT(hero_str_61);
@@ -12118,7 +12115,7 @@ bb0:
     t3603 = h602_own602;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h602_own602 = t1205;
-#line 12122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3603);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1206 = HERO_STR_LIT(hero_str_61);
@@ -12128,7 +12125,7 @@ bb0:
     t3604 = h603_own603;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h603_own603 = t1207;
-#line 12132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3604);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1208 = HERO_STR_LIT(hero_str_61);
@@ -12138,7 +12135,7 @@ bb0:
     t3605 = h604_own604;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h604_own604 = t1209;
-#line 12142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3605);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1210 = HERO_STR_LIT(hero_str_61);
@@ -12148,7 +12145,7 @@ bb0:
     t3606 = h605_own605;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h605_own605 = t1211;
-#line 12152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3606);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1212 = HERO_STR_LIT(hero_str_61);
@@ -12158,7 +12155,7 @@ bb0:
     t3607 = h606_own606;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h606_own606 = t1213;
-#line 12162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3607);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1214 = HERO_STR_LIT(hero_str_61);
@@ -12168,7 +12165,7 @@ bb0:
     t3608 = h607_own607;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h607_own607 = t1215;
-#line 12172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3608);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1216 = HERO_STR_LIT(hero_str_61);
@@ -12178,7 +12175,7 @@ bb0:
     t3609 = h608_own608;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h608_own608 = t1217;
-#line 12182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3609);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1218 = HERO_STR_LIT(hero_str_61);
@@ -12188,7 +12185,7 @@ bb0:
     t3610 = h609_own609;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h609_own609 = t1219;
-#line 12192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3610);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1220 = HERO_STR_LIT(hero_str_61);
@@ -12198,7 +12195,7 @@ bb0:
     t3611 = h610_own610;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h610_own610 = t1221;
-#line 12202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3611);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1222 = HERO_STR_LIT(hero_str_61);
@@ -12208,7 +12205,7 @@ bb0:
     t3612 = h611_own611;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h611_own611 = t1223;
-#line 12212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3612);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1224 = HERO_STR_LIT(hero_str_61);
@@ -12218,7 +12215,7 @@ bb0:
     t3613 = h612_own612;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h612_own612 = t1225;
-#line 12222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3613);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1226 = HERO_STR_LIT(hero_str_61);
@@ -12228,7 +12225,7 @@ bb0:
     t3614 = h613_own613;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h613_own613 = t1227;
-#line 12232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3614);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1228 = HERO_STR_LIT(hero_str_61);
@@ -12238,7 +12235,7 @@ bb0:
     t3615 = h614_own614;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h614_own614 = t1229;
-#line 12242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3615);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1230 = HERO_STR_LIT(hero_str_61);
@@ -12248,7 +12245,7 @@ bb0:
     t3616 = h615_own615;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h615_own615 = t1231;
-#line 12252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3616);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1232 = HERO_STR_LIT(hero_str_61);
@@ -12258,7 +12255,7 @@ bb0:
     t3617 = h616_own616;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h616_own616 = t1233;
-#line 12262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3617);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1234 = HERO_STR_LIT(hero_str_61);
@@ -12268,7 +12265,7 @@ bb0:
     t3618 = h617_own617;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h617_own617 = t1235;
-#line 12272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3618);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1236 = HERO_STR_LIT(hero_str_61);
@@ -12278,7 +12275,7 @@ bb0:
     t3619 = h618_own618;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h618_own618 = t1237;
-#line 12282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3619);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1238 = HERO_STR_LIT(hero_str_61);
@@ -12288,7 +12285,7 @@ bb0:
     t3620 = h619_own619;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h619_own619 = t1239;
-#line 12292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3620);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1240 = HERO_STR_LIT(hero_str_61);
@@ -12298,7 +12295,7 @@ bb0:
     t3621 = h620_own620;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h620_own620 = t1241;
-#line 12302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3621);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1242 = HERO_STR_LIT(hero_str_61);
@@ -12308,7 +12305,7 @@ bb0:
     t3622 = h621_own621;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h621_own621 = t1243;
-#line 12312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3622);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1244 = HERO_STR_LIT(hero_str_61);
@@ -12318,7 +12315,7 @@ bb0:
     t3623 = h622_own622;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h622_own622 = t1245;
-#line 12322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3623);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1246 = HERO_STR_LIT(hero_str_61);
@@ -12328,7 +12325,7 @@ bb0:
     t3624 = h623_own623;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h623_own623 = t1247;
-#line 12332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3624);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1248 = HERO_STR_LIT(hero_str_61);
@@ -12338,7 +12335,7 @@ bb0:
     t3625 = h624_own624;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h624_own624 = t1249;
-#line 12342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3625);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1250 = HERO_STR_LIT(hero_str_61);
@@ -12348,7 +12345,7 @@ bb0:
     t3626 = h625_own625;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h625_own625 = t1251;
-#line 12352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3626);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1252 = HERO_STR_LIT(hero_str_61);
@@ -12358,7 +12355,7 @@ bb0:
     t3627 = h626_own626;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h626_own626 = t1253;
-#line 12362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3627);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1254 = HERO_STR_LIT(hero_str_61);
@@ -12368,7 +12365,7 @@ bb0:
     t3628 = h627_own627;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h627_own627 = t1255;
-#line 12372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3628);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1256 = HERO_STR_LIT(hero_str_61);
@@ -12378,7 +12375,7 @@ bb0:
     t3629 = h628_own628;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h628_own628 = t1257;
-#line 12382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3629);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1258 = HERO_STR_LIT(hero_str_61);
@@ -12388,7 +12385,7 @@ bb0:
     t3630 = h629_own629;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h629_own629 = t1259;
-#line 12392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3630);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1260 = HERO_STR_LIT(hero_str_61);
@@ -12398,7 +12395,7 @@ bb0:
     t3631 = h630_own630;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h630_own630 = t1261;
-#line 12402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3631);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1262 = HERO_STR_LIT(hero_str_61);
@@ -12408,7 +12405,7 @@ bb0:
     t3632 = h631_own631;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h631_own631 = t1263;
-#line 12412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3632);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1264 = HERO_STR_LIT(hero_str_61);
@@ -12418,7 +12415,7 @@ bb0:
     t3633 = h632_own632;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h632_own632 = t1265;
-#line 12422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3633);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1266 = HERO_STR_LIT(hero_str_61);
@@ -12428,7 +12425,7 @@ bb0:
     t3634 = h633_own633;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h633_own633 = t1267;
-#line 12432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3634);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1268 = HERO_STR_LIT(hero_str_61);
@@ -12438,7 +12435,7 @@ bb0:
     t3635 = h634_own634;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h634_own634 = t1269;
-#line 12442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3635);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1270 = HERO_STR_LIT(hero_str_61);
@@ -12448,7 +12445,7 @@ bb0:
     t3636 = h635_own635;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h635_own635 = t1271;
-#line 12452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3636);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1272 = HERO_STR_LIT(hero_str_61);
@@ -12458,7 +12455,7 @@ bb0:
     t3637 = h636_own636;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h636_own636 = t1273;
-#line 12462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3637);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1274 = HERO_STR_LIT(hero_str_61);
@@ -12468,7 +12465,7 @@ bb0:
     t3638 = h637_own637;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h637_own637 = t1275;
-#line 12472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3638);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1276 = HERO_STR_LIT(hero_str_61);
@@ -12478,7 +12475,7 @@ bb0:
     t3639 = h638_own638;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h638_own638 = t1277;
-#line 12482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3639);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1278 = HERO_STR_LIT(hero_str_61);
@@ -12488,7 +12485,7 @@ bb0:
     t3640 = h639_own639;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h639_own639 = t1279;
-#line 12492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3640);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1280 = HERO_STR_LIT(hero_str_61);
@@ -12498,7 +12495,7 @@ bb0:
     t3641 = h640_own640;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h640_own640 = t1281;
-#line 12502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3641);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1282 = HERO_STR_LIT(hero_str_61);
@@ -12508,7 +12505,7 @@ bb0:
     t3642 = h641_own641;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h641_own641 = t1283;
-#line 12512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3642);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1284 = HERO_STR_LIT(hero_str_61);
@@ -12518,7 +12515,7 @@ bb0:
     t3643 = h642_own642;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h642_own642 = t1285;
-#line 12522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3643);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1286 = HERO_STR_LIT(hero_str_61);
@@ -12528,7 +12525,7 @@ bb0:
     t3644 = h643_own643;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h643_own643 = t1287;
-#line 12532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3644);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1288 = HERO_STR_LIT(hero_str_61);
@@ -12538,7 +12535,7 @@ bb0:
     t3645 = h644_own644;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h644_own644 = t1289;
-#line 12542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3645);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1290 = HERO_STR_LIT(hero_str_61);
@@ -12548,7 +12545,7 @@ bb0:
     t3646 = h645_own645;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h645_own645 = t1291;
-#line 12552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3646);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1292 = HERO_STR_LIT(hero_str_61);
@@ -12558,7 +12555,7 @@ bb0:
     t3647 = h646_own646;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h646_own646 = t1293;
-#line 12562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3647);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1294 = HERO_STR_LIT(hero_str_61);
@@ -12568,7 +12565,7 @@ bb0:
     t3648 = h647_own647;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h647_own647 = t1295;
-#line 12572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3648);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1296 = HERO_STR_LIT(hero_str_61);
@@ -12578,7 +12575,7 @@ bb0:
     t3649 = h648_own648;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h648_own648 = t1297;
-#line 12582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3649);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1298 = HERO_STR_LIT(hero_str_61);
@@ -12588,7 +12585,7 @@ bb0:
     t3650 = h649_own649;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h649_own649 = t1299;
-#line 12592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3650);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1300 = HERO_STR_LIT(hero_str_61);
@@ -12598,7 +12595,7 @@ bb0:
     t3651 = h650_own650;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h650_own650 = t1301;
-#line 12602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3651);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1302 = HERO_STR_LIT(hero_str_61);
@@ -12608,7 +12605,7 @@ bb0:
     t3652 = h651_own651;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h651_own651 = t1303;
-#line 12612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3652);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1304 = HERO_STR_LIT(hero_str_61);
@@ -12618,7 +12615,7 @@ bb0:
     t3653 = h652_own652;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h652_own652 = t1305;
-#line 12622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3653);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1306 = HERO_STR_LIT(hero_str_61);
@@ -12628,7 +12625,7 @@ bb0:
     t3654 = h653_own653;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h653_own653 = t1307;
-#line 12632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3654);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1308 = HERO_STR_LIT(hero_str_61);
@@ -12638,7 +12635,7 @@ bb0:
     t3655 = h654_own654;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h654_own654 = t1309;
-#line 12642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3655);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1310 = HERO_STR_LIT(hero_str_61);
@@ -12648,7 +12645,7 @@ bb0:
     t3656 = h655_own655;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h655_own655 = t1311;
-#line 12652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3656);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1312 = HERO_STR_LIT(hero_str_61);
@@ -12658,7 +12655,7 @@ bb0:
     t3657 = h656_own656;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h656_own656 = t1313;
-#line 12662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3657);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1314 = HERO_STR_LIT(hero_str_61);
@@ -12668,7 +12665,7 @@ bb0:
     t3658 = h657_own657;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h657_own657 = t1315;
-#line 12672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3658);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1316 = HERO_STR_LIT(hero_str_61);
@@ -12678,7 +12675,7 @@ bb0:
     t3659 = h658_own658;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h658_own658 = t1317;
-#line 12682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3659);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1318 = HERO_STR_LIT(hero_str_61);
@@ -12688,7 +12685,7 @@ bb0:
     t3660 = h659_own659;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h659_own659 = t1319;
-#line 12692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3660);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1320 = HERO_STR_LIT(hero_str_61);
@@ -12698,7 +12695,7 @@ bb0:
     t3661 = h660_own660;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h660_own660 = t1321;
-#line 12702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3661);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1322 = HERO_STR_LIT(hero_str_61);
@@ -12708,7 +12705,7 @@ bb0:
     t3662 = h661_own661;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h661_own661 = t1323;
-#line 12712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3662);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1324 = HERO_STR_LIT(hero_str_61);
@@ -12718,7 +12715,7 @@ bb0:
     t3663 = h662_own662;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h662_own662 = t1325;
-#line 12722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3663);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1326 = HERO_STR_LIT(hero_str_61);
@@ -12728,7 +12725,7 @@ bb0:
     t3664 = h663_own663;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h663_own663 = t1327;
-#line 12732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3664);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1328 = HERO_STR_LIT(hero_str_61);
@@ -12738,7 +12735,7 @@ bb0:
     t3665 = h664_own664;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h664_own664 = t1329;
-#line 12742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3665);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1330 = HERO_STR_LIT(hero_str_61);
@@ -12748,7 +12745,7 @@ bb0:
     t3666 = h665_own665;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h665_own665 = t1331;
-#line 12752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3666);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1332 = HERO_STR_LIT(hero_str_61);
@@ -12758,7 +12755,7 @@ bb0:
     t3667 = h666_own666;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h666_own666 = t1333;
-#line 12762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3667);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1334 = HERO_STR_LIT(hero_str_61);
@@ -12768,7 +12765,7 @@ bb0:
     t3668 = h667_own667;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h667_own667 = t1335;
-#line 12772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3668);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1336 = HERO_STR_LIT(hero_str_61);
@@ -12778,7 +12775,7 @@ bb0:
     t3669 = h668_own668;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h668_own668 = t1337;
-#line 12782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3669);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1338 = HERO_STR_LIT(hero_str_61);
@@ -12788,7 +12785,7 @@ bb0:
     t3670 = h669_own669;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h669_own669 = t1339;
-#line 12792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3670);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1340 = HERO_STR_LIT(hero_str_61);
@@ -12798,7 +12795,7 @@ bb0:
     t3671 = h670_own670;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h670_own670 = t1341;
-#line 12802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3671);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1342 = HERO_STR_LIT(hero_str_61);
@@ -12808,7 +12805,7 @@ bb0:
     t3672 = h671_own671;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h671_own671 = t1343;
-#line 12812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3672);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1344 = HERO_STR_LIT(hero_str_61);
@@ -12818,7 +12815,7 @@ bb0:
     t3673 = h672_own672;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h672_own672 = t1345;
-#line 12822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3673);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1346 = HERO_STR_LIT(hero_str_61);
@@ -12828,7 +12825,7 @@ bb0:
     t3674 = h673_own673;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h673_own673 = t1347;
-#line 12832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3674);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1348 = HERO_STR_LIT(hero_str_61);
@@ -12838,7 +12835,7 @@ bb0:
     t3675 = h674_own674;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h674_own674 = t1349;
-#line 12842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3675);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1350 = HERO_STR_LIT(hero_str_61);
@@ -12848,7 +12845,7 @@ bb0:
     t3676 = h675_own675;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h675_own675 = t1351;
-#line 12852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3676);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1352 = HERO_STR_LIT(hero_str_61);
@@ -12858,7 +12855,7 @@ bb0:
     t3677 = h676_own676;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h676_own676 = t1353;
-#line 12862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3677);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1354 = HERO_STR_LIT(hero_str_61);
@@ -12868,7 +12865,7 @@ bb0:
     t3678 = h677_own677;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h677_own677 = t1355;
-#line 12872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3678);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1356 = HERO_STR_LIT(hero_str_61);
@@ -12878,7 +12875,7 @@ bb0:
     t3679 = h678_own678;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h678_own678 = t1357;
-#line 12882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3679);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1358 = HERO_STR_LIT(hero_str_61);
@@ -12888,7 +12885,7 @@ bb0:
     t3680 = h679_own679;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h679_own679 = t1359;
-#line 12892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3680);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1360 = HERO_STR_LIT(hero_str_61);
@@ -12898,7 +12895,7 @@ bb0:
     t3681 = h680_own680;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h680_own680 = t1361;
-#line 12902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3681);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1362 = HERO_STR_LIT(hero_str_61);
@@ -12908,7 +12905,7 @@ bb0:
     t3682 = h681_own681;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h681_own681 = t1363;
-#line 12912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3682);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1364 = HERO_STR_LIT(hero_str_61);
@@ -12918,7 +12915,7 @@ bb0:
     t3683 = h682_own682;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h682_own682 = t1365;
-#line 12922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3683);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1366 = HERO_STR_LIT(hero_str_61);
@@ -12928,7 +12925,7 @@ bb0:
     t3684 = h683_own683;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h683_own683 = t1367;
-#line 12932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3684);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1368 = HERO_STR_LIT(hero_str_61);
@@ -12938,7 +12935,7 @@ bb0:
     t3685 = h684_own684;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h684_own684 = t1369;
-#line 12942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3685);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1370 = HERO_STR_LIT(hero_str_61);
@@ -12948,7 +12945,7 @@ bb0:
     t3686 = h685_own685;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h685_own685 = t1371;
-#line 12952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3686);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1372 = HERO_STR_LIT(hero_str_61);
@@ -12958,7 +12955,7 @@ bb0:
     t3687 = h686_own686;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h686_own686 = t1373;
-#line 12962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3687);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1374 = HERO_STR_LIT(hero_str_61);
@@ -12968,7 +12965,7 @@ bb0:
     t3688 = h687_own687;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h687_own687 = t1375;
-#line 12972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3688);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1376 = HERO_STR_LIT(hero_str_61);
@@ -12978,7 +12975,7 @@ bb0:
     t3689 = h688_own688;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h688_own688 = t1377;
-#line 12982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3689);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1378 = HERO_STR_LIT(hero_str_61);
@@ -12988,7 +12985,7 @@ bb0:
     t3690 = h689_own689;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h689_own689 = t1379;
-#line 12992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3690);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1380 = HERO_STR_LIT(hero_str_61);
@@ -12998,7 +12995,7 @@ bb0:
     t3691 = h690_own690;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h690_own690 = t1381;
-#line 13002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 12999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3691);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1382 = HERO_STR_LIT(hero_str_61);
@@ -13008,7 +13005,7 @@ bb0:
     t3692 = h691_own691;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h691_own691 = t1383;
-#line 13012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3692);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1384 = HERO_STR_LIT(hero_str_61);
@@ -13018,7 +13015,7 @@ bb0:
     t3693 = h692_own692;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h692_own692 = t1385;
-#line 13022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3693);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1386 = HERO_STR_LIT(hero_str_61);
@@ -13028,7 +13025,7 @@ bb0:
     t3694 = h693_own693;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h693_own693 = t1387;
-#line 13032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3694);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1388 = HERO_STR_LIT(hero_str_61);
@@ -13038,7 +13035,7 @@ bb0:
     t3695 = h694_own694;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h694_own694 = t1389;
-#line 13042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3695);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1390 = HERO_STR_LIT(hero_str_61);
@@ -13048,7 +13045,7 @@ bb0:
     t3696 = h695_own695;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h695_own695 = t1391;
-#line 13052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3696);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1392 = HERO_STR_LIT(hero_str_61);
@@ -13058,7 +13055,7 @@ bb0:
     t3697 = h696_own696;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h696_own696 = t1393;
-#line 13062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3697);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1394 = HERO_STR_LIT(hero_str_61);
@@ -13068,7 +13065,7 @@ bb0:
     t3698 = h697_own697;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h697_own697 = t1395;
-#line 13072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3698);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1396 = HERO_STR_LIT(hero_str_61);
@@ -13078,7 +13075,7 @@ bb0:
     t3699 = h698_own698;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h698_own698 = t1397;
-#line 13082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3699);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1398 = HERO_STR_LIT(hero_str_61);
@@ -13088,7 +13085,7 @@ bb0:
     t3700 = h699_own699;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h699_own699 = t1399;
-#line 13092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3700);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1400 = HERO_STR_LIT(hero_str_61);
@@ -13098,7 +13095,7 @@ bb0:
     t3701 = h700_own700;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h700_own700 = t1401;
-#line 13102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3701);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1402 = HERO_STR_LIT(hero_str_61);
@@ -13108,7 +13105,7 @@ bb0:
     t3702 = h701_own701;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h701_own701 = t1403;
-#line 13112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3702);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1404 = HERO_STR_LIT(hero_str_61);
@@ -13118,7 +13115,7 @@ bb0:
     t3703 = h702_own702;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h702_own702 = t1405;
-#line 13122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3703);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1406 = HERO_STR_LIT(hero_str_61);
@@ -13128,7 +13125,7 @@ bb0:
     t3704 = h703_own703;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h703_own703 = t1407;
-#line 13132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3704);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1408 = HERO_STR_LIT(hero_str_61);
@@ -13138,7 +13135,7 @@ bb0:
     t3705 = h704_own704;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h704_own704 = t1409;
-#line 13142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3705);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1410 = HERO_STR_LIT(hero_str_61);
@@ -13148,7 +13145,7 @@ bb0:
     t3706 = h705_own705;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h705_own705 = t1411;
-#line 13152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3706);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1412 = HERO_STR_LIT(hero_str_61);
@@ -13158,7 +13155,7 @@ bb0:
     t3707 = h706_own706;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h706_own706 = t1413;
-#line 13162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3707);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1414 = HERO_STR_LIT(hero_str_61);
@@ -13168,7 +13165,7 @@ bb0:
     t3708 = h707_own707;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h707_own707 = t1415;
-#line 13172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3708);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1416 = HERO_STR_LIT(hero_str_61);
@@ -13178,7 +13175,7 @@ bb0:
     t3709 = h708_own708;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h708_own708 = t1417;
-#line 13182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3709);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1418 = HERO_STR_LIT(hero_str_61);
@@ -13188,7 +13185,7 @@ bb0:
     t3710 = h709_own709;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h709_own709 = t1419;
-#line 13192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3710);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1420 = HERO_STR_LIT(hero_str_61);
@@ -13198,7 +13195,7 @@ bb0:
     t3711 = h710_own710;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h710_own710 = t1421;
-#line 13202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3711);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1422 = HERO_STR_LIT(hero_str_61);
@@ -13208,7 +13205,7 @@ bb0:
     t3712 = h711_own711;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h711_own711 = t1423;
-#line 13212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3712);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1424 = HERO_STR_LIT(hero_str_61);
@@ -13218,7 +13215,7 @@ bb0:
     t3713 = h712_own712;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h712_own712 = t1425;
-#line 13222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3713);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1426 = HERO_STR_LIT(hero_str_61);
@@ -13228,7 +13225,7 @@ bb0:
     t3714 = h713_own713;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h713_own713 = t1427;
-#line 13232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3714);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1428 = HERO_STR_LIT(hero_str_61);
@@ -13238,7 +13235,7 @@ bb0:
     t3715 = h714_own714;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h714_own714 = t1429;
-#line 13242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3715);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1430 = HERO_STR_LIT(hero_str_61);
@@ -13248,7 +13245,7 @@ bb0:
     t3716 = h715_own715;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h715_own715 = t1431;
-#line 13252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3716);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1432 = HERO_STR_LIT(hero_str_61);
@@ -13258,7 +13255,7 @@ bb0:
     t3717 = h716_own716;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h716_own716 = t1433;
-#line 13262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3717);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1434 = HERO_STR_LIT(hero_str_61);
@@ -13268,7 +13265,7 @@ bb0:
     t3718 = h717_own717;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h717_own717 = t1435;
-#line 13272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3718);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1436 = HERO_STR_LIT(hero_str_61);
@@ -13278,7 +13275,7 @@ bb0:
     t3719 = h718_own718;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h718_own718 = t1437;
-#line 13282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3719);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1438 = HERO_STR_LIT(hero_str_61);
@@ -13288,7 +13285,7 @@ bb0:
     t3720 = h719_own719;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h719_own719 = t1439;
-#line 13292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3720);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1440 = HERO_STR_LIT(hero_str_61);
@@ -13298,7 +13295,7 @@ bb0:
     t3721 = h720_own720;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h720_own720 = t1441;
-#line 13302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3721);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1442 = HERO_STR_LIT(hero_str_61);
@@ -13308,7 +13305,7 @@ bb0:
     t3722 = h721_own721;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h721_own721 = t1443;
-#line 13312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3722);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1444 = HERO_STR_LIT(hero_str_61);
@@ -13318,7 +13315,7 @@ bb0:
     t3723 = h722_own722;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h722_own722 = t1445;
-#line 13322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3723);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1446 = HERO_STR_LIT(hero_str_61);
@@ -13328,7 +13325,7 @@ bb0:
     t3724 = h723_own723;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h723_own723 = t1447;
-#line 13332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3724);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1448 = HERO_STR_LIT(hero_str_61);
@@ -13338,7 +13335,7 @@ bb0:
     t3725 = h724_own724;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h724_own724 = t1449;
-#line 13342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3725);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1450 = HERO_STR_LIT(hero_str_61);
@@ -13348,7 +13345,7 @@ bb0:
     t3726 = h725_own725;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h725_own725 = t1451;
-#line 13352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3726);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1452 = HERO_STR_LIT(hero_str_61);
@@ -13358,7 +13355,7 @@ bb0:
     t3727 = h726_own726;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h726_own726 = t1453;
-#line 13362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3727);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1454 = HERO_STR_LIT(hero_str_61);
@@ -13368,7 +13365,7 @@ bb0:
     t3728 = h727_own727;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h727_own727 = t1455;
-#line 13372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3728);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1456 = HERO_STR_LIT(hero_str_61);
@@ -13378,7 +13375,7 @@ bb0:
     t3729 = h728_own728;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h728_own728 = t1457;
-#line 13382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3729);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1458 = HERO_STR_LIT(hero_str_61);
@@ -13388,7 +13385,7 @@ bb0:
     t3730 = h729_own729;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h729_own729 = t1459;
-#line 13392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3730);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1460 = HERO_STR_LIT(hero_str_61);
@@ -13398,7 +13395,7 @@ bb0:
     t3731 = h730_own730;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h730_own730 = t1461;
-#line 13402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3731);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1462 = HERO_STR_LIT(hero_str_61);
@@ -13408,7 +13405,7 @@ bb0:
     t3732 = h731_own731;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h731_own731 = t1463;
-#line 13412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3732);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1464 = HERO_STR_LIT(hero_str_61);
@@ -13418,7 +13415,7 @@ bb0:
     t3733 = h732_own732;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h732_own732 = t1465;
-#line 13422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3733);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1466 = HERO_STR_LIT(hero_str_61);
@@ -13428,7 +13425,7 @@ bb0:
     t3734 = h733_own733;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h733_own733 = t1467;
-#line 13432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3734);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1468 = HERO_STR_LIT(hero_str_61);
@@ -13438,7 +13435,7 @@ bb0:
     t3735 = h734_own734;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h734_own734 = t1469;
-#line 13442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3735);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1470 = HERO_STR_LIT(hero_str_61);
@@ -13448,7 +13445,7 @@ bb0:
     t3736 = h735_own735;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h735_own735 = t1471;
-#line 13452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3736);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1472 = HERO_STR_LIT(hero_str_61);
@@ -13458,7 +13455,7 @@ bb0:
     t3737 = h736_own736;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h736_own736 = t1473;
-#line 13462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3737);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1474 = HERO_STR_LIT(hero_str_61);
@@ -13468,7 +13465,7 @@ bb0:
     t3738 = h737_own737;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h737_own737 = t1475;
-#line 13472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3738);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1476 = HERO_STR_LIT(hero_str_61);
@@ -13478,7 +13475,7 @@ bb0:
     t3739 = h738_own738;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h738_own738 = t1477;
-#line 13482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3739);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1478 = HERO_STR_LIT(hero_str_61);
@@ -13488,7 +13485,7 @@ bb0:
     t3740 = h739_own739;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h739_own739 = t1479;
-#line 13492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3740);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1480 = HERO_STR_LIT(hero_str_61);
@@ -13498,7 +13495,7 @@ bb0:
     t3741 = h740_own740;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h740_own740 = t1481;
-#line 13502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3741);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1482 = HERO_STR_LIT(hero_str_61);
@@ -13508,7 +13505,7 @@ bb0:
     t3742 = h741_own741;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h741_own741 = t1483;
-#line 13512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3742);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1484 = HERO_STR_LIT(hero_str_61);
@@ -13518,7 +13515,7 @@ bb0:
     t3743 = h742_own742;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h742_own742 = t1485;
-#line 13522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3743);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1486 = HERO_STR_LIT(hero_str_61);
@@ -13528,7 +13525,7 @@ bb0:
     t3744 = h743_own743;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h743_own743 = t1487;
-#line 13532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3744);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1488 = HERO_STR_LIT(hero_str_61);
@@ -13538,7 +13535,7 @@ bb0:
     t3745 = h744_own744;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h744_own744 = t1489;
-#line 13542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3745);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1490 = HERO_STR_LIT(hero_str_61);
@@ -13548,7 +13545,7 @@ bb0:
     t3746 = h745_own745;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h745_own745 = t1491;
-#line 13552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3746);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1492 = HERO_STR_LIT(hero_str_61);
@@ -13558,7 +13555,7 @@ bb0:
     t3747 = h746_own746;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h746_own746 = t1493;
-#line 13562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3747);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1494 = HERO_STR_LIT(hero_str_61);
@@ -13568,7 +13565,7 @@ bb0:
     t3748 = h747_own747;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h747_own747 = t1495;
-#line 13572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3748);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1496 = HERO_STR_LIT(hero_str_61);
@@ -13578,7 +13575,7 @@ bb0:
     t3749 = h748_own748;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h748_own748 = t1497;
-#line 13582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3749);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1498 = HERO_STR_LIT(hero_str_61);
@@ -13588,7 +13585,7 @@ bb0:
     t3750 = h749_own749;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h749_own749 = t1499;
-#line 13592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3750);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1500 = HERO_STR_LIT(hero_str_61);
@@ -13598,7 +13595,7 @@ bb0:
     t3751 = h750_own750;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h750_own750 = t1501;
-#line 13602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3751);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1502 = HERO_STR_LIT(hero_str_61);
@@ -13608,7 +13605,7 @@ bb0:
     t3752 = h751_own751;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h751_own751 = t1503;
-#line 13612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3752);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1504 = HERO_STR_LIT(hero_str_61);
@@ -13618,7 +13615,7 @@ bb0:
     t3753 = h752_own752;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h752_own752 = t1505;
-#line 13622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3753);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1506 = HERO_STR_LIT(hero_str_61);
@@ -13628,7 +13625,7 @@ bb0:
     t3754 = h753_own753;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h753_own753 = t1507;
-#line 13632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3754);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1508 = HERO_STR_LIT(hero_str_61);
@@ -13638,7 +13635,7 @@ bb0:
     t3755 = h754_own754;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h754_own754 = t1509;
-#line 13642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3755);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1510 = HERO_STR_LIT(hero_str_61);
@@ -13648,7 +13645,7 @@ bb0:
     t3756 = h755_own755;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h755_own755 = t1511;
-#line 13652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3756);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1512 = HERO_STR_LIT(hero_str_61);
@@ -13658,7 +13655,7 @@ bb0:
     t3757 = h756_own756;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h756_own756 = t1513;
-#line 13662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3757);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1514 = HERO_STR_LIT(hero_str_61);
@@ -13668,7 +13665,7 @@ bb0:
     t3758 = h757_own757;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h757_own757 = t1515;
-#line 13672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3758);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1516 = HERO_STR_LIT(hero_str_61);
@@ -13678,7 +13675,7 @@ bb0:
     t3759 = h758_own758;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h758_own758 = t1517;
-#line 13682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3759);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1518 = HERO_STR_LIT(hero_str_61);
@@ -13688,7 +13685,7 @@ bb0:
     t3760 = h759_own759;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h759_own759 = t1519;
-#line 13692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3760);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1520 = HERO_STR_LIT(hero_str_61);
@@ -13698,7 +13695,7 @@ bb0:
     t3761 = h760_own760;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h760_own760 = t1521;
-#line 13702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3761);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1522 = HERO_STR_LIT(hero_str_61);
@@ -13708,7 +13705,7 @@ bb0:
     t3762 = h761_own761;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h761_own761 = t1523;
-#line 13712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3762);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1524 = HERO_STR_LIT(hero_str_61);
@@ -13718,7 +13715,7 @@ bb0:
     t3763 = h762_own762;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h762_own762 = t1525;
-#line 13722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3763);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1526 = HERO_STR_LIT(hero_str_61);
@@ -13728,7 +13725,7 @@ bb0:
     t3764 = h763_own763;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h763_own763 = t1527;
-#line 13732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3764);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1528 = HERO_STR_LIT(hero_str_61);
@@ -13738,7 +13735,7 @@ bb0:
     t3765 = h764_own764;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h764_own764 = t1529;
-#line 13742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3765);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1530 = HERO_STR_LIT(hero_str_61);
@@ -13748,7 +13745,7 @@ bb0:
     t3766 = h765_own765;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h765_own765 = t1531;
-#line 13752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3766);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1532 = HERO_STR_LIT(hero_str_61);
@@ -13758,7 +13755,7 @@ bb0:
     t3767 = h766_own766;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h766_own766 = t1533;
-#line 13762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3767);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1534 = HERO_STR_LIT(hero_str_61);
@@ -13768,7 +13765,7 @@ bb0:
     t3768 = h767_own767;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h767_own767 = t1535;
-#line 13772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3768);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1536 = HERO_STR_LIT(hero_str_61);
@@ -13778,7 +13775,7 @@ bb0:
     t3769 = h768_own768;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h768_own768 = t1537;
-#line 13782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3769);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1538 = HERO_STR_LIT(hero_str_61);
@@ -13788,7 +13785,7 @@ bb0:
     t3770 = h769_own769;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h769_own769 = t1539;
-#line 13792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3770);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1540 = HERO_STR_LIT(hero_str_61);
@@ -13798,7 +13795,7 @@ bb0:
     t3771 = h770_own770;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h770_own770 = t1541;
-#line 13802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3771);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1542 = HERO_STR_LIT(hero_str_61);
@@ -13808,7 +13805,7 @@ bb0:
     t3772 = h771_own771;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h771_own771 = t1543;
-#line 13812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3772);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1544 = HERO_STR_LIT(hero_str_61);
@@ -13818,7 +13815,7 @@ bb0:
     t3773 = h772_own772;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h772_own772 = t1545;
-#line 13822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3773);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1546 = HERO_STR_LIT(hero_str_61);
@@ -13828,7 +13825,7 @@ bb0:
     t3774 = h773_own773;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h773_own773 = t1547;
-#line 13832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3774);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1548 = HERO_STR_LIT(hero_str_61);
@@ -13838,7 +13835,7 @@ bb0:
     t3775 = h774_own774;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h774_own774 = t1549;
-#line 13842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3775);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1550 = HERO_STR_LIT(hero_str_61);
@@ -13848,7 +13845,7 @@ bb0:
     t3776 = h775_own775;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h775_own775 = t1551;
-#line 13852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3776);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1552 = HERO_STR_LIT(hero_str_61);
@@ -13858,7 +13855,7 @@ bb0:
     t3777 = h776_own776;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h776_own776 = t1553;
-#line 13862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3777);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1554 = HERO_STR_LIT(hero_str_61);
@@ -13868,7 +13865,7 @@ bb0:
     t3778 = h777_own777;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h777_own777 = t1555;
-#line 13872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3778);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1556 = HERO_STR_LIT(hero_str_61);
@@ -13878,7 +13875,7 @@ bb0:
     t3779 = h778_own778;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h778_own778 = t1557;
-#line 13882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3779);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1558 = HERO_STR_LIT(hero_str_61);
@@ -13888,7 +13885,7 @@ bb0:
     t3780 = h779_own779;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h779_own779 = t1559;
-#line 13892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3780);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1560 = HERO_STR_LIT(hero_str_61);
@@ -13898,7 +13895,7 @@ bb0:
     t3781 = h780_own780;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h780_own780 = t1561;
-#line 13902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3781);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1562 = HERO_STR_LIT(hero_str_61);
@@ -13908,7 +13905,7 @@ bb0:
     t3782 = h781_own781;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h781_own781 = t1563;
-#line 13912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3782);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1564 = HERO_STR_LIT(hero_str_61);
@@ -13918,7 +13915,7 @@ bb0:
     t3783 = h782_own782;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h782_own782 = t1565;
-#line 13922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3783);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1566 = HERO_STR_LIT(hero_str_61);
@@ -13928,7 +13925,7 @@ bb0:
     t3784 = h783_own783;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h783_own783 = t1567;
-#line 13932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3784);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1568 = HERO_STR_LIT(hero_str_61);
@@ -13938,7 +13935,7 @@ bb0:
     t3785 = h784_own784;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h784_own784 = t1569;
-#line 13942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3785);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1570 = HERO_STR_LIT(hero_str_61);
@@ -13948,7 +13945,7 @@ bb0:
     t3786 = h785_own785;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h785_own785 = t1571;
-#line 13952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3786);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1572 = HERO_STR_LIT(hero_str_61);
@@ -13958,7 +13955,7 @@ bb0:
     t3787 = h786_own786;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h786_own786 = t1573;
-#line 13962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3787);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1574 = HERO_STR_LIT(hero_str_61);
@@ -13968,7 +13965,7 @@ bb0:
     t3788 = h787_own787;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h787_own787 = t1575;
-#line 13972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3788);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1576 = HERO_STR_LIT(hero_str_61);
@@ -13978,7 +13975,7 @@ bb0:
     t3789 = h788_own788;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h788_own788 = t1577;
-#line 13982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3789);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1578 = HERO_STR_LIT(hero_str_61);
@@ -13988,7 +13985,7 @@ bb0:
     t3790 = h789_own789;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h789_own789 = t1579;
-#line 13992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3790);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1580 = HERO_STR_LIT(hero_str_61);
@@ -13998,7 +13995,7 @@ bb0:
     t3791 = h790_own790;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h790_own790 = t1581;
-#line 14002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 13999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3791);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1582 = HERO_STR_LIT(hero_str_61);
@@ -14008,7 +14005,7 @@ bb0:
     t3792 = h791_own791;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h791_own791 = t1583;
-#line 14012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3792);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1584 = HERO_STR_LIT(hero_str_61);
@@ -14018,7 +14015,7 @@ bb0:
     t3793 = h792_own792;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h792_own792 = t1585;
-#line 14022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3793);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1586 = HERO_STR_LIT(hero_str_61);
@@ -14028,7 +14025,7 @@ bb0:
     t3794 = h793_own793;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h793_own793 = t1587;
-#line 14032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3794);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1588 = HERO_STR_LIT(hero_str_61);
@@ -14038,7 +14035,7 @@ bb0:
     t3795 = h794_own794;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h794_own794 = t1589;
-#line 14042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3795);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1590 = HERO_STR_LIT(hero_str_61);
@@ -14048,7 +14045,7 @@ bb0:
     t3796 = h795_own795;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h795_own795 = t1591;
-#line 14052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3796);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1592 = HERO_STR_LIT(hero_str_61);
@@ -14058,7 +14055,7 @@ bb0:
     t3797 = h796_own796;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h796_own796 = t1593;
-#line 14062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3797);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1594 = HERO_STR_LIT(hero_str_61);
@@ -14068,7 +14065,7 @@ bb0:
     t3798 = h797_own797;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h797_own797 = t1595;
-#line 14072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3798);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1596 = HERO_STR_LIT(hero_str_61);
@@ -14078,7 +14075,7 @@ bb0:
     t3799 = h798_own798;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h798_own798 = t1597;
-#line 14082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3799);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1598 = HERO_STR_LIT(hero_str_61);
@@ -14088,7 +14085,7 @@ bb0:
     t3800 = h799_own799;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h799_own799 = t1599;
-#line 14092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3800);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1600 = HERO_STR_LIT(hero_str_61);
@@ -14098,7 +14095,7 @@ bb0:
     t3801 = h800_own800;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h800_own800 = t1601;
-#line 14102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3801);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1602 = HERO_STR_LIT(hero_str_61);
@@ -14108,7 +14105,7 @@ bb0:
     t3802 = h801_own801;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h801_own801 = t1603;
-#line 14112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3802);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1604 = HERO_STR_LIT(hero_str_61);
@@ -14118,7 +14115,7 @@ bb0:
     t3803 = h802_own802;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h802_own802 = t1605;
-#line 14122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3803);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1606 = HERO_STR_LIT(hero_str_61);
@@ -14128,7 +14125,7 @@ bb0:
     t3804 = h803_own803;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h803_own803 = t1607;
-#line 14132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3804);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1608 = HERO_STR_LIT(hero_str_61);
@@ -14138,7 +14135,7 @@ bb0:
     t3805 = h804_own804;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h804_own804 = t1609;
-#line 14142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3805);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1610 = HERO_STR_LIT(hero_str_61);
@@ -14148,7 +14145,7 @@ bb0:
     t3806 = h805_own805;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h805_own805 = t1611;
-#line 14152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3806);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1612 = HERO_STR_LIT(hero_str_61);
@@ -14158,7 +14155,7 @@ bb0:
     t3807 = h806_own806;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h806_own806 = t1613;
-#line 14162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3807);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1614 = HERO_STR_LIT(hero_str_61);
@@ -14168,7 +14165,7 @@ bb0:
     t3808 = h807_own807;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h807_own807 = t1615;
-#line 14172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3808);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1616 = HERO_STR_LIT(hero_str_61);
@@ -14178,7 +14175,7 @@ bb0:
     t3809 = h808_own808;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h808_own808 = t1617;
-#line 14182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3809);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1618 = HERO_STR_LIT(hero_str_61);
@@ -14188,7 +14185,7 @@ bb0:
     t3810 = h809_own809;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h809_own809 = t1619;
-#line 14192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3810);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1620 = HERO_STR_LIT(hero_str_61);
@@ -14198,7 +14195,7 @@ bb0:
     t3811 = h810_own810;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h810_own810 = t1621;
-#line 14202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3811);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1622 = HERO_STR_LIT(hero_str_61);
@@ -14208,7 +14205,7 @@ bb0:
     t3812 = h811_own811;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h811_own811 = t1623;
-#line 14212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3812);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1624 = HERO_STR_LIT(hero_str_61);
@@ -14218,7 +14215,7 @@ bb0:
     t3813 = h812_own812;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h812_own812 = t1625;
-#line 14222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3813);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1626 = HERO_STR_LIT(hero_str_61);
@@ -14228,7 +14225,7 @@ bb0:
     t3814 = h813_own813;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h813_own813 = t1627;
-#line 14232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3814);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1628 = HERO_STR_LIT(hero_str_61);
@@ -14238,7 +14235,7 @@ bb0:
     t3815 = h814_own814;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h814_own814 = t1629;
-#line 14242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3815);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1630 = HERO_STR_LIT(hero_str_61);
@@ -14248,7 +14245,7 @@ bb0:
     t3816 = h815_own815;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h815_own815 = t1631;
-#line 14252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3816);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1632 = HERO_STR_LIT(hero_str_61);
@@ -14258,7 +14255,7 @@ bb0:
     t3817 = h816_own816;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h816_own816 = t1633;
-#line 14262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3817);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1634 = HERO_STR_LIT(hero_str_61);
@@ -14268,7 +14265,7 @@ bb0:
     t3818 = h817_own817;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h817_own817 = t1635;
-#line 14272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3818);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1636 = HERO_STR_LIT(hero_str_61);
@@ -14278,7 +14275,7 @@ bb0:
     t3819 = h818_own818;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h818_own818 = t1637;
-#line 14282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3819);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1638 = HERO_STR_LIT(hero_str_61);
@@ -14288,7 +14285,7 @@ bb0:
     t3820 = h819_own819;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h819_own819 = t1639;
-#line 14292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3820);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1640 = HERO_STR_LIT(hero_str_61);
@@ -14298,7 +14295,7 @@ bb0:
     t3821 = h820_own820;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h820_own820 = t1641;
-#line 14302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3821);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1642 = HERO_STR_LIT(hero_str_61);
@@ -14308,7 +14305,7 @@ bb0:
     t3822 = h821_own821;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h821_own821 = t1643;
-#line 14312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3822);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1644 = HERO_STR_LIT(hero_str_61);
@@ -14318,7 +14315,7 @@ bb0:
     t3823 = h822_own822;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h822_own822 = t1645;
-#line 14322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3823);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1646 = HERO_STR_LIT(hero_str_61);
@@ -14328,7 +14325,7 @@ bb0:
     t3824 = h823_own823;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h823_own823 = t1647;
-#line 14332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3824);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1648 = HERO_STR_LIT(hero_str_61);
@@ -14338,7 +14335,7 @@ bb0:
     t3825 = h824_own824;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h824_own824 = t1649;
-#line 14342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3825);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1650 = HERO_STR_LIT(hero_str_61);
@@ -14348,7 +14345,7 @@ bb0:
     t3826 = h825_own825;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h825_own825 = t1651;
-#line 14352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3826);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1652 = HERO_STR_LIT(hero_str_61);
@@ -14358,7 +14355,7 @@ bb0:
     t3827 = h826_own826;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h826_own826 = t1653;
-#line 14362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3827);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1654 = HERO_STR_LIT(hero_str_61);
@@ -14368,7 +14365,7 @@ bb0:
     t3828 = h827_own827;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h827_own827 = t1655;
-#line 14372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3828);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1656 = HERO_STR_LIT(hero_str_61);
@@ -14378,7 +14375,7 @@ bb0:
     t3829 = h828_own828;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h828_own828 = t1657;
-#line 14382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3829);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1658 = HERO_STR_LIT(hero_str_61);
@@ -14388,7 +14385,7 @@ bb0:
     t3830 = h829_own829;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h829_own829 = t1659;
-#line 14392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3830);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1660 = HERO_STR_LIT(hero_str_61);
@@ -14398,7 +14395,7 @@ bb0:
     t3831 = h830_own830;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h830_own830 = t1661;
-#line 14402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3831);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1662 = HERO_STR_LIT(hero_str_61);
@@ -14408,7 +14405,7 @@ bb0:
     t3832 = h831_own831;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h831_own831 = t1663;
-#line 14412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3832);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1664 = HERO_STR_LIT(hero_str_61);
@@ -14418,7 +14415,7 @@ bb0:
     t3833 = h832_own832;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h832_own832 = t1665;
-#line 14422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3833);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1666 = HERO_STR_LIT(hero_str_61);
@@ -14428,7 +14425,7 @@ bb0:
     t3834 = h833_own833;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h833_own833 = t1667;
-#line 14432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3834);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1668 = HERO_STR_LIT(hero_str_61);
@@ -14438,7 +14435,7 @@ bb0:
     t3835 = h834_own834;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h834_own834 = t1669;
-#line 14442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3835);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1670 = HERO_STR_LIT(hero_str_61);
@@ -14448,7 +14445,7 @@ bb0:
     t3836 = h835_own835;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h835_own835 = t1671;
-#line 14452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3836);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1672 = HERO_STR_LIT(hero_str_61);
@@ -14458,7 +14455,7 @@ bb0:
     t3837 = h836_own836;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h836_own836 = t1673;
-#line 14462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3837);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1674 = HERO_STR_LIT(hero_str_61);
@@ -14468,7 +14465,7 @@ bb0:
     t3838 = h837_own837;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h837_own837 = t1675;
-#line 14472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3838);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1676 = HERO_STR_LIT(hero_str_61);
@@ -14478,7 +14475,7 @@ bb0:
     t3839 = h838_own838;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h838_own838 = t1677;
-#line 14482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3839);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1678 = HERO_STR_LIT(hero_str_61);
@@ -14488,7 +14485,7 @@ bb0:
     t3840 = h839_own839;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h839_own839 = t1679;
-#line 14492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3840);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1680 = HERO_STR_LIT(hero_str_61);
@@ -14498,7 +14495,7 @@ bb0:
     t3841 = h840_own840;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h840_own840 = t1681;
-#line 14502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3841);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1682 = HERO_STR_LIT(hero_str_61);
@@ -14508,7 +14505,7 @@ bb0:
     t3842 = h841_own841;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h841_own841 = t1683;
-#line 14512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3842);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1684 = HERO_STR_LIT(hero_str_61);
@@ -14518,7 +14515,7 @@ bb0:
     t3843 = h842_own842;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h842_own842 = t1685;
-#line 14522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3843);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1686 = HERO_STR_LIT(hero_str_61);
@@ -14528,7 +14525,7 @@ bb0:
     t3844 = h843_own843;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h843_own843 = t1687;
-#line 14532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3844);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1688 = HERO_STR_LIT(hero_str_61);
@@ -14538,7 +14535,7 @@ bb0:
     t3845 = h844_own844;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h844_own844 = t1689;
-#line 14542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3845);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1690 = HERO_STR_LIT(hero_str_61);
@@ -14548,7 +14545,7 @@ bb0:
     t3846 = h845_own845;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h845_own845 = t1691;
-#line 14552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3846);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1692 = HERO_STR_LIT(hero_str_61);
@@ -14558,7 +14555,7 @@ bb0:
     t3847 = h846_own846;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h846_own846 = t1693;
-#line 14562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3847);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1694 = HERO_STR_LIT(hero_str_61);
@@ -14568,7 +14565,7 @@ bb0:
     t3848 = h847_own847;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h847_own847 = t1695;
-#line 14572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3848);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1696 = HERO_STR_LIT(hero_str_61);
@@ -14578,7 +14575,7 @@ bb0:
     t3849 = h848_own848;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h848_own848 = t1697;
-#line 14582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3849);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1698 = HERO_STR_LIT(hero_str_61);
@@ -14588,7 +14585,7 @@ bb0:
     t3850 = h849_own849;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h849_own849 = t1699;
-#line 14592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3850);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1700 = HERO_STR_LIT(hero_str_61);
@@ -14598,7 +14595,7 @@ bb0:
     t3851 = h850_own850;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h850_own850 = t1701;
-#line 14602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3851);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1702 = HERO_STR_LIT(hero_str_61);
@@ -14608,7 +14605,7 @@ bb0:
     t3852 = h851_own851;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h851_own851 = t1703;
-#line 14612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3852);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1704 = HERO_STR_LIT(hero_str_61);
@@ -14618,7 +14615,7 @@ bb0:
     t3853 = h852_own852;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h852_own852 = t1705;
-#line 14622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3853);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1706 = HERO_STR_LIT(hero_str_61);
@@ -14628,7 +14625,7 @@ bb0:
     t3854 = h853_own853;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h853_own853 = t1707;
-#line 14632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3854);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1708 = HERO_STR_LIT(hero_str_61);
@@ -14638,7 +14635,7 @@ bb0:
     t3855 = h854_own854;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h854_own854 = t1709;
-#line 14642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3855);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1710 = HERO_STR_LIT(hero_str_61);
@@ -14648,7 +14645,7 @@ bb0:
     t3856 = h855_own855;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h855_own855 = t1711;
-#line 14652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3856);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1712 = HERO_STR_LIT(hero_str_61);
@@ -14658,7 +14655,7 @@ bb0:
     t3857 = h856_own856;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h856_own856 = t1713;
-#line 14662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3857);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1714 = HERO_STR_LIT(hero_str_61);
@@ -14668,7 +14665,7 @@ bb0:
     t3858 = h857_own857;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h857_own857 = t1715;
-#line 14672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3858);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1716 = HERO_STR_LIT(hero_str_61);
@@ -14678,7 +14675,7 @@ bb0:
     t3859 = h858_own858;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h858_own858 = t1717;
-#line 14682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3859);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1718 = HERO_STR_LIT(hero_str_61);
@@ -14688,7 +14685,7 @@ bb0:
     t3860 = h859_own859;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h859_own859 = t1719;
-#line 14692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3860);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1720 = HERO_STR_LIT(hero_str_61);
@@ -14698,7 +14695,7 @@ bb0:
     t3861 = h860_own860;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h860_own860 = t1721;
-#line 14702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3861);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1722 = HERO_STR_LIT(hero_str_61);
@@ -14708,7 +14705,7 @@ bb0:
     t3862 = h861_own861;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h861_own861 = t1723;
-#line 14712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3862);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1724 = HERO_STR_LIT(hero_str_61);
@@ -14718,7 +14715,7 @@ bb0:
     t3863 = h862_own862;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h862_own862 = t1725;
-#line 14722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3863);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1726 = HERO_STR_LIT(hero_str_61);
@@ -14728,7 +14725,7 @@ bb0:
     t3864 = h863_own863;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h863_own863 = t1727;
-#line 14732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3864);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1728 = HERO_STR_LIT(hero_str_61);
@@ -14738,7 +14735,7 @@ bb0:
     t3865 = h864_own864;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h864_own864 = t1729;
-#line 14742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3865);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1730 = HERO_STR_LIT(hero_str_61);
@@ -14748,7 +14745,7 @@ bb0:
     t3866 = h865_own865;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h865_own865 = t1731;
-#line 14752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3866);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1732 = HERO_STR_LIT(hero_str_61);
@@ -14758,7 +14755,7 @@ bb0:
     t3867 = h866_own866;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h866_own866 = t1733;
-#line 14762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3867);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1734 = HERO_STR_LIT(hero_str_61);
@@ -14768,7 +14765,7 @@ bb0:
     t3868 = h867_own867;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h867_own867 = t1735;
-#line 14772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3868);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1736 = HERO_STR_LIT(hero_str_61);
@@ -14778,7 +14775,7 @@ bb0:
     t3869 = h868_own868;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h868_own868 = t1737;
-#line 14782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3869);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1738 = HERO_STR_LIT(hero_str_61);
@@ -14788,7 +14785,7 @@ bb0:
     t3870 = h869_own869;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h869_own869 = t1739;
-#line 14792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3870);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1740 = HERO_STR_LIT(hero_str_61);
@@ -14798,7 +14795,7 @@ bb0:
     t3871 = h870_own870;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h870_own870 = t1741;
-#line 14802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3871);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1742 = HERO_STR_LIT(hero_str_61);
@@ -14808,7 +14805,7 @@ bb0:
     t3872 = h871_own871;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h871_own871 = t1743;
-#line 14812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3872);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1744 = HERO_STR_LIT(hero_str_61);
@@ -14818,7 +14815,7 @@ bb0:
     t3873 = h872_own872;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h872_own872 = t1745;
-#line 14822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3873);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1746 = HERO_STR_LIT(hero_str_61);
@@ -14828,7 +14825,7 @@ bb0:
     t3874 = h873_own873;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h873_own873 = t1747;
-#line 14832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3874);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1748 = HERO_STR_LIT(hero_str_61);
@@ -14838,7 +14835,7 @@ bb0:
     t3875 = h874_own874;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h874_own874 = t1749;
-#line 14842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3875);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1750 = HERO_STR_LIT(hero_str_61);
@@ -14848,7 +14845,7 @@ bb0:
     t3876 = h875_own875;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h875_own875 = t1751;
-#line 14852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3876);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1752 = HERO_STR_LIT(hero_str_61);
@@ -14858,7 +14855,7 @@ bb0:
     t3877 = h876_own876;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h876_own876 = t1753;
-#line 14862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3877);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1754 = HERO_STR_LIT(hero_str_61);
@@ -14868,7 +14865,7 @@ bb0:
     t3878 = h877_own877;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h877_own877 = t1755;
-#line 14872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3878);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1756 = HERO_STR_LIT(hero_str_61);
@@ -14878,7 +14875,7 @@ bb0:
     t3879 = h878_own878;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h878_own878 = t1757;
-#line 14882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3879);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1758 = HERO_STR_LIT(hero_str_61);
@@ -14888,7 +14885,7 @@ bb0:
     t3880 = h879_own879;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h879_own879 = t1759;
-#line 14892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3880);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1760 = HERO_STR_LIT(hero_str_61);
@@ -14898,7 +14895,7 @@ bb0:
     t3881 = h880_own880;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h880_own880 = t1761;
-#line 14902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3881);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1762 = HERO_STR_LIT(hero_str_61);
@@ -14908,7 +14905,7 @@ bb0:
     t3882 = h881_own881;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h881_own881 = t1763;
-#line 14912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3882);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1764 = HERO_STR_LIT(hero_str_61);
@@ -14918,7 +14915,7 @@ bb0:
     t3883 = h882_own882;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h882_own882 = t1765;
-#line 14922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3883);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1766 = HERO_STR_LIT(hero_str_61);
@@ -14928,7 +14925,7 @@ bb0:
     t3884 = h883_own883;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h883_own883 = t1767;
-#line 14932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3884);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1768 = HERO_STR_LIT(hero_str_61);
@@ -14938,7 +14935,7 @@ bb0:
     t3885 = h884_own884;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h884_own884 = t1769;
-#line 14942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3885);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1770 = HERO_STR_LIT(hero_str_61);
@@ -14948,7 +14945,7 @@ bb0:
     t3886 = h885_own885;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h885_own885 = t1771;
-#line 14952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3886);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1772 = HERO_STR_LIT(hero_str_61);
@@ -14958,7 +14955,7 @@ bb0:
     t3887 = h886_own886;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h886_own886 = t1773;
-#line 14962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3887);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1774 = HERO_STR_LIT(hero_str_61);
@@ -14968,7 +14965,7 @@ bb0:
     t3888 = h887_own887;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h887_own887 = t1775;
-#line 14972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3888);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1776 = HERO_STR_LIT(hero_str_61);
@@ -14978,7 +14975,7 @@ bb0:
     t3889 = h888_own888;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h888_own888 = t1777;
-#line 14982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3889);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1778 = HERO_STR_LIT(hero_str_61);
@@ -14988,7 +14985,7 @@ bb0:
     t3890 = h889_own889;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h889_own889 = t1779;
-#line 14992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3890);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1780 = HERO_STR_LIT(hero_str_61);
@@ -14998,7 +14995,7 @@ bb0:
     t3891 = h890_own890;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h890_own890 = t1781;
-#line 15002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 14999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3891);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1782 = HERO_STR_LIT(hero_str_61);
@@ -15008,7 +15005,7 @@ bb0:
     t3892 = h891_own891;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h891_own891 = t1783;
-#line 15012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3892);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1784 = HERO_STR_LIT(hero_str_61);
@@ -15018,7 +15015,7 @@ bb0:
     t3893 = h892_own892;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h892_own892 = t1785;
-#line 15022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3893);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1786 = HERO_STR_LIT(hero_str_61);
@@ -15028,7 +15025,7 @@ bb0:
     t3894 = h893_own893;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h893_own893 = t1787;
-#line 15032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3894);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1788 = HERO_STR_LIT(hero_str_61);
@@ -15038,7 +15035,7 @@ bb0:
     t3895 = h894_own894;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h894_own894 = t1789;
-#line 15042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3895);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1790 = HERO_STR_LIT(hero_str_61);
@@ -15048,7 +15045,7 @@ bb0:
     t3896 = h895_own895;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h895_own895 = t1791;
-#line 15052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3896);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1792 = HERO_STR_LIT(hero_str_61);
@@ -15058,7 +15055,7 @@ bb0:
     t3897 = h896_own896;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h896_own896 = t1793;
-#line 15062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3897);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1794 = HERO_STR_LIT(hero_str_61);
@@ -15068,7 +15065,7 @@ bb0:
     t3898 = h897_own897;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h897_own897 = t1795;
-#line 15072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3898);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1796 = HERO_STR_LIT(hero_str_61);
@@ -15078,7 +15075,7 @@ bb0:
     t3899 = h898_own898;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h898_own898 = t1797;
-#line 15082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3899);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1798 = HERO_STR_LIT(hero_str_61);
@@ -15088,7 +15085,7 @@ bb0:
     t3900 = h899_own899;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h899_own899 = t1799;
-#line 15092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3900);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1800 = HERO_STR_LIT(hero_str_61);
@@ -15098,7 +15095,7 @@ bb0:
     t3901 = h900_own900;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h900_own900 = t1801;
-#line 15102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3901);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1802 = HERO_STR_LIT(hero_str_61);
@@ -15108,7 +15105,7 @@ bb0:
     t3902 = h901_own901;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h901_own901 = t1803;
-#line 15112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3902);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1804 = HERO_STR_LIT(hero_str_61);
@@ -15118,7 +15115,7 @@ bb0:
     t3903 = h902_own902;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h902_own902 = t1805;
-#line 15122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3903);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1806 = HERO_STR_LIT(hero_str_61);
@@ -15128,7 +15125,7 @@ bb0:
     t3904 = h903_own903;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h903_own903 = t1807;
-#line 15132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3904);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1808 = HERO_STR_LIT(hero_str_61);
@@ -15138,7 +15135,7 @@ bb0:
     t3905 = h904_own904;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h904_own904 = t1809;
-#line 15142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3905);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1810 = HERO_STR_LIT(hero_str_61);
@@ -15148,7 +15145,7 @@ bb0:
     t3906 = h905_own905;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h905_own905 = t1811;
-#line 15152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3906);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1812 = HERO_STR_LIT(hero_str_61);
@@ -15158,7 +15155,7 @@ bb0:
     t3907 = h906_own906;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h906_own906 = t1813;
-#line 15162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3907);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1814 = HERO_STR_LIT(hero_str_61);
@@ -15168,7 +15165,7 @@ bb0:
     t3908 = h907_own907;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h907_own907 = t1815;
-#line 15172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3908);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1816 = HERO_STR_LIT(hero_str_61);
@@ -15178,7 +15175,7 @@ bb0:
     t3909 = h908_own908;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h908_own908 = t1817;
-#line 15182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3909);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1818 = HERO_STR_LIT(hero_str_61);
@@ -15188,7 +15185,7 @@ bb0:
     t3910 = h909_own909;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h909_own909 = t1819;
-#line 15192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3910);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1820 = HERO_STR_LIT(hero_str_61);
@@ -15198,7 +15195,7 @@ bb0:
     t3911 = h910_own910;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h910_own910 = t1821;
-#line 15202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3911);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1822 = HERO_STR_LIT(hero_str_61);
@@ -15208,7 +15205,7 @@ bb0:
     t3912 = h911_own911;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h911_own911 = t1823;
-#line 15212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3912);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1824 = HERO_STR_LIT(hero_str_61);
@@ -15218,7 +15215,7 @@ bb0:
     t3913 = h912_own912;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h912_own912 = t1825;
-#line 15222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3913);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1826 = HERO_STR_LIT(hero_str_61);
@@ -15228,7 +15225,7 @@ bb0:
     t3914 = h913_own913;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h913_own913 = t1827;
-#line 15232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3914);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1828 = HERO_STR_LIT(hero_str_61);
@@ -15238,7 +15235,7 @@ bb0:
     t3915 = h914_own914;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h914_own914 = t1829;
-#line 15242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3915);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1830 = HERO_STR_LIT(hero_str_61);
@@ -15248,7 +15245,7 @@ bb0:
     t3916 = h915_own915;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h915_own915 = t1831;
-#line 15252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3916);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1832 = HERO_STR_LIT(hero_str_61);
@@ -15258,7 +15255,7 @@ bb0:
     t3917 = h916_own916;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h916_own916 = t1833;
-#line 15262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3917);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1834 = HERO_STR_LIT(hero_str_61);
@@ -15268,7 +15265,7 @@ bb0:
     t3918 = h917_own917;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h917_own917 = t1835;
-#line 15272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3918);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1836 = HERO_STR_LIT(hero_str_61);
@@ -15278,7 +15275,7 @@ bb0:
     t3919 = h918_own918;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h918_own918 = t1837;
-#line 15282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3919);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1838 = HERO_STR_LIT(hero_str_61);
@@ -15288,7 +15285,7 @@ bb0:
     t3920 = h919_own919;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h919_own919 = t1839;
-#line 15292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3920);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1840 = HERO_STR_LIT(hero_str_61);
@@ -15298,7 +15295,7 @@ bb0:
     t3921 = h920_own920;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h920_own920 = t1841;
-#line 15302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3921);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1842 = HERO_STR_LIT(hero_str_61);
@@ -15308,7 +15305,7 @@ bb0:
     t3922 = h921_own921;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h921_own921 = t1843;
-#line 15312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3922);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1844 = HERO_STR_LIT(hero_str_61);
@@ -15318,7 +15315,7 @@ bb0:
     t3923 = h922_own922;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h922_own922 = t1845;
-#line 15322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3923);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1846 = HERO_STR_LIT(hero_str_61);
@@ -15328,7 +15325,7 @@ bb0:
     t3924 = h923_own923;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h923_own923 = t1847;
-#line 15332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3924);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1848 = HERO_STR_LIT(hero_str_61);
@@ -15338,7 +15335,7 @@ bb0:
     t3925 = h924_own924;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h924_own924 = t1849;
-#line 15342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3925);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1850 = HERO_STR_LIT(hero_str_61);
@@ -15348,7 +15345,7 @@ bb0:
     t3926 = h925_own925;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h925_own925 = t1851;
-#line 15352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3926);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1852 = HERO_STR_LIT(hero_str_61);
@@ -15358,7 +15355,7 @@ bb0:
     t3927 = h926_own926;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h926_own926 = t1853;
-#line 15362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3927);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1854 = HERO_STR_LIT(hero_str_61);
@@ -15368,7 +15365,7 @@ bb0:
     t3928 = h927_own927;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h927_own927 = t1855;
-#line 15372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3928);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1856 = HERO_STR_LIT(hero_str_61);
@@ -15378,7 +15375,7 @@ bb0:
     t3929 = h928_own928;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h928_own928 = t1857;
-#line 15382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3929);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1858 = HERO_STR_LIT(hero_str_61);
@@ -15388,7 +15385,7 @@ bb0:
     t3930 = h929_own929;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h929_own929 = t1859;
-#line 15392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3930);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1860 = HERO_STR_LIT(hero_str_61);
@@ -15398,7 +15395,7 @@ bb0:
     t3931 = h930_own930;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h930_own930 = t1861;
-#line 15402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3931);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1862 = HERO_STR_LIT(hero_str_61);
@@ -15408,7 +15405,7 @@ bb0:
     t3932 = h931_own931;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h931_own931 = t1863;
-#line 15412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3932);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1864 = HERO_STR_LIT(hero_str_61);
@@ -15418,7 +15415,7 @@ bb0:
     t3933 = h932_own932;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h932_own932 = t1865;
-#line 15422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3933);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1866 = HERO_STR_LIT(hero_str_61);
@@ -15428,7 +15425,7 @@ bb0:
     t3934 = h933_own933;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h933_own933 = t1867;
-#line 15432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3934);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1868 = HERO_STR_LIT(hero_str_61);
@@ -15438,7 +15435,7 @@ bb0:
     t3935 = h934_own934;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h934_own934 = t1869;
-#line 15442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3935);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1870 = HERO_STR_LIT(hero_str_61);
@@ -15448,7 +15445,7 @@ bb0:
     t3936 = h935_own935;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h935_own935 = t1871;
-#line 15452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3936);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1872 = HERO_STR_LIT(hero_str_61);
@@ -15458,7 +15455,7 @@ bb0:
     t3937 = h936_own936;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h936_own936 = t1873;
-#line 15462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3937);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1874 = HERO_STR_LIT(hero_str_61);
@@ -15468,7 +15465,7 @@ bb0:
     t3938 = h937_own937;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h937_own937 = t1875;
-#line 15472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3938);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1876 = HERO_STR_LIT(hero_str_61);
@@ -15478,7 +15475,7 @@ bb0:
     t3939 = h938_own938;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h938_own938 = t1877;
-#line 15482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3939);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1878 = HERO_STR_LIT(hero_str_61);
@@ -15488,7 +15485,7 @@ bb0:
     t3940 = h939_own939;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h939_own939 = t1879;
-#line 15492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3940);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1880 = HERO_STR_LIT(hero_str_61);
@@ -15498,7 +15495,7 @@ bb0:
     t3941 = h940_own940;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h940_own940 = t1881;
-#line 15502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3941);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1882 = HERO_STR_LIT(hero_str_61);
@@ -15508,7 +15505,7 @@ bb0:
     t3942 = h941_own941;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h941_own941 = t1883;
-#line 15512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3942);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1884 = HERO_STR_LIT(hero_str_61);
@@ -15518,7 +15515,7 @@ bb0:
     t3943 = h942_own942;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h942_own942 = t1885;
-#line 15522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3943);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1886 = HERO_STR_LIT(hero_str_61);
@@ -15528,7 +15525,7 @@ bb0:
     t3944 = h943_own943;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h943_own943 = t1887;
-#line 15532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3944);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1888 = HERO_STR_LIT(hero_str_61);
@@ -15538,7 +15535,7 @@ bb0:
     t3945 = h944_own944;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h944_own944 = t1889;
-#line 15542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3945);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1890 = HERO_STR_LIT(hero_str_61);
@@ -15548,7 +15545,7 @@ bb0:
     t3946 = h945_own945;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h945_own945 = t1891;
-#line 15552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3946);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1892 = HERO_STR_LIT(hero_str_61);
@@ -15558,7 +15555,7 @@ bb0:
     t3947 = h946_own946;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h946_own946 = t1893;
-#line 15562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3947);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1894 = HERO_STR_LIT(hero_str_61);
@@ -15568,7 +15565,7 @@ bb0:
     t3948 = h947_own947;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h947_own947 = t1895;
-#line 15572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3948);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1896 = HERO_STR_LIT(hero_str_61);
@@ -15578,7 +15575,7 @@ bb0:
     t3949 = h948_own948;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h948_own948 = t1897;
-#line 15582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3949);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1898 = HERO_STR_LIT(hero_str_61);
@@ -15588,7 +15585,7 @@ bb0:
     t3950 = h949_own949;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h949_own949 = t1899;
-#line 15592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3950);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1900 = HERO_STR_LIT(hero_str_61);
@@ -15598,7 +15595,7 @@ bb0:
     t3951 = h950_own950;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h950_own950 = t1901;
-#line 15602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3951);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1902 = HERO_STR_LIT(hero_str_61);
@@ -15608,7 +15605,7 @@ bb0:
     t3952 = h951_own951;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h951_own951 = t1903;
-#line 15612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3952);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1904 = HERO_STR_LIT(hero_str_61);
@@ -15618,7 +15615,7 @@ bb0:
     t3953 = h952_own952;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h952_own952 = t1905;
-#line 15622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3953);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1906 = HERO_STR_LIT(hero_str_61);
@@ -15628,7 +15625,7 @@ bb0:
     t3954 = h953_own953;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h953_own953 = t1907;
-#line 15632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3954);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1908 = HERO_STR_LIT(hero_str_61);
@@ -15638,7 +15635,7 @@ bb0:
     t3955 = h954_own954;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h954_own954 = t1909;
-#line 15642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3955);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1910 = HERO_STR_LIT(hero_str_61);
@@ -15648,7 +15645,7 @@ bb0:
     t3956 = h955_own955;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h955_own955 = t1911;
-#line 15652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3956);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1912 = HERO_STR_LIT(hero_str_61);
@@ -15658,7 +15655,7 @@ bb0:
     t3957 = h956_own956;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h956_own956 = t1913;
-#line 15662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3957);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1914 = HERO_STR_LIT(hero_str_61);
@@ -15668,7 +15665,7 @@ bb0:
     t3958 = h957_own957;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h957_own957 = t1915;
-#line 15672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3958);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1916 = HERO_STR_LIT(hero_str_61);
@@ -15678,7 +15675,7 @@ bb0:
     t3959 = h958_own958;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h958_own958 = t1917;
-#line 15682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3959);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1918 = HERO_STR_LIT(hero_str_61);
@@ -15688,7 +15685,7 @@ bb0:
     t3960 = h959_own959;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h959_own959 = t1919;
-#line 15692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3960);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1920 = HERO_STR_LIT(hero_str_61);
@@ -15698,7 +15695,7 @@ bb0:
     t3961 = h960_own960;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h960_own960 = t1921;
-#line 15702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3961);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1922 = HERO_STR_LIT(hero_str_61);
@@ -15708,7 +15705,7 @@ bb0:
     t3962 = h961_own961;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h961_own961 = t1923;
-#line 15712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3962);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1924 = HERO_STR_LIT(hero_str_61);
@@ -15718,7 +15715,7 @@ bb0:
     t3963 = h962_own962;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h962_own962 = t1925;
-#line 15722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3963);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1926 = HERO_STR_LIT(hero_str_61);
@@ -15728,7 +15725,7 @@ bb0:
     t3964 = h963_own963;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h963_own963 = t1927;
-#line 15732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3964);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1928 = HERO_STR_LIT(hero_str_61);
@@ -15738,7 +15735,7 @@ bb0:
     t3965 = h964_own964;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h964_own964 = t1929;
-#line 15742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3965);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1930 = HERO_STR_LIT(hero_str_61);
@@ -15748,7 +15745,7 @@ bb0:
     t3966 = h965_own965;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h965_own965 = t1931;
-#line 15752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3966);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1932 = HERO_STR_LIT(hero_str_61);
@@ -15758,7 +15755,7 @@ bb0:
     t3967 = h966_own966;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h966_own966 = t1933;
-#line 15762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3967);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1934 = HERO_STR_LIT(hero_str_61);
@@ -15768,7 +15765,7 @@ bb0:
     t3968 = h967_own967;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h967_own967 = t1935;
-#line 15772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3968);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1936 = HERO_STR_LIT(hero_str_61);
@@ -15778,7 +15775,7 @@ bb0:
     t3969 = h968_own968;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h968_own968 = t1937;
-#line 15782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3969);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1938 = HERO_STR_LIT(hero_str_61);
@@ -15788,7 +15785,7 @@ bb0:
     t3970 = h969_own969;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h969_own969 = t1939;
-#line 15792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3970);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1940 = HERO_STR_LIT(hero_str_61);
@@ -15798,7 +15795,7 @@ bb0:
     t3971 = h970_own970;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h970_own970 = t1941;
-#line 15802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3971);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1942 = HERO_STR_LIT(hero_str_61);
@@ -15808,7 +15805,7 @@ bb0:
     t3972 = h971_own971;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h971_own971 = t1943;
-#line 15812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3972);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1944 = HERO_STR_LIT(hero_str_61);
@@ -15818,7 +15815,7 @@ bb0:
     t3973 = h972_own972;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h972_own972 = t1945;
-#line 15822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3973);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1946 = HERO_STR_LIT(hero_str_61);
@@ -15828,7 +15825,7 @@ bb0:
     t3974 = h973_own973;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h973_own973 = t1947;
-#line 15832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3974);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1948 = HERO_STR_LIT(hero_str_61);
@@ -15838,7 +15835,7 @@ bb0:
     t3975 = h974_own974;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h974_own974 = t1949;
-#line 15842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3975);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1950 = HERO_STR_LIT(hero_str_61);
@@ -15848,7 +15845,7 @@ bb0:
     t3976 = h975_own975;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h975_own975 = t1951;
-#line 15852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3976);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1952 = HERO_STR_LIT(hero_str_61);
@@ -15858,7 +15855,7 @@ bb0:
     t3977 = h976_own976;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h976_own976 = t1953;
-#line 15862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3977);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1954 = HERO_STR_LIT(hero_str_61);
@@ -15868,7 +15865,7 @@ bb0:
     t3978 = h977_own977;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h977_own977 = t1955;
-#line 15872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3978);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1956 = HERO_STR_LIT(hero_str_61);
@@ -15878,7 +15875,7 @@ bb0:
     t3979 = h978_own978;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h978_own978 = t1957;
-#line 15882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3979);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1958 = HERO_STR_LIT(hero_str_61);
@@ -15888,7 +15885,7 @@ bb0:
     t3980 = h979_own979;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h979_own979 = t1959;
-#line 15892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3980);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1960 = HERO_STR_LIT(hero_str_61);
@@ -15898,7 +15895,7 @@ bb0:
     t3981 = h980_own980;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h980_own980 = t1961;
-#line 15902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3981);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1962 = HERO_STR_LIT(hero_str_61);
@@ -15908,7 +15905,7 @@ bb0:
     t3982 = h981_own981;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h981_own981 = t1963;
-#line 15912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3982);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1964 = HERO_STR_LIT(hero_str_61);
@@ -15918,7 +15915,7 @@ bb0:
     t3983 = h982_own982;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h982_own982 = t1965;
-#line 15922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3983);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1966 = HERO_STR_LIT(hero_str_61);
@@ -15928,7 +15925,7 @@ bb0:
     t3984 = h983_own983;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h983_own983 = t1967;
-#line 15932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3984);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1968 = HERO_STR_LIT(hero_str_61);
@@ -15938,7 +15935,7 @@ bb0:
     t3985 = h984_own984;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h984_own984 = t1969;
-#line 15942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3985);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1970 = HERO_STR_LIT(hero_str_61);
@@ -15948,7 +15945,7 @@ bb0:
     t3986 = h985_own985;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h985_own985 = t1971;
-#line 15952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3986);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1972 = HERO_STR_LIT(hero_str_61);
@@ -15958,7 +15955,7 @@ bb0:
     t3987 = h986_own986;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h986_own986 = t1973;
-#line 15962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3987);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1974 = HERO_STR_LIT(hero_str_61);
@@ -15968,7 +15965,7 @@ bb0:
     t3988 = h987_own987;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h987_own987 = t1975;
-#line 15972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3988);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1976 = HERO_STR_LIT(hero_str_61);
@@ -15978,7 +15975,7 @@ bb0:
     t3989 = h988_own988;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h988_own988 = t1977;
-#line 15982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3989);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1978 = HERO_STR_LIT(hero_str_61);
@@ -15988,7 +15985,7 @@ bb0:
     t3990 = h989_own989;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h989_own989 = t1979;
-#line 15992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3990);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1980 = HERO_STR_LIT(hero_str_61);
@@ -15998,7 +15995,7 @@ bb0:
     t3991 = h990_own990;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h990_own990 = t1981;
-#line 16002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 15999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3991);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1982 = HERO_STR_LIT(hero_str_61);
@@ -16008,7 +16005,7 @@ bb0:
     t3992 = h991_own991;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h991_own991 = t1983;
-#line 16012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3992);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1984 = HERO_STR_LIT(hero_str_61);
@@ -16018,7 +16015,7 @@ bb0:
     t3993 = h992_own992;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h992_own992 = t1985;
-#line 16022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3993);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1986 = HERO_STR_LIT(hero_str_61);
@@ -16028,7 +16025,7 @@ bb0:
     t3994 = h993_own993;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h993_own993 = t1987;
-#line 16032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3994);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1988 = HERO_STR_LIT(hero_str_61);
@@ -16038,7 +16035,7 @@ bb0:
     t3995 = h994_own994;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h994_own994 = t1989;
-#line 16042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3995);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1990 = HERO_STR_LIT(hero_str_61);
@@ -16048,7 +16045,7 @@ bb0:
     t3996 = h995_own995;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h995_own995 = t1991;
-#line 16052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3996);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1992 = HERO_STR_LIT(hero_str_61);
@@ -16058,7 +16055,7 @@ bb0:
     t3997 = h996_own996;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h996_own996 = t1993;
-#line 16062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3997);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1994 = HERO_STR_LIT(hero_str_61);
@@ -16068,7 +16065,7 @@ bb0:
     t3998 = h997_own997;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h997_own997 = t1995;
-#line 16072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3998);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1996 = HERO_STR_LIT(hero_str_61);
@@ -16078,7 +16075,7 @@ bb0:
     t3999 = h998_own998;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h998_own998 = t1997;
-#line 16082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t3999);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t1998 = HERO_STR_LIT(hero_str_61);
@@ -16088,7 +16085,7 @@ bb0:
     t4000 = h999_own999;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h999_own999 = t1999;
-#line 16092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4000);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2000 = HERO_STR_LIT(hero_str_61);
@@ -16098,7 +16095,7 @@ bb0:
     t4001 = h1000_own1000;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1000_own1000 = t2001;
-#line 16102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4001);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2002 = HERO_STR_LIT(hero_str_61);
@@ -16108,7 +16105,7 @@ bb0:
     t4002 = h1001_own1001;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1001_own1001 = t2003;
-#line 16112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4002);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2004 = HERO_STR_LIT(hero_str_61);
@@ -16118,7 +16115,7 @@ bb0:
     t4003 = h1002_own1002;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1002_own1002 = t2005;
-#line 16122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4003);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2006 = HERO_STR_LIT(hero_str_61);
@@ -16128,7 +16125,7 @@ bb0:
     t4004 = h1003_own1003;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1003_own1003 = t2007;
-#line 16132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4004);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2008 = HERO_STR_LIT(hero_str_61);
@@ -16138,7 +16135,7 @@ bb0:
     t4005 = h1004_own1004;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1004_own1004 = t2009;
-#line 16142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4005);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2010 = HERO_STR_LIT(hero_str_61);
@@ -16148,7 +16145,7 @@ bb0:
     t4006 = h1005_own1005;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1005_own1005 = t2011;
-#line 16152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4006);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2012 = HERO_STR_LIT(hero_str_61);
@@ -16158,7 +16155,7 @@ bb0:
     t4007 = h1006_own1006;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1006_own1006 = t2013;
-#line 16162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4007);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2014 = HERO_STR_LIT(hero_str_61);
@@ -16168,7 +16165,7 @@ bb0:
     t4008 = h1007_own1007;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1007_own1007 = t2015;
-#line 16172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4008);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2016 = HERO_STR_LIT(hero_str_61);
@@ -16178,7 +16175,7 @@ bb0:
     t4009 = h1008_own1008;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1008_own1008 = t2017;
-#line 16182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4009);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2018 = HERO_STR_LIT(hero_str_61);
@@ -16188,7 +16185,7 @@ bb0:
     t4010 = h1009_own1009;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1009_own1009 = t2019;
-#line 16192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4010);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2020 = HERO_STR_LIT(hero_str_61);
@@ -16198,7 +16195,7 @@ bb0:
     t4011 = h1010_own1010;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1010_own1010 = t2021;
-#line 16202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4011);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2022 = HERO_STR_LIT(hero_str_61);
@@ -16208,7 +16205,7 @@ bb0:
     t4012 = h1011_own1011;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1011_own1011 = t2023;
-#line 16212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4012);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2024 = HERO_STR_LIT(hero_str_61);
@@ -16218,7 +16215,7 @@ bb0:
     t4013 = h1012_own1012;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1012_own1012 = t2025;
-#line 16222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4013);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2026 = HERO_STR_LIT(hero_str_61);
@@ -16228,7 +16225,7 @@ bb0:
     t4014 = h1013_own1013;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1013_own1013 = t2027;
-#line 16232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4014);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2028 = HERO_STR_LIT(hero_str_61);
@@ -16238,7 +16235,7 @@ bb0:
     t4015 = h1014_own1014;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1014_own1014 = t2029;
-#line 16242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4015);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2030 = HERO_STR_LIT(hero_str_61);
@@ -16248,7 +16245,7 @@ bb0:
     t4016 = h1015_own1015;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1015_own1015 = t2031;
-#line 16252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4016);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2032 = HERO_STR_LIT(hero_str_61);
@@ -16258,7 +16255,7 @@ bb0:
     t4017 = h1016_own1016;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1016_own1016 = t2033;
-#line 16262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4017);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2034 = HERO_STR_LIT(hero_str_61);
@@ -16268,7 +16265,7 @@ bb0:
     t4018 = h1017_own1017;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1017_own1017 = t2035;
-#line 16272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4018);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2036 = HERO_STR_LIT(hero_str_61);
@@ -16278,7 +16275,7 @@ bb0:
     t4019 = h1018_own1018;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1018_own1018 = t2037;
-#line 16282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4019);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2038 = HERO_STR_LIT(hero_str_61);
@@ -16288,7 +16285,7 @@ bb0:
     t4020 = h1019_own1019;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1019_own1019 = t2039;
-#line 16292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4020);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2040 = HERO_STR_LIT(hero_str_61);
@@ -16298,7 +16295,7 @@ bb0:
     t4021 = h1020_own1020;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1020_own1020 = t2041;
-#line 16302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4021);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2042 = HERO_STR_LIT(hero_str_61);
@@ -16308,7 +16305,7 @@ bb0:
     t4022 = h1021_own1021;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1021_own1021 = t2043;
-#line 16312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4022);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2044 = HERO_STR_LIT(hero_str_61);
@@ -16318,7 +16315,7 @@ bb0:
     t4023 = h1022_own1022;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1022_own1022 = t2045;
-#line 16322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4023);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2046 = HERO_STR_LIT(hero_str_61);
@@ -16328,7 +16325,7 @@ bb0:
     t4024 = h1023_own1023;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1023_own1023 = t2047;
-#line 16332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4024);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2048 = HERO_STR_LIT(hero_str_61);
@@ -16338,7 +16335,7 @@ bb0:
     t4025 = h1024_own1024;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1024_own1024 = t2049;
-#line 16342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4025);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2050 = HERO_STR_LIT(hero_str_61);
@@ -16348,7 +16345,7 @@ bb0:
     t4026 = h1025_own1025;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1025_own1025 = t2051;
-#line 16352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4026);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2052 = HERO_STR_LIT(hero_str_61);
@@ -16358,7 +16355,7 @@ bb0:
     t4027 = h1026_own1026;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1026_own1026 = t2053;
-#line 16362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4027);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2054 = HERO_STR_LIT(hero_str_61);
@@ -16368,7 +16365,7 @@ bb0:
     t4028 = h1027_own1027;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1027_own1027 = t2055;
-#line 16372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4028);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2056 = HERO_STR_LIT(hero_str_61);
@@ -16378,7 +16375,7 @@ bb0:
     t4029 = h1028_own1028;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1028_own1028 = t2057;
-#line 16382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4029);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2058 = HERO_STR_LIT(hero_str_61);
@@ -16388,7 +16385,7 @@ bb0:
     t4030 = h1029_own1029;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1029_own1029 = t2059;
-#line 16392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4030);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2060 = HERO_STR_LIT(hero_str_61);
@@ -16398,7 +16395,7 @@ bb0:
     t4031 = h1030_own1030;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1030_own1030 = t2061;
-#line 16402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4031);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2062 = HERO_STR_LIT(hero_str_61);
@@ -16408,7 +16405,7 @@ bb0:
     t4032 = h1031_own1031;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1031_own1031 = t2063;
-#line 16412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4032);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2064 = HERO_STR_LIT(hero_str_61);
@@ -16418,7 +16415,7 @@ bb0:
     t4033 = h1032_own1032;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1032_own1032 = t2065;
-#line 16422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4033);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2066 = HERO_STR_LIT(hero_str_61);
@@ -16428,7 +16425,7 @@ bb0:
     t4034 = h1033_own1033;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1033_own1033 = t2067;
-#line 16432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4034);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2068 = HERO_STR_LIT(hero_str_61);
@@ -16438,7 +16435,7 @@ bb0:
     t4035 = h1034_own1034;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1034_own1034 = t2069;
-#line 16442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4035);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2070 = HERO_STR_LIT(hero_str_61);
@@ -16448,7 +16445,7 @@ bb0:
     t4036 = h1035_own1035;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1035_own1035 = t2071;
-#line 16452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4036);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2072 = HERO_STR_LIT(hero_str_61);
@@ -16458,7 +16455,7 @@ bb0:
     t4037 = h1036_own1036;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1036_own1036 = t2073;
-#line 16462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4037);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2074 = HERO_STR_LIT(hero_str_61);
@@ -16468,7 +16465,7 @@ bb0:
     t4038 = h1037_own1037;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1037_own1037 = t2075;
-#line 16472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4038);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2076 = HERO_STR_LIT(hero_str_61);
@@ -16478,7 +16475,7 @@ bb0:
     t4039 = h1038_own1038;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1038_own1038 = t2077;
-#line 16482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4039);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2078 = HERO_STR_LIT(hero_str_61);
@@ -16488,7 +16485,7 @@ bb0:
     t4040 = h1039_own1039;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1039_own1039 = t2079;
-#line 16492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4040);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2080 = HERO_STR_LIT(hero_str_61);
@@ -16498,7 +16495,7 @@ bb0:
     t4041 = h1040_own1040;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1040_own1040 = t2081;
-#line 16502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4041);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2082 = HERO_STR_LIT(hero_str_61);
@@ -16508,7 +16505,7 @@ bb0:
     t4042 = h1041_own1041;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1041_own1041 = t2083;
-#line 16512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4042);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2084 = HERO_STR_LIT(hero_str_61);
@@ -16518,7 +16515,7 @@ bb0:
     t4043 = h1042_own1042;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1042_own1042 = t2085;
-#line 16522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4043);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2086 = HERO_STR_LIT(hero_str_61);
@@ -16528,7 +16525,7 @@ bb0:
     t4044 = h1043_own1043;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1043_own1043 = t2087;
-#line 16532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4044);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2088 = HERO_STR_LIT(hero_str_61);
@@ -16538,7 +16535,7 @@ bb0:
     t4045 = h1044_own1044;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1044_own1044 = t2089;
-#line 16542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4045);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2090 = HERO_STR_LIT(hero_str_61);
@@ -16548,7 +16545,7 @@ bb0:
     t4046 = h1045_own1045;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1045_own1045 = t2091;
-#line 16552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4046);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2092 = HERO_STR_LIT(hero_str_61);
@@ -16558,7 +16555,7 @@ bb0:
     t4047 = h1046_own1046;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1046_own1046 = t2093;
-#line 16562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4047);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2094 = HERO_STR_LIT(hero_str_61);
@@ -16568,7 +16565,7 @@ bb0:
     t4048 = h1047_own1047;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1047_own1047 = t2095;
-#line 16572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4048);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2096 = HERO_STR_LIT(hero_str_61);
@@ -16578,7 +16575,7 @@ bb0:
     t4049 = h1048_own1048;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1048_own1048 = t2097;
-#line 16582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4049);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2098 = HERO_STR_LIT(hero_str_61);
@@ -16588,7 +16585,7 @@ bb0:
     t4050 = h1049_own1049;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1049_own1049 = t2099;
-#line 16592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4050);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2100 = HERO_STR_LIT(hero_str_61);
@@ -16598,7 +16595,7 @@ bb0:
     t4051 = h1050_own1050;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1050_own1050 = t2101;
-#line 16602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4051);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2102 = HERO_STR_LIT(hero_str_61);
@@ -16608,7 +16605,7 @@ bb0:
     t4052 = h1051_own1051;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1051_own1051 = t2103;
-#line 16612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4052);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2104 = HERO_STR_LIT(hero_str_61);
@@ -16618,7 +16615,7 @@ bb0:
     t4053 = h1052_own1052;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1052_own1052 = t2105;
-#line 16622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4053);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2106 = HERO_STR_LIT(hero_str_61);
@@ -16628,7 +16625,7 @@ bb0:
     t4054 = h1053_own1053;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1053_own1053 = t2107;
-#line 16632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4054);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2108 = HERO_STR_LIT(hero_str_61);
@@ -16638,7 +16635,7 @@ bb0:
     t4055 = h1054_own1054;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1054_own1054 = t2109;
-#line 16642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4055);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2110 = HERO_STR_LIT(hero_str_61);
@@ -16648,7 +16645,7 @@ bb0:
     t4056 = h1055_own1055;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1055_own1055 = t2111;
-#line 16652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4056);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2112 = HERO_STR_LIT(hero_str_61);
@@ -16658,7 +16655,7 @@ bb0:
     t4057 = h1056_own1056;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1056_own1056 = t2113;
-#line 16662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4057);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2114 = HERO_STR_LIT(hero_str_61);
@@ -16668,7 +16665,7 @@ bb0:
     t4058 = h1057_own1057;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1057_own1057 = t2115;
-#line 16672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4058);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2116 = HERO_STR_LIT(hero_str_61);
@@ -16678,7 +16675,7 @@ bb0:
     t4059 = h1058_own1058;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1058_own1058 = t2117;
-#line 16682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4059);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2118 = HERO_STR_LIT(hero_str_61);
@@ -16688,7 +16685,7 @@ bb0:
     t4060 = h1059_own1059;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1059_own1059 = t2119;
-#line 16692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4060);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2120 = HERO_STR_LIT(hero_str_61);
@@ -16698,7 +16695,7 @@ bb0:
     t4061 = h1060_own1060;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1060_own1060 = t2121;
-#line 16702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4061);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2122 = HERO_STR_LIT(hero_str_61);
@@ -16708,7 +16705,7 @@ bb0:
     t4062 = h1061_own1061;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1061_own1061 = t2123;
-#line 16712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4062);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2124 = HERO_STR_LIT(hero_str_61);
@@ -16718,7 +16715,7 @@ bb0:
     t4063 = h1062_own1062;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1062_own1062 = t2125;
-#line 16722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4063);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2126 = HERO_STR_LIT(hero_str_61);
@@ -16728,7 +16725,7 @@ bb0:
     t4064 = h1063_own1063;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1063_own1063 = t2127;
-#line 16732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4064);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2128 = HERO_STR_LIT(hero_str_61);
@@ -16738,7 +16735,7 @@ bb0:
     t4065 = h1064_own1064;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1064_own1064 = t2129;
-#line 16742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4065);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2130 = HERO_STR_LIT(hero_str_61);
@@ -16748,7 +16745,7 @@ bb0:
     t4066 = h1065_own1065;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1065_own1065 = t2131;
-#line 16752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4066);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2132 = HERO_STR_LIT(hero_str_61);
@@ -16758,7 +16755,7 @@ bb0:
     t4067 = h1066_own1066;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1066_own1066 = t2133;
-#line 16762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4067);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2134 = HERO_STR_LIT(hero_str_61);
@@ -16768,7 +16765,7 @@ bb0:
     t4068 = h1067_own1067;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1067_own1067 = t2135;
-#line 16772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4068);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2136 = HERO_STR_LIT(hero_str_61);
@@ -16778,7 +16775,7 @@ bb0:
     t4069 = h1068_own1068;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1068_own1068 = t2137;
-#line 16782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4069);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2138 = HERO_STR_LIT(hero_str_61);
@@ -16788,7 +16785,7 @@ bb0:
     t4070 = h1069_own1069;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1069_own1069 = t2139;
-#line 16792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4070);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2140 = HERO_STR_LIT(hero_str_61);
@@ -16798,7 +16795,7 @@ bb0:
     t4071 = h1070_own1070;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1070_own1070 = t2141;
-#line 16802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4071);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2142 = HERO_STR_LIT(hero_str_61);
@@ -16808,7 +16805,7 @@ bb0:
     t4072 = h1071_own1071;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1071_own1071 = t2143;
-#line 16812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4072);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2144 = HERO_STR_LIT(hero_str_61);
@@ -16818,7 +16815,7 @@ bb0:
     t4073 = h1072_own1072;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1072_own1072 = t2145;
-#line 16822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4073);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2146 = HERO_STR_LIT(hero_str_61);
@@ -16828,7 +16825,7 @@ bb0:
     t4074 = h1073_own1073;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1073_own1073 = t2147;
-#line 16832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4074);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2148 = HERO_STR_LIT(hero_str_61);
@@ -16838,7 +16835,7 @@ bb0:
     t4075 = h1074_own1074;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1074_own1074 = t2149;
-#line 16842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4075);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2150 = HERO_STR_LIT(hero_str_61);
@@ -16848,7 +16845,7 @@ bb0:
     t4076 = h1075_own1075;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1075_own1075 = t2151;
-#line 16852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4076);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2152 = HERO_STR_LIT(hero_str_61);
@@ -16858,7 +16855,7 @@ bb0:
     t4077 = h1076_own1076;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1076_own1076 = t2153;
-#line 16862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4077);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2154 = HERO_STR_LIT(hero_str_61);
@@ -16868,7 +16865,7 @@ bb0:
     t4078 = h1077_own1077;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1077_own1077 = t2155;
-#line 16872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4078);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2156 = HERO_STR_LIT(hero_str_61);
@@ -16878,7 +16875,7 @@ bb0:
     t4079 = h1078_own1078;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1078_own1078 = t2157;
-#line 16882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4079);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2158 = HERO_STR_LIT(hero_str_61);
@@ -16888,7 +16885,7 @@ bb0:
     t4080 = h1079_own1079;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1079_own1079 = t2159;
-#line 16892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4080);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2160 = HERO_STR_LIT(hero_str_61);
@@ -16898,7 +16895,7 @@ bb0:
     t4081 = h1080_own1080;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1080_own1080 = t2161;
-#line 16902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4081);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2162 = HERO_STR_LIT(hero_str_61);
@@ -16908,7 +16905,7 @@ bb0:
     t4082 = h1081_own1081;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1081_own1081 = t2163;
-#line 16912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4082);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2164 = HERO_STR_LIT(hero_str_61);
@@ -16918,7 +16915,7 @@ bb0:
     t4083 = h1082_own1082;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1082_own1082 = t2165;
-#line 16922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4083);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2166 = HERO_STR_LIT(hero_str_61);
@@ -16928,7 +16925,7 @@ bb0:
     t4084 = h1083_own1083;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1083_own1083 = t2167;
-#line 16932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4084);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2168 = HERO_STR_LIT(hero_str_61);
@@ -16938,7 +16935,7 @@ bb0:
     t4085 = h1084_own1084;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1084_own1084 = t2169;
-#line 16942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4085);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2170 = HERO_STR_LIT(hero_str_61);
@@ -16948,7 +16945,7 @@ bb0:
     t4086 = h1085_own1085;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1085_own1085 = t2171;
-#line 16952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4086);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2172 = HERO_STR_LIT(hero_str_61);
@@ -16958,7 +16955,7 @@ bb0:
     t4087 = h1086_own1086;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1086_own1086 = t2173;
-#line 16962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4087);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2174 = HERO_STR_LIT(hero_str_61);
@@ -16968,7 +16965,7 @@ bb0:
     t4088 = h1087_own1087;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1087_own1087 = t2175;
-#line 16972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4088);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2176 = HERO_STR_LIT(hero_str_61);
@@ -16978,7 +16975,7 @@ bb0:
     t4089 = h1088_own1088;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1088_own1088 = t2177;
-#line 16982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4089);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2178 = HERO_STR_LIT(hero_str_61);
@@ -16988,7 +16985,7 @@ bb0:
     t4090 = h1089_own1089;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1089_own1089 = t2179;
-#line 16992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4090);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2180 = HERO_STR_LIT(hero_str_61);
@@ -16998,7 +16995,7 @@ bb0:
     t4091 = h1090_own1090;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1090_own1090 = t2181;
-#line 17002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 16999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4091);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2182 = HERO_STR_LIT(hero_str_61);
@@ -17008,7 +17005,7 @@ bb0:
     t4092 = h1091_own1091;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1091_own1091 = t2183;
-#line 17012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4092);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2184 = HERO_STR_LIT(hero_str_61);
@@ -17018,7 +17015,7 @@ bb0:
     t4093 = h1092_own1092;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1092_own1092 = t2185;
-#line 17022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4093);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2186 = HERO_STR_LIT(hero_str_61);
@@ -17028,7 +17025,7 @@ bb0:
     t4094 = h1093_own1093;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1093_own1093 = t2187;
-#line 17032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4094);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2188 = HERO_STR_LIT(hero_str_61);
@@ -17038,7 +17035,7 @@ bb0:
     t4095 = h1094_own1094;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1094_own1094 = t2189;
-#line 17042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4095);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2190 = HERO_STR_LIT(hero_str_61);
@@ -17048,7 +17045,7 @@ bb0:
     t4096 = h1095_own1095;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1095_own1095 = t2191;
-#line 17052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4096);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2192 = HERO_STR_LIT(hero_str_61);
@@ -17058,7 +17055,7 @@ bb0:
     t4097 = h1096_own1096;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1096_own1096 = t2193;
-#line 17062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4097);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2194 = HERO_STR_LIT(hero_str_61);
@@ -17068,7 +17065,7 @@ bb0:
     t4098 = h1097_own1097;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1097_own1097 = t2195;
-#line 17072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4098);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2196 = HERO_STR_LIT(hero_str_61);
@@ -17078,7 +17075,7 @@ bb0:
     t4099 = h1098_own1098;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1098_own1098 = t2197;
-#line 17082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4099);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2198 = HERO_STR_LIT(hero_str_61);
@@ -17088,7 +17085,7 @@ bb0:
     t4100 = h1099_own1099;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1099_own1099 = t2199;
-#line 17092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4100);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2200 = HERO_STR_LIT(hero_str_61);
@@ -17098,7 +17095,7 @@ bb0:
     t4101 = h1100_own1100;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1100_own1100 = t2201;
-#line 17102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4101);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2202 = HERO_STR_LIT(hero_str_61);
@@ -17108,7 +17105,7 @@ bb0:
     t4102 = h1101_own1101;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1101_own1101 = t2203;
-#line 17112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4102);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2204 = HERO_STR_LIT(hero_str_61);
@@ -17118,7 +17115,7 @@ bb0:
     t4103 = h1102_own1102;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1102_own1102 = t2205;
-#line 17122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4103);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2206 = HERO_STR_LIT(hero_str_61);
@@ -17128,7 +17125,7 @@ bb0:
     t4104 = h1103_own1103;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1103_own1103 = t2207;
-#line 17132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4104);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2208 = HERO_STR_LIT(hero_str_61);
@@ -17138,7 +17135,7 @@ bb0:
     t4105 = h1104_own1104;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1104_own1104 = t2209;
-#line 17142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4105);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2210 = HERO_STR_LIT(hero_str_61);
@@ -17148,7 +17145,7 @@ bb0:
     t4106 = h1105_own1105;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1105_own1105 = t2211;
-#line 17152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4106);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2212 = HERO_STR_LIT(hero_str_61);
@@ -17158,7 +17155,7 @@ bb0:
     t4107 = h1106_own1106;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1106_own1106 = t2213;
-#line 17162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4107);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2214 = HERO_STR_LIT(hero_str_61);
@@ -17168,7 +17165,7 @@ bb0:
     t4108 = h1107_own1107;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1107_own1107 = t2215;
-#line 17172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4108);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2216 = HERO_STR_LIT(hero_str_61);
@@ -17178,7 +17175,7 @@ bb0:
     t4109 = h1108_own1108;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1108_own1108 = t2217;
-#line 17182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4109);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2218 = HERO_STR_LIT(hero_str_61);
@@ -17188,7 +17185,7 @@ bb0:
     t4110 = h1109_own1109;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1109_own1109 = t2219;
-#line 17192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4110);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2220 = HERO_STR_LIT(hero_str_61);
@@ -17198,7 +17195,7 @@ bb0:
     t4111 = h1110_own1110;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1110_own1110 = t2221;
-#line 17202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4111);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2222 = HERO_STR_LIT(hero_str_61);
@@ -17208,7 +17205,7 @@ bb0:
     t4112 = h1111_own1111;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1111_own1111 = t2223;
-#line 17212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4112);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2224 = HERO_STR_LIT(hero_str_61);
@@ -17218,7 +17215,7 @@ bb0:
     t4113 = h1112_own1112;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1112_own1112 = t2225;
-#line 17222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4113);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2226 = HERO_STR_LIT(hero_str_61);
@@ -17228,7 +17225,7 @@ bb0:
     t4114 = h1113_own1113;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1113_own1113 = t2227;
-#line 17232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4114);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2228 = HERO_STR_LIT(hero_str_61);
@@ -17238,7 +17235,7 @@ bb0:
     t4115 = h1114_own1114;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1114_own1114 = t2229;
-#line 17242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4115);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2230 = HERO_STR_LIT(hero_str_61);
@@ -17248,7 +17245,7 @@ bb0:
     t4116 = h1115_own1115;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1115_own1115 = t2231;
-#line 17252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4116);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2232 = HERO_STR_LIT(hero_str_61);
@@ -17258,7 +17255,7 @@ bb0:
     t4117 = h1116_own1116;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1116_own1116 = t2233;
-#line 17262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4117);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2234 = HERO_STR_LIT(hero_str_61);
@@ -17268,7 +17265,7 @@ bb0:
     t4118 = h1117_own1117;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1117_own1117 = t2235;
-#line 17272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4118);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2236 = HERO_STR_LIT(hero_str_61);
@@ -17278,7 +17275,7 @@ bb0:
     t4119 = h1118_own1118;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1118_own1118 = t2237;
-#line 17282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4119);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2238 = HERO_STR_LIT(hero_str_61);
@@ -17288,7 +17285,7 @@ bb0:
     t4120 = h1119_own1119;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1119_own1119 = t2239;
-#line 17292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4120);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2240 = HERO_STR_LIT(hero_str_61);
@@ -17298,7 +17295,7 @@ bb0:
     t4121 = h1120_own1120;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1120_own1120 = t2241;
-#line 17302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4121);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2242 = HERO_STR_LIT(hero_str_61);
@@ -17308,7 +17305,7 @@ bb0:
     t4122 = h1121_own1121;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1121_own1121 = t2243;
-#line 17312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4122);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2244 = HERO_STR_LIT(hero_str_61);
@@ -17318,7 +17315,7 @@ bb0:
     t4123 = h1122_own1122;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1122_own1122 = t2245;
-#line 17322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4123);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2246 = HERO_STR_LIT(hero_str_61);
@@ -17328,7 +17325,7 @@ bb0:
     t4124 = h1123_own1123;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1123_own1123 = t2247;
-#line 17332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4124);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2248 = HERO_STR_LIT(hero_str_61);
@@ -17338,7 +17335,7 @@ bb0:
     t4125 = h1124_own1124;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1124_own1124 = t2249;
-#line 17342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4125);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2250 = HERO_STR_LIT(hero_str_61);
@@ -17348,7 +17345,7 @@ bb0:
     t4126 = h1125_own1125;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1125_own1125 = t2251;
-#line 17352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4126);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2252 = HERO_STR_LIT(hero_str_61);
@@ -17358,7 +17355,7 @@ bb0:
     t4127 = h1126_own1126;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1126_own1126 = t2253;
-#line 17362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4127);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2254 = HERO_STR_LIT(hero_str_61);
@@ -17368,7 +17365,7 @@ bb0:
     t4128 = h1127_own1127;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1127_own1127 = t2255;
-#line 17372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4128);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2256 = HERO_STR_LIT(hero_str_61);
@@ -17378,7 +17375,7 @@ bb0:
     t4129 = h1128_own1128;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1128_own1128 = t2257;
-#line 17382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4129);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2258 = HERO_STR_LIT(hero_str_61);
@@ -17388,7 +17385,7 @@ bb0:
     t4130 = h1129_own1129;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1129_own1129 = t2259;
-#line 17392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4130);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2260 = HERO_STR_LIT(hero_str_61);
@@ -17398,7 +17395,7 @@ bb0:
     t4131 = h1130_own1130;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1130_own1130 = t2261;
-#line 17402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4131);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2262 = HERO_STR_LIT(hero_str_61);
@@ -17408,7 +17405,7 @@ bb0:
     t4132 = h1131_own1131;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1131_own1131 = t2263;
-#line 17412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4132);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2264 = HERO_STR_LIT(hero_str_61);
@@ -17418,7 +17415,7 @@ bb0:
     t4133 = h1132_own1132;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1132_own1132 = t2265;
-#line 17422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4133);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2266 = HERO_STR_LIT(hero_str_61);
@@ -17428,7 +17425,7 @@ bb0:
     t4134 = h1133_own1133;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1133_own1133 = t2267;
-#line 17432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4134);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2268 = HERO_STR_LIT(hero_str_61);
@@ -17438,7 +17435,7 @@ bb0:
     t4135 = h1134_own1134;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1134_own1134 = t2269;
-#line 17442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4135);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2270 = HERO_STR_LIT(hero_str_61);
@@ -17448,7 +17445,7 @@ bb0:
     t4136 = h1135_own1135;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1135_own1135 = t2271;
-#line 17452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4136);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2272 = HERO_STR_LIT(hero_str_61);
@@ -17458,7 +17455,7 @@ bb0:
     t4137 = h1136_own1136;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1136_own1136 = t2273;
-#line 17462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4137);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2274 = HERO_STR_LIT(hero_str_61);
@@ -17468,7 +17465,7 @@ bb0:
     t4138 = h1137_own1137;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1137_own1137 = t2275;
-#line 17472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4138);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2276 = HERO_STR_LIT(hero_str_61);
@@ -17478,7 +17475,7 @@ bb0:
     t4139 = h1138_own1138;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1138_own1138 = t2277;
-#line 17482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4139);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2278 = HERO_STR_LIT(hero_str_61);
@@ -17488,7 +17485,7 @@ bb0:
     t4140 = h1139_own1139;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1139_own1139 = t2279;
-#line 17492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4140);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2280 = HERO_STR_LIT(hero_str_61);
@@ -17498,7 +17495,7 @@ bb0:
     t4141 = h1140_own1140;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1140_own1140 = t2281;
-#line 17502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4141);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2282 = HERO_STR_LIT(hero_str_61);
@@ -17508,7 +17505,7 @@ bb0:
     t4142 = h1141_own1141;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1141_own1141 = t2283;
-#line 17512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4142);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2284 = HERO_STR_LIT(hero_str_61);
@@ -17518,7 +17515,7 @@ bb0:
     t4143 = h1142_own1142;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1142_own1142 = t2285;
-#line 17522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4143);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2286 = HERO_STR_LIT(hero_str_61);
@@ -17528,7 +17525,7 @@ bb0:
     t4144 = h1143_own1143;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1143_own1143 = t2287;
-#line 17532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4144);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2288 = HERO_STR_LIT(hero_str_61);
@@ -17538,7 +17535,7 @@ bb0:
     t4145 = h1144_own1144;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1144_own1144 = t2289;
-#line 17542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4145);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2290 = HERO_STR_LIT(hero_str_61);
@@ -17548,7 +17545,7 @@ bb0:
     t4146 = h1145_own1145;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1145_own1145 = t2291;
-#line 17552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4146);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2292 = HERO_STR_LIT(hero_str_61);
@@ -17558,7 +17555,7 @@ bb0:
     t4147 = h1146_own1146;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1146_own1146 = t2293;
-#line 17562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4147);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2294 = HERO_STR_LIT(hero_str_61);
@@ -17568,7 +17565,7 @@ bb0:
     t4148 = h1147_own1147;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1147_own1147 = t2295;
-#line 17572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4148);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2296 = HERO_STR_LIT(hero_str_61);
@@ -17578,7 +17575,7 @@ bb0:
     t4149 = h1148_own1148;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1148_own1148 = t2297;
-#line 17582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4149);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2298 = HERO_STR_LIT(hero_str_61);
@@ -17588,7 +17585,7 @@ bb0:
     t4150 = h1149_own1149;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1149_own1149 = t2299;
-#line 17592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4150);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2300 = HERO_STR_LIT(hero_str_61);
@@ -17598,7 +17595,7 @@ bb0:
     t4151 = h1150_own1150;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1150_own1150 = t2301;
-#line 17602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4151);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2302 = HERO_STR_LIT(hero_str_61);
@@ -17608,7 +17605,7 @@ bb0:
     t4152 = h1151_own1151;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1151_own1151 = t2303;
-#line 17612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4152);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2304 = HERO_STR_LIT(hero_str_61);
@@ -17618,7 +17615,7 @@ bb0:
     t4153 = h1152_own1152;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1152_own1152 = t2305;
-#line 17622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4153);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2306 = HERO_STR_LIT(hero_str_61);
@@ -17628,7 +17625,7 @@ bb0:
     t4154 = h1153_own1153;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1153_own1153 = t2307;
-#line 17632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4154);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2308 = HERO_STR_LIT(hero_str_61);
@@ -17638,7 +17635,7 @@ bb0:
     t4155 = h1154_own1154;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1154_own1154 = t2309;
-#line 17642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4155);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2310 = HERO_STR_LIT(hero_str_61);
@@ -17648,7 +17645,7 @@ bb0:
     t4156 = h1155_own1155;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1155_own1155 = t2311;
-#line 17652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4156);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2312 = HERO_STR_LIT(hero_str_61);
@@ -17658,7 +17655,7 @@ bb0:
     t4157 = h1156_own1156;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1156_own1156 = t2313;
-#line 17662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4157);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2314 = HERO_STR_LIT(hero_str_61);
@@ -17668,7 +17665,7 @@ bb0:
     t4158 = h1157_own1157;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1157_own1157 = t2315;
-#line 17672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4158);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2316 = HERO_STR_LIT(hero_str_61);
@@ -17678,7 +17675,7 @@ bb0:
     t4159 = h1158_own1158;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1158_own1158 = t2317;
-#line 17682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4159);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2318 = HERO_STR_LIT(hero_str_61);
@@ -17688,7 +17685,7 @@ bb0:
     t4160 = h1159_own1159;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1159_own1159 = t2319;
-#line 17692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4160);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2320 = HERO_STR_LIT(hero_str_61);
@@ -17698,7 +17695,7 @@ bb0:
     t4161 = h1160_own1160;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1160_own1160 = t2321;
-#line 17702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4161);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2322 = HERO_STR_LIT(hero_str_61);
@@ -17708,7 +17705,7 @@ bb0:
     t4162 = h1161_own1161;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1161_own1161 = t2323;
-#line 17712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4162);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2324 = HERO_STR_LIT(hero_str_61);
@@ -17718,7 +17715,7 @@ bb0:
     t4163 = h1162_own1162;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1162_own1162 = t2325;
-#line 17722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4163);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2326 = HERO_STR_LIT(hero_str_61);
@@ -17728,7 +17725,7 @@ bb0:
     t4164 = h1163_own1163;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1163_own1163 = t2327;
-#line 17732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4164);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2328 = HERO_STR_LIT(hero_str_61);
@@ -17738,7 +17735,7 @@ bb0:
     t4165 = h1164_own1164;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1164_own1164 = t2329;
-#line 17742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4165);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2330 = HERO_STR_LIT(hero_str_61);
@@ -17748,7 +17745,7 @@ bb0:
     t4166 = h1165_own1165;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1165_own1165 = t2331;
-#line 17752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4166);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2332 = HERO_STR_LIT(hero_str_61);
@@ -17758,7 +17755,7 @@ bb0:
     t4167 = h1166_own1166;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1166_own1166 = t2333;
-#line 17762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4167);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2334 = HERO_STR_LIT(hero_str_61);
@@ -17768,7 +17765,7 @@ bb0:
     t4168 = h1167_own1167;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1167_own1167 = t2335;
-#line 17772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4168);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2336 = HERO_STR_LIT(hero_str_61);
@@ -17778,7 +17775,7 @@ bb0:
     t4169 = h1168_own1168;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1168_own1168 = t2337;
-#line 17782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4169);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2338 = HERO_STR_LIT(hero_str_61);
@@ -17788,7 +17785,7 @@ bb0:
     t4170 = h1169_own1169;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1169_own1169 = t2339;
-#line 17792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4170);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2340 = HERO_STR_LIT(hero_str_61);
@@ -17798,7 +17795,7 @@ bb0:
     t4171 = h1170_own1170;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1170_own1170 = t2341;
-#line 17802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4171);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2342 = HERO_STR_LIT(hero_str_61);
@@ -17808,7 +17805,7 @@ bb0:
     t4172 = h1171_own1171;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1171_own1171 = t2343;
-#line 17812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4172);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2344 = HERO_STR_LIT(hero_str_61);
@@ -17818,7 +17815,7 @@ bb0:
     t4173 = h1172_own1172;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1172_own1172 = t2345;
-#line 17822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4173);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2346 = HERO_STR_LIT(hero_str_61);
@@ -17828,7 +17825,7 @@ bb0:
     t4174 = h1173_own1173;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1173_own1173 = t2347;
-#line 17832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4174);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2348 = HERO_STR_LIT(hero_str_61);
@@ -17838,7 +17835,7 @@ bb0:
     t4175 = h1174_own1174;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1174_own1174 = t2349;
-#line 17842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4175);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2350 = HERO_STR_LIT(hero_str_61);
@@ -17848,7 +17845,7 @@ bb0:
     t4176 = h1175_own1175;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1175_own1175 = t2351;
-#line 17852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4176);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2352 = HERO_STR_LIT(hero_str_61);
@@ -17858,7 +17855,7 @@ bb0:
     t4177 = h1176_own1176;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1176_own1176 = t2353;
-#line 17862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4177);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2354 = HERO_STR_LIT(hero_str_61);
@@ -17868,7 +17865,7 @@ bb0:
     t4178 = h1177_own1177;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1177_own1177 = t2355;
-#line 17872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4178);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2356 = HERO_STR_LIT(hero_str_61);
@@ -17878,7 +17875,7 @@ bb0:
     t4179 = h1178_own1178;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1178_own1178 = t2357;
-#line 17882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4179);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2358 = HERO_STR_LIT(hero_str_61);
@@ -17888,7 +17885,7 @@ bb0:
     t4180 = h1179_own1179;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1179_own1179 = t2359;
-#line 17892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4180);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2360 = HERO_STR_LIT(hero_str_61);
@@ -17898,7 +17895,7 @@ bb0:
     t4181 = h1180_own1180;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1180_own1180 = t2361;
-#line 17902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4181);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2362 = HERO_STR_LIT(hero_str_61);
@@ -17908,7 +17905,7 @@ bb0:
     t4182 = h1181_own1181;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1181_own1181 = t2363;
-#line 17912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4182);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2364 = HERO_STR_LIT(hero_str_61);
@@ -17918,7 +17915,7 @@ bb0:
     t4183 = h1182_own1182;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1182_own1182 = t2365;
-#line 17922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4183);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2366 = HERO_STR_LIT(hero_str_61);
@@ -17928,7 +17925,7 @@ bb0:
     t4184 = h1183_own1183;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1183_own1183 = t2367;
-#line 17932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4184);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2368 = HERO_STR_LIT(hero_str_61);
@@ -17938,7 +17935,7 @@ bb0:
     t4185 = h1184_own1184;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1184_own1184 = t2369;
-#line 17942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4185);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2370 = HERO_STR_LIT(hero_str_61);
@@ -17948,7 +17945,7 @@ bb0:
     t4186 = h1185_own1185;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1185_own1185 = t2371;
-#line 17952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4186);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2372 = HERO_STR_LIT(hero_str_61);
@@ -17958,7 +17955,7 @@ bb0:
     t4187 = h1186_own1186;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1186_own1186 = t2373;
-#line 17962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4187);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2374 = HERO_STR_LIT(hero_str_61);
@@ -17968,7 +17965,7 @@ bb0:
     t4188 = h1187_own1187;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1187_own1187 = t2375;
-#line 17972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4188);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2376 = HERO_STR_LIT(hero_str_61);
@@ -17978,7 +17975,7 @@ bb0:
     t4189 = h1188_own1188;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1188_own1188 = t2377;
-#line 17982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4189);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2378 = HERO_STR_LIT(hero_str_61);
@@ -17988,7 +17985,7 @@ bb0:
     t4190 = h1189_own1189;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1189_own1189 = t2379;
-#line 17992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4190);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2380 = HERO_STR_LIT(hero_str_61);
@@ -17998,7 +17995,7 @@ bb0:
     t4191 = h1190_own1190;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1190_own1190 = t2381;
-#line 18002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 17999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4191);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2382 = HERO_STR_LIT(hero_str_61);
@@ -18008,7 +18005,7 @@ bb0:
     t4192 = h1191_own1191;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1191_own1191 = t2383;
-#line 18012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4192);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2384 = HERO_STR_LIT(hero_str_61);
@@ -18018,7 +18015,7 @@ bb0:
     t4193 = h1192_own1192;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1192_own1192 = t2385;
-#line 18022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4193);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2386 = HERO_STR_LIT(hero_str_61);
@@ -18028,7 +18025,7 @@ bb0:
     t4194 = h1193_own1193;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1193_own1193 = t2387;
-#line 18032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4194);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2388 = HERO_STR_LIT(hero_str_61);
@@ -18038,7 +18035,7 @@ bb0:
     t4195 = h1194_own1194;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1194_own1194 = t2389;
-#line 18042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4195);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2390 = HERO_STR_LIT(hero_str_61);
@@ -18048,7 +18045,7 @@ bb0:
     t4196 = h1195_own1195;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1195_own1195 = t2391;
-#line 18052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4196);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2392 = HERO_STR_LIT(hero_str_61);
@@ -18058,7 +18055,7 @@ bb0:
     t4197 = h1196_own1196;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1196_own1196 = t2393;
-#line 18062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4197);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2394 = HERO_STR_LIT(hero_str_61);
@@ -18068,7 +18065,7 @@ bb0:
     t4198 = h1197_own1197;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1197_own1197 = t2395;
-#line 18072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4198);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2396 = HERO_STR_LIT(hero_str_61);
@@ -18078,7 +18075,7 @@ bb0:
     t4199 = h1198_own1198;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1198_own1198 = t2397;
-#line 18082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4199);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2398 = HERO_STR_LIT(hero_str_61);
@@ -18088,7 +18085,7 @@ bb0:
     t4200 = h1199_own1199;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1199_own1199 = t2399;
-#line 18092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4200);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2400 = HERO_STR_LIT(hero_str_61);
@@ -18098,7 +18095,7 @@ bb0:
     t4201 = h1200_own1200;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1200_own1200 = t2401;
-#line 18102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4201);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2402 = HERO_STR_LIT(hero_str_61);
@@ -18108,7 +18105,7 @@ bb0:
     t4202 = h1201_own1201;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1201_own1201 = t2403;
-#line 18112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4202);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2404 = HERO_STR_LIT(hero_str_61);
@@ -18118,7 +18115,7 @@ bb0:
     t4203 = h1202_own1202;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1202_own1202 = t2405;
-#line 18122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4203);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2406 = HERO_STR_LIT(hero_str_61);
@@ -18128,7 +18125,7 @@ bb0:
     t4204 = h1203_own1203;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1203_own1203 = t2407;
-#line 18132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4204);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2408 = HERO_STR_LIT(hero_str_61);
@@ -18138,7 +18135,7 @@ bb0:
     t4205 = h1204_own1204;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1204_own1204 = t2409;
-#line 18142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4205);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2410 = HERO_STR_LIT(hero_str_61);
@@ -18148,7 +18145,7 @@ bb0:
     t4206 = h1205_own1205;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1205_own1205 = t2411;
-#line 18152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4206);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2412 = HERO_STR_LIT(hero_str_61);
@@ -18158,7 +18155,7 @@ bb0:
     t4207 = h1206_own1206;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1206_own1206 = t2413;
-#line 18162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4207);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2414 = HERO_STR_LIT(hero_str_61);
@@ -18168,7 +18165,7 @@ bb0:
     t4208 = h1207_own1207;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1207_own1207 = t2415;
-#line 18172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4208);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2416 = HERO_STR_LIT(hero_str_61);
@@ -18178,7 +18175,7 @@ bb0:
     t4209 = h1208_own1208;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1208_own1208 = t2417;
-#line 18182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4209);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2418 = HERO_STR_LIT(hero_str_61);
@@ -18188,7 +18185,7 @@ bb0:
     t4210 = h1209_own1209;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1209_own1209 = t2419;
-#line 18192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4210);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2420 = HERO_STR_LIT(hero_str_61);
@@ -18198,7 +18195,7 @@ bb0:
     t4211 = h1210_own1210;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1210_own1210 = t2421;
-#line 18202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4211);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2422 = HERO_STR_LIT(hero_str_61);
@@ -18208,7 +18205,7 @@ bb0:
     t4212 = h1211_own1211;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1211_own1211 = t2423;
-#line 18212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4212);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2424 = HERO_STR_LIT(hero_str_61);
@@ -18218,7 +18215,7 @@ bb0:
     t4213 = h1212_own1212;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1212_own1212 = t2425;
-#line 18222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4213);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2426 = HERO_STR_LIT(hero_str_61);
@@ -18228,7 +18225,7 @@ bb0:
     t4214 = h1213_own1213;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1213_own1213 = t2427;
-#line 18232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4214);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2428 = HERO_STR_LIT(hero_str_61);
@@ -18238,7 +18235,7 @@ bb0:
     t4215 = h1214_own1214;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1214_own1214 = t2429;
-#line 18242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4215);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2430 = HERO_STR_LIT(hero_str_61);
@@ -18248,7 +18245,7 @@ bb0:
     t4216 = h1215_own1215;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1215_own1215 = t2431;
-#line 18252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4216);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2432 = HERO_STR_LIT(hero_str_61);
@@ -18258,7 +18255,7 @@ bb0:
     t4217 = h1216_own1216;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1216_own1216 = t2433;
-#line 18262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4217);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2434 = HERO_STR_LIT(hero_str_61);
@@ -18268,7 +18265,7 @@ bb0:
     t4218 = h1217_own1217;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1217_own1217 = t2435;
-#line 18272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4218);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2436 = HERO_STR_LIT(hero_str_61);
@@ -18278,7 +18275,7 @@ bb0:
     t4219 = h1218_own1218;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1218_own1218 = t2437;
-#line 18282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4219);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2438 = HERO_STR_LIT(hero_str_61);
@@ -18288,7 +18285,7 @@ bb0:
     t4220 = h1219_own1219;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1219_own1219 = t2439;
-#line 18292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4220);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2440 = HERO_STR_LIT(hero_str_61);
@@ -18298,7 +18295,7 @@ bb0:
     t4221 = h1220_own1220;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1220_own1220 = t2441;
-#line 18302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4221);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2442 = HERO_STR_LIT(hero_str_61);
@@ -18308,7 +18305,7 @@ bb0:
     t4222 = h1221_own1221;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1221_own1221 = t2443;
-#line 18312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4222);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2444 = HERO_STR_LIT(hero_str_61);
@@ -18318,7 +18315,7 @@ bb0:
     t4223 = h1222_own1222;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1222_own1222 = t2445;
-#line 18322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4223);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2446 = HERO_STR_LIT(hero_str_61);
@@ -18328,7 +18325,7 @@ bb0:
     t4224 = h1223_own1223;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1223_own1223 = t2447;
-#line 18332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4224);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2448 = HERO_STR_LIT(hero_str_61);
@@ -18338,7 +18335,7 @@ bb0:
     t4225 = h1224_own1224;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1224_own1224 = t2449;
-#line 18342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4225);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2450 = HERO_STR_LIT(hero_str_61);
@@ -18348,7 +18345,7 @@ bb0:
     t4226 = h1225_own1225;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1225_own1225 = t2451;
-#line 18352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4226);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2452 = HERO_STR_LIT(hero_str_61);
@@ -18358,7 +18355,7 @@ bb0:
     t4227 = h1226_own1226;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1226_own1226 = t2453;
-#line 18362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4227);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2454 = HERO_STR_LIT(hero_str_61);
@@ -18368,7 +18365,7 @@ bb0:
     t4228 = h1227_own1227;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1227_own1227 = t2455;
-#line 18372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4228);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2456 = HERO_STR_LIT(hero_str_61);
@@ -18378,7 +18375,7 @@ bb0:
     t4229 = h1228_own1228;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1228_own1228 = t2457;
-#line 18382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4229);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2458 = HERO_STR_LIT(hero_str_61);
@@ -18388,7 +18385,7 @@ bb0:
     t4230 = h1229_own1229;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1229_own1229 = t2459;
-#line 18392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4230);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2460 = HERO_STR_LIT(hero_str_61);
@@ -18398,7 +18395,7 @@ bb0:
     t4231 = h1230_own1230;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1230_own1230 = t2461;
-#line 18402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4231);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2462 = HERO_STR_LIT(hero_str_61);
@@ -18408,7 +18405,7 @@ bb0:
     t4232 = h1231_own1231;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1231_own1231 = t2463;
-#line 18412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4232);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2464 = HERO_STR_LIT(hero_str_61);
@@ -18418,7 +18415,7 @@ bb0:
     t4233 = h1232_own1232;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1232_own1232 = t2465;
-#line 18422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4233);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2466 = HERO_STR_LIT(hero_str_61);
@@ -18428,7 +18425,7 @@ bb0:
     t4234 = h1233_own1233;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1233_own1233 = t2467;
-#line 18432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4234);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2468 = HERO_STR_LIT(hero_str_61);
@@ -18438,7 +18435,7 @@ bb0:
     t4235 = h1234_own1234;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1234_own1234 = t2469;
-#line 18442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4235);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2470 = HERO_STR_LIT(hero_str_61);
@@ -18448,7 +18445,7 @@ bb0:
     t4236 = h1235_own1235;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1235_own1235 = t2471;
-#line 18452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4236);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2472 = HERO_STR_LIT(hero_str_61);
@@ -18458,7 +18455,7 @@ bb0:
     t4237 = h1236_own1236;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1236_own1236 = t2473;
-#line 18462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4237);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2474 = HERO_STR_LIT(hero_str_61);
@@ -18468,7 +18465,7 @@ bb0:
     t4238 = h1237_own1237;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1237_own1237 = t2475;
-#line 18472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4238);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2476 = HERO_STR_LIT(hero_str_61);
@@ -18478,7 +18475,7 @@ bb0:
     t4239 = h1238_own1238;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1238_own1238 = t2477;
-#line 18482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4239);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2478 = HERO_STR_LIT(hero_str_61);
@@ -18488,7 +18485,7 @@ bb0:
     t4240 = h1239_own1239;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1239_own1239 = t2479;
-#line 18492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4240);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2480 = HERO_STR_LIT(hero_str_61);
@@ -18498,7 +18495,7 @@ bb0:
     t4241 = h1240_own1240;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1240_own1240 = t2481;
-#line 18502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4241);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2482 = HERO_STR_LIT(hero_str_61);
@@ -18508,7 +18505,7 @@ bb0:
     t4242 = h1241_own1241;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1241_own1241 = t2483;
-#line 18512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4242);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2484 = HERO_STR_LIT(hero_str_61);
@@ -18518,7 +18515,7 @@ bb0:
     t4243 = h1242_own1242;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1242_own1242 = t2485;
-#line 18522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4243);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2486 = HERO_STR_LIT(hero_str_61);
@@ -18528,7 +18525,7 @@ bb0:
     t4244 = h1243_own1243;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1243_own1243 = t2487;
-#line 18532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4244);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2488 = HERO_STR_LIT(hero_str_61);
@@ -18538,7 +18535,7 @@ bb0:
     t4245 = h1244_own1244;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1244_own1244 = t2489;
-#line 18542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4245);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2490 = HERO_STR_LIT(hero_str_61);
@@ -18548,7 +18545,7 @@ bb0:
     t4246 = h1245_own1245;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1245_own1245 = t2491;
-#line 18552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4246);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2492 = HERO_STR_LIT(hero_str_61);
@@ -18558,7 +18555,7 @@ bb0:
     t4247 = h1246_own1246;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1246_own1246 = t2493;
-#line 18562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4247);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2494 = HERO_STR_LIT(hero_str_61);
@@ -18568,7 +18565,7 @@ bb0:
     t4248 = h1247_own1247;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1247_own1247 = t2495;
-#line 18572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4248);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2496 = HERO_STR_LIT(hero_str_61);
@@ -18578,7 +18575,7 @@ bb0:
     t4249 = h1248_own1248;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1248_own1248 = t2497;
-#line 18582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4249);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2498 = HERO_STR_LIT(hero_str_61);
@@ -18588,7 +18585,7 @@ bb0:
     t4250 = h1249_own1249;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1249_own1249 = t2499;
-#line 18592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4250);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2500 = HERO_STR_LIT(hero_str_61);
@@ -18598,7 +18595,7 @@ bb0:
     t4251 = h1250_own1250;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1250_own1250 = t2501;
-#line 18602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4251);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2502 = HERO_STR_LIT(hero_str_61);
@@ -18608,7 +18605,7 @@ bb0:
     t4252 = h1251_own1251;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1251_own1251 = t2503;
-#line 18612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4252);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2504 = HERO_STR_LIT(hero_str_61);
@@ -18618,7 +18615,7 @@ bb0:
     t4253 = h1252_own1252;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1252_own1252 = t2505;
-#line 18622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4253);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2506 = HERO_STR_LIT(hero_str_61);
@@ -18628,7 +18625,7 @@ bb0:
     t4254 = h1253_own1253;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1253_own1253 = t2507;
-#line 18632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4254);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2508 = HERO_STR_LIT(hero_str_61);
@@ -18638,7 +18635,7 @@ bb0:
     t4255 = h1254_own1254;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1254_own1254 = t2509;
-#line 18642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4255);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2510 = HERO_STR_LIT(hero_str_61);
@@ -18648,7 +18645,7 @@ bb0:
     t4256 = h1255_own1255;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1255_own1255 = t2511;
-#line 18652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4256);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2512 = HERO_STR_LIT(hero_str_61);
@@ -18658,7 +18655,7 @@ bb0:
     t4257 = h1256_own1256;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1256_own1256 = t2513;
-#line 18662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4257);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2514 = HERO_STR_LIT(hero_str_61);
@@ -18668,7 +18665,7 @@ bb0:
     t4258 = h1257_own1257;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1257_own1257 = t2515;
-#line 18672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4258);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2516 = HERO_STR_LIT(hero_str_61);
@@ -18678,7 +18675,7 @@ bb0:
     t4259 = h1258_own1258;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1258_own1258 = t2517;
-#line 18682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4259);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2518 = HERO_STR_LIT(hero_str_61);
@@ -18688,7 +18685,7 @@ bb0:
     t4260 = h1259_own1259;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1259_own1259 = t2519;
-#line 18692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4260);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2520 = HERO_STR_LIT(hero_str_61);
@@ -18698,7 +18695,7 @@ bb0:
     t4261 = h1260_own1260;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1260_own1260 = t2521;
-#line 18702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4261);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2522 = HERO_STR_LIT(hero_str_61);
@@ -18708,7 +18705,7 @@ bb0:
     t4262 = h1261_own1261;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1261_own1261 = t2523;
-#line 18712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4262);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2524 = HERO_STR_LIT(hero_str_61);
@@ -18718,7 +18715,7 @@ bb0:
     t4263 = h1262_own1262;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1262_own1262 = t2525;
-#line 18722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4263);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2526 = HERO_STR_LIT(hero_str_61);
@@ -18728,7 +18725,7 @@ bb0:
     t4264 = h1263_own1263;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1263_own1263 = t2527;
-#line 18732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4264);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2528 = HERO_STR_LIT(hero_str_61);
@@ -18738,7 +18735,7 @@ bb0:
     t4265 = h1264_own1264;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1264_own1264 = t2529;
-#line 18742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4265);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2530 = HERO_STR_LIT(hero_str_61);
@@ -18748,7 +18745,7 @@ bb0:
     t4266 = h1265_own1265;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1265_own1265 = t2531;
-#line 18752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4266);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2532 = HERO_STR_LIT(hero_str_61);
@@ -18758,7 +18755,7 @@ bb0:
     t4267 = h1266_own1266;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1266_own1266 = t2533;
-#line 18762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4267);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2534 = HERO_STR_LIT(hero_str_61);
@@ -18768,7 +18765,7 @@ bb0:
     t4268 = h1267_own1267;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1267_own1267 = t2535;
-#line 18772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4268);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2536 = HERO_STR_LIT(hero_str_61);
@@ -18778,7 +18775,7 @@ bb0:
     t4269 = h1268_own1268;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1268_own1268 = t2537;
-#line 18782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4269);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2538 = HERO_STR_LIT(hero_str_61);
@@ -18788,7 +18785,7 @@ bb0:
     t4270 = h1269_own1269;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1269_own1269 = t2539;
-#line 18792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4270);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2540 = HERO_STR_LIT(hero_str_61);
@@ -18798,7 +18795,7 @@ bb0:
     t4271 = h1270_own1270;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1270_own1270 = t2541;
-#line 18802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4271);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2542 = HERO_STR_LIT(hero_str_61);
@@ -18808,7 +18805,7 @@ bb0:
     t4272 = h1271_own1271;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1271_own1271 = t2543;
-#line 18812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4272);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2544 = HERO_STR_LIT(hero_str_61);
@@ -18818,7 +18815,7 @@ bb0:
     t4273 = h1272_own1272;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1272_own1272 = t2545;
-#line 18822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4273);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2546 = HERO_STR_LIT(hero_str_61);
@@ -18828,7 +18825,7 @@ bb0:
     t4274 = h1273_own1273;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1273_own1273 = t2547;
-#line 18832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4274);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2548 = HERO_STR_LIT(hero_str_61);
@@ -18838,7 +18835,7 @@ bb0:
     t4275 = h1274_own1274;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1274_own1274 = t2549;
-#line 18842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4275);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2550 = HERO_STR_LIT(hero_str_61);
@@ -18848,7 +18845,7 @@ bb0:
     t4276 = h1275_own1275;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1275_own1275 = t2551;
-#line 18852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4276);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2552 = HERO_STR_LIT(hero_str_61);
@@ -18858,7 +18855,7 @@ bb0:
     t4277 = h1276_own1276;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1276_own1276 = t2553;
-#line 18862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4277);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2554 = HERO_STR_LIT(hero_str_61);
@@ -18868,7 +18865,7 @@ bb0:
     t4278 = h1277_own1277;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1277_own1277 = t2555;
-#line 18872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4278);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2556 = HERO_STR_LIT(hero_str_61);
@@ -18878,7 +18875,7 @@ bb0:
     t4279 = h1278_own1278;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1278_own1278 = t2557;
-#line 18882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4279);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2558 = HERO_STR_LIT(hero_str_61);
@@ -18888,7 +18885,7 @@ bb0:
     t4280 = h1279_own1279;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1279_own1279 = t2559;
-#line 18892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4280);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2560 = HERO_STR_LIT(hero_str_61);
@@ -18898,7 +18895,7 @@ bb0:
     t4281 = h1280_own1280;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1280_own1280 = t2561;
-#line 18902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4281);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2562 = HERO_STR_LIT(hero_str_61);
@@ -18908,7 +18905,7 @@ bb0:
     t4282 = h1281_own1281;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1281_own1281 = t2563;
-#line 18912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4282);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2564 = HERO_STR_LIT(hero_str_61);
@@ -18918,7 +18915,7 @@ bb0:
     t4283 = h1282_own1282;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1282_own1282 = t2565;
-#line 18922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4283);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2566 = HERO_STR_LIT(hero_str_61);
@@ -18928,7 +18925,7 @@ bb0:
     t4284 = h1283_own1283;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1283_own1283 = t2567;
-#line 18932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4284);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2568 = HERO_STR_LIT(hero_str_61);
@@ -18938,7 +18935,7 @@ bb0:
     t4285 = h1284_own1284;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1284_own1284 = t2569;
-#line 18942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4285);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2570 = HERO_STR_LIT(hero_str_61);
@@ -18948,7 +18945,7 @@ bb0:
     t4286 = h1285_own1285;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1285_own1285 = t2571;
-#line 18952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4286);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2572 = HERO_STR_LIT(hero_str_61);
@@ -18958,7 +18955,7 @@ bb0:
     t4287 = h1286_own1286;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1286_own1286 = t2573;
-#line 18962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4287);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2574 = HERO_STR_LIT(hero_str_61);
@@ -18968,7 +18965,7 @@ bb0:
     t4288 = h1287_own1287;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1287_own1287 = t2575;
-#line 18972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4288);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2576 = HERO_STR_LIT(hero_str_61);
@@ -18978,7 +18975,7 @@ bb0:
     t4289 = h1288_own1288;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1288_own1288 = t2577;
-#line 18982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4289);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2578 = HERO_STR_LIT(hero_str_61);
@@ -18988,7 +18985,7 @@ bb0:
     t4290 = h1289_own1289;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1289_own1289 = t2579;
-#line 18992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4290);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2580 = HERO_STR_LIT(hero_str_61);
@@ -18998,7 +18995,7 @@ bb0:
     t4291 = h1290_own1290;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1290_own1290 = t2581;
-#line 19002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 18999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4291);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2582 = HERO_STR_LIT(hero_str_61);
@@ -19008,7 +19005,7 @@ bb0:
     t4292 = h1291_own1291;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1291_own1291 = t2583;
-#line 19012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4292);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2584 = HERO_STR_LIT(hero_str_61);
@@ -19018,7 +19015,7 @@ bb0:
     t4293 = h1292_own1292;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1292_own1292 = t2585;
-#line 19022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4293);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2586 = HERO_STR_LIT(hero_str_61);
@@ -19028,7 +19025,7 @@ bb0:
     t4294 = h1293_own1293;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1293_own1293 = t2587;
-#line 19032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4294);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2588 = HERO_STR_LIT(hero_str_61);
@@ -19038,7 +19035,7 @@ bb0:
     t4295 = h1294_own1294;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1294_own1294 = t2589;
-#line 19042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4295);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2590 = HERO_STR_LIT(hero_str_61);
@@ -19048,7 +19045,7 @@ bb0:
     t4296 = h1295_own1295;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1295_own1295 = t2591;
-#line 19052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4296);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2592 = HERO_STR_LIT(hero_str_61);
@@ -19058,7 +19055,7 @@ bb0:
     t4297 = h1296_own1296;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1296_own1296 = t2593;
-#line 19062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4297);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2594 = HERO_STR_LIT(hero_str_61);
@@ -19068,7 +19065,7 @@ bb0:
     t4298 = h1297_own1297;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1297_own1297 = t2595;
-#line 19072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4298);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2596 = HERO_STR_LIT(hero_str_61);
@@ -19078,7 +19075,7 @@ bb0:
     t4299 = h1298_own1298;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1298_own1298 = t2597;
-#line 19082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4299);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2598 = HERO_STR_LIT(hero_str_61);
@@ -19088,7 +19085,7 @@ bb0:
     t4300 = h1299_own1299;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1299_own1299 = t2599;
-#line 19092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4300);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2600 = HERO_STR_LIT(hero_str_61);
@@ -19098,7 +19095,7 @@ bb0:
     t4301 = h1300_own1300;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1300_own1300 = t2601;
-#line 19102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4301);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2602 = HERO_STR_LIT(hero_str_61);
@@ -19108,7 +19105,7 @@ bb0:
     t4302 = h1301_own1301;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1301_own1301 = t2603;
-#line 19112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4302);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2604 = HERO_STR_LIT(hero_str_61);
@@ -19118,7 +19115,7 @@ bb0:
     t4303 = h1302_own1302;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1302_own1302 = t2605;
-#line 19122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4303);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2606 = HERO_STR_LIT(hero_str_61);
@@ -19128,7 +19125,7 @@ bb0:
     t4304 = h1303_own1303;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1303_own1303 = t2607;
-#line 19132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4304);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2608 = HERO_STR_LIT(hero_str_61);
@@ -19138,7 +19135,7 @@ bb0:
     t4305 = h1304_own1304;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1304_own1304 = t2609;
-#line 19142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4305);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2610 = HERO_STR_LIT(hero_str_61);
@@ -19148,7 +19145,7 @@ bb0:
     t4306 = h1305_own1305;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1305_own1305 = t2611;
-#line 19152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4306);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2612 = HERO_STR_LIT(hero_str_61);
@@ -19158,7 +19155,7 @@ bb0:
     t4307 = h1306_own1306;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1306_own1306 = t2613;
-#line 19162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4307);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2614 = HERO_STR_LIT(hero_str_61);
@@ -19168,7 +19165,7 @@ bb0:
     t4308 = h1307_own1307;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1307_own1307 = t2615;
-#line 19172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4308);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2616 = HERO_STR_LIT(hero_str_61);
@@ -19178,7 +19175,7 @@ bb0:
     t4309 = h1308_own1308;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1308_own1308 = t2617;
-#line 19182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4309);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2618 = HERO_STR_LIT(hero_str_61);
@@ -19188,7 +19185,7 @@ bb0:
     t4310 = h1309_own1309;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1309_own1309 = t2619;
-#line 19192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4310);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2620 = HERO_STR_LIT(hero_str_61);
@@ -19198,7 +19195,7 @@ bb0:
     t4311 = h1310_own1310;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1310_own1310 = t2621;
-#line 19202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4311);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2622 = HERO_STR_LIT(hero_str_61);
@@ -19208,7 +19205,7 @@ bb0:
     t4312 = h1311_own1311;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1311_own1311 = t2623;
-#line 19212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4312);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2624 = HERO_STR_LIT(hero_str_61);
@@ -19218,7 +19215,7 @@ bb0:
     t4313 = h1312_own1312;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1312_own1312 = t2625;
-#line 19222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4313);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2626 = HERO_STR_LIT(hero_str_61);
@@ -19228,7 +19225,7 @@ bb0:
     t4314 = h1313_own1313;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1313_own1313 = t2627;
-#line 19232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4314);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2628 = HERO_STR_LIT(hero_str_61);
@@ -19238,7 +19235,7 @@ bb0:
     t4315 = h1314_own1314;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1314_own1314 = t2629;
-#line 19242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4315);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2630 = HERO_STR_LIT(hero_str_61);
@@ -19248,7 +19245,7 @@ bb0:
     t4316 = h1315_own1315;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1315_own1315 = t2631;
-#line 19252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4316);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2632 = HERO_STR_LIT(hero_str_61);
@@ -19258,7 +19255,7 @@ bb0:
     t4317 = h1316_own1316;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1316_own1316 = t2633;
-#line 19262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4317);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2634 = HERO_STR_LIT(hero_str_61);
@@ -19268,7 +19265,7 @@ bb0:
     t4318 = h1317_own1317;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1317_own1317 = t2635;
-#line 19272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4318);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2636 = HERO_STR_LIT(hero_str_61);
@@ -19278,7 +19275,7 @@ bb0:
     t4319 = h1318_own1318;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1318_own1318 = t2637;
-#line 19282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4319);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2638 = HERO_STR_LIT(hero_str_61);
@@ -19288,7 +19285,7 @@ bb0:
     t4320 = h1319_own1319;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1319_own1319 = t2639;
-#line 19292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4320);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2640 = HERO_STR_LIT(hero_str_61);
@@ -19298,7 +19295,7 @@ bb0:
     t4321 = h1320_own1320;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1320_own1320 = t2641;
-#line 19302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4321);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2642 = HERO_STR_LIT(hero_str_61);
@@ -19308,7 +19305,7 @@ bb0:
     t4322 = h1321_own1321;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1321_own1321 = t2643;
-#line 19312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4322);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2644 = HERO_STR_LIT(hero_str_61);
@@ -19318,7 +19315,7 @@ bb0:
     t4323 = h1322_own1322;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1322_own1322 = t2645;
-#line 19322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4323);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2646 = HERO_STR_LIT(hero_str_61);
@@ -19328,7 +19325,7 @@ bb0:
     t4324 = h1323_own1323;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1323_own1323 = t2647;
-#line 19332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4324);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2648 = HERO_STR_LIT(hero_str_61);
@@ -19338,7 +19335,7 @@ bb0:
     t4325 = h1324_own1324;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1324_own1324 = t2649;
-#line 19342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4325);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2650 = HERO_STR_LIT(hero_str_61);
@@ -19348,7 +19345,7 @@ bb0:
     t4326 = h1325_own1325;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1325_own1325 = t2651;
-#line 19352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4326);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2652 = HERO_STR_LIT(hero_str_61);
@@ -19358,7 +19355,7 @@ bb0:
     t4327 = h1326_own1326;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1326_own1326 = t2653;
-#line 19362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4327);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2654 = HERO_STR_LIT(hero_str_61);
@@ -19368,7 +19365,7 @@ bb0:
     t4328 = h1327_own1327;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1327_own1327 = t2655;
-#line 19372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4328);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2656 = HERO_STR_LIT(hero_str_61);
@@ -19378,7 +19375,7 @@ bb0:
     t4329 = h1328_own1328;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1328_own1328 = t2657;
-#line 19382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4329);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2658 = HERO_STR_LIT(hero_str_61);
@@ -19388,7 +19385,7 @@ bb0:
     t4330 = h1329_own1329;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1329_own1329 = t2659;
-#line 19392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4330);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2660 = HERO_STR_LIT(hero_str_61);
@@ -19398,7 +19395,7 @@ bb0:
     t4331 = h1330_own1330;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1330_own1330 = t2661;
-#line 19402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4331);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2662 = HERO_STR_LIT(hero_str_61);
@@ -19408,7 +19405,7 @@ bb0:
     t4332 = h1331_own1331;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1331_own1331 = t2663;
-#line 19412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4332);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2664 = HERO_STR_LIT(hero_str_61);
@@ -19418,7 +19415,7 @@ bb0:
     t4333 = h1332_own1332;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1332_own1332 = t2665;
-#line 19422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4333);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2666 = HERO_STR_LIT(hero_str_61);
@@ -19428,7 +19425,7 @@ bb0:
     t4334 = h1333_own1333;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1333_own1333 = t2667;
-#line 19432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4334);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2668 = HERO_STR_LIT(hero_str_61);
@@ -19438,7 +19435,7 @@ bb0:
     t4335 = h1334_own1334;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1334_own1334 = t2669;
-#line 19442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4335);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2670 = HERO_STR_LIT(hero_str_61);
@@ -19448,7 +19445,7 @@ bb0:
     t4336 = h1335_own1335;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1335_own1335 = t2671;
-#line 19452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4336);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2672 = HERO_STR_LIT(hero_str_61);
@@ -19458,7 +19455,7 @@ bb0:
     t4337 = h1336_own1336;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1336_own1336 = t2673;
-#line 19462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4337);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2674 = HERO_STR_LIT(hero_str_61);
@@ -19468,7 +19465,7 @@ bb0:
     t4338 = h1337_own1337;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1337_own1337 = t2675;
-#line 19472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4338);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2676 = HERO_STR_LIT(hero_str_61);
@@ -19478,7 +19475,7 @@ bb0:
     t4339 = h1338_own1338;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1338_own1338 = t2677;
-#line 19482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4339);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2678 = HERO_STR_LIT(hero_str_61);
@@ -19488,7 +19485,7 @@ bb0:
     t4340 = h1339_own1339;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1339_own1339 = t2679;
-#line 19492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4340);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2680 = HERO_STR_LIT(hero_str_61);
@@ -19498,7 +19495,7 @@ bb0:
     t4341 = h1340_own1340;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1340_own1340 = t2681;
-#line 19502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4341);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2682 = HERO_STR_LIT(hero_str_61);
@@ -19508,7 +19505,7 @@ bb0:
     t4342 = h1341_own1341;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1341_own1341 = t2683;
-#line 19512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4342);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2684 = HERO_STR_LIT(hero_str_61);
@@ -19518,7 +19515,7 @@ bb0:
     t4343 = h1342_own1342;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1342_own1342 = t2685;
-#line 19522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4343);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2686 = HERO_STR_LIT(hero_str_61);
@@ -19528,7 +19525,7 @@ bb0:
     t4344 = h1343_own1343;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1343_own1343 = t2687;
-#line 19532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4344);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2688 = HERO_STR_LIT(hero_str_61);
@@ -19538,7 +19535,7 @@ bb0:
     t4345 = h1344_own1344;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1344_own1344 = t2689;
-#line 19542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4345);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2690 = HERO_STR_LIT(hero_str_61);
@@ -19548,7 +19545,7 @@ bb0:
     t4346 = h1345_own1345;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1345_own1345 = t2691;
-#line 19552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4346);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2692 = HERO_STR_LIT(hero_str_61);
@@ -19558,7 +19555,7 @@ bb0:
     t4347 = h1346_own1346;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1346_own1346 = t2693;
-#line 19562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4347);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2694 = HERO_STR_LIT(hero_str_61);
@@ -19568,7 +19565,7 @@ bb0:
     t4348 = h1347_own1347;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1347_own1347 = t2695;
-#line 19572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4348);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2696 = HERO_STR_LIT(hero_str_61);
@@ -19578,7 +19575,7 @@ bb0:
     t4349 = h1348_own1348;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1348_own1348 = t2697;
-#line 19582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4349);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2698 = HERO_STR_LIT(hero_str_61);
@@ -19588,7 +19585,7 @@ bb0:
     t4350 = h1349_own1349;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1349_own1349 = t2699;
-#line 19592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4350);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2700 = HERO_STR_LIT(hero_str_61);
@@ -19598,7 +19595,7 @@ bb0:
     t4351 = h1350_own1350;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1350_own1350 = t2701;
-#line 19602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4351);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2702 = HERO_STR_LIT(hero_str_61);
@@ -19608,7 +19605,7 @@ bb0:
     t4352 = h1351_own1351;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1351_own1351 = t2703;
-#line 19612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4352);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2704 = HERO_STR_LIT(hero_str_61);
@@ -19618,7 +19615,7 @@ bb0:
     t4353 = h1352_own1352;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1352_own1352 = t2705;
-#line 19622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4353);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2706 = HERO_STR_LIT(hero_str_61);
@@ -19628,7 +19625,7 @@ bb0:
     t4354 = h1353_own1353;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1353_own1353 = t2707;
-#line 19632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4354);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2708 = HERO_STR_LIT(hero_str_61);
@@ -19638,7 +19635,7 @@ bb0:
     t4355 = h1354_own1354;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1354_own1354 = t2709;
-#line 19642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4355);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2710 = HERO_STR_LIT(hero_str_61);
@@ -19648,7 +19645,7 @@ bb0:
     t4356 = h1355_own1355;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1355_own1355 = t2711;
-#line 19652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4356);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2712 = HERO_STR_LIT(hero_str_61);
@@ -19658,7 +19655,7 @@ bb0:
     t4357 = h1356_own1356;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1356_own1356 = t2713;
-#line 19662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4357);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2714 = HERO_STR_LIT(hero_str_61);
@@ -19668,7 +19665,7 @@ bb0:
     t4358 = h1357_own1357;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1357_own1357 = t2715;
-#line 19672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4358);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2716 = HERO_STR_LIT(hero_str_61);
@@ -19678,7 +19675,7 @@ bb0:
     t4359 = h1358_own1358;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1358_own1358 = t2717;
-#line 19682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4359);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2718 = HERO_STR_LIT(hero_str_61);
@@ -19688,7 +19685,7 @@ bb0:
     t4360 = h1359_own1359;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1359_own1359 = t2719;
-#line 19692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4360);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2720 = HERO_STR_LIT(hero_str_61);
@@ -19698,7 +19695,7 @@ bb0:
     t4361 = h1360_own1360;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1360_own1360 = t2721;
-#line 19702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4361);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2722 = HERO_STR_LIT(hero_str_61);
@@ -19708,7 +19705,7 @@ bb0:
     t4362 = h1361_own1361;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1361_own1361 = t2723;
-#line 19712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4362);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2724 = HERO_STR_LIT(hero_str_61);
@@ -19718,7 +19715,7 @@ bb0:
     t4363 = h1362_own1362;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1362_own1362 = t2725;
-#line 19722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4363);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2726 = HERO_STR_LIT(hero_str_61);
@@ -19728,7 +19725,7 @@ bb0:
     t4364 = h1363_own1363;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1363_own1363 = t2727;
-#line 19732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4364);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2728 = HERO_STR_LIT(hero_str_61);
@@ -19738,7 +19735,7 @@ bb0:
     t4365 = h1364_own1364;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1364_own1364 = t2729;
-#line 19742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4365);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2730 = HERO_STR_LIT(hero_str_61);
@@ -19748,7 +19745,7 @@ bb0:
     t4366 = h1365_own1365;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1365_own1365 = t2731;
-#line 19752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4366);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2732 = HERO_STR_LIT(hero_str_61);
@@ -19758,7 +19755,7 @@ bb0:
     t4367 = h1366_own1366;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1366_own1366 = t2733;
-#line 19762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4367);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2734 = HERO_STR_LIT(hero_str_61);
@@ -19768,7 +19765,7 @@ bb0:
     t4368 = h1367_own1367;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1367_own1367 = t2735;
-#line 19772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4368);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2736 = HERO_STR_LIT(hero_str_61);
@@ -19778,7 +19775,7 @@ bb0:
     t4369 = h1368_own1368;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1368_own1368 = t2737;
-#line 19782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4369);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2738 = HERO_STR_LIT(hero_str_61);
@@ -19788,7 +19785,7 @@ bb0:
     t4370 = h1369_own1369;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1369_own1369 = t2739;
-#line 19792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4370);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2740 = HERO_STR_LIT(hero_str_61);
@@ -19798,7 +19795,7 @@ bb0:
     t4371 = h1370_own1370;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1370_own1370 = t2741;
-#line 19802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4371);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2742 = HERO_STR_LIT(hero_str_61);
@@ -19808,7 +19805,7 @@ bb0:
     t4372 = h1371_own1371;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1371_own1371 = t2743;
-#line 19812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4372);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2744 = HERO_STR_LIT(hero_str_61);
@@ -19818,7 +19815,7 @@ bb0:
     t4373 = h1372_own1372;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1372_own1372 = t2745;
-#line 19822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4373);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2746 = HERO_STR_LIT(hero_str_61);
@@ -19828,7 +19825,7 @@ bb0:
     t4374 = h1373_own1373;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1373_own1373 = t2747;
-#line 19832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4374);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2748 = HERO_STR_LIT(hero_str_61);
@@ -19838,7 +19835,7 @@ bb0:
     t4375 = h1374_own1374;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1374_own1374 = t2749;
-#line 19842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4375);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2750 = HERO_STR_LIT(hero_str_61);
@@ -19848,7 +19845,7 @@ bb0:
     t4376 = h1375_own1375;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1375_own1375 = t2751;
-#line 19852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4376);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2752 = HERO_STR_LIT(hero_str_61);
@@ -19858,7 +19855,7 @@ bb0:
     t4377 = h1376_own1376;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1376_own1376 = t2753;
-#line 19862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4377);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2754 = HERO_STR_LIT(hero_str_61);
@@ -19868,7 +19865,7 @@ bb0:
     t4378 = h1377_own1377;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1377_own1377 = t2755;
-#line 19872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4378);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2756 = HERO_STR_LIT(hero_str_61);
@@ -19878,7 +19875,7 @@ bb0:
     t4379 = h1378_own1378;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1378_own1378 = t2757;
-#line 19882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4379);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2758 = HERO_STR_LIT(hero_str_61);
@@ -19888,7 +19885,7 @@ bb0:
     t4380 = h1379_own1379;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1379_own1379 = t2759;
-#line 19892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4380);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2760 = HERO_STR_LIT(hero_str_61);
@@ -19898,7 +19895,7 @@ bb0:
     t4381 = h1380_own1380;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1380_own1380 = t2761;
-#line 19902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4381);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2762 = HERO_STR_LIT(hero_str_61);
@@ -19908,7 +19905,7 @@ bb0:
     t4382 = h1381_own1381;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1381_own1381 = t2763;
-#line 19912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4382);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2764 = HERO_STR_LIT(hero_str_61);
@@ -19918,7 +19915,7 @@ bb0:
     t4383 = h1382_own1382;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1382_own1382 = t2765;
-#line 19922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4383);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2766 = HERO_STR_LIT(hero_str_61);
@@ -19928,7 +19925,7 @@ bb0:
     t4384 = h1383_own1383;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1383_own1383 = t2767;
-#line 19932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4384);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2768 = HERO_STR_LIT(hero_str_61);
@@ -19938,7 +19935,7 @@ bb0:
     t4385 = h1384_own1384;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1384_own1384 = t2769;
-#line 19942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4385);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2770 = HERO_STR_LIT(hero_str_61);
@@ -19948,7 +19945,7 @@ bb0:
     t4386 = h1385_own1385;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1385_own1385 = t2771;
-#line 19952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4386);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2772 = HERO_STR_LIT(hero_str_61);
@@ -19958,7 +19955,7 @@ bb0:
     t4387 = h1386_own1386;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1386_own1386 = t2773;
-#line 19962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4387);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2774 = HERO_STR_LIT(hero_str_61);
@@ -19968,7 +19965,7 @@ bb0:
     t4388 = h1387_own1387;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1387_own1387 = t2775;
-#line 19972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4388);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2776 = HERO_STR_LIT(hero_str_61);
@@ -19978,7 +19975,7 @@ bb0:
     t4389 = h1388_own1388;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1388_own1388 = t2777;
-#line 19982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4389);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2778 = HERO_STR_LIT(hero_str_61);
@@ -19988,7 +19985,7 @@ bb0:
     t4390 = h1389_own1389;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1389_own1389 = t2779;
-#line 19992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4390);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2780 = HERO_STR_LIT(hero_str_61);
@@ -19998,7 +19995,7 @@ bb0:
     t4391 = h1390_own1390;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1390_own1390 = t2781;
-#line 20002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 19999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4391);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2782 = HERO_STR_LIT(hero_str_61);
@@ -20008,7 +20005,7 @@ bb0:
     t4392 = h1391_own1391;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1391_own1391 = t2783;
-#line 20012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4392);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2784 = HERO_STR_LIT(hero_str_61);
@@ -20018,7 +20015,7 @@ bb0:
     t4393 = h1392_own1392;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1392_own1392 = t2785;
-#line 20022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4393);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2786 = HERO_STR_LIT(hero_str_61);
@@ -20028,7 +20025,7 @@ bb0:
     t4394 = h1393_own1393;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1393_own1393 = t2787;
-#line 20032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4394);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2788 = HERO_STR_LIT(hero_str_61);
@@ -20038,7 +20035,7 @@ bb0:
     t4395 = h1394_own1394;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1394_own1394 = t2789;
-#line 20042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4395);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2790 = HERO_STR_LIT(hero_str_61);
@@ -20048,7 +20045,7 @@ bb0:
     t4396 = h1395_own1395;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1395_own1395 = t2791;
-#line 20052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4396);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2792 = HERO_STR_LIT(hero_str_61);
@@ -20058,7 +20055,7 @@ bb0:
     t4397 = h1396_own1396;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1396_own1396 = t2793;
-#line 20062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4397);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2794 = HERO_STR_LIT(hero_str_61);
@@ -20068,7 +20065,7 @@ bb0:
     t4398 = h1397_own1397;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1397_own1397 = t2795;
-#line 20072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4398);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2796 = HERO_STR_LIT(hero_str_61);
@@ -20078,7 +20075,7 @@ bb0:
     t4399 = h1398_own1398;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1398_own1398 = t2797;
-#line 20082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4399);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2798 = HERO_STR_LIT(hero_str_61);
@@ -20088,7 +20085,7 @@ bb0:
     t4400 = h1399_own1399;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1399_own1399 = t2799;
-#line 20092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4400);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2800 = HERO_STR_LIT(hero_str_61);
@@ -20098,7 +20095,7 @@ bb0:
     t4401 = h1400_own1400;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1400_own1400 = t2801;
-#line 20102 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4401);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2802 = HERO_STR_LIT(hero_str_61);
@@ -20108,7 +20105,7 @@ bb0:
     t4402 = h1401_own1401;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1401_own1401 = t2803;
-#line 20112 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4402);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2804 = HERO_STR_LIT(hero_str_61);
@@ -20118,7 +20115,7 @@ bb0:
     t4403 = h1402_own1402;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1402_own1402 = t2805;
-#line 20122 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4403);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2806 = HERO_STR_LIT(hero_str_61);
@@ -20128,7 +20125,7 @@ bb0:
     t4404 = h1403_own1403;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1403_own1403 = t2807;
-#line 20132 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4404);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2808 = HERO_STR_LIT(hero_str_61);
@@ -20138,7 +20135,7 @@ bb0:
     t4405 = h1404_own1404;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1404_own1404 = t2809;
-#line 20142 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4405);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2810 = HERO_STR_LIT(hero_str_61);
@@ -20148,7 +20145,7 @@ bb0:
     t4406 = h1405_own1405;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1405_own1405 = t2811;
-#line 20152 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4406);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2812 = HERO_STR_LIT(hero_str_61);
@@ -20158,7 +20155,7 @@ bb0:
     t4407 = h1406_own1406;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1406_own1406 = t2813;
-#line 20162 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4407);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2814 = HERO_STR_LIT(hero_str_61);
@@ -20168,7 +20165,7 @@ bb0:
     t4408 = h1407_own1407;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1407_own1407 = t2815;
-#line 20172 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4408);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2816 = HERO_STR_LIT(hero_str_61);
@@ -20178,7 +20175,7 @@ bb0:
     t4409 = h1408_own1408;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1408_own1408 = t2817;
-#line 20182 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4409);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2818 = HERO_STR_LIT(hero_str_61);
@@ -20188,7 +20185,7 @@ bb0:
     t4410 = h1409_own1409;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1409_own1409 = t2819;
-#line 20192 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4410);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2820 = HERO_STR_LIT(hero_str_61);
@@ -20198,7 +20195,7 @@ bb0:
     t4411 = h1410_own1410;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1410_own1410 = t2821;
-#line 20202 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4411);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2822 = HERO_STR_LIT(hero_str_61);
@@ -20208,7 +20205,7 @@ bb0:
     t4412 = h1411_own1411;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1411_own1411 = t2823;
-#line 20212 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4412);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2824 = HERO_STR_LIT(hero_str_61);
@@ -20218,7 +20215,7 @@ bb0:
     t4413 = h1412_own1412;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1412_own1412 = t2825;
-#line 20222 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4413);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2826 = HERO_STR_LIT(hero_str_61);
@@ -20228,7 +20225,7 @@ bb0:
     t4414 = h1413_own1413;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1413_own1413 = t2827;
-#line 20232 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4414);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2828 = HERO_STR_LIT(hero_str_61);
@@ -20238,7 +20235,7 @@ bb0:
     t4415 = h1414_own1414;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1414_own1414 = t2829;
-#line 20242 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4415);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2830 = HERO_STR_LIT(hero_str_61);
@@ -20248,7 +20245,7 @@ bb0:
     t4416 = h1415_own1415;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1415_own1415 = t2831;
-#line 20252 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4416);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2832 = HERO_STR_LIT(hero_str_61);
@@ -20258,7 +20255,7 @@ bb0:
     t4417 = h1416_own1416;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1416_own1416 = t2833;
-#line 20262 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4417);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2834 = HERO_STR_LIT(hero_str_61);
@@ -20268,7 +20265,7 @@ bb0:
     t4418 = h1417_own1417;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1417_own1417 = t2835;
-#line 20272 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4418);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2836 = HERO_STR_LIT(hero_str_61);
@@ -20278,7 +20275,7 @@ bb0:
     t4419 = h1418_own1418;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1418_own1418 = t2837;
-#line 20282 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4419);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2838 = HERO_STR_LIT(hero_str_61);
@@ -20288,7 +20285,7 @@ bb0:
     t4420 = h1419_own1419;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1419_own1419 = t2839;
-#line 20292 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4420);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2840 = HERO_STR_LIT(hero_str_61);
@@ -20298,7 +20295,7 @@ bb0:
     t4421 = h1420_own1420;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1420_own1420 = t2841;
-#line 20302 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4421);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2842 = HERO_STR_LIT(hero_str_61);
@@ -20308,7 +20305,7 @@ bb0:
     t4422 = h1421_own1421;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1421_own1421 = t2843;
-#line 20312 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4422);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2844 = HERO_STR_LIT(hero_str_61);
@@ -20318,7 +20315,7 @@ bb0:
     t4423 = h1422_own1422;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1422_own1422 = t2845;
-#line 20322 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4423);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2846 = HERO_STR_LIT(hero_str_61);
@@ -20328,7 +20325,7 @@ bb0:
     t4424 = h1423_own1423;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1423_own1423 = t2847;
-#line 20332 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4424);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2848 = HERO_STR_LIT(hero_str_61);
@@ -20338,7 +20335,7 @@ bb0:
     t4425 = h1424_own1424;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1424_own1424 = t2849;
-#line 20342 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4425);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2850 = HERO_STR_LIT(hero_str_61);
@@ -20348,7 +20345,7 @@ bb0:
     t4426 = h1425_own1425;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1425_own1425 = t2851;
-#line 20352 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4426);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2852 = HERO_STR_LIT(hero_str_61);
@@ -20358,7 +20355,7 @@ bb0:
     t4427 = h1426_own1426;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1426_own1426 = t2853;
-#line 20362 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4427);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2854 = HERO_STR_LIT(hero_str_61);
@@ -20368,7 +20365,7 @@ bb0:
     t4428 = h1427_own1427;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1427_own1427 = t2855;
-#line 20372 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4428);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2856 = HERO_STR_LIT(hero_str_61);
@@ -20378,7 +20375,7 @@ bb0:
     t4429 = h1428_own1428;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1428_own1428 = t2857;
-#line 20382 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4429);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2858 = HERO_STR_LIT(hero_str_61);
@@ -20388,7 +20385,7 @@ bb0:
     t4430 = h1429_own1429;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1429_own1429 = t2859;
-#line 20392 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4430);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2860 = HERO_STR_LIT(hero_str_61);
@@ -20398,7 +20395,7 @@ bb0:
     t4431 = h1430_own1430;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1430_own1430 = t2861;
-#line 20402 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4431);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2862 = HERO_STR_LIT(hero_str_61);
@@ -20408,7 +20405,7 @@ bb0:
     t4432 = h1431_own1431;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1431_own1431 = t2863;
-#line 20412 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4432);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2864 = HERO_STR_LIT(hero_str_61);
@@ -20418,7 +20415,7 @@ bb0:
     t4433 = h1432_own1432;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1432_own1432 = t2865;
-#line 20422 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4433);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2866 = HERO_STR_LIT(hero_str_61);
@@ -20428,7 +20425,7 @@ bb0:
     t4434 = h1433_own1433;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1433_own1433 = t2867;
-#line 20432 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4434);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2868 = HERO_STR_LIT(hero_str_61);
@@ -20438,7 +20435,7 @@ bb0:
     t4435 = h1434_own1434;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1434_own1434 = t2869;
-#line 20442 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4435);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2870 = HERO_STR_LIT(hero_str_61);
@@ -20448,7 +20445,7 @@ bb0:
     t4436 = h1435_own1435;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1435_own1435 = t2871;
-#line 20452 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4436);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2872 = HERO_STR_LIT(hero_str_61);
@@ -20458,7 +20455,7 @@ bb0:
     t4437 = h1436_own1436;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1436_own1436 = t2873;
-#line 20462 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4437);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2874 = HERO_STR_LIT(hero_str_61);
@@ -20468,7 +20465,7 @@ bb0:
     t4438 = h1437_own1437;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1437_own1437 = t2875;
-#line 20472 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4438);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2876 = HERO_STR_LIT(hero_str_61);
@@ -20478,7 +20475,7 @@ bb0:
     t4439 = h1438_own1438;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1438_own1438 = t2877;
-#line 20482 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4439);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2878 = HERO_STR_LIT(hero_str_61);
@@ -20488,7 +20485,7 @@ bb0:
     t4440 = h1439_own1439;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1439_own1439 = t2879;
-#line 20492 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4440);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2880 = HERO_STR_LIT(hero_str_61);
@@ -20498,7 +20495,7 @@ bb0:
     t4441 = h1440_own1440;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1440_own1440 = t2881;
-#line 20502 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4441);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2882 = HERO_STR_LIT(hero_str_61);
@@ -20508,7 +20505,7 @@ bb0:
     t4442 = h1441_own1441;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1441_own1441 = t2883;
-#line 20512 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4442);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2884 = HERO_STR_LIT(hero_str_61);
@@ -20518,7 +20515,7 @@ bb0:
     t4443 = h1442_own1442;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1442_own1442 = t2885;
-#line 20522 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4443);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2886 = HERO_STR_LIT(hero_str_61);
@@ -20528,7 +20525,7 @@ bb0:
     t4444 = h1443_own1443;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1443_own1443 = t2887;
-#line 20532 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4444);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2888 = HERO_STR_LIT(hero_str_61);
@@ -20538,7 +20535,7 @@ bb0:
     t4445 = h1444_own1444;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1444_own1444 = t2889;
-#line 20542 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4445);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2890 = HERO_STR_LIT(hero_str_61);
@@ -20548,7 +20545,7 @@ bb0:
     t4446 = h1445_own1445;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1445_own1445 = t2891;
-#line 20552 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4446);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2892 = HERO_STR_LIT(hero_str_61);
@@ -20558,7 +20555,7 @@ bb0:
     t4447 = h1446_own1446;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1446_own1446 = t2893;
-#line 20562 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4447);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2894 = HERO_STR_LIT(hero_str_61);
@@ -20568,7 +20565,7 @@ bb0:
     t4448 = h1447_own1447;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1447_own1447 = t2895;
-#line 20572 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4448);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2896 = HERO_STR_LIT(hero_str_61);
@@ -20578,7 +20575,7 @@ bb0:
     t4449 = h1448_own1448;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1448_own1448 = t2897;
-#line 20582 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4449);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2898 = HERO_STR_LIT(hero_str_61);
@@ -20588,7 +20585,7 @@ bb0:
     t4450 = h1449_own1449;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1449_own1449 = t2899;
-#line 20592 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4450);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2900 = HERO_STR_LIT(hero_str_61);
@@ -20598,7 +20595,7 @@ bb0:
     t4451 = h1450_own1450;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1450_own1450 = t2901;
-#line 20602 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4451);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2902 = HERO_STR_LIT(hero_str_61);
@@ -20608,7 +20605,7 @@ bb0:
     t4452 = h1451_own1451;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1451_own1451 = t2903;
-#line 20612 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4452);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2904 = HERO_STR_LIT(hero_str_61);
@@ -20618,7 +20615,7 @@ bb0:
     t4453 = h1452_own1452;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1452_own1452 = t2905;
-#line 20622 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4453);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2906 = HERO_STR_LIT(hero_str_61);
@@ -20628,7 +20625,7 @@ bb0:
     t4454 = h1453_own1453;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1453_own1453 = t2907;
-#line 20632 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4454);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2908 = HERO_STR_LIT(hero_str_61);
@@ -20638,7 +20635,7 @@ bb0:
     t4455 = h1454_own1454;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1454_own1454 = t2909;
-#line 20642 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4455);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2910 = HERO_STR_LIT(hero_str_61);
@@ -20648,7 +20645,7 @@ bb0:
     t4456 = h1455_own1455;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1455_own1455 = t2911;
-#line 20652 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4456);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2912 = HERO_STR_LIT(hero_str_61);
@@ -20658,7 +20655,7 @@ bb0:
     t4457 = h1456_own1456;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1456_own1456 = t2913;
-#line 20662 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4457);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2914 = HERO_STR_LIT(hero_str_61);
@@ -20668,7 +20665,7 @@ bb0:
     t4458 = h1457_own1457;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1457_own1457 = t2915;
-#line 20672 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4458);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2916 = HERO_STR_LIT(hero_str_61);
@@ -20678,7 +20675,7 @@ bb0:
     t4459 = h1458_own1458;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1458_own1458 = t2917;
-#line 20682 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4459);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2918 = HERO_STR_LIT(hero_str_61);
@@ -20688,7 +20685,7 @@ bb0:
     t4460 = h1459_own1459;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1459_own1459 = t2919;
-#line 20692 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4460);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2920 = HERO_STR_LIT(hero_str_61);
@@ -20698,7 +20695,7 @@ bb0:
     t4461 = h1460_own1460;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1460_own1460 = t2921;
-#line 20702 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4461);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2922 = HERO_STR_LIT(hero_str_61);
@@ -20708,7 +20705,7 @@ bb0:
     t4462 = h1461_own1461;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1461_own1461 = t2923;
-#line 20712 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4462);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2924 = HERO_STR_LIT(hero_str_61);
@@ -20718,7 +20715,7 @@ bb0:
     t4463 = h1462_own1462;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1462_own1462 = t2925;
-#line 20722 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4463);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2926 = HERO_STR_LIT(hero_str_61);
@@ -20728,7 +20725,7 @@ bb0:
     t4464 = h1463_own1463;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1463_own1463 = t2927;
-#line 20732 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4464);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2928 = HERO_STR_LIT(hero_str_61);
@@ -20738,7 +20735,7 @@ bb0:
     t4465 = h1464_own1464;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1464_own1464 = t2929;
-#line 20742 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4465);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2930 = HERO_STR_LIT(hero_str_61);
@@ -20748,7 +20745,7 @@ bb0:
     t4466 = h1465_own1465;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1465_own1465 = t2931;
-#line 20752 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4466);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2932 = HERO_STR_LIT(hero_str_61);
@@ -20758,7 +20755,7 @@ bb0:
     t4467 = h1466_own1466;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1466_own1466 = t2933;
-#line 20762 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4467);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2934 = HERO_STR_LIT(hero_str_61);
@@ -20768,7 +20765,7 @@ bb0:
     t4468 = h1467_own1467;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1467_own1467 = t2935;
-#line 20772 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4468);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2936 = HERO_STR_LIT(hero_str_61);
@@ -20778,7 +20775,7 @@ bb0:
     t4469 = h1468_own1468;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1468_own1468 = t2937;
-#line 20782 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4469);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2938 = HERO_STR_LIT(hero_str_61);
@@ -20788,7 +20785,7 @@ bb0:
     t4470 = h1469_own1469;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1469_own1469 = t2939;
-#line 20792 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4470);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2940 = HERO_STR_LIT(hero_str_61);
@@ -20798,7 +20795,7 @@ bb0:
     t4471 = h1470_own1470;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1470_own1470 = t2941;
-#line 20802 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4471);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2942 = HERO_STR_LIT(hero_str_61);
@@ -20808,7 +20805,7 @@ bb0:
     t4472 = h1471_own1471;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1471_own1471 = t2943;
-#line 20812 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4472);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2944 = HERO_STR_LIT(hero_str_61);
@@ -20818,7 +20815,7 @@ bb0:
     t4473 = h1472_own1472;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1472_own1472 = t2945;
-#line 20822 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4473);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2946 = HERO_STR_LIT(hero_str_61);
@@ -20828,7 +20825,7 @@ bb0:
     t4474 = h1473_own1473;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1473_own1473 = t2947;
-#line 20832 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4474);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2948 = HERO_STR_LIT(hero_str_61);
@@ -20838,7 +20835,7 @@ bb0:
     t4475 = h1474_own1474;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1474_own1474 = t2949;
-#line 20842 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4475);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2950 = HERO_STR_LIT(hero_str_61);
@@ -20848,7 +20845,7 @@ bb0:
     t4476 = h1475_own1475;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1475_own1475 = t2951;
-#line 20852 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4476);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2952 = HERO_STR_LIT(hero_str_61);
@@ -20858,7 +20855,7 @@ bb0:
     t4477 = h1476_own1476;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1476_own1476 = t2953;
-#line 20862 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4477);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2954 = HERO_STR_LIT(hero_str_61);
@@ -20868,7 +20865,7 @@ bb0:
     t4478 = h1477_own1477;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1477_own1477 = t2955;
-#line 20872 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4478);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2956 = HERO_STR_LIT(hero_str_61);
@@ -20878,7 +20875,7 @@ bb0:
     t4479 = h1478_own1478;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1478_own1478 = t2957;
-#line 20882 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4479);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2958 = HERO_STR_LIT(hero_str_61);
@@ -20888,7 +20885,7 @@ bb0:
     t4480 = h1479_own1479;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1479_own1479 = t2959;
-#line 20892 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4480);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2960 = HERO_STR_LIT(hero_str_61);
@@ -20898,7 +20895,7 @@ bb0:
     t4481 = h1480_own1480;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1480_own1480 = t2961;
-#line 20902 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4481);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2962 = HERO_STR_LIT(hero_str_61);
@@ -20908,7 +20905,7 @@ bb0:
     t4482 = h1481_own1481;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1481_own1481 = t2963;
-#line 20912 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4482);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2964 = HERO_STR_LIT(hero_str_61);
@@ -20918,7 +20915,7 @@ bb0:
     t4483 = h1482_own1482;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1482_own1482 = t2965;
-#line 20922 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4483);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2966 = HERO_STR_LIT(hero_str_61);
@@ -20928,7 +20925,7 @@ bb0:
     t4484 = h1483_own1483;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1483_own1483 = t2967;
-#line 20932 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4484);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2968 = HERO_STR_LIT(hero_str_61);
@@ -20938,7 +20935,7 @@ bb0:
     t4485 = h1484_own1484;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1484_own1484 = t2969;
-#line 20942 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4485);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2970 = HERO_STR_LIT(hero_str_61);
@@ -20948,7 +20945,7 @@ bb0:
     t4486 = h1485_own1485;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1485_own1485 = t2971;
-#line 20952 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4486);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2972 = HERO_STR_LIT(hero_str_61);
@@ -20958,7 +20955,7 @@ bb0:
     t4487 = h1486_own1486;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1486_own1486 = t2973;
-#line 20962 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4487);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2974 = HERO_STR_LIT(hero_str_61);
@@ -20968,7 +20965,7 @@ bb0:
     t4488 = h1487_own1487;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1487_own1487 = t2975;
-#line 20972 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4488);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2976 = HERO_STR_LIT(hero_str_61);
@@ -20978,7 +20975,7 @@ bb0:
     t4489 = h1488_own1488;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1488_own1488 = t2977;
-#line 20982 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4489);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2978 = HERO_STR_LIT(hero_str_61);
@@ -20988,7 +20985,7 @@ bb0:
     t4490 = h1489_own1489;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1489_own1489 = t2979;
-#line 20992 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4490);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2980 = HERO_STR_LIT(hero_str_61);
@@ -20998,7 +20995,7 @@ bb0:
     t4491 = h1490_own1490;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1490_own1490 = t2981;
-#line 21002 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 20999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4491);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2982 = HERO_STR_LIT(hero_str_61);
@@ -21008,7 +21005,7 @@ bb0:
     t4492 = h1491_own1491;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1491_own1491 = t2983;
-#line 21012 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4492);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2984 = HERO_STR_LIT(hero_str_61);
@@ -21018,7 +21015,7 @@ bb0:
     t4493 = h1492_own1492;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1492_own1492 = t2985;
-#line 21022 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4493);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2986 = HERO_STR_LIT(hero_str_61);
@@ -21028,7 +21025,7 @@ bb0:
     t4494 = h1493_own1493;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1493_own1493 = t2987;
-#line 21032 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4494);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2988 = HERO_STR_LIT(hero_str_61);
@@ -21038,7 +21035,7 @@ bb0:
     t4495 = h1494_own1494;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1494_own1494 = t2989;
-#line 21042 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4495);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2990 = HERO_STR_LIT(hero_str_61);
@@ -21048,7 +21045,7 @@ bb0:
     t4496 = h1495_own1495;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1495_own1495 = t2991;
-#line 21052 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4496);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2992 = HERO_STR_LIT(hero_str_61);
@@ -21058,7 +21055,7 @@ bb0:
     t4497 = h1496_own1496;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1496_own1496 = t2993;
-#line 21062 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4497);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2994 = HERO_STR_LIT(hero_str_61);
@@ -21068,7 +21065,7 @@ bb0:
     t4498 = h1497_own1497;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1497_own1497 = t2995;
-#line 21072 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4498);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2996 = HERO_STR_LIT(hero_str_61);
@@ -21078,7 +21075,7 @@ bb0:
     t4499 = h1498_own1498;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1498_own1498 = t2997;
-#line 21082 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4499);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t2998 = HERO_STR_LIT(hero_str_61);
@@ -21088,15 +21085,15 @@ bb0:
     t4500 = h1499_own1499;
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h1499_own1499 = t2999;
-#line 21092 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4500);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t4501 = h0_s;
-#line 21096 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21093 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_incref(t2999);
 #line 17 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     h0_s = t2999;
-#line 21100 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21097 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(t4501);
 #line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     t3000 = h0_s;
@@ -21106,4504 +21103,1506 @@ bb0:
     hero_print_int(t3001);
 #line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
     hero_print_end();
-#line 21110 "fixedbugs218astrof1500piecesbuildsandruns.c"
+#line 21107 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h0_s);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21113 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1_own1);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21116 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h2_own2);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h3_own3);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21122 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h4_own4);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21125 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h5_own5);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21128 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h6_own6);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21131 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h7_own7);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21134 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h8_own8);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21137 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h9_own9);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21140 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h10_own10);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21143 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h11_own11);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21146 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h12_own12);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h13_own13);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21152 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h14_own14);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21155 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h15_own15);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21158 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h16_own16);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21161 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h17_own17);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21164 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h18_own18);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21167 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h19_own19);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21170 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h20_own20);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21173 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h21_own21);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21176 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h22_own22);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h23_own23);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21182 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h24_own24);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21185 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h25_own25);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21188 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h26_own26);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21191 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h27_own27);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21194 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h28_own28);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21197 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h29_own29);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21200 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h30_own30);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21203 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h31_own31);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21206 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h32_own32);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h33_own33);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21212 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h34_own34);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21215 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h35_own35);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21218 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h36_own36);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21221 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h37_own37);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21224 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h38_own38);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21227 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h39_own39);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21230 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h40_own40);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21233 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h41_own41);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21236 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h42_own42);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h43_own43);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21242 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h44_own44);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21245 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h45_own45);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21248 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h46_own46);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21251 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h47_own47);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21254 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h48_own48);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21257 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h49_own49);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21260 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h50_own50);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21263 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h51_own51);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21266 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h52_own52);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h53_own53);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21272 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h54_own54);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21275 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h55_own55);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21278 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h56_own56);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21281 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h57_own57);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21284 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h58_own58);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21287 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h59_own59);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21290 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h60_own60);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21293 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h61_own61);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21296 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h62_own62);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h63_own63);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21302 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h64_own64);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21305 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h65_own65);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21308 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h66_own66);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21311 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h67_own67);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21314 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h68_own68);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21317 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h69_own69);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21320 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h70_own70);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21323 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h71_own71);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21326 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h72_own72);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h73_own73);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21332 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h74_own74);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21335 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h75_own75);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21338 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h76_own76);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21341 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h77_own77);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21344 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h78_own78);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21347 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h79_own79);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21350 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h80_own80);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21353 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h81_own81);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21356 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h82_own82);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h83_own83);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21362 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h84_own84);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21365 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h85_own85);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21368 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h86_own86);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21371 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h87_own87);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21374 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h88_own88);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21377 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h89_own89);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21380 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h90_own90);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21383 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h91_own91);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21386 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h92_own92);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h93_own93);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21392 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h94_own94);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21395 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h95_own95);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21398 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h96_own96);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21401 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h97_own97);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21404 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h98_own98);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21407 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h99_own99);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21410 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h100_own100);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21413 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h101_own101);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21416 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h102_own102);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h103_own103);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21422 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h104_own104);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21425 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h105_own105);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21428 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h106_own106);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21431 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h107_own107);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21434 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h108_own108);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21437 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h109_own109);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21440 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h110_own110);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21443 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h111_own111);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21446 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h112_own112);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h113_own113);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21452 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h114_own114);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21455 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h115_own115);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21458 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h116_own116);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21461 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h117_own117);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21464 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h118_own118);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21467 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h119_own119);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21470 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h120_own120);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21473 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h121_own121);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21476 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h122_own122);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h123_own123);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21482 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h124_own124);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21485 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h125_own125);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21488 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h126_own126);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21491 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h127_own127);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21494 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h128_own128);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21497 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h129_own129);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21500 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h130_own130);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21503 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h131_own131);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21506 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h132_own132);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h133_own133);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21512 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h134_own134);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21515 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h135_own135);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21518 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h136_own136);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21521 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h137_own137);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21524 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h138_own138);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21527 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h139_own139);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21530 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h140_own140);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21533 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h141_own141);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21536 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h142_own142);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h143_own143);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21542 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h144_own144);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21545 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h145_own145);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21548 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h146_own146);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21551 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h147_own147);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21554 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h148_own148);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21557 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h149_own149);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21560 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h150_own150);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21563 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h151_own151);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21566 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h152_own152);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h153_own153);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21572 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h154_own154);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21575 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h155_own155);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21578 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h156_own156);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21581 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h157_own157);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21584 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h158_own158);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21587 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h159_own159);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21590 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h160_own160);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21593 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h161_own161);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21596 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h162_own162);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h163_own163);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21602 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h164_own164);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21605 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h165_own165);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21608 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h166_own166);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21611 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h167_own167);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21614 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h168_own168);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21617 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h169_own169);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21620 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h170_own170);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21623 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h171_own171);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21626 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h172_own172);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h173_own173);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21632 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h174_own174);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21635 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h175_own175);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21638 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h176_own176);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21641 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h177_own177);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21644 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h178_own178);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21647 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h179_own179);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21650 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h180_own180);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21653 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h181_own181);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21656 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h182_own182);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h183_own183);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21662 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h184_own184);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21665 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h185_own185);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21668 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h186_own186);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21671 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h187_own187);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21674 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h188_own188);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21677 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h189_own189);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21680 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h190_own190);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21683 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h191_own191);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21686 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h192_own192);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h193_own193);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21692 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h194_own194);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21695 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h195_own195);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21698 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h196_own196);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21701 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h197_own197);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21704 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h198_own198);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21707 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h199_own199);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21710 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h200_own200);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21713 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h201_own201);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21716 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h202_own202);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h203_own203);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21722 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h204_own204);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21725 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h205_own205);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21728 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h206_own206);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21731 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h207_own207);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21734 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h208_own208);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21737 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h209_own209);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21740 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h210_own210);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21743 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h211_own211);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21746 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h212_own212);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h213_own213);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21752 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h214_own214);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21755 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h215_own215);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21758 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h216_own216);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21761 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h217_own217);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21764 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h218_own218);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21767 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h219_own219);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21770 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h220_own220);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21773 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h221_own221);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21776 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h222_own222);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h223_own223);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21782 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h224_own224);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21785 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h225_own225);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21788 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h226_own226);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21791 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h227_own227);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21794 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h228_own228);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21797 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h229_own229);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21800 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h230_own230);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21803 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h231_own231);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21806 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h232_own232);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h233_own233);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21812 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h234_own234);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21815 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h235_own235);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21818 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h236_own236);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21821 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h237_own237);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21824 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h238_own238);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21827 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h239_own239);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21830 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h240_own240);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21833 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h241_own241);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21836 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h242_own242);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h243_own243);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21842 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h244_own244);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21845 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h245_own245);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21848 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h246_own246);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21851 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h247_own247);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21854 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h248_own248);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21857 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h249_own249);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21860 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h250_own250);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21863 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h251_own251);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21866 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h252_own252);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h253_own253);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21872 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h254_own254);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21875 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h255_own255);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21878 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h256_own256);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21881 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h257_own257);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21884 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h258_own258);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21887 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h259_own259);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21890 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h260_own260);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21893 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h261_own261);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21896 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h262_own262);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h263_own263);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21902 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h264_own264);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21905 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h265_own265);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21908 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h266_own266);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21911 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h267_own267);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21914 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h268_own268);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21917 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h269_own269);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21920 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h270_own270);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21923 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h271_own271);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21926 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h272_own272);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h273_own273);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21932 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h274_own274);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21935 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h275_own275);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21938 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h276_own276);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21941 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h277_own277);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21944 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h278_own278);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21947 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h279_own279);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21950 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h280_own280);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21953 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h281_own281);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21956 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h282_own282);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h283_own283);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21962 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h284_own284);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21965 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h285_own285);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21968 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h286_own286);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21971 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h287_own287);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21974 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h288_own288);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21977 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h289_own289);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21980 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h290_own290);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21983 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h291_own291);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21986 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h292_own292);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h293_own293);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21992 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h294_own294);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21995 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h295_own295);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 21998 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h296_own296);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22001 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h297_own297);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22004 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h298_own298);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22007 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h299_own299);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22010 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h300_own300);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22013 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h301_own301);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22016 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h302_own302);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h303_own303);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22022 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h304_own304);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22025 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h305_own305);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22028 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h306_own306);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22031 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h307_own307);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22034 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h308_own308);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22037 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h309_own309);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22040 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h310_own310);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22043 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h311_own311);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22046 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h312_own312);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h313_own313);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22052 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h314_own314);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22055 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h315_own315);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22058 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h316_own316);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22061 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h317_own317);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22064 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h318_own318);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22067 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h319_own319);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22070 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h320_own320);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22073 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h321_own321);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22076 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h322_own322);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h323_own323);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22082 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h324_own324);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22085 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h325_own325);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22088 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h326_own326);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22091 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h327_own327);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22094 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h328_own328);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22097 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h329_own329);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22100 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h330_own330);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22103 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h331_own331);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22106 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h332_own332);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h333_own333);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22112 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h334_own334);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22115 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h335_own335);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22118 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h336_own336);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22121 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h337_own337);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22124 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h338_own338);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22127 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h339_own339);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22130 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h340_own340);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22133 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h341_own341);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22136 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h342_own342);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h343_own343);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22142 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h344_own344);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22145 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h345_own345);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22148 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h346_own346);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22151 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h347_own347);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22154 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h348_own348);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22157 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h349_own349);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22160 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h350_own350);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22163 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h351_own351);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22166 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h352_own352);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h353_own353);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22172 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h354_own354);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22175 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h355_own355);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22178 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h356_own356);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22181 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h357_own357);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22184 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h358_own358);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22187 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h359_own359);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22190 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h360_own360);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22193 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h361_own361);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22196 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h362_own362);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h363_own363);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22202 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h364_own364);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22205 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h365_own365);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22208 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h366_own366);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22211 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h367_own367);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22214 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h368_own368);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22217 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h369_own369);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22220 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h370_own370);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22223 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h371_own371);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22226 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h372_own372);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h373_own373);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22232 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h374_own374);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22235 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h375_own375);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22238 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h376_own376);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22241 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h377_own377);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22244 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h378_own378);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22247 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h379_own379);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22250 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h380_own380);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22253 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h381_own381);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22256 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h382_own382);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h383_own383);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22262 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h384_own384);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22265 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h385_own385);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22268 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h386_own386);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22271 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h387_own387);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22274 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h388_own388);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22277 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h389_own389);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22280 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h390_own390);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22283 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h391_own391);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22286 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h392_own392);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h393_own393);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22292 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h394_own394);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22295 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h395_own395);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22298 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h396_own396);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22301 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h397_own397);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22304 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h398_own398);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22307 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h399_own399);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22310 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h400_own400);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22313 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h401_own401);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22316 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h402_own402);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h403_own403);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22322 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h404_own404);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22325 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h405_own405);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22328 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h406_own406);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22331 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h407_own407);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22334 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h408_own408);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22337 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h409_own409);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22340 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h410_own410);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22343 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h411_own411);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22346 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h412_own412);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h413_own413);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22352 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h414_own414);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22355 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h415_own415);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22358 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h416_own416);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22361 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h417_own417);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22364 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h418_own418);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22367 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h419_own419);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22370 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h420_own420);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22373 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h421_own421);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22376 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h422_own422);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h423_own423);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22382 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h424_own424);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22385 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h425_own425);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22388 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h426_own426);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22391 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h427_own427);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22394 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h428_own428);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22397 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h429_own429);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22400 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h430_own430);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22403 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h431_own431);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22406 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h432_own432);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h433_own433);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22412 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h434_own434);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22415 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h435_own435);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22418 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h436_own436);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22421 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h437_own437);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22424 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h438_own438);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22427 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h439_own439);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22430 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h440_own440);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22433 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h441_own441);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22436 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h442_own442);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h443_own443);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22442 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h444_own444);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22445 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h445_own445);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22448 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h446_own446);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22451 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h447_own447);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22454 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h448_own448);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22457 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h449_own449);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22460 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h450_own450);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22463 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h451_own451);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22466 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h452_own452);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h453_own453);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22472 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h454_own454);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22475 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h455_own455);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22478 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h456_own456);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22481 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h457_own457);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22484 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h458_own458);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22487 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h459_own459);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22490 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h460_own460);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22493 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h461_own461);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22496 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h462_own462);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h463_own463);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22502 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h464_own464);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22505 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h465_own465);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22508 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h466_own466);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22511 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h467_own467);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22514 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h468_own468);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22517 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h469_own469);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22520 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h470_own470);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22523 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h471_own471);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22526 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h472_own472);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h473_own473);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22532 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h474_own474);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22535 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h475_own475);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22538 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h476_own476);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22541 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h477_own477);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22544 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h478_own478);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22547 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h479_own479);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22550 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h480_own480);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22553 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h481_own481);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22556 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h482_own482);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h483_own483);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22562 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h484_own484);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22565 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h485_own485);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22568 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h486_own486);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22571 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h487_own487);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22574 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h488_own488);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22577 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h489_own489);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22580 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h490_own490);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22583 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h491_own491);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22586 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h492_own492);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h493_own493);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22592 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h494_own494);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22595 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h495_own495);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22598 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h496_own496);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22601 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h497_own497);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22604 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h498_own498);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22607 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h499_own499);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22610 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h500_own500);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22613 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h501_own501);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22616 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h502_own502);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22619 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h503_own503);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22622 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h504_own504);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22625 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h505_own505);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22628 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h506_own506);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22631 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h507_own507);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22634 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h508_own508);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22637 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h509_own509);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22640 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h510_own510);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22643 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h511_own511);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22646 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h512_own512);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22649 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h513_own513);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22652 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h514_own514);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22655 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h515_own515);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22658 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h516_own516);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22661 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h517_own517);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22664 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h518_own518);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22667 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h519_own519);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22670 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h520_own520);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22673 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h521_own521);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22676 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h522_own522);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22679 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h523_own523);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22682 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h524_own524);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22685 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h525_own525);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22688 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h526_own526);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22691 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h527_own527);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22694 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h528_own528);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22697 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h529_own529);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22700 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h530_own530);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22703 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h531_own531);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22706 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h532_own532);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22709 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h533_own533);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22712 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h534_own534);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22715 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h535_own535);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22718 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h536_own536);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22721 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h537_own537);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22724 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h538_own538);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22727 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h539_own539);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22730 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h540_own540);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22733 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h541_own541);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22736 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h542_own542);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22739 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h543_own543);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22742 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h544_own544);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22745 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h545_own545);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22748 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h546_own546);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22751 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h547_own547);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22754 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h548_own548);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22757 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h549_own549);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22760 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h550_own550);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22763 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h551_own551);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22766 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h552_own552);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22769 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h553_own553);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22772 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h554_own554);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22775 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h555_own555);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22778 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h556_own556);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22781 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h557_own557);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22784 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h558_own558);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22787 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h559_own559);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22790 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h560_own560);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22793 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h561_own561);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22796 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h562_own562);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22799 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h563_own563);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22802 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h564_own564);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22805 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h565_own565);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22808 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h566_own566);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22811 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h567_own567);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22814 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h568_own568);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22817 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h569_own569);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22820 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h570_own570);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22823 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h571_own571);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22826 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h572_own572);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22829 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h573_own573);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22832 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h574_own574);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22835 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h575_own575);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22838 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h576_own576);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22841 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h577_own577);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22844 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h578_own578);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22847 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h579_own579);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22850 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h580_own580);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22853 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h581_own581);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22856 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h582_own582);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22859 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h583_own583);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22862 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h584_own584);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22865 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h585_own585);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22868 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h586_own586);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22871 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h587_own587);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22874 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h588_own588);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22877 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h589_own589);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22880 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h590_own590);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22883 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h591_own591);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22886 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h592_own592);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22889 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h593_own593);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22892 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h594_own594);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22895 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h595_own595);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22898 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h596_own596);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22901 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h597_own597);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22904 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h598_own598);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22907 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h599_own599);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22910 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h600_own600);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22913 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h601_own601);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22916 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h602_own602);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22919 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h603_own603);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22922 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h604_own604);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22925 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h605_own605);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22928 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h606_own606);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22931 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h607_own607);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22934 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h608_own608);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22937 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h609_own609);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22940 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h610_own610);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22943 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h611_own611);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22946 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h612_own612);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22949 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h613_own613);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22952 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h614_own614);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22955 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h615_own615);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22958 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h616_own616);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22961 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h617_own617);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22964 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h618_own618);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22967 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h619_own619);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22970 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h620_own620);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22973 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h621_own621);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22976 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h622_own622);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22979 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h623_own623);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22982 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h624_own624);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22985 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h625_own625);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22988 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h626_own626);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22991 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h627_own627);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22994 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h628_own628);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 22997 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h629_own629);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23000 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h630_own630);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23003 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h631_own631);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23006 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h632_own632);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23009 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h633_own633);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23012 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h634_own634);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23015 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h635_own635);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23018 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h636_own636);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23021 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h637_own637);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23024 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h638_own638);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23027 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h639_own639);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23030 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h640_own640);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23033 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h641_own641);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23036 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h642_own642);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23039 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h643_own643);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23042 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h644_own644);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23045 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h645_own645);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23048 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h646_own646);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23051 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h647_own647);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23054 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h648_own648);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23057 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h649_own649);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23060 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h650_own650);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23063 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h651_own651);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23066 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h652_own652);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23069 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h653_own653);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23072 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h654_own654);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23075 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h655_own655);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23078 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h656_own656);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23081 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h657_own657);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23084 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h658_own658);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23087 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h659_own659);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23090 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h660_own660);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23093 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h661_own661);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23096 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h662_own662);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23099 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h663_own663);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23102 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h664_own664);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23105 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h665_own665);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23108 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h666_own666);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23111 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h667_own667);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23114 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h668_own668);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23117 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h669_own669);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23120 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h670_own670);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23123 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h671_own671);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23126 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h672_own672);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23129 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h673_own673);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23132 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h674_own674);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23135 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h675_own675);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23138 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h676_own676);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23141 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h677_own677);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23144 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h678_own678);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23147 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h679_own679);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23150 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h680_own680);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23153 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h681_own681);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23156 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h682_own682);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23159 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h683_own683);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23162 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h684_own684);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23165 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h685_own685);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23168 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h686_own686);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23171 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h687_own687);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23174 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h688_own688);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23177 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h689_own689);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23180 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h690_own690);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23183 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h691_own691);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23186 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h692_own692);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23189 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h693_own693);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23192 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h694_own694);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23195 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h695_own695);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23198 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h696_own696);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23201 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h697_own697);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23204 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h698_own698);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23207 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h699_own699);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23210 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h700_own700);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23213 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h701_own701);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23216 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h702_own702);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23219 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h703_own703);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23222 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h704_own704);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23225 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h705_own705);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23228 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h706_own706);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23231 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h707_own707);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23234 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h708_own708);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23237 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h709_own709);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23240 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h710_own710);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23243 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h711_own711);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23246 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h712_own712);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23249 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h713_own713);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23252 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h714_own714);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23255 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h715_own715);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23258 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h716_own716);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23261 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h717_own717);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23264 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h718_own718);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23267 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h719_own719);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23270 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h720_own720);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23273 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h721_own721);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23276 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h722_own722);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23279 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h723_own723);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23282 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h724_own724);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23285 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h725_own725);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23288 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h726_own726);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23291 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h727_own727);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23294 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h728_own728);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23297 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h729_own729);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23300 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h730_own730);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23303 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h731_own731);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23306 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h732_own732);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23309 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h733_own733);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23312 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h734_own734);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23315 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h735_own735);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23318 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h736_own736);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23321 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h737_own737);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23324 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h738_own738);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23327 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h739_own739);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23330 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h740_own740);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23333 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h741_own741);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23336 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h742_own742);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23339 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h743_own743);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23342 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h744_own744);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23345 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h745_own745);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23348 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h746_own746);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23351 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h747_own747);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23354 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h748_own748);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23357 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h749_own749);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23360 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h750_own750);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23363 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h751_own751);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23366 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h752_own752);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23369 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h753_own753);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23372 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h754_own754);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23375 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h755_own755);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23378 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h756_own756);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23381 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h757_own757);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23384 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h758_own758);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23387 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h759_own759);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23390 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h760_own760);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23393 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h761_own761);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23396 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h762_own762);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23399 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h763_own763);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23402 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h764_own764);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23405 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h765_own765);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23408 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h766_own766);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23411 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h767_own767);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23414 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h768_own768);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23417 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h769_own769);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23420 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h770_own770);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23423 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h771_own771);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23426 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h772_own772);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23429 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h773_own773);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23432 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h774_own774);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23435 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h775_own775);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23438 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h776_own776);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23441 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h777_own777);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23444 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h778_own778);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23447 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h779_own779);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23450 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h780_own780);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23453 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h781_own781);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23456 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h782_own782);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23459 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h783_own783);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23462 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h784_own784);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23465 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h785_own785);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23468 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h786_own786);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23471 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h787_own787);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23474 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h788_own788);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23477 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h789_own789);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23480 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h790_own790);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23483 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h791_own791);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23486 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h792_own792);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23489 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h793_own793);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23492 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h794_own794);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23495 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h795_own795);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23498 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h796_own796);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23501 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h797_own797);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23504 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h798_own798);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23507 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h799_own799);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23510 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h800_own800);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23513 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h801_own801);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23516 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h802_own802);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23519 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h803_own803);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23522 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h804_own804);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23525 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h805_own805);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23528 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h806_own806);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23531 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h807_own807);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23534 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h808_own808);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23537 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h809_own809);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23540 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h810_own810);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23543 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h811_own811);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23546 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h812_own812);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23549 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h813_own813);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23552 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h814_own814);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23555 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h815_own815);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23558 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h816_own816);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23561 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h817_own817);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23564 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h818_own818);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23567 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h819_own819);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23570 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h820_own820);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23573 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h821_own821);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23576 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h822_own822);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23579 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h823_own823);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23582 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h824_own824);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23585 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h825_own825);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23588 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h826_own826);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23591 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h827_own827);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23594 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h828_own828);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23597 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h829_own829);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23600 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h830_own830);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23603 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h831_own831);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23606 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h832_own832);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23609 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h833_own833);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23612 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h834_own834);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23615 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h835_own835);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23618 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h836_own836);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23621 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h837_own837);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23624 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h838_own838);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23627 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h839_own839);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23630 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h840_own840);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23633 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h841_own841);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23636 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h842_own842);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23639 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h843_own843);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23642 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h844_own844);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23645 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h845_own845);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23648 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h846_own846);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23651 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h847_own847);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23654 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h848_own848);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23657 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h849_own849);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23660 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h850_own850);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23663 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h851_own851);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23666 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h852_own852);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23669 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h853_own853);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23672 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h854_own854);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23675 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h855_own855);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23678 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h856_own856);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23681 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h857_own857);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23684 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h858_own858);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23687 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h859_own859);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23690 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h860_own860);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23693 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h861_own861);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23696 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h862_own862);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23699 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h863_own863);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23702 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h864_own864);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23705 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h865_own865);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23708 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h866_own866);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23711 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h867_own867);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23714 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h868_own868);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23717 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h869_own869);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23720 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h870_own870);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23723 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h871_own871);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23726 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h872_own872);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23729 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h873_own873);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23732 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h874_own874);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23735 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h875_own875);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23738 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h876_own876);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23741 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h877_own877);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23744 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h878_own878);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23747 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h879_own879);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23750 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h880_own880);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23753 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h881_own881);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23756 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h882_own882);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23759 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h883_own883);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23762 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h884_own884);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23765 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h885_own885);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23768 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h886_own886);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23771 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h887_own887);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23774 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h888_own888);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23777 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h889_own889);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23780 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h890_own890);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23783 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h891_own891);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23786 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h892_own892);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23789 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h893_own893);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23792 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h894_own894);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23795 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h895_own895);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23798 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h896_own896);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23801 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h897_own897);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23804 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h898_own898);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23807 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h899_own899);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23810 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h900_own900);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23813 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h901_own901);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23816 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h902_own902);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23819 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h903_own903);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23822 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h904_own904);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23825 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h905_own905);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23828 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h906_own906);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23831 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h907_own907);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23834 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h908_own908);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23837 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h909_own909);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23840 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h910_own910);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23843 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h911_own911);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23846 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h912_own912);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23849 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h913_own913);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23852 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h914_own914);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23855 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h915_own915);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23858 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h916_own916);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23861 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h917_own917);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23864 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h918_own918);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23867 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h919_own919);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23870 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h920_own920);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23873 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h921_own921);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23876 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h922_own922);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23879 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h923_own923);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23882 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h924_own924);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23885 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h925_own925);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23888 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h926_own926);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23891 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h927_own927);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23894 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h928_own928);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23897 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h929_own929);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23900 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h930_own930);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23903 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h931_own931);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23906 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h932_own932);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23909 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h933_own933);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23912 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h934_own934);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23915 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h935_own935);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23918 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h936_own936);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23921 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h937_own937);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23924 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h938_own938);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23927 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h939_own939);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23930 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h940_own940);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23933 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h941_own941);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23936 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h942_own942);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23939 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h943_own943);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23942 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h944_own944);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23945 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h945_own945);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23948 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h946_own946);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23951 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h947_own947);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23954 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h948_own948);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23957 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h949_own949);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23960 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h950_own950);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23963 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h951_own951);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23966 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h952_own952);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23969 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h953_own953);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23972 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h954_own954);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23975 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h955_own955);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23978 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h956_own956);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23981 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h957_own957);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23984 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h958_own958);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23987 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h959_own959);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23990 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h960_own960);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23993 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h961_own961);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23996 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h962_own962);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 23999 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h963_own963);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24002 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h964_own964);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24005 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h965_own965);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24008 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h966_own966);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24011 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h967_own967);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24014 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h968_own968);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24017 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h969_own969);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24020 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h970_own970);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24023 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h971_own971);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24026 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h972_own972);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24029 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h973_own973);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24032 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h974_own974);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24035 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h975_own975);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24038 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h976_own976);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24041 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h977_own977);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24044 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h978_own978);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24047 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h979_own979);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24050 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h980_own980);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24053 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h981_own981);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24056 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h982_own982);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24059 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h983_own983);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24062 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h984_own984);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24065 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h985_own985);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24068 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h986_own986);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24071 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h987_own987);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24074 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h988_own988);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24077 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h989_own989);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24080 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h990_own990);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24083 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h991_own991);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24086 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h992_own992);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24089 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h993_own993);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24092 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h994_own994);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24095 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h995_own995);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24098 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h996_own996);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24101 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h997_own997);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24104 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h998_own998);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24107 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h999_own999);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24110 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1000_own1000);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24113 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1001_own1001);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24116 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1002_own1002);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24119 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1003_own1003);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24122 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1004_own1004);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24125 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1005_own1005);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24128 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1006_own1006);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24131 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1007_own1007);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24134 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1008_own1008);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24137 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1009_own1009);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24140 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1010_own1010);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24143 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1011_own1011);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24146 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1012_own1012);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24149 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1013_own1013);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24152 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1014_own1014);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24155 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1015_own1015);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24158 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1016_own1016);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24161 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1017_own1017);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24164 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1018_own1018);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24167 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1019_own1019);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24170 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1020_own1020);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24173 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1021_own1021);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24176 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1022_own1022);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24179 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1023_own1023);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24182 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1024_own1024);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24185 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1025_own1025);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24188 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1026_own1026);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24191 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1027_own1027);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24194 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1028_own1028);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24197 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1029_own1029);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24200 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1030_own1030);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24203 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1031_own1031);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24206 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1032_own1032);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24209 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1033_own1033);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24212 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1034_own1034);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24215 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1035_own1035);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24218 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1036_own1036);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24221 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1037_own1037);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24224 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1038_own1038);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24227 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1039_own1039);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24230 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1040_own1040);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24233 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1041_own1041);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24236 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1042_own1042);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24239 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1043_own1043);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24242 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1044_own1044);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24245 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1045_own1045);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24248 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1046_own1046);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24251 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1047_own1047);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24254 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1048_own1048);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24257 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1049_own1049);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24260 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1050_own1050);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24263 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1051_own1051);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24266 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1052_own1052);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24269 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1053_own1053);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24272 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1054_own1054);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24275 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1055_own1055);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24278 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1056_own1056);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24281 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1057_own1057);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24284 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1058_own1058);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24287 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1059_own1059);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24290 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1060_own1060);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24293 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1061_own1061);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24296 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1062_own1062);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24299 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1063_own1063);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24302 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1064_own1064);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24305 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1065_own1065);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24308 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1066_own1066);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24311 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1067_own1067);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24314 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1068_own1068);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24317 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1069_own1069);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24320 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1070_own1070);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24323 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1071_own1071);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24326 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1072_own1072);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24329 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1073_own1073);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24332 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1074_own1074);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24335 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1075_own1075);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24338 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1076_own1076);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24341 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1077_own1077);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24344 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1078_own1078);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24347 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1079_own1079);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24350 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1080_own1080);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24353 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1081_own1081);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24356 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1082_own1082);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24359 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1083_own1083);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24362 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1084_own1084);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24365 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1085_own1085);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24368 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1086_own1086);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24371 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1087_own1087);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24374 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1088_own1088);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24377 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1089_own1089);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24380 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1090_own1090);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24383 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1091_own1091);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24386 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1092_own1092);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24389 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1093_own1093);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24392 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1094_own1094);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24395 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1095_own1095);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24398 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1096_own1096);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24401 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1097_own1097);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24404 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1098_own1098);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24407 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1099_own1099);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24410 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1100_own1100);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24413 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1101_own1101);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24416 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1102_own1102);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24419 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1103_own1103);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24422 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1104_own1104);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24425 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1105_own1105);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24428 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1106_own1106);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24431 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1107_own1107);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24434 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1108_own1108);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24437 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1109_own1109);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24440 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1110_own1110);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24443 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1111_own1111);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24446 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1112_own1112);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24449 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1113_own1113);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24452 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1114_own1114);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24455 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1115_own1115);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24458 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1116_own1116);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24461 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1117_own1117);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24464 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1118_own1118);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24467 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1119_own1119);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24470 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1120_own1120);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24473 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1121_own1121);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24476 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1122_own1122);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24479 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1123_own1123);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24482 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1124_own1124);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24485 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1125_own1125);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24488 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1126_own1126);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24491 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1127_own1127);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24494 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1128_own1128);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24497 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1129_own1129);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24500 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1130_own1130);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24503 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1131_own1131);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24506 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1132_own1132);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24509 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1133_own1133);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24512 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1134_own1134);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24515 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1135_own1135);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24518 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1136_own1136);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24521 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1137_own1137);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24524 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1138_own1138);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24527 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1139_own1139);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24530 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1140_own1140);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24533 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1141_own1141);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24536 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1142_own1142);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24539 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1143_own1143);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24542 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1144_own1144);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24545 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1145_own1145);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24548 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1146_own1146);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24551 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1147_own1147);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24554 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1148_own1148);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24557 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1149_own1149);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24560 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1150_own1150);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24563 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1151_own1151);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24566 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1152_own1152);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24569 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1153_own1153);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24572 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1154_own1154);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24575 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1155_own1155);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24578 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1156_own1156);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24581 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1157_own1157);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24584 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1158_own1158);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24587 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1159_own1159);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24590 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1160_own1160);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24593 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1161_own1161);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24596 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1162_own1162);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24599 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1163_own1163);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24602 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1164_own1164);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24605 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1165_own1165);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24608 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1166_own1166);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24611 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1167_own1167);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24614 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1168_own1168);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24617 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1169_own1169);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24620 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1170_own1170);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24623 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1171_own1171);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24626 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1172_own1172);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24629 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1173_own1173);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24632 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1174_own1174);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24635 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1175_own1175);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24638 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1176_own1176);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24641 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1177_own1177);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24644 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1178_own1178);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24647 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1179_own1179);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24650 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1180_own1180);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24653 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1181_own1181);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24656 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1182_own1182);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24659 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1183_own1183);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24662 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1184_own1184);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24665 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1185_own1185);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24668 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1186_own1186);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24671 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1187_own1187);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24674 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1188_own1188);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24677 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1189_own1189);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24680 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1190_own1190);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24683 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1191_own1191);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24686 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1192_own1192);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24689 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1193_own1193);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24692 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1194_own1194);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24695 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1195_own1195);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24698 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1196_own1196);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24701 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1197_own1197);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24704 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1198_own1198);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24707 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1199_own1199);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24710 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1200_own1200);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24713 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1201_own1201);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24716 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1202_own1202);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24719 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1203_own1203);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24722 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1204_own1204);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24725 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1205_own1205);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24728 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1206_own1206);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24731 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1207_own1207);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24734 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1208_own1208);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24737 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1209_own1209);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24740 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1210_own1210);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24743 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1211_own1211);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24746 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1212_own1212);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24749 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1213_own1213);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24752 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1214_own1214);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24755 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1215_own1215);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24758 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1216_own1216);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24761 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1217_own1217);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24764 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1218_own1218);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24767 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1219_own1219);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24770 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1220_own1220);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24773 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1221_own1221);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24776 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1222_own1222);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24779 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1223_own1223);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24782 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1224_own1224);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24785 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1225_own1225);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24788 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1226_own1226);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24791 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1227_own1227);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24794 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1228_own1228);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24797 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1229_own1229);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24800 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1230_own1230);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24803 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1231_own1231);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24806 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1232_own1232);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24809 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1233_own1233);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24812 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1234_own1234);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24815 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1235_own1235);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24818 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1236_own1236);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24821 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1237_own1237);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24824 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1238_own1238);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24827 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1239_own1239);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24830 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1240_own1240);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24833 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1241_own1241);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24836 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1242_own1242);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24839 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1243_own1243);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24842 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1244_own1244);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24845 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1245_own1245);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24848 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1246_own1246);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24851 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1247_own1247);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24854 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1248_own1248);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24857 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1249_own1249);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24860 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1250_own1250);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24863 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1251_own1251);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24866 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1252_own1252);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24869 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1253_own1253);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24872 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1254_own1254);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24875 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1255_own1255);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24878 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1256_own1256);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24881 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1257_own1257);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24884 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1258_own1258);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24887 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1259_own1259);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24890 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1260_own1260);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24893 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1261_own1261);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24896 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1262_own1262);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24899 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1263_own1263);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24902 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1264_own1264);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24905 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1265_own1265);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24908 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1266_own1266);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24911 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1267_own1267);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24914 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1268_own1268);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24917 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1269_own1269);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24920 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1270_own1270);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24923 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1271_own1271);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24926 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1272_own1272);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24929 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1273_own1273);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24932 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1274_own1274);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24935 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1275_own1275);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24938 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1276_own1276);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24941 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1277_own1277);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24944 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1278_own1278);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24947 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1279_own1279);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24950 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1280_own1280);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24953 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1281_own1281);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24956 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1282_own1282);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24959 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1283_own1283);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24962 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1284_own1284);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24965 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1285_own1285);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24968 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1286_own1286);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24971 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1287_own1287);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24974 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1288_own1288);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24977 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1289_own1289);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24980 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1290_own1290);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24983 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1291_own1291);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24986 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1292_own1292);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24989 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1293_own1293);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24992 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1294_own1294);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24995 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1295_own1295);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 24998 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1296_own1296);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25001 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1297_own1297);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25004 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1298_own1298);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25007 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1299_own1299);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25010 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1300_own1300);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25013 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1301_own1301);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25016 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1302_own1302);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25019 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1303_own1303);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25022 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1304_own1304);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25025 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1305_own1305);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25028 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1306_own1306);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25031 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1307_own1307);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25034 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1308_own1308);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25037 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1309_own1309);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25040 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1310_own1310);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25043 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1311_own1311);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25046 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1312_own1312);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25049 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1313_own1313);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25052 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1314_own1314);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25055 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1315_own1315);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25058 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1316_own1316);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25061 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1317_own1317);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25064 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1318_own1318);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25067 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1319_own1319);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25070 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1320_own1320);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25073 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1321_own1321);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25076 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1322_own1322);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25079 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1323_own1323);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25082 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1324_own1324);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25085 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1325_own1325);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25088 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1326_own1326);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25091 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1327_own1327);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25094 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1328_own1328);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25097 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1329_own1329);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25100 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1330_own1330);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25103 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1331_own1331);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25106 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1332_own1332);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25109 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1333_own1333);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25112 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1334_own1334);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25115 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1335_own1335);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25118 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1336_own1336);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25121 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1337_own1337);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25124 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1338_own1338);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25127 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1339_own1339);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25130 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1340_own1340);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25133 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1341_own1341);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25136 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1342_own1342);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25139 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1343_own1343);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25142 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1344_own1344);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25145 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1345_own1345);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25148 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1346_own1346);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25151 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1347_own1347);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25154 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1348_own1348);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25157 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1349_own1349);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25160 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1350_own1350);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25163 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1351_own1351);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25166 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1352_own1352);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25169 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1353_own1353);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25172 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1354_own1354);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25175 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1355_own1355);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25178 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1356_own1356);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25181 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1357_own1357);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25184 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1358_own1358);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25187 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1359_own1359);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25190 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1360_own1360);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25193 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1361_own1361);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25196 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1362_own1362);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25199 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1363_own1363);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25202 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1364_own1364);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25205 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1365_own1365);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25208 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1366_own1366);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25211 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1367_own1367);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25214 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1368_own1368);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25217 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1369_own1369);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25220 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1370_own1370);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25223 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1371_own1371);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25226 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1372_own1372);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25229 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1373_own1373);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25232 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1374_own1374);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25235 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1375_own1375);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25238 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1376_own1376);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25241 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1377_own1377);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25244 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1378_own1378);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25247 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1379_own1379);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25250 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1380_own1380);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25253 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1381_own1381);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25256 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1382_own1382);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25259 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1383_own1383);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25262 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1384_own1384);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25265 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1385_own1385);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25268 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1386_own1386);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25271 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1387_own1387);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25274 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1388_own1388);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25277 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1389_own1389);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25280 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1390_own1390);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25283 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1391_own1391);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25286 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1392_own1392);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25289 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1393_own1393);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25292 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1394_own1394);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25295 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1395_own1395);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25298 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1396_own1396);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25301 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1397_own1397);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25304 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1398_own1398);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25307 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1399_own1399);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25310 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1400_own1400);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25313 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1401_own1401);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25316 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1402_own1402);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25319 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1403_own1403);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25322 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1404_own1404);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25325 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1405_own1405);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25328 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1406_own1406);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25331 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1407_own1407);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25334 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1408_own1408);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25337 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1409_own1409);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25340 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1410_own1410);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25343 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1411_own1411);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25346 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1412_own1412);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25349 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1413_own1413);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25352 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1414_own1414);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25355 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1415_own1415);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25358 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1416_own1416);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25361 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1417_own1417);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25364 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1418_own1418);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25367 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1419_own1419);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25370 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1420_own1420);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25373 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1421_own1421);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25376 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1422_own1422);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25379 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1423_own1423);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25382 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1424_own1424);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25385 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1425_own1425);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25388 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1426_own1426);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25391 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1427_own1427);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25394 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1428_own1428);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25397 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1429_own1429);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25400 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1430_own1430);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25403 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1431_own1431);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25406 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1432_own1432);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25409 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1433_own1433);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25412 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1434_own1434);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25415 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1435_own1435);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25418 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1436_own1436);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25421 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1437_own1437);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25424 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1438_own1438);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25427 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1439_own1439);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25430 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1440_own1440);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25433 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1441_own1441);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25436 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1442_own1442);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25439 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1443_own1443);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25442 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1444_own1444);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25445 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1445_own1445);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25448 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1446_own1446);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25451 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1447_own1447);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25454 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1448_own1448);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25457 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1449_own1449);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25460 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1450_own1450);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25463 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1451_own1451);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25466 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1452_own1452);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25469 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1453_own1453);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25472 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1454_own1454);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25475 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1455_own1455);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25478 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1456_own1456);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25481 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1457_own1457);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25484 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1458_own1458);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25487 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1459_own1459);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25490 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1460_own1460);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25493 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1461_own1461);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25496 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1462_own1462);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25499 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1463_own1463);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25502 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1464_own1464);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25505 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1465_own1465);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25508 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1466_own1466);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25511 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1467_own1467);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25514 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1468_own1468);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25517 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1469_own1469);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25520 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1470_own1470);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25523 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1471_own1471);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25526 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1472_own1472);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25529 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1473_own1473);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25532 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1474_own1474);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25535 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1475_own1475);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25538 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1476_own1476);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25541 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1477_own1477);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25544 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1478_own1478);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25547 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1479_own1479);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25550 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1480_own1480);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25553 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1481_own1481);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25556 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1482_own1482);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25559 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1483_own1483);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25562 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1484_own1484);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25565 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1485_own1485);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25568 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1486_own1486);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25571 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1487_own1487);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25574 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1488_own1488);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25577 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1489_own1489);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25580 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1490_own1490);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25583 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1491_own1491);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25586 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1492_own1492);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25589 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1493_own1493);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25592 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1494_own1494);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25595 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1495_own1495);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25598 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1496_own1496);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25601 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1497_own1497);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25604 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1498_own1498);
-#line 18 "tests/golden/run/fixedbugs-218-a-str-of-1500-pieces-builds-and-runs.hero"
-#line 25607 "fixedbugs218astrof1500piecesbuildsandruns.c"
     hero_str_decref(h1499_own1499);
     return;
 }

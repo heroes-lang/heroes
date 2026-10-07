@@ -78,17 +78,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fficonstant_sqrt(double a0) { (void)(sqrt)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fficonstant.c"
+#line 89 "fficonstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -107,25 +104,25 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 111 "fficonstant.c"
+#line 108 "fficonstant.c"
     return M_PI;
 }
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 117 "fficonstant.c"
+#line 114 "fficonstant.c"
     return SEEK_SET;
 }
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 123 "fficonstant.c"
+#line 120 "fficonstant.c"
     return SEEK_END;
 }
 
 #line 52 "tests/golden/run/ffi-constant.hero"
 void h_fficonstant_main(void) {
-#line 129 "fficonstant.c"
+#line 126 "fficonstant.c"
     double t1;
     double t2;
     double t3;
@@ -143,7 +140,6 @@ bb0:
     hero_print_f64(t1);
 #line 54 "tests/golden/run/ffi-constant.hero"
     hero_print_end();
-#line 55 "tests/golden/run/ffi-constant.hero"
     t2 = h_fficonstant_M_PI();
 #line 55 "tests/golden/run/ffi-constant.hero"
     t3 = h_fficonstant_M_PI();
@@ -161,7 +157,6 @@ bb0:
     hero_print_int(t6);
 #line 58 "tests/golden/run/ffi-constant.hero"
     hero_print_end();
-#line 59 "tests/golden/run/ffi-constant.hero"
     t7 = h_fficonstant_SEEK_END();
 #line 59 "tests/golden/run/ffi-constant.hero"
     t8 = h_fficonstant_SEEK_SET();
@@ -173,7 +168,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 177 "fficonstant.c"
+#line 172 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

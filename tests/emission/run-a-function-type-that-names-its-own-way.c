@@ -71,17 +71,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 85 "afunctiontypethatnamesitsownway.c"
+#line 82 "afunctiontypethatnamesitsownway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -99,7 +96,7 @@ HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at);
 
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_relay(h_0fn_573f54ce h0_f) {
-#line 103 "afunctiontypethatnamesitsownway.c"
+#line 100 "afunctiontypethatnamesitsownway.c"
     HeroStr h1_own1 = {0};
     h_0fn_573f54ce t1;
     HeroStr t2;
@@ -120,20 +117,16 @@ bb0:
     t5 = h1_own1;
 #line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h1_own1 = t4;
-#line 124 "afunctiontypethatnamesitsownway.c"
+#line 121 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t5);
-#line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-#line 127 "afunctiontypethatnamesitsownway.c"
     hero_str_incref(t4);
-#line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-#line 130 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(h1_own1);
     return t4;
 }
 
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 void h_afunctiontypethatnamesitsownway_main(void) {
-#line 137 "afunctiontypethatnamesitsownway.c"
+#line 130 "afunctiontypethatnamesitsownway.c"
     HeroStr h0_own0 = {0};
     h_0fn_1fb9aa18 t1;
     HeroStr t2;
@@ -148,20 +141,20 @@ bb0:
     t3 = h0_own0;
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h0_own0 = t2;
-#line 152 "afunctiontypethatnamesitsownway.c"
+#line 145 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t3);
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_print_str(t2);
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_print_end();
-#line 158 "afunctiontypethatnamesitsownway.c"
+#line 151 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(h0_own0);
     return;
 }
 
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at) {
-#line 165 "afunctiontypethatnamesitsownway.c"
+#line 158 "afunctiontypethatnamesitsownway.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -186,7 +179,7 @@ bb0:
     t7 = h2_own2;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h2_own2 = t3;
-#line 190 "afunctiontypethatnamesitsownway.c"
+#line 183 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t7);
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     t4 = h1_at;
@@ -196,7 +189,7 @@ bb0:
     t8 = h3_own3;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h3_own3 = t5;
-#line 200 "afunctiontypethatnamesitsownway.c"
+#line 193 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t8);
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     t6 = hero_str_concat(t3, t5);
@@ -204,19 +197,11 @@ bb0:
     t9 = h4_own4;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h4_own4 = t6;
-#line 208 "afunctiontypethatnamesitsownway.c"
+#line 201 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t9);
-#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-#line 211 "afunctiontypethatnamesitsownway.c"
     hero_str_incref(t6);
-#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-#line 214 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(h2_own2);
-#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-#line 217 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(h3_own3);
-#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-#line 220 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(h4_own4);
     return t6;
 }

@@ -13,9 +13,8 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
 _Static_assert(__builtin_classify_type(((UAS *)0)->kind) == 1 && sizeof(((UAS *)0)->kind) == sizeof(int32_t) && (_Generic(((UAS *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UAS kind");
-#line 14 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
 _Static_assert(__builtin_classify_type(((UAS *)0)->q) == 1 && sizeof(((UAS *)0)->q) == sizeof(int64_t) && (_Generic(((UAS *)0)->q, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UAS q");
-#line 19 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
+#line 18 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -76,17 +75,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
+#line 86 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_UAS_eq(const UAS *a, const UAS *b);
@@ -104,7 +100,7 @@ void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
 void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void) {
-#line 108 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
+#line 104 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
     UAS t1;
     int64_t t2;
     goto bb0;
@@ -119,7 +115,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
     return;
-#line 123 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
+#line 119 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_UAS_eq(const UAS *a, const UAS *b) {
     if (!(a->kind == b->kind)) return false;

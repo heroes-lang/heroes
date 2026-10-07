@@ -68,17 +68,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugsalibraryfunctionasavalue.c"
+#line 79 "fixedbugsalibraryfunctionasavalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +95,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 16 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 int64_t h_fixedbugsalibraryfunctionasavalue_call_it(h_0fn_60b7da88 h0_f) {
-#line 102 "fixedbugsalibraryfunctionasavalue.c"
+#line 99 "fixedbugsalibraryfunctionasavalue.c"
     HeroArrayHeader * h1_own1 = {0};
     h_0fn_60b7da88 t1;
     int64_t t2;
@@ -120,18 +117,18 @@ bb0:
     t6 = h1_own1;
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     h1_own1 = t4;
-#line 124 "fixedbugsalibraryfunctionasavalue.c"
+#line 121 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t6);
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 128 "fixedbugsalibraryfunctionasavalue.c"
+#line 125 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(h1_own1);
     return t5;
 }
 
 #line 19 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 int64_t h_fixedbugsalibraryfunctionasavalue_pick(h_0fn_48ac9712 h0_f, int64_t h1_n) {
-#line 135 "fixedbugsalibraryfunctionasavalue.c"
+#line 132 "fixedbugsalibraryfunctionasavalue.c"
     h_0fn_48ac9712 t1;
     int64_t t2;
     int64_t t3;
@@ -145,12 +142,12 @@ bb0:
     t3 = t1(t2);
 #line 20 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     return t3;
-#line 149 "fixedbugsalibraryfunctionasavalue.c"
+#line 146 "fixedbugsalibraryfunctionasavalue.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 void h_fixedbugsalibraryfunctionasavalue_main(void) {
-#line 154 "fixedbugsalibraryfunctionasavalue.c"
+#line 151 "fixedbugsalibraryfunctionasavalue.c"
     h_0fn_60b7da88 t1;
     int64_t t2;
     h_0fn_48ac9712 t3;
@@ -166,7 +163,6 @@ bb0:
     hero_print_int(t2);
 #line 23 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t3 = h_fixedbugsalibraryfunctionasavalue_twice;
 #line 24 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t4 = INT64_C(21);
@@ -178,12 +174,12 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     return;
-#line 182 "fixedbugsalibraryfunctionasavalue.c"
+#line 178 "fixedbugsalibraryfunctionasavalue.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
 int64_t h_fixedbugsalibraryfunctionasavalue_twice(int64_t h0_n) {
-#line 187 "fixedbugsalibraryfunctionasavalue.c"
+#line 183 "fixedbugsalibraryfunctionasavalue.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -197,12 +193,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 27 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     return t3;
-#line 201 "fixedbugsalibraryfunctionasavalue.c"
+#line 197 "fixedbugsalibraryfunctionasavalue.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 206 "fixedbugsalibraryfunctionasavalue.c"
+#line 202 "fixedbugsalibraryfunctionasavalue.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -226,15 +222,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 230 "fixedbugsalibraryfunctionasavalue.c"
+#line 226 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 234 "fixedbugsalibraryfunctionasavalue.c"
+#line 230 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 238 "fixedbugsalibraryfunctionasavalue.c"
+#line 234 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -244,7 +240,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -254,11 +249,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -270,15 +263,10 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 276 "fixedbugsalibraryfunctionasavalue.c"
+#line 268 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 279 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 282 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_decref(h4_own4);
     return t12;
 }

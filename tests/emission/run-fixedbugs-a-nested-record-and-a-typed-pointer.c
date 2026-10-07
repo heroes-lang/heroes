@@ -14,39 +14,26 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 36 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->id) == 1 && sizeof(((Texture *)0)->id) == sizeof(uint32_t) && (_Generic(((Texture *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Texture id");
-#line 37 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->width) == 1 && sizeof(((Texture *)0)->width) == sizeof(int32_t) && (_Generic(((Texture *)0)->width, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Texture width");
-#line 38 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->height) == 1 && sizeof(((Texture *)0)->height) == sizeof(int32_t) && (_Generic(((Texture *)0)->height, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Texture height");
-#line 39 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->mipmaps) == 1 && sizeof(((Texture *)0)->mipmaps) == sizeof(int32_t) && (_Generic(((Texture *)0)->mipmaps, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Texture mipmaps");
-#line 40 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Texture *)0)->format) == 1 && sizeof(((Texture *)0)->format) == sizeof(int32_t) && (_Generic(((Texture *)0)->format, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Texture format");
 #line 42 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Font *)0)->baseSize) == 1 && sizeof(((Font *)0)->baseSize) == sizeof(int32_t) && (_Generic(((Font *)0)->baseSize, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Font baseSize");
-#line 43 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Font *)0)->glyphCount) == 1 && sizeof(((Font *)0)->glyphCount) == sizeof(int32_t) && (_Generic(((Font *)0)->glyphCount, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Font glyphCount");
-#line 44 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Font *)0)->glyphPadding) == 1 && sizeof(((Font *)0)->glyphPadding) == sizeof(int32_t) && (_Generic(((Font *)0)->glyphPadding, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Font glyphPadding");
-#line 45 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Font *)0)->texture, Texture *: 1, default: 0) && sizeof(((Font *)0)->texture) == sizeof(Texture), "heroes-ffi-field Font texture");
-#line 46 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Font *)0)->recs) == 5 && _Generic(((Font *)0)->recs, __typeof__(((Font *)0)->recs): 1, default: 0) && sizeof(((Font *)0)->recs) == sizeof(void *), "heroes-ffi-field Font recs");
-#line 47 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(((Font *)0)->glyphs) == 5 && _Generic(((Font *)0)->glyphs, __typeof__(((Font *)0)->glyphs): 1, default: 0) && sizeof(((Font *)0)->glyphs) == sizeof(void *), "heroes-ffi-field Font glyphs");
 #line 49 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Vector2 *)0)->x, float *: 1, default: 0) && sizeof(((Vector2 *)0)->x) == sizeof(float), "heroes-ffi-field Vector2 x");
-#line 50 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Vector2 *)0)->y, float *: 1, default: 0) && sizeof(((Vector2 *)0)->y) == sizeof(float), "heroes-ffi-field Vector2 y");
 #line 52 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Camera2D *)0)->offset, Vector2 *: 1, default: 0) && sizeof(((Camera2D *)0)->offset) == sizeof(Vector2), "heroes-ffi-field Camera2D offset");
-#line 53 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Camera2D *)0)->target, Vector2 *: 1, default: 0) && sizeof(((Camera2D *)0)->target) == sizeof(Vector2), "heroes-ffi-field Camera2D target");
-#line 54 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Camera2D *)0)->rotation, float *: 1, default: 0) && sizeof(((Camera2D *)0)->rotation) == sizeof(float), "heroes-ffi-field Camera2D rotation");
-#line 55 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(_Generic(&((Camera2D *)0)->zoom, float *: 1, default: 0) && sizeof(((Camera2D *)0)->zoom) == sizeof(float), "heroes-ffi-field Camera2D zoom");
-#line 50 "fixedbugsanestedrecordandatypedpointer.c"
+#line 37 "fixedbugsanestedrecordandatypedpointer.c"
 
 #line 35 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(*(Texture *)0) != 13, "heroes-ffi-union Texture id width height mipmaps format");
@@ -56,7 +43,7 @@ _Static_assert(__builtin_classify_type(*(Font *)0) != 13, "heroes-ffi-union Font
 _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union Vector2 x y");
 #line 51 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(*(Camera2D *)0) != 13, "heroes-ffi-union Camera2D offset target rotation zoom");
-#line 60 "fixedbugsanestedrecordandatypedpointer.c"
+#line 47 "fixedbugsanestedrecordandatypedpointer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -120,21 +107,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 56 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanestedrecordandatypedpointer_IsFontValid(Font a0) { (void)(IsFontValid)(a0); }
-#line 57 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanestedrecordandatypedpointer_GetWorldToScreen2D(Vector2 a0, Camera2D a1) { (void)(GetWorldToScreen2D)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugsanestedrecordandatypedpointer.c"
+#line 121 "fixedbugsanestedrecordandatypedpointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b);
@@ -158,7 +141,7 @@ void h_fixedbugsanestedrecordandatypedpointer_main(void);
 
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
-#line 162 "fixedbugsanestedrecordandatypedpointer.c"
+#line 145 "fixedbugsanestedrecordandatypedpointer.c"
     Camera2D h0_c;
     Vector2 h1_p;
     Font h2_empty;
@@ -202,15 +185,12 @@ bb0:
     t2 = 0x0p+0;
 #line 63 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t3 = (Vector2){.x = t1, .y = t2};
-#line 64 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t4 = 0x0p+0;
 #line 64 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t5 = 0x0p+0;
 #line 64 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t6 = (Vector2){.x = t4, .y = t5};
-#line 65 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t7 = 0x0p+0;
-#line 66 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t8 = 0x1p+0;
 #line 62 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t9 = (Camera2D){.offset = t3, .target = t6, .rotation = t7, .zoom = t8};
@@ -228,7 +208,6 @@ bb0:
     t14 = GetWorldToScreen2D(t12, t13);
 #line 68 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     h1_p = t14;
-#line 69 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t15 = h1_p;
 #line 69 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t16 = t15.x;
@@ -236,7 +215,6 @@ bb0:
     hero_print_f32(t16);
 #line 69 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     hero_print_end();
-#line 70 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t17 = h1_p;
 #line 70 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t18 = t17.y;
@@ -246,11 +224,8 @@ bb0:
     hero_print_end();
 #line 76 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t19 = INT64_C(0);
-#line 77 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t20 = INT64_C(0);
-#line 78 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t21 = INT64_C(0);
-#line 79 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t22 = UINT64_C(0);
 #line 79 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t23 = INT64_C(0);
@@ -262,9 +237,7 @@ bb0:
     t26 = INT64_C(0);
 #line 79 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t27 = (Texture){.id = t22, .width = t23, .height = t24, .mipmaps = t25, .format = t26};
-#line 80 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t28 = ((void *)0);
-#line 81 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t29 = ((void *)0);
 #line 75 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t30 = (Font){.baseSize = t19, .glyphCount = t20, .glyphPadding = t21, .texture = t27, .recs = t28, .glyphs = t29};
@@ -280,7 +253,7 @@ bb0:
     hero_print_end();
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     return;
-#line 284 "fixedbugsanestedrecordandatypedpointer.c"
+#line 257 "fixedbugsanestedrecordandatypedpointer.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
     if (!(a->id == b->id)) return false;

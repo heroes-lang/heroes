@@ -35,6 +35,7 @@ use emit/construct
 use emit/container
 use emit/aggregate
 use emit/places
+use emit/term
 use emit/unread
 use emit/writer
 use token
@@ -57,7 +58,13 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
 
     if is_copy_out
         return
-    writer.at_span(@w, s, offset: inst.span.start)
+
+    # A merged exit's load and what follows it are the generated file's
+    # (defect 335, `term.loads_return_slot`).
+    if term.loads_return_slot(f, op: inst.op)
+        writer.at_generated(@w)
+    else
+        writer.at_span(@w, s, offset: inst.span.start)
 
     # A temporary nobody reads gets no declaration and no assignment,
     # for the ops where that is safe.

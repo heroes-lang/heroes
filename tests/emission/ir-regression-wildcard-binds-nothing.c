@@ -82,17 +82,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "regressionwildcardbindsnothing.c"
+#line 93 "regressionwildcardbindsnothing.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_regressionwildcardbindsnothing_Token_c_num_eq(const h_regressionwildcardbindsnothing_Token_c_num *a, const h_regressionwildcardbindsnothing_Token_c_num *b);
@@ -113,7 +110,7 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs);
 
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_kind_of(h_regressionwildcardbindsnothing_Token h0_t) {
-#line 117 "regressionwildcardbindsnothing.c"
+#line 114 "regressionwildcardbindsnothing.c"
     h_regressionwildcardbindsnothing_Token h1_s0;
     int64_t h2_r0;
     h_regressionwildcardbindsnothing_Token t1;
@@ -150,7 +147,6 @@ bb1:
     return t6;
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb2:
-#line 15 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t4 = INT64_C(0);
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_r0 = t4;
@@ -164,12 +160,12 @@ bb3:
     h2_r0 = t5;
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb1;
-#line 168 "regressionwildcardbindsnothing.c"
+#line 164 "regressionwildcardbindsnothing.c"
 }
 
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
-#line 173 "regressionwildcardbindsnothing.c"
+#line 169 "regressionwildcardbindsnothing.c"
     int64_t h1_n;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -198,11 +194,11 @@ bb0:
     t2 = h0_xs;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
-#line 202 "regressionwildcardbindsnothing.c"
+#line 198 "regressionwildcardbindsnothing.c"
     hero_array_incref(t2);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
-#line 206 "regressionwildcardbindsnothing.c"
+#line 202 "regressionwildcardbindsnothing.c"
     hero_array_decref(t15);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);
@@ -224,7 +220,6 @@ bb1:
     if (t7) goto bb2; else goto bb4;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb2:
-#line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t8 = h1_n;
 #line 22 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t9 = INT64_C(1);
@@ -250,7 +245,7 @@ bb3:
 bb4:
 #line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t14 = h1_n;
-#line 254 "regressionwildcardbindsnothing.c"
+#line 249 "regressionwildcardbindsnothing.c"
     hero_array_decref(h2_xs0);
     return t14;
 }

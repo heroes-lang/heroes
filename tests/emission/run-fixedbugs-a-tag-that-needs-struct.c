@@ -76,29 +76,21 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 31 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_open(int64_t a0) { (void)(probe_open)(a0); }
-#line 32 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_value(struct probe * a0) { (void)(probe_value)(a0); }
-#line 33 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_probe_close(struct probe * a0) { (void)(probe_close)(a0); }
-#line 34 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_open(int64_t a0) { (void)(gauge_open)(a0); }
-#line 35 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_read(struct gauge * a0) { (void)(gauge_read)(a0); }
-#line 36 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruct_gauge_close(struct gauge * a0) { (void)(gauge_close)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugsatagthatneedsstruct.c"
+#line 94 "fixedbugsatagthatneedsstruct.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b);
@@ -118,7 +110,7 @@ void h_fixedbugsatagthatneedsstruct_main(void);
 
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 void h_fixedbugsatagthatneedsstruct_main(void) {
-#line 122 "fixedbugsatagthatneedsstruct.c"
+#line 114 "fixedbugsatagthatneedsstruct.c"
     struct probe * h0_p;
     struct gauge * h1_g;
     int64_t t1;
@@ -142,7 +134,6 @@ bb0:
     hero_handle_acquired(t2, "probe_close");
 #line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     h0_p = t2;
-#line 40 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t3 = INT64_C(35);
 #line 40 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t4 = gauge_open(t3);
@@ -150,7 +141,6 @@ bb0:
     hero_handle_acquired(t4, "gauge_close");
 #line 40 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     h1_g = t4;
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t5 = h0_p;
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     hero_handle_alive(t5, "the argument `p` of `probe_value`");
@@ -168,7 +158,6 @@ bb0:
     hero_print_int(t9);
 #line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     hero_print_end();
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t10 = h0_p;
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     {
@@ -182,7 +171,6 @@ bb0:
     if (hero_handle_ended(t10, hero_life_0_0) && h0_p == t10) h0_p = hero_handle_dead();
 #line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     }
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t11 = h1_g;
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     {
@@ -198,7 +186,7 @@ bb0:
     }
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
-#line 202 "fixedbugsatagthatneedsstruct.c"
+#line 190 "fixedbugsatagthatneedsstruct.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
     return hero_handle_eq(*a, *b);

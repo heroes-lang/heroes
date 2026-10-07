@@ -73,21 +73,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 22 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbindable_getaddrinfo(const char * a0, void * a1, void * a2, struct addrinfo * * a3) { (void)(getaddrinfo)(a0, a1, a2, a3); }
-#line 23 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbindable_freeaddrinfo(struct addrinfo * a0) { (void)(freeaddrinfo)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugsgetaddrinfoisbindable.c"
+#line 87 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -105,7 +101,7 @@ void h_fixedbugsgetaddrinfoisbindable_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 void h_fixedbugsgetaddrinfoisbindable_main(void) {
-#line 109 "fixedbugsgetaddrinfoisbindable.c"
+#line 105 "fixedbugsgetaddrinfoisbindable.c"
     struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res");
 #define h0_res (*hero_lend_h0_res)
     int32_t h1_rc;
@@ -123,7 +119,6 @@ bb0:
     t1 = ((void *)0);
 #line 26 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     h0_res = t1;
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t2 = HERO_STR_LIT(hero_str_69fd5e8e);
 #line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t3 = hero_str_lend(t2);
@@ -139,13 +134,11 @@ bb0:
     hero_handle_acquired(h0_res, "freeaddrinfo");
 #line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     h1_rc = t6;
-#line 28 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t7 = h1_rc;
 #line 28 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     hero_print_int(t7);
 #line 28 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t8 = h0_res;
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     {
@@ -163,7 +156,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_res);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
-#line 167 "fixedbugsgetaddrinfoisbindable.c"
+#line 160 "fixedbugsgetaddrinfoisbindable.c"
 }
 #undef h0_res
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {

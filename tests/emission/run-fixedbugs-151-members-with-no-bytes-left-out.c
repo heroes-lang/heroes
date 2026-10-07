@@ -74,17 +74,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugs151memberswithnobytesleftout.c"
+#line 85 "fixedbugs151memberswithnobytesleftout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_ZE_eq(const ZE *a, const ZE *b);
@@ -102,7 +99,7 @@ void h_fixedbugs151memberswithnobytesleftout_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 void h_fixedbugs151memberswithnobytesleftout_main(void) {
-#line 106 "fixedbugs151memberswithnobytesleftout.c"
+#line 103 "fixedbugs151memberswithnobytesleftout.c"
     ZE t1;
     int32_t t2;
     goto bb0;
@@ -117,7 +114,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     return;
-#line 121 "fixedbugs151memberswithnobytesleftout.c"
+#line 118 "fixedbugs151memberswithnobytesleftout.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_ZE_eq(const ZE *a, const ZE *b) {
     if (!(a->x == b->x)) return false;
