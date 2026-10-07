@@ -66,11 +66,13 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 import ceiling
 import marks
 import trees
 
+STARTED = time.monotonic()
 LAYER = "(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
 
 
@@ -221,6 +223,18 @@ def main():
         over = ceiling.verdict(place.tree, place.rel)
         if over is not None:
             print(over, file=sys.stderr)
+            return 2
+
+    # 3b. A module's growths and appends, asked of `layout` narrowed to it
+    #     where a line might be one (defect 215, `ceiling.might_grow`), within
+    #     what the hook's minute leaves after the checks above.
+    if place.under("selfhost/") and place.rel.endswith(".hero") and ceiling.might_grow(on_disk.decode("utf-8", errors="replace"), ceiling.slow_appends(place.tree)):
+        rows = ceiling.layout_rows(compiler, place.tree, place.rel, max(5.0, marks.LIMIT - (time.monotonic() - STARTED)))
+        if rows:
+            print(
+                place.shown + " is refused by the `layout` suite narrowed to it:\n" + "\n".join(rows) + "\n" + LAYER,
+                file=sys.stderr,
+            )
             return 2
 
     # 4. A golden case's marks against its expectation.
