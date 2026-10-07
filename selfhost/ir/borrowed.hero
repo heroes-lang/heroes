@@ -55,8 +55,12 @@ record Borrows
 # is the checker's table by type: a load of a type nothing counts holds no
 # header to lose.
 function lenders(f: containers.Function, counted: [bool]) -> {i64: bool}
+    return lenders_of(f, borrows(f, counted: counted))
+
+# The same, over the borrows already read: the ownership pass reads them once
+# and asks this and `ir/held.hero`'s holds of them (panel 196's R1).
+function lenders_of(f: containers.Function, b: Borrows) -> {i64: bool}
     lent: {i64: bool} @ {}
-    b = borrows(f, counted: counted)
 
     if b.value.len() == 0
         return lent

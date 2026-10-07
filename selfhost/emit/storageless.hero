@@ -22,6 +22,7 @@ use ir
 use ir/containers
 use emit/mangle
 use emit/aggregate
+use emit/places
 use token
 use parse
 use resolve
@@ -98,16 +99,6 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 
     return fail(code: "none", msg: "no instruction produces this value")
 
-# One element of a fixed array, as the C lvalue `base[guarded index]`, and the
-# ONE spelling of its bound check: `element` below reads through it and
-# `container.write_element` writes through it, so a read and a write of `n.a[i]`
-# cannot disagree about the bound or the message (defect 097, whose write had no
-# spelling at all and died at run time as a compiler bug). Guarded HERE (panel
-# 062) because -Warray-bounds was measured not to fire on an opaque index, and
-# unsigned so one test catches both ends.
-function subscript(base: str, index: str, length: i64) -> str
-    return base + "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + index + "))]"
-
 # `v.params[i]`, the read, for a base that is a fixed array; anything else is
 # the caller's, which is a `[T]` read through the runtime.
 #
@@ -138,7 +129,10 @@ function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
 
     if !rendered.is_err()
         base_text @ rendered.must()
-    return ok(subscript(base: base_text, index: mangle.value(index), length: length))
+
+    # The bound is checked by the one spelling a read, a write and a lend of
+    # `n.a[i]` share, `places.subscript` (defect 097; panel 196's R1).
+    return ok(places.subscript(base: base_text, index: mangle.value(index), length: length))
 
 ## Tests
 

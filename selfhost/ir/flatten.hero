@@ -593,11 +593,11 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
     return build.emit(@b, op: .missing, ty: ty, span: span)
 
 # Lowers the written arguments, left to right. `@x` at the call site
-# becomes a PLACE, not a value: the callee copies in and copies out, so
-# it needs to know where to write back (§4.8). The label is dropped
-# here — it was checked against the parameter at this position and
-# carries no further meaning. A place that runs through an index is
-# handed over as a temporary, and the store back is what `after` owes.
+# becomes a PLACE, not a value, and the callee is handed that place itself,
+# an element's included (§4.8; panel 196's R1, `ir/inout.hero`). The label
+# is dropped here — it was checked against the parameter at this position
+# and carries no further meaning. A parameter marked `owned <freer>` is
+# handed a cell instead, and its release is what `after` owes.
 function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg], callee: i64?) -> inout.Args
     lowered_args: [ir.Arg] @ []
     after: [inout.WriteBack] @ []
@@ -607,7 +607,7 @@ function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(
-                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, callee: callee, at: at, after: @after)
+                inout.argument(@b, c, decls, span: a.exprs[arg.value].span, spot: spot, callee: callee, at: at, after: @after)
             )
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
@@ -634,7 +634,7 @@ function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
         if arg.mutable
             spot = place(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(
-                inout.argument(@b, a, r, c, s, decls, id: arg.value, spot: spot, callee: callee, at: at, after: @after)
+                inout.argument(@b, c, decls, span: a.exprs[arg.value].span, spot: spot, callee: callee, at: at, after: @after)
             )
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)

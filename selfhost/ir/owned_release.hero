@@ -264,8 +264,6 @@ function release_cells(@b: build.Lowering, c: state.Checked, s: source.Source, d
         return
 
     for owed in handed.after
-        if !owed.owned
-            continue
         mark = parameter_mark(decls, at: at, index: owed.at)
 
         if mark.is_err()

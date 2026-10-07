@@ -350,9 +350,10 @@ wider than C's. A **parameter** and a **field** are declared at the header's own
 width and sign — `i32` where C says int, `i8` where it says char, `u64` where it
 says `size_t` — and one that
 disagrees is refused, except a parameter C converts exactly (`i16` against int)
-and what a `ptr` points at. A C out-parameter is an `@` parameter, and what it
-points at is held to the same width and sign — `@n: u64` where it says
-`size_t *`:
+and what a `ptr` points at. A C out-parameter is an `@` parameter, and C receives
+the place itself, which it may keep only while the place does not move: a copy,
+a return and an array's growth move it. What it points at is held to the same
+width and sign — `@n: u64` where it says `size_t *`:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64

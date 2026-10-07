@@ -1,0 +1,75 @@
+# fixedbugs, defect 413, lane b13-land-addr, 2026-10-07: a record lent to C
+# through `@` is handed as its place's own address, wherever the place is
+# (panel 196's R1). The header (`fixedbugs-413-keepers.h`) is the shape of
+# zlib's stream and libuv's handle on every platform: `keep_init` records the
+# address it is handed, and `keep_use` refuses with -2 any record that is not
+# the one it initialised, so each row reads `0 0` only where both calls were
+# handed one place.
+#
+# Until R1 two of the four spellings of that place handed C something else:
+# an array's element was read into a temporary and stored back after the
+# call, and a Heroes function's own `@` parameter was copied into the
+# callee's frame and back, so every row below through an element or through
+# `start` read `0 -2`. The rows: a local; an element; a field of an element;
+# an element of a group's fixed array; a field of a group's record; a Heroes
+# function's `@` parameter; the same handed an element; that parameter
+# passed on to another `@` parameter; recursion through one; every element
+# of an array lent by a variable index inside a function that holds the
+# array through `@`. The last row is the program's obligation, which § 13
+# states: a copy moves the place, and C, keeping the old address, refuses the
+# copy.
+extern "fixedbugs-413-keepers.h"
+    record Keeper tag keeper
+        self: ptr
+        uses: i64
+    record Wrap tag wrap
+        before: i64
+        k: Keeper
+    record Pair tag pair
+        k: Keeper[2]
+        after: i64
+    function keep_init(@k: Keeper) -> i32
+    function keep_use(@k: Keeper) -> i32
+
+function start(@k: Keeper) -> i32
+    return keep_init(@k)
+
+function passed_on(@k: Keeper) -> i32
+    return start(@k)
+
+function deep(@k: Keeper, n: i64) -> i32
+    if n == 0
+        return keep_init(@k)
+    return deep(@k, n: n - 1)
+
+function every_one(@ks: [Keeper]) -> i64
+    refused: i64 @ 0
+
+    for i in range(from: 0, to: ks.len())
+        if keep_init(@ks[i]) != 0
+            refused @ refused + 1
+
+    return refused
+
+function main()
+    k: Keeper @ Keeper(rest: zero)
+    print(keep_init(@k), " ", keep_use(@k))
+    ks: [Keeper] @ [Keeper(rest: zero), Keeper(rest: zero), Keeper(rest: zero)]
+    print(keep_init(@ks[1]), " ", keep_use(@ks[1]))
+    ws: [Wrap] @ [Wrap(before: 1, k: Keeper(rest: zero)), Wrap(before: 2, k: Keeper(rest: zero))]
+    print(keep_init(@ws[1].k), " ", keep_use(@ws[1].k))
+    p: Pair @ Pair(rest: zero)
+    print(keep_init(@p.k[1]), " ", keep_use(@p.k[1]))
+    w: Wrap @ Wrap(before: 3, k: Keeper(rest: zero))
+    print(keep_init(@w.k), " ", keep_use(@w.k))
+    a: Keeper @ Keeper(rest: zero)
+    print(start(@a), " ", keep_use(@a))
+    print(start(@ks[2]), " ", keep_use(@ks[2]))
+    b: Keeper @ Keeper(rest: zero)
+    print(passed_on(@b), " ", keep_use(@b))
+    d: Keeper @ Keeper(rest: zero)
+    print(deep(@d, n: 3), " ", keep_use(@d))
+    print(every_one(@ks), " ", keep_use(@ks[0]), " ", keep_use(@ks[1]), " ", keep_use(@ks[2]))
+    print(ks[1].uses, " ", ws[1].before, " ", ws[1].k.uses, " ", p.after)
+    copy: Keeper @ k
+    print(keep_use(@copy), " ", keep_use(@k))

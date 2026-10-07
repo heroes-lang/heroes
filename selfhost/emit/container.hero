@@ -19,7 +19,7 @@
 #
 # What is NOT here: hero_array_at's bounds check and hero_map_find's
 # NULL are the runtime's. This module only spells the calls. A fixed
-# array's bound is the compiler's, in emit/storageless (defect 097).
+# array's bound is the compiler's, in `places.subscript` (defect 097).
 
 use ast
 use source
@@ -32,6 +32,7 @@ use emit/mangle
 use emit/ctype
 use emit/descriptors
 use emit/aggregate
+use emit/places
 use emit/storageless
 use parse
 use resolve
@@ -147,7 +148,7 @@ function replaced(c: state.Checked, names: ctype.Names, lines: [str], lvalue: st
 # without it beats an emitter that has to remember.
 function write_element(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place, value: i64) -> [str]?
     slot = f.slots[at.root]
-    lvalue: str @ mangle.slot(index: at.root, name: slot.name)
+    lvalue: str @ places.slot_lvalue(f, at.root)
     ty: i64 @ slot.ty
     steps = containers.steps_of(f, at.path)
     lines: [str] @ []
@@ -210,7 +211,7 @@ function write_element(c: state.Checked, names: ctype.Names, s: source.Source, d
                 # `.fixed` as "not a container step", and `n.a[0] @ 9`,
                 # `check` 0, died at run time as a compiler bug.
                 if fixed_len >= 0
-                    lvalue @ storageless.subscript(base: lvalue, index: mangle.value(ix.value), length: fixed_len)
+                    lvalue @ places.subscript(base: lvalue, index: mangle.value(ix.value), length: fixed_len)
                     ty @ element
 
                     if last
