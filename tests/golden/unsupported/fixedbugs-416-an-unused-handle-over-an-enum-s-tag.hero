@@ -1,0 +1,14 @@
+# Defect 416, lane run400, 2026-10-06: the shape beside it, a handle over an
+# enum's tag that nothing uses.
+#
+# SYMPTOM: `heroes test` refused with `ffi_tag_is_a_union`, the tag an
+# `enum`'s, and `build` and `run` exited 0.
+#
+# FIX: the declaring module's unit reaches every group record it declares
+# (`emit/members.hero`'s `group_records`), so every verb tells it.
+
+extern "fixedbugs-400-tags-of-three-kinds.h"
+    record EH tag colour  #~ ffi_tag_is_a_union
+
+function main()
+    print(1)
