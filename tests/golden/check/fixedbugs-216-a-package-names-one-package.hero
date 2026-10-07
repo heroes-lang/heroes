@@ -22,7 +22,7 @@ extern "stdio.h" package "zlib,sqlite3"    #~ unwritable_name
 extern "stdio.h" package "zlib >= 99"    #~ unwritable_name
     function p3() -> i32
 
-extern "stdio.h" package "zlib>=1"    #~ package_comparison
+extern "stdio.h" package "zlib>=1"    #~ unwritable_name
     function p4() -> i32
 
 extern "stdio.h" package "seven.pc"    #~ machine_locked_path
@@ -42,3 +42,8 @@ extern "stdio.h" package "-x"    #~ option_like_name
 
 function main()
     print(p1() + p2() + p3() + p4() + p5() + p6() + p7() + p8() + p9())
+
+# Defect 252, 2026-10-07: `>` stands in no file's name on Windows, Win32 error
+# 123 as `*` measured on the box, so `zlib>=1` above is `unwritable_name`,
+# told before the thesis rule as a `<` is since defect 235; `=` and `!` are
+# still a version's comparison.

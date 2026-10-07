@@ -18,11 +18,15 @@
 # the stem of one the tool builds, `X.lib` from clang's Windows driver
 # (measured with `-###`) and `X.pc`, so the end of their last part is not the
 # end of a file's name, and a `.` or a space there is no reason to refuse.
-# What lld-link and a Windows `pkg-config` do with such names is unrun.
+# What lld-link does with a `>`, a `"`, a `\` and a `/` in such a name was
+# measured on the box on 2026-10-07 (defect 252, `library_unwritable`); a
+# Windows `pkg-config` is unrun, the box carrying none, so a package's name is
+# judged by what NTFS can hold.
 #
-# A leaf, read by `head_names`: `unwritable` gives `unwritable_name`'s reason
-# on Windows, a name it stores as another file's or a device's, and `locked`
-# gives `machine_locked_path`'s, a name whose file depends on the machine.
+# A leaf, read by `head_names`: `unwritable` and `library_unwritable` give
+# `unwritable_name`'s reason on Windows, a name it stores as another file's,
+# a device's or no file's, and `locked` gives `machine_locked_path`'s, a name
+# whose file depends on the machine.
 
 use bytes
 
@@ -58,6 +62,36 @@ function reserved_byte(value: str) -> str
 
         if b == '*' || b == '<' || b == '?' || b == '|'
             return value.slice(from: at, to: at + 1)
+        at @ at + 1
+
+    return ""
+
+# What a `link`'s or a `package`'s name holds past `unwritable`'s that names
+# no one file on every machine, as its reason, or "" (defect 252). Measured
+# on the box on 2026-10-07, clang 23.1.1 driving lld-link over NTFS: `>` and
+# `"` stand in no file's name there, `CopyFileW` into `a>b.lib`, `a"b.lib`,
+# `a>b.pc` and `a"b.pc` failing with Win32 error 123 as into `a*b.lib`, and
+# lld-link, handed `g>h.lib` and `g"h.lib` by `-l`, by `/defaultlib:` and as a
+# path, could not open them, *invalid argument*, Git Bash having written both;
+# a `\` is a directory to lld-link, `-la\b` linking `b.lib` inside `a`, where
+# ld64 and GNU ld 2.44 link one file, `liba\b.a`; and in a `link` a `/` is a
+# directory to every linker but not the same one, lld-link opening
+# `sub/m252.lib` and ld64 and GNU ld `libsub/m252.a`, `lib` written before the
+# directory. A `rooted` value is a path whatever it holds, which `head_names`
+# tells with its route, so its `/` and `\` are left to that. A package's `/`
+# passes, as a header's `sub/foo.h` does: `pkg-config` looks it up under each
+# search directory.
+function library_unwritable(value: str, what: str, rooted: bool) -> str
+    at: i64 @ 0
+
+    while at < value.len()
+        b = value[at]
+
+        if b == '>' || b == '"' || b == '\\' && !rooted
+            return "holds `" + value.slice(from: at, to: at + 1) + "`, which no file's name on Windows can hold"
+
+        if b == '/' && what == "link" && !rooted
+            return "holds `/`, which every linker reads as a directory and not the same one, `" + value + ".lib` on Windows and `lib" + value + "` on macOS and Linux"
         at @ at + 1
 
     return ""

@@ -1,0 +1,58 @@
+# Defect 252 (batch 14, 2026-10-07): a `link` or `package` name holding `>`,
+# `"` or `\`, or a `link` holding `/`, passed on every platform, and what the
+# Windows linker does with one was unrun. Measured on the Windows box (clang
+# 23.1.1 driving lld-link, NTFS): `>` and `"` stand in no file's name there,
+# Win32 error 123 as for `*`, and lld-link could not open `g>h.lib` or
+# `g"h.lib` by `-l`, by `/defaultlib:` or as a path; a `\` is a directory to
+# lld-link (`-la\b` linked `b.lib` inside `a`) and one byte of a file's name
+# to ld64 and GNU ld 2.44 (`liba\b.a`); a `/` is a directory to all three, but
+# lld-link opened `sub/m252.lib` and ld64 and GNU ld `libsub/m252.a`. Refused
+# at `check` as `unwritable_name`, before any thesis rule, so a package's `>`
+# is told as `<` is since defect 235 and no longer as a version's comparison;
+# `=` and `!` still are. A rooted name keeps panel 055's message, a header's
+# `"` panel 188's, and a package's `/` passes, as the last three lines do.
+
+extern "stdio.h" link "a>b"  #~ unwritable_name
+    function l1() -> i32
+
+extern "stdio.h" link "a\"b"  #~ unwritable_name
+    function l2() -> i32
+
+extern "stdio.h" link "a\\b"  #~ unwritable_name
+    function l3() -> i32
+
+extern "stdio.h" link "sub/m"  #~ unwritable_name
+    function l4() -> i32
+
+extern "stdio.h" package "p>q"  #~ unwritable_name
+    function l5() -> i32
+
+extern "stdio.h" package "p\"q"  #~ unwritable_name
+    function l6() -> i32
+
+extern "stdio.h" package "p\\q"  #~ unwritable_name
+    function l7() -> i32
+
+extern "stdio.h" package "zlib=1"  #~ package_comparison
+    function l8() -> i32
+
+extern "stdio.h" package "a!b"  #~ package_comparison
+    function l9() -> i32
+
+extern "stdio.h" link "C:\\side\\m"  #~ machine_locked_path
+    function l10() -> i32
+
+extern "a\"b.h"  #~ undefined_header_name
+    function l11() -> i32
+
+extern "stdio.h" package "sub/seven"
+    function l12() -> i32
+
+extern "stdio.h" link "a'b"
+    function l13() -> i32
+
+extern "sub/m.h"
+    function l14() -> i32
+
+function main()
+    print(l1() + l2() + l3() + l4() + l5() + l6() + l7() + l8() + l9() + l10() + l11() + l12() + l13() + l14())
