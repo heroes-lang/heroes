@@ -17,6 +17,7 @@ use source
 use diag
 use token
 use shown_char
+use excerpt_window
 
 # One diagnostic, in the rich form. No trailing blank line: the
 # caller joins.
@@ -41,8 +42,9 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
     number = found.line.to_str()
     gutter = " ".repeat(number.chars().len().to_u64().must())
     rows @ rows.push("  " + gutter + " |\n")
-    rows @ rows.push("  " + number + " | " + source_line(s, line: absolute) + "\n")
-    rows @ rows.push("  " + gutter + " | " + caret(s, d, col: found.col) + "\n")
+    shown = excerpt(s, d, line: absolute, col: found.col)
+    rows @ rows.push("  " + number + " | " + shown.line + "\n")
+    rows @ rows.push("  " + gutter + " | " + shown.caret + "\n")
 
     for note in d.notes
         rows @ rows.push("  note: " + note + "\n")
@@ -76,6 +78,22 @@ function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
         rendered @ rendered.push(render(d, s))
 
     return rendered.join("\n")
+
+# The line as written and the caret under it: whole where the line, and
+# the stretch of it before the span, are no wider than
+# `excerpt_window.SHOWN` columns, and otherwise a window of it around the
+# span, each side it cuts marked, since a line of 4,000 refused characters
+# was 32 KB under each of its messages (defect 294).
+function excerpt(s: source.Source, d: diag.Diagnostic, line: i64, col: i64) -> excerpt_window.Excerpt
+    text = source_line(s, line: line)
+
+    if line < 1 || line > s.line_starts.len()
+        return excerpt_window.Excerpt(line: text, caret: caret(s, d, col: col))
+    start = s.line_starts[line - 1]
+
+    if !excerpt_window.wider(text, from: 0, to: text.len()) && !excerpt_window.wider(s.text, from: start, to: d.span.start)
+        return excerpt_window.Excerpt(line: text, caret: caret(s, d, col: col))
+    return excerpt_window.window(s, d, start: start, end: start + text.len(), col: col)
 
 # The line as written, in the WHOLE text's numbering, trailing
 # whitespace dropped. Sliced at the source's own line table (defect 105):

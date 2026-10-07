@@ -1,0 +1,23 @@
+error[unknown_name]: nothing named `missing_one` is in scope
+  at tests/golden/full/fixedbugs-294-a-long-line-is-cut-to-a-window-around-its-span.hero:12:314
+     |
+  12 | …efghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij" + missing_one  #~ unknown_name
+     |                                                                                            ^^^^^^^^^^^
+
+error[unknown_name]: nothing named `missing_two` is in scope
+  at tests/golden/full/fixedbugs-294-a-long-line-is-cut-to-a-window-around-its-span.hero:13:9
+     |
+  13 |     b = missing_two + "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcde…
+     |         ^^^^^^^^^^^
+
+error[unknown_name]: nothing named `missing_three` is in scope
+  at tests/golden/full/fixedbugs-294-a-long-line-is-cut-to-a-window-around-its-span.hero:14:174
+     |
+  14 | …bcdefghijabcdefghij café € <U+200B> " + missing_three + "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghija…
+     |                                          ^^^^^^^^^^^^^
+
+error[unknown_name]: nothing named `missing_four` is in scope
+  at tests/golden/full/fixedbugs-294-a-long-line-is-cut-to-a-window-around-its-span.hero:15:92
+     |
+  15 |     d = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + missing_four  #~ unknown_name
+     |                                                                                            ^^^^^^^^^^^^
