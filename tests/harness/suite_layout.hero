@@ -36,6 +36,7 @@ use floors
 use shell
 use strings
 use growth
+use stream_writes
 
 constant COMPILER: str
     "selfhost"
@@ -685,6 +686,7 @@ function run_all(scratch: str, only: str) -> report.Report?
         rows @ rows_holding(rows: BUDGETS, modules: modules)
     over: [str] @ []
     slow: [str] @ []
+    streams: [str] @ []
     grown_keys: [str] @ []
     grown_lines: [str] @ []
     spent: [i64] @ []
@@ -713,6 +715,9 @@ function run_all(scratch: str, only: str) -> report.Report?
 
         for found in slow_appends(path: path, text: text.must())
             slow @ slow.push(found)
+
+        for site in stream_writes.sites(path: path, text: text.must())
+            streams @ streams.push("    " + path + ":" + site.line.to_str() + ": " + site.code)
 
         for site in growth.sites(text.must())
             key = path + " " + site.name
@@ -745,6 +750,16 @@ function run_all(scratch: str, only: str) -> report.Report?
     else
         report.keep_pass(@r)
 
+    # **A stream's tokens are written only through `relaid`** (defect 483):
+    # `tests/harness/stream_writes.hero` says what a write is and why.
+    if streams.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout/streams",
+            detail: "  once the parser's token stream is made, a token is written only through `stream_tables.relaid`, which refuses a kind a reader sees: the cursor's kept walk back goes on from where the last walk ended on that premise (defects 258 and 483). The lexer's own state, a `LexState`, is the stream still being made, and is not asked:\n" + streams.join("\n")
+        )
+    else
+        report.keep_pass(@r)
     grown = unallowed(found: grown_keys, written: grown_lines, allowed: allowed)
 
     if grown.len() > 0
@@ -1109,7 +1124,8 @@ test "the ceiling is per file, and a decided file keeps its own"
 
 # DEFECT 209, held as a test (2026-10-04): a narrowed walk that selects no
 # module records nothing, where it read one pass, and one that selects a module
-# asks its ceiling, and since defect 215 its appends and its growths: three.
+# asks its ceiling, and since defect 215 its appends and its growths: three;
+# four since defect 483, its writes to a stream's tokens.
 test "fixedbugs: a narrowed layout walk that selects no module records nothing (defect 209)"
     scratch = shell.own_scratch()
     none = run_all(scratch: scratch, only: "no-module-is-named-this")
@@ -1118,22 +1134,23 @@ test "fixedbugs: a narrowed layout walk that selects no module records nothing (
     assert none.must().failed == 0
     one = run_all(scratch: scratch, only: "selfhost/ast.hero")
     assert !one.is_err()
-    assert one.must().passed == 3
+    assert one.must().passed == 4
     assert one.must().failed == 0
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 215, held as a test (2026-10-07): a narrowed walk asks its module's
 # growths against the allowances that name it, so the one module an allowance
-# names passes, and its directory's budget where a row holds it, four cases.
+# names passes, and its directory's budget where a row holds it, four cases;
+# one more each since defect 483, the module's writes to a stream's tokens.
 test "fixedbugs: a narrowed layout walk asks the module's appends, growths and budget (defect 215)"
     scratch = shell.own_scratch()
     allowed = run_all(scratch: scratch, only: "selfhost/emit/container.hero")
     assert !allowed.is_err()
-    assert allowed.must().passed == 3
+    assert allowed.must().passed == 4
     assert allowed.must().failed == 0
     budgeted = run_all(scratch: scratch, only: "selfhost/parse/apart.hero")
     assert !budgeted.is_err()
-    assert budgeted.must().passed == 4
+    assert budgeted.must().passed == 5
     assert budgeted.must().failed == 0
     assert !shell.remove_tree(scratch).is_err()
 
