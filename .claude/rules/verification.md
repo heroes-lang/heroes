@@ -587,11 +587,17 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   `heroes check selfhost/main.hero`, the whole compiler's names and types in
   **5.8 s** (measured 2026-09-29), because a nested module cannot be checked
   alone and a root module checked alone does not see its callers; a `selfhost/` module's
-  line ceiling is judged in two stages, the file's non-blank lines first (a
-  count that is always at least the instrument's, so under 300 it is silent)
-  and the harness's own `layout` filtered to the file when that count passes
-  300 or the file is in `DECIDED`; a `tests/golden/` case's `#~` annotations
-  are held to its `.expected`. The hook notices and never rewrites (CL-025).
+  line ceiling is judged by `.claude/hooks/ceiling.py`, a declared mirror of
+  the `layout` suite's `code_lines` against its `DECIDED` table read from
+  disk; its growths and appends by the `layout` suite itself, narrowed to the
+  file, wherever a line might be one (`ceiling.might_grow`, a necessary
+  condition, 29 of 470 modules on 2026-10-07; defect 215), a narrowed `layout`
+  asking the file's appends, its growths against the allowances that name it
+  and its directory's budget; a `tests/golden/` case's `#~` annotations
+  are held to its `.expected`. (Until 2026-10-07 this bullet said the ceiling
+  was judged in two stages, the second the harness's `layout` filtered to the
+  file; no hook ran that stage, `ceiling.py` having been a mirror since
+  2026-09-29.) The hook notices and never rewrites (CL-025).
   **The last check was named here from 2026-09-29 and performed by no hook
   until 2026-10-05** (defect 286): since then the hook asks the `annotations`
   suite itself, narrowed to the case, on a write of its `.hero` or its
