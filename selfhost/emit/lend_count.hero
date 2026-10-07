@@ -138,9 +138,13 @@ function count_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: cont
 
     return Count(text: "", ty: 0, value: 0 - 1)
 
-# The Heroes type of a place: its root slot's, through each field step. A
-# place reaching a count has no index step, since the lowering copies an
-# element into a cell of its own before an `@` hands it over.
+# The Heroes type of a place: its root slot's, through each field step and
+# each element. **This said a place reaching a count has no index step**, the
+# lowering having copied an element into a cell of its own; panel 196's R1
+# lends the element itself, so `@counts[0]` reaches a count as `[i32]`'s
+# element, and the array's type in its place dropped the sign the checks ask
+# (lane land-addr's finding, 2026-10-07): a negative count in a signed
+# element read as an unsigned one, past every bound instead of below zero.
 function place_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> i64
     ty: i64 @ f.slots[at.root].ty
 
@@ -152,7 +156,13 @@ function place_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
                 if found.is_err()
                     return ty
                 ty @ found.must().ty
-            .index_step => return ty
+            .index_step =>
+                match table.get(c.types, ty)
+                    .array x                                                  => ty @ x.element
+                    .fixed x                                                  => ty @ x.element
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ty
+                    .map | .fallible | .function_ty | .named | .case_ty       => return ty
+                    .failure | .generic | .error                              => return ty
 
     return ty
 
