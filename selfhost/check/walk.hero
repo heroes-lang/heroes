@@ -1649,6 +1649,11 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                         tainted @ true
                     check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[arg.value].span)
 
+                # A marked argument is a place the call writes into, so a
+                # string's byte is refused here as `s[0] @ 65` is (defect 440).
+                if arg.mutable
+                    access.refuse_str_element(@c, a, place: arg.value)
+
                 # What else a label naming nothing could be asks the
                 # argument's type, now known (defect 135, C3).
                 if misnamed
