@@ -274,7 +274,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
     here = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
 
     # clang's own answer under one more flag, asked of the real compiler.
-    more = strings.with_all(list: flags.flags(), more: ["-DHEROES_KEY_PROBE=1"])
+    more = strings.with_all(list: flags.level_words(level: "-O0", sanitize: false), more: ["-DHEROES_KEY_PROBE=1"])
     said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
     other: toolchain.Toolchain @ here
     other.compiler_key @ digest.digest(more.join(" ") + "|" + toolchain.answer_text(said))
@@ -282,17 +282,50 @@ test "a unit compiled under one clang answer is compiled again under another (de
     none: [str] = []
     memo: {str: str} @ {}
     told: {str: bool} @ {}
-    first = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
-    )
-    second = tu_object(other, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
-    )
+    first = tu_object(
+        here,
+        module: "keyprobe",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
+    second = tu_object(
+        other,
+        module: "keyprobe",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
 
     # Another directory, compiled there, and the first still the first's.
     assert first != second
     assert process.path_exists(path: first)
     assert process.path_exists(path: second)
-    again = tu_object(here, module: "keyprobe", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).must(
-    )
+    again = tu_object(
+        here,
+        module: "keyprobe",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
     assert again == first
 
 # **A record vouches for the object its own compile made, and for no other**
@@ -312,18 +345,51 @@ test "a record vouches only for the object its own compile made, and one whose o
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
     told: {str: bool} @ {}
     one: {str: str} @ {}
-    first = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @one, @told).must(
-    )
+    first = tu_object(
+        t,
+        module: "vouch",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: [headers_at],
+        @one,
+        @told
+    ).must()
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
     two: {str: str} @ {}
-    second = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @two, @told).must(
-    )
+    second = tu_object(
+        t,
+        module: "vouch",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: [headers_at],
+        @two,
+        @told
+    ).must()
     assert second != first
     assert process.path_exists(first)
     assert !process.remove_file(second).is_err()
     three: {str: str} @ {}
-    third = tu_object(t, module: "vouch", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: [headers_at], @three, @told).must(
-    )
+    third = tu_object(
+        t,
+        module: "vouch",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: [headers_at],
+        @three,
+        @told
+    ).must()
     assert third == second
     assert process.path_exists(third)
 
@@ -348,17 +414,61 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
 
     # Without the package's word the unit does not compile, and nothing is
     # kept for the compile that has it to find.
-    assert tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: "", search_include: none, @memo, @told).is_err(
-    )
-    seven = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7"], source_dir: "", search_include: none, @memo, @told).must(
-    )
-    eight = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=8"], source_dir: "", search_include: none, @memo, @told).must(
-    )
+    assert tu_object(
+        t,
+        module: "pkgwords",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).is_err()
+    seven = tu_object(
+        t,
+        module: "pkgwords",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: ["-DHEROES_PACKAGE_VALUE=7"],
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
+    eight = tu_object(
+        t,
+        module: "pkgwords",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: ["-DHEROES_PACKAGE_VALUE=8"],
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
     assert eight != seven
 
     # A link word is no compile's: the same words, the same object.
-    linked = tu_object(t, module: "pkgwords", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"], source_dir: "", search_include: none, @memo, @told).must(
-    )
+    linked = tu_object(
+        t,
+        module: "pkgwords",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: ["-DHEROES_PACKAGE_VALUE=7", "-lz", "-framework", "Cocoa"],
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
     assert linked == seven
 
 # **A unit's object is keyed by every word its line compiles under, the
@@ -384,10 +494,32 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
     none: [str] = []
     memo: {str: str} @ {}
     told: {str: bool} @ {}
-    first = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: one, search_include: none, @memo, @told).must(
-    )
-    second = tu_object(t, module: "beside", tu_text: text, level: "-O0", sanitize: false, search: "", package_flags: none, source_dir: two, search_include: none, @memo, @told).must(
-    )
+    first = tu_object(
+        t,
+        module: "beside",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: one,
+        search_include: none,
+        @memo,
+        @told
+    ).must()
+    second = tu_object(
+        t,
+        module: "beside",
+        tu_text: text,
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: two,
+        search_include: none,
+        @memo,
+        @told
+    ).must()
     assert first != second
     assert process.path_exists(path: first)
     assert process.path_exists(path: second)

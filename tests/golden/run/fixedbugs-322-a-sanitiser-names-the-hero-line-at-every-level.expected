@@ -1,0 +1,3 @@
+a freed block is read in C
+1
+!sanitizer: fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero:21
