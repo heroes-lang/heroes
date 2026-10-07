@@ -1,0 +1,9 @@
+# Defect 290 (lane b9-notext, 2026-10-04), its surface rows (lane
+# b14-harness-b, 2026-10-07, defect 328's remedy): a string literal holding
+# a raw ESC, the byte itself, and `[2Jboom`. The token dump and the syntax
+# tree's dump write the ESC by its code, `<U+001B>`, where they wrote the byte
+# and a terminal cleared its screen. The byte stands here on purpose, so no
+# editor may normalise it: `suite_surface`'s rows over this file fail if one
+# does.
+function main()
+    print("[2Jboom")  #~ invisible_character
