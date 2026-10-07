@@ -1,0 +1,59 @@
+# Defect 313, 2026-10-07 (lane b14-parse). Lane b9-recovery asked, unrun,
+# whether defect 204's shape nested gives a spurious message: an outer `[`
+# never closed around an inner list the lexer closed with a closer of
+# another kind further down. Run on the base `dad2da47`: it does not. Every
+# message is true, `check` and `check --permissive` alike: the lexer names
+# the outer `[` never closed, which nothing below closes; the binding below
+# the inner list ends it, told at its `=` with that `[` and where its `]`
+# goes (`list_line.ended_at_a_binding`, defect 204), and an opener it stands
+# in on its line is named with it only where a closer further down closes
+# that opener too (`bracket_head.openers_around`, defect 307's rule: one the
+# lexer named never closed has its own report); and the stray closer is
+# told. The shapes: the outer `[` on the inner's line, around a call, with an
+# element between, a `}` for the closer, and on the line above; and, beside
+# them, the outer `[` closed by a `]` further down, which the binding's
+# message names with the inner one.
+
+function f(a: [i64]) -> i64
+    return 1
+
+function on_its_line()
+    x = [[1, 2  #~ unclosed_bracket
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function around_a_call()
+    x = [f([1, 2  #~ unclosed_bracket
+    print(x)
+    y = 3 ))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function an_element_between()
+    x = [1, [2, 3  #~ unclosed_bracket
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_brace_for_the_closer()
+    x = [[1, 2  #~ unclosed_bracket
+    print(x)
+    y = 3 }  #~ expected_separator expected_end_of_line
+    print(y)
+
+function on_the_line_above()
+    x = [  #~ unclosed_bracket
+        [1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function closed_further_down()
+    x = [[1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    z = 4 ]  #~ expected_end_of_line
+    print(y)
+
+function main()
+    on_its_line()
