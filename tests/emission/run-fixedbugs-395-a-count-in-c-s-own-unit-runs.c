@@ -179,7 +179,8 @@ void h_fixedbugs395acountincsownunitruns_main(void) {
 #line 180 "fixedbugs395acountincsownunitruns.c"
     struct held h0_h;
     struct ten h1_t;
-    __attribute__((unused)) uint32_t h2_n;
+    uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n");
+#define h2_n (*hero_lend_h2_n)
     uint8_t t1;
     uint8_t t2;
     uint8_t t3;
@@ -523,6 +524,8 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     if ((uint64_t)(h2_n) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))) hero_panic(sizeof(*(void *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:54: `fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:54: `fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `void *` points at");
 #line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
+    hero_lend_local_name(hero_lend_h2_n, "fill_len", "n");
+#line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t108 = fill_len(t107, (void *)&h2_n);
 #line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_int(t108);
@@ -545,9 +548,12 @@ bb0:
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
+    hero_lend_local_give(hero_lend_h2_n);
+#line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return;
-#line 550 "fixedbugs395acountincsownunitruns.c"
+#line 555 "fixedbugs395acountincsownunitruns.c"
 }
+#undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;

@@ -1,0 +1,21 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: the defect's own
+# reproducer, `docs/panel/194-evidence/new-defects/single-cell/md_scalar.hero`
+# on OpenSSL's header read whole. `SHA256_Final(@md: u8, ...)` binds a pointer
+# C writes 32 bytes through as ONE element (panel 196's R2), and the program
+# lends it a one-byte local: C wrote the other 31 over the frame at exit 0,
+# past every sanitizer. Under R7 the local lives against a page nothing may
+# touch, so C stops on the second byte and the runtime names the local, the
+# call and the parameter.
+extern "fixedbugs-396-openssl.h" package "libcrypto"
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: u8, @c: Sha256Ctx) -> i32
+
+function main()
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    m: u8 @ 0
+    print(SHA256_Init(@c), " ", SHA256_Update(@c, data: "abc".cstr(), len: 3))
+    print(SHA256_Final(md: @m, @c))
+    print("not reached ", m)

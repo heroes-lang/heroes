@@ -1,0 +1,13 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: the twin of
+# `fixedbugs-396-sha256-final-into-one-cell-aborts` on a header of the
+# program's own, so every platform runs it. `digest32` writes 32 bytes, bound
+# as one cell; the local lent to it lives against a page nothing may touch
+# (panel 196's R7), and C writing its second byte is named.
+extern "fixedbugs-396-buffers.h"
+    function digest32(@md: u8) -> i32
+
+function main()
+    m: u8 @ 0
+    print("before")
+    print(digest32(@m))
+    print("not reached ", m)

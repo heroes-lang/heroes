@@ -1,0 +1,27 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R7 through
+# Heroes wrappers. Since R1 a Heroes function's `@` parameter is its caller's
+# place through a pointer, so `outer(@m)` handing `@m` to `inner`, which hands
+# it to `digest32`, gives C the caller's local itself, the ordinary way to
+# structure a program. Measured before the wrapper clause: C's other 31 bytes
+# over the neighbour, exit 139 with nothing on stderr. Which `@` parameters
+# reach C is found over the whole program, so the caller's local is guarded
+# too, and the call inside the wrapper labels it: the abort names `digest32`.
+extern "fixedbugs-396-buffers.h"
+    function digest32(@md: u8) -> i32
+
+record Pair
+    a: u8
+    b: i64
+
+function inner(@x: u8) -> i32
+    return digest32(@x)
+
+function outer(@y: u8) -> i32
+    return inner(@y)
+
+function main()
+    p: Pair @ Pair(a: 0, b: 7)
+    m: u8 @ 0
+    print("before ", p.b)
+    print(outer(@m))
+    print("not reached ", m, " ", p.b)

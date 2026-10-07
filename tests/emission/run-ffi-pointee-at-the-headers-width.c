@@ -102,9 +102,11 @@ void h_ffipointeeattheheaderswidth_main(void);
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 void h_ffipointeeattheheaderswidth_main(void) {
 #line 105 "ffipointeeattheheaderswidth.c"
-    int32_t h0_e;
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e");
+#define h0_e (*hero_lend_h0_e)
     double h1_m;
-    int64_t h2_t;
+    int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t");
+#define h2_t (*hero_lend_h2_t)
     int32_t t1;
     double t2;
     double t3;
@@ -122,6 +124,8 @@ bb0:
     h0_e = t1;
 #line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     t2 = 0x1p+3;
+#line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    hero_lend_local_name(hero_lend_h0_e, "frexp", "e");
 #line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     t3 = frexp(t2, (void *)&h0_e);
 #line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
@@ -143,6 +147,8 @@ bb0:
 #line 21 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     h2_t = t6;
 #line 22 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    hero_lend_local_name(hero_lend_h2_t, "time", "t");
+#line 22 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     (void)time((void *)&h2_t);
 #line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     t8 = h2_t;
@@ -155,9 +161,15 @@ bb0:
 #line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     hero_print_end();
 #line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    hero_lend_local_give(hero_lend_h2_t);
+#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    hero_lend_local_give(hero_lend_h0_e);
+#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     return;
-#line 160 "ffipointeeattheheaderswidth.c"
+#line 170 "ffipointeeattheheaderswidth.c"
 }
+#undef h0_e
+#undef h2_t
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

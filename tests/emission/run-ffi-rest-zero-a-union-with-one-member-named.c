@@ -198,8 +198,10 @@ bb0:
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 void h_ffirestzeroaunionwithonemembernamed_main(void) {
 #line 201 "ffirestzeroaunionwithonemembernamed.c"
-    SA h0_w;
-    SA h1_n;
+    SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w");
+#define h0_w (*hero_lend_h0_w)
+    SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n");
+#define h1_n (*hero_lend_h1_n)
     SA t1;
     SA t2;
     int32_t t3;
@@ -239,6 +241,8 @@ bb0:
 #line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t7 = HERO_STR_LIT(hero_str_20);
 #line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+    hero_lend_local_name(hero_lend_h0_w, "sa_x", "s");
+#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t8 = sa_x(&h0_w);
 #line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     hero_print_int(t3);
@@ -271,6 +275,8 @@ bb0:
 #line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t15 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+    hero_lend_local_name(hero_lend_h1_n, "sa_x", "s");
+#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t16 = sa_x(&h1_n);
 #line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     hero_print_int(t11);
@@ -293,9 +299,15 @@ bb0:
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     hero_print_end();
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+    hero_lend_local_give(hero_lend_h1_n);
+#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+    hero_lend_local_give(hero_lend_h0_w);
+#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return;
-#line 298 "ffirestzeroaunionwithonemembernamed.c"
+#line 308 "ffirestzeroaunionwithonemembernamed.c"
 }
+#undef h0_w
+#undef h1_n
 HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->c == b->c)) return false;

@@ -179,8 +179,10 @@ bb0:
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 void h_ffirestzeroanestedgrouprecord_main(void) {
 #line 182 "ffirestzeroanestedgrouprecord.c"
-    struct outer h0_a;
-    struct outer h1_b;
+    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a");
+#define h0_a (*hero_lend_h0_a)
+    struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b");
+#define h1_b (*hero_lend_h1_b)
     struct outer t1;
     struct outer t2;
     int32_t t3;
@@ -222,6 +224,8 @@ bb0:
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     t8 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_lend_local_name(hero_lend_h0_a, "outer_union", "o");
+#line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     t9 = outer_union(&h0_a);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_print_int(t3);
@@ -256,6 +260,8 @@ bb0:
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     t17 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_lend_local_name(hero_lend_h1_b, "outer_union", "o");
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     t18 = outer_union(&h1_b);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_print_int(t12);
@@ -270,9 +276,15 @@ bb0:
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_print_end();
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_lend_local_give(hero_lend_h1_b);
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_lend_local_give(hero_lend_h0_a);
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return;
-#line 275 "ffirestzeroanestedgrouprecord.c"
+#line 285 "ffirestzeroanestedgrouprecord.c"
 }
+#undef h0_a
+#undef h1_b
 HERO_TU_LOCAL bool h_ffirestzeroanestedgrouprecord_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->c == b->c)) return false;

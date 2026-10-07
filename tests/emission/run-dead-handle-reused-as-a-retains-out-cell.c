@@ -113,7 +113,8 @@ void h_deadhandlereusedasaretainsoutcell_main(void);
 #line 24 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 void h_deadhandlereusedasaretainsoutcell_main(void) {
 #line 116 "deadhandlereusedasaretainsoutcell.c"
-    ob * h0_cert;
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereusedasaretainsoutcell.main", "cert");
+#define h0_cert (*hero_lend_h0_cert)
     ob * t1;
     int64_t t2;
     int64_t t3;
@@ -147,6 +148,8 @@ bb0:
 bb1:
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     t6 = HERO_STR_LIT(hero_str_3bd1309f);
+#line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
+    hero_lend_local_name(hero_lend_h0_cert, "ob_get_shared", "out");
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     t7 = ob_get_shared(&h0_cert);
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
@@ -216,14 +219,17 @@ bb4:
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     }
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
+    hero_lend_local_give(hero_lend_h0_cert);
+#line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     return;
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 bb5:
 #line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-#line 224 "deadhandlereusedasaretainsoutcell.c"
+#line 229 "deadhandlereusedasaretainsoutcell.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
+#undef h0_cert
 HERO_TU_LOCAL bool h_deadhandlereusedasaretainsoutcell_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

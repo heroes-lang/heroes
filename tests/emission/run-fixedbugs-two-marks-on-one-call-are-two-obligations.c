@@ -111,8 +111,10 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void);
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
 #line 114 "fixedbugstwomarksononecallaretwoobligations.c"
-    Slot * h0_a;
-    Conn * h1_b;
+    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a");
+#define h0_a (*hero_lend_h0_a)
+    Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b");
+#define h1_b (*hero_lend_h1_b)
     Slot * t1;
     Conn * t2;
     int64_t t3;
@@ -131,6 +133,10 @@ bb0:
     h1_b = t2;
 #line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     t3 = INT64_C(1);
+#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+    hero_lend_local_name(hero_lend_h0_a, "both_open", "a");
+#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+    hero_lend_local_name(hero_lend_h1_b, "both_open", "b");
 #line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     (void)both_open(t3, &h0_a, &h1_b);
 #line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
@@ -172,9 +178,15 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+    hero_lend_local_give(hero_lend_h1_b);
+#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+    hero_lend_local_give(hero_lend_h0_a);
+#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     return;
-#line 177 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 187 "fixedbugstwomarksononecallaretwoobligations.c"
 }
+#undef h0_a
+#undef h1_b
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
 }

@@ -119,8 +119,10 @@ void h_fixedbugsatagnamesahandleandarecord_main(void);
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 void h_fixedbugsatagnamesahandleandarecord_main(void) {
 #line 122 "fixedbugsatagnamesahandleandarecord.c"
-    __attribute__((unused)) struct addrinfo h0_h;
-    struct addrinfo * h1_r;
+    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h");
+#define h0_h (*hero_lend_h0_h)
+    struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r");
+#define h1_r (*hero_lend_h1_r)
     int32_t h2_rc;
     int32_t t1;
     int32_t t2;
@@ -153,6 +155,10 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t7 = ((void *)0);
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints");
+#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res");
+#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r);
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_handle_acquired(h1_r, "freeaddrinfo");
@@ -179,9 +185,15 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     }
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_lend_local_give(hero_lend_h1_r);
+#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_lend_local_give(hero_lend_h0_h);
+#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 184 "fixedbugsatagnamesahandleandarecord.c"
+#line 194 "fixedbugsatagnamesahandleandarecord.c"
 }
+#undef h0_h
+#undef h1_r
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return hero_handle_eq(*a, *b);
 }

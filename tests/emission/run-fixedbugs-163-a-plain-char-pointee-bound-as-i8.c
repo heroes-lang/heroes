@@ -99,7 +99,8 @@ void h_fixedbugs163aplaincharpointeeboundasi8_main(void);
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
 #line 102 "fixedbugs163aplaincharpointeeboundasi8.c"
-    int8_t h0_v;
+    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v");
+#define h0_v (*hero_lend_h0_v)
     int8_t t1;
     int8_t t2;
     goto bb0;
@@ -109,6 +110,8 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     h0_v = t1;
 #line 17 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
+    hero_lend_local_name(hero_lend_h0_v, "fill", "p");
+#line 17 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     (void)fill((void *)&h0_v);
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     t2 = h0_v;
@@ -117,9 +120,12 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
+    hero_lend_local_give(hero_lend_h0_v);
+#line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     return;
-#line 122 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 127 "fixedbugs163aplaincharpointeeboundasi8.c"
 }
+#undef h0_v
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
