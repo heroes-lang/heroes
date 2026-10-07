@@ -8,6 +8,16 @@
 # The arithmetic is 32 bits wide inside an `i64`, every sum masked and every
 # shift kept below bit 32, since an `i64` that overflowed would abort
 # (spec § 7): a rotation shifts the low bits up only after masking them.
+#
+# **Its cost is the compiler's own, at `-O0`** (defect 383): the compiler is
+# built with no `-O` (`seed/README.md`), which is clang's `-O0`, and no route
+# compiles one module apart at `-O2`, so the digest is paid in plain Heroes. Measured
+# 2026-10-07 in instructions retired, a copy of this module digesting one file
+# at 64 KiB, 512 KiB and 4 MiB: 2,729, 2,730 and 2,737 a byte as the digest
+# was written, 1,686, 1,692 and 1,695 as it is now, the same digest as
+# `shasum -a 256` on 1,226 files, 720 of this tree's and 506 at every length
+# to 200 bytes and every block edge to 4 KiB. On the compiler's own source,
+# 470 files and 5.9 MB, `check --json` paid 24.3% over `check`.
 
 # The 64 round constants, the cube roots' fractional bits of the first 64
 # primes.
@@ -97,38 +107,49 @@ constant MASK: i64
     4294967295
 
 # The digest of `text`'s bytes, 64 lowercase hexadecimal digits.
+#
+# **Every whole block is read from the text where it lies** (defect 383): the
+# bytes were copied into an `[i64]` first, eight bytes of array for each one,
+# and each block's schedule was a new array of 64 pushes. The schedule is now
+# one array written in place block after block, the hash eight cells updated
+# in place, and only the last one or two blocks, where the padding goes, are
+# gathered into an array. A rotation is written out where it is used, its
+# masks and shifts as constants: a call per rotation, ten per round, cost
+# more than the rotation.
 function of(text: str) -> str
-    bytes: [i64] @ []
+    h: [i64] @ START
+    w: [i64] @ []
+
+    while w.len() < 64
+        w @ w.push(0)
+
+    constants = K
+    whole = text.len() - text.len() % 64
     at: i64 @ 0
 
-    # Each byte read into a name before it is pushed: a push whose argument
-    # holds a `.must()` copied the whole array each time, measured here, 481
-    # thousand instructions a byte, where this costs a few hundred.
-    while at < text.len()
-        b = text[at].to_i64().must()
-        bytes @ bytes.push(b)
-        at @ at + 1
+    while at < whole
+        i: i64 @ 0
 
-    # The padding: a one bit, zeros to 56 bytes of 64, and the length in
-    # bits, big-endian, in the last 8.
-    bits = text.len() * 8
-    bytes @ bytes.push(128)
+        while i < 16
+            b = at + i * 4
+            w[i] @ byte(text, at: b) << 24 | byte(text, at: b + 1) << 16 | byte(text, at: b + 2) << 8 | byte(text, at: b + 3)
+            i @ i + 1
 
-    while bytes.len() % 64 != 56
-        bytes @ bytes.push(0)
+        compress(h: @h, w: @w, constants: constants)
+        at @ at + 64
 
-    shift: i64 @ 56
-
-    while shift >= 0
-        bytes @ bytes.push(bits >> shift & 255)
-        shift @ shift - 8
-
-    h: [i64] @ START
-    constants = K
+    tail = padded_tail(text, from: whole)
     block: i64 @ 0
 
-    while block < bytes.len()
-        h @ compressed(h: h, bytes: bytes, from: block, constants: constants)
+    while block < tail.len()
+        i: i64 @ 0
+
+        while i < 16
+            b = block + i * 4
+            w[i] @ tail[b] << 24 | tail[b + 1] << 16 | tail[b + 2] << 8 | tail[b + 3]
+            i @ i + 1
+
+        compress(h: @h, w: @w, constants: constants)
         block @ block + 64
 
     out: [str] @ []
@@ -138,20 +159,49 @@ function of(text: str) -> str
 
     return out.join("")
 
-# The hash after one block of 64 bytes from `from`.
-function compressed(h: [i64], bytes: [i64], from: i64, constants: [i64]) -> [i64]
-    w: [i64] @ []
-    i: i64 @ 0
+# The byte at `at`, as a number.
+function byte(text: str, at: i64) -> i64
+    return text[at].to_i64().must()
 
-    while i < 16
-        at = from + i * 4
-        w @ w.push(bytes[at] << 24 | bytes[at + 1] << 16 | bytes[at + 2] << 8 | bytes[at + 3])
-        i @ i + 1
+# The bytes from `from` to the end, then the padding: a one bit, zeros to 56
+# bytes of 64, and the length in bits, big-endian, in the last 8. One block,
+# or two where fewer than 9 bytes were left for the padding.
+function padded_tail(text: str, from: i64) -> [i64]
+    bytes: [i64] @ []
+    at: i64 @ from
+
+    while at < text.len()
+        b = byte(text, at: at)
+        bytes @ bytes.push(b)
+        at @ at + 1
+
+    bytes @ bytes.push(128)
+
+    while bytes.len() % 64 != 56
+        bytes @ bytes.push(0)
+
+    bits = text.len() * 8
+    shift: i64 @ 56
+
+    while shift >= 0
+        bytes @ bytes.push(bits >> shift & 255)
+        shift @ shift - 8
+
+    return bytes
+
+# One block into the hash: `w`'s first 16 words are the block, and the other
+# 48 are its schedule, written here. Each rotation right by `r` within 32
+# bits is `x >> r | (x & (2^r - 1)) << (32 - r)`: the low bits are masked
+# before they move up, so nothing passes bit 31.
+function compress(@h: [i64], @w: [i64], constants: [i64])
+    i: i64 @ 16
 
     while i < 64
-        s0 = rotr(word: w[i - 15], by: 7) ^ rotr(word: w[i - 15], by: 18) ^ w[i - 15] >> 3
-        s1 = rotr(word: w[i - 2], by: 17) ^ rotr(word: w[i - 2], by: 19) ^ w[i - 2] >> 10
-        w @ w.push(w[i - 16] + s0 + w[i - 7] + s1 & MASK)
+        x = w[i - 15]
+        y = w[i - 2]
+        s0 = (x >> 7 | (x & 127) << 25) ^ (x >> 18 | (x & 262143) << 14) ^ x >> 3
+        s1 = (y >> 17 | (y & 131071) << 15) ^ (y >> 19 | (y & 524287) << 13) ^ y >> 10
+        w[i] @ w[i - 16] + s0 + w[i - 7] + s1 & MASK
         i @ i + 1
 
     a: i64 @ h[0]
@@ -165,12 +215,11 @@ function compressed(h: [i64], bytes: [i64], from: i64, constants: [i64]) -> [i64
     round: i64 @ 0
 
     while round < 64
-        s1 = rotr(word: e, by: 6) ^ rotr(word: e, by: 11) ^ rotr(word: e, by: 25)
-        choose = e & f ^ (MASK ^ e) & g
-        one = k + s1 + choose + constants[round] + w[round] & MASK
-        s0 = rotr(word: a, by: 2) ^ rotr(word: a, by: 13) ^ rotr(word: a, by: 22)
-        major = a & b ^ a & c ^ b & c
-        two = s0 + major & MASK
+        s1 = (e >> 6 | (e & 63) << 26) ^ (e >> 11 | (e & 2047) << 21) ^ (e >> 25 | (e & 33554431) << 7)
+        choose = g ^ e & (f ^ g)
+        one = k + s1 + choose + constants[round] + w[round]
+        s0 = (a >> 2 | (a & 3) << 30) ^ (a >> 13 | (a & 8191) << 19) ^ (a >> 22 | (a & 4194303) << 10)
+        major = a & b | c & (a | b)
         k @ g
         g @ f
         f @ e
@@ -178,25 +227,17 @@ function compressed(h: [i64], bytes: [i64], from: i64, constants: [i64]) -> [i64
         d @ c
         c @ b
         b @ a
-        a @ one + two & MASK
+        a @ one + s0 + major & MASK
         round @ round + 1
 
-    return [
-        h[0] + a & MASK
-        h[1] + b & MASK
-        h[2] + c & MASK
-        h[3] + d & MASK
-        h[4] + e & MASK
-        h[5] + f & MASK
-        h[6] + g & MASK
-        h[7] + k & MASK
-    ]
-
-# `word` rotated right `by` bits within 32: its low bits are masked before
-# they move up, so nothing passes bit 31.
-function rotr(word: i64, by: i64) -> i64
-    low = word & (1 << by) - 1
-    return word >> by | low << 32 - by
+    h[0] @ h[0] + a & MASK
+    h[1] @ h[1] + b & MASK
+    h[2] @ h[2] + c & MASK
+    h[3] @ h[3] + d & MASK
+    h[4] @ h[4] + e & MASK
+    h[5] @ h[5] + f & MASK
+    h[6] @ h[6] + g & MASK
+    h[7] @ h[7] + k & MASK
 
 # A 32-bit word as eight lowercase hexadecimal digits.
 function hex8(word: i64) -> str
@@ -225,6 +266,21 @@ test "the digest is FIPS 180-4's"
     assert of("a".repeat(55)) == FIFTY_FIVE
     assert of("a".repeat(56)) == FIFTY_SIX
     assert of("é€😀\r\n") == WIDE
+
+# DEFECT 383's shapes, each digest `shasum -a 256`'s (2026-10-07): whole
+# blocks read where they lie with no tail, with a tail its padding fits (55
+# bytes after a block) and one it does not (56), two blocks of FIPS 180-4's
+# second message, and characters above ASCII across two blocks and a tail.
+test "whole blocks are read where they lie, at every edge of the padding (defect 383)"
+    assert of("a".repeat(64)) == "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb"
+    assert of("a".repeat(119)) == "31eba51c313a5c08226adf18d4a359cfdfd8d2e816b13f4af952f7ea6584dcfb"
+    assert of("a".repeat(120)) == "2f3d335432c70b580af0e8e1b3674a7c020d683aa5f73aaaedfdc55af904c21c"
+    assert of("a".repeat(128)) == "6836cf13bac400e9105071cd6af47084dfacad4e5e302c94bfed24e013afb73e"
+    assert of(TWO_BLOCKS) == "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1"
+    assert of("é€😀\r\n".repeat(13)) == "a3b23150b2908946e929a61722cecb07a08e2a94302e9d0f731ea0e0022fc87f"
+
+constant TWO_BLOCKS: str
+    "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
 
 constant FIFTY_FIVE: str
     "9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318"
