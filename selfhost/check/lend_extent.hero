@@ -189,9 +189,13 @@ function is_cstr(c: state.Checker, ty: i64) -> bool
 
 # Every `lent` in an extern signature, judged where it is written (panel 171).
 # The word is read on a by-value `cstr` or a `ptr` that declares its extent —
-# the two parameters a lend can land on — and nowhere else: in an `@` position
-# no lend can stand, on a handle or a number nothing is lent, and a `ptr` with
-# no `counted_by` refuses every lend before the word is read. Unread, it is
+# the two parameters a lend can land on — and, since panel 196's R3, on every
+# `@` parameter, where it says C keeps nothing of the ADDRESS after the call:
+# an `@` argument is the place itself (R1), and a temporary the emitter makes
+# for a call, the buffer C fills (R4), reaches only a parameter so declared.
+# Elsewhere nothing reads it: on a handle or a number by value nothing is
+# lent, and a `ptr` with no `counted_by` refuses every lend before the word is
+# read. Unread, it is
 # refused, which is `check/marks.hero`'s rule for the handle words applied to
 # this one. The word landed one commit before this rule did, so the seed
 # compiler that built this one could parse the marks it writes on the
@@ -205,8 +209,9 @@ function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl
         why: str @ ""
 
         if param.mutable
-            why @ "`" + param_name + "` is an `@` out-parameter, and no lend can stand in an `@` position"
-        else if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
+            continue
+
+        if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
             why @ "`" + param_name + "` is not a `cstr` or a `ptr`, and only those two are ever lent"
         else if is_ptr(c, param.ty) && param.counted_by.is_err()
             why @ "`" + param_name + "` is a `ptr` that declares no extent, and a `ptr` lend reaches only a parameter declared `counted_by` — nothing is ever lent here, so the word is dead text; write `counted_by <n> lent`"
