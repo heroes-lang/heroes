@@ -39,7 +39,7 @@ use resolved
 use name_rows
 use resolve/vocab
 use resolve/binding as resolve_binding
-use inventory
+use resolve/builtin_names
 use resolve/errors
 use resolve/asked
 use resolve/braced_names
@@ -173,6 +173,8 @@ record Resolver
     offered: {str: offered.Offered}
     # What the did-you-mean has answered (`resolve/did_you_mean.hero`).
     asking: asked.Asking
+    # The names the library declares, taken everywhere (defect 455).
+    library: {str: bool}
 
 # The two arenas start full of `.unresolved`, one slot per expression and
 # one per written type in the whole program.
@@ -215,7 +217,8 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
         braced: [],
         zero_words: {},
         offered: held,
-        asking: asked.new_asking()
+        asking: asked.new_asking(),
+        library: {}
     )
 
 # Appended in place, the list lent: a push through the field place copied
@@ -324,7 +327,7 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     # named `range` would say "the declaration at line 30", naming a line
     # in a file the author cannot open (§1.11). Left unbound, every later
     # write was the built-in's, told again each time (defect 422).
-    taken = !inventory.index_of(text).is_err()
+    taken = builtin_names.taken(r.library, text)
 
     if taken
         push_diagnostic(@r, errors.builtin_name_taken(text, span: name))

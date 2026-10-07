@@ -16,7 +16,7 @@
 use ast
 use source
 use resolved
-use inventory
+use resolve/builtin_names
 use diag
 use resolve/state
 use resolve/did_you_mean
@@ -44,7 +44,7 @@ function report(@r: state.Resolver, s: source.Source)
         # declaration of its module holds is refused there and bound only so
         # that what follows is the binding's (defect 422). Whether it is read
         # is asked once it is renamed, so the one mistake is one message.
-        if !inventory.index_of(name).is_err() || !resolved.top_in(r.out, module: module, name: name).is_err()
+        if builtin_names.taken(r.library, name) || !resolved.top_in(r.out, module: module, name: name).is_err()
             continue
 
         # Already spoken for: the compiler offered this name as the repair
