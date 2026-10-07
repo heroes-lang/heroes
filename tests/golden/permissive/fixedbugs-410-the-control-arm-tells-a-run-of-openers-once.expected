@@ -1,0 +1,5 @@
+tests/golden/permissive/fixedbugs-410-the-control-arm-tells-a-run-of-openers-once.hero:13:9: error[unclosed_bracket]: `[` opened here and 1 more after it on its line are still open at line 15, where `function` begins a line no bracket can hold
+tests/golden/permissive/fixedbugs-410-the-control-arm-tells-a-run-of-openers-once.hero:16:10: error[unclosed_bracket]: `(` opened here and 2 more after it on its line are still open at line 18, where `function` begins a line no bracket can hold
+tests/golden/permissive/fixedbugs-410-the-control-arm-tells-a-run-of-openers-once.hero:19:9: error[unclosed_bracket]: `[` opened here and 1 more after it on its line are still open at line 21, where `function` begins a line no bracket can hold
+tests/golden/permissive/fixedbugs-410-the-control-arm-tells-a-run-of-openers-once.hero:22:10: error[unclosed_bracket]: `(` opened here is still open at line 25, where `function` begins a line no bracket can hold
+tests/golden/permissive/fixedbugs-410-the-control-arm-tells-a-run-of-openers-once.hero:23:9: error[unclosed_bracket]: `[` opened here is still open at line 25, where `function` begins a line no bracket can hold

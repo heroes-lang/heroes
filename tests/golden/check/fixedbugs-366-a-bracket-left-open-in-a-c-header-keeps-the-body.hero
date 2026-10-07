@@ -39,7 +39,7 @@ function the_first_clause()
         print(i)
 
 function two_calls_deep()
-    #~v unclosed_bracket unclosed_bracket
+    #~v unclosed_bracket
     for (i = 0; i < f(f(3; i++  #~ for_missing_in
         print(i)
 
@@ -67,3 +67,9 @@ function main()
     a_brace()
     no_body()
     the_call_closed()
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `two_calls_deep`'s two calls, the header's own `(` withdrawn
+# for the header's report as before.

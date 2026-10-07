@@ -25,6 +25,7 @@
 # | `before`, `opener_of` | `scan.finish` |
 # | `never_closed` | `close_to_its_kind`, `layout.close_brackets` |
 # | `past_literal` | `loop_headers`, `bracket_reach` |
+# | `said_of`, `run_of` | `unclosed_runs` |
 
 use token
 use diag
@@ -157,11 +158,7 @@ function opener_of(kind: token.TokenKind) -> u8
 # at a closer that closes what the opener stands in (`close_to_its_kind`, a
 # body's `}`), past which no closer can be its own.
 function never_closed(text: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(
-        code: "unclosed_bracket",
-        message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is never closed",
-        span: span
-    )
+    return diag.new_diagnostic(code: "unclosed_bracket", message: opened(text, span) + "is never closed", span: span)
 
 # The report of the opener at `span`, still open at the line `line`, whose
 # first word `word` ended its reach (`bracket_reach.end_the_reach`): a word no
@@ -181,9 +178,35 @@ function still_open(text: str, span: token.Span, line: i64, word: str, name: boo
         why @ "the name `" + word + "` begins a line after one that ended without a `,`"
     return diag.new_diagnostic(
         code: "unclosed_bracket",
-        message: "`" + text.slice(from: span.start, to: span.end) + "` opened here is still open at line " + line.to_str() + ", where " + why,
+        message: opened(text, span) + "is still open at line " + line.to_str() + ", where " + why,
         span: span
     )
+
+# How a report of an opener left open begins: the opener, and that it stands
+# where the caret is.
+function opened(text: str, span: token.Span) -> str
+    return "`" + text.slice(from: span.start, to: span.end) + "` opened here "
+
+# What a report of one opener left open, `never_closed`'s or `still_open`'s,
+# says of it, "never closed" or "still open at line 4, where ...", or nothing
+# for any other report.
+function said_of(report: diag.Diagnostic, text: str) -> str
+    if report.code != "unclosed_bracket" || report.fixes.len() > 0 || report.notes.len() > 0 || report.span.end != report.span.start + 1
+        return ""
+    head = opened(text, report.span) + "is "
+    whole = report.message
+
+    if whole.len() <= head.len() || whole.slice(from: 0, to: head.len()) != head
+        return ""
+    return whole.slice(from: head.len(), to: whole.len())
+
+# The report of `first`, an opener left open, told for it and the `more`
+# openers after it on its line the lexer named at the same place in the same
+# words (`unclosed_runs`, defect 410): at the first, saying how many.
+function run_of(first: diag.Diagnostic, text: str, more: i64) -> diag.Diagnostic
+    told: diag.Diagnostic @ first
+    told.message @ opened(text, first.span) + "and " + more.to_str() + " more after it on its line are " + said_of(first, text)
+    return told
 
 ## Tests
 
