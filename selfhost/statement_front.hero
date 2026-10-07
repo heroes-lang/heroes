@@ -9,8 +9,10 @@
 # `certain` fix: a value's span leaves out the parentheses around it, so `(5)`
 # alone took `_ = ` as `(_ = 5)` (panel 181's audit), and a value that does not
 # begin its line is an arm's inline body, where a statement written in front of
-# it is refused anew as `declaration_in_arm` (defect 135), so a statement goes
-# into the block an arm that does nothing holds (spec § 8).
+# it was refused anew as `declaration_in_arm` (defect 135), so a statement goes
+# into a block under the arm. Since panel 185's R3 spec § 8 lets `_ = ` and
+# `x @ ` stand on the arm's line as well; the block is the one of the two
+# forms the fix writes.
 
 use token
 use diag

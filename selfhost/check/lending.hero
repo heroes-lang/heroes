@@ -104,10 +104,10 @@ function is_builtin_named(a: ast.Ast, r: resolved.Resolved, at: i64, name: str) 
 #
 # THE MATCH IS IN A FUNCTION OF ITS OWN so that the arms which record
 # nothing can be a `return`. Written inline in the `while` below, they
-# were a `continue` — which the spec forbids for exactly this reason,
-# § Control flow: *"An arm that does nothing is a block holding `_ = 0` —
-# `continue` is not one"*. In a `while` it jumps past the increment, and
-# the sweep hung on its first run.
+# were a `continue`, which jumps rather than doing nothing, as the spec
+# warns for exactly this reason, § Control flow: *"An arm that does nothing
+# holds `_ = 0` — `continue` is not one"*. In a `while` it jumps past the
+# increment, and the sweep hung on its first run.
 function record_arguments(a: ast.Ast, at: i64, @into: {i64: i64})
     match a.exprs[at].kind
         .call cl =>
