@@ -589,18 +589,16 @@ test "a literal match is a chain of tests closed by _, and a T? still switches"
 
     assert fallible_switch
 
-test "an @ argument through an index is handed over as a temporary and stored back after the call"
+test "an @ argument through an index is handed over as the element's own place, and nothing is stored back"
     got = lowered(
         "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @ [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
     )
-    call_at: i64 @ 0 - 1
-    store_at: i64 @ 0 - 1
     handed_over: bool @ false
+    stored_through_index: bool @ false
 
     for f in got.program.functions
         if f.name != "main"
             continue
-        index: i64 @ 0
 
         for inst in f.blocks[0].insts
             match inst.op
@@ -609,23 +607,21 @@ test "an @ argument through an index is handed over as a temporary and stored ba
                         match arg
                             .value_arg => continue
                             .inout_arg io =>
-                                call_at @ index
+                                # The callee is handed the author's array, one
+                                # index step in: panel 196's R1.
+                                steps = containers.steps_of(f, io.place.path)
 
-                                # The callee sees a whole synthetic slot, never the array.
                                 match f.slots[io.place.root].kind
-                                    .synthetic_slot                          => handed_over @ io.place.path.length == 0
-                                    .param_slot | .local_slot | .return_slot => handed_over @ false
+                                    .local_slot                                  => handed_over @ steps.len() == 1
+                                    .param_slot | .synthetic_slot | .return_slot => handed_over @ false
                 .store st =>
                     for step in containers.steps_of(f, st.place.path)
                         match step
-                            .index_step => store_at @ index
+                            .index_step => stored_through_index @ true
                             .field_step => continue
-                .lit | .load | .push_owned | .unary | .binary | .cast | .construct                      => index @ index
-                .field | .index | .map_get | .len_of | .tag_of | .payload                               => index @ index
-                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => index @ index
-
-            index @ index + 1
+                .lit | .load | .push_owned | .unary | .binary | .cast | .construct                      => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
+                .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
     assert handed_over
-    assert call_at >= 0
-    assert store_at > call_at
+    assert !stored_through_index

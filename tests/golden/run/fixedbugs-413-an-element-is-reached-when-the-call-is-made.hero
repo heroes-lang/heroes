@@ -1,0 +1,30 @@
+# fixedbugs, defect 413, lane b13-land-addr, 2026-10-07: an `@` argument whose
+# place is an element, beside an argument whose own call writes the same
+# array. Panel 196's R1 hands the callee the element's own address, reached
+# when the call is made, after every argument was computed: the copy-in a
+# whole cell has always had (`selfhost/resolve/writes.hero`: a call's copy-in
+# happens after its arguments are evaluated, so `outer(@n, k: bump(@n))`
+# keeps both writes). So `grow` sets the element to 100 and lengthens the
+# array, and `add` then adds 1 to what the element holds: `101 2`, as the
+# cell beside it reads `101`. Until R1 the element was read into a temporary
+# where the argument was written, before `grow` ran, and stored back after
+# the call over `grow`'s write: `2 2`, while the cell read `101`.
+function add(@n: i64, k: i64)
+    n @ n + k
+
+function grow(@xs: [i64]) -> i64
+    xs[0] @ 100
+    xs @ xs.push(7)
+    return 1
+
+function hundred(@n: i64) -> i64
+    n @ 100
+    return 1
+
+function main()
+    xs: [i64] @ [1]
+    add(n: @xs[0], k: grow(@xs))
+    print(xs[0], " ", xs.len())
+    n: i64 @ 1
+    add(n: @n, k: hundred(@n))
+    print(n)

@@ -1,0 +1,49 @@
+# fixedbugs, defect 413, lane b13-land-addr, 2026-10-07: zlib knows a stream
+# by its address (`deflateStateCheck` compares `strm->state->strm` with the
+# pointer it is handed), so every call after `deflateInit_` returns
+# `Z_STREAM_ERROR`, -2, unless it is handed the stream the first call
+# initialised. Panel 196's R1: an `@` argument reaches C as its place's own
+# address, never a copy.
+#
+# Four rows of `init reset end`: a local (`0 0 0` before R1 too, the
+# ffi-pragmatist's control); an array's element (defect 413 as filed, `0 -2 -2`
+# until R1: the element was handed over as a temporary); a Heroes function's
+# own `@` parameter wrapping `deflateInit_` (`0 -2 -2`: the wrapper's copy, the
+# completeness critic's row); the same wrapper handed an element (`0 -2 -2`).
+# `deflateEnd` frees what `deflateInit_` allocated, so a row that read -2 also
+# leaked it. `stream_size` is `sizeof(z_stream)` where a long is eight bytes;
+# the Windows box has no zlib, and the case is judged where the header is
+# (`.claude/rules/platforms.md`): its twin on a header of its own,
+# `fixedbugs-413-a-record-c-knows-by-its-address`, runs everywhere.
+extern "zlib.h" link "z"
+    record ZStream tag z_stream_s partial
+        avail_in: u32
+        avail_out: u32
+    function zlibVersion() -> cstr
+    function deflateInit_(@s: ZStream, level: i32, version: cstr lent, stream_size: i32) -> i32
+    function deflateReset(@s: ZStream) -> i32
+    function deflateEnd(@s: ZStream) -> i32
+
+function init(@s: ZStream) -> i32
+    return deflateInit_(@s, level: -1, version: zlibVersion(), stream_size: 112)
+
+function main()
+    s: ZStream @ ZStream(rest: zero)
+    a = deflateInit_(@s, level: -1, version: zlibVersion(), stream_size: 112)
+    b = deflateReset(@s)
+    c = deflateEnd(@s)
+    print(a, " ", b, " ", c)
+    zs: [ZStream] @ [ZStream(rest: zero), ZStream(rest: zero)]
+    d = deflateInit_(@zs[0], level: -1, version: zlibVersion(), stream_size: 112)
+    e = deflateReset(@zs[0])
+    f = deflateEnd(@zs[0])
+    print(d, " ", e, " ", f)
+    t: ZStream @ ZStream(rest: zero)
+    g = init(@t)
+    h = deflateReset(@t)
+    i = deflateEnd(@t)
+    print(g, " ", h, " ", i)
+    j = init(@zs[1])
+    k = deflateReset(@zs[1])
+    l = deflateEnd(@zs[1])
+    print(j, " ", k, " ", l)

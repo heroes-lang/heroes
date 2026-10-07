@@ -7,7 +7,7 @@
 # D92808 records the failure mode of the alternative, where ARC's
 # pairing lived only in the backend.
 #
-# Six rules, and every one has a compiled counterexample:
+# Six rules, each with a compiled counterexample; a seventh is `ir/held.hero`'s:
 # 1. A plain parameter is BORROWED — excluded from the exit sweep.
 #    Taking the other reading was the first program panel 021's judge
 #    compiled, and ASan failed it on the first run.
@@ -60,7 +60,7 @@ use ir/mono
 use ir/verify
 use ir/place_store
 use ir/survival
-use ir/borrowed
+use ir/held
 use ir/uses
 use ir/released
 
@@ -102,12 +102,12 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
     values: [i64] @ worked.values
 
     # The counted loads whose header a read after a write to their root
-    # borrows: in their block or a later one, of the load or of a field, an
-    # element, a payload or a cast of it (defect 387). Asked of the function
-    # as lowering left it, before this walk adds anything; it answers every
-    # load `survival.survivors` answers in its block, which this walk asked
-    # until then, and the test below holds it to that.
-    lent = borrowed.lenders(f, counted: c.counted)
+    # borrows (defect 387), and the arguments a call holds for its duration
+    # (rule 7, panel 196's R1), from one reading of the function as lowering
+    # left it, before this walk adds anything; the lenders answer every load
+    # `survival.survivors` answers in its block, and the test below holds
+    # them to that.
+    found = held.read(f, counted: c.counted)
     index: i64 @ 0
 
     while index < worked.blocks.len()
@@ -123,7 +123,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                 # reference of its own, and rule 5's slot machinery does
                 # the rest.
                 .load =>
-                    if !inst.dest.is_err() && layout.is_refcounted(c, inst.ty) && lent[inst.dest.must()].default(false)
+                    if !inst.dest.is_err() && layout.is_refcounted(c, inst.ty) && found.lent[inst.dest.must()].default(false)
                         moved = inst.dest.must()
                         out @ out.push(inst)
                         out @ out.push(
@@ -222,6 +222,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
 
     worked.slots @ slots
     worked.values @ values
+    worked @ held.hold(worked, holds: found.holds)
 
     # The second walk. Rules 1 and 2 decide the list: local and
     # synthetic slots only, because a plain parameter is borrowed and an
@@ -462,7 +463,7 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
         place_store.run(@p)
 
         for f in p.functions
-            lent = borrowed.lenders(f, counted: c.counted)
+            lent = held.read(f, counted: c.counted).lent
 
             for blk in f.blocks
                 got = survival.survivors(f, blk.insts, blk.term)
