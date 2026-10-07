@@ -18,11 +18,15 @@
 # the stem of one the tool builds, `X.lib` from clang's Windows driver
 # (measured with `-###`) and `X.pc`, so the end of their last part is not the
 # end of a file's name, and a `.` or a space there is no reason to refuse.
-# What lld-link and a Windows `pkg-config` do with such names is unrun.
+# What lld-link does with a `>`, a `"`, a `\` and a `/` in such a name was
+# measured on the box on 2026-10-07 (defect 252, `library_unwritable`); a
+# Windows `pkg-config` is unrun, the box carrying none, so a package's name is
+# judged by what NTFS can hold.
 #
-# A leaf, read by `head_names`: `unwritable` gives `unwritable_name`'s reason
-# on Windows, a name it stores as another file's or a device's, and `locked`
-# gives `machine_locked_path`'s, a name whose file depends on the machine.
+# A leaf, read by `head_names`: `unwritable` and `library_unwritable` give
+# `unwritable_name`'s reason on Windows, a name it stores as another file's,
+# a device's or no file's, and `locked` gives `machine_locked_path`'s, a name
+# whose file depends on the machine.
 
 use bytes
 
@@ -62,6 +66,36 @@ function reserved_byte(value: str) -> str
 
     return ""
 
+# What a `link`'s or a `package`'s name holds past `unwritable`'s that names
+# no one file on every machine, as its reason, or "" (defect 252). Measured
+# on the box on 2026-10-07, clang 23.1.1 driving lld-link over NTFS: `>` and
+# `"` stand in no file's name there, `CopyFileW` into `a>b.lib`, `a"b.lib`,
+# `a>b.pc` and `a"b.pc` failing with Win32 error 123 as into `a*b.lib`, and
+# lld-link, handed `g>h.lib` and `g"h.lib` by `-l`, by `/defaultlib:` and as a
+# path, could not open them, *invalid argument*, Git Bash having written both;
+# a `\` is a directory to lld-link, `-la\b` linking `b.lib` inside `a`, where
+# ld64 and GNU ld 2.44 link one file, `liba\b.a`; and in a `link` a `/` is a
+# directory to every linker but not the same one, lld-link opening
+# `sub/m252.lib` and ld64 and GNU ld `libsub/m252.a`, `lib` written before the
+# directory. A `rooted` value is a path whatever it holds, which `head_names`
+# tells with its route, so its `/` and `\` are left to that. A package's `/`
+# passes, as a header's `sub/foo.h` does: `pkg-config` looks it up under each
+# search directory.
+function library_unwritable(value: str, what: str, rooted: bool) -> str
+    at: i64 @ 0
+
+    while at < value.len()
+        b = value[at]
+
+        if b == '>' || b == '"' || b == '\\' && !rooted
+            return "holds `" + value.slice(from: at, to: at + 1) + "`, which no file's name on Windows can hold"
+
+        if b == '/' && what == "link" && !rooted
+            return "holds `/`, which every linker reads as a directory and not the same one, `" + value + ".lib` on Windows and `lib" + value + "` on macOS and Linux"
+        at @ at + 1
+
+    return ""
+
 function part_unwritable(part: str, last: bool, suffixed: bool) -> str
     if part.len() == 0 || part == "." || part == ".."
         return ""
@@ -79,17 +113,48 @@ function ending(b: u8) -> str
         return "`.`"
     return "a space"
 
-# Whether a part names one of Windows' devices: CON, PRN, AUX, NUL, COM0 to
-# COM9 or LPT0 to LPT9, in any case, the part before its first `.`.
+# Whether a part names one of Windows' devices: CON, PRN, AUX, NUL, CONIN$,
+# CONOUT$, and COM and LPT with a digit from 1 to 9 or one of ISO 8859-1's
+# superscripts `¹`, `²` and `³` (UTF-8 `c2 b9`, `c2 b2`, `c2 b3`), in any
+# ASCII case; read on the part before its first `.`, the spaces ending it
+# dropped (defect 253). The names are Microsoft's *Naming Files, Paths, and
+# Namespaces* (read 2026-10-07, its date 2024-08-28), which reserves them
+# followed by an extension too, and the console's two of `CreateFileW`'s
+# page; CPython's `ntpath.isreserved` and Wine's `RtlIsDosDeviceName_U` read
+# the same set the same way, spaces dropped, *the rules varying across Windows
+# versions*. Measured on the box (Windows 10.0.26100, `CreateFileW`,
+# `GetFullPathNameW` and `RtlIsDosDeviceName_U` itself): each of them bare is
+# the device, `\\.\COM¹`, the console's two opened as the console; `COM0`,
+# `LPT0`, `COM10`, `COM⁰`, `COM⁴`, `COM１`, `CONERR$` and `CLOCK$` are files.
+# That build reads a file where the page and Wine read the device, behind an
+# extension (`COM¹.h`, `NUL.h`, `CONIN$.h`) or after a directory (`sub/COM¹`;
+# `sub/NUL` stays the device), and refuses a directory so named (error 267).
+# Git Bash wrote every one bare as a file, and clang's `#include` of `NUL`
+# then read the device, its declaration unseen.
 function device(part: str) -> bool
     stem: i64 @ 0
 
     while stem < part.len() && part[stem] != '.'
         stem @ stem + 1
 
+    while stem > 0 && part[stem - 1] == ' '
+        stem @ stem - 1
+
     if stem == 3
         return same_letters(part: part, word: "con") || same_letters(part: part, word: "prn") || same_letters(part: part, word: "aux") || same_letters(part: part, word: "nul")
-    return stem == 4 && (same_letters(part: part, word: "com") || same_letters(part: part, word: "lpt")) && bytes.is_digit(part[3])
+
+    if stem == 6
+        return same_letters(part: part, word: "conin$")
+
+    if stem == 7
+        return same_letters(part: part, word: "conout$")
+
+    if stem < 4 || !(same_letters(part: part, word: "com") || same_letters(part: part, word: "lpt"))
+        return false
+
+    if stem == 4
+        return part[3] >= '1' && part[3] <= '9'
+    return stem == 5 && part[3] == 194 && (part[4] == 185 || part[4] == 178 || part[4] == 179)
 
 # Whether `part` begins with the lower-case `word` in any ASCII case.
 function same_letters(part: str, word: str) -> bool
@@ -162,13 +227,43 @@ test "a part Windows stores under another name, or reads as a device (defect 234
     assert unwritable(value: "sub/Con.h", suffixed: false) != ""
     assert unwritable(value: "aux", suffixed: true) != ""
     assert unwritable(value: "COM1", suffixed: false) != ""
-    assert unwritable(value: "lpt0.h", suffixed: false) != ""
     assert unwritable(value: "com.h", suffixed: false) == ""
     assert unwritable(value: "comx.h", suffixed: false) == ""
     assert unwritable(value: "com10.h", suffixed: false) == ""
     assert unwritable(value: "nullish.h", suffixed: false) == ""
     assert unwritable(value: "a.nul", suffixed: false) == ""
     assert unwritable(value: "é.h", suffixed: false) == ""
+
+# Defect 253: the superscript digits and the console's two are devices as
+# `COM1` is, and `COM0` and `LPT0` are files, the box's measure and
+# Microsoft's list both.
+test "a device is named by a superscript digit or by the console's two, and never by 0 (defect 253)"
+    device_said = "has a part Windows reads as one of its devices, not as a file"
+    assert unwritable(value: "COM¹.h", suffixed: false) == device_said
+    assert unwritable(value: "com²", suffixed: false) != ""
+    assert unwritable(value: "sub/Com³.txt", suffixed: false) != ""
+    assert unwritable(value: "LPT¹", suffixed: true) != ""
+    assert unwritable(value: "lpt².h", suffixed: false) != ""
+    assert unwritable(value: "lPt³", suffixed: true) != ""
+    assert unwritable(value: "CONIN$", suffixed: true) == device_said
+    assert unwritable(value: "conin$.h", suffixed: false) != ""
+    assert unwritable(value: "CONOUT$", suffixed: true) != ""
+    assert unwritable(value: "sub/Conout$.txt", suffixed: false) != ""
+    assert unwritable(value: "nul .h", suffixed: false) != ""
+    assert unwritable(value: "COM¹  .h", suffixed: false) != ""
+    assert unwritable(value: "com0.h", suffixed: false) == ""
+    assert unwritable(value: "LPT0", suffixed: true) == ""
+    assert unwritable(value: "COM⁰.h", suffixed: false) == ""
+    assert unwritable(value: "COM⁴.h", suffixed: false) == ""
+    assert unwritable(value: "COM¹¹.h", suffixed: false) == ""
+    assert unwritable(value: "COM¼.h", suffixed: false) == ""
+    assert unwritable(value: "CONERR$.h", suffixed: false) == ""
+    assert unwritable(value: "CLOCK$", suffixed: true) == ""
+    assert unwritable(value: "CONIN.h", suffixed: false) == ""
+    assert unwritable(value: "conins$", suffixed: true) == ""
+    assert unwritable(value: " nul.h", suffixed: false) == ""
+    assert device("CONOUT$ ")
+    assert !device("CONOUT")
 
 test "a name whose file depends on the machine: a `:`, a `~`, a climb out of a named directory (defect 234)"
     assert locked("ab.h") == ""

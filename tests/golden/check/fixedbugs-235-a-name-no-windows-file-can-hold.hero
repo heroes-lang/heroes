@@ -28,8 +28,12 @@ extern "stdio.h" link "a?b"  #~ unwritable_name
 extern "stdio.h" package "zlib<2"  #~ unwritable_name
     function v7() -> i32
 
-extern "stdio.h" package "zlib>=1"  #~ package_comparison
+extern "stdio.h" package "zlib>=1"  #~ unwritable_name
     function v8() -> i32
 
 function main()
     print(v1() + v2() + v3() + v4() + v5() + v6() + v7() + v8())
+
+# Defect 252, 2026-10-07: `>` stands in no file's name on Windows either, Win32
+# error 123 as `*` measured on the box, so `zlib>=1` above is told as `zlib<2`
+# is, and no longer as a version's comparison.
