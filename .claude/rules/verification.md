@@ -29,13 +29,16 @@ rather than trusting the table:
 grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 
 # what each suite file walks, from its own constants — the literal paths, and
-# the bare group names of a suite that builds `"tests/golden/" + group`
+# the bare group names of a suite that builds `"tests/golden/" + group` — read
+# in the suite's code alone: its `test` blocks and its comments left out, since
+# a literal a test asserts the suite does NOT walk is not a walk (defect 288)
 for f in tests/harness/suite_*.hero; do
   printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  { grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+|issues)"' "$f"
-    if grep -q '"tests/golden/" +' "$f"; then
+  code=$(awk '/^test "/ { t = 1; next } t && /^[^ \t#]/ { t = 0 } !t && !/^[[:space:]]*#/' "$f")
+  { printf '%s\n' "$code" | grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+|issues)"'
+    if printf '%s\n' "$code" | grep -q '"tests/golden/" +'; then
       for d in $(ls tests/golden); do
-        grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" "$f" && echo "\"tests/golden/$d\""
+        printf '%s\n' "$code" | grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" && echo "\"tests/golden/$d\""
       done
     fi
   } | sort -u | tr '\n' ' '; echo
@@ -60,11 +63,11 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `selfhost/**` | `canonical` `layout` `order` `records`, **plus the compiler's own tests** |
 | `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
 | `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, plus everything `selfhost/**` already gets, and the run by hand below before a push |
-| `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
+| `tests/golden/check/**` | **`check`** `annotations` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
-| `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
-| `tests/golden/permissive/**` | **`permissive`** `annotations` `canonical` |
-| `tests/golden/full/**` | **`full`** `annotations` `canonical` |
+| `tests/golden/unsupported/**` | **`unsupported`** `annotations` |
+| `tests/golden/permissive/**` | **`permissive`** `annotations` |
+| `tests/golden/full/**` | **`full`** `annotations` |
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
@@ -76,6 +79,20 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
+
+**`canonical` stood in four golden rows until 2026-10-07, and walks none of
+them** (defect 288, lane b9-harness's reading of 2026-10-04): its test *the
+exempt directories are named nowhere in the walk* asserts `dir !=
+"tests/golden/check"`, and the same of `unsupported`, `permissive` and
+`full`, and the command read those four literals as four walks. It now reads a
+suite's code without its `test` blocks and its comments. Run against its old
+self that day it moved three rows of its output and no other: `canonical` lost
+the four directories, `unseen` lost `seed/heroes.c` (its test asserts the seed
+EXEMPT), and `records` lost `selfhost`, `docs/design/` and
+`docs/work/milestones`, three literals of its tests, the last two asserted
+absent; the table's `records` cells stand, since `records` reads every file
+`shell.project_files` names, which no literal shows. The four rows above lost
+`canonical`, which runs a suite too many and never one too few.
 
 **`emit` and `unseen` were missing until 2026-10-06**, both found at batch 12's
 close. `tests/golden/emit/` holds emissions kept by hand that an emitter change
