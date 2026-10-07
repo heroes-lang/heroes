@@ -5,7 +5,7 @@
 # reads `fd.value.params[position].name`, a span into the source the author
 # wrote, and compares the call site's label against the text at that position.
 # A Tier-1 built-in has no declaration and therefore no span, so the name has
-# to be a `str` the compiler carries: `inventory.labelled()`.
+# to be a `str` the compiler carries: `inventory.labelled_of`.
 #
 # Both halves of the rule live here, because they are one rule: a missing label
 # is `needs_label` and a label at the wrong position is `wrong_label`. The

@@ -363,7 +363,7 @@ function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
         # audit on its first program.
 
         .builtin b =>
-            state.push_diagnostic(@c, contextless_errors.builtin_as_value(inventory.table()[b.at].name, span))
+            state.push_diagnostic(@c, contextless_errors.builtin_as_value(inventory.name_of(b.at), span))
             return state.error_ty_of(c)
         .unresolved => return state.error_ty_of(c)
 
@@ -1229,7 +1229,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
     return fail(code: "indirect", msg: "unreached")
 
 function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], index: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
-    name = inventory.table()[index].name
+    name = inventory.name_of(index)
     collected: [i64] @ []
     taken = labels.written_labels(s, given)
 
@@ -1903,7 +1903,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     name: str @ ""
 
     match r.uses[callee]
-        .builtin b                            => name @ inventory.table()[b.at].name
+        .builtin b                            => name @ inventory.name_of(b.at)
         .unresolved | .local | .top | .module => return fail(code: "not_mine", msg: "the callee is not a built-in")
 
     if name != "ok" && name != "fail"
