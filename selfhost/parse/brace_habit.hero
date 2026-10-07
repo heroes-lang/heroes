@@ -230,7 +230,12 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
                 )
                 return
             else if open.len() == 0 && i >= c.pos && told_to(c, at: i) >= run.end
-                while c.tokens[i + 1].span.end <= run.end
+                # Past the run's own closers, and only those: a view of a body
+                # lays its `dedent` and `eof` at its closing token's place
+                # (`parse/braced_lines`), so where the run ends there they
+                # end inside it too, and stepping by place alone read past the
+                # last token (defect 456).
+                while i + 1 < c.tokens.len() && token.is_closer(c.tokens[i + 1].kind) && c.tokens[i + 1].span.end <= run.end
                     i @ i + 1
         i @ i + 1
 
@@ -240,7 +245,7 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
 function stray_run(c: cursor.Cursor, text: str, at: i64) -> token.Span
     last: i64 @ at
 
-    while token.is_closer(c.tokens[at].kind) && token.is_closer(c.tokens[last + 1].kind) && text_lines.newlines_between(text, from: c.tokens[last].span.end, to: c.tokens[last + 1].span.start) == 0
+    while token.is_closer(c.tokens[at].kind) && last + 1 < c.tokens.len() && token.is_closer(c.tokens[last + 1].kind) && text_lines.newlines_between(text, from: c.tokens[last].span.end, to: c.tokens[last + 1].span.start) == 0
         last @ last + 1
 
     return token.Span(start: c.tokens[at].span.start, end: c.tokens[last].span.end)
