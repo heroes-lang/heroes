@@ -1,0 +1,17 @@
+# fixedbugs, defect 413, lane b13-land-addr, 2026-10-07: an `@` argument whose
+# element is past the array's end. Panel 196's R1 reaches the element when the
+# call is made, after every argument was computed, so the argument after it
+# runs first, and its line is printed, and the call then aborts naming the
+# index, before the callee runs. Until R1 the element was read where the
+# argument was written, and the program aborted before `said` ran.
+function set(@n: i64, k: i64)
+    n @ k
+
+function said(k: i64) -> i64
+    print("said ", k)
+    return k
+
+function main()
+    xs: [i64] @ [0]
+    set(n: @xs[3], k: said(k: 5))
+    print(xs[0])

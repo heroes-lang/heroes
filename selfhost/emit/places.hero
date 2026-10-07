@@ -1,0 +1,252 @@
+# A place as C: its slot, the fields it walks through, and its elements
+# (design.md §4.8, §4.9, §4.10; panels 022, 062, 196). Split out of
+# `emit/aggregate.hero` on 2026-10-07, when panel 196's R1 gave an `@`
+# argument's place an element and the walk took that file past §11's 300
+# lines, along the seam the file already had: what a record's C is, and where
+# a place is.
+#
+# One question: GIVEN A SLOT AND A PATH, WHAT C LVALUE IS THE PLACE. A field
+# is an index in the IR, so a step walks from a type to its declaration and
+# back (`field`); an element is the runtime's own slot in the array's block,
+# reached after the array is unshared (`reached`); a fixed array's element is
+# C storage behind one bound check (`subscript`); and the slot itself is its
+# local, or for an `@` parameter the caller's place through its pointer
+# (`slot_lvalue`). `aggregate.field` and `aggregate.place` are the names the
+# rest of the emitter asks these by.
+
+use ast
+use source
+use check/table
+use check/state
+use ir
+use ir/containers
+use emit/mangle
+use emit/ctype
+use emit/writer
+
+# The C member name of a field, and the type it holds. Absent where the
+# owner is not an aggregate or the index is past its fields — which by
+# here means the checker reported something already.
+record FieldRead
+    member: str
+    ty: i64
+
+function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, index: i64) -> FieldRead?
+    # §4.6's built-in record: two strs, code then msg, with no
+    # declaration anywhere to read them from.
+    is_failure: bool @ false
+
+    match table.get(c.types, owner)
+        .failure                                                   => is_failure @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_failure @ is_failure
+        .array | .fixed | .map | .fallible | .function_ty | .named => is_failure @ is_failure
+        .case_ty | .generic | .error                               => is_failure @ is_failure
+
+    if is_failure
+        member: str @ "msg"
+
+        if index == 0
+            member @ "code"
+        return ok(FieldRead(member: member, ty: table.str_ty(c.types)))
+    decl: i64 @ 0 - 1
+    case_at: i64 @ 0 - 1
+
+    match table.get(c.types, owner)
+        .named n => decl @ n.decl
+        .case_ty vc =>
+            decl @ vc.decl
+            case_at @ vc.at
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ decl
+        .array | .fixed | .map | .fallible | .function_ty         => decl @ decl
+        .failure | .generic | .error                              => decl @ decl
+
+    if decl < 0
+        return fail(code: "none", msg: "not an aggregate")
+    fields: [ast.Field] @ []
+    foreign: bool @ false
+
+    match decls[decl].kind
+        .record_decl rec =>
+            fields @ rec.fields
+
+            if !rec.header.is_err()
+                foreign @ true
+        .variant_decl v =>
+            if case_at < 0 || case_at >= v.cases.len()
+                return fail(code: "none", msg: "not a case of this variant")
+            fields @ v.cases[case_at].fields
+        .constant_decl | .function_decl | .test_decl => return fail(code: "none", msg: "not an aggregate declaration")
+
+    if index >= fields.len()
+        return fail(code: "none", msg: "past the fields")
+    written = state.written_type(c, fields[index].ty)
+
+    if written.is_err()
+        return fail(code: "none", msg: "the field's type was never lowered")
+    return ok(
+        FieldRead(member: mangle.field_of(foreign: foreign, name: source.span_text(s, fields[index].name)), ty: written.must())
+    )
+
+# The C lvalue a slot is reached by: its own local, or, for an `@`
+# parameter, the caller's place through the pointer the signature declares
+# (panel 196's R1). An `@` parameter has no local of its own since that
+# sitting, so every read and write of the body lands on the caller's place,
+# and C handed `&(*ph0_s)` from inside a wrapper receives that place too:
+# until then the callee copied it into a local and back, and zlib, which
+# knows its stream by address, refused the wrapper's copy (defect 413).
+function slot_lvalue(f: containers.Function, at: i64) -> str
+    slot = f.slots[at]
+
+    if by_pointer(slot)
+        return "(*" + mangle.out_param(index: at, name: slot.name) + ")"
+    return mangle.slot(index: at, name: slot.name)
+
+# Whether a slot is reached through a pointer rather than declared: an `@`
+# parameter, and nothing else.
+function by_pointer(slot: containers.Slot) -> bool
+    return match slot.kind
+        .param_slot ps                               => ps.mutable
+        .local_slot | .synthetic_slot | .return_slot => false
+
+# What clang reads as an undeclared identifier, appended where a place has
+# no C lvalue: if it is ever emitted, the unit is refused and the failure
+# is exit 2, the compiler's, and loud. Until 2026-09-03 a walk that met an
+# index stopped silently, the text compiled with a warning, and
+# `add(@bs[0], "y")` was handed `&h0_bs`, the whole array, and died at exit
+# 138.
+constant NOT_AN_LVALUE: str
+    " HERO_INDEX_STEP_IS_NOT_AN_LVALUE"
+
+# A place as a C lvalue: the slot, then one `.member` per field and one
+# element per index. The path is walked with the TYPE alongside it, because
+# a member's spelling comes from the declaration and each step changes which
+# declaration that is.
+#
+# **An index step is an `@` argument's alone** (panel 196's R1): a store
+# through one is the container store's (`emit/container.hero`), and a load
+# never carries one. So `reached` below is where an element is spelled, and
+# this reading asks it with no names of its own, which the two readers that
+# hold none need, `emit/lend_count.hero` and `emit/lend_extent.hero`: they
+# spell the record or the count cell an extern is lent, whose element types
+# are C's own and spelled from the declarations alone.
+function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
+    none: ctype.Names? = fail(code: "none", msg: "no names: read from the declarations where an element needs them")
+    return reached(c, none, s, decls, f, at: at).lvalue
+
+# A place reached for an `@` argument: its C lvalue, and the unshare each
+# array step owes before anything may write through it, outermost first.
+record Reached
+    lvalue: str
+    unshares: [str]
+
+# **An array's element is its own address, after the array is unshared**
+# (panel 196's R1; defect 413). One unshare per array step, each at its own
+# level, as a store through the same place makes them (`container.hero`'s
+# `write_element`, panel 022), and the element is then the runtime's own
+# slot, `hero_array_at_mut`, which aborts out of range. The caller writes
+# the unshares immediately before the call, after every argument has been
+# computed, so no argument read before them can see the block they make
+# the array's own; a fixed array's element is C storage and only checks its
+# bound (`subscript`). Until R1 `ir/inout.hero` read the element into a
+# temporary and stored it back after the call, and C, handed the temporary,
+# kept an address that was dead when the call returned: zlib printed
+# `0 -2 -2`.
+#
+# `names` is absent where the reader holds none, and is then made from the
+# declarations at the first element: a group's record, a number or a pointer
+# is spelled from them alone. An element whose C type is named from the
+# whole program, a `T?` or a function, is spelled only with the caller's
+# names, and without them the place is `NOT_AN_LVALUE`.
+function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> Reached
+    # The lvalue so far, as pieces joined where a step wraps it, so a long
+    # path is not copied whole at every field (defect 105).
+    parts: [str] @ [slot_lvalue(f, at.root)]
+    ty: i64 @ f.slots[at.root].ty
+    unshares: [str] @ []
+    known: ctype.Names? @ names
+
+    for step in containers.steps_of(f, at.path)
+        match step
+            .field_step fs =>
+                found = field(c, s, decls, owner: ty, index: fs.at)
+
+                if found.is_err()
+                    return Reached(lvalue: parts.join(""), unshares: unshares)
+                parts @ parts.push("." + found.must().member)
+                ty @ found.must().ty
+            .index_step ix =>
+                index = mangle.value(ix.value)
+                so_far = parts.join("")
+
+                match table.get(c.types, ty)
+                    .fixed x =>
+                        parts @ [subscript(base: so_far, index: index, length: x.length)]
+                        ty @ x.element
+                    .array arr =>
+                        if known.is_err()
+                            known @ ok(ctype.new_names(s, decls))
+                        spelled = element_c_type(c, known.must(), ty: arr.element)
+
+                        if spelled.is_err()
+                            return Reached(lvalue: so_far + NOT_AN_LVALUE, unshares: unshares)
+                        unshares @ unshares.push("hero_array_unshare(&(" + so_far + "));")
+                        parts @ ["(*(" + spelled.must() + " *)hero_array_at_mut(" + so_far + ", " + index + "))"]
+                        ty @ arr.element
+                    # A map's element is a `V?`, which the checker refuses
+                    # after `@`; a string's byte is no place either, and the
+                    # checker does not refuse it yet (found beside panel 196's
+                    # landing and reported), so clang refuses the text below.
+                    .map | .str | .int_ty | .float_ty | .bool | .ptr | .cstr => return Reached(
+                        lvalue: so_far + NOT_AN_LVALUE,
+                        unshares: unshares
+                    )
+                    .unit | .fallible | .function_ty | .named | .case_ty => return Reached(
+                        lvalue: so_far + NOT_AN_LVALUE,
+                        unshares: unshares
+                    )
+                    .failure | .generic | .error => return Reached(lvalue: so_far + NOT_AN_LVALUE, unshares: unshares)
+
+    return Reached(lvalue: parts.join(""), unshares: unshares)
+
+# An element's C type, where `names` holds it: a `T?` and a function type are
+# named from the whole program, so names made from the declarations alone do
+# not hold them, and the answer is then absent rather than `ctype`'s assert.
+function element_c_type(c: state.Checked, names: ctype.Names, ty: i64) -> str?
+    match table.get(c.types, ty)
+        .fallible =>
+            if names.options[ty].is_err()
+                return fail(code: "none", msg: "a T? these names do not hold")
+        .function_ty =>
+            if names.funcs[ty].is_err()
+                return fail(code: "none", msg: "a function type these names do not hold")
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => _ = 0
+        .array | .fixed | .map | .named | .case_ty                => _ = 0
+        .failure | .generic | .error                              => _ = 0
+
+    return ctype.c_type(names, c: c, ty: ty)
+
+# One element of a fixed array, as the C lvalue `base[guarded index]`, and the
+# ONE spelling of its bound check: `emit/storageless.hero` reads through it,
+# `container.write_element` writes through it, and an `@` argument is handed
+# its address (`reached` above), so a read, a write and a lend of `n.a[i]`
+# cannot disagree about the bound or the message (defect 097, whose write had
+# no spelling at all and died at run time as a compiler bug). Guarded HERE
+# (panel 062) because -Warray-bounds was measured not to fire on an opaque
+# index, and unsigned so one test catches both ends. It lived in
+# `emit/storageless.hero` until panel 196's R1 gave a place an element, and
+# that module reads this one, so this one could not read it.
+function subscript(base: str, index: str, length: i64) -> str
+    return base + "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + index + "))]"
+
+# An `@` argument as the call hands it over: the unshares its array steps
+# owe, written here, then the place's own address (panel 196's R1). The
+# caller writes the call after this, so every argument is computed before
+# the unshares and nothing the call reads was taken from the block they make
+# the array's own.
+function argument(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
+    lent = reached(c, ok(names), s, decls, f, at: at)
+
+    for line in lent.unshares
+        writer.line(@w, text: "    " + line)
+
+    return "&" + lent.lvalue

@@ -1,0 +1,44 @@
+# fixedbugs, defect 413, lane b13-land-addr, 2026-10-07: libuv keeps every
+# handle's address in its loop's queue, from `uv_timer_init` until the handle
+# is closed, and `uv_walk` visits what the queue holds. Panel 196's R1: an
+# `@` argument reaches C as its place's own address, never a copy.
+#
+# Three timers: a local initialised through a Heroes function's own `@`
+# parameter (`start`), an array's element initialised directly, and an
+# element initialised through `start`. After each is initialised the program
+# writes its own `data` field, and the walk prints, for each handle the loop
+# holds, whether that handle's `data` is what the program wrote: `true` three
+# times where the loop holds the program's own three places. Until R1 the
+# loop held the wrapper's dead frame and two of the caller's temporaries
+# instead: one line, `false`, at exit 0 on this Mac at `-O0` (the critic's
+# `uv_print_all_handles` read the same queue as a cycle without end at `-O2`
+# and exited 139 at `-O0`). The walk ends with the queue, so this program
+# ends. The Windows box has no libuv, and the case is judged where the header
+# is (`.claude/rules/platforms.md`): its twin on a header of its own,
+# `fixedbugs-413-a-record-c-knows-by-its-address`, runs everywhere.
+extern "uv.h" package "libuv"
+    record UvTimer tag uv_timer_s partial
+        data: ptr
+    record UvHandle tag uv_handle_s
+    function uv_default_loop() -> ptr
+    function uv_timer_init(loop: ptr, @h: UvTimer) -> i32
+    function uv_walk(loop: ptr, walk_cb: (function(h: UvHandle, arg: ptr) -> ()), arg: ptr)
+    function uv_handle_get_data(h: UvHandle) -> ptr
+
+function seen(h: UvHandle, arg: ptr)
+    print(uv_handle_get_data(h) == arg)
+
+function start(loop: ptr, @t: UvTimer) -> i32
+    return uv_timer_init(loop, @t)
+
+function main()
+    loop = uv_default_loop()
+    a: UvTimer @ UvTimer(rest: zero)
+    print(start(loop, @a))
+    a.data @ loop
+    ts: [UvTimer] @ [UvTimer(rest: zero), UvTimer(rest: zero)]
+    print(uv_timer_init(loop, @ts[0]))
+    print(start(loop, @ts[1]))
+    ts[0].data @ loop
+    ts[1].data @ loop
+    uv_walk(loop: loop, walk_cb: seen, arg: loop)

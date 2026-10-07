@@ -1,0 +1,244 @@
+# The by-value arguments a call holds for its own duration (design.md Part 5,
+# §4.8, §4.10; panel 196's R1, defect 413).
+#
+# **The shape.** `f(@x, x.items)`, `f(@x.items, q: x)`, `f(@xs[0], q: xs)`:
+# one call is handed a place through `@` and, by value, something that
+# borrows the header of that same place. A load BORROWS (`ir/own.hero`, rule
+# 5): it takes no reference, so the by-value argument and the place share
+# one block with one count. The callee then writes through `@`, in place,
+# because the count says nobody else holds the block, and reads its
+# by-value parameter: it sees its own write, where § 9's *copy in, copy out*
+# says it sees the value the call was handed, or it reads a block the write
+# released, which is a use after free. Measured on round b13's compiler
+# before this module, with the array's count at one: `f(@x.items, q: x)`
+# printed `7 7` where the meaning is `1 7`, `f(@x, x.items)` the same, and a
+# callee replacing `b.items` while `items` named the old block exited 134
+# with AddressSanitizer reporting a heap use after free.
+#
+# **Why it was rare, and why it is not now.** A literal or a call's result is
+# held by a synthetic slot until the function returns (rule 5), so most
+# arrays reach a call with a count of two and copy on their first write; a
+# block made the place's own by an earlier write or grown in place by the
+# place store reaches it with one. And until panel 196's R1 an element was
+# handed over as a temporary written back after the call, so `f(@xs[0],
+# q: xs)` could not see itself; since R1 the element is its own address in
+# the array's block, and this is the rule that keeps the meaning.
+#
+# **The repair is a reference held for the call, and only for it**: each such
+# argument is retained before the call and released right after it. The
+# callee's write then finds the block shared and copies it (one copy, the
+# one copy-in-copy-out always implied), the by-value parameter keeps the old
+# block alive, and the caller's count is back where it was once the call
+# returns, so a place grown in place after the call still grows in place.
+# Holding it in a slot until the function returns, as a lender's reference
+# is held (`ir/borrowed.hero`), would make every later push of that array in
+# a loop copy it whole: a program linear today would become quadratic.
+#
+# **What is held**, asked of the value in hand: an argument of a counted type
+# whose lender is a load of a root the same call writes through `@`
+# (`borrowed.borrows`, `survival.inout_roots`). A number read off the place
+# (`l.pos`) is not counted and is not held; a value the call does not borrow
+# from that root (another binding, a call's result, a join's slot) already
+# holds a count of its own.
+
+use token
+use ir
+use ir/containers
+use ir/borrowed
+use ir/survival
+use source
+use check/state
+use parse
+use resolve
+use checker
+use ir/lower
+use ir/mono
+use ir/place_store
+
+# One reading of a function for the ownership pass: the loads that lend
+# their header to a read after a write to their root (`borrowed.lenders_of`,
+# defect 387), and the calls' holds, both from the one borrow analysis.
+record Reading
+    lent: {i64: bool}
+    holds: {i64: [i64]}
+
+function read(f: containers.Function, counted: [bool]) -> Reading
+    b = borrowed.borrows(f, counted: counted)
+    return Reading(lent: borrowed.lenders_of(f, b), holds: held(f, b, counted: counted))
+
+# The holds written into a function the ownership pass has walked: before each
+# call that holds anything, a retain of each value it holds, and right after
+# it a release of each. After rule 5's move of the call's result or before it
+# is one answer, since that result owns a reference of its own. A function
+# that holds nothing is handed back as it came.
+#
+# **What the verifier reads of a hold.** `ir/released.hero` reads a decref of
+# a whole-slot load taken after the slot's last write as that slot's release
+# in its block; a hold's release balances its own retain, and that reading
+# skips it, so a hold never stands in for the sweep a returning block owes.
+function hold(f: containers.Function, holds: {i64: [i64]}) -> containers.Function
+    if holds.len() == 0
+        return f
+    worked: containers.Function @ f
+    index: i64 @ 0
+
+    while index < worked.blocks.len()
+        out: [ir.Inst] @ []
+
+        for inst in worked.blocks[index].insts
+            holding: [i64] @ []
+
+            match inst.op
+                .call cl                                                                          => holding @ of_call(
+                    holds,
+                    run: cl.arguments
+                )
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct       => holding @ holding
+                .field | .index | .map_get | .len_of | .tag_of | .payload | .func_ref | .copy_out => holding @ holding
+                .abort_op | .incref | .decref | .decref_slot | .hole | .missing                   => holding @ holding
+
+            for v in holding
+                out @ out.push(reference(f, value: v, keep: true, span: inst.span))
+
+            out @ out.push(inst)
+
+            for v in holding
+                out @ out.push(reference(f, value: v, keep: false, span: inst.span))
+
+        worked.blocks[index].insts @ out
+        index @ index + 1
+
+    return worked
+
+function reference(f: containers.Function, value: i64, keep: bool, span: token.Span) -> ir.Inst
+    void: i64? = fail(code: "none", msg: "void")
+
+    if keep
+        return ir.Inst(dest: void, op: .incref(value: value), ty: containers.value_type(f, value), span: span)
+    return ir.Inst(dest: void, op: .decref(value: value), ty: containers.value_type(f, value), span: span)
+
+# For each call that holds anything, keyed by the start of its argument run
+# (a call with arguments has its own run in the function's pool; `of_call`
+# reads it), the by-value arguments it holds, in argument order. Read from the borrows the ownership pass has
+# already read for its lenders (`borrowed.borrows`), so a function is read for
+# them once; a function whose loads no write follows holds nothing.
+function held(f: containers.Function, b: borrowed.Borrows, counted: [bool]) -> {i64: [i64]}
+    out: {i64: [i64]} @ {}
+
+    if b.value.len() == 0
+        return out
+
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .call cl =>
+                    taken = held_by(f, b, counted: counted, run: cl.arguments)
+
+                    # A hold implies an argument, so a run that holds anything
+                    # is not empty and no other call's run starts where it does.
+
+                    if taken.len() > 0
+                        out[cl.arguments.start] @ taken
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct       => continue
+                .field | .index | .map_get | .len_of | .tag_of | .payload | .func_ref | .copy_out => continue
+                .abort_op | .incref | .decref | .decref_slot | .hole | .missing                   => continue
+
+    return out
+
+# What one call holds. A call with no arguments holds nothing, and is
+# answered without the table: its empty run takes no room in the pool, so it
+# may start where another call's run starts, and that call's holds would be
+# read as its own (measured: `xs @ fresh()` before `f(@xs[0], q: xs)` was
+# handed `f`'s hold of `xs` before `xs` was loaded, and the verifier refused
+# the program).
+function of_call(holds: {i64: [i64]}, run: ir.Run) -> [i64]
+    none: [i64] = []
+
+    if run.length == 0
+        return none
+    return holds[run.start].default(none)
+
+# The arguments of one call it holds: counted, and borrowed from a load whose
+# root the call writes through `@`.
+function held_by(f: containers.Function, b: borrowed.Borrows, counted: [bool], run: ir.Run) -> [i64]
+    taken: [i64] @ []
+
+    if !survival.any_inout(f, over: run)
+        return taken
+    roots = survival.inout_roots(f, over: run)
+
+    if roots.len() == 0
+        return taken
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg v =>
+                if is_counted(f, counted: counted, value: v.value) && v.value < b.lender.len() && b.lender[v.value] >= 0
+                    root = b.root[b.lender[v.value]]
+
+                    if contains(roots, root) && !contains(taken, v.value)
+                        taken @ taken.push(v.value)
+            .inout_arg => continue
+
+    return taken
+
+function is_counted(f: containers.Function, counted: [bool], value: i64) -> bool
+    if value < 0 || value >= f.values.len()
+        return false
+    ty = f.values[value]
+    return ty >= 0 && ty < counted.len() && counted[ty]
+
+function contains(list: [i64], wanted: i64) -> bool
+    for one in list
+        if one == wanted
+            return true
+
+    return false
+
+## Tests
+
+# The calls of `main` in `text` that hold anything, after the passes the
+# ownership pass follows, and how many values each holds.
+function holds_in_main(text: str) -> [i64]
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    resolved_out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, resolved_out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    p: containers.Program @ lower.lower(parsed.tree, resolved_out, c, s, parsed.decls).program
+    assert mono.run(@p, @c, s, parsed.decls).len() == 0
+    place_store.run(@p)
+    sizes: [i64] @ []
+
+    for f in p.functions
+        if f.name == "main"
+            got = held(f, borrowed.borrows(f, counted: c.counted), counted: c.counted)
+
+            # Read call by call, in the order the calls stand.
+            for blk in f.blocks
+                for inst in blk.insts
+                    match inst.op
+                        .call cl =>
+                            taken = of_call(got, run: cl.arguments)
+
+                            if taken.len() > 0
+                                sizes @ sizes.push(taken.len())
+                        .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct       => continue
+                        .field | .index | .map_get | .len_of | .tag_of | .payload | .func_ref | .copy_out => continue
+                        .abort_op | .incref | .decref | .decref_slot | .hole | .missing                   => continue
+
+    return sizes
+
+test "a counted argument borrowed from a root the call writes is held, a number read off it and another root are not"
+    text = "record B\n    items: [i64]\n\nfunction f(@b: B, items: [i64], n: i64) -> i64\n    return items[0] + n\n\nfunction main()\n    x: B @ B(items: [1])\n    y: B @ B(items: [2])\n    print(f(@x, x.items, x.items.len()))\n    print(f(@x, y.items, 0))\n    print(f(@y, x.items, y.items.len()))\n"
+    assert holds_in_main(text) == [1]
+
+test "an element lent beside its own array holds the array, and a call with no arguments holds nothing"
+    text = "function fresh() -> [i64]\n    return [1, 2]\n\nfunction f(@e: i64, q: [i64]) -> i64\n    return q[0] + e\n\nfunction main()\n    xs: [i64] @ fresh()\n    print(f(@xs[0], q: xs))\n    print(f(@xs[1], q: fresh()))\n"
+    assert holds_in_main(text) == [1]
+
+test "what one call holds is read from its own run, never from an empty one beside it"
+    holds: {i64: [i64]} = {4: [7]}
+    assert of_call(holds, run: ir.Run(start: 4, length: 0)).len() == 0
+    assert of_call(holds, run: ir.Run(start: 4, length: 2)) == [7]
+    assert of_call(holds, run: ir.Run(start: 5, length: 2)).len() == 0

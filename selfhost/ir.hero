@@ -243,10 +243,10 @@ variant OpKind
     # verifier rejects.
     func_ref
         callee: Callee
-    # §4.8's second half, on an exit edge: write an @ parameter's slot
-    # back to the caller's place. Copy-out happens ALWAYS — including on
-    # early return and on `?` — so lowering emits one per @ parameter
-    # before every return.
+    # §4.8's second half, on an exit edge: the @ parameter's place is the
+    # caller's again. Copy-out happens ALWAYS — including on early return
+    # and on `?` — so lowering emits one per @ parameter before every
+    # return. No C since panel 196's R1: the slot IS the caller's place.
     copy_out
         param: i64
     # The program stops here. The terminator is unreachable.
