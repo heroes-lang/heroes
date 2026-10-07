@@ -1,0 +1,22 @@
+# Defect 314, 2026-10-07, the array beside its string. Symptom: an array
+# released once more than it was held ran on in silence wherever the
+# allocator wrote a pointer over the freed block's first word, which the
+# runtime read as its count: on this Mac at 1, 4 and 32 elements (exit 0,
+# the block freed twice), measured at `dad2da47`; the Windows heap stopped it
+# as heap corruption with no word of the runtime's. Cause: the count, the
+# only thing the check asked, is the allocator's once the block is given
+# back. Now the runtime sets the element descriptor, which a live array
+# always has, to none before the block goes, and a release finding none is
+# refused by name, as a count of 0 already was (`runtime/parts/array.c`).
+#
+# The array is the C's own, made through the runtime and released twice by a
+# function of the program's own header: a program cannot hand C an array's
+# block, and the compiler never releases one twice. AddressSanitizer names
+# the read of the freed block.
+
+extern "fixedbugs-314-an-array-released-twice-is-named.h"
+    function release_twice(elements: i64)
+
+function main()
+    print("four elements, released twice")
+    release_twice(elements: 4)
