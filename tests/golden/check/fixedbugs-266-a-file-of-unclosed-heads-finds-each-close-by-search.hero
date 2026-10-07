@@ -28,7 +28,7 @@ function a_call(n: i64)
     print(x)
 
 function a_nested_call(n: i64)
-    x = f(f(0  #~ unclosed_bracket unclosed_bracket
+    x = f(f(0  #~ unclosed_bracket
     print(x)
 
 function a_signature(n: i64  #~ unclosed_bracket
@@ -36,3 +36,8 @@ function a_signature(n: i64  #~ unclosed_bracket
 
 function main()
     a_for_head(1)
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `a_nested_call`'s `f(f(0`.

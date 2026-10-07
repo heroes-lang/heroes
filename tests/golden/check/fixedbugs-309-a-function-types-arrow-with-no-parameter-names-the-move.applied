@@ -23,7 +23,7 @@ function outer_open(g: (function( -> i64))  #~ expected_function_type_params_clo
 function no_result(g: (function( -> )))  #~ expected_function_type_params_close expected_type
     print(1)
 
-function nothing_closed(g: (function( -> i64  #~ expected_function_type_params_close unclosed_bracket unclosed_bracket
+function nothing_closed(g: (function( -> i64  #~ expected_function_type_params_close unclosed_bracket
     print(1)
 
 function generic<A>(g: (function( -> A)))  #~ expected_function_type_params_close
@@ -55,3 +55,9 @@ function main()
 # result being the outer `(`'s; and `nothing_closed`, which the header above
 # tells by the lexer's `unclosed_bracket` alone, now tells where the
 # parameters' `)` goes, beside the two openers it never closes.
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `nothing_closed`'s two `(`, beside the report of the `)`
+# its `->` needs.

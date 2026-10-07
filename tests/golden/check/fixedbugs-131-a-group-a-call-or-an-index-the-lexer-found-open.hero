@@ -38,19 +38,19 @@ function a_comma_goes_on()
     print(x)
 
 function two_openers()
-    x = foo(1, (2 + 3  #~ unclosed_bracket unclosed_bracket
+    x = foo(1, (2 + 3  #~ unclosed_bracket
     print(x)
 
 function lists_nested()
-    xs = [[1], [2  #~ unclosed_bracket unclosed_bracket
+    xs = [[1], [2  #~ unclosed_bracket
     print(xs.len())
 
 function a_list_in_a_map()
-    m = {1: [2  #~ unclosed_bracket unclosed_bracket
+    m = {1: [2  #~ unclosed_bracket
     print(m.len())
 
 function a_call_in_a_list()
-    ys = [f(1  #~ unclosed_bracket unclosed_bracket
+    ys = [f(1  #~ unclosed_bracket
     print(ys.len())
 
 function junk_after_it()
@@ -59,3 +59,9 @@ function junk_after_it()
 
 function at_the_end()
     x = (1 + 2  #~ unclosed_bracket
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `two_openers`, `lists_nested`, `a_list_in_a_map` and
+# `a_call_in_a_list`, two openers each.
