@@ -227,9 +227,9 @@ bb9:
     goto bb7;
 #line 16 "tests/golden/ir/core-blocks.hero"
 bb10:
-#line 5 "tests/golden/ir/core-blocks.hero"
+#line 16 "tests/golden/ir/core-blocks.hero"
     t24 = h4_ret0;
-#line 5 "tests/golden/ir/core-blocks.hero"
+#line 16 "tests/golden/ir/core-blocks.hero"
     return t24;
 #line 235 "coreblocks.c"
 }

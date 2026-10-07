@@ -299,9 +299,9 @@ bb11:
     goto bb7;
 #line 37 "examples/nqueens/main.hero"
 bb12:
-#line 26 "examples/nqueens/main.hero"
+#line 33 "examples/nqueens/main.hero"
     t33 = h6_ret0;
-#line 26 "examples/nqueens/main.hero"
+#line 33 "examples/nqueens/main.hero"
     return t33;
 #line 307 "main.c"
 }
@@ -448,7 +448,7 @@ bb9:
     goto bb7;
 #line 53 "examples/nqueens/main.hero"
 bb10:
-#line 43 "examples/nqueens/main.hero"
+#line 45 "examples/nqueens/main.hero"
     t26 = h4_ret0;
 #line 454 "main.c"
     hero_array_decref(h3_deeper);

@@ -1100,11 +1100,11 @@ bb3:
     goto bb1;
 #line 101 "examples/readings/main.hero"
 bb4:
-#line 97 "examples/readings/main.hero"
+#line 101 "examples/readings/main.hero"
     t11 = h3_ret0;
 #line 1106 "main.c"
     h_main_Reading_release(&h2_one);
-#line 97 "examples/readings/main.hero"
+#line 101 "examples/readings/main.hero"
 #line 1109 "main.c"
     hero_array_decref(h4_own4);
     return t11;
@@ -1265,26 +1265,26 @@ bb3:
     goto bb1;
 #line 17 "examples/readings/scale.hero"
 bb4:
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
     t23 = h3_ret0;
 #line 1271 "main.c"
     hero_str_incref(t23);
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
 #line 1274 "main.c"
     hero_str_decref(h4_own4);
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
 #line 1277 "main.c"
     hero_str_decref(h5_own5);
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
 #line 1280 "main.c"
     hero_str_decref(h6_own6);
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
 #line 1283 "main.c"
     hero_str_decref(h7_own7);
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
 #line 1286 "main.c"
     hero_str_decref(h8_own8);
-#line 15 "examples/readings/scale.hero"
+#line 17 "examples/readings/scale.hero"
 #line 1289 "main.c"
     hero_str_decref(h9_own9);
     return t23;
@@ -1916,20 +1916,20 @@ bb7:
     goto bb5;
 #line 69 "<heroes library>"
 bb8:
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
     t21 = h5_ret0;
 #line 1922 "main.c"
     h_0opt_b79796d_retain(&t21);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1925 "main.c"
     hero_array_decref(h2_xs0);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1928 "main.c"
     h_main_Reading_release(&h4_x);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1931 "main.c"
     h_0opt_b79796d_release(&h6_own6);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1934 "main.c"
     h_0opt_b79796d_release(&h7_own7);
     return t21;
@@ -2056,11 +2056,11 @@ bb7:
     goto bb5;
 #line 77 "<heroes library>"
 bb8:
-#line 74 "<heroes library>"
+#line 77 "<heroes library>"
     t18 = h5_ret0;
 #line 2062 "main.c"
     hero_array_decref(h2_xs0);
-#line 74 "<heroes library>"
+#line 77 "<heroes library>"
 #line 2065 "main.c"
     h_main_Reading_release(&h4_x);
     return t18;
@@ -2190,11 +2190,11 @@ bb7:
     goto bb5;
 #line 85 "<heroes library>"
 bb8:
-#line 82 "<heroes library>"
+#line 85 "<heroes library>"
     t19 = h5_ret0;
 #line 2196 "main.c"
     hero_array_decref(h2_xs0);
-#line 82 "<heroes library>"
+#line 85 "<heroes library>"
 #line 2199 "main.c"
     h_main_Reading_release(&h4_x);
     return t19;

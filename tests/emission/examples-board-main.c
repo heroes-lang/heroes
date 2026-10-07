@@ -1071,9 +1071,9 @@ bb12:
     goto bb9;
 #line 97 "examples/board/main.hero"
 bb13:
-#line 91 "examples/board/main.hero"
+#line 93 "examples/board/main.hero"
     t21 = h6_ret0;
-#line 91 "examples/board/main.hero"
+#line 93 "examples/board/main.hero"
     return t21;
 #line 1079 "main.c"
 }

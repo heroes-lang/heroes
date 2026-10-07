@@ -2265,32 +2265,32 @@ bb8:
     goto bb6;
 #line 304 "examples/nbody/main.hero"
 bb9:
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
     t40 = h8_ret0;
 #line 2271 "main.c"
     hero_str_incref(t40);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2274 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2277 "main.c"
     hero_str_decref(h7_text);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2280 "main.c"
     h_0opt_e201354_release(&h9_own9);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2283 "main.c"
     hero_str_decref(h10_own10);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2286 "main.c"
     hero_str_decref(h11_own11);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2289 "main.c"
     hero_str_decref(h12_own12);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2292 "main.c"
     hero_str_decref(h13_own13);
-#line 292 "examples/nbody/main.hero"
+#line 304 "examples/nbody/main.hero"
 #line 2295 "main.c"
     hero_str_decref(h14_own14);
     return t40;
@@ -2463,9 +2463,9 @@ bb3:
     goto bb1;
 #line 404 "examples/nbody/main.hero"
 bb4:
-#line 400 "examples/nbody/main.hero"
+#line 404 "examples/nbody/main.hero"
     t14 = h3_ret0;
-#line 400 "examples/nbody/main.hero"
+#line 404 "examples/nbody/main.hero"
     return t14;
 #line 2471 "main.c"
 }

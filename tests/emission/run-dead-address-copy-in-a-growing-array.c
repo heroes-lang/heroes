@@ -254,14 +254,14 @@ bb3:
     goto bb1;
 #line 20 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 bb4:
-#line 16 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
+#line 20 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     t13 = h1_ret0;
 #line 260 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_retain(&t13);
-#line 16 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
+#line 20 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 #line 263 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(&h2_own2);
-#line 16 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
+#line 20 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 #line 266 "deadaddresscopyinagrowingarray.c"
     h_0opt_5553b083_release(&h3_own3);
     hero_lend_local_give(hero_lend_h0_db);

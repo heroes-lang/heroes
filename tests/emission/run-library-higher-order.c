@@ -1541,17 +1541,17 @@ bb7:
     goto bb5;
 #line 69 "<heroes library>"
 bb8:
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
     t21 = h5_ret0;
 #line 1547 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t21);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1550 "libraryhigherorder.c"
     hero_array_decref(h2_xs0);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1553 "libraryhigherorder.c"
     h_0opt_e201354_release(&h6_own6);
-#line 66 "<heroes library>"
+#line 69 "<heroes library>"
 #line 1556 "libraryhigherorder.c"
     h_0opt_e201354_release(&h7_own7);
     return t21;
@@ -1671,7 +1671,7 @@ bb7:
     goto bb5;
 #line 77 "<heroes library>"
 bb8:
-#line 74 "<heroes library>"
+#line 77 "<heroes library>"
     t18 = h5_ret0;
 #line 1677 "libraryhigherorder.c"
     hero_array_decref(h2_xs0);
@@ -1795,7 +1795,7 @@ bb7:
     goto bb5;
 #line 85 "<heroes library>"
 bb8:
-#line 82 "<heroes library>"
+#line 85 "<heroes library>"
     t19 = h5_ret0;
 #line 1801 "libraryhigherorder.c"
     hero_array_decref(h2_xs0);
