@@ -298,9 +298,9 @@ function record_use(@r: Resolver, at: i64, to: resolved.Ref)
 ## Declaring
 
 # Binds `name` in the innermost scope and hands back its local index.
-# Absence means nothing was bound — the wildcard, or a name that was
-# refused — and in both cases the walk carries on: a refused binding is one
-# diagnostic, not a cascade.
+# Absence means nothing was bound — the wildcard, or a name an open scope
+# already binds — and in both cases the walk carries on: a refused binding is
+# one diagnostic, not a cascade.
 function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.Span, binding: resolve_binding.Binding) -> i64?
     text = source.span_text(s, name)
 
@@ -318,8 +318,8 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     # either** — the mirror of `use_shadows_a_declaration` and the same rule,
     # because `use` BINDS (panel 031 R3, ratified at `issues/2026-08/11/2026-08-11-0041-modules-the-namespace-at-71-measured-spec-tokens.md`, which
     # chose that verb for exactly this coverage). FIRST of the four, because a
-    # `use` line is always in this file. **It reports and then BINDS**, unlike
-    # the three below: returning here leaves the name meaning the MODULE,
+    # `use` line is always in this file. **It reports and then BINDS**, as the
+    # two below do: returning here leaves the name meaning the MODULE,
     # which is not a value, and one mistake became five diagnostics — measured
     # on `examples/json/parse.hero` (panel 102, the whole argument).
     used = resolved.used_module_named(r.out, from: source.module_at(s, name.start), binding: text)
@@ -332,13 +332,15 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
     # precisely the bug the shadow ban exists to kill. BEFORE the top-level
     # check, and the order is the message: reported the other way, a local
     # named `range` would say "the declaration at line 30", naming a line
-    # in a file the author cannot open (§1.11).
-    if !inventory.index_of(text).is_err()
+    # in a file the author cannot open (§1.11). Left unbound, every later
+    # write was the built-in's, told again each time (defect 422).
+    taken = !inventory.index_of(text).is_err()
+
+    if taken
         push_diagnostic(@r, errors.builtin_name_taken(text, span: name))
-        return fail(code: "refused", msg: "a built-in's name is taken everywhere")
     top = top_visible(r, text)
 
-    if !top.is_err()
+    if !taken && !top.is_err()
         # The library and the author's file cannot shadow each other: they
         # share one Source and therefore one table, but they are two
         # programs. Only this direction needs the guard — a user local
@@ -349,7 +351,6 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         if source.is_library(s, name.start) == source.is_library(s, declared_at)
             at = source.elsewhere(s, here: name.start, there: declared_at)
             push_diagnostic(@r, errors.shadows_top_level(name: text, declared_at: at, span: name))
-            return fail(code: "refused", msg: "the declaration is in scope everywhere")
     index = r.out.locals.len()
 
     # Through the array rather than through the field, for `new_resolver`'s
@@ -426,7 +427,7 @@ test "a sibling scope's binding is invisible, a parent's shadows"
     assert r.out.diagnostics[0].code == "shadowed_binding"
     assert r.out.diagnostics[0].message == "`x` is already in scope, bound at line 1 — shadowing is an error here: a name means one thing for as long as it is visible"
 
-test "the wildcard never binds and a built-in is taken everywhere"
+test "the wildcard never binds and a built-in is taken everywhere, told once"
     s = tiny()
     decls: [ast.Decl] = []
     r: Resolver @ new_resolver(expr_count: 0, type_count: 0)
@@ -442,12 +443,16 @@ test "the wildcard never binds and a built-in is taken everywhere"
         span_at(start: 8, end: 10),
         resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
-    assert taken.is_err()
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "builtin_name_taken"
+
+    # Told once and bound all the same (defect 422): what follows in its
+    # scope, a write above all, is the binding's, never the built-in's.
+    assert lookup_local(r, "ok").must() == taken.must()
     reserved = declare(@r, s, decls, span_at(start: 11, end: 16), resolve_binding.cell_binding(ty: 0, value: 0))
-    assert reserved.is_err()
+    assert lookup_local(r, "range").must() == reserved.must()
     assert r.out.diagnostics.len() == 2
+    assert r.out.diagnostics[1].code == "builtin_name_taken"
 
 # Defect 364: the index by name answers as the scan of every open entry
 # did: a binding a closed scope took away is gone, its place taken by
@@ -543,9 +548,9 @@ test "what the library declares and what the file declares stay two programs"
         span_at(start: 9, end: 15),
         resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
     )
-    assert clash.is_err()
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "shadowed_binding"
+    assert lookup_local(r, "helper").must() == clash.must()
     assert r.out.diagnostics[0].message == "`helper` is the name of the declaration at line 1, which is in scope everywhere — pick another name"
 
 # Defect 267: a name goes into its module's row and no other, a second add

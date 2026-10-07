@@ -16,6 +16,7 @@
 use ast
 use source
 use resolved
+use inventory
 use diag
 use resolve/state
 use resolve/errors
@@ -37,6 +38,13 @@ function report(@r: state.Resolver, s: source.Source)
         if local.kind == .param && local.mutable && local.writes > 0
             continue
         name = source.span_text(s, local.name)
+
+        # Already told, at its binding: a name a built-in or a top-level
+        # declaration of its module holds is refused there and bound only so
+        # that what follows is the binding's (defect 422). Whether it is read
+        # is asked once it is renamed, so the one mistake is one message.
+        if !inventory.index_of(name).is_err() || !resolved.top_in(r.out, module: module, name: name).is_err()
+            continue
 
         # Already spoken for: the compiler offered this name as the repair
         # for a name that resolved to nothing, and applying that repair

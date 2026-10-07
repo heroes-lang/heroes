@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:34:5: error[builtin_name_taken]: `args` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:39:5: error[builtin_name_taken]: `args` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:45:5: error[builtin_name_taken]: `any` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:50:5: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:54:23: error[builtin_name_taken]: `args` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:60:9: error[builtin_name_taken]: `range` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:67:14: error[builtin_name_taken]: `print` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:70:5: error[builtin_name_taken]: `sort` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:72:5: error[builtin_name_taken]: `keys` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-422-a-local-named-for-a-built-in-is-told-once.hero:77:5: error[shadowed_binding]: `helper` is the name of the declaration at line 27, which is in scope everywhere — pick another name

@@ -57,15 +57,18 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         r.out.locals[at].writes @ r.out.locals[at].writes + 1
         return
 
+    # A built-in first: the library declares some of them (`args`, `range`),
+    # and one written where no binding of its name stands is the language's,
+    # never a top-level declaration of the author's (defect 422).
+    if !inventory.index_of(text).is_err()
+        state.push_diagnostic(@r, errors.no_mutable_globals(name: text, what: "built-in", span: span))
+        return
+
     if !state.top_visible(r, text).is_err()
         state.push_diagnostic(
             @r,
             errors.no_mutable_globals(name: text, what: "top-level declaration", span: span)
         )
-        return
-
-    if !inventory.index_of(text).is_err()
-        state.push_diagnostic(@r, errors.no_mutable_globals(name: text, what: "built-in", span: span))
         return
     candidates = names.value_candidates(@r)
     near = state.near_names(@r, text, candidates)
