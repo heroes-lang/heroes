@@ -1,0 +1,104 @@
+# Whether an object the build cache would serve is the object its compile
+# wrote (design.md §1.12, §3.1; defect 443, 2026-10-07).
+#
+# **An object a power cut left as zeros was served by every later build.**
+# Measured on the base, this Mac: the runtime's object or a module's, zeroed
+# at its length, and every build after it said `ld: unknown file type`, then
+# *clang refused the generated C*, at exit 2, until `build/` was deleted by
+# hand. Defect 357 had made the bytes durable before the name
+# (`publish.publish` flushes before its rename) and sealed every kept TEXT
+# (`cli/kept.hero`); an object was served on its record and its existence
+# alone, so a file a disk lost, a `build/` written before that repair, or
+# one cut or written over by anything else stood in for the object, and the
+# link was the first to look at its bytes.
+#
+# **So each object carries a seal, beside it, of its own bytes**: the key
+# `module/reading.key_of` gives a file, the one the headers a compile read are
+# keyed by, which is a function of every byte, a binary's included. The seal
+# is taken of what clang wrote, before the object is published, and is a kept
+# text (`cli/kept.hero`), so a seal that is not whole is not read either.
+# Before an object is served its bytes are keyed again and held to the seal:
+# zeros, a cut, a block lost in the middle, another file at the name, each
+# moves the key, and the object is compiled again and the build says so. A
+# check of the header alone would pass an object whose header survived and
+# whose body did not, which is what a power cut can leave of a large file.
+#
+# **An object with no seal at all is compiled again in silence**: that is a
+# `build/` an older compiler left, whose objects were never sealed, and not a
+# fault; it costs one cold compile per object, once.
+#
+# **The cost is a read and a key of every object a build serves**, measured
+# 2026-10-07 in instructions retired: 1,158 a byte of object at -O0 over this
+# compiler's 472 objects, 178 of them the runtime's shown read, which writes
+# each byte that is not UTF-8 as three, and the rest `cli/digest`'s loop. A
+# warm build of `print(1)` +13.4% (three objects), of `examples/interpreter`
+# +14.6%, of this compiler +4.0% (32 MB of objects). A check of the header and
+# the length would cost almost nothing, and pass a block zeroed in the middle,
+# which on the base linked and ran.
+
+use cli/io
+use cli/kept
+use cli/process
+use cli/publish
+use module/reading as file_reading
+
+# What a served object's bytes say against its seal.
+variant Checked
+    # The object its compile wrote, byte for byte.
+    whole
+    # No seal stands beside it: a `build/` no seal was written in.
+    unsealed
+    # A seal stands beside it and the bytes are not what it holds, or the
+    # seal itself is not whole: something changed the file after its compile.
+    changed
+
+# The seal's name, beside the object.
+function seal_of(object: str) -> str
+    return object + ".key.txt"
+
+# Seal the object `staged` holds, which is about to be published as `object`:
+# the key of the bytes clang wrote. Where it cannot be sealed, the staged file
+# is discarded with it, since it would be published with nothing to vouch.
+function seal(staged: str, object: str) -> ()?
+    key = file_reading.key_of(staged)
+    sealed: ()? @ ok()
+
+    if key.is_err()
+        sealed @ fail(code: "failed", msg: "cannot read the object clang wrote at " + staged)
+    else
+        sealed @ kept.write(path: seal_of(object), text: key.must())
+
+    if sealed.is_err()
+        publish.discard(staged)
+    return sealed
+
+# Whether the cache may serve `object`: it is there and it is whole. One that
+# changed is said before the caller compiles it again; one with no seal is
+# compiled again in silence.
+function serves(object: str) -> bool
+    if !process.path_exists(object)
+        return false
+    checked = check(object)
+
+    if checked == .changed
+        io.eprint(text: told(object))
+    return checked == .whole
+
+# The object's bytes held to its seal.
+function check(object: str) -> Checked
+    if !process.path_exists(seal_of(object))
+        return .unsealed
+    sealed = kept.read(seal_of(object))
+
+    if sealed.is_err()
+        return .changed
+    found = file_reading.key_of(object)
+
+    if found.is_err() || found.must() != sealed.must()
+        return .changed
+    return .whole
+
+# What the build says of an object that is not the one its compile wrote,
+# before it compiles it again.
+function told(object: str) -> str
+    return "the cached object " + object + " is not the one its compile wrote: its bytes changed after it was written, as a power cut or a failing disk can leave a file, so it is compiled again"
