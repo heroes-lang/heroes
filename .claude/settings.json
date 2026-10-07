@@ -54,7 +54,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run.sh\" guard_bash.py"
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run.sh\" guard_bash.py",
+            "timeout": 120
           }
         ]
       }
@@ -65,7 +66,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run.sh\" fmt_check.py"
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run.sh\" fmt_check.py",
+            "timeout": 120
           }
         ]
       }

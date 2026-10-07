@@ -85,6 +85,13 @@ stays exit 2.
 and double-free. **Leaks are caught by `hero_runtime_check_leaks()`**, because
 ASan's leak detector does not exist on Darwin arm64.
 
+**Since 2026-10-07 the `run` suite also sanitises at `-O0`, gives both
+sanitised runs ASan's free fill, and runs the `-O0` binary under Guard Malloc
+on Darwin** (defects 390 and 321, lane b14-cli): ASan at `-O2` missed a stack
+overwrite `-O0` catches, and a C library reading the bytes of a string already
+freed was seen by no leg. LeakSanitizer runs in the Linux arm64 container too
+(measured that day, a 77-byte leak; `.claude/rules/platforms.md`).
+
 **A program that declares an `extern` runs its Linux leg under `--sanitize`**
 (CL-055). LeakSanitizer exists on that leg and on no other, so a leak in a C
 binding is invisible on this Mac in all three configurations. The rule is narrow
