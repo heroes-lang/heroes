@@ -1,0 +1,320 @@
+# A list of names indexed by every deletion of up to two of their bytes, so
+# the did-you-mean finds the names near one without comparing it with every
+# name near it in length (design.md §4.17; defect 388).
+#
+# `near_names.nearest_in` compares the name with each candidate whose length
+# is within its budget, a band of the edit table each: over a scope of `n`
+# locals and `n` names nothing answers, `n` squared bands, nine tenths of
+# `check` at 1,600. Two names within `k` edits share a spelling once at most
+# `k` bytes are deleted from each: an alignment of `s` changes, `d` bytes
+# dropped and `i` added deletes the changed and dropped bytes from the one
+# and the changed and added from the other, `s + d` and `s + i` bytes, both
+# within `k`, and what is left is the same. So the names sharing a key with
+# the name's own deletions hold every one within two edits, and others,
+# which the band then asks as the walk asked them, in the walk's order: the
+# same answer, read from far fewer bands.
+#
+# **A key is the hash of a spelling, never the spelling**: the index is a
+# filter whose every candidate the band verifies, so two spellings sharing a
+# hash add a candidate and can never lose one, and the hash of a name with
+# one or two bytes left out is combined from its prefixes' hashes in a few
+# multiplications, where building each spelling cost three strings. The
+# case twin, which wins alone, is found under the hash of the name's letters
+# lowered, and verified by its letters as the walk asks them. A test reads
+# every answer again under a modulus of seven, where nearly every key
+# collides.
+#
+# Each key's positions are a chain: the index keeps, for every key, the last
+# entry made under it, and for every entry its position and the entry before
+# it under the same key, so a name is indexed in one push per key, never by
+# copying a key's list.
+#
+# An index is not free: about a name's length squared over two keys for each
+# name. `resolve/asked.hero` builds one for a list only once the bands
+# walked against it have reached that count, so a list asked about once or
+# twice is never indexed, and a program that asks nothing pays nothing.
+
+use resolve/near_names
+use bytes
+
+# A prime under 2^31, so a product of two hashes stays inside an `i64`.
+constant MODULUS: i64
+    2147483629
+
+constant BASE: i64
+    257
+
+record Index
+    modulus: i64
+    # The last entry under each hash of a deletion, and of a name lowered.
+    deleted: {i64: i64}
+    lowered: {i64: i64}
+    # Each entry's position in the list, and the entry before it under the
+    # same key, -1 at a chain's end.
+    at: [i64]
+    before: [i64]
+
+# The names of `names`, indexed: each position under each of its keys.
+function indexed(names: [str]) -> Index
+    return indexed_by(names, modulus: MODULUS)
+
+function indexed_by(names: [str], modulus: i64) -> Index
+    deleted: {i64: i64} @ {}
+    lowered: {i64: i64} @ {}
+    at: [i64] @ []
+    before: [i64] @ []
+    position: i64 @ 0
+
+    for name in names
+        link(@lowered, at: @at, before: @before, key: lowered_hash(name, modulus: modulus), position: position)
+
+        for key in deletion_hashes(name, modulus: modulus)
+            link(@deleted, at: @at, before: @before, key: key, position: position)
+
+        position @ position + 1
+
+    return Index(modulus: modulus, deleted: deleted, lowered: lowered, at: at, before: before)
+
+function link(@heads: {i64: i64}, @at: [i64], @before: [i64], key: i64, position: i64)
+    before @ before.push(heads[key].default(-1))
+    at @ at.push(position)
+    heads[key] @ at.len() - 1
+
+# How many entries `indexed(names)` makes: a lowered key and
+# `1 + m + m (m - 1) / 2` deletions for a name of `m` bytes.
+function weight(names: [str]) -> i64
+    total: i64 @ 0
+
+    for name in names
+        m = name.len()
+        total @ total + 2 + m + m * (m - 1) / 2
+
+    return total
+
+function lowered_hash(name: str, modulus: i64) -> i64
+    h: i64 @ 0
+    i: i64 @ 0
+
+    while i < name.len()
+        h @ (h * BASE + bytes.lower(name[i]).to_i64().must()) % modulus
+        i @ i + 1
+
+    return h
+
+# The hash of every spelling `name` takes with at most two of its bytes
+# deleted, itself first: `1 + m + m (m - 1) / 2` of them for `m` bytes. The
+# hash of a spelling is `prefix[m]`, the bytes read in order, each step
+# multiplying by `BASE`; the spelling with the bytes at `i` and `k` left out
+# is its three pieces joined, each piece's hash read off the prefixes.
+function deletion_hashes(name: str, modulus: i64) -> [i64]
+    m = name.len()
+    prefix: [i64] @ [0]
+    power: [i64] @ [1]
+    t: i64 @ 0
+
+    while t < m
+        prefix @ prefix.push((prefix[t] * BASE + name[t].to_i64().must()) % modulus)
+        power @ power.push(power[t] * BASE % modulus)
+        t @ t + 1
+
+    out: [i64] @ [prefix[m]]
+    i: i64 @ 0
+
+    while i < m
+        left = prefix[i]
+        rest = piece(prefix: prefix, power: power, from: i + 1, to: m, modulus: modulus)
+        out @ out.push(joined(first: left, second: rest, shift: power[m - i - 1], modulus: modulus))
+        k: i64 @ i + 1
+
+        while k < m
+            between = piece(prefix: prefix, power: power, from: i + 1, to: k, modulus: modulus)
+            after = piece(prefix: prefix, power: power, from: k + 1, to: m, modulus: modulus)
+            middle = joined(first: left, second: between, shift: power[k - i - 1], modulus: modulus)
+            out @ out.push(joined(first: middle, second: after, shift: power[m - k - 1], modulus: modulus))
+            k @ k + 1
+
+        i @ i + 1
+
+    return out
+
+# The hash of the bytes from `from` to `to`, read off the prefixes.
+function piece(prefix: [i64], power: [i64], from: i64, to: i64, modulus: i64) -> i64
+    return (prefix[to] - prefix[from] * power[to - from] % modulus + modulus) % modulus
+
+# The hash of a spelling followed by another, whose `shift` is `BASE` to the
+# second's length.
+function joined(first: i64, second: i64, shift: i64, modulus: i64) -> i64
+    return (first * shift % modulus + second) % modulus
+
+# The positions chained under `key` in `heads`.
+function chained(index: Index, heads: {i64: i64}, key: i64, @found: [i64])
+    entry: i64 @ heads[key].default(-1)
+
+    while entry >= 0
+        found @ found.push(index.at[entry])
+        entry @ index.before[entry]
+
+function ascending_once(xs: [i64]) -> [i64]
+    out: [i64] @ []
+
+    for x in sort(xs)
+        if out.len() == 0 || out[out.len() - 1] != x
+            out @ out.push(x)
+
+    return out
+
+# What `near_names.nearest_in` answers for `name` over `lists`, each list
+# read through `indexes`' entry where it holds one and walked where it holds
+# none; `compared` counts, list by list, the bands a walk asked.
+#
+# In two passes, as the rule stood before defect 385 joined them: the first
+# case twin in order wins alone, and otherwise the first three names within
+# the budget, each once. A list read through its index is read in the same
+# order, its positions ascending, and each candidate asked what the walk
+# asks it.
+function nearest_over(name: str, lists: [[str]], indexes: [Index?], @compared: [i64]) -> [str]
+    size = name.len()
+    allowed: i64 @ 2
+
+    if name.chars().len() < 4
+        allowed @ 1
+    k: i64 @ 0
+
+    for candidates in lists
+        index = indexes[k]
+
+        if index.is_err()
+            for candidate in candidates
+                if twin(name: name, candidate: candidate, size: size)
+                    return [candidate]
+        else
+            found: [i64] @ []
+            held = index.must()
+            chained(held, heads: held.lowered, key: lowered_hash(name, modulus: held.modulus), @found)
+
+            for at in ascending_once(found)
+                if twin(name: name, candidate: candidates[at], size: size)
+                    return [candidates[at]]
+
+        k @ k + 1
+
+    near: [str] @ []
+    band: [i64] @ []
+    k @ 0
+
+    for candidates in lists
+        index = indexes[k]
+
+        if index.is_err()
+            for candidate in candidates
+                if near.len() < 3 && fits(name: name, candidate: candidate, allowed: allowed, near: near)
+                    compared[k] @ compared[k] + 1
+
+                    if near_names.within(@band, a: name, b: candidate, most: allowed)
+                        near @ near.push(candidate)
+        else
+            found: [i64] @ []
+            held = index.must()
+
+            for key in deletion_hashes(name, modulus: held.modulus)
+                chained(held, heads: held.deleted, key: key, @found)
+
+            for at in ascending_once(found)
+                if near.len() < 3 && fits(name: name, candidate: candidates[at], allowed: allowed, near: near)
+                    if near_names.within(@band, a: name, b: candidates[at], most: allowed)
+                        near @ near.push(candidates[at])
+
+        k @ k + 1
+
+    return near
+
+# Whether `candidate` is the name in another case, which wins alone.
+function twin(name: str, candidate: str, size: i64) -> bool
+    return candidate.len() == size && candidate != name && near_names.same_ignoring_case(a: name, b: candidate)
+
+# Whether the walk would ask `candidate`'s band: near enough in length, not
+# the name, and not offered already.
+function fits(name: str, candidate: str, allowed: i64, near: [str]) -> bool
+    long = candidate.len()
+    return long - name.len() <= allowed && name.len() - long <= allowed && candidate != name && !near_names.already_listed(near, candidate)
+
+## Tests
+
+# Every spelling `name` takes with at most two of its bytes deleted, built
+# as strings: what `deletion_hashes` must hash.
+function deletions(name: str) -> [str]
+    out: [str] @ [name]
+    i: i64 @ 0
+
+    while i < name.len()
+        one = name.slice(from: 0, to: i) + name.slice(from: i + 1, to: name.len())
+        out @ out.push(one)
+        j: i64 @ i
+
+        while j < one.len()
+            out @ out.push(one.slice(from: 0, to: j) + one.slice(from: j + 1, to: one.len()))
+            j @ j + 1
+
+        i @ i + 1
+
+    return out
+
+# Every word of up to four bytes over three letters, and names a program
+# writes: the hashes combined from prefixes are the hashes of the spellings
+# left, in the order the strings are built.
+test "a deletion's hash is the hash of the spelling it leaves"
+    words = near_names.words_of(letters: ["a", "b", "Z"], longest: 4)
+
+    for word in words.push("validated_bytes").push("to_i64")
+        hashes: [i64] @ []
+
+        for spelling in deletions(word)
+            hashes @ hashes.push(deletion_hashes(spelling, modulus: MODULUS)[0])
+
+        assert deletion_hashes(word, modulus: MODULUS) == hashes
+
+    assert deletions("aa") == ["aa", "a", "", "a"]
+    assert weight(["abc", "ab"]) == 2 + 3 + 3 + (2 + 2 + 1)
+
+# Every word of up to four bytes over `a`, `b` and `A` asked of each list of
+# them read through an index and walked, cut in two around an empty list,
+# each half indexed or not, under the modulus the index is built with and
+# under seven, where nearly every key collides: the answer is `nearest_in`'s
+# every time.
+test "a list read through its index answers what its walk answered"
+    words = near_names.words_of(letters: ["a", "b", "A"], longest: 4)
+    names: [str] = [
+        "print"
+        "pirnt"
+        "Print"
+        "paint"
+        "point"
+        "len"
+        "lenn"
+        "total"
+        "totl"
+        "totale"
+        "Total"
+        "to_i64"
+        "to_i32"
+    ]
+    no_index: Index? = fail(code: "none", msg: "walked")
+
+    for modulus in [MODULUS, 7]
+        for set in [words, names]
+            cut = set.len() / 2
+            empty: [str] = []
+            split: [[str]] = [set.slice(from: 0, to: cut), empty, set.slice(from: cut, to: set.len())]
+            whole: Index? = ok(indexed_by(set, modulus: modulus))
+            first: Index? = ok(indexed_by(split[0], modulus: modulus))
+            none_held: Index? = ok(indexed_by(empty, modulus: modulus))
+            last: Index? = ok(indexed_by(split[2], modulus: modulus))
+
+            for name in set
+                reference = near_names.nearest_in(name, lists: split)
+                one: [i64] @ [0]
+                assert near_names.nearest_in(name, lists: [set]) == nearest_over(name, lists: [set], indexes: [whole], @one)
+
+                for chosen in [[no_index, no_index, no_index], [first, none_held, last], [first, no_index, no_index], [no_index, none_held, last]]
+                    compared: [i64] @ [0, 0, 0]
+                    assert nearest_over(name, lists: split, indexes: chosen, @compared) == reference
