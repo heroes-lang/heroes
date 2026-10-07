@@ -114,7 +114,8 @@ void h_fixedbugs396sha256finalpastsixteenaborts_main(void);
 #line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 void h_fixedbugs396sha256finalpastsixteenaborts_main(void) {
 #line 117 "fixedbugs396sha256finalpastsixteenaborts.c"
-    __attribute__((unused)) struct SHA256state_st h0_c;
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalpastsixteenaborts.main", "c");
+#define h0_c (*hero_lend_h0_c)
     HeroArrayHeader * h1_md = {0};
     HeroArrayHeader * h2_own2 = {0};
     uint32_t t1;
@@ -146,16 +147,18 @@ bb0:
     t14 = h2_own2;
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h2_own2 = t3;
-#line 150 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 151 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_decref(t14);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t15 = h1_md;
-#line 154 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 155 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_incref(t3);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h1_md = t3;
-#line 158 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 159 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_decref(t15);
+#line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
+    hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t4 = SHA256_Init(&h0_c);
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
@@ -167,6 +170,8 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t8 = UINT64_C(3);
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
+    hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c");
+#line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t9 = SHA256_Update(&h0_c, hero_cstr_nonnull(t7), t8);
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_int(t4);
@@ -176,6 +181,8 @@ bb0:
     hero_print_int(t9);
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
+#line 18 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
+    hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c");
 #line 18 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     {
 #line 18 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
@@ -206,13 +213,15 @@ bb0:
     hero_print_int(t13);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
-#line 210 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 217 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_decref(h1_md);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
-#line 213 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 220 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_decref(h2_own2);
+    hero_lend_local_give(hero_lend_h0_c);
     return;
 }
+#undef h0_c
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalpastsixteenaborts_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b) {
     hero_panic("h_fixedbugs396sha256finalpastsixteenaborts_Sha256Ctx_eq: a partial record has no structural equality");
 }

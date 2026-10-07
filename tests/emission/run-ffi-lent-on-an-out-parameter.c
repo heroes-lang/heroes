@@ -117,8 +117,10 @@ void h_ffilentonanoutparameter_main(void);
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 void h_ffilentonanoutparameter_main(void) {
 #line 120 "ffilentonanoutparameter.c"
-    int32_t h0_e;
-    struct span h1_s;
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e");
+#define h0_e (*hero_lend_h0_e)
+    struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s");
+#define h1_s (*hero_lend_h1_s)
     int32_t t1;
     double t2;
     double t3;
@@ -140,6 +142,8 @@ bb0:
     h0_e = t1;
 #line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     t2 = 0x1.8p+1;
+#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    hero_lend_local_name(hero_lend_h0_e, "halve", "e");
 #line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     t3 = halve(t2, (void *)&h0_e);
 #line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
@@ -163,6 +167,8 @@ bb0:
 #line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     h1_s = t8;
 #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    hero_lend_local_name(hero_lend_h1_s, "widen", "s");
+#line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     (void)widen(&h1_s);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     t9 = h1_s;
@@ -183,9 +189,15 @@ bb0:
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     hero_print_end();
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    hero_lend_local_give(hero_lend_h1_s);
+#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    hero_lend_local_give(hero_lend_h0_e);
+#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     return;
-#line 188 "ffilentonanoutparameter.c"
+#line 198 "ffilentonanoutparameter.c"
 }
+#undef h0_e
+#undef h1_s
 HERO_TU_LOCAL bool h_ffilentonanoutparameter_Span_eq(const struct span *a, const struct span *b) {
     if (!(a->lo == b->lo)) return false;
     if (!(a->hi == b->hi)) return false;

@@ -1,0 +1,253 @@
+# A local lent in place, guarded (design.md §4.19, §1.12; panel 196's R7,
+# ratified 2026-10-06; defect 396): a binding lent whole through `@` to an
+# `extern` call lives for its function's life in a region of the calling
+# thread that ends at a page nothing may touch (`runtime/parts/lend.c`), so
+# C is handed the local itself, never a copy, and C writing past it stops on
+# that page and is named.
+#
+# WHY. `SHA256_Final(@md: u8, ...)` lent a one-byte local and C wrote the
+# digest's other 31 bytes over the frame at exit 0, past every sanitizer,
+# since the store is inside libcrypto (defect 396). An unmarked `@` promises
+# ONE element (R2); this is what makes a binding that is wrong about that a
+# named abort for a local. A FIELD or an ELEMENT keeps its record's or its
+# array's layout and is not moved here: for them the extent is the binding's
+# word, as every other C promise is (R7's second sentence).
+#
+# WHAT IS GUARDED, a fact about the program in hand: a local or synthetic
+# slot handed whole through `@`, with no field or element step, which is not
+# an array (an array crosses as R4's buffer, `emit/lend_buffer.hero`), to an
+# `extern` call, or to a Heroes function whose own `@` parameter reaches one.
+# Since panel 196's R1 that parameter is its caller's place through a
+# pointer, so wrapping a C call in a Heroes function, the ordinary way to
+# structure a program, hands C the caller's local: measured before this
+# clause, `wrap(@m)` around a one-cell `digest32` wrote over the neighbour
+# and died at 139 with nothing on stderr. Which parameters reach C is one
+# fixpoint over the whole program (`flows`), found once per build and
+# carried in `ctype.Names.lend_units` under `@<decl> <position>`, a key no C
+# name can be (`with_flows`); a function value's call is not followed, the
+# callee being any function of its type.
+#
+# HOW IT IS SPELLED, AND WHY A MACRO. Every read and write of a slot is
+# spelled by `places.slot_lvalue`, and the readers that spell a count or a
+# record lent (`emit/lend_count.hero`, `emit/lend_extent.hero`) do it with no
+# type table in hand. So the prologue declares a pointer to the region in
+# the slot's place and DEFINES the slot's mangled name as `(*pointer)` for
+# the rest of the function, undefined after its closing brace: every spelling
+# of the slot, whoever writes it, reaches the region, and none can miss it. A
+# mangled slot name is `h<n>_<name>` and the function's own, so the one way a
+# token of the body could also be that name is a header's field or function
+# literally so named, which clang refuses loudly, at the build.
+#
+# THE ORDER IS THE STACK'S: taken in slot order in the prologue, labelled
+# with the callee and its parameter before every `extern` call that lends it
+# (a fault is named by the call that made it, a wrapper's call included,
+# whose `@` parameter points into the caller's region), and given back in
+# reverse at the function's one exit (`ir/exits.hero`), with R4's buffers
+# taken and given back between, so a callback into Heroes that lends again
+# stacks above.
+
+use ast
+use source
+use check/state
+use check/table
+use ir
+use ir/containers
+use emit/writer
+use emit/ctype
+use emit/mangle
+use emit/lend_count
+
+# A parameter of a Heroes function, as `flows` keys it: `@` first, which no
+# C name a counted parameter is keyed by can begin with.
+function key(decl: i64, at: i64) -> str
+    return "@" + decl.to_str() + " " + at.to_str()
+
+# The slot an argument lends whole, or -1: no field or element step, and not
+# an array, which crosses as a buffer and never as its place.
+function whole_slot(c: state.Checked, f: containers.Function, arg: ir.Arg) -> i64
+    match arg
+        .inout_arg io =>
+            if containers.steps_of(f, io.place.path).len() > 0
+                return 0 - 1
+
+            match table.get(c.types, f.slots[io.place.root].ty)
+                .array                                                    => return 0 - 1
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return io.place.root
+                .fixed | .map | .fallible | .function_ty | .named         => return io.place.root
+                .case_ty | .failure | .generic | .error                   => return io.place.root
+        .value_arg => return 0 - 1
+
+    return 0 - 1
+
+# Whether a slot is a local's, which this function's frame would hold.
+function is_local(f: containers.Function, at: i64) -> bool
+    return match f.slots[at].kind
+        .local_slot | .synthetic_slot => true
+        .param_slot | .return_slot    => false
+
+# Which `@` parameter of the function a slot is, or -1.
+function param_position(f: containers.Function, at: i64) -> i64
+    position: i64 @ 0
+
+    for param in f.params
+        if param == at
+            match f.slots[at].kind
+                .param_slot ps =>
+                    if ps.mutable
+                        return position
+                    return 0 - 1
+                .local_slot | .synthetic_slot | .return_slot => return 0 - 1
+        position @ position + 1
+
+    return 0 - 1
+
+# Whether a call at this argument position hands the place on to C: an
+# `extern` call does, and a Heroes function does where `reaching` holds its
+# parameter at that position, whatever value it holds.
+function reaches_c(callee: ir.Callee, at: i64, reaching: {str: str}) -> bool
+    return match callee
+        .extern_fn              => true
+        .heroes_fn h            => !reaching[key(decl: h.decl, at: at)].is_err()
+        .builtin_fn | .indirect => false
+
+# THE PROGRAM'S `@` PARAMETERS THAT REACH C, by `key`: one handed whole to an
+# `extern` call, or to a Heroes function's parameter already found, until a
+# walk finds none more. Every walk reads each call once; the walks are as many
+# as the longest chain of wrappers plus one, and a program that hands C no `@`
+# parameter at all is read once.
+function flows(p: containers.Program, c: state.Checked) -> {str: str}
+    out: {str: str} @ {}
+    grew: bool @ true
+
+    while grew
+        grew @ false
+
+        for f in p.functions
+            for blk in f.blocks
+                for inst in blk.insts
+                    match inst.op
+                        .call cl =>
+                            position: i64 @ 0
+
+                            for arg in containers.args_of(f, cl.arguments)
+                                at = whole_slot(c, f, arg)
+
+                                if at >= 0 && reaches_c(callee: cl.callee, at: position, reaching: out)
+                                    mine = param_position(f, at)
+
+                                    if mine >= 0 && out[key(decl: f.decl, at: mine)].is_err()
+                                        out[key(decl: f.decl, at: mine)] @ "c"
+                                        grew @ true
+                                position @ position + 1
+                        .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast     => continue
+                        .construct | .index | .map_get | .len_of | .tag_of | .payload | .func_ref   => continue
+                        .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => continue
+
+    return out
+
+# A build's lend facts with the flows added: the counted parameters' header
+# types as the pointee check read them, and every `@` parameter that reaches C.
+#
+# ORDER: none. Every key is written into a map, so the walk's order is not
+# observed.
+function with_flows(units: {str: str}, p: containers.Program, c: state.Checked) -> {str: str}
+    out: {str: str} @ units
+    found = flows(p, c)
+
+    for k in keys(found)
+        out[k] @ found[k].must()
+
+    return out
+
+# Every guarded slot of the function: one walk of its calls.
+#
+# ORDER: ascending slot id. The prologue takes the regions in this order and
+# the exit gives them back in its reverse, which is the stack order the
+# runtime holds them to, so the order is observed and must be the same at
+# both ends.
+function guarded(c: state.Checked, names: ctype.Names, f: containers.Function) -> [i64]
+    seen: {i64: bool} @ {}
+
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .call cl =>
+                    position: i64 @ 0
+
+                    for arg in containers.args_of(f, cl.arguments)
+                        at = whole_slot(c, f, arg)
+
+                        if at >= 0 && is_local(f, at) && reaches_c(callee: cl.callee, at: position, reaching: names.lend_units)
+                            seen[at] @ true
+                        position @ position + 1
+                .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast     => continue
+                .construct | .index | .map_get | .len_of | .tag_of | .payload | .func_ref   => continue
+                .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => continue
+
+    return sort(keys(seen))
+
+# The pointer a guarded slot is reached through.
+function pointer(f: containers.Function, at: i64) -> str
+    return "hero_lend_" + mangle.slot(index: at, name: f.slots[at].name)
+
+# The prologue's line for a guarded slot, in place of its declaration: the
+# region taken, and the slot's name made the region's for the function.
+function declare(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, at: i64, owner: str)
+    spelled = ctype.c_type(names, c: c, ty: f.slots[at].ty)
+
+    if spelled.is_err()
+        return
+    p = pointer(f, at)
+    writer.line(
+        @w,
+        text: "    " + spelled.must() + " *const " + p + " = (" + spelled.must() + " *)hero_lend_local(sizeof(" + spelled.must() + "), " + lend_count.quoted(owner) + ", " + lend_count.quoted(f.slots[at].name) + ");"
+    )
+    writer.line(@w, text: "#define " + mangle.slot(index: at, name: f.slots[at].name) + " (*" + p + ")")
+
+# Before an `extern` call: each place it is handed whole that may be a
+# guarded local is labelled with the callee and the parameter, for the
+# message a fault prints: this function's own guarded local, or an `@`
+# parameter, whose pointer is the caller's place and labels the caller's
+# region where there is one (the runtime looks it up by address and leaves
+# a place no region holds alone).
+function label(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64)
+    params = lend_count.param_names(s, decls, decl: decl)
+    callee = lend_count.quoted(source.span_text(s, decls[decl].name))
+    index: i64 @ 0
+
+    for arg in containers.args_of(f, run)
+        at = whole_slot(c, f, arg)
+
+        if at >= 0 && index < params.len()
+            held: str @ ""
+
+            if is_local(f, at)
+                held @ pointer(f, at)
+            else if param_position(f, at) >= 0
+                held @ mangle.out_param(index: at, name: f.slots[at].name)
+
+            if held != ""
+                writer.line(
+                    @w,
+                    text: "    hero_lend_local_name(" + held + ", " + callee + ", " + lend_count.quoted(params[index]) + ");"
+                )
+        index @ index + 1
+
+# The lines that give the regions back at the function's one exit, the last
+# taken first, for `emit/term.hero` to write before it returns.
+function releases(c: state.Checked, names: ctype.Names, f: containers.Function) -> [str]
+    taken = guarded(c, names, f)
+    out: [str] @ []
+    at: i64 @ taken.len() - 1
+
+    while at >= 0
+        out @ out.push("    hero_lend_local_give(" + pointer(f, taken[at]) + ");")
+        at @ at - 1
+
+    return out
+
+# After the function's closing brace: the slots' names given back to C, so the
+# next function's own `h<n>_<name>` is its own.
+function undefine(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function)
+    for at in guarded(c, names, f)
+        writer.line(@w, text: "#undef " + mangle.slot(index: at, name: f.slots[at].name))

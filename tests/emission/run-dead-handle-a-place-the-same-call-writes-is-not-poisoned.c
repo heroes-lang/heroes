@@ -111,7 +111,8 @@ void h_deadhandleaplacethesamecallwritesisnotpoisoned_main(void);
 #line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
 void h_deadhandleaplacethesamecallwritesisnotpoisoned_main(void) {
 #line 114 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
-    node * h0_a;
+    node * *const hero_lend_h0_a = (node * *)hero_lend_local(sizeof(node *), "deadhandleaplacethesamecallwritesisnotpoisoned.main", "a");
+#define h0_a (*hero_lend_h0_a)
     node * t1;
     node * t2;
     HeroStr t3;
@@ -128,6 +129,8 @@ bb0:
     h0_a = t1;
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     t2 = h0_a;
+#line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    hero_lend_local_name(hero_lend_h0_a, "node_swap", "out");
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     {
 #line 23 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
@@ -171,9 +174,12 @@ bb0:
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     }
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    hero_lend_local_give(hero_lend_h0_a);
+#line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     return;
-#line 176 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
+#line 181 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
 }
+#undef h0_a
 HERO_TU_LOCAL bool h_deadhandleaplacethesamecallwritesisnotpoisoned_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

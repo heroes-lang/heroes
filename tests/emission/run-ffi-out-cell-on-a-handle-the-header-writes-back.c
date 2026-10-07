@@ -110,8 +110,10 @@ void h_ffioutcellonahandletheheaderwritesback_main(void);
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 void h_ffioutcellonahandletheheaderwritesback_main(void) {
 #line 113 "ffioutcellonahandletheheaderwritesback.c"
-    void * h0_a;
-    void * h1_b;
+    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a");
+#define h0_a (*hero_lend_h0_a)
+    void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b");
+#define h1_b (*hero_lend_h1_b)
     void * t1;
     void * t2;
     int32_t t3;
@@ -131,9 +133,13 @@ bb0:
 #line 15 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     h1_b = t2;
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    hero_lend_local_name(hero_lend_h0_a, "make_into", "out");
+#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t3 = make_into(&h0_a);
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     hero_handle_acquired(h0_a, "eat");
+#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    hero_lend_local_name(hero_lend_h1_b, "make_typedef", "out");
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t4 = make_typedef(&h1_b);
 #line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
@@ -179,9 +185,15 @@ bb0:
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     hero_print_end();
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    hero_lend_local_give(hero_lend_h1_b);
+#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    hero_lend_local_give(hero_lend_h0_a);
+#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     return;
-#line 184 "ffioutcellonahandletheheaderwritesback.c"
+#line 194 "ffioutcellonahandletheheaderwritesback.c"
 }
+#undef h0_a
+#undef h1_b
 HERO_TU_LOCAL bool h_ffioutcellonahandletheheaderwritesback_Mem_eq(void * const *a, void * const *b) {
     return hero_handle_eq(*a, *b);
 }

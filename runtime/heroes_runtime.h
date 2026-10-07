@@ -660,6 +660,13 @@ void *hero_lend_take(const HeroArrayHeader *from, int64_t, const char *, const c
 HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *, int64_t);
 int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
 
+/* A local lent through `@` to an `extern` call, in place in a region of its
+ * own for its function's life (panel 196's R7): taken in the prologue, zeroed,
+ * labelled with each call that lends it, given back at the function's exit. */
+void *hero_lend_local(size_t, const char *, const char *);
+void hero_lend_local_name(void *, const char *, const char *);
+void hero_lend_local_give(void *);
+
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *
  * Open addressing with linear probing, and THREE PARALLEL REGIONS in one block —

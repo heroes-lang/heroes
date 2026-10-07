@@ -66,17 +66,23 @@
 #include <unistd.h>
 #endif
 
-/* One region: `room` bytes the buffer is placed in, so that it ends at
+/* One region: `room` bytes the buffer is placed in, so that its `bytes` end at
  * `base + room`, then `guard` bytes mapped with no access. `callee`, `param`
  * and `extent` are what the handler names, kept after the region is given back
- * so a fault through an address C should not have kept is named too. */
+ * so a fault through an address C should not have kept is named too. A LOCAL
+ * (panel 196's R7) holds `owner` and `name` as well, the Heroes function and
+ * the binding, and is labelled with the call each time one lends it. */
 typedef struct HeroLendRegion {
     char *base;
     size_t room;
     size_t guard;
+    size_t bytes;
     const char *callee;
     const char *param;
     int64_t extent;
+    int local;
+    const char *owner;
+    const char *name;
 } HeroLendRegion;
 
 /* The calling thread's regions, in stack order: `hero_lend_depth` of them in
@@ -137,6 +143,24 @@ static _Noreturn void hero_lend_refuse(const char *callee, const char *param, co
     hero_panic(msg);
 }
 
+/* WHAT A GIVE-BACK AT THE WRONG ADDRESS SAYS. The address of a buffer or a
+ * local lent to C is held in the function's frame between the take and the
+ * give, and a frame can be written over: C writing past a field or an element
+ * it was lent, which panel 196's R7 leaves to the binding's word, reaches
+ * whatever the frame holds beside it, measured on defect 396's `md_field.hero`
+ * (SHA-256's 32 bytes through one byte of a 16-byte record, its last 16 on
+ * the pointer to a guarded local). So the sentence names that first and the
+ * compiler second, and claims neither: it read one wrong address. */
+static _Noreturn void hero_lend_misplaced(const char *what) {
+    char msg[640];
+    snprintf(msg, sizeof msg,
+             "%s lent to C was given back at an address its region does not hold: what held the address in this "
+             "function's frame was written over, by C writing past a field or an element it was lent, which "
+             "is the binding's word (§ 13), or by a fault of this compiler",
+             what);
+    hero_panic(msg);
+}
+
 /* Room for one more region in the table, mapped and doubled by a copy. */
 static void hero_lend_grow_table(void) {
     int64_t cap = hero_lend_cap < 8 ? 8 : hero_lend_cap * 2;
@@ -172,9 +196,13 @@ static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const ch
         r->room = room;
         r->guard = page;
     }
+    r->bytes = bytes;
     r->callee = callee;
     r->param = param;
     r->extent = extent;
+    r->local = 0;
+    r->owner = NULL;
+    r->name = NULL;
     hero_lend_depth += 1;
     return r;
 }
@@ -212,9 +240,7 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
     if (hero_lend_depth < 1) hero_panic("a buffer lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
     size_t bytes = (size_t)extent * a->elem->size;
-    if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) {
-        hero_panic("a buffer lent to C was given back out of the order it was taken — this is a compiler bug, please report it");
-    }
+    if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer");
     HeroArrayHeader *fresh = hero_array_new(a->elem, extent);
     if (bytes > 0) memcpy(hero_array_data(fresh), buffer, bytes);
     fresh->len = extent;
@@ -227,6 +253,57 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
         r->guard = 0;
     }
     return fresh;
+}
+
+/* A LOCAL LENT TO C, IN PLACE (panel 196's R7). A binding lent whole through
+ * `@` to an `extern` call lives in a region of its own for its function's life
+ * instead of in the C frame: the emitter declares a pointer to it in the
+ * prologue, names the binding through that pointer, labels the region before
+ * each call that lends it, and gives it back at the function's one exit, so
+ * regions stay in stack order with the buffers of R4 above and below them. C
+ * is handed the local itself, never a copy, and one byte past it is the guard
+ * page. Zeroed, which is the value a refcounted slot starts at and the one the
+ * frame would not have given any other. */
+void *hero_lend_local(size_t size, const char *owner, const char *name) {
+    HeroLendRegion *r = hero_lend_push(size, owner, name, 1);
+    char *local = r->base + r->room - size;
+    memset(local, 0, size);
+    r->local = 1;
+    r->owner = owner;
+    r->name = name;
+    r->callee = NULL;
+    r->param = NULL;
+    return local;
+}
+
+/* Which call is lending it now: a local outlives one call, and a fault is
+ * named by the call that made it. Asked also of an `@` parameter's pointer
+ * inside a Heroes function that hands it on to C, which is its caller's place:
+ * a guarded local's region where the caller lent one, and otherwise a field,
+ * an element or an unguarded place, which no region holds and this leaves
+ * alone. */
+void hero_lend_local_name(void *local, const char *callee, const char *param) {
+    for (int64_t i = hero_lend_depth - 1; i >= 0; i--) {
+        HeroLendRegion *r = &hero_lend_regions[i];
+        if (r->local && r->base + r->room - r->bytes == (char *)local) {
+            r->callee = callee;
+            r->param = param;
+            return;
+        }
+    }
+}
+
+void hero_lend_local_give(void *local) {
+    if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
+    HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
+    if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local");
+    hero_lend_depth -= 1;
+    if (r->room > HERO_LEND_KEEP) {
+        hero_lend_unmap(r->base, r->room + r->guard);
+        r->base = NULL;
+        r->room = 0;
+        r->guard = 0;
+    }
 }
 
 /* THE HANDLER'S QUESTION, asked on the faulting thread, which is the thread
@@ -244,6 +321,9 @@ __attribute__((unused)) static int hero_lend_fault_at(uintptr_t addr, HeroLendFa
             out->param = r->param;
             out->extent = r->extent;
             out->returned = i >= hero_lend_depth;
+            out->local = r->local;
+            out->owner = r->owner;
+            out->name = r->name;
             return 1;
         }
     }
@@ -281,6 +361,23 @@ __attribute__((unused)) static void hero_lend_tell(const HeroLendFault *f, void 
         say("  The parameter is declared `lent`, which says C keeps nothing of the address after the\n");
         say("  call, and C kept it: the declaration is wrong about C, and a buffer lent for one call\n");
         say("  cannot serve a function that keeps it.\n");
+        return;
+    }
+    if (f->local) {
+        say("panic: C reached past the local `");
+        say(f->name != NULL ? f->name : "?");
+        say("` of `");
+        say(f->owner != NULL ? f->owner : "?");
+        say("`, the one element lent to `");
+        say(param);
+        say("` of `");
+        say(callee);
+        say("`\n");
+        say("  An `@` parameter promises C one element, and the local ends at a page nothing may touch,\n");
+        say("  so C stopped there and changed nothing beside it. Where C writes several, the binding\n");
+        say("  lends an array with the extent C writes: `@");
+        say(param);
+        say(": [T] counted_by <n> lent`.\n");
         return;
     }
     say("panic: C reached past the ");

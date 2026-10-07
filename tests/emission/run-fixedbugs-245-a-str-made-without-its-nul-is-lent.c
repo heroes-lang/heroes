@@ -765,7 +765,8 @@ int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 768 "fixedbugs245astrmadewithoutitsnulislent.c"
-    int64_t h1_status;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
+#define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
     h_0opt_f87774a h3_ret0 = {0};
     HeroStr h4_own4 = {0};
@@ -836,20 +837,22 @@ bb0:
 #line 169 "<heroes library>"
     t2 = h0_path;
 #line 169 "<heroes library>"
+    hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status");
+#line 169 "<heroes library>"
     t3 = hero_file_read_str(t2, (void *)&h1_status);
 #line 169 "<heroes library>"
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 845 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 848 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 849 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 852 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 853 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 856 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -873,7 +876,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 877 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 880 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -881,7 +884,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 885 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 888 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -907,10 +910,10 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 911 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 914 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t12);
 #line 175 "<heroes library>"
-#line 914 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 917 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -918,7 +921,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 922 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 925 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -952,13 +955,13 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 956 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 959 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(t43);
 #line 177 "<heroes library>"
-#line 959 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 962 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t18);
 #line 177 "<heroes library>"
-#line 962 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 965 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -966,7 +969,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 970 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 973 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -990,13 +993,13 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 994 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 997 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(t45);
 #line 183 "<heroes library>"
-#line 997 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1000 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t33);
 #line 183 "<heroes library>"
-#line 1000 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1003 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -1004,7 +1007,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 1008 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1011 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -1024,7 +1027,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 1028 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1031 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -1034,13 +1037,13 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 1038 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1041 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(t48);
 #line 182 "<heroes library>"
-#line 1041 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1044 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t26);
 #line 182 "<heroes library>"
-#line 1044 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1047 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -1048,7 +1051,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 1052 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1055 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -1062,43 +1065,45 @@ bb12:
 bb13:
 #line 167 "<heroes library>"
     t38 = h3_ret0;
-#line 1066 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1069 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_retain(&t38);
 #line 167 "<heroes library>"
-#line 1069 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1072 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(h2_text);
 #line 167 "<heroes library>"
-#line 1072 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1075 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(h4_own4);
 #line 167 "<heroes library>"
-#line 1075 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1078 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 167 "<heroes library>"
-#line 1078 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1081 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 167 "<heroes library>"
-#line 1081 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1084 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(h7_own7);
 #line 167 "<heroes library>"
-#line 1084 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1087 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&h8_own8);
 #line 167 "<heroes library>"
-#line 1087 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1090 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(h9_own9);
 #line 167 "<heroes library>"
-#line 1090 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1093 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&h10_own10);
 #line 167 "<heroes library>"
-#line 1093 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1096 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(h11_own11);
 #line 167 "<heroes library>"
-#line 1096 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1099 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_decref(h12_own12);
 #line 167 "<heroes library>"
-#line 1099 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 1102 "fixedbugs245astrmadewithoutitsnulislent.c"
     h_0opt_f87774a_release(&h13_own13);
+    hero_lend_local_give(hero_lend_h1_status);
     return t38;
 }
+#undef h1_status
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
     if (v->tag == INT64_C(0)) {
         return;

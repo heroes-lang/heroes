@@ -1,0 +1,3 @@
+7
+!sanitizer: on unknown address
+!panic: C reached past the local `x` of `fixedbugs396alocalisnamedbythecallthatoverrunsit.main`, the one element lent to `x` of `put_two`
