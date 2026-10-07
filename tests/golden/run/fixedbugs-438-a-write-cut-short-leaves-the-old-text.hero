@@ -1,0 +1,114 @@
+# Defect 438, 2026-10-07. Symptom: `write_file` over a file that held text,
+# stopped half-way, left the file empty or cut and the old text gone: a child
+# under a 4096-byte ceiling on what it may write wrote 1 MB over "OLD" and left
+# 4096 bytes of the new text, and a 64 MB write killed the instant the file
+# changed left it at 0 bytes in 2 runs of 6. Cause: the write opened the file
+# truncated and then wrote. Now the new text is written under a private name
+# beside the file, flushed, and renamed over it (`runtime/parts/write.c`), so
+# the name holds the old text or the new; a write that fails half-way says so
+# and leaves the file as it was and no private name beside it.
+#
+# The program runs itself as a child under a ceiling of 4096 bytes, the
+# kernel's nearest thing to a full disk (`hero_run_limit_writes`), once over a
+# file holding "OLD" and once over a name not there, and the child answers by
+# its exit code alone: 5 where its ceiling is not the one asked, 3 where the
+# write failed, 4 where it did not. `sys/resource.h` is no header of Windows,
+# which keeps no such ceiling, so the case is skipped there by its build's own
+# words; the child reads its own ceiling through it. `build/` for the
+# directory, `edges-file-args-exit.hero`'s reason.
+
+extern "sys/resource.h"
+    constant RLIMIT_FSIZE: i32
+    record Ceiling tag rlimit
+        rlim_cur: u64
+        rlim_max: u64
+    function getrlimit(resource: i32, @limit: Ceiling) -> i32
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_limit_writes(bytes: i64) -> i64
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+    function hero_os_pid() -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_exists(path: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_DIR_FILES: i64
+
+constant CEILING: i64
+    4096
+
+function itself() -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+# The child: a megabyte over `path`, under the ceiling it reads back first.
+function child(path: str)
+    limit: Ceiling @ Ceiling(rlim_cur: 0, rlim_max: 0)
+
+    if getrlimit(resource: RLIMIT_FSIZE, @limit) != 0 || limit.rlim_cur != CEILING.to_u64().must()
+        exit(code: 5)
+
+    if write_file(path: path, text: "x".repeat(1048576)).is_err()
+        exit(code: 3)
+    exit(code: 4)
+
+# The child run over `path` under the ceiling: the code it answered.
+function cut_short(path: str) -> i64
+    program = itself()
+    hero_run_reset()
+    hero_run_arg(word: program)
+    hero_run_arg(word: path)
+    hero_run_limit(seconds: 60)
+    _ = hero_run_limit_writes(bytes: CEILING)
+    status: i64 @ 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    return code
+
+# How many files `dir` holds.
+function files_in(dir: str) -> i64
+    count = hero_dir_scan(root: dir.cstr(), want: HERO_DIR_FILES, recursive: 0)
+    hero_dir_release()
+    return count
+
+function main()
+    words = args()
+
+    if words.len() > 0
+        child(words[0])
+        return
+    dir = "build/heroes-golden-438-cut-" + hero_os_pid().to_str()
+    _ = hero_fs_mkdir_all(path: dir.cstr())
+    held = dir + "/held.txt"
+
+    if write_file(path: held, text: "OLD").is_err()
+        print("cannot make ", held)
+        return
+    code = cut_short(held)
+    print("the child ran under its ceiling: ", code != 5)
+    after = read_file(held).default("(unreadable)")
+    print(
+        "a file cut short: write failed ",
+        code == 3,
+        ", holds the old text ",
+        after == "OLD",
+        ", beside it ",
+        files_in(dir)
+    )
+    fresh = dir + "/fresh.txt"
+    code2 = cut_short(fresh)
+    print(
+        "a name not there cut short: write failed ",
+        code2 == 3,
+        ", nothing made ",
+        hero_fs_exists(path: fresh.cstr()) == 0,
+        ", beside it ",
+        files_in(dir)
+    )
+    _ = hero_dir_remove_tree(path: dir.cstr())
