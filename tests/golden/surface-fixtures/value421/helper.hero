@@ -1,0 +1,15 @@
+# Defect 421's module (lane b14-harness-b, 2026-10-07): the generic functions
+# `main.hero`, `alias.hero` and `unbound.hero` name qualified, as values, and
+# one that names its own generic as a value at a type `main.hero` names it at
+# too, so the instance is reached from two modules.
+function ident<A>(x: A) -> A
+    return x
+
+function first<A, B>(x: A, y: B) -> A
+    kept: [B] = [y]
+    assert kept.len() == 1
+    return x
+
+function inside(v: i64) -> i64
+    f: (function(i64) -> i64) = ident
+    return f(v)
