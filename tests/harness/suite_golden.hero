@@ -656,7 +656,7 @@ test "a machine missing the library skips, but a machine missing every library f
     missing = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: absence.HEADER_LOOKED,
-        at: "x.hero:1:1"
+        at: group_spot(absence.NOWHERE)
     )
     assert !planted(tree: tree.must(), name: "x", source: binding(absence.NOWHERE), expected: SAID, said: missing).is_err()
     compiler = absence.said_stub(scratch)
@@ -692,20 +692,24 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
     direct = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: absence.HEADER_LOOKED,
-        at: "x.hero:1:1"
+        at: group_spot(absence.NOWHERE)
     )
     reworded = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: " — clang looked and found nothing",
-        at: "x.hero:1:1"
+        at: group_spot(absence.NOWHERE)
     )
     assert !planted(tree: dir, name: "a-words", source: binding(absence.NOWHERE), expected: direct, said: reworded).is_err()
     outer = absence.OWNER_OPEN + "heroes-golden-outer.h" + absence.OWNER_CLOSE + absence.OWNER_TAIL
-    through = absence.missing_header_said(header: absence.NOWHERE, tail: outer + " at line 1", at: "x.hero:1:1")
+    through = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: outer + " at line 1",
+        at: group_spot("heroes-golden-outer.h")
+    )
     moved = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: outer + " through `heroes-golden-mid.h`",
-        at: "x.hero:1:1"
+        at: group_spot("heroes-golden-outer.h")
     )
     assert !planted(tree: dir, name: "b-through", source: binding("heroes-golden-outer.h"), expected: through, said: moved).is_err()
     package = absence.package_said(package: "heroes-golden-gone", at: "x.hero:1:26")
@@ -718,7 +722,7 @@ test "fixedbugs: a changed missing-library message fails, and is never skipped"
 
     # The case's group reaches the header named, and no machine has the cut
     # name either, so only the place keeps this from reading as the machine's.
-    spot = dir + "/e-misnamed.hero:1:1"
+    spot = dir + "/e-misnamed.hero:" + absence.group_place(source: binding("heroes-golden-outer.h"), header: "heroes-golden-outer.h").must()
     pinned_here = absence.missing_header_said(header: absence.NOWHERE, tail: outer + " at line 1", at: spot)
     cut = absence.missing_header_said(header: "heroes-golden-a-header", tail: outer + " at line 1", at: spot)
     assert !planted(tree: dir, name: "e-misnamed", source: binding("heroes-golden-outer.h"), expected: pinned_here, said: cut).is_err()
@@ -760,7 +764,7 @@ test "a library the case binds and this machine lacks is skipped by name, among 
     missing = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: absence.HEADER_LOOKED,
-        at: "x.hero:1:1"
+        at: group_spot(absence.NOWHERE)
     )
     assert !planted(tree: dir, name: "d", source: binding(absence.NOWHERE), expected: REFUSED, said: missing).is_err()
     compiler = absence.said_stub(scratch)
@@ -787,14 +791,14 @@ test "a library said to be missing is judged where the machine has it, or the ca
 
     # `stdio.h` is on every machine this compiler builds on, so clang finds it
     # and the compiler's word is refuted.
-    has = absence.missing_header_said(header: "stdio.h", tail: absence.HEADER_LOOKED, at: "x.hero:1:1")
+    has = absence.missing_header_said(header: "stdio.h", tail: absence.HEADER_LOOKED, at: group_spot("stdio.h"))
     assert !planted(tree: dir, name: "a-has", source: binding("stdio.h"), expected: REFUSED, said: has).is_err()
 
     # A header missing everywhere, but one no group of this case names.
     elsewhere = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: absence.HEADER_LOOKED,
-        at: "x.hero:1:1"
+        at: group_spot("stdio.h")
     )
     assert !planted(tree: dir, name: "b-unbound", source: binding("stdio.h"), expected: REFUSED, said: elsewhere).is_err()
     compiler = absence.said_stub(scratch)
@@ -907,6 +911,13 @@ function refusing(dir: str) -> Shape
 # A case's source: one group binding `header`.
 function binding(header: str) -> str
     return "extern \"" + header + "\"\n    function seven() -> i32\n\nfunction main()\n    print(seven())\n"
+
+# Where the compiler tells that `binding(header)`'s group cannot open what it
+# names, or what a header it names includes: the group's first declaration
+# (`absence.group_place`), in the file the stand-in's words name. The plants
+# stood at `:1:1`, the group's head, until defect 449.
+function group_spot(header: str) -> str
+    return "x.hero:" + absence.group_place(source: binding(header), header: header).must()
 
 # A refusal that names no missing library: what a case expects where the
 # machine has everything it binds.

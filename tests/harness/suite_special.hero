@@ -333,50 +333,14 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
 # in it that does not run is a lie in the one document a reader is told
 # to trust.
 function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str, compiler: str)
-    spec = read_file("spec/heroes-spec.md")
+    program = specs_program()
 
-    if spec.is_err()
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot read spec/heroes-spec.md")
-        return
-
-    # By title and not by the literal text `## FFI`: the heading carries a
-    # section number since M-anchored-spec, and a needle that included the
-    # number would go stale the day a section is inserted before it.
-    after = spec_text.section_named(text: spec.must(), name: "FFI")
-
-    if after.is_err()
-        report.keep_failure(
-            @r,
-            label: "special/the spec's example",
-            detail: "  the spec has no `## FFI` section, numbered or not"
-        )
-        return
-    rest = spec.must().slice(from: after.must(), to: spec.must().len())
-    blocks = strings.split_text(text: rest, separator: "```")
-
-    if blocks.len() < 2
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  the FFI section has no fenced block")
-        return
-    block = blocks[1]
-
-    if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
-        report.keep_failure(
-            @r,
-            label: "special/the spec's example",
-            detail: "  the FFI section's first block is not the sqlite example any more:\n" + block
-        )
+    if program.is_err()
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  " + unread(program))
         return
     path = scratch + "/spec-ffi.hero"
 
-    # `Db`, not `ptr`, since 2026-09-13: the document's own fence declares the
-    # handle now (panel 145, defect 029), and this body is what a reader would
-    # write from it. The two move together on purpose — a body that still said
-    # `ptr` would be the one program in the tree that reads the spec and ignores
-    # it, and this check exists to prove the example is a program and not a
-    # picture.
-    program = block + "\nfunction main()\n    db: Db @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
-
-    if write_file(path: path, text: program).is_err()
+    if write_file(path: path, text: program.must()).is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot write " + path)
         return
     said = shell.run_guarded(scratch: scratch, words: [compiler, "run", path])
@@ -416,6 +380,49 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
         )
         return
     report.keep_pass(@r)
+
+# The program the check above runs: the FFI section's first fenced block of
+# `spec/heroes-spec.md`, the sqlite example, and a `main` that opens a
+# database with it; or why the spec does not hold one. Its own function since
+# defect 449, so the test below plants its stand-in's words at the place the
+# compiler tells them, read from the same program.
+function specs_program() -> str?
+    spec = read_file("spec/heroes-spec.md")
+
+    if spec.is_err()
+        return fail(code: "unread", msg: "cannot read spec/heroes-spec.md")
+
+    # By title and not by the literal text `## FFI`: the heading carries a
+    # section number since M-anchored-spec, and a needle that included the
+    # number would go stale the day a section is inserted before it.
+    after = spec_text.section_named(text: spec.must(), name: "FFI")
+
+    if after.is_err()
+        return fail(code: "unread", msg: "the spec has no `## FFI` section, numbered or not")
+    rest = spec.must().slice(from: after.must(), to: spec.must().len())
+    blocks = strings.split_text(text: rest, separator: "```")
+
+    if blocks.len() < 2
+        return fail(code: "unread", msg: "the FFI section has no fenced block")
+    block = blocks[1]
+
+    if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
+        return fail(code: "unread", msg: "the FFI section's first block is not the sqlite example any more:\n" + block)
+
+    # `Db`, not `ptr`, since 2026-09-13: the document's own fence declares the
+    # handle now (panel 145, defect 029), and this body is what a reader would
+    # write from it. The two move together on purpose — a body that still said
+    # `ptr` would be the one program in the tree that reads the spec and ignores
+    # it, and this check exists to prove the example is a program and not a
+    # picture.
+    return ok(
+        block + "\nfunction main()\n    db: Db @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
+    )
+
+function unread(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # **A search path reaches clang as ONE argv word.** The path a user types
 # goes onto a command line, and a command line is a shell's input: a
@@ -539,7 +546,12 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
     assert !shell.mkdir_all(scratch).is_err()
     compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
-    at = scratch + "/spec-ffi.hero:1:1"
+
+    # Told where the compiler tells a header the example's group cannot open,
+    # its first declaration (defect 449), whichever header is named.
+    path = scratch + "/spec-ffi.hero"
+    program = specs_program().must()
+    at = path + ":" + absence.group_place(source: program, header: "sqlite3.h").must()
     elsewhere = absence.missing_header_said(
         header: absence.NOWHERE,
         tail: absence.HEADER_LOOKED,
