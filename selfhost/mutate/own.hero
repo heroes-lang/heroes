@@ -1,0 +1,164 @@
+# A mutant's own messages: what a compiler told it, less what the same
+# compiler tells its program unmutated (panel 187's R2 as the fourth round
+# read it, 2026-10-03; defect 210).
+#
+# The corpus was frozen on 2026-09-30, every program of it accepted then.
+# The language has moved since, and a program it now refuses carries that
+# refusal into every mutant of it: `examples/gallery/12-interpolation.hero`
+# is told `lone_brace` by the trunk of 2026-10-07 (panel 184's R2), so each
+# of its mutants reads one message more than its mistake earns. The fourth
+# round subtracted such a program by hand; a run now records its corpus
+# (`corpus.jsonl`), and a reading takes each of the program's own messages
+# out of each mutant's, once, where its code, its line carried through the
+# mutant's hunks, and its words, the planted file's name aside, all agree.
+#
+# **A message the mutation moved off its line is kept as the mutant's**,
+# the loud direction (`.claude/rules/module-shape.md`): a subtraction on
+# the code and the words alone would take a mutant's own `lone_brace`, the
+# words of which name no place, for the program's.
+
+use bytes
+use mutate/hunks
+use mutate/json_fields
+use mutate/json_read
+
+# One run's corpus record by program: each arm's messages and the name the
+# copy was checked under. A run that recorded none (the Python's) reads as
+# an empty map, and its mutants' messages are all their own.
+function read_corpus(run: str) -> {str: json_read.Json}?
+    return read_corpus_at(run + "/corpus.jsonl")
+
+# The same record at `path`, the one pinned with the plan among them.
+function read_corpus_at(path: str) -> {str: json_read.Json}?
+    out: {str: json_read.Json} @ {}
+    text = read_file(path)
+
+    if text.is_err()
+        return ok(out)
+
+    for row in json_read.read_lines(text.must())?
+        out[json_fields.text_field(row, name: "file")?] @ row
+
+    return ok(out)
+
+# The program's own messages in `arm`, and the name they were told under;
+# none where the run recorded none.
+function program_diags(corpus: {str: json_read.Json}, file: str, arm: str) -> [json_read.Json]
+    none: [json_read.Json] = []
+    row = corpus[file]
+
+    if row.is_err()
+        return none
+    got = json_fields.field(row.must(), name: arm)
+
+    if got.is_err()
+        return none
+    return json_fields.items_field(got.must(), name: "diags").default(none)
+
+function program_used(corpus: {str: json_read.Json}, file: str) -> str
+    row = corpus[file]
+
+    if row.is_err()
+        return ""
+    return json_fields.text_field(row.must(), name: "path_used").default("")
+
+# `diags`, told under `used`, less the program's own (`theirs`, told under
+# `their_used`), each of those mapped through `applied`'s hunks.
+function own(diags: [json_read.Json], used: str, theirs: [json_read.Json], their_used: str, applied: hunks.Applied) -> [json_read.Json]
+    if theirs.len() == 0
+        return diags
+    owed: {str: i64} @ {}
+
+    for d in theirs
+        line = json_fields.whole_field(d, name: "line").default(-1)
+        k = key(d, used: their_used, line: hunks.mapped(applied, line: line))
+        owed[k] @ owed[k].default(0) + 1
+
+    out: [json_read.Json] @ []
+
+    for d in diags
+        k = key(d, used: used, line: json_fields.whole_field(d, name: "line").default(-1))
+        left = owed[k].default(0)
+
+        if left > 0
+            owed[k] @ left - 1
+        else
+            out @ out.push(d)
+
+    return out
+
+# A message as the subtraction compares it: its code, its line, and its
+# words with the planted file's name, whole and as a base name, made one.
+function key(d: json_read.Json, used: str, line: i64) -> str
+    code = json_fields.text_field(d, name: "code").default("")
+    words = json_fields.text_field(d, name: "msg").default("")
+    return code + "\t" + line.to_str() + "\t" + named_alike(text: words, used: used)
+
+function named_alike(text: str, used: str) -> str
+    if used.len() == 0
+        return text
+    base = base_name(used)
+    whole = replaced(text: text, from: used, to: "F")
+    return replaced(text: whole, from: base, to: "F")
+
+function base_name(path: str) -> str
+    at: i64 @ path.len() - 1
+
+    while at >= 0
+        if path[at] == '/'
+            return path.slice(from: at + 1, to: path.len())
+        at @ at - 1
+
+    return path
+
+# `text` with each occurrence of `from` written `to`, asked a byte at a time.
+function replaced(text: str, from: str, to: str) -> str
+    if from.len() == 0
+        return text
+    parts: [str] @ []
+    plain: i64 @ 0
+    at: i64 @ 0
+
+    while at + from.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: from)
+            parts @ parts.push(text.slice(from: plain, to: at))
+            parts @ parts.push(to)
+            at @ at + from.len()
+            plain @ at
+        else
+            at @ at + 1
+
+    parts @ parts.push(text.slice(from: plain, to: text.len()))
+    return parts.join("")
+
+## Tests
+
+function told(code: str, line: i64, msg: str) -> json_read.Json
+    return .fields(
+        names: ["code", "line", "msg"],
+        values: [json_fields.string(code), json_fields.whole(line), json_fields.string(msg)]
+    )
+
+test "the program's own message is taken out once, at its line carried through the hunks"
+    lines = ["a", "b", "c"]
+    applied = hunks.apply(lines, sets: [hunks.Tagged(tag: "a", hunks: [hunks.Hunk(start: 0, end: 0, lines: ["new"], site: [0])])]).must(
+    )
+    theirs = [told(code: "lone_brace", line: 3, msg: "in d/zzb_1.hero")]
+
+    # The program's message stands one line lower in the mutant, and goes.
+    mine = [told(code: "lone_brace", line: 4, msg: "in d/zzm_k.hero"), told(code: "missing", line: 1, msg: "m")]
+    assert own(diags: mine, used: "d/zzm_k.hero", theirs: theirs, their_used: "d/zzb_1.hero", applied: applied) == [mine[1]]
+
+    # Told twice, it is taken out once.
+    twice = [mine[0], mine[0]]
+    assert own(diags: twice, used: "d/zzm_k.hero", theirs: theirs, their_used: "d/zzb_1.hero", applied: applied) == [mine[0]]
+
+    # The same code and words at another line are the mutant's own.
+    moved = [told(code: "lone_brace", line: 2, msg: "in d/zzm_k.hero")]
+    assert own(diags: moved, used: "d/zzm_k.hero", theirs: theirs, their_used: "d/zzb_1.hero", applied: applied) == moved
+
+test "a name is made one whole and as a base name, and a character above ASCII is passed over whole"
+    assert named_alike(text: "in d/zzm_k.hero and zzm_k.hero", used: "d/zzm_k.hero") == "in F and F"
+    assert replaced(text: "é/x é", from: "/x", to: "y") == "éy é"
+    assert base_name("a/b/c.hero") == "c.hero"
+    assert base_name("c.hero") == "c.hero"
