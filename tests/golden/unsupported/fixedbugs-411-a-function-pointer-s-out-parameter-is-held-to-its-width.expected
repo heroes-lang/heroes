@@ -1,0 +1,8 @@
+error[ffi_parameter_type]: `n` of `fp_count` is declared `i32`, and the header's `size_t *` points at a different width or sign — clang read the header, and C writes back exactly the bytes the header expects
+  at tests/golden/unsupported/fixedbugs-411-a-function-pointer-s-out-parameter-is-held-to-its-width.hero:10:24
+     |
+  10 |     function fp_count(@n: i32)  #~ ffi_parameter_type
+     |                        ^
+  note: §4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
+  note: `size_t` is the platform's pointer width: 64 bits on this machine, and 32 on a 32-bit target. `u64` is the answer for this target; a program that must build on both declares the width it means there and converts at the call
+  fix (guess): declare `n` as `@n: u64`

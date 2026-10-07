@@ -5,7 +5,7 @@
 # and how to read clang's answer back.
 #
 # **Where the type text comes from.** One unit includes the program's
-# headers and declares `extern __typeof__(getline) hero_ty_getline;` per
+# headers and declares `extern __typeof__(*getline) hero_ty_getline;` per
 # extern asked about; `clang -fsyntax-only -Xclang -ast-dump=json -Xclang
 # -ast-dump-filter=hero_ty_` prints, for each, a `FunctionDecl` whose
 # `ParmVarDecl` children carry the parameter types as the header spelled
@@ -58,7 +58,10 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
 
         if !already
             named @ named.push(one.name)
-            lines @ lines.push("extern __typeof__(" + one.name + ") " + PREFIX + one.name + ";")
+
+            # Through `*` (defect 411, 2026-10-07): a function pointer the header
+            # declares as a variable is read as the function it points at.
+            lines @ lines.push("extern __typeof__(*" + one.name + ") " + PREFIX + one.name + ";")
 
     return lines.join("\n") + "\n"
 
@@ -415,4 +418,4 @@ test "the check unit asserts width and sign at the author's line, with the marke
     assert locate_text(text: unit, needle: "_Static_assert(!__builtin_types_compatible_p(void, void) && __builtin_classify_type(*(void *)0) == 5, \"heroes-ffi-pointee-depth eat p handle void\");", from: 0).must() > 0
     assert locate_text(text: unit, needle: "sizeof(handle)", from: 0).is_err()
     dumped = dump_unit(headers, wanted)
-    assert locate_text(text: dumped, needle: "extern __typeof__(getline) hero_ty_getline;", from: 0).must() > 0
+    assert locate_text(text: dumped, needle: "extern __typeof__(*getline) hero_ty_getline;", from: 0).must() > 0

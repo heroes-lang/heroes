@@ -1,0 +1,8 @@
+error[ffi_writable_parameter]: `p` of `fp_write` is declared `cstr`, and the header says `unsigned char *` — C does not promise to leave it alone
+  at tests/golden/unsupported/fixedbugs-411-a-function-pointer-the-header-declares-is-asked.hero:15:5
+     |
+  15 |     function fp_write(p: cstr lent) -> i32  #~ ffi_writable_parameter
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: declare it `ptr` and give `fp_write` a buffer C owns, then read the result back
+  fix (guess): declare it `ptr`
