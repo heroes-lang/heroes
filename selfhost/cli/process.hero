@@ -35,6 +35,7 @@
 # module takes.
 
 use not_text
+use cli/strings
 
 extern "hero_os.h"
     function hero_run_discard_path() -> str
@@ -310,23 +311,6 @@ function serial() -> i64
 
 ## Tests
 
-# Whether `text` holds `needle` anywhere. **Written here rather than imported,
-# and the reason is the language.** `strings.has_text` is the same
-# predicate, and `cli_toolchain` imports THIS module — so `use cli_toolchain`
-# here is `module_cycle`, whatever the edge carries (CLAUDE.md §11's knot
-# clause). Six lines in a test section is the cheaper half of that trade.
-function holds(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    at: i64 @ 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 # **`clang` is the witness on all three platforms, and it is not a shell.**
 # These two cases used to name `/bin/echo` and `/bin/sh`, which is 2 of 520
 # red on the Windows leg (measured 2026-08-31, run 33381701823) for a reason
@@ -353,7 +337,7 @@ test "an argument survives what a shell would have eaten"
     # comes back through a second process's own diagnostic — spaces, quotes,
     # dollar sign and all. A shell would have split it into four words and
     # expanded the last one.
-    assert holds(text: back.must(), needle: tricky)
+    assert strings.holds(text: back.must(), needle: tricky)
 
 test "a program that never started is not a program that failed"
     absent = run(program: "heroes-no-such-program", words: ["heroes-no-such-program"], out: "", err: "")
@@ -496,17 +480,17 @@ test "a refusal the runtime makes itself is told as its own, never as the operat
         match mkdir_all(refused)
             .ok _ => assert false
             .err e =>
-                assert holds(
+                assert strings.holds(
                     text: e.msg,
                     needle: ": the runtime refused it before the system was asked, for the reason the system numbers "
                 )
-                assert !holds(text: e.msg, needle: "the operating system's own reason")
+                assert !strings.holds(text: e.msg, needle: "the operating system's own reason")
 
     assert !write_file(path: "build/selftest-346-file", text: "x").is_err()
 
     match mkdir_all("build/selftest-346-file/under")
         .ok _  => assert false
-        .err e => assert holds(text: e.msg, needle: ": the operating system's own reason is ")
+        .err e => assert strings.holds(text: e.msg, needle: ": the operating system's own reason is ")
 
     assert !remove_file("build/selftest-346-file").is_err()
 
