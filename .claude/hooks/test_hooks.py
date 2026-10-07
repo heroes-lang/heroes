@@ -156,6 +156,29 @@ def written(session, path):
     return done.returncode, done.stderr
 
 
+class Isolated(unittest.TestCase):
+    """The hooks run under `python3 -I` too, which leaves their directory off
+    `sys.path`: both failed at their first import of a module beside them."""
+
+    def test_the_guard_refuses_under_an_isolated_python(self):
+        event = json.dumps({"cwd": HOOKS, "tool_input": {"command": "git add -A"}})
+        done = subprocess.run(
+            [sys.executable, "-I", os.path.join(HOOKS, "guard_bash.py")],
+            input=event, capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(done.returncode, 2, done.stderr)
+        self.assertIn("git add", done.stderr)
+
+    def test_the_write_hook_runs_under_an_isolated_python(self):
+        event = json.dumps({"cwd": HOOKS, "tool_input": {"file_path": os.path.join(HOOKS, "absent.hero")}})
+        done = subprocess.run(
+            [sys.executable, "-I", os.path.join(HOOKS, "fmt_check.py")],
+            input=event, capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(done.stderr, "")
+
+
 class Place(unittest.TestCase):
     """Defect 254: a written file is judged in the tree it stands in."""
 

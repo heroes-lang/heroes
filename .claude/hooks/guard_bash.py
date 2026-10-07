@@ -22,10 +22,18 @@ import re
 import shlex
 import sys
 
-import commits
-import staged
+# The hooks' own modules are found beside this file whatever runs it:
+# `python3 -I`, isolated, leaves the script's directory off `sys.path`, and
+# this file then failed at its first import (measured 2026-10-07, Python 3.14).
+HOOKS = os.path.dirname(os.path.abspath(__file__))
+if HOOKS not in sys.path:
+    sys.path.insert(0, HOOKS)
+
 import trees
-import unseen
+
+# The modules only a git command needs, imported by `git_rules` the first time
+# one is read.
+commits = staged = unseen = None
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
@@ -229,6 +237,22 @@ def words(segment):
         # An unbalanced quote is not our business to fix; fall back to a coarse
         # split so a malformed line cannot slip a forbidden verb past us.
         return segment.split()
+
+
+def git_rules():
+    """Import `commits`, `staged` and `unseen`, which only the git rules use.
+    This guard runs before every Bash call and most are not git: imported at
+    the top, the three and what they import took an `ls` from 235.6 to 251.8
+    million instructions (measured 2026-10-07, the guard's own process)."""
+    global commits, staged, unseen
+    if commits is None:
+        if HOOKS not in sys.path:
+            sys.path.insert(0, HOOKS)
+        import commits as commits_module
+        import staged as staged_module
+        import unseen as unseen_module
+
+        commits, staged, unseen = commits_module, staged_module, unseen_module
 
 
 def git_dir(w, here):
@@ -458,10 +482,13 @@ def verdict(command, cwd=None):
                 return inner
             continue
         where = git_dir(w, here)
+        is_git = bool(w) and os.path.basename(w[0]) == "git"
+        if is_git:
+            git_rules()
 
         # **A message is read for what its reader cannot see** (defect 378): the
         # list is the `unseen` suite's, read from the tree the command stands in.
-        for verb in unseen.VERBS:
+        for verb in unseen.VERBS if is_git else ():
             more = git_args(w, verb)
             if more is not None:
                 tree = trees.tree_of(where) if where is not None else None
@@ -523,7 +550,7 @@ def verdict(command, cwd=None):
             said = commits.pathspec(rest, where)
             if said is not None:
                 return said
-        for name, _head in commits.OPERATIONS:
+        for name, _head in commits.OPERATIONS if is_git else ():
             more = git_args(w, name)
             if more is not None and "--continue" in more:
                 said = commits.concluded(where, name)

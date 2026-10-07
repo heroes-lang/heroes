@@ -68,6 +68,13 @@ import subprocess
 import sys
 import time
 
+# The hooks' own modules are found beside this file whatever runs it:
+# `python3 -I`, isolated, leaves the script's directory off `sys.path`, and
+# this file then failed at its first import (measured 2026-10-07, Python 3.14).
+HOOKS = os.path.dirname(os.path.abspath(__file__))
+if HOOKS not in sys.path:
+    sys.path.insert(0, HOOKS)
+
 import ceiling
 import marks
 import trees
