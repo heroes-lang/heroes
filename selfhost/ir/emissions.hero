@@ -34,12 +34,16 @@ use ir/questions
 # back before control leaves. Copy-out happens ALWAYS — including on
 # early return and on `?` — so this is called from three places, and the
 # dump shows the instructions rather than leaving them to the emitter's
-# good intentions.
-function copy_out(@b: build.Lowering, c: state.Checked)
+# good intentions. Each carries the span of what leaves, the `return`, the
+# `?` or the end of the body, and so do the retain and the sweep the
+# ownership pass writes after them, which take the line of the last
+# instruction before them: until defect 335 the copy-outs carried the
+# declaration's span, and a debugger leaving by any way out was sent to the
+# `function` line.
+function copy_out(@b: build.Lowering, c: state.Checked, span: token.Span)
     unit = table.unit_ty(c.types)
 
     for param in build.mutable_params(b)
-        span = build.declaration_span(b)
         build.emit_void(@b, op: .copy_out(param: param), ty: unit, span: span)
 
 function orphan(@b: build.Lowering, c: state.Checked, id: i64) -> i64

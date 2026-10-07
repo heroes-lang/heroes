@@ -251,14 +251,14 @@ bb3:
     goto bb1;
 #line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 bb4:
-#line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+#line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     t13 = h1_ret0;
 #line 257 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_retain(&t13);
-#line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+#line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 #line 260 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(&h2_own2);
-#line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
+#line 30 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 #line 263 "fixedbugssynthesisednamesareunspellable.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;

@@ -260,14 +260,14 @@ bb3:
     goto bb1;
 #line 12 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
 bb4:
-#line 10 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
+#line 12 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t13 = h1_ret0;
 #line 266 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     h_0opt_e201354_retain(&t13);
-#line 10 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
+#line 12 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
 #line 269 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     h_0opt_e201354_release(&h2_own2);
-#line 10 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
+#line 12 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
 #line 272 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;

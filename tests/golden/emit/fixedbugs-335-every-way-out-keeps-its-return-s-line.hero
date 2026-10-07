@@ -1,0 +1,59 @@
+# Defect 335, 2026-10-07. A function with two or more ways out leaves by one
+# exit (defect 231): each way out stores what it returns and jumps there, and
+# the exit copies out its `@` parameters, loads what was stored, retains it
+# and releases every slot. That exit's load carried the function's own line,
+# and every copy-out carried the declaration's, so the retain and the sweep
+# after them did too: lldb stepping from any `return` stopped on the
+# `function` line. Now each copy-out carries the line of what leaves, the
+# `return`, the `?` or the end of the body, and a merged exit's load the line
+# of the way out written first. In `pick` that is `return found`, though
+# lowering ends the block of `return "-"` before it; in `halves`, the `?`;
+# in `count`, the bare `return`; `grow` only falls off its end and sweeps at
+# its last line, and `only` leaves once and sweeps at its `return`.
+
+record Tally
+    n: i64
+
+function pick(@t: Tally, word: str) -> str
+    t.n @ t.n + 1
+    found = word + "!"
+
+    if word.len() > 1
+        if word.len() > 3
+            return found
+        return word
+    return "-"
+
+function half(n: i64) -> i64?
+    if n % 2 == 1
+        return fail(code: "odd", msg: "odd")
+    return ok(n / 2)
+
+function halves(@t: Tally, n: i64) -> i64?
+    h = half(n)?
+    t.n @ t.n + h
+    return ok(h)
+
+function count(@t: Tally, word: str)
+    shout = word + "!"
+
+    if word == ""
+        return
+    t.n @ t.n + shout.len()
+
+function grow(@t: Tally, word: str)
+    shout = word + "!"
+    t.n @ t.n + shout.len()
+
+function only(@t: Tally, word: str) -> str
+    t.n @ t.n + 1
+    return word + "?"
+
+function main()
+    t: Tally @ Tally(n: 0)
+    print(pick(@t, "words"), pick(@t, "ab"), pick(@t, "a"))
+    print(halves(@t, 8).default(0), halves(@t, 3).default(0))
+    count(@t, "four")
+    count(@t, "")
+    grow(@t, "ab")
+    print(only(@t, "x"), t.n)

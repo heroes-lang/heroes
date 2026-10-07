@@ -625,35 +625,35 @@ bb12:
     goto bb7;
 #line 51 "examples/roman/main.hero"
 bb13:
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
     t42 = h6_ret0;
 #line 631 "main.c"
     h_0opt_f87774a_retain(&t42);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 634 "main.c"
     hero_str_decref(h1_out);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 637 "main.c"
     hero_array_decref(h4_all_values);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 640 "main.c"
     hero_array_decref(h5_all_letters);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 643 "main.c"
     h_0opt_f87774a_release(&h7_own7);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 646 "main.c"
     hero_array_decref(h8_own8);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 649 "main.c"
     hero_array_decref(h9_own9);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 652 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 655 "main.c"
     h_0opt_f87774a_release(&h11_own11);
-#line 31 "examples/roman/main.hero"
+#line 33 "examples/roman/main.hero"
 #line 658 "main.c"
     hero_str_decref(h12_own12);
     return t42;
@@ -1338,29 +1338,29 @@ bb11:
     goto bb9;
 #line 86 "examples/roman/main.hero"
 bb12:
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
     t47 = h7_ret0;
 #line 1344 "main.c"
     h_0opt_e201354_retain(&t47);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1347 "main.c"
     hero_array_decref(h3_letters_here);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1350 "main.c"
     h_0opt_e201354_release(&h5_f0);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1353 "main.c"
     hero_array_decref(h8_own8);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1356 "main.c"
     h_0opt_e201354_release(&h9_own9);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1359 "main.c"
     h_0opt_e201354_release(&h10_own10);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1362 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 68 "examples/roman/main.hero"
+#line 70 "examples/roman/main.hero"
 #line 1365 "main.c"
     h_0opt_e201354_release(&h12_own12);
     return t47;

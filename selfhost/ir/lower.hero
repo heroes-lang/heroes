@@ -21,6 +21,7 @@
 # What lowering IS lives in `ir/flatten.hero`'s own doc: flattening a
 # tree into instructions that name temporaries and nest nothing.
 
+use token
 use ast
 use source
 use resolved
@@ -201,7 +202,7 @@ function close(@b: build.Lowering, c: state.Checked, body: ast.Block, result: i6
 
         if build.is_terminated(b)
             return
-    emissions.copy_out(@b, c)
+    emissions.copy_out(@b, c, span: token.Span(start: body.span.end, end: body.span.end))
     build.terminate(@b, .return_term(value: fail(code: "none", msg: "fell off the end")))
 
 ## Tests

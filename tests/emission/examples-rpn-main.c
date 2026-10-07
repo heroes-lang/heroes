@@ -424,35 +424,35 @@ bb6:
     goto bb7;
 #line 30 "examples/rpn/main.hero"
 bb7:
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
     t31 = h7_ret0;
 #line 430 "main.c"
     h_0opt_53d4767c_retain(&t31);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 433 "main.c"
     hero_array_decref(h1_out);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 436 "main.c"
     hero_array_decref(h2_xs0);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 439 "main.c"
     hero_str_decref(h4_word);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 442 "main.c"
     h_0opt_15618ef8_release(&h5_f0);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 445 "main.c"
     hero_array_decref(h8_own8);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 448 "main.c"
     hero_array_decref(h9_own9);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 451 "main.c"
     h_0opt_15618ef8_release(&h10_own10);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 454 "main.c"
     h_0opt_53d4767c_release(&h11_own11);
-#line 26 "examples/rpn/main.hero"
+#line 30 "examples/rpn/main.hero"
 #line 457 "main.c"
     h_0opt_53d4767c_release(&h12_own12);
     return t31;
@@ -704,32 +704,32 @@ bb14:
     goto bb15;
 #line 47 "examples/rpn/main.hero"
 bb15:
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
     t34 = h2_ret0;
 #line 710 "main.c"
     h_0opt_15618ef8_retain(&t34);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 713 "main.c"
     h_0opt_e201354_release(&h1_f0);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 716 "main.c"
     h_0opt_15618ef8_release(&h3_own3);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 719 "main.c"
     h_0opt_15618ef8_release(&h4_own4);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 722 "main.c"
     h_0opt_15618ef8_release(&h5_own5);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 725 "main.c"
     h_0opt_e201354_release(&h6_own6);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 728 "main.c"
     h_0opt_15618ef8_release(&h7_own7);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 731 "main.c"
     h_0opt_15618ef8_release(&h8_own8);
-#line 35 "examples/rpn/main.hero"
+#line 37 "examples/rpn/main.hero"
 #line 734 "main.c"
     h_0opt_15618ef8_release(&h9_own9);
     return t34;
@@ -1206,47 +1206,47 @@ bb20:
     h_0opt_e201354_release(&t84);
     goto bb18;
 bb21:
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
     t70 = h12_ret0;
 #line 1212 "main.c"
     h_0opt_e201354_retain(&t70);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1215 "main.c"
     hero_array_decref(h5_xs0);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1218 "main.c"
     hero_str_decref(h7_ch);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1221 "main.c"
     h_0opt_e201354_release(&h9_f0);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1224 "main.c"
     h_0opt_e201354_release(&h11_r0);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1227 "main.c"
     hero_array_decref(h13_own13);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1230 "main.c"
     h_0opt_e201354_release(&h14_own14);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1233 "main.c"
     h_0opt_e201354_release(&h15_own15);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1236 "main.c"
     h_0opt_e201354_release(&h16_own16);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1239 "main.c"
     hero_str_decref(h17_own17);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1242 "main.c"
     hero_str_decref(h18_own18);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1245 "main.c"
     h_0opt_e201354_release(&h19_own19);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1248 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 52 "examples/rpn/main.hero"
+#line 54 "examples/rpn/main.hero"
 #line 1251 "main.c"
     h_0opt_e201354_release(&h21_own21);
     return t70;
@@ -1427,26 +1427,26 @@ bb6:
     goto bb4;
 #line 84 "examples/rpn/main.hero"
 bb7:
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
     t26 = h3_ret0;
 #line 1433 "main.c"
     h_0opt_e201354_retain(&t26);
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
 #line 1436 "main.c"
     hero_str_decref(h1_digits);
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
 #line 1439 "main.c"
     hero_str_decref(h4_own4);
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
 #line 1442 "main.c"
     hero_str_decref(h5_own5);
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
 #line 1445 "main.c"
     hero_str_decref(h6_own6);
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
 #line 1448 "main.c"
     h_0opt_e201354_release(&h7_own7);
-#line 78 "examples/rpn/main.hero"
+#line 84 "examples/rpn/main.hero"
 #line 1451 "main.c"
     h_0opt_e201354_release(&h8_own8);
     return t26;
@@ -2271,50 +2271,50 @@ bb20:
     goto bb18;
 #line 124 "examples/rpn/main.hero"
 bb21:
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
     t92 = h11_ret0;
 #line 2277 "main.c"
     h_0opt_e201354_retain(&t92);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2280 "main.c"
     hero_array_decref(h1_stack);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2283 "main.c"
     h_0opt_53d4767c_release(&h2_f0);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2286 "main.c"
     hero_array_decref(h3_xs0);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2289 "main.c"
     h_0opt_e201354_release(&h10_f1);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2292 "main.c"
     hero_array_decref(h12_own12);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2295 "main.c"
     h_0opt_53d4767c_release(&h13_own13);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2298 "main.c"
     h_0opt_e201354_release(&h14_own14);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2301 "main.c"
     hero_array_decref(h15_own15);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2304 "main.c"
     h_0opt_e201354_release(&h16_own16);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2307 "main.c"
     h_0opt_e201354_release(&h17_own17);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2310 "main.c"
     h_0opt_e201354_release(&h18_own18);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2313 "main.c"
     h_0opt_e201354_release(&h19_own19);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2316 "main.c"
     h_0opt_e201354_release(&h20_own20);
-#line 106 "examples/rpn/main.hero"
+#line 109 "examples/rpn/main.hero"
 #line 2319 "main.c"
     h_0opt_e201354_release(&h21_own21);
     return t92;

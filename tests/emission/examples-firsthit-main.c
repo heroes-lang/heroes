@@ -337,9 +337,9 @@ bb6:
     goto bb4;
 #line 52 "examples/firsthit/main.hero"
 bb7:
-#line 47 "examples/firsthit/main.hero"
+#line 52 "examples/firsthit/main.hero"
     t18 = h2_ret0;
-#line 47 "examples/firsthit/main.hero"
+#line 52 "examples/firsthit/main.hero"
     return t18;
 #line 345 "main.c"
 }
@@ -630,9 +630,9 @@ bb6:
     goto bb4;
 #line 80 "examples/firsthit/main.hero"
 bb7:
-#line 75 "examples/firsthit/main.hero"
+#line 80 "examples/firsthit/main.hero"
     t14 = h1_ret0;
-#line 75 "examples/firsthit/main.hero"
+#line 80 "examples/firsthit/main.hero"
     return t14;
 #line 638 "main.c"
 }

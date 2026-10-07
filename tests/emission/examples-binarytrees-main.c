@@ -285,23 +285,23 @@ bb3:
     goto bb1;
 #line 76 "examples/binarytrees/main.hero"
 bb4:
-#line 74 "examples/binarytrees/main.hero"
+#line 76 "examples/binarytrees/main.hero"
     t15 = h1_ret0;
 #line 291 "main.c"
     h_main_Tree_retain(&t15);
-#line 74 "examples/binarytrees/main.hero"
+#line 76 "examples/binarytrees/main.hero"
 #line 294 "main.c"
     h_main_Tree_release(&h2_own2);
-#line 74 "examples/binarytrees/main.hero"
+#line 76 "examples/binarytrees/main.hero"
 #line 297 "main.c"
     h_main_Tree_release(&h3_own3);
-#line 74 "examples/binarytrees/main.hero"
+#line 76 "examples/binarytrees/main.hero"
 #line 300 "main.c"
     hero_array_decref(h4_own4);
-#line 74 "examples/binarytrees/main.hero"
+#line 76 "examples/binarytrees/main.hero"
 #line 303 "main.c"
     h_main_Tree_release(&h5_own5);
-#line 74 "examples/binarytrees/main.hero"
+#line 76 "examples/binarytrees/main.hero"
 #line 306 "main.c"
     h_main_Tree_release(&h6_own6);
     return t15;

@@ -431,33 +431,32 @@ bb0:
     hero_array_unshare(&((*ph0_g).f_rows));
 #line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_array_set(&((*(h_fixedbugs261abuildertablegrowsinplace_Row *)hero_array_at_mut((*ph0_g).f_rows, t17)).f_cells), t18, &t20);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 436 "fixedbugs261abuildertablegrowsinplace.c"
+#line 435 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h5_s0);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 439 "fixedbugs261abuildertablegrowsinplace.c"
+#line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
+#line 438 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h6_s1);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 442 "fixedbugs261abuildertablegrowsinplace.c"
+#line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
+#line 441 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h7_s2);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 445 "fixedbugs261abuildertablegrowsinplace.c"
+#line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
+#line 444 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h8_own8);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 448 "fixedbugs261abuildertablegrowsinplace.c"
+#line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
+#line 447 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h9_own9);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 451 "fixedbugs261abuildertablegrowsinplace.c"
+#line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
+#line 450 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h10_own10);
-#line 43 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 454 "fixedbugs261abuildertablegrowsinplace.c"
+#line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
+#line 453 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h11_own11);
     return;
 }
 
 #line 53 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
 void h_fixedbugs261abuildertablegrowsinplace_main(void) {
-#line 461 "fixedbugs261abuildertablegrowsinplace.c"
+#line 460 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid h0_g = {0};
     HeroStr h1_x = {0};
     HeroStr h2_y = {0};
@@ -517,10 +516,10 @@ bb0:
     t28 = h4_own4;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h4_own4 = t3;
-#line 521 "fixedbugs261abuildertablegrowsinplace.c"
+#line 520 "fixedbugs261abuildertablegrowsinplace.c"
     hero_array_decref(t28);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 524 "fixedbugs261abuildertablegrowsinplace.c"
+#line 523 "fixedbugs261abuildertablegrowsinplace.c"
     hero_array_incref(t3);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t4 = (h_fixedbugs261abuildertablegrowsinplace_Row){.f_cells = t3};
@@ -528,7 +527,7 @@ bb0:
     t29 = h5_own5;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h5_own5 = t4;
-#line 532 "fixedbugs261abuildertablegrowsinplace.c"
+#line 531 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Row_release(&t29);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t5 = hero_array_new(&h_fixedbugs261abuildertablegrowsinplace_Row_desc, 1);
@@ -538,10 +537,10 @@ bb0:
     t30 = h6_own6;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h6_own6 = t5;
-#line 542 "fixedbugs261abuildertablegrowsinplace.c"
+#line 541 "fixedbugs261abuildertablegrowsinplace.c"
     hero_array_decref(t30);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 545 "fixedbugs261abuildertablegrowsinplace.c"
+#line 544 "fixedbugs261abuildertablegrowsinplace.c"
     hero_array_incref(t5);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t6 = (h_fixedbugs261abuildertablegrowsinplace_Grid){.f_rows = t5};
@@ -549,45 +548,45 @@ bb0:
     t31 = h7_own7;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h7_own7 = t6;
-#line 553 "fixedbugs261abuildertablegrowsinplace.c"
+#line 552 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t31);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t32 = h0_g;
-#line 557 "fixedbugs261abuildertablegrowsinplace.c"
+#line 556 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid_retain(&t6);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h0_g = t6;
-#line 561 "fixedbugs261abuildertablegrowsinplace.c"
+#line 560 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t32);
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t7 = HERO_STR_LIT(hero_str_78);
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t33 = h1_x;
-#line 567 "fixedbugs261abuildertablegrowsinplace.c"
+#line 566 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_incref(t7);
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h1_x = t7;
-#line 571 "fixedbugs261abuildertablegrowsinplace.c"
+#line 570 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(t33);
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t8 = HERO_STR_LIT(hero_str_79);
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t34 = h2_y;
-#line 577 "fixedbugs261abuildertablegrowsinplace.c"
+#line 576 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_incref(t8);
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h2_y = t8;
-#line 581 "fixedbugs261abuildertablegrowsinplace.c"
+#line 580 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(t34);
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t9 = HERO_STR_LIT(hero_str_7a);
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t35 = h3_z;
-#line 587 "fixedbugs261abuildertablegrowsinplace.c"
+#line 586 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_incref(t9);
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h3_z = t9;
-#line 591 "fixedbugs261abuildertablegrowsinplace.c"
+#line 590 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(t35);
 #line 58 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t10 = INT64_C(4);
@@ -639,28 +638,28 @@ bb0:
     hero_print_int(t27);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_print_end();
-#line 643 "fixedbugs261abuildertablegrowsinplace.c"
+#line 642 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid_release(&h0_g);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 646 "fixedbugs261abuildertablegrowsinplace.c"
+#line 645 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h1_x);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 649 "fixedbugs261abuildertablegrowsinplace.c"
+#line 648 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h2_y);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 652 "fixedbugs261abuildertablegrowsinplace.c"
+#line 651 "fixedbugs261abuildertablegrowsinplace.c"
     hero_str_decref(h3_z);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 655 "fixedbugs261abuildertablegrowsinplace.c"
+#line 654 "fixedbugs261abuildertablegrowsinplace.c"
     hero_array_decref(h4_own4);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 658 "fixedbugs261abuildertablegrowsinplace.c"
+#line 657 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Row_release(&h5_own5);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 661 "fixedbugs261abuildertablegrowsinplace.c"
+#line 660 "fixedbugs261abuildertablegrowsinplace.c"
     hero_array_decref(h6_own6);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-#line 664 "fixedbugs261abuildertablegrowsinplace.c"
+#line 663 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid_release(&h7_own7);
     return;
 }

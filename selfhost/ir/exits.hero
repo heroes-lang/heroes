@@ -68,8 +68,22 @@ function merge(f: containers.Function, unit: i64) -> containers.Function
 
     worked: containers.Function @ f
     exit_at = worked.blocks.len()
-    first = f.blocks[returning[0]].insts
-    exit_insts: [ir.Inst] @ first.slice(from: first.len() - outs.len(), to: first.len())
+
+    # The exit carries the line of the way out written first (defect 335): its
+    # copy-outs are that way out's, and its load takes that way out's span.
+    # Until then the load carried the function's, and so did the retain and
+    # the sweep after it, so a debugger stepping from any `return` stopped on
+    # the `function` line. One exit serves every way out, so one line is
+    # chosen: the first in the source, never the first in block order, which
+    # lowering does not promise to follow.
+    first: i64 @ returning[0]
+
+    for r in returning
+        if site(f, at: r, outs: outs, valued: valued).start < site(f, at: first, outs: outs, valued: valued).start
+            first @ r
+
+    leaving = f.blocks[first].insts
+    exit_insts: [ir.Inst] @ leaving.slice(from: leaving.len() - outs.len(), to: leaving.len())
     term: ir.Term @ .return_term(value: fail(code: "none", msg: "bare return"))
     slot: i64 @ 0 - 1
 
@@ -79,7 +93,7 @@ function merge(f: containers.Function, unit: i64) -> containers.Function
         loaded = worked.values.len()
         worked.values @ worked.values.push(f.result)
         exit_insts @ exit_insts.push(
-            ir.Inst(dest: ok(loaded), op: .load(place: whole(slot)), ty: f.result, span: f.span)
+            ir.Inst(dest: ok(loaded), op: .load(place: whole(slot)), ty: f.result, span: site(f, at: first, outs: outs, valued: valued))
         )
         term @ .return_term(value: ok(loaded))
 
@@ -103,6 +117,18 @@ function merge(f: containers.Function, unit: i64) -> containers.Function
 
     worked.blocks @ worked.blocks.push(containers.Block(preds: returning, insts: exit_insts, term: term, note: "exit"))
     return worked
+
+# Where a way out stands in the source. Its copy-outs carry the span of the
+# `return` or the `?` that leaves (`emissions.copy_out`), and without them a
+# value's last instruction is the returned expression's own; a bare way out
+# with neither has no line of its own, and the exit then holds nothing that
+# would take one.
+function site(f: containers.Function, at: i64, outs: [i64], valued: bool) -> token.Span
+    insts = f.blocks[at].insts
+
+    if (outs.len() > 0 || valued) && insts.len() > 0
+        return insts[insts.len() - 1].span
+    return f.span
 
 function returns(term: ir.Term) -> bool
     return match term

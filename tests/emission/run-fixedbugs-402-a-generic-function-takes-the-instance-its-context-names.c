@@ -274,11 +274,11 @@ bb3:
     goto bb4;
 #line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb4:
-#line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
+#line 39 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t14 = h4_ret0;
 #line 280 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     h_0opt_30514ebf_release(&h1_s0);
-#line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
+#line 39 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 #line 283 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_failure_release(&h3_e);
     return t14;

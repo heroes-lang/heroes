@@ -187,14 +187,14 @@ bb3:
     goto bb1;
 #line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb4:
-#line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t11 = h1_ret0;
 #line 193 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_retain(&t11);
-#line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 #line 196 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&h2_own2);
-#line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 #line 199 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&h3_own3);
     return t11;
@@ -269,14 +269,14 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb4:
-#line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t8 = h1_ret0;
 #line 275 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_retain(&t8);
-#line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 #line 278 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&h2_own2);
-#line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 #line 281 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&h3_own3);
     return t8;

@@ -1065,23 +1065,23 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 153 "<heroes library>"
+#line 155 "<heroes library>"
     t18 = h3_ret0;
 #line 1071 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t18);
-#line 153 "<heroes library>"
+#line 155 "<heroes library>"
 #line 1074 "ffiownedcellisfreed.c"
     hero_str_decref(h2_text);
-#line 153 "<heroes library>"
+#line 155 "<heroes library>"
 #line 1077 "ffiownedcellisfreed.c"
     hero_str_decref(h4_own4);
-#line 153 "<heroes library>"
+#line 155 "<heroes library>"
 #line 1080 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 153 "<heroes library>"
+#line 155 "<heroes library>"
 #line 1083 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 153 "<heroes library>"
+#line 155 "<heroes library>"
 #line 1086 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h7_own7);
     hero_lend_local_give(hero_lend_h1_status);
