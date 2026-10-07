@@ -3,7 +3,7 @@ kind: defect
 area: ir
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: c1f87af5c071a6d6bd52d893c02b1a6812f450a8
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 196's ffi-pragmatist, 2026-10-06 (`docs/panel/196-reports/ffi-pragmatist.md`, *Found beside* 1), reproduced by the coordinator; the evidence is `docs/panel/196-evidence/r413/`. Measured by the seat, not re-run by the coordinator: on Linux arm64 `--sanitize` exits 1 with LeakSanitizer reporting 268,096 bytes in 5 allocations, and `@b.m[0]` of a `u8[32]` field hands C one byte.
 
     **Class: blocking**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a wrong value at exit 0, `check` and `run` both silent. Spec § 9 says an `@` argument is *copy in, copy out*, which promises no address; what a lend to C promises about its address is the ruling panel 196 is sitting on (the ffi-pragmatist's veto: a record lent to C is never copied), so the repair waits on its synthesis.
+
+    Repaired at `c1f87af5`, 2026-10-07 (lane b13-land-addr, panel 196's R1), gated by its cases and the compiler's own tests; the net is owed at the batch's close, and as a C-boundary defect it closes after the push's platform legs.
