@@ -627,9 +627,12 @@ State these plainly so nobody drifts:
   can't call native C libraries, which breaks the founding premise). Backend needs concurrency,
   which doesn't exist yet. See Part 9.
 - **No concurrency in v1.** This is the largest gap and it is deliberate.
-- **No typed variable inspection in v1.** Line-level debugging works: generated C carries `#line`
-  directives, so lldb breaks on and steps through `.hero` source lines. But `p x` shows a mangled C
-  temporary, not a Heroes value — printing rich values is still `print`'s job.
+- **No typed variable inspection in v1.** Line-level debugging works at every level: generated C
+  carries `#line` directives and every build carries line tables, so lldb breaks on and steps
+  through `.hero` source lines and a sanitiser names the `.hero` line. The variables are described
+  at an `-O0` build (`heroes build`, `heroes test`), the one an author debugs; `-O2` (`heroes run`)
+  carries the line tables alone (panel 197). But `p x` shows a mangled C temporary, not a Heroes
+  value — printing rich values is still `print`'s job.
 
 ---
 
@@ -3679,7 +3682,8 @@ visible rather than patched with a second form.
 12. **Every name passes through a mangler** (§3.1): a valid Heroes identifier can collide with a C
     keyword or a libc symbol, and without the mangler a correct program fails to compile for
     reasons invisible to its author — the exact error class this project exists to eliminate. The
-    mangled names are what `lldb` shows for variables (see Part 2's reworded debugger non-goal).
+    mangled names are what `lldb` shows for variables at an `-O0` build, the one that describes
+    them (panel 197; see Part 2's reworded debugger non-goal).
 13. **An emitter bug surfaces as a clang error**, not a Heroes error. Mitigated — `#line` points the
     message at `.hero` source and the `-Werror` set catches the UB-shaped cases — but not erased:
     when the emitter is wrong, the author reads C.

@@ -211,9 +211,11 @@ function link_flags() -> [str]
     # `dladdr` reads only `.dynsym` — measured in the Linux image: without the
     # flag the message is `panic: stack exhausted` and nothing more; with it,
     # `… in d100000.down`, and the binary grows 134,640 → 142,832 bytes. Darwin
-    # names the symbol either way (`-g` on every build, nothing strips) and
-    # accepts the flag (measured: exit 0, no diagnostic), so the flag is POSIX's
-    # rather than Linux's — `selfhost/` still asks the machine one question,
+    # names the symbol either way, from its symbol table under every debug word
+    # (`in deep.down` under `-g`, line tables and `-g0` alike, panel 197; this
+    # said *`-g` on every build*, which was never the cause), nothing strips,
+    # and it accepts the flag (measured: exit 0, no diagnostic), so the flag is
+    # POSIX's rather than Linux's — `selfhost/` still asks the machine one question,
     # `exe_suffix()`, and gains no second platform axis.
     if process.exe_suffix() != ".exe"
         return ["-rdynamic"]

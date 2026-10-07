@@ -17,10 +17,16 @@ on this Mac 2026-09-06, with lldb in batch mode over a hand-written program: a
 breakpoint on a `.hero` line resolves and is hit, the source line is printed with a
 caret, `bt` names Heroes frames at `.hero:line` (`h_dbg_total(...) at dbg.hero:19`),
 a local carries the author's own spelling behind an index (`h3_base = 7`), a `str`
-shows its text, and a record shows its fields (`h0_p = (f_x = 3, f_y = 4)`). `-g` is
+shows its text, and a record shows its fields (`h0_p = (f_x = 3, f_y = 4)`). `-g` was
 on every build and the object survives beside the `.c` so Darwin's DWARF resolves
 (`selfhost/cli/flags.hero`, `selfhost/cli/toolchain.hero`) — both repaired at
-M-selfhost-port, which is why the line half exists at all.
+M-selfhost-port, which is why the line half exists at all. **Since panel 197
+(2026-10-07) `-g` is the `-O0` build's**, which `heroes build` and `heroes test` make,
+and `-O2`, `heroes run`'s level, carries line tables alone: there lldb still breaks on
+and steps through `.hero` lines and `frame variable` says *no variable information is
+available*, measured by the sitting. So the half that works is measured at `-O0`, and
+`flags.hero`'s test that an unoptimised unit describes its locals is this row's
+instrument in its smallest form, pulled forward.
 
 **What it delivers is the other half, and it is four named failures.** `p p` is
 `error: use of undeclared identifier 'p'` — the C name is `h0_p` and lldb's
@@ -51,9 +57,10 @@ M-bootstrap-archive on 2026-08-19, `tests/harness/` has no lldb suite, and
 The suite comes back wider than it went away: the three guards the archived test
 bought with failures (lldb wrote nothing on either stream · the breakpoint is pending
 with no locations · the file, the line and `stop reason`), plus the **stepping** half
-that never had a test at all. Its own falsifier is run once by hand and quoted —
-`-g` deleted, the suite must go red — because a debugger suite that passes without
-DWARF is a decoration. It also settles `docs/panel/085`'s B2 condition, which said in
+that never had a test at all. It builds its programs at `-O0`, the build that carries
+the variables since panel 197. Its own falsifier is run once by hand and quoted —
+`-O0`'s `-g` deleted (`flags.debug_words`), the suite must go red — because a
+debugger suite that passes without DWARF is a decoration. It also settles `docs/panel/085`'s B2 condition, which said in
 its own words that the lldb class *"was not tried"*.
 
 **The second step measures four premises before anything is designed on them**, and
