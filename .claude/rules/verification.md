@@ -617,7 +617,12 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   (two commits went past a red `records` in one week, `f22c8baf`, `efaf5564`,
   because the chain read the pipe's last exit); a gate piped into `head` or
   `tail` is refused (seven `emit` goldens stayed red for two steps behind an
-  output cut at forty lines).
+  output cut at forty lines); and a `git commit` whose index holds a `.hero`
+  file that does not parse, is not canonical or is over its ceiling is
+  refused, the index being the one of the tree the commit runs in, `git -C` or
+  the command's `cd`, since 2026-10-07 (defect 287: a lane's commit was judged
+  by the trunk's index), and a refusal by a compiler older than that tree told
+  as its age.
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
