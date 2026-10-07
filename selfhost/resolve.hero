@@ -207,3 +207,22 @@ test "an @ a function takes none for asks nothing of the name it marks"
     )
     assert written.diagnostics.len() == 1
     assert written.diagnostics[0].code == "not_mutable"
+
+# Defect 439: an `@` no parameter of the call takes, past the last or handed
+# to a callee that is no function, asks nothing of the name it marks and
+# overlaps nothing, so the call's own mistake is the one message; the module
+# called needs a second file, which a golden case cannot hold.
+test "an @ no parameter takes asks nothing of the name it marks"
+    past = resolved_source(
+        "function f(@x: i64)\n    x @ x + 1\n\nfunction g()\n    n: i64 @ 1\n    m = 2\n    f(@n, @m)\n    f(@n, @n)\n"
+    )
+    assert past.diagnostics.len() == 0
+    inputs: [source.InputFile] = [
+        source.user_file(name: "main.hero", text: "use calc\n\nfunction main()\n    n = 1\n    calc(@n)\n    print(n)\n")
+        source.InputFile(name: "calc.hero", module: "calc", text: "function one() -> i64\n    return 1\n", is_library: false)
+    ]
+    s = source.from_files(inputs)
+    p = parse.parse_source(s)
+    called = resolve(p.tree, s, p.decls, p.uses)
+    assert called.diagnostics.len() == 1
+    assert called.diagnostics[0].code == "module_is_not_a_value"
