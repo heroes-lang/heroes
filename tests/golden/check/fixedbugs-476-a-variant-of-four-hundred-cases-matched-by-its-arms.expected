@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-476-a-variant-of-four-hundred-cases-matched-by-its-arms.hero:417:5: error[non_exhaustive]: this `match` does not cover `.c399`
