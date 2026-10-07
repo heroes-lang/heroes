@@ -1310,13 +1310,36 @@ function lexed_in_piece(scratch: str, compiler: str, brace: str) -> shell.Run?
 # refuse each, the spec giving that escape one spelling: its digits in
 # capitals, a leading zero, no digits, no closing brace, no braces, seven
 # digits. Each is a way the pattern can break: a class admitting capitals, a
-# first digit admitting 0, a count with no ceiling, a brace made optional. A
-# code spelled the one way that the lexer refuses for what it names (`\u{41}`,
-# which a string writes `A`) is not among them, and the grammar paints it by
-# design: which codes `\u{…}` may name is the compiler's to say (the rule's own
-# comment, panel 192's R5).
+# first digit admitting 0, a count with no ceiling, a brace made optional.
+#
+# **The lexer gives three verdicts, and the grammar is held to two of them**
+# (2026-10-07). It reads an escape (exit 0); it refuses a code spelled the
+# one way that names a character a string writes otherwise (`\u{41}`, which
+# a string writes `A`), `escape_not_needed` and nothing else, which the grammar
+# paints as the escape it is, which characters a string must write by code
+# being the compiler's to say (the rule's own comment, panel 192's R5); or it
+# refuses what is no escape at all, which the grammar must not paint. The
+# grammar painted `\u{d800}`, a surrogate, and `\u{110000}`, past Unicode, as
+# escapes until that day, the lexer refusing both `unknown_escape`, and no
+# probe asked: `CODE_EDGES` below are the edges of what a code may name.
 constant LEAST_SPEC_ESCAPES: i64
     7
+
+# The edges of a code that names a character, a Unicode scalar value: the
+# last code before the surrogates, the first and the last surrogate, the first
+# code after them, the first of five digits, the last scalar value and the
+# first past it. Facts of Unicode and not of the spec, so they are written
+# here; what the lexer says of each is asked, as of every other probe.
+constant CODE_EDGES: [str]
+    [
+        "\\u{d7ff}"
+        "\\u{d800}"
+        "\\u{dfff}"
+        "\\u{e000}"
+        "\\u{10000}"
+        "\\u{10ffff}"
+        "\\u{110000}"
+    ]
 
 # The literals an escape stands in, by the name of the grammar's repository
 # entry that paints its text: a string, an `f` literal's text, a character
@@ -1328,11 +1351,14 @@ constant LITERALS: [str]
         "char"
     ]
 
-# What the lexer said of one escape in one literal.
+# What the lexer said of one escape in one literal: `read` where it reads it,
+# `named` where it refuses an escape by code only as a character a string
+# writes otherwise.
 record Lexed
     escape: str
     literal: str
     read: bool
+    named: bool
 
 function escapes_painted(@r: report.Report, scratch: str, compiler: str, spec: str)
     grammar = read_file(GRAMMAR)
@@ -1346,9 +1372,13 @@ function escapes_painted(@r: report.Report, scratch: str, compiler: str, spec: s
         return
     said: [Lexed] @ []
     probes: [str] @ spelled
+    others = other_spellings(spelled)
 
-    for other in other_spellings(spelled)
+    for other in others
         probes @ probes.push(other)
+
+    for edge in CODE_EDGES
+        probes @ probes.push(edge)
 
     for escape in probes
         for literal in LITERALS
@@ -1361,9 +1391,11 @@ function escapes_painted(@r: report.Report, scratch: str, compiler: str, spec: s
                     detail: "  the lexer gave no verdict on `" + escape + "` in " + literal_said(literal) + ": " + shell.ending(ran)
                 )
                 return
-            said @ said.push(Lexed(escape: escape, literal: literal, read: ran.must().code == 0))
+            said @ said.push(
+                Lexed(escape: escape, literal: literal, read: ran.must().code == 0, named: ran.must().code == 1 && strings.starts_with(text: escape, prefix: "\\u{") && only_named(ran.must().err))
+            )
 
-    wrong = disagreements(grammar: grammar.must(), spelled: spelled, said: said)
+    wrong = disagreements(grammar: grammar.must(), spelled: spelled, others: others, said: said)
 
     if wrong.is_err()
         report.keep_failure(
@@ -1387,10 +1419,28 @@ function why_unrun(got: [str]?) -> str
         .ok _  => ""
         .err e => e.msg
 
+# Whether every diagnostic the lexer wrote is `escape_not_needed`, and one
+# was. Of an escape by code it says a code spelled the one way, naming a
+# character a string writes otherwise; of a letter escape it says something
+# else, `\"` in a character literal, an escape that literal does not have,
+# so the caller asks it of an escape by code alone.
+function only_named(err: str) -> bool
+    pieces = strings.split_text(text: err, separator: "error[")
+
+    if pieces.len() < 2
+        return false
+
+    for piece in pieces.slice(from: 1, to: pieces.len())
+        if !strings.starts_with(text: piece, prefix: "escape_not_needed]")
+            return false
+
+    return true
+
 # Where the grammar and the lexer part, one sentence each; an error where a
-# rule cannot be run. `spelled` are the escapes the spec names, `said` the
-# lexer's verdict on each of them and on the other spellings, in each literal.
-function disagreements(grammar: str, spelled: [str], said: [Lexed]) -> [str]?
+# rule cannot be run. `spelled` are the escapes the spec names, `others` the
+# other spellings of its escape by code, `said` the lexer's verdict on each
+# probe in each literal.
+function disagreements(grammar: str, spelled: [str], others: [str], said: [Lexed]) -> [str]?
     wrong: [str] @ []
 
     for literal in LITERALS
@@ -1412,9 +1462,13 @@ function disagreements(grammar: str, spelled: [str], said: [Lexed]) -> [str]?
                 wrong @ wrong.push(
                     "`" + one.escape + "` in " + literal_said(literal) + ": the lexer reads it, and the grammar paints " + painted_said(got)
                 )
-            else if !one.read && as_escape
+            else if one.named && !as_escape
                 wrong @ wrong.push(
-                    "`" + one.escape + "` in " + literal_said(literal) + ": the lexer refuses it, and the grammar paints it `" + got.scope + "`, an escape"
+                    "`" + one.escape + "` in " + literal_said(literal) + ": a code the lexer refuses only as a character a string writes otherwise, `escape_not_needed`, and the grammar paints " + painted_said(got)
+                )
+            else if !one.read && !one.named && as_escape
+                wrong @ wrong.push(
+                    "`" + one.escape + "` in " + literal_said(literal) + ": the lexer refuses it as no escape, and the grammar paints it `" + got.scope + "`, an escape"
                 )
 
     for escape in spelled
@@ -1428,7 +1482,7 @@ function disagreements(grammar: str, spelled: [str], said: [Lexed]) -> [str]?
             wrong @ wrong.push("the spec names `" + escape + "`, and the lexer reads it in no literal")
 
     for one in said
-        if one.read && absent_from(want: [one.escape], got: spelled).len() == 1
+        if one.read && absent_from(want: [one.escape], got: others).len() == 0
             wrong @ wrong.push(
                 "`" + one.escape + "` is read in " + literal_said(one.literal) + ", a second spelling of an escape the spec gives one"
             )
@@ -1888,47 +1942,81 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
     real = read_file(GRAMMAR)
     assert !real.is_err()
     spelled = ["\\n", "\\t", "\\r", "\\\\", "\\\"", "\\'", "\\u{1b}"]
+    others = other_spellings(spelled)
     said = said_by_section_two(spelled)
-    assert disagreements(grammar: real.must(), spelled: spelled, said: said).must().len() == 0
+    assert disagreements(grammar: real.must(), spelled: spelled, others: others, said: said).must().len() == 0
 
     # Each way the escape by code's pattern can break, and the sentence that
     # names it: a class admitting capitals, a first digit admitting 0, a count
-    # with no ceiling, a rule that matches nothing.
+    # with no ceiling, a surrogate admitted, a code past Unicode admitted, a
+    # rule that matches nothing, and one that paints fewer codes than name a
+    # character.
     capitals_wrong = said_of_broken(
         grammar: real.must(),
-        was: "[1-9a-f][0-9a-f]{0,5}",
-        now: "[1-9a-fA-F][0-9a-fA-F]{0,5}",
-        spelled: spelled,
+        was: "[1-9a-f][0-9a-f]{0,2}",
+        now: "[1-9a-fA-F][0-9a-fA-F]{0,2}",
+        others: others,
         said: said
     )
-    assert strings.contains(text: capitals_wrong, needle: "`\\u{1B}` in a string: the lexer refuses it")
-    assert strings.contains(text: capitals_wrong, needle: "`\\u{1B}` in an `f` literal's text: the lexer refuses it")
+    assert strings.contains(text: capitals_wrong, needle: "`\\u{1B}` in a string: the lexer refuses it as no escape")
+    assert strings.contains(
+        text: capitals_wrong,
+        needle: "`\\u{1B}` in an `f` literal's text: the lexer refuses it as no escape"
+    )
     zero_wrong = said_of_broken(
         grammar: real.must(),
-        was: "[1-9a-f][0-9a-f]{0,5}",
-        now: "[0-9a-f][0-9a-f]{0,5}",
-        spelled: spelled,
+        was: "[1-9a-f][0-9a-f]{0,2}",
+        now: "[0-9a-f][0-9a-f]{0,2}",
+        others: others,
         said: said
     )
-    assert strings.contains(text: zero_wrong, needle: "`\\u{01b}` in a string: the lexer refuses it")
+    assert strings.contains(text: zero_wrong, needle: "`\\u{01b}` in a string: the lexer refuses it as no escape")
     ceiling_wrong = said_of_broken(
         grammar: real.must(),
-        was: "[1-9a-f][0-9a-f]{0,5}",
+        was: "[1-9a-f][0-9a-f]{4}",
         now: "[1-9a-f][0-9a-f]*",
-        spelled: spelled,
+        others: others,
         said: said
     )
-    assert strings.contains(text: ceiling_wrong, needle: "`\\u{1b00000}` in a string: the lexer refuses it")
+    assert strings.contains(
+        text: ceiling_wrong,
+        needle: "`\\u{1b00000}` in a string: the lexer refuses it as no escape"
+    )
+    surrogate_wrong = said_of_broken(
+        grammar: real.must(),
+        was: "[1-9a-ce-f][0-9a-f]{3}",
+        now: "[1-9a-f][0-9a-f]{3}",
+        others: others,
+        said: said
+    )
+    assert strings.contains(text: surrogate_wrong, needle: "`\\u{d800}` in a string: the lexer refuses it as no escape")
+    assert strings.contains(
+        text: surrogate_wrong,
+        needle: "`\\u{dfff}` in an `f` literal's text: the lexer refuses it as no escape"
+    )
+    past_wrong = said_of_broken(
+        grammar: real.must(),
+        was: "10[0-9a-f]{4}",
+        now: "[1-9a-f][0-9a-f]{5}",
+        others: others,
+        said: said
+    )
+    assert strings.contains(text: past_wrong, needle: "`\\u{110000}` in a string: the lexer refuses it as no escape")
     never = said_of_broken(
         grammar: real.must(),
-        was: "[1-9a-f][0-9a-f]{0,5}",
-        now: "[1-9a-f][0-9a-f]{0,5}x",
-        spelled: spelled,
+        was: "|10[0-9a-f]{4})",
+        now: "|10[0-9a-f]{4})x",
+        others: others,
         said: said
     )
     assert strings.contains(
         text: never,
         needle: "`\\u{1b}` in a string: the lexer reads it, and the grammar paints `invalid.illegal.unknown-escape.hero` over 2 characters"
+    )
+    fewer = said_of_broken(grammar: real.must(), was: "|[1-9a-f][0-9a-f]{4}|", now: "|", others: others, said: said)
+    assert strings.contains(
+        text: fewer,
+        needle: "`\\u{10000}` in a string: a code the lexer refuses only as a character a string writes otherwise"
     )
 
     # The `f` literal's own rules, which no check read until this one: its
@@ -1937,7 +2025,7 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         grammar: real.must(),
         was: "constant.character.escape.interpolated.hero",
         now: "string.quoted.double.interpolated.hero",
-        spelled: spelled,
+        others: others,
         said: said
     )
     assert strings.contains(text: piece, needle: "`\\n` in an `f` literal's text: the lexer reads it")
@@ -1947,14 +2035,14 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
         grammar: real.must(),
         was: "invalid.illegal.char-literal.hero",
         now: "constant.character.hero",
-        spelled: spelled,
+        others: others,
         said: said
     )
-    assert strings.contains(text: leak, needle: "`\\u{1b}` in a character literal: the lexer refuses it")
+    assert strings.contains(text: leak, needle: "`\\u{1b}` in a character literal: the lexer refuses it as no escape")
 
     # And a rule the reader cannot run is an error, never a pass.
     lazy = strings.split_text(text: real.must(), separator: "'[^']*'").join("'[^']*?'")
-    assert disagreements(grammar: lazy, spelled: spelled, said: said).is_err()
+    assert disagreements(grammar: lazy, spelled: spelled, others: others, said: said).is_err()
 
     # The lexer's side is checked too: a spelled escape no literal reads, and a
     # second spelling one does, are each a sentence.
@@ -1962,17 +2050,25 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
 
     for one in said
         if one.escape == "\\t"
-            nowhere @ nowhere.push(Lexed(escape: one.escape, literal: one.literal, read: false))
+            nowhere @ nowhere.push(Lexed(escape: one.escape, literal: one.literal, read: false, named: false))
+        else if one.escape == "\\u{1B}"
+            nowhere @ nowhere.push(Lexed(escape: one.escape, literal: one.literal, read: true, named: false))
         else
             nowhere @ nowhere.push(one)
 
-    unread = disagreements(grammar: real.must(), spelled: spelled, said: nowhere).must().join("\n")
+    unread = disagreements(grammar: real.must(), spelled: spelled, others: others, said: nowhere).must().join("\n")
     assert strings.contains(text: unread, needle: "the spec names `\\t`, and the lexer reads it in no literal")
+    assert strings.contains(
+        text: unread,
+        needle: "`\\u{1B}` is read in a string, a second spelling of an escape the spec gives one"
+    )
 
 # What § 2 says the lexer reads, as verdicts: the four letter escapes in every
 # literal, `\"` and the escape by code in the two string literals, `\'` in a
-# character literal alone, and the other spellings of the escape by code
-# nowhere.
+# character literal alone, the other spellings of the escape by code nowhere,
+# and of the edges of a code, those naming a character refused in the two
+# string literals only as a character a string writes otherwise, and a
+# surrogate and a code past Unicode as no escape.
 function said_by_section_two(spelled: [str]) -> [Lexed]
     out: [Lexed] @ []
     probes: [str] @ spelled
@@ -1980,9 +2076,13 @@ function said_by_section_two(spelled: [str]) -> [Lexed]
     for other in other_spellings(spelled)
         probes @ probes.push(other)
 
+    for edge in CODE_EDGES
+        probes @ probes.push(edge)
+
     for escape in probes
         for literal in LITERALS
             read: bool @ false
+            by_code: bool @ false
 
             if escape == "\\n" || escape == "\\t" || escape == "\\r" || escape == "\\\\"
                 read @ true
@@ -1990,17 +2090,19 @@ function said_by_section_two(spelled: [str]) -> [Lexed]
                 read @ literal != "char"
             else if escape == "\\'"
                 read @ literal == "char"
-            out @ out.push(Lexed(escape: escape, literal: literal, read: read))
+            else if escape == "\\u{d7ff}" || escape == "\\u{e000}" || escape == "\\u{10000}" || escape == "\\u{10ffff}"
+                by_code @ literal != "char"
+            out @ out.push(Lexed(escape: escape, literal: literal, read: read, named: by_code))
 
     return out
 
 # The sentences `disagreements` says of `grammar` with `was` written `now`,
 # joined; `was` must be there, or the case would test the grammar unbroken.
-function said_of_broken(grammar: str, was: str, now: str, spelled: [str], said: [Lexed]) -> str
+function said_of_broken(grammar: str, was: str, now: str, others: [str], said: [Lexed]) -> str
     assert strings.contains(text: grammar, needle: was)
-    return disagreements(grammar: strings.split_text(text: grammar, separator: was).join(now), spelled: spelled, said: said).must().join(
-        "\n"
-    )
+    spelled = ["\\n", "\\t", "\\r", "\\\\", "\\\"", "\\'", "\\u{1b}"]
+    broke = strings.split_text(text: grammar, separator: was).join(now)
+    return disagreements(grammar: broke, spelled: spelled, others: others, said: said).must().join("\n")
 
 test "the two sides of the colouring check are read out of the compiler's own source"
     # Not pinned here: read from the files, so this test dies with a rename
