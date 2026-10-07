@@ -12,6 +12,11 @@
 # literals and branches. A value the `[T]` would refuse too, `"ab"` or an
 # element `"a"`, keeps its message, and so does a value judged against a
 # group's field or a type with no fixed array in it.
+#
+# **The list of positions is gone since defects 432 and 433** (2026-10-07):
+# the program is typed again as the refusal repairs it, and what the
+# repaired program does not tell again is withdrawn, so every line below
+# reads as it did, through the typing's own rules rather than a copy.
 
 extern "tags.h"
     record Tag
