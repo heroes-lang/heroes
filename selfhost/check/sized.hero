@@ -135,6 +135,16 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
 # path", which is what tells a back edge from a diamond — a visited flag
 # would reject A-[B]-A, the legal shape panel 023's historian predicted
 # as this file's first false positive.
+#
+# **Every step costs the same whatever the depth** (defect 489). Each
+# declaration's edges are listed once, before the walk (`outs_of`), and the
+# path is a stack and its height, its steps written over as it grows again,
+# each step but the root's holding the edge that entered it, which is all
+# the path a cycle's message needs. The walk scanned every edge of the file
+# at every step and popped the stack and the path by a slice, a copy of what
+# lay under the top: a chain of 4,000 records cost 10.2 billion
+# instructions, the square of its depth. `resolve/cycles.hero` walked the
+# same way until defect 374, and walks as this one does now.
 function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
     colour: [i64] @ []
     i: i64 @ 0
@@ -143,39 +153,37 @@ function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
         colour @ colour.push(0)
         i @ i + 1
 
+    outs = outs_of(edges, nodes: decls.len())
     order: [i64] @ []
     seen: {str: bool} @ {}
     diagnostics: [diag.Diagnostic] @ []
-    path: [i64] @ []
+    stack: [PathStep] @ []
+    height: i64 @ 0
     root: i64 @ 0
 
     while root < decls.len()
         if colour[root] != 0 || !is_aggregate(decls, root)
             root @ root + 1
             continue
-        stack: [PathStep] @ [PathStep(node: root, taken: 0)]
+        height @ put_step(@stack, at: 0, step: PathStep(node: root, taken: 0, via: -1))
         colour[root] @ 1
 
-        while stack.len() > 0
-            top = stack[stack.len() - 1]
-            stack @ stack.slice(from: 0, to: stack.len() - 1)
-            out = out_edges(edges, node: top.node)
+        while height > 0
+            top = stack[height - 1]
 
-            if top.taken >= out.len()
+            if top.taken >= outs[top.node].len()
                 colour[top.node] @ 2
                 order @ order.push(top.node)
-
-                if path.len() > 0
-                    path @ path.slice(from: 0, to: path.len() - 1)
+                height @ height - 1
                 continue
-            edge = out[top.taken]
-            stack @ stack.push(PathStep(node: top.node, taken: top.taken + 1))
+            edge = outs[top.node][top.taken]
+            stack[height - 1] @ PathStep(node: top.node, taken: top.taken + 1, via: top.via)
             target = edges[edge].to
 
             if colour[target] == 1
                 # A back edge: the cycle is this edge plus the suffix of
                 # the path that starts at target.
-                cycle = cycle_from(edges, path: path, closing: edge, target: target)
+                cycle = cycle_from(edges, path: path_of(stack, height: height), closing: edge, target: target)
                 key = cycle_nodes_key(edges, cycle)
 
                 if seen[key].is_err()
@@ -183,8 +191,7 @@ function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
                     diagnostics @ diagnostics.push(report(s, decls, edges, cycle))
             else if colour[target] == 0
                 colour[target] @ 1
-                path @ path.push(edge)
-                stack @ stack.push(PathStep(node: target, taken: 0))
+                height @ put_step(@stack, at: height, step: PathStep(node: target, taken: 0, via: edge))
 
         root @ root + 1
 
@@ -193,25 +200,61 @@ function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
         order @ empty
     return SizeAnswer(order: order, diagnostics: diagnostics)
 
+# A declaration on the walk's path, how many of its edges the walk has
+# taken, and the edge it was entered by: -1 for the root, which none
+# entered.
 record PathStep
     node: i64
     taken: i64
+    via: i64
 
 function is_aggregate(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
         .record_decl | .variant_decl                 => true
         .constant_decl | .function_decl | .test_decl => false
 
-function out_edges(edges: [Edge], node: i64) -> [i64]
-    out: [i64] @ []
+# The edges leaving each declaration, by index into `edges`, each list in
+# the order `collect` met them, which is the order the walk takes them in
+# and so what decides which rotation of a cycle it meets first.
+function outs_of(edges: [Edge], nodes: i64) -> [[i64]]
+    outs: [[i64]] @ []
+
+    while outs.len() < nodes
+        empty: [i64] = []
+        outs @ outs.push(empty)
+
     index: i64 @ 0
 
     for edge in edges
-        if edge.from == node
-            out @ out.push(index)
+        add_out(@outs[edge.from], edge: index)
         index @ index + 1
 
-    return out
+    return outs
+
+# Lent, so the list grows in place (`resolve/cycles.hero`'s `add_edge`).
+function add_out(@list: [i64], edge: i64)
+    list @ list.push(edge)
+
+# The step `step` at `at` of the stack, over a step a pop left or past them
+# all, and the stack's new height (`resolve/cycles.hero`'s `put_step`).
+function put_step(@stack: [PathStep], at: i64, step: PathStep) -> i64
+    if at < stack.len()
+        stack[at] @ step
+    else
+        stack @ stack.push(step)
+    return at + 1
+
+# The edges the path took, root first: the one each step below `height`
+# but the root's was entered by.
+function path_of(stack: [PathStep], height: i64) -> [i64]
+    path: [i64] @ []
+    k: i64 @ 1
+
+    while k < height
+        path @ path.push(stack[k].via)
+        k @ k + 1
+
+    return path
 
 function cycle_nodes_key(edges: [Edge], cycle: [i64]) -> str
     rendered: [str] @ []
