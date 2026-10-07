@@ -1,0 +1,39 @@
+# Panel 196's R5, the declaration half (lane b13-land-buf, 2026-10-07):
+# `counted_by` names the sibling C reads the count from, a `constant` of the
+# same group, or the number itself, and a mark that is none of the three is
+# refused where it is written.
+#
+# THE SHAPES BESIDE THE RULE. A number of no elements, `0`. A number past what
+# an `i64` counts, which no buffer holds. A name that is neither a sibling nor
+# a constant of the group. A constant of ANOTHER group, whose macro the call's
+# header need not define. A constant that is not an integer. And the quiet
+# five: a literal, a constant of the group, one declared BELOW the function
+# (declaration order never matters, so the constant's type is read as
+# written), a sibling that shares its name with a constant (the sibling is
+# what the mark names), and a record lent whole stating its count.
+#
+# AND ONE MISTAKE, ONE MESSAGE (panel 196's R8): an array by value cannot
+# cross at all, so the `counted_by` on it is not judged a second time.
+extern "ffi-counted-by-states-its-extent.h"
+    constant FILL_LEN: i64
+    constant FILL_SCALE: f64
+    record Two tag two
+        a: i32
+    function fill_zero(p: ptr counted_by 0 lent)  #~ counted_by_shape
+    function fill_huge(p: ptr counted_by 99999999999999999999 lent)  #~ counted_by_shape
+    function fill_nowhere(p: ptr counted_by NOPE lent)  #~ counted_by_shape
+    function fill_other(p: ptr counted_by OTHER_LEN lent)  #~ counted_by_shape
+    function fill_float(p: ptr counted_by FILL_SCALE lent)  #~ counted_by_shape
+    function fill_by_value(p: [u8] counted_by 16)  #~ ffi_type
+    function fill_lit(p: ptr counted_by 16 lent)
+    function fill_const(p: ptr counted_by FILL_LEN lent)
+    function fill_sibling(p: ptr counted_by FILL_LEN lent, FILL_LEN: u64)
+    function fill_two(@t: Two counted_by 1)
+    function fill_late(p: ptr counted_by LATE_LEN lent)
+    constant LATE_LEN: u32
+
+extern "ffi-counted-by-states-its-extent-other.h"
+    constant OTHER_LEN: i64
+
+function main()
+    print(0)

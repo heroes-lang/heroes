@@ -70,6 +70,16 @@ constant RECORD_MARKER: str
 constant UNASKED_MARKER: str
     "heroes-ffi-extent-unasked "
 
+# An extent the DECLARATION states (panel 196's R5), a field's and a record's:
+# `counted_by 32` or `counted_by SHA256_DIGEST_LENGTH`. Apart from the three
+# above because what is wrong differs: the declaration says what C writes, so
+# the place lent is what is short, and the message lands on the lend.
+constant STATED_MARKER: str
+    "heroes-ffi-extent-stated "
+
+constant STATED_RECORD_MARKER: str
+    "heroes-ffi-extent-stated-record "
+
 # What a counted argument lends: the C lvalue of the object, the bytes of it
 # Heroes knows (a field's length; 0 for a record, whose size is C's alone),
 # whether it is a record lent whole, and the span a message about it names.
@@ -79,7 +89,9 @@ record Lent
     whole: bool
     span: token.Span
 
-# The checks before one extern call, one per lend at a counted parameter.
+# The checks before one extern call, one per lend at a counted parameter: the
+# count a sibling carries, or the extent the declaration states (panel 196's
+# R5), which `lend_count.stated_text` reads and which never names a sibling.
 function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64)
     counted = lend_count.counted_siblings(s, decls, decl: decl)
     given = containers.args_of(f, run)
@@ -92,7 +104,46 @@ function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
             if !lent.is_err()
                 for text in checks(c, names, s, decls, f, lent: lent.must(), count: given[counted[index]], decl: decl, pointer: index, at: counted[index])
                     writer.line(@w, text: "    " + text)
+        else if index < counted.len()
+            stated = lend_count.stated_text(s, decls, decl: decl, index: index)
+            lent = lent_by(c, s, decls, f, arg: arg, run: run)
+
+            if !stated.is_err() && !lent.is_err()
+                for text in stated_checks(names, s, decls, lent: lent.must(), decl: decl, pointer: index, stated: stated.must())
+                    writer.line(@w, text: "    " + text)
         index @ index + 1
+
+# The two assertions for an extent the declaration states, in C's unit, of
+# which C picks the one that can fail, as `asserted` does for a count the call
+# states. The number is the declaration's: a constant's macro by name, a
+# literal as its decimal value. The marker carries the lend's span, so the
+# message lands on the place that is too short.
+function stated_checks(names: ctype.Names, s: source.Source, decls: [ast.Decl], lent: Lent, decl: i64, pointer: i64, stated: lend_count.Stated) -> [str]
+    params = lend_count.param_names(s, decls, decl: decl)
+    callee = source.span_text(s, decls[decl].name)
+
+    if pointer >= params.len()
+        return []
+    header = names.lend_units[callee + " " + pointer.to_str()]
+
+    if header.is_err()
+        return [
+            "_Static_assert(0, \"" + UNASKED_MARKER + callee + " " + params[pointer] + ": the pointee check read no unit for this counted parameter\");"
+        ]
+    unit = "sizeof(*(" + header.must() + ")0)"
+    extent = "(uint64_t)(" + stated.c_text + ")"
+    fits_bytes = extent + " <= (uint64_t)sizeof(" + lent.place + ")"
+    fits_units = extent + " <= (uint64_t)(sizeof(" + lent.place + ") / " + unit + ")"
+    at_lend = lent.span.start.to_str() + " " + lent.span.end.to_str()
+    marker: str @ STATED_MARKER
+
+    if lent.whole
+        marker @ STATED_RECORD_MARKER
+    tail = callee + " " + params[pointer] + " " + stated.written + " " + at_lend + " " + lent.length.to_str()
+    return [
+        "_Static_assert(" + unit + " != 1 || (" + fits_bytes + "), \"" + marker + tail + " bytes " + header.must() + "\");"
+        "_Static_assert(" + unit + " == 1 || (" + fits_units + "), \"" + marker + tail + " unit " + header.must() + "\");"
+    ]
 
 # What an argument lends, if it lends anything a count can be held to: the
 # field a `ptr()` takes the address of, or the record an `@` names. A `ptr`

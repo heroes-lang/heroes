@@ -394,7 +394,8 @@ bytes, reading to its first zero or the whole field, and for a `[u8]` every
 byte, and either fails `not_text`.
 Nothing lends a field to `cstr`, which promises a zero the field does not;
 `f.ptr()` lends a binding's field to a `ptr` parameter declared `counted_by n`,
-naming the sibling that gives the extent, and one past the field is refused.
+naming the sibling C reads the extent from, a constant of the group or a number,
+and one past the field is refused; a group's record lent whole with `@` may say it too.
 C writes back through the lend only where the binding is a `@` name. A lend
 lives for its call and no longer: a parameter is taken to keep what it is
 handed unless declared `lent`, and a lend reaches only one so declared.
@@ -444,5 +445,5 @@ asks the system where its headers and libraries are and what else it needs.
                  [ "when" ( integer | "true" | "false" ) ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
-    CParam = [ "@" ] ident ":" Type [ "counted_by" ident ] [ "lent" ]
+    CParam = [ "@" ] ident ":" Type [ "counted_by" ( ident | integer ) ] [ "lent" ]
              [ "owned" ident ] [ "consumes" | ( "transfers" | "acquires" | "retains" ) ident { "|" ident } | "borrows" ] .
