@@ -1,0 +1,12 @@
+extern "giveaway.h"
+    function look(s: cstr lent)
+
+function down(n: i64) -> i64
+    return down(n: n + 1) + 1
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    look(s: c)
+    print(to_str(down(n: 0)))
+    end_lease(@c)

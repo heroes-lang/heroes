@@ -1,0 +1,13 @@
+# M-held-bytes, panel 124 R6 and panel 125. A lease nobody ends is a leak the
+# PROGRAM owes, not the compiler, and the exit-time gate says so in those
+# words: `hero_live_blocks` counts what the language owns and would have called
+# this "a compiler bug"; the lease has its own counter so the accusation lands
+# on the right party. The panic is the whole point of this case, and it is the
+# only instrument for it on Darwin arm64, where ASan has no leak detector.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function main()
+    c: cstr @ "twelve bytes".lease()
+    print(strlen(s: c))

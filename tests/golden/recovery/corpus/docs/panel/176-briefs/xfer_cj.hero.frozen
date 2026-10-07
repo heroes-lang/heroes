@@ -1,0 +1,12 @@
+extern "cj.h"
+    record Json tag cJSON
+    function cJSON_CreateObject() -> Json acquires cJSON_Delete
+    function cJSON_AddItemToObject(object: Json, string: cstr lent, item: Json consumes) -> i64
+    function cJSON_Delete(item: Json consumes)
+
+function main()
+    root = cJSON_CreateObject()
+    child = cJSON_CreateObject()
+    _ = cJSON_AddItemToObject(object: root, string: "child".cstr(), item: child)
+    cJSON_Delete(item: root)
+    print("transferred and deleted")

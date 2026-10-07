@@ -1,0 +1,9 @@
+# Panel 173 q3: the same, spelled `cstr` against the header's `void *`.
+extern "sqlite3.h" link "sqlite3"
+    function sqlite3_free(p: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    sqlite3_free(p: c)
+    end_lease(@c)

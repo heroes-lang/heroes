@@ -1,0 +1,9 @@
+extern "r1.h"
+    function make() -> ptr
+    function release(p: ptr)
+
+function main()
+    p = make()
+    release(p: p)
+    release(p: p)
+    print("after")

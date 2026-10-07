@@ -1,0 +1,27 @@
+# The shapes beside defect 096's, measured 2026-09-25 on the seed: a remark
+# and a blank line before the FIRST member, where the blank was deleted at
+# exit 0 with the same tree, since no comment between the head and its first
+# member is ever a doc; a doc directly above a member, which stays a doc; a
+# blank line, a remark and a blank line before a middle member, and two
+# remarks with blank lines between and under them before the LAST member,
+# both refused at exit 2. This file is canonical: `fmt` prints it back byte
+# for byte.
+
+extern "x.h"
+    # a remark before the first member
+
+    record Ob tag ob
+    # documentation for ob_put
+    function ob_put(o: Ob consumes)
+
+    # a remark after a blank line and before one
+
+    record Pool tag pool
+    # one remark
+
+    # another remark
+
+    function pool_put(p: Pool consumes)
+
+function main()
+    print(0)

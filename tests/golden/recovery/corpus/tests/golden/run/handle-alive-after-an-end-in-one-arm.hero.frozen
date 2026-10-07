@@ -1,0 +1,22 @@
+# ALIVE ON SOME PATH IS NOT REFUSED (panel 177's item 3, route M (must),
+# 2026-09-25). The end sits in one arm of the `if`, so the read after it is
+# alive on the other path, and refusing it would be a guess about the value C
+# returned and never a fact about the program's shape (E10 of the sitting's
+# compiler-engineer: `if_correlated`, which the route M (may) it refused got
+# wrong). The rule leaves the read alone; here the arm is not taken, nothing
+# is dead, and the program releases once and exits 0. Where the arm IS taken,
+# the runtime stops the read before C (items 1 and 2).
+extern "handle-alive-after-an-end-in-one-arm.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+
+function main()
+    n = node_new(v: 7)
+
+    if node_peek(n: n) > 100
+        node_free(n: n)
+        print("ended early")
+    print("still held: ", node_peek(n: n))
+    node_free(n: n)

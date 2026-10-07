@@ -1,0 +1,75 @@
+# Two levels of keys, the second written in place: the name tables the
+# resolver builds, split out of `resolved.hero` along the seam defect 111's
+# repair drew (2026-09-27), when the rows took that file past design.md
+# §11's ~300 lines. `resolved.Resolved` holds one `NameRows` (module -> name
+# -> declaration) and one `UseRows` (file -> binding -> module); every read
+# and write of them goes through the functions here and in `resolved.hero`.
+
+# **The outer key finds a ROW, and the rows are an array** (defect 111). Held
+# as `{str: {str: i64}}`, a new name reached the inner map only by reading it
+# out, storing into the copy read and storing that back, and the read shares
+# the map, so the store copied it: every declaration copied its module's
+# whole table of names, and `check` grew with the square of a module's size.
+# A map step ends a place (`m[a][b] @ v` is not one), an index step does not:
+# `t.rows[row][name] @ v` unshares the array, whose count is one, and stores
+# into the one map it holds.
+#
+# `at` has an entry for a key exactly when `rows` has its row, and a row is
+# never removed: the two are written together, by `row_for` alone.
+record NameRows
+    # module -> its index in `rows`
+    at: {str: i64}
+    # name -> declaration index, one map per module
+    rows: [{str: i64}]
+
+# The same two levels for the `use` table: file -> binding -> module.
+record UseRows
+    at: {str: i64}
+    rows: [{str: str}]
+
+function new_name_rows() -> NameRows
+    at: {str: i64} = {}
+    rows: [{str: i64}] = []
+    return NameRows(at: at, rows: rows)
+
+function new_use_rows() -> UseRows
+    at: {str: i64} = {}
+    rows: [{str: str}] = []
+    return UseRows(at: at, rows: rows)
+
+# The row a key's names go in, made empty where the key has none. The new row
+# is pushed onto a lent array, so it grows in place (design.md Part 8 wart 8's
+# cheap spelling) where a push through the field would copy every row.
+function name_row(@t: NameRows, key: str) -> i64
+    found = t.at[key]
+
+    if !found.is_err()
+        return found.must()
+    t.at[key] @ t.rows.len()
+    fresh: {str: i64} = {}
+    grow_names(@t.rows, fresh)
+    return t.rows.len() - 1
+
+function use_row(@t: UseRows, key: str) -> i64
+    found = t.at[key]
+
+    if !found.is_err()
+        return found.must()
+    t.at[key] @ t.rows.len()
+    fresh: {str: str} = {}
+    grow_uses(@t.rows, fresh)
+    return t.rows.len() - 1
+
+function grow_names(@rows: [{str: i64}], row: {str: i64})
+    rows @ rows.push(row)
+
+function grow_uses(@rows: [{str: str}], row: {str: str})
+    rows @ rows.push(row)
+
+# One key's names, or absent where nothing was declared under it.
+function names_of(t: NameRows, key: str) -> {str: i64}?
+    found = t.at[key]
+
+    if found.is_err()
+        return fail(code: "absent", msg: key)
+    return ok(t.rows[found.must()])

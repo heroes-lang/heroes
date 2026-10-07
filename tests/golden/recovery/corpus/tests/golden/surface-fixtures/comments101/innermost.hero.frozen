@@ -1,0 +1,16 @@
+# Two of the author's parentheses around one value, a comment after the
+# outer one, inside index brackets (the second skeptic seat's `xs[(  # c`).
+# `fmt` drops the outer pair, and the one-line text's parentheses were
+# matched to the written ones one by one: the outer `(` took the printed
+# `(` of `(a + b)` and the comment moved inside it, refused at exit 2. A
+# printed pair is the written pair around the same tokens now, the
+# innermost of several, and the comment stays before the inner `(`.
+
+function f(xs: [i64], a: i64, b: i64, c: i64) -> i64
+    ys: [i64] @ xs
+    ys[(  # after the outer paren
+        (a + b) * c)] @ 1
+    return ys[0]
+
+function main()
+    print(f(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))

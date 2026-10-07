@@ -1,0 +1,835 @@
+# The harness's entire contact with the operating system: run a command,
+# capture its two streams and the status a shell would print, and list a
+# directory.
+#
+# Port of what archive/bootstrap-rs/heroes-cli/tests/*.rs get from Rust's
+# `std::process::Command` and `std::fs::read_dir`. design.md §1.11 is why
+# this file exists at all — Heroes has no standard library, so a process
+# and a directory arrive through C, and C's own `system()` is the one
+# entry point every platform this project builds on already has
+# (selfhost/cli/toolchain.hero:14 made the same call for clang).
+#
+# THREE THINGS HERE ARE MEASURED, NOT ASSUMED.
+#
+# 1. `sq` is the only way a path reaches the shell. Case names come from
+#    a directory listing, so an apostrophe in a filename is a command the
+#    harness did not mean to write. Measured: a file named `quo'te.hero`
+#    is listed and read back intact.
+#
+# 2. The status is decoded, never used raw. `system()` answers in
+#    waitpid's format — the exit code rides the high byte, a signal death
+#    the low seven bits (panel 070: a hardcoded 134 reported a SIGSEGV as
+#    an abort, and the instrument hid the defect from the person holding
+#    it). `heroes check` exiting 1 and a compiler killed by SIGHUP are
+#    both "1" if you forget this.
+#
+# 3. The directory walk survives a newline in a filename. Panel 085 R4
+#    measured `ls > file` + `read_file` splitting such a name into two
+#    entries at exit 0 — silently wrong, which CLAUDE.md §12's robustness
+#    rule forbids — and named `popen`/`readdir` as the only sound routes.
+#    There is a third and it costs no extern at all: `find -print0`
+#    separates names with the NUL byte, and a Heroes `str` carries that
+#    byte through `read_file` and byte indexing without trouble.
+#    Measured on both compilers: 3 entries for 3 files, the newline name
+#    whole, every one readable. The test below is that measurement, kept.
+
+use strings
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_exe_suffix() -> str
+    function hero_os_pid() -> i64
+    # `lent`: each call reads the path while it runs and keeps nothing of it
+    # (panel 171); this is the third of the three trees that bind the runtime,
+    # and forgetting it here stops every suite of the net rather than the
+    # compiler.
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_run_why() -> i64
+    function hero_run_serial() -> i64
+    function hero_run_discard_path() -> str
+    function hero_fs_exists(path: cstr lent) -> i64
+    function hero_fs_is_directory(path: cstr lent) -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_remove(path: cstr lent) -> i64
+    function hero_fs_newer_than(path: cstr lent, reference: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_at(index: i64) -> str
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+
+extern "stdlib.h"
+    function getenv(name: cstr lent) -> cstr
+
+# What `hero_dir_scan` is looking for.
+constant DIR_FILES: i64
+    0
+
+constant DIR_DIRECTORIES: i64
+    1
+
+# One finished program: its exit status, and both streams.
+#
+# `started` is separate from `code` and must be read first. A program
+# that never ran has no exit code, and the number that used to stand in
+# for one — 127 — is also a code a program can legitimately exit with.
+#
+# **THAT SENTENCE WAS A COMMENT AND NOTHING PERFORMED IT**, which is why
+# `run` below now refuses instead of asking. Measured 2026-09-21: thirteen
+# of the net's twenty-four suites read `.code` and none of them read
+# `.started`, 68 reads in all, while the compiler's own `Ran` is asked in
+# ten places. The Windows CI leg that day reported 101 cases as
+# `did not build (exit -1)` and five annotation groups as
+# `the annotations and the diagnostics disagree` — two false sentences
+# about one silence, because `-1` is this record's way of saying *there is
+# no exit code* and both readers took it for one.
+#
+# `why` is the operating system's own number for the refusal, 0 where the
+# program started. It is the answer the runtime always had and never handed
+# over (`hero_os.h`, `hero_run_why`).
+record Run
+    code: i64
+    out: str
+    err: str
+    started: bool
+    why: i64
+
+# Run `program` with `words` (its own name first), both streams captured
+# to files under `scratch`, and read them back.
+#
+# **THIS TOOK A COMMAND LINE UNTIL M-argv-execution**, and the comment
+# that stood here explained how to wrap it in a subshell so a redirection
+# would bind to the whole line, and how to silence the shell's own
+# announcements so that thirteen deliberately-aborting cases would not
+# print thirteen lines looking like failures. All of that was the cost of
+# handing a sentence to a parser. There is no sentence now: the words go
+# to the operating system as a list, the streams are files this call
+# opens, and a shell has no opinion about any of it.
+#
+# The two streams stay separate files because that is the distinction the
+# goldens are about: `check/` diffs stderr while `run/` diffs stdout, and
+# a harness that merged them could not tell a diagnostic from a program's
+# output.
+# **The same call, with a file on the child's standard input.** A sibling
+# rather than a parameter on `run`, and the reason is arithmetic: `run` has
+# 28 call sites and exactly one of them ever wants to feed a program, so a
+# required parameter would make 27 places say "nothing" out loud. `run`
+# below delegates here with the inherit sentinel, which is what the runtime
+# has always meant by an empty path.
+#
+# **Why it exists at all**: the corpus had no program that reads its input,
+# measured while planning M-corpus-depth, and every other language's example
+# suite has one — Wren spells it `// stdin:` in the program itself. The price
+# was measured before it was paid, which is the gate the scheduling item set:
+# one file handle in `hero_run_child` on POSIX and one `CreateFileA` on the
+# Windows arm, where the inherited handle already had a probe around it.
+function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
+    return insisted(
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path)?,
+        program: program
+    )
+
+function run(scratch: str, program: str, words: [str]) -> Run?
+    return insisted(ran: spawned(scratch: scratch, program: program, words: words, in_path: "")?, program: program)
+
+# **The same call for the places that ASK whether a program is there.**
+# Five of them, and each is a case whose SUBJECT is the machine: `git` that
+# a record check needs, `/bin/sh` that Windows does not have, and the test
+# below that names a program on purpose nobody has. They read `.started`
+# and they are the reason `run` cannot simply always refuse.
+#
+# It is deliberately the longer name. A caller that wants the ordinary
+# thing types the short one and gets the refusal; a caller that wants the
+# machine's answer has to say so at the call, which is where a reader of
+# the case will look for it.
+function attempted(scratch: str, program: str, words: [str]) -> Run?
+    return spawned(scratch: scratch, program: program, words: words, in_path: "")
+
+# Why a `run` came back with no program verdict, for a caller about to print
+# one. "" where it came back with one.
+#
+# The text is `insisted`'s, so it names the program and the operating system's
+# own number: the pair design.md §4.17 asks a diagnostic to carry, which is
+# `report.hero`'s rule for a test as much as the compiler's for a program.
+# `suite_units.hero`'s `why` is the same shape over its own result type.
+function refusal(got: Run?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# What the program complained, or why there was no program to complain.
+#
+# **The sibling of `refusal`, and it exists because a THIRD way of lying was
+# found the same day.** Seven call sites built their failure message out of
+# `said.default(Run(err: "cannot run", …)).err`, which substitutes a fixed
+# string for whatever actually went wrong — so a compiler that could not be
+# started and a compiler that wrote three pages of diagnostics both printed
+# `cannot run`. Measured 2026-09-21 by pointing the net at a file that exists
+# and is not executable: `suite_units` said `cannot runcannot run` where the
+# repaired `suite_run` said the path, the sentence and the number 13.
+function complaint(got: Run?) -> str
+    return match got
+        .ok r  => r.err
+        .err e => e.msg
+
+# A `Run` that started, or the reason there is none.
+#
+# **This is the executor for the sentence on `Run` above**, and the whole
+# point is that it stands between the runtime and every caller rather than
+# being a rule each caller remembers. What it costs is that a machine
+# problem now stops a case instead of being reported as the program's own
+# verdict, which is the trade the 2026-09-21 Windows leg priced: 106 red
+# lines, not one of which named the machine.
+function insisted(ran: Run, program: str) -> Run?
+    if ran.started
+        return ok(ran)
+
+    return fail(
+        code: "not_started",
+        msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
+    )
+
+function spawned(scratch: str, program: str, words: [str], in_path: str) -> Run?
+    # **The scratch directory is this function's to make, not its caller's.**
+    # The two streams are files opened under it, so a missing directory makes
+    # the child fail to start — and `started: false` then means "the program is
+    # not there", which is a lie about the program.
+    #
+    # Measured 2026-08-31 on the Linux CI leg: `a status is decoded the way a
+    # shell prints it` asserted `started` on `/bin/sh -c 'exit 0'` and failed,
+    # because the test three cases below it is the one that calls `mkdir_all`.
+    # It passed here and on Darwin because `build/harness-selftest` was left
+    # over from an earlier run. A test that passes on the strength of another
+    # test's side effect passes for the wrong reason, and 28 call sites share
+    # that directory — so the fix is the one place none of them can forget.
+    mkdir_all(scratch)?
+
+    # **A NAME NO EARLIER CALL CAN STILL BE HOLDING OPEN**, which is what this
+    # serial buys and the reason panel 174 made it load-bearing.
+    #
+    # These two paths were `scratch + "/stdout"` and `scratch + "/stderr"` for
+    # every one of the net's spawns. A descendant that outlives its parent keeps
+    # the descriptor it inherited, and then the two platforms fail differently:
+    # Windows refuses the next open with ERROR_SHARING_VIOLATION, so every later
+    # spawn reports `started: false` with an empty stderr — 101 of 136 `run/`
+    # cases and 19 of the annotation groups, CI run 35651518558, each printing
+    # `the operating system's own reason is 32`. POSIX refuses NOTHING, and the
+    # orphan's bytes land in the file a LATER case is judged on: measured on
+    # Darwin at 497a048f, a 17-byte capture arriving as 150 bytes, 58 of them
+    # NUL and three lines of them written by another case's process.
+    #
+    # A serial makes the second impossible rather than loud, and the first
+    # impossible too: an orphan holds a name nobody will ask for again. It comes
+    # from the runtime because this language has no mutable global (spec § 2).
+    serial = hero_run_serial().to_str()
+    out_path = scratch + "/stdout-" + serial
+    err_path = scratch + "/stderr-" + serial
+    hero_run_reset()
+
+    # **Every call is guarded, and there is no way to ask for less.** The old
+    # shape had `run` and `run_guarded`, the second prefixing coreutils'
+    # `timeout 120`. Nothing this harness runs should be allowed to hang
+    # forever, so the limit is not a parameter: it is what `run` means.
+    hero_run_limit(seconds: WATCHDOG_SECONDS)
+
+    for word in words
+        hero_run_arg(word: word)
+
+    status: i64 @ 0
+    code = hero_run_go(
+        program: program.cstr(),
+        in_path: in_path.cstr(),
+        out_path: out_path.cstr(),
+        err_path: err_path.cstr(),
+        @status
+    )
+    hero_run_reset()
+
+    if status != 0
+        # `-1` is not an exit code and never was: it is this record saying
+        # there is none, which is what `started: false` beside it means. The
+        # operating system's own reason rides along rather than being asked
+        # for later, because `hero_run_why` answers about the LAST call and a
+        # caller that holds a `Run` may have made others since.
+        return ok(Run(code: -1, out: "", err: "", started: false, why: hero_run_why()))
+    out = read_file(out_path)
+
+    if out.is_err()
+        return fail(code: "cannot_run", msg: "cannot read the captured stdout at " + out_path)
+    err = read_file(err_path)
+
+    if err.is_err()
+        return fail(code: "cannot_run", msg: "cannot read the captured stderr at " + err_path)
+
+    # Read, so the names are free. **The answer is deliberately not checked**:
+    # on Windows a file a descendant still holds cannot be deleted, and that is
+    # precisely the case this scheme exists to survive — the next spawn asks
+    # for a name nobody is holding. Refusing here would turn the thing that
+    # was repaired back into a failure.
+    _ = hero_fs_remove(path: out_path.cstr())
+    _ = hero_fs_remove(path: err_path.cstr())
+    return ok(Run(code: code, out: out.must(), err: err.must(), started: true, why: 0))
+
+# The names `hero_dir_scan` just found, as a list — and the listing is
+# let go on the way out. The runtime holds those names in memory it
+# allocated, so a caller that reads them and walks away leaks; the leak
+# gate turns that into a panic at exit rather than a silence, which is
+# how this line came to be written at all.
+function scanned(count: i64) -> [str]
+    found: [str] @ []
+    at: i64 @ 0
+
+    while at < count
+        found @ found.push(hero_dir_at(index: at))
+        at @ at + 1
+
+    hero_dir_release()
+
+    return found
+
+# Every file directly inside `dir`, sorted, whatever its name holds.
+#
+# **The newline in a filename is why this used to run `find -print0`.**
+# Panel 085 R4 measured `ls > file` + `read_file` splitting such a name
+# into two entries at exit 0 — silently wrong — and named `readdir` as one
+# of the two sound routes. The runtime takes that route now: a name never
+# becomes text on its way here, so there is no separator to be confused
+# by, not even the NUL the `-print0` trick was borrowing.
+function list_entries(scratch: str, dir: str) -> [str]?
+    _ = scratch
+    found = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 0)
+
+    if found < 0
+        return fail(code: "cannot_walk", msg: "cannot list " + dir)
+    entries: [str] @ []
+
+    for name in scanned(count: found)
+        entries @ entries.push(dir + "/" + name)
+
+    return ok(entries.sort())
+
+# Every directory directly inside `dir`, sorted, `dir` itself excluded.
+function list_directories(scratch: str, dir: str) -> [str]?
+    _ = scratch
+    found = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
+
+    if found < 0
+        return fail(code: "cannot_walk", msg: "cannot list the directories in " + dir)
+    entries: [str] @ []
+
+    for name in scanned(count: found)
+        entries @ entries.push(dir + "/" + name)
+
+    return ok(entries.sort())
+
+# Every file this project OWNS — asked of git, which is the only thing that
+# knows.
+#
+# **This exists because the alternative reported a TLS private key as a
+# milestone identifier** (2026-08-19, found by the first run of the whole net
+# from the seed-built compiler). `site/.cache/heroes-lang.org-key.pem` is a
+# local certificate a parallel session had just written; it is gitignored
+# (`site/.gitignore:4`), and both record walks — this one and its Rust twin —
+# read it anyway and found a milestone-shaped fragment in the base64. `cargo test`
+# was green at 00:05 and red at 00:47 with nothing committed in between. (The
+# fragment itself is not quoted here on purpose: this is a living file, and the
+# check that found it reads living files. `suite_records.hero` carries it, and
+# that file is on the list of deliberate quotations.)
+#
+# The old question was *"what files are under this directory, minus a list of
+# things I remembered to exclude"*, which is a premise about the world and
+# expires whenever the world grows a new kind of junk (CLAUDE.md §11). The new
+# question is *"what does git say belongs to this project"*: `--cached` for
+# tracked, `--others --exclude-standard` for what is new and not ignored — so a
+# file written one minute ago is still in scope, which is exactly the case the
+# record checks exist for, while ignored output is not.
+#
+# Paths come back WITHOUT a leading `./`, unlike `list_tree`.
+function project_files(scratch: str) -> [str]?
+    listing = scratch + "/listing-project"
+    ran = attempted(scratch: scratch, program: "git", words: ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"])?
+
+    if !ran.started
+        return fail(
+            code: "cannot_walk",
+            msg: "git is not on this machine, and the record checks ask git what belongs to this project"
+        )
+
+    if ran.code != 0
+        return fail(
+            code: "cannot_walk",
+            msg: "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
+        )
+    write_file(path: listing, text: ran.out)?
+    entries: [str] @ []
+
+    for piece in strings.split_on(text: ran.out, byte: 0)
+        if piece.len() > 0
+            entries @ entries.push(piece)
+
+    return ok(entries.sort())
+
+# Every file under `dir`, recursively, with whole subtrees pruned.
+#
+# The pruning is done by `find` and not in Heroes, and the reason is a
+# measurement: this repository holds **343,010** files, of which **1,186**
+# are outside `target/`, `build/` and `.git/`. Reading the long listing to
+# throw 99.7% of it away would be a listing measured in megabytes for an
+# answer measured in kilobytes.
+function list_tree(scratch: str, dir: str, skip: [str]) -> [str]?
+    _ = scratch
+    found = walk_into(dir: dir, skip: skip)?
+
+    return ok(found.sort())
+
+# One level, then down into the directories that survive the prune.
+#
+# **The prune happens before the descent, and that is a measurement and
+# not a style.** This repository holds 343,010 files, of which 1,186 are
+# outside `target/`, `build/` and `.git/`. Walking everything and
+# filtering afterwards would read megabytes to answer in kilobytes,
+# which is what `find -not -path` was buying and what this has to keep.
+function walk_into(dir: str, skip: [str]) -> [str]?
+    files = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 0)
+
+    if files < 0
+        return fail(code: "cannot_walk", msg: "cannot list " + dir)
+    found: [str] @ []
+
+    for name in scanned(count: files)
+        found @ found.push(dir + "/" + name)
+
+    dirs = hero_dir_scan(root: dir.cstr(), want: DIR_DIRECTORIES, recursive: 0)
+
+    if dirs < 0
+        return fail(code: "cannot_walk", msg: "cannot list the directories in " + dir)
+
+    for name in scanned(count: dirs)
+        if !skipped(name: name, skip: skip)
+            for deeper in walk_into(dir: dir + "/" + name, skip: skip)?
+                found @ found.push(deeper)
+
+    return ok(found)
+
+function skipped(name: str, skip: [str]) -> bool
+    for one in skip
+        if one == name
+            return true
+
+    return false
+
+# How long a program may take before the harness stops waiting, as a
+# command prefix — or "" where this machine has no `timeout`.
+#
+# **A corpus program can hang, and a hang is worse than a failure here**
+# (2026-08-14, found by the author looking at their own screen): an
+# `examples/sdl/` binding linked SDL2, whose shim opens a MODAL DIALOG
+# when it cannot load SDL3, and two processes sat at 0% CPU for ninety
+# minutes waiting for a click nobody could give them. This harness runs
+# unattended, in three configurations: a program that never returns burns
+# **THE WATCHDOG IS THE RUNTIME'S NOW, and `timeout` is gone from this
+# project.** `patience()` used to answer the words to put in front of a
+# program — coreutils' `timeout 120` — and `is_a_watchdog` used to work out
+# whether this machine's `timeout` was that program at all.
+#
+# Both are deleted, and the reason is that the question could not be answered
+# well enough. Windows ships a `TIMEOUT.EXE` that PAUSES for N seconds and
+# launches nothing: it starts (so the first probe said yes, and 271 of the
+# net's checks died), and it exits 1 on a bad argument list (so the second
+# probe said yes too, and the numbers came back identical). The third probe
+# finally read the child's own words and said no — correctly — and left
+# Windows with **no watchdog**, which showed inside one run: two orphan
+# `heroes.exe` and a `clang.exe` held `build/harness/stdout` open, and Windows
+# refuses to delete a file a handle still holds, so the next run could not
+# clear its own build directory.
+#
+# A limit is not a program. `WaitForSingleObject` already takes a deadline and
+# POSIX gets one by waiting in small steps, so `hero_run_limit` is the whole
+# of it — one runtime call, both platforms, no probe and nothing to be wrong
+# about. It answers **124** on a kill, which is the number coreutils used, so
+# every caller that read that answer reads the same one.
+#
+# Two minutes is the line between *slow* and *never*, chosen against the
+# slowest thing the corpus actually does — seconds, not minutes — so it is not
+# a performance budget in disguise (CLAUDE.md §13).
+constant WATCHDOG_SECONDS: i64
+    120
+
+# **What an executable is CALLED on this machine** — "" on POSIX, ".exe" on
+# Windows. The harness needs it wherever it names a binary with `-o` and then
+# runs it: clang honours `-o` to the letter, and `CreateProcess` given a name
+# with no extension looks for `<name>.exe` — which then does not exist. That
+# was `run/`'s entire 0-of-91 on the Windows leg (every case "exit -1", never
+# started), measured 2026-08-31. The answer comes from the runtime, which is
+# the one place allowed to know what machine this is.
+function exe_suffix() -> str
+    return hero_run_exe_suffix()
+
+# **Whether this machine runs POSIX shell scripts, asked by running one.**
+# Twelve of the harness's own tests build stub compilers as `#!/bin/sh`
+# scripts, ask `/bin/sh` for two streams, or write a filename with a newline
+# in it — POSIX facts, and their SUBJECT, not their plumbing: the newline
+# case exists because `ls` splits such a name, the stub cases because a fake
+# tool must be cheap to write. On Windows `CreateProcess` reads no shebang
+# and NTFS refuses the filename, so the premise these cases test is absent —
+# measured 2026-08-31, 12 of 92 self-tests red on the CI leg, every one of
+# them in this class, while the NET ITSELF was green there. Each such case
+# asks this and steps aside where the answer is no; the net's own suites
+# never call it, so nothing the compiler is judged on can hide behind it.
+function can_run_scripts() -> bool
+    said = attempted(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+
+    if said.is_err()
+        return false
+
+    return said.must().started && said.must().code == 0
+
+# Kept as its own name because 40 call sites read it, and because it says at
+# the call what `run` now guarantees everywhere: this will come back.
+function run_guarded(scratch: str, words: [str]) -> Run?
+    return run(scratch: scratch, program: words[0], words: words)
+
+# Every file under `dir`, recursively, whose name ends in `suffix` and
+# which is newer than `reference`. What `find -name … -newer` answered,
+# without a `find`.
+#
+# An empty `suffix` matches everything; an empty `reference` drops the
+# age question. The two are separate because the callers ask them
+# separately, and joining them would make one of the two a premise.
+function found_under(dir: str, suffix: str, reference: str) -> [str]?
+    count = hero_dir_scan(root: dir.cstr(), want: DIR_FILES, recursive: 1)
+
+    if count < 0
+        return fail(code: "cannot_walk", msg: "cannot walk " + dir)
+    out: [str] @ []
+
+    for name in scanned(count: count)
+        full = dir + "/" + name
+
+        if suffix.len() > 0 && !ends_with(text: name, tail: suffix)
+            continue
+
+        if reference.len() > 0 && hero_fs_newer_than(path: full.cstr(), reference: reference.cstr()) != 1
+            continue
+        out @ out.push(full)
+
+    return ok(out.sort())
+
+# Asked of the bytes, as `strings.ends_with` asks them: the slice this was
+# put its cut inside a character above ASCII, and a file such as `é.txt`
+# under a walked tree would have stopped the harness (found beside defect
+# 110, 2026-09-27).
+function ends_with(text: str, tail: str) -> bool
+    return strings.ends_with(text: text, suffix: tail)
+
+# One list after another. `+` joins two `str`s and this language does
+# not overload it onto arrays, which is why this exists rather than
+# being written inline at six call sites.
+function both(first: [str], second: [str]) -> [str]
+    out: [str] @ first
+
+    for one in second
+        out @ out.push(one)
+
+    return out
+
+# One environment variable, or "" where it is unset. The null test is the
+# contract, not caution: converting a null `cstr` aborts (spec § 13 FFI).
+function env(name: str) -> str
+    got = getenv(name: name.cstr())
+
+    if got == nullptr
+        return ""
+    return got.validated().default("")
+
+# Whether a refusal is this MACHINE's answer rather than the compiler's.
+#
+# Two codes, both about a library that is not installed (golden.rs:939 —
+# raylib on the Windows leg, which carries clang and no pkg-config). It
+# lives here rather than in a suite because two suites ask it, and
+# because the question is about the machine, which is what this module
+# is: `unsupported/` may skip such a case, and `run/` may skip building
+# one. Every caller that skips must also floor its skips — a machine
+# missing every library would otherwise report green having tested
+# nothing.
+function machine_lacks_the_library(text: str) -> bool
+    # Three spellings of one answer, and all three are the MACHINE's rather
+    # than the program's: a package the machine cannot find, a header it does
+    # not have, and a `pkg-config` that is not installed at all — the third is
+    # `cli_libraries.hero:187`'s own wording, and it was missing here until
+    # the Windows VPS answered it for four `run/` cases that name raylib
+    # (measured 2026-08-31: 4 failed as "did not build" on a machine that
+    # simply has no pkg-config).
+    return strings.contains(text: text, needle: "error[ffi_package]") || strings.contains(text: text, needle: "error[ffi_missing_header]") || strings.contains(text: text, needle: "pkg-config is not on this machine")
+
+# The compilers this harness's own test blocks may use, in the order they are
+# tried. Read as: whatever the caller named, then the binary in the repository
+# root — the one every command in CLAUDE.md § Commands and the ROADMAP's *Verify
+# it yourself* block names — then what CI builds from the seed with clang alone,
+# then a local seed build.
+#
+# **`./heroes` was missing from this list and `./target/debug/heroes` was on it**
+# until 2026-08-25 (author decision, `/decide` answer `a`). The second is the
+# bootstrap, archived at M-bootstrap-archive, so the list reached for a dead path
+# before the live one — and the comment below has said *"the path they must not
+# name is the bootstrap's"* since the day of the archive, with the list under it
+# naming it. What that cost is measured: `suite_run`'s self-test reached a
+# `build/heroes-seed` dated 2026-08-19 and every program it built died on
+# `_Static_assert` against `HERO_RUNTIME_ABI 15` — the stamp doing exactly its
+# job (CLAUDE.md §7, version skew) against a test that trusted whatever binary
+# was lying around.
+#
+# A stale `./heroes` is no safer than a stale seed build, and that is the point:
+# the ABI stamp turns skew into a loud clang error rather than a wrong answer,
+# and the ROADMAP's first line rebuilds it in 3.5 s. In CI nothing here is
+# reached at all — the leg names `HEROES_COMPILER`, so the answer is decided
+# rather than searched for.
+constant CANDIDATES: [str]
+    [
+        "./heroes"
+        "./heroes-from-seed"
+        "./build/heroes-seed"
+    ]
+
+# A compiler these self-tests can run, asked of the MACHINE rather than
+# assumed from a path.
+#
+# **The path they must not name is the bootstrap's.** `./target/debug/heroes` is
+# what the archive deletes, and the day it goes is the day this harness matters
+# most — which is exactly why `suite_golden.hero`'s stubs exist. Nine self-tests
+# named it as a literal, so nine of them would have started failing on the move
+# commit, in the net that was built to survive it (found 2026-08-19, while
+# adding the seed leg to CI). It stayed in the list above for six more days,
+# which is the whole argument for the CI leg that now runs this file.
+#
+# An empty answer is a loud failure rather than a skip: the harness is being run
+# BY a compiler, so one exists, and if none of these paths holds it the test
+# says which four it looked at.
+function some_compiler() -> str
+    named = env(name: "HEROES_COMPILER")
+
+    if named.len() > 0 && exists(named)
+        return named
+
+    for path in CANDIDATES
+        if exists(path)
+            return path
+
+        # The same name as the machine spells it: `./heroes` here is
+        # `./heroes.exe` on Windows, and a list that forgets the suffix
+        # answers "" on a machine with a perfectly good compiler in the
+        # root — measured 2026-08-31, four self-tests red on the VPS while
+        # CI passed them only because its leg names HEROES_COMPILER.
+        if exists(path + exe_suffix())
+            return path + exe_suffix()
+
+    return ""
+
+# What to print when there is none — the four places, named.
+function no_compiler_anywhere() -> str
+    return "no compiler found: set HEROES_COMPILER, or build one at " + CANDIDATES.join(" / ")
+
+function exists(path: str) -> bool
+    return hero_fs_exists(path: path.cstr()) == 1
+
+function is_directory(path: str) -> bool
+    return hero_fs_is_directory(path: path.cstr()) == 1
+
+function mkdir_all(path: str) -> ()?
+    if hero_fs_mkdir_all(path: path.cstr()) != 0
+        return fail(code: "cannot_run", msg: "cannot create the directory " + path)
+    return ok()
+
+function remove_tree(path: str) -> ()?
+    if hero_dir_remove_tree(path: path.cstr()) != 0
+        return fail(code: "cannot_run", msg: "cannot remove " + path)
+    return ok()
+
+# This process's id — the one number no other process running now shares,
+# which is what a scratch directory's name needs (main.hero).
+function pid() -> i64
+    return hero_os_pid()
+
+test "a name's suffix is asked of its bytes, whatever the name holds above ASCII"
+    assert ends_with(text: "a.hero", tail: ".hero")
+    assert ends_with(text: "café/é.hero", tail: ".hero")
+    assert !ends_with(text: "é.txt", tail: ".hero")
+    assert !ends_with(text: "cafés.md", tail: ".hero")
+    assert !ends_with(text: "😀", tail: ".hero")
+
+test "a status is decoded the way a shell prints it"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (shell.hero::can_run_scripts carries the measurement).
+    if !can_run_scripts()
+        return
+
+    # 1 << 8 is `exit 1`; 134 is the shape panel 070's hardcoded number
+    # got wrong — SIGABRT is 6, so waitpid says 6 and a shell says 134.
+    # **`status_of` is gone and the runtime answers instead.** It decoded
+    # waitpid's format by hand — the exit code in the high byte, a signal
+    # in the low seven bits — which was right on POSIX and wrong on
+    # Windows, where the same call answers the exit code directly. These
+    # assertions are now about what a program really did.
+    quiet = run(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+    assert !quiet.is_err()
+    assert quiet.must().started
+    assert quiet.must().code == 0
+
+    angry = run(scratch: "build/harness-selftest", program: "/bin/sh", words: ["/bin/sh", "-c", "exit 2"])
+    assert !angry.is_err()
+    assert angry.must().code == 2
+
+    absent = attempted(
+        scratch: "build/harness-selftest",
+        program: "heroes-no-such-program",
+        words: ["heroes-no-such-program"]
+    )
+    assert !absent.is_err()
+    assert !absent.must().started
+
+    # **The operating system says WHY, and this is the assertion that keeps
+    # it saying so.** The number itself differs by platform — POSIX answers
+    # `ENOENT`, Windows `ERROR_FILE_NOT_FOUND` — so what is asserted is that
+    # there IS one, which is the property the 2026-09-21 Windows leg lacked.
+    assert absent.must().why != 0
+
+    # And the ordinary `run` refuses the same program rather than handing
+    # back a record whose `code` means nothing.
+    refused = run(
+        scratch: "build/harness-selftest",
+        program: "heroes-no-such-program",
+        words: ["heroes-no-such-program"]
+    )
+    assert refused.is_err()
+
+test "a command's two streams come back apart, with its status"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (shell.hero::can_run_scripts carries the measurement).
+    if !can_run_scripts()
+        return
+    scratch = "build/harness-selftest"
+    assert !mkdir_all(scratch).is_err()
+
+    # **`/bin/sh` is the PROGRAM here, and that is the honest shape.** The
+    # case needs something that writes to both streams and exits 3, and a
+    # shell is a perfectly ordinary program to ask for that — what is gone
+    # is the harness handing a sentence to a shell it did not name. On a
+    # machine with no `/bin/sh` this one test reports `started: false`
+    # rather than a wrong answer, and the same case written in Heroes and
+    # compiled would cost this module a dependency on the compiler under
+    # test, which is the one thing a self-test may not have.
+    said = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "printf 'to out'; printf 'to err' 1>&2; exit 3"]
+    )
+    assert !said.is_err()
+    assert said.must().out == "to out"
+
+    assert said.must().err == "to err"
+    assert said.must().code == 3
+
+# **THE CAPTURES DO NOT PILE UP, and this is the instrument that says so.**
+#
+# Author instruction 2026-09-22, in their own words: *avoid like death errors
+# that go and fill the disk with useless files.* Panel 174 gave every spawn its
+# own pair of capture files, which is what closed defect 074 — and it moved the
+# cost from a name collision to a file count. The net starts thousands of
+# processes in one run, so a removal that quietly stops working turns two files
+# into tens of thousands and nothing else in the tree would notice.
+#
+# It watches the WORLD and not this module's own bookkeeping: it runs real
+# programs through the real `run`, then asks the directory what is in it. What
+# would still pass if the removal were broken? Nothing — the count is the
+# subject.
+#
+# The ceiling is 2 rather than 0 because a capture is alive between its
+# `CreateFileA` and its read, and a self-test is free to be the call that is
+# in flight. Anything above that is accumulation.
+test "the captures are removed, so a run cannot fill the disk with them"
+    if !can_run_scripts()
+        return
+    scratch = "build/harness-captures"
+    assert !remove_tree(scratch).is_err()
+    assert !mkdir_all(scratch).is_err()
+
+    for _ in range(from: 0, to: 12)
+        said = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
+        assert !said.is_err()
+
+    listed = list_entries(scratch: scratch, dir: scratch)
+    assert !listed.is_err()
+    left: i64 @ 0
+
+    for name in listed.must()
+        if strings.starts_with(text: name, prefix: "stdout-") || strings.starts_with(text: name, prefix: "stderr-")
+            left @ left + 1
+
+    # Twelve spawns wrote twenty-four capture files. If the removal works the
+    # directory holds none of them; if it does not, it holds twenty-four and a
+    # real run holds thousands.
+    assert left <= 2
+    assert !remove_tree(scratch).is_err()
+
+test "the directory walk keeps a filename that contains a newline"
+    # POSIX is this case's subject, and this machine answers for itself
+    # (shell.hero::can_run_scripts carries the measurement).
+    if !can_run_scripts()
+        return
+
+    # Panel 085 R4's falsifier, kept as a test: this is the case `ls`
+    # splits in two at exit 0. If the NUL route ever stops working, this
+    # is what fires, and the harness stops trusting its own case list.
+    scratch = "build/harness-selftest"
+    hostile = scratch + "/hostile"
+    assert !remove_tree(hostile).is_err()
+    assert !mkdir_all(hostile).is_err()
+
+    # **The files are written by the language, not by `touch` inside a
+    # subshell.** `write_file` carries an apostrophe and a newline in a
+    # path the same way it carries any other byte, so the case that used
+    # to need a shell — and a quoting function to survive it — is now
+    # four ordinary calls.
+    assert !write_file(path: hostile + "/plain.hero", text: "").is_err()
+    assert !write_file(path: hostile + "/two\nlines.hero", text: "").is_err()
+    assert !write_file(path: hostile + "/quo'te.hero", text: "").is_err()
+    found = list_entries(scratch: scratch, dir: hostile)
+    assert !found.is_err()
+    assert found.must().len() == 3
+    readable: i64 @ 0
+
+    for entry in found.must()
+        if !read_file(entry).is_err()
+            readable @ readable + 1
+
+    assert readable == 3
+
+test "fixedbugs: the watchdog is a runtime limit, because no probe could name the program"
+    # Symptom: 271 of 357 net checks failed on the Windows leg with
+    # `ERROR: Invalid syntax`, every one of them the compiler never launched.
+    # Cause: the harness prefixed every invocation with coreutils' `timeout
+    # 120`, and Windows ships a `TIMEOUT.EXE` that pauses for N seconds and
+    # launches nothing. Date: 2026-08-31.
+    #
+    # **Three probes, and the reason this case now asserts an absence.** The
+    # first asked whether a program called `timeout` STARTS — TIMEOUT.EXE
+    # starts. The second asked whether it exits 1 on a refused argument —
+    # TIMEOUT.EXE exits 1, and the net came back with numbers identical to the
+    # round before, 686/357 both times. The third read the child's own words
+    # and said no, correctly, which left Windows with no watchdog at all: two
+    # orphan `heroes.exe` and a `clang.exe` held `build/harness/stdout` open,
+    # and Windows will not delete a file a handle holds, so the next run could
+    # not clear its build directory.
+    #
+    # A limit is not a program, so it stopped being one. What this case can
+    # assert is that the number every caller relies on is still the number
+    # coreutils used, and that the guard is asked for rather than assumed.
+    assert WATCHDOG_SECONDS == 120
+
+    # It really runs a program and really gets its code back, with a limit
+    # nothing here comes near.
+    quick = run(scratch: "build/harness-selftest", program: "clang", words: ["clang", "--heroes-no-such-flag"])
+    assert !quick.is_err()
+    assert quick.must().started
+    assert quick.must().code == 1

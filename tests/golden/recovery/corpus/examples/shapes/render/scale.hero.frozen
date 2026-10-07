@@ -1,0 +1,16 @@
+# The neighbour that is NOT reached by a bare `use scale`.
+#
+# `render/ascii.hero` sits beside this file and says `use scale`; that line
+# names the root's `scale.hero`, not this one. To reach this module a file
+# writes `use render/scale`, from anywhere in the program, because a path
+# starts at the directory of the file you compile.
+#
+# `main.hero` does exactly that, so both modules are live and the program's
+# output tells them apart: 10 from the root, 3 from here. If the resolution
+# ever flips, `main.expected` changes and the corpus goes red.
+
+function factor() -> i64
+    return 3
+
+test "the neighbour's scale is three"
+    assert factor() == 3

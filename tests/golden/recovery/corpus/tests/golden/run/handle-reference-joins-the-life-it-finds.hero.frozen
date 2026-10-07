@@ -1,0 +1,24 @@
+# `retains` on a result and on a parameter (panel 176's item 4, panel 177's
+# item 8): a reference joins the life it finds and keeps its releaser set, and
+# the program owes one more release. Both of C's shapes: the returned
+# reference and the status-returning one, whose `when 1` makes the reference
+# conditional. Defect 079's repair: before it, the second release of a
+# reference-counted handle was refused as a double release whichever way the
+# reference was declared.
+extern "handle-reference-joins-the-life-it-finds.h"
+    record Ob tag ob
+    function ob_new(v: i64) -> Ob acquires ob_put
+    function ob_get(o: Ob) -> Ob retains ob_put
+    function ob_up_ref(o: Ob retains ob_put) -> i32 when 1
+    function ob_put(o: Ob consumes)
+    function ob_refs(o: Ob) -> i64
+
+function main()
+    a = ob_new(v: 3)
+    b = ob_get(o: a)
+    rc = ob_up_ref(o: a)
+    print("refs: ", ob_refs(o: a), " up_ref: ", rc)
+    ob_put(o: b)
+    ob_put(o: a)
+    ob_put(o: a)
+    print("released three times, as C expects")

@@ -1,0 +1,46 @@
+# Builds one expression as a tree, then reads it three ways.
+#
+# The expression is `-(2 * (3 + 4)) + 5`, built node by node into the arena the
+# way a parser builds one: children first, parents after, every link an index.
+#
+# What this program is FOR is in `node.hero`'s own doc: the corpus had no
+# tree-with-a-vocabulary, and that absence hid a compiler defect until the
+# compiler's own syntax tree was ported to Heroes to find it. A program that
+# declares more node shapes than it builds is the ordinary case, not a contrived
+# one, and it now runs on every commit in three configurations.
+
+use node
+
+function main()
+    t: node.Tree @ node.new_tree()
+
+    # The leaves, first — a parser has nothing else to attach to.
+    two = node.add_node(@t, .number(value: 2))
+    three = node.add_node(@t, .number(value: 3))
+    four = node.add_node(@t, .number(value: 4))
+    five = node.add_node(@t, .number(value: 5))
+
+    # Then the shapes that hold them.
+    sum = node.add_node(@t, .add(left: three, right: four))
+    product = node.add_node(@t, .multiply(left: two, right: sum))
+    negated = node.add_node(@t, .negate(operand: product))
+    whole = node.add_node(@t, .add(left: negated, right: five))
+
+    print(node.render(t, whole))
+    print(node.evaluate(t, whole))
+    print(node.depth(t, whole))
+    print(len(t.nodes))
+
+    # Two trees built the same way are the same value. This is what makes the
+    # compiler emit `==` over every case of `Node`, including the ones this
+    # program never builds — the assertion that traces the defect.
+    u: node.Tree @ node.new_tree()
+    _ = node.add_node(@u, .number(value: 2))
+    v: node.Tree @ node.new_tree()
+    _ = node.add_node(@v, .number(value: 2))
+    print(u.nodes == v.nodes)
+
+    # And a node the program never constructs still compares.
+    absent: node.Node @ .unreadable
+    print(absent == .unreadable)
+    print(absent == .number(value: 0))

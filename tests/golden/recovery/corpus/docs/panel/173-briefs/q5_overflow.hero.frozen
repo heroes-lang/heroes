@@ -1,0 +1,11 @@
+# Panel 173 q5: the stack runs out while a lease is live. stack.c's handler
+# speaks and then aborts; the prototype's handler sees that abort.
+function down(n: i64) -> i64
+    a = [n, n + 1, n + 2]
+    return a[0] + down(n: n + 1)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    print(to_str(down(n: 1)))
+    end_lease(@c)

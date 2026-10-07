@@ -1,0 +1,16 @@
+# The module half of `contract.hero`: `h_open`'s set holds a comment here,
+# and `contract.hero` declares the same C function with the same set and no
+# comment. One C function has one contract (`check/contracts.hero`), read
+# from each set's names, so the trunk read `#eitheroneh_close_v2` here and
+# refused the pair with `contract_differs`.
+
+extern "rel.h"
+    record H tag hh
+    function h_open(n: i64, @out: H acquires h_close |  # either one
+        h_close_v2) -> i64
+    function h_close(x: H consumes)
+    function h_close_v2(x: H consumes)
+    function h_value(x: H) -> i64
+
+function value(x: H) -> i64
+    return h_value(x: x)

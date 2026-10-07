@@ -1,0 +1,101 @@
+# How many ways eight queens fit on a chessboard, one thread per opening move —
+# the member of this family whose work is a SEARCH TREE rather than a range.
+#
+# Every other program here divides a straight line of numbers. This one divides
+# a tree: thread `c` places the first queen in column `c` and explores only what
+# follows from that. The eight subtrees are different sizes and none of them
+# knows what the others found, which is the same shape as `collatz/`'s uneven
+# bands one level up — and the answer is still one `i64` per thread.
+#
+# WHY THE BOARD NEVER CROSSES. The partial board is a `[i64]` built and grown
+# inside the thread as the search descends. It could not be handed to a thread
+# even if this program wanted to: a container in a callback signature is
+# `error[ffi_type]` on the line that writes it. So the only thing that can
+# start a thread's work is the number that describes it, which here is the
+# column of the first queen — and that turns out to be all a search needs.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant SIZE: i64
+    8
+
+# May a queen stand in `col` of the next row, given the rows already placed?
+# `placed[r]` is the column of the queen in row `r`.
+function fits(placed: [i64], col: i64) -> bool
+    row: i64 @ 0
+
+    while row < len(placed)
+        other = placed[row]
+
+        if other == col
+            return false
+        down = len(placed) - row
+
+        if other - down == col || other + down == col
+            return false
+        row @ row + 1
+
+    return true
+
+# Every completed board that starts with the rows already placed.
+function solutions_from(placed: [i64]) -> i64
+    if len(placed) == SIZE
+        return 1
+    found: i64 @ 0
+    col: i64 @ 0
+
+    while col < SIZE
+        if fits(placed: placed, col: col)
+            deeper: [i64] @ placed
+            deeper @ deeper.push(col)
+            found @ found + solutions_from(placed: deeper)
+        col @ col + 1
+
+    return found
+
+# One thread's whole job: the first queen goes in this column.
+function from_column(col: i64) -> i64
+    start: [i64] = [col]
+    return solutions_from(placed: start)
+
+function together() -> i64
+    handles: [i64] @ []
+    c: i64 @ 0
+
+    while c < SIZE
+        handles @ handles.push(hero_thread_spawn(body: from_column, arg: c))
+        c @ c + 1
+
+    found: i64 @ 0
+
+    for h in handles
+        found @ found + hero_thread_join(handle: h)
+
+    return found
+
+function alone() -> i64
+    empty: [i64] = []
+    return solutions_from(placed: empty)
+
+function main()
+    print("ways to place ", SIZE, " queens: ", together())
+
+test "the threads count what one thread counts"
+    assert together() == alone()
+
+test "the published answer for eight queens is 92"
+    assert together() == 92
+
+test "the board is symmetric, so the first column and the last agree"
+    assert from_column(col: 0) == from_column(col: SIZE - 1)
+
+test "a queen cannot share a column"
+    one: [i64] = [3]
+    assert !fits(placed: one, col: 3)
+
+test "nor a diagonal, one row down"
+    one: [i64] = [3]
+    assert !fits(placed: one, col: 4)
+    assert fits(placed: one, col: 5)

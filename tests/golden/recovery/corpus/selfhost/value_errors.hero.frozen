@@ -1,0 +1,356 @@
+# Mismatches, operators, and what a call will accept.
+# Port of archive/bootstrap-rs/heroes/src/types/errors/values.rs.
+#
+# **The discard family moved out on 2026-09-16**, at M-check-completeness
+# step 3, when this file passed its DECIDED ceiling of 334 and the
+# `layout` check refused it. `discarded_value`, `answers`,
+# `discarded_failure`, `discarded_failure_parameter` and `bound_unit` are
+# now `selfhost/discard_errors.hero`, with the tests and the `has` helper
+# they need. The seam is the FAMILY and not the line count, which is what
+# this file's own ceiling ratification asked for in the sentence that
+# refused a split: cutting by line count "would put two messages of one
+# family in two files".
+#
+# What is left is two families that were always here. `mismatch`,
+# `mixed_arithmetic`, `bad_operand`, `unordered_element` and
+# `generic_equality` say what an operator or a built-in will accept —
+# the last two being the pair worth reading together, since both refuse
+# an operation on a TYPE PARAMETER and both send the reader to design.md
+# §4.12's own answer, *pass the operation as a parameter*. `not_bool`,
+# `main_returns`, `not_callable`, `arity` and `callback_name` are what a
+# call or a signature will accept.
+#
+# Message text byte for byte with the Rust side, as everywhere in the port.
+
+use token
+use diag
+
+function mismatch(expected: str, got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "type_mismatch",
+        message: "expected `" + expected + "`, found `" + got + "`",
+        span: span
+    )
+
+# The two numeric types never mix (§4.14), and the repair is the
+# conversion the spec names — a guess, because which side to convert is
+# the author's.
+#
+# TWO FIXES, BECAUSE THE READER'S MISTAKE DIFFERS (defect 023, 2026-09-09,
+# out of the spec-warden's steelman at panel 121). The title below was
+# written for two numbers of different widths and was emitted unchanged
+# when one side is a `str`, where NO `to_<width>` can help: measured, a
+# reader who followed it got the identical diagnostic back with `str` and
+# `f64`, and `n.to_str()` — the one repair that works, and a built-in the
+# spec lists — was never named. Following a compiler's advice must not be
+# a loop.
+#
+# **AND NOTHING BUT THIS MODULE'S OWN TESTS CAN SEE IT**, which is why they
+# are below. `.expected` compares `check --brief`'s stderr, which carries no
+# `fix (…)` line, and `suite_fixes` tests only `certain` fixes through
+# `.fixed`, so a `guess` fix's TEXT is unwatched by every golden — the gap
+# `docs/records/journal/039-closures-verdict.md` filed rather than tapped shut, and
+# the reason the `fit_` fix could have stood indefinitely.
+function mixed_arithmetic(op: str, left: str, right: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "mixed_arithmetic",
+        message: "`" + op + "` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `" + left + "` and `" + right + "`",
+        span: span
+    )
+
+    title = if left == "str" || right == "str"
+        "one side is text, so no `to_<width>` can help — those answer a number, and `+` on a `str` wants a `str`. Render the other side: `\"n is \" + n.to_str()`"
+    else
+        "convert one side: `to_f64(x)` cannot fail, and `to_i64(x)` or another `to_<width>(x)` gives a `T?` because the number may not fit"
+    d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: "", span: span, certainty: .guess))
+    return d
+
+# A `cstr` gets a route, because a hard stop without one is what produced
+# the only genuinely unsafe artifact in this project's record (panel 059):
+# the blind reader hit the stop and reached for a C helper with a static
+# buffer — an escape one line long, invisible to every rule this compiler
+# has, and strictly worse than what the stop refused. A note and not a
+# fix: the repair is `c.to_str()`, and building that replacement needs the
+# operand's own source text, which this module does not have.
+function bad_operand(op: str, allowed: str, got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "bad_operand",
+        message: "`" + op + "` takes " + allowed + ", found `" + got + "`",
+        span: span
+    )
+
+    if got == "cstr"
+        d.notes @ d.notes.push(
+            "a `cstr` is C's string, not this language's — `c.validated()` copies one into a `str?`, which is `null_cstr` for a null pointer and `not_text` for bytes that are not UTF-8"
+        )
+    return d
+
+# `sort` was handed an array of something the language does not order
+# (panel 068 R2 — the refusal moved here from the emitter). Three things
+# this message must not do, each a finding of that sitting: it must not
+# say the element "has no `<`" (false of `str`); it must NAME the ordered
+# set (the old emitter message was stale since the widths landed); and it
+# must leave `sort_by` addable — it says what `sort` orders, never that
+# ordering THIS is impossible. A type parameter takes its own note (panel
+# 084): "build an array of one of those" is unanswerable when the element
+# is spelled `A`, and §4.12 has always named the route — pass the
+# comparison as a parameter.
+function unordered_element(element: str, reached: str?, generic: bool, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unordered_element",
+        message: "`sort` orders arrays of numbers, `str` and `bool` — `[" + element + "]` is none of those",
+        span: span
+    )
+
+    if generic
+        d.notes @ d.notes.push(
+            "`" + element + "` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(candidate: " + element + ", best: " + element + ") -> bool)`, and name its arguments at the call, `less(candidate: x, best: best)`: two parameters of one type are named in the type, so the order of the two is checked for you"
+        )
+        return d
+
+    if !reached.is_err()
+        d.notes @ d.notes.push(
+            reached.must() + ", which has no order the language can produce. Sort a key you can name instead — build `[i64]`, `[str]` or `[bool]` from the values and order that"
+        )
+        return d
+    d.notes @ d.notes.push(
+        "the ordered types are `i8` `i16` `i32` `i64`, `u8` `u16` `u32` `u64`, `f32` `f64`, `str` and `bool`. Sort a key you can name instead — build an array of one of those from the values and order that"
+    )
+    return d
+
+# `==` on two values of a bare type parameter (panel 155 R2, provisional
+# 2026-09-16). The twin of `unordered_element` above and deliberately
+# phrased like it: both say the body cannot know what the call will
+# choose, and both send the reader to design.md §4.12's own answer —
+# *if an operation on `T` is needed, pass it as a parameter*.
+#
+# WHY THE BODY, when a call-site rule would refuse fewer programs. Panel
+# 155 measured the call-site pass at 284 code lines needing a second
+# span-keyed table, against the standing rule at `check/state.hero:78-85`,
+# and four language communities' recorded experience of that mechanism.
+# The body rule deletes nothing here: of the 50 generic functions in this
+# tree, two use `==` in a body and neither compares two bare type
+# parameters (measured 2026-09-16).
+#
+# It is narrow on purpose. It asks whether the operand's type IS a type
+# parameter, never whether it REACHES one, so `{K: i64} == {K: i64}` and
+# `[A] == [A]` are untouched — those are the shapes the goldens hold, and
+# widening to `reaches` would delete them. The float half of that question
+# is open and is panel 155 R3.
+function generic_equality(letter: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "generic_equality",
+        message: "`==` compares two values of one type structurally, and `" + letter + "` is a type parameter — this line cannot know what the call will choose",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`" + letter + "` may arrive as a `partial` group record, which has no structural equality and aborts when compared. Take the comparison as a parameter instead, `same: (function(left: " + letter + ", right: " + letter + ") -> bool)`, and name its arguments at the call, `same(left: x, right: y)`: two parameters of one type are named in the type, so the order of the two is checked for you"
+    )
+    return d
+
+# There is no truthiness (§4.14), which is worth saying in the message: a
+# model carrying a C or Python prior needs the rule, not just the
+# mismatch.
+function not_bool(what: str, got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "not_bool",
+        message: what + " must be `bool`, found `" + got + "` — there is no truthiness in this language",
+        span: span
+    )
+
+# `main` has no result, and a program that fails has to say so some other
+# way. Not a style rule: with a result type, `return fail(…)` from `main`
+# printed nothing and exited 0, so the one thing a shell can read said the
+# program had worked (panel 035).
+function main_returns(got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "main_returns",
+        message: "`main` produces nothing, and this one is declared `-> " + got + "` — a program reports failure by what it prints, not by what it returns",
+        span: span
+    )
+    d.notes @ d.notes.push("drop the result type; a value `main` computed and returned would have nowhere to go")
+    return d
+
+# `main` takes nothing either, and this half went unguarded until 2026-09-16.
+# The guard above reads the RESULT and nothing read the PARAMETERS, so
+# `function main(n: i64)` reached the emitter, which writes the call as
+# `h_<module>_main()` with no arguments and hands clang *too few arguments to
+# function call* — an internal error at exit 2, in clang's voice, about a
+# program the checker had passed (defect 053, panel 159's completeness critic).
+function main_parameters(count: i64, span: token.Span) -> diag.Diagnostic
+    tail: str @ " parameters"
+
+    if count == 1
+        tail @ " parameter"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "main_parameters",
+        message: "`main` is called by the runtime and takes nothing, and this one declares " + count.to_str() + tail + " — nothing exists that could pass a value to it",
+        span: span
+    )
+    d.notes @ d.notes.push("the command line reaches a program through `args()`, not through `main`'s signature")
+    return d
+
+function not_callable(got: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "not_callable",
+        message: "this is a `" + got + "`, and a `" + got + "` cannot be called",
+        span: span
+    )
+
+# §4.17: the error carries the signature, because that is the file the
+# reader would otherwise open. A built-in and a function VALUE have no
+# declaration to cite, and a note saying so would be worse than no note.
+#
+# Port note: Rust's Option<(String, String)> pair becomes a record + a
+# fallible — the Head move, third time.
+record DeclaredAt
+    signature: str
+    at: str
+
+function arity(name: str, expected: i64, got: i64, declared: DeclaredAt?, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "wrong_arity",
+        message: "`" + name + "` takes " + expected.to_str() + " argument(s), found " + got.to_str(),
+        span: span
+    )
+
+    if !declared.is_err()
+        d.notes @ d.notes.push("declared at " + declared.must().at + ": " + declared.must().signature)
+    return d
+
+# A function handed where a callback type NAMES its parameters, under names of
+# its own. `fold`'s callback is `(function(acc: B, item: A) -> B)`, and a program
+# that declared `append(item: str, acc: str)` and handed it over compiled and
+# printed `cba` where it meant `abc`, at exit 0, until M-named-callbacks.
+#
+# **The message carries the SCOPE and not only the rule**, because panel 130's
+# ergonomist read the two side by side and found the message broader than the
+# document: `spec § 9` scopes the rule three times to two parameters sharing a
+# type, and a message that stated it for any named callback type would have asked
+# a reader to know every callback type their function will ever be handed to. It
+# says *two of this function's parameters are one type* for that reason.
+#
+# **This is a naming mandate and the message says so**, because the alternative
+# was measured and refused: firing only where the callee reused the type's own
+# word for another position caught **2 of 7** transposed callbacks in this
+# repository's corpus, the other five using their authors' vocabulary. The author
+# took agreement with that number in front of them (2026-09-11).
+#
+# **No fix is offered, and there are two reasons rather than one.** The repair is
+# not at this span: it is a parameter of ANOTHER declaration, possibly in another
+# module, and `heroes check --apply` reaches the root module only. And a rename
+# would leave the defect standing — the body goes on using the old meanings, so
+# the program compiles and computes exactly what it computed before — which is
+# panel 127's own test for a fix that is a `guess` rather than a `certain`.
+# The note says what to do instead, which is §4.17's bargain: everything needed
+# to fix the program without opening another file, even when the edit is in one.
+function callback_name(wanted: str, written: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "callback_name",
+        message: "this function calls that parameter `" + written + "` and the type it is passed to calls it `" + wanted + "` — two of this function's parameters are one type, so it names them the way the type does",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "rename this parameter `" + wanted + "`, or swap the two if they are in the other order — the two positions can end up one type, and then the names are the only thing that says which is which"
+    )
+    return d
+
+## Tests
+
+test "the cstr stop carries its route, every other operand does not"
+    span = token.Span(start: 0, end: 3)
+    stopped = bad_operand(op: "+", allowed: "two of one numeric type", got: "cstr", span: span)
+    assert stopped.notes.len() == 1
+    assert stopped.notes[0] == "a `cstr` is C's string, not this language's — `c.validated()` copies one into a `str?`, which is `null_cstr` for a null pointer and `not_text` for bytes that are not UTF-8"
+    plain = bad_operand(op: "&", allowed: "`i64`", got: "bool", span: span)
+    assert plain.notes.len() == 0
+    assert plain.message == "`&` takes `i64`, found `bool`"
+
+test "the equality refusal names the letter, the risk, and the repair"
+    # Panel 155 R2. The note is asserted whole rather than by a substring,
+    # because its VALUE is that a reader can act on it without opening
+    # another file (§4.17) — and nothing else in this repository watches
+    # the text of a note. A `guess` fix's title is unwatched too, which is
+    # this milestone's own open item.
+    d = generic_equality(letter: "A", span: token.Span(start: 0, end: 4))
+    assert d.code == "generic_equality"
+    assert d.message == "`==` compares two values of one type structurally, and `A` is a type parameter — this line cannot know what the call will choose"
+    assert d.notes.len() == 1
+    assert d.notes[0] == "`A` may arrive as a `partial` group record, which has no structural equality and aborts when compared. Take the comparison as a parameter instead, `same: (function(left: A, right: A) -> bool)`, and name its arguments at the call, `same(left: x, right: y)`: two parameters of one type are named in the type, so the order of the two is checked for you"
+
+    # The letter is threaded, never assumed to be `A`: a two-parameter
+    # generic reports on whichever one the operands have.
+    other = generic_equality(letter: "K", span: token.Span(start: 0, end: 4))
+    assert other.message == "`==` compares two values of one type structurally, and `K` is a type parameter — this line cannot know what the call will choose"
+
+test "sort's refusal names the set, the member, or the route"
+    span = token.Span(start: 0, end: 4)
+    bare = unordered_element(
+        element: "Point",
+        reached: fail(code: "absent", msg: "the element itself"),
+        generic: false,
+        span: span
+    )
+    assert bare.message == "`sort` orders arrays of numbers, `str` and `bool` — `[Point]` is none of those"
+    assert bare.notes[0] == "the ordered types are `i8` `i16` `i32` `i64`, `u8` `u16` `u32` `u64`, `f32` `f64`, `str` and `bool`. Sort a key you can name instead — build an array of one of those from the values and order that"
+    inside = unordered_element(
+        element: "Row",
+        reached: ok("its field `cells` holds `[Cell]`"),
+        generic: false,
+        span: span
+    )
+    assert inside.notes[0] == "its field `cells` holds `[Cell]`, which has no order the language can produce. Sort a key you can name instead — build `[i64]`, `[str]` or `[bool]` from the values and order that"
+    parameter = unordered_element(
+        element: "A",
+        reached: fail(code: "absent", msg: "unknown"),
+        generic: true,
+        span: span
+    )
+
+    # **The note said BY POSITION between panel 128 and defect 026's repair**,
+    # because the shape it prescribes was one the label rule could not check and
+    # a reader handed it deserved to be told so on the same line. The names are
+    # in the type now, so the same note prescribes a CHECKED shape and says
+    # which operand is the candidate — the gap the ergonomist seat measured at
+    # that sitting, where naming the peers bought a label and not a check.
+    assert parameter.notes[0] == "`A` is a type parameter, so this line cannot know whether it has an order — take the comparison as a parameter instead, `less: (function(candidate: A, best: A) -> bool)`, and name its arguments at the call, `less(candidate: x, best: best)`: two parameters of one type are named in the type, so the order of the two is checked for you"
+
+test "arity cites the declaration only when one exists"
+    span = token.Span(start: 0, end: 2)
+    cited = arity(
+        name: "dist2",
+        expected: 2,
+        got: 3,
+        declared: ok(DeclaredAt(signature: "function dist2(a: Point, b: Point) -> i64", at: "line 4")),
+        span: span
+    )
+    assert cited.notes.len() == 1
+    assert cited.notes[0] == "declared at line 4: function dist2(a: Point, b: Point) -> i64"
+    builtin = arity(
+        name: "len",
+        expected: 1,
+        got: 2,
+        declared: fail(code: "absent", msg: "a built-in has no line"),
+        span: span
+    )
+    assert builtin.notes.len() == 0
+    assert builtin.message == "`len` takes 1 argument(s), found 2"
+
+# Defect 023's two branches, pinned here because no golden can see a
+# `guess` fix's text. The titles are asserted WHOLE rather than by
+# substring: `contains` lives in `ir/mono` and importing it into a leaf
+# every module uses would buy a cycle, and an exact title is what a golden
+# would have pinned anyway.
+test "the mixed-arithmetic fix names `to_str` when one side is text"
+    span = token.Span(start: 0, end: 1)
+    left_text = mixed_arithmetic(op: "+", left: "str", right: "i64", span: span)
+    assert left_text.fixes.len() == 1
+    assert left_text.fixes[0].title == "one side is text, so no `to_<width>` can help — those answer a number, and `+` on a `str` wants a `str`. Render the other side: `\"n is \" + n.to_str()`"
+    right_text = mixed_arithmetic(op: "+", left: "i64", right: "str", span: span)
+    assert right_text.fixes[0].title == "one side is text, so no `to_<width>` can help — those answer a number, and `+` on a `str` wants a `str`. Render the other side: `\"n is \" + n.to_str()`"
+
+test "and it still names the widths when both sides are numbers"
+    span = token.Span(start: 0, end: 1)
+    widths = mixed_arithmetic(op: "+", left: "i32", right: "i64", span: span)
+    assert widths.fixes.len() == 1
+    assert widths.fixes[0].title == "convert one side: `to_f64(x)` cannot fail, and `to_i64(x)` or another `to_<width>(x)` gives a `T?` because the number may not fit"

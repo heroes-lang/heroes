@@ -1,0 +1,100 @@
+# Counting how often each digit appears, one thread per BUCKET rather than one
+# thread per band — the member of this family that partitions the output.
+#
+# Every other program here splits the input and adds the answers up. This one
+# splits the ANSWER: thread `d` walks the whole input and counts only the
+# digit `d`, so the ten threads never have to agree about a shared table. That
+# is the same trade seen from the other side, and it is the trade Part 7.13's
+# model makes cheap — a thread that shares nothing needs no lock, so the only
+# question left is how to divide the work, not how to protect it.
+#
+# WHY THAT IS NOT SILLY HERE. Reading the input ten times sounds wasteful and
+# is the right answer when the alternative is a shared table: a table would
+# need a lock on every increment, and this program would spend more time
+# waiting than counting. The two shapes are both in this corpus on purpose —
+# `dotproduct/` splits the input, this splits the output, and the choice is a
+# property of the problem rather than of the language.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant NUMBERS: i64
+    20000
+
+# The stream every thread reads: the same numbers, derived rather than stored.
+function value_at(n: i64) -> i64
+    return n * n % 99991
+
+# How often `digit` appears in the whole stream. This is a thread's whole job.
+function count_of(digit: i64) -> i64
+    seen: i64 @ 0
+    n: i64 @ 0
+
+    while n < NUMBERS
+        v: i64 @ value_at(n: n)
+
+        if v == 0 && digit == 0
+            seen @ seen + 1
+
+        while v > 0
+            if v % 10 == digit
+                seen @ seen + 1
+            v @ v / 10
+
+        n @ n + 1
+
+    return seen
+
+function counts() -> [i64]
+    handles: [i64] @ []
+    d: i64 @ 0
+
+    while d < 10
+        handles @ handles.push(hero_thread_spawn(body: count_of, arg: d))
+        d @ d + 1
+
+    out: [i64] @ []
+
+    for h in handles
+        out @ out.push(hero_thread_join(handle: h))
+
+    return out
+
+function main()
+    found = counts()
+    d: i64 @ 0
+
+    while d < 10
+        print("digit ", d, ": ", found[d])
+        d @ d + 1
+
+test "the ten counts add up to every digit written"
+    total: i64 @ 0
+
+    for c in counts()
+        total @ total + c
+
+    written: i64 @ 0
+    n: i64 @ 0
+
+    while n < NUMBERS
+        v: i64 @ value_at(n: n)
+
+        if v == 0
+            written @ written + 1
+
+        while v > 0
+            written @ written + 1
+            v @ v / 10
+
+        n @ n + 1
+
+    assert total == written
+
+test "a thread counts only its own digit"
+    assert count_of(digit: 7) == counts()[7]
+
+test "and the buckets are not found the same, so the split is doing something"
+    found = counts()
+    assert found[0] != found[7]

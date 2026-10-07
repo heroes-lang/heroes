@@ -1,0 +1,15 @@
+# Defect 095's silent shape: the same comment, and no member following. The
+# expelled comment landed after the group as a file-level remark, and `fmt`
+# exited 0 having MOVED it, which is worse than the refusal. This file is
+# canonical: `fmt` prints it back byte for byte.
+extern "x.h"
+    record Ob tag ob
+    function ob_put(o: Ob consumes)
+    function ob_get(
+        o: Ob,
+        # a comment between
+        n: i64
+    ) -> Ob retains ob_put
+
+function main()
+    print(0)

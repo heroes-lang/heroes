@@ -1,0 +1,25 @@
+# THE CLASS design.md Part 8 wart 20 states, and the half the poison cannot
+# see (panel 177's item 2, route T; the compiler-engineer's E13): a copy made
+# BEFORE the ending call still holds the old address, and `keep` was never
+# ended through its own name, so neither the poison nor the checker's half
+# knows anything about it. Before panel 177 this printed `-1`, the freed
+# node's own word, at exit 0.
+#
+# What catches it is the DEAD SET: the runtime remembers the address
+# `node_free` ended until C hands it out again, and the crossing into
+# `node_value` finds it there. The pool never hands an address out twice, so
+# the mark is still standing when the copy arrives; where C has reused the
+# address first, the mark has been cleared and the copy is the documented
+# limit `limit-a-copy-read-after-c-reused-its-address-is-not-caught` pins.
+
+extern "dead-address-copy-made-before-the-end-reaches-c.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+
+function main()
+    a = node_new()
+    keep = a
+    node_free(n: a)
+    print(node_value(n: keep))

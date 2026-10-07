@@ -1,0 +1,20 @@
+# AN END UNDER `when` IS NO END FOR THE CHECKER (panel 177's items 3 and 6,
+# route M (must), 2026-09-25): `db_close` ends the connection only when it
+# returns 0, and whether it did is a value the run knows. So the read between
+# the busy close and the successful one is alive at check time, as it is at
+# run time, and the runtime keeps the truth: the first close ends nothing,
+# the second ends the life, nothing is owed at exit.
+extern "handle-alive-under-when-after-a-failed-end.h"
+    record Db tag db
+    function db_open() -> Db acquires db_close
+    function db_finalize(d: Db)
+    function db_close(d: Db consumes) -> i32 when 0
+    function db_open_stmts(d: Db) -> i64
+
+function main()
+    d = db_open()
+    first = db_close(d: d)
+    print("busy close: ", first, " statements still open: ", db_open_stmts(d: d))
+    db_finalize(d: d)
+    second = db_close(d: d)
+    print("closed: ", second)

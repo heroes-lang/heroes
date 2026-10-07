@@ -1,0 +1,119 @@
+## The architecture test: SQLite, from Heroes, with no shim
+#
+# design.md §4.19 puts it plainly — *if this works without you having written a
+# standard library, the architecture holds*. Nothing here is a wrapper this
+# project wrote: `sqlite3.h` is the SDK's, clang reads it, and every signature
+# below is checked against it.
+#
+# Four things had to exist before this file could:
+#
+#   - the group, so a signature has a header behind it;
+#   - `<sqlite3.h>` in the generated C, so clang sees the real declarations;
+#   - `nullptr` and `@`, so a C out-parameter has something to write into;
+#   - `.cstr()`, so a Heroes string can be lent to C for the length of a call.
+#
+# What is NOT here is as much of the point: no marshalling, no glue layer, no
+# generated binding file, and no `sqlite3.c` of our own.
+#
+# **This program builds with zero warnings, since panel 103.** It
+# built with four, and they were true: `ptr` is C's `void *`, an out-parameter
+# was `void **` where the header wants `sqlite3 **`, and C converts `void *` to
+# any object pointer but never `void **`. Clang 22 made that an ERROR by
+# default, so the same program was refused on Linux and accepted here. Now the
+# emitter passes `(void *)&db` — the pointee of a `ptr` is the one thing the
+# spec leaves to the header (spec § FFI) — while a NUMERIC `@` is checked by the
+# compiler itself against the header's width and sign (`cli/pointee.hero`).
+
+extern "sqlite3.h" link "sqlite3"
+    # SQLite's own result codes, from SQLite's own header. A typo is
+    # `error[unknown_name]` here, locally (panel 034 R4) — and since
+    # M-header-constants a *wrong number* is impossible rather than unnoticed,
+    # because there is no number: this file used to say `0` and `100`.
+    constant SQLITE_OK: i64
+    constant SQLITE_ROW: i64
+    # The two HANDLES, since 2026-09-13 (panel 145, defect 029). A `record`
+    # inside a group with a `tag` and NO fields is a pointer to a type the
+    # header names and leaves opaque: `Db` is C's `sqlite3 *` and `Stmt` is
+    # `sqlite3_stmt *`. Until this line both were `ptr`, one Heroes type over
+    # two C types, and `sqlite3_step(db)` built at zero diagnostics and exited
+    # 139. It is now `error[type_mismatch]: expected Stmt, found Db` on the
+    # line that writes it, and clang refuses it a second time from the header.
+    record Db tag sqlite3
+    record Stmt tag sqlite3_stmt
+    # **The two ends of a handle's life, since 2026-09-14** (panel 148). C hands
+    # this program a connection and a statement, and nothing in a C header says
+    # which calls give one away and which lend one — so the binding author says
+    # it, once per declaration, and the compiler chooses neither end.
+    # `acquires <releaser>` names the function that takes it back, so closing a
+    # `Stmt` with `sqlite3_close` is a mistake with a name; `consumes` marks the
+    # call that takes it. A handle taken and not given back is a panic at exit
+    # saying how many, where before this it was exit 0 and silence.
+    # `lent` says the call reads the string while it runs and keeps nothing
+    # of it, which SQLite's documentation says of `filename` and of `sql`
+    # (it copies what it needs). Without the word the compiler assumes C
+    # keeps the pointer and refuses `s.cstr()` at the call (spec § 13).
+    function sqlite3_open(filename: cstr lent, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64
+    # The fifth argument is `char **errmsg`, and a non-NULL one makes SQLite
+    # allocate a copy of the message that the CALLER must release with
+    # `sqlite3_free`. This program does not want one, so it is a plain `ptr`
+    # the caller passes `nullptr` for — SQLite's documented *do not allocate*
+    # — rather than an `@` parameter whose value nothing reads. It was an `@`
+    # until a repair, and `examples/ledger/` shipped the identical binding
+    # and leaked 40 bytes per refused statement; this program never leaked
+    # because no statement here is ever refused, which is a fact about its SQL
+    # and not a defence. Repaired as the class rather than the case
+    # (CLAUDE.md §1).
+    function sqlite3_exec(db: Db, sql: cstr lent, callback: ptr, context: ptr, error: ptr) -> i64
+    function sqlite3_prepare_v2(db: Db, sql: cstr lent, length: i32, @statement: Stmt acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_step(statement: Stmt) -> i64
+    function sqlite3_column_int(statement: Stmt, column: i32) -> i64
+    function sqlite3_finalize(statement: Stmt consumes) -> i64
+
+# One statement, run for its effect. The three pointers SQLite's callback
+# protocol takes are `nullptr`: §4.19 fixes a callback at `ptr` until the
+# boundary has a C-width type vocabulary, and this program needs none.
+function run(db: Db, sql: str) -> i64
+    return sqlite3_exec(db: db, sql: sql.cstr(), callback: nullptr, context: nullptr, error: nullptr)
+
+# The first column of the first row, which is the whole of "read a result".
+function first_int(db: Db, sql: str) -> i64
+    statement: Stmt @ nullptr
+    tail: cstr @ nullptr
+    rc = sqlite3_prepare_v2(
+        db: db,
+        sql: sql.cstr(),
+        length: -1,
+        statement: @statement,
+        tail: @tail
+    )
+
+    if rc != SQLITE_OK
+        return 0 - 1
+    value: i64 @ 0 - 1
+
+    if sqlite3_step(statement) == SQLITE_ROW
+        value @ sqlite3_column_int(statement, 0)
+    _ = sqlite3_finalize(statement)
+    return value
+
+function main()
+    db: Db @ nullptr
+
+    if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
+        # **A FAILED OPEN STILL HANDS BACK A CONNECTION.** This branch dropped
+        # it until 2026-09-14, when M-cleanup-verdict's opening census read the
+        # pair: `examples/ledger/db/sqlite.hero` had measured the fact on two
+        # platforms and closed the handle on its own failure path, and this
+        # program — the one a reader meets FIRST — went on leaking beside it.
+        # SQLite's documentation is explicit that a handle is returned even
+        # when the open fails, so the connection is this program's to release
+        # here as much as on the way out.
+        print("cannot open the database")
+        _ = sqlite3_close(db)
+        return
+    _ = run(db, "create table note(body text)")
+    _ = run(db, "insert into note(body) values ('hello'), ('from'), ('sqlite')")
+    print("rows: ", first_int(db, "select count(*) from note"))
+    print("longest: ", first_int(db, "select max(length(body)) from note"))
+    _ = sqlite3_close(db)

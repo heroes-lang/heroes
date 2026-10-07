@@ -1,0 +1,614 @@
+# The grammar suite: what `heroes grammar` prints against what the compiler's
+# own source says (panel 133 R1).
+#
+# **WHY THIS READS SOURCE AND NOT A DOCUMENT.** Panel 133 refused a
+# hand-written grammar file and the four checks that would have guarded it: the
+# historian found every free-standing grammar in the survey archived, and the
+# engineer measured that the production check alone would have needed 82
+# hand-written exception rows to judge 74 productions. What is left is the half
+# that is already data, and the honest check on it compares two spellings of
+# THAT: the tables as the compiler compiles them, reached by running the
+# command, and the tables as they are WRITTEN, read out of the source as text.
+#
+# Heroes has no reflection, so `keywords.keywords()` and `grammar_expr.operators()`
+# are lists written beside the matches they enumerate. A unit test holds one
+# direction — every entry in the list is in the match. **This suite holds the
+# other**, which is the one a test inside the compiler cannot reach: a word or an
+# operator added to the MATCH and forgotten in the list. That direction is where
+# the silence would be, because the list is what the command prints.
+#
+# THE ORDER IS PART OF THE COMPARISON. Both sides are sequences, not sets, so an
+# entry moved between two arms is caught. A set comparison here would pass over
+# a precedence table whose rows had been shuffled, which is the only kind of
+# mistake this table can have that still parses.
+
+use report
+use floors
+use shell
+use strings
+
+constant KEYWORD_SOURCE: str
+    "selfhost/keywords.hero"
+
+constant OPERATOR_SOURCE: str
+    "selfhost/grammar_expr.hero"
+
+# The floors. A extractor that reads the wrong shape returns nothing and every
+# comparison below it passes vacuously, which is the failure `suite_spec.hero`
+# names in its own words: a false pass is worse than a red.
+constant LEAST_KEYWORDS: i64
+    21
+
+constant LEAST_OPERATORS: i64
+    18
+
+constant LEAST_CONTEXTUAL: i64
+    14
+
+# The parser's files, which read the contextual words. A file added here and
+# not reading one is harmless; a file reading one and missing here is a word
+# the check below cannot see, so the list is the directory, read at run time.
+constant PARSER_DIR: str
+    "selfhost/parse"
+
+constant LEAST_PRODUCTIONS: i64
+    40
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "grammar"])
+
+    if said.is_err()
+        report.keep_failure(@r, label: "grammar/runs", detail: "  cannot run `" + compiler + " grammar`")
+        return ok(r)
+
+    if said.must().code != 0
+        report.keep_failure(
+            @r,
+            label: "grammar/runs",
+            detail: "  `grammar` exited " + said.must().code.to_str() + " — it reads no file and takes no operand, so there is nothing for it to fail on (.claude/rules/cli-surface.md)"
+        )
+        return ok(r)
+
+    if said.must().err.len() != 0
+        report.keep_failure(
+            @r,
+            label: "grammar/runs",
+            detail: "  `grammar` wrote to stderr: the artifact goes to stdout and nothing else is owed"
+        )
+    else
+        report.keep_pass(@r)
+    out = said.must().out
+    keywords(@r, out: out)
+    contextual(@r, out: out, scratch: scratch)
+    powers(@r, out: out)
+    productions(@r, out: out)
+    return ok(r)
+
+## The keywords
+
+# Every word the lexer reserves is printed, in the order the match declares it.
+function keywords(@r: report.Report, out: str)
+    written = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")
+
+    if !floors.sound(@r, label: "grammar/keywords", found: written.len(), floor: LEAST_KEYWORDS, what: "keywords read out of " + KEYWORD_SOURCE)
+        return
+    printed = words_after(text: out, marker: "which a program may not use as a name:")
+
+    if printed != written
+        report.keep_failure(
+            @r,
+            label: "grammar/keywords",
+            detail: "  the match in " + KEYWORD_SOURCE + " declares\n    " + written.join(" ") + "\n  and `grammar` prints\n    " + printed.join(" ") + "\n  Both are sequences, so a word MOVED between two arms fails here too. The\n  repair is `keywords()` in that file, the list beside the match: it is what\n  the command prints, and Heroes has no reflection to derive it with."
+        )
+    else
+        report.keep_pass(@r)
+
+## The contextual words
+
+# Three facts, held together, none of which a comment could hold (defect 087):
+# every `WORD_` constant `selfhost/keywords.hero` declares is printed, in the
+# declaration order; every one is READ by some file under `selfhost/parse/`, so
+# the list advertises no word the parser does not know; and no parser file
+# spells one of the words as a literal, so the parser cannot read a word the
+# list does not carry. The last is the direction the defect came from: eleven
+# literals in four files, and a count of six kept by hand.
+function contextual(@r: report.Report, out: str, scratch: str)
+    declared = quoted_on_next_line(path: KEYWORD_SOURCE, marker: "constant WORD_")
+
+    if !floors.sound(@r, label: "grammar/contextual", found: declared.len(), floor: LEAST_CONTEXTUAL, what: "contextual words read out of " + KEYWORD_SOURCE)
+        return
+    printed = words_after(text: out, marker: "each read in one position and an ordinary name everywhere else:")
+
+    if printed != declared
+        report.keep_failure(
+            @r,
+            label: "grammar/contextual",
+            detail: "  " + KEYWORD_SOURCE + " declares\n    " + declared.join(" ") + "\n  and `grammar` prints\n    " + printed.join(" ") + "\n  Both are sequences. The repair is `contextual()` in that file, the list\n  beside the constants: it is what the command prints."
+        )
+        return
+    files = shell.list_entries(scratch: scratch, dir: PARSER_DIR)
+
+    if files.is_err()
+        report.keep_failure(@r, label: "grammar/contextual", detail: "  cannot list " + PARSER_DIR)
+        return
+    unread: [str] @ []
+    literal: [str] @ []
+
+    for word in declared
+        constant_name = constant_of(word)
+        seen: bool @ false
+
+        for entry in files.must()
+            if !strings.ends_with(text: entry, suffix: ".hero")
+                continue
+            text = read_file(entry)
+
+            if text.is_err()
+                report.keep_failure(
+                    @r,
+                    label: "grammar/contextual",
+                    detail: "  cannot read " + entry + ", and a file this check cannot read is a file it cannot hold to the table"
+                )
+                return
+
+            if strings.contains(text: text.must(), needle: constant_name)
+                seen @ true
+
+            for line in strings.lines(text.must())
+                if strings.contains(text: line, needle: "\"" + word + "\"") && !strings.starts_with(text: strings.trimmed(line), prefix: "#")
+                    literal @ literal.push(strings.base_name(path: entry) + ": " + strings.trimmed(line))
+
+        if !seen
+            unread @ unread.push(word)
+
+    if unread.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/contextual",
+            detail: "  declared in " + KEYWORD_SOURCE + " and read by no file under " + PARSER_DIR + ":\n    " + unread.join(" ") + "\n  A word the parser does not read is not contextual, and the list advertises it."
+        )
+        return
+
+    if literal.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/contextual",
+            detail: "  a contextual word spelled as a literal under " + PARSER_DIR + ", where the parser reads `keywords.WORD_*`:\n    " + literal.join("\n    ") + "\n  A literal is a second spelling, and the day the two disagree is silent."
+        )
+        return
+    report.keep_pass(@r)
+
+## The precedence table
+
+record Row
+    spelling: str
+    name: str
+    power: str
+
+# Each arm of `binary_op` carries all three facts, and the printed table carries
+# the same three.
+#
+# **WHAT THIS CHECK CANNOT SEE, said here rather than left to be discovered.**
+# Both sides come from the same match: the source read as text, and the command
+# that compiled it. So `.percent => .add` — panel 067's defect, the spelling and
+# the power kept and the operator changed — makes BOTH sides say `add`, and this
+# check passes. It is closed one level down, by the unit test in
+# `selfhost/cli/grammar.hero` that asserts `op_text` of `%`'s operator is `%`;
+# falsified 2026-09-12 by making exactly that edit, which turned that test red
+# and left this one green. **What this check does see** is the pair drifting:
+# `operators()` losing or gaining a row against the match, the order shuffled,
+# or `op_name` handing back the wrong name for an operator — which is the
+# printed column a reader would trust.
+function powers(@r: report.Report, out: str)
+    written = arms_of_binary_op()
+
+    if !floors.sound(@r, label: "grammar/powers", found: written.len(), floor: LEAST_OPERATORS, what: "operators read out of " + OPERATOR_SOURCE)
+        return
+    printed = printed_rows(out)
+
+    if printed.len() != written.len()
+        report.keep_failure(
+            @r,
+            label: "grammar/powers",
+            detail: "  `binary_op` has " + written.len().to_str() + " arms and `grammar` prints " + printed.len().to_str() + " rows — the list `operators()` and the match have drifted apart"
+        )
+        return
+    i: i64 @ 0
+
+    while i < written.len()
+        if printed[i].name != written[i].name || printed[i].power != written[i].power
+            report.keep_failure(
+                @r,
+                label: "grammar/powers",
+                detail: "  row " + i.to_str() + ": " + OPERATOR_SOURCE + " says operator `" + written[i].name + "` at power " + written[i].power + ", and `grammar` prints `" + printed[i].name + "` at power " + printed[i].power + ".\n  The operator column is the one panel 067 lost: `.percent => .add` kept the\n  spelling and the power and changed only this, with every test green."
+            )
+            return
+        i @ i + 1
+
+    report.keep_pass(@r)
+
+# `.or_or   => ok(Operator(op: .or, power: 1))` — the three facts, in the order
+# the file declares them.
+function arms_of_binary_op() -> [Row]
+    text = read_file(OPERATOR_SOURCE)
+    rows: [Row] @ []
+
+    if text.is_err()
+        return rows
+    inside: bool @ false
+
+    for line in strings.lines(text.must())
+        if strings.starts_with(text: line, prefix: "function binary_op(")
+            inside @ true
+            continue
+
+        if inside && strings.starts_with(text: line, prefix: "function ")
+            inside @ false
+
+        if !inside
+            continue
+        op = between(text: line, open: "op: .", close: ",")
+        power = between(text: line, open: "power: ", close: ")")
+
+        if op.len() > 0 && power.len() > 0
+            rows @ rows.push(Row(spelling: "", name: op, power: power))
+
+    return rows
+
+# The rows under the report's own header, each `  <power>  <spelling>  <name>`.
+function printed_rows(out: str) -> [Row]
+    rows: [Row] @ []
+    seen: bool @ false
+
+    for line in strings.lines(out)
+        if strings.contains(text: line, needle: "power  spelling  operator")
+            seen @ true
+            continue
+
+        if !seen
+            continue
+
+        # **The table ends at its blank line**, and saying so is what keeps this
+        # check inside its own section: a production is indented too and several
+        # are three words wide, so without this the report's later sections are
+        # read as more rows. Measured the day the command started printing them.
+        if strings.trimmed(line).len() == 0
+            return rows
+        parts = strings.words(line)
+
+        if parts.len() == 3
+            rows @ rows.push(Row(spelling: parts[1], name: parts[2], power: parts[0]))
+
+    return rows
+
+## Reading the two shapes
+
+# The quoted word on the left of an arrow, for an arm the marker identifies:
+# `"constant" => ok(.kw_constant)` gives `constant`.
+function quoted_before_arrow(path: str, marker: str) -> [str]
+    text = read_file(path)
+    found: [str] @ []
+
+    if text.is_err()
+        return found
+
+    for line in strings.lines(text.must())
+        if !strings.contains(text: line, needle: marker)
+            continue
+        word = between(text: line, open: "\"", close: "\"")
+
+        if word.len() > 0
+            found @ found.push(word)
+
+    return found
+
+constant LOWER: str
+    "abcdefghijklmnopqrstuvwxyz"
+
+constant UPPER: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+# The constant the parser reads for a word: `keywords.WORD_` and the word in
+# capitals. The words are ASCII letters and underscores, and anything else is
+# kept as it is rather than guessed at.
+function constant_of(word: str) -> str
+    out: str @ "keywords.WORD_"
+
+    for ch in word.chars()
+        at = strings.index_of(text: LOWER, needle: ch)
+
+        if at.is_err()
+            out @ out + ch
+        else
+            out @ out + UPPER.slice(from: at.must(), to: at.must() + 1)
+
+    return out
+
+# The quoted word on the line AFTER each line holding a marker: a Heroes
+# constant's value sits on the line under its declaration.
+function quoted_on_next_line(path: str, marker: str) -> [str]
+    text = read_file(path)
+    found: [str] @ []
+
+    if text.is_err()
+        return found
+    take: bool @ false
+
+    for line in strings.lines(text.must())
+        if take
+            word = between(text: line, open: "\"", close: "\"")
+
+            if word.len() > 0
+                found @ found.push(word)
+        take @ strings.contains(text: line, needle: marker)
+
+    return found
+
+# Every word on the lines after a marker, until a blank line. The keyword block
+# is printed several to a line, so the words are read and the layout is not.
+function words_after(text: str, marker: str) -> [str]
+    found: [str] @ []
+    seen: bool @ false
+
+    for line in strings.lines(text)
+        if strings.contains(text: line, needle: marker)
+            seen @ true
+            continue
+
+        if !seen
+            continue
+
+        if strings.trimmed(line).len() == 0
+            return found
+
+        for word in strings.words(line)
+            found @ found.push(word)
+
+    return found
+
+# What stands between the first `open` and the next `close` after it, or the
+# empty string when either is absent.
+function between(text: str, open: str, close: str) -> str
+    at = strings.index_of(text: text, needle: open)
+
+    if at.is_err()
+        return ""
+    rest = text.slice(from: at.must() + open.len(), to: text.len())
+    stop = strings.index_of(text: rest, needle: close)
+
+    if stop.is_err()
+        return ""
+    return rest.slice(from: 0, to: stop.must())
+
+## Tests
+
+test "the three facts are read out of an arm, in the file's order"
+    rows = arms_of_binary_op()
+    assert rows.len() == 18
+    assert rows[0].name == "or"
+    assert rows[0].power == "1"
+    assert rows[17].name == "rem"
+    assert rows[17].power == "9"
+
+test "the keywords are read off the match and not off the list"
+    written = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")
+    assert written.len() == 21
+    assert written[0] == "constant"
+    assert written[20] == "fail"
+
+test "a word names the constant the parser reads for it"
+    assert constant_of("as") == "keywords.WORD_AS"
+    assert constant_of("counted_by") == "keywords.WORD_COUNTED_BY"
+
+test "a constant's word is read off the line under its declaration"
+    words = quoted_on_next_line(path: KEYWORD_SOURCE, marker: "constant WORD_")
+    assert words.len() >= LEAST_CONTEXTUAL
+    assert words[0] == "as"
+    assert words[words.len() - 1] == "when"
+
+test "a field is cut between its two markers, and a missing one is empty"
+    assert between(text: "op: .rem, power: 9))", open: "op: .", close: ",") == "rem"
+    assert between(text: "power: 9))", open: "power: ", close: ")") == "9"
+    assert between(text: "nothing here", open: "op: .", close: ",") == ""
+    assert between(text: "op: .rem no comma", open: "op: .", close: ",") == ""
+
+test "the printed rows are read by their columns, and the header is not one"
+    out = "  power  spelling  operator\n      1  ||        or\n      9  %         rem\n"
+    rows = printed_rows(out)
+    assert rows.len() == 2
+    assert rows[0].power == "1"
+    assert rows[0].spelling == "||"
+    assert rows[1].name == "rem"
+
+test "the words after a marker stop at the blank line"
+    out = "head:\n  a b\n  c\n\nnot this\n"
+    assert words_after(text: out, marker: "head:") == ["a", "b", "c"]
+
+## The productions, against themselves
+
+# **WHAT THIS IS, said exactly.** It is `ebnflint`'s class and Go's, and
+# grammarkdown's for ECMAScript: the grammar checked against ITSELF, never
+# against the parser. Panel 133's historian named those three and said Heroes'
+# four proposed checks would be "strictly stronger"; three of those four were
+# never built, so the sentence would be inherited falsely if it were not said
+# here. Nothing in this repository compares a production to the function that
+# reads it, and the engineer measured the reason: roughly 82 hand-written
+# exception rows to judge 74 productions, where a name-only row is a mute button.
+#
+# What it does catch is real and cheap: a non-terminal used and never defined,
+# which is a typo or a production somebody deleted; and one defined and
+# unreachable from `File`, which is a production nothing can ever use. Both are
+# silent in prose and neither costs a spec token to find.
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+# The classes the lexer builds and the indentation plants. They are used by the
+# productions, named in the document's opening paragraph, and defined by no
+# production — so they are the one legitimate reason a name appears on a right
+# side and nowhere on a left.
+function lexical() -> [str]
+    return ["ident", "integer", "float", "string", "character", "piece", "NEWLINE", "INDENT", "DEDENT"]
+
+record Production
+    name: str
+    uses: [str]
+
+function productions(@r: report.Report, out: str)
+    found = productions_of(out)
+
+    if !floors.sound(@r, label: "grammar/productions", found: found.len(), floor: LEAST_PRODUCTIONS, what: "productions read out of " + SPEC)
+        return
+    defined: {str: bool} @ {}
+
+    for one in found
+        defined[one.name] @ true
+
+    for word in lexical()
+        defined[word] @ true
+
+    missing: [str] @ []
+
+    for one in found
+        for used in one.uses
+            if defined[used].is_err()
+                missing @ missing.push(one.name + " uses " + used)
+
+    if missing.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/productions",
+            detail: "  a production names something no production defines and the lexer does not build:\n    " + missing.join("\n    ") + "\n  Either the name is a typo, or the production it named has been deleted."
+        )
+        return
+    seen: {str: bool} @ {}
+    mark(found: found, at: "File", @seen)
+    orphans: [str] @ []
+
+    for one in found
+        if seen[one.name].is_err()
+            orphans @ orphans.push(one.name)
+
+    if orphans.len() > 0
+        report.keep_failure(
+            @r,
+            label: "grammar/productions",
+            detail: "  a production is defined and cannot be reached from `File`:\n    " + orphans.join(" ") + "\n  Nothing that parses a Heroes file can ever use it, so either the grammar\n  lost the production that named it, or it describes a form the language\n  does not have."
+        )
+        return
+
+    report.keep_pass(@r)
+
+# Everything reachable from `at`, marked in place. Heroes has no recursion
+# limit worth fearing here: the grammar is under a hundred productions.
+function mark(found: [Production], at: str, @seen: {str: bool})
+    if !seen[at].is_err()
+        return
+    seen[at] @ true
+
+    for one in found
+        if one.name == at
+            for used in one.uses
+                mark(found: found, at: used, @seen)
+
+## Reading the blocks
+
+# The productions AS THE COMMAND PRINTS THEM, which is the whole point of
+# reading them from there rather than from the document a second time: the
+# command has the only extractor, and this check exercises it. Its first version
+# demanded a non-space in the fifth column and silently dropped every
+# continuation line, printing three productions truncated and complete-looking;
+# a check with an extractor of its own would have passed over exactly that.
+function productions_of(text: str) -> [Production]
+    out: [Production] @ []
+    buffer: str @ ""
+
+    # **The productions SECTION and not every indented line**, because the
+    # precedence table is indented too and `3  ==  eq` reads as a production
+    # named `3`: `opens_production` finds a name, spaces, and the `=` of `==`.
+    # Measured the first time this check read the command's output instead of
+    # the document, which is the cost of one extractor and worth paying once.
+    seen: bool @ false
+
+    for line in strings.lines(text)
+        if strings.contains(text: line, needle: "Productions, collected from")
+            seen @ true
+            continue
+
+        if !seen || !strings.starts_with(text: line, prefix: "    ")
+            continue
+        body = strings.trimmed(line)
+
+        if body.len() == 0
+            continue
+
+        if opens_production(body)
+            if buffer.len() > 0
+                out @ out.push(one_production(buffer))
+            buffer @ body
+        else if buffer.len() > 0
+            buffer @ buffer + " " + body
+
+    if buffer.len() > 0
+        out @ out.push(one_production(buffer))
+
+    return out
+
+# `Name = ...` — a name, then spaces, then `=`. A continuation line opens with
+# `|` or with a piece of the right side, so it never matches.
+function opens_production(body: str) -> bool
+    i: i64 @ 0
+
+    while i < body.len() && is_name_byte(body[i])
+        i @ i + 1
+
+    if i == 0
+        return false
+
+    while i < body.len() && body[i] == ' '
+        i @ i + 1
+
+    return i < body.len() && body[i] == '='
+
+function is_name_byte(b: u8) -> bool
+    if b >= 'a' && b <= 'z'
+        return true
+
+    if b >= 'A' && b <= 'Z'
+        return true
+
+    if b >= '0' && b <= '9'
+        return true
+    return b == '_'
+
+# The name on the left, and every name on the right that is not inside quotes.
+function one_production(body: str) -> Production
+    cut = strings.index_of(text: body, needle: "=")
+    name: str @ strings.trimmed(body.slice(from: 0, to: cut.default(0)))
+    rest = body.slice(from: cut.default(0) + 1, to: body.len())
+    return Production(name: name, uses: names_outside_quotes(rest))
+
+function names_outside_quotes(text: str) -> [str]
+    out: [str] @ []
+    word: str @ ""
+    quoted: bool @ false
+    i: i64 @ 0
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '"'
+            quoted @ !quoted
+            word @ ""
+        else if !quoted && is_name_byte(b)
+            word @ word + text.slice(from: i, to: i + 1)
+        else
+            if word.len() > 0
+                out @ out.push(word)
+            word @ ""
+        i @ i + 1
+
+    if word.len() > 0
+        out @ out.push(word)
+
+    return out

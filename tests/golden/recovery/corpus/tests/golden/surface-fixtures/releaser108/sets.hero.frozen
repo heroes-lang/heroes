@@ -1,0 +1,43 @@
+# Defect 108 (panel 180's completeness critic, 2026-09-27): a comment inside
+# an `extern` member's releaser set became part of the next releaser's name.
+# The parser hands the set on as one span, and `handles.releasers` read its
+# text dropping only the blanks, so `acquires h_close |  # either one` over
+# `h_close_v2` named `#eitheroneh_close_v2`: `check` refused it with
+# `unread_releaser`, and the emitter would have handed the runtime that name.
+# A comment is part of no name now, at every place one can stand in a set,
+# on every word that takes one: after a `|` at a line's end, on a line of its
+# own, two of them, one holding a `|`, and after the set's last name before
+# the list's `)`. `fmt` keeps each where it is written, the set broken after
+# the `|` it follows.
+
+extern "rel.h"
+    record H tag hh
+    function h_open(n: i64, @out: H acquires h_close |  # either one
+        h_close_v2) -> i64
+    function h_make(n: i64, @out: H acquires h_close |
+        # on a line of its own
+        h_close_v2 |  # and a third, a | inside
+        h_close_v3) -> i64
+    function h_keep(into: H, x: H transfers h_close |  # a transfer's set
+        # and a second comment
+        h_close_v2)
+    function h_ref(x: H retains h_close | h_close_v2  # after the set
+    )
+    function h_close(x: H consumes)
+    function h_close_v2(x: H consumes)
+    function h_close_v3(x: H consumes)
+    function h_value(x: H) -> i64
+
+function main()
+    a: H @ nullptr
+    b: H @ nullptr
+
+    if h_open(n: 7, out: @a) != 0
+        return
+
+    if h_make(n: 9, out: @b) != 0
+        return
+    print(h_value(x: a) + h_value(x: b))
+    h_close_v2(x: a)
+    h_close_v3(x: b)
+    print("each ended by a name its set gave, past a comment")

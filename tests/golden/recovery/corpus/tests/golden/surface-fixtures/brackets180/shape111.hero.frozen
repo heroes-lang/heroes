@@ -1,0 +1,11 @@
+# Panel 180 R5, shape 111 of the compiler-engineer's 117 (extern member
+# params): a break before , after a mark.
+# By the spec's opening paragraph, the line ends with `n`, a name, so it keeps
+# its NEWLINE, which may stand before a `,`, and in a list the two are one
+# separator: accepted, exit 0.
+extern "m.h"
+    function g(p: ptr counted_by n
+        , n: u64)
+
+function shape()
+    print(1)

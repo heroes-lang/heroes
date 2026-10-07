@@ -1,0 +1,38 @@
+# A null handle handed to a C function that reads through it (defect 045's
+# partial repair, 2026-09-15).
+#
+# **It died at exit 139 with both streams empty**, which design.md §1.12 forbids
+# by name. The repair is defect 013's own, one argument over: that defect was a
+# null FUNCTION pointer reaching C, and its answer was not a refusal at compile
+# time but a runtime handler that says what happened — because
+# `sqlite3_exec(callback: nullptr)` is correct and `atexit(nullptr)` is not, and
+# no header states which. The same holds here: `freeaddrinfo(NULL)` and
+# `sqlite3_close(NULL)` are legal C.
+#
+# **The witness is the address, measured rather than assumed.** A read through
+# null lands in the first page, because a field's offset is smaller than a page
+# in every struct a header can lay out and the null page is unmappable on all
+# three platforms. Panel 104's wild store, eight kibibytes under the stack, is
+# megabytes away and still re-raises.
+#
+# **THE LEVEL IS PART OF THE CLAIM AND THE ROW SAYS `-O0`.** At `-O2` clang is
+# entitled to assume the pointer is non-null and folds the fault away: the same
+# program measured there prints a value for a node that does not exist and exits
+# 0. No signal handler can reach that, which is why defect 045 stays open and
+# why this fixture pins the half that is repaired rather than the whole class.
+#
+# It is a surface fixture and not a `run/` golden for one reason, stated so
+# nobody moves it: the C here is deliberately undefined, so the sanitizer leg
+# every `run/` case takes reports it, and `suite_run` fails any case that trips
+# a sanitiser — correctly.
+
+extern "node.h"
+    record Node tag node
+    function node_open(v: i64) -> Node
+    function node_value(p: Node) -> i64
+
+function main()
+    real = node_open(v: 7)
+    print(node_value(p: real))
+    empty: Node @ nullptr
+    print(node_value(p: empty))

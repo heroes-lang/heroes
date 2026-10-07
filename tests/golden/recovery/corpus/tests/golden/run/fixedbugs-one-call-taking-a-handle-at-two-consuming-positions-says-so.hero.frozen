@@ -1,0 +1,27 @@
+# Defect 084: `SSL_set_bio(s, b, b)`, OpenSSL's socket-BIO idiom, hands one
+# handle to two consuming positions of one call, and the library takes ONE
+# reference. The live set takes the handle back once per marked position, so
+# the second was a stray, and the message called it a double release. Panel
+# 176 ruled it a message and a shim, not a word: the runtime counts each end
+# a call announces as pending before C runs, a call announcing more ends than
+# the address holds references is stopped BEFORE the library frees twice (the
+# header's `C ran` never prints), the message names the shape, and the
+# binding is a one-line C shim that consumes the handle once
+# (`handle-a-shim-consumes-a-handle-once-for-two-positions.hero`). The
+# transfer names what the SSL will END the BIO with, `bio_free`.
+extern "fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.h"
+    record Bio tag bio
+    record Ssl tag ssl
+    function bio_new() -> Bio acquires bio_free
+    function bio_free(b: Bio consumes)
+    function ssl_new() -> Ssl acquires ssl_free
+    function ssl_free(s: Ssl consumes)
+    function ssl_set_bio(s: Ssl, rbio: Bio transfers bio_free, wbio: Bio transfers bio_free)
+
+function main()
+    s = ssl_new()
+    b = bio_new()
+    print("one bio, two positions")
+    ssl_set_bio(s: s, rbio: b, wbio: b)
+    ssl_free(s: s)
+    print("not reached")

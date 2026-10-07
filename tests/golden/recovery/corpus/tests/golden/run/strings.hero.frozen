@@ -1,0 +1,13 @@
+# `str` reached the backend at M5b, and this case is the same file that used to be
+# a REFUSAL golden — moved rather than rewritten, so the record shows the row dying.
+# Bulk regression case.
+
+function main()
+    greeting = "hello"
+    print(greeting)
+    print(greeting + " " + "world")
+    print(len(greeting))
+    print(greeting[0])
+    print(slice(greeting, from: 1, to: 3))
+    print("a" == "a", "a" == "b")
+    print(to_str(42), to_str(true))

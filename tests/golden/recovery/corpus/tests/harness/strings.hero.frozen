@@ -1,0 +1,361 @@
+# The byte-level string work every suite needs, in one place.
+#
+# The spec's built-in list (spec § 11 Built-ins) has `len`, `slice`,
+# `chars` and `join`; it has no `ends_with`, no split and no basename, so
+# the harness writes them once here rather than four times in four
+# suites — a second copy is a second place for `ends_with` to be subtly
+# wrong.
+#
+# Port of the small string helpers spread through
+# archive/bootstrap-rs/heroes-cli/tests/{golden,corpus,layout}.rs (Rust hands those out
+# in its standard library, which is exactly what design.md §1.11 says
+# Heroes does not have).
+#
+# WHY THESE COMPARE BYTES AND DO NOT SLICE. `slice` aborts when it splits
+# a character (spec § 10 Strings, arrays, maps), so `text.slice(from: len - suffix.len(), ...)`
+# on a name holding one multi-byte character is an abort rather than a
+# `false` — and a harness that dies on a filename is worse than no
+# harness. Indexing gives a `u8` for any in-range index and cannot abort,
+# so every predicate here walks bytes.
+
+# Whether `text` ends with `suffix`, byte for byte.
+function ends_with(text: str, suffix: str) -> bool
+    if suffix.len() > text.len()
+        return false
+    offset = text.len() - suffix.len()
+    i: i64 @ 0
+
+    while i < suffix.len()
+        if text[offset + i] != suffix[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# `text` with `suffix` removed.
+#
+# The caller must have asked `ends_with` first — this returns `text`
+# untouched otherwise, rather than guessing. The slice is safe for the
+# same reason it is safe nowhere else in this file: an ASCII suffix that
+# matched proves the cut is on a character boundary, because no ASCII
+# byte appears inside a multi-byte UTF-8 sequence. Every suffix the
+# harness passes is a literal in its own source (`.hero`, `.expected`).
+function without_suffix(text: str, suffix: str) -> str
+    if !ends_with(text: text, suffix: suffix)
+        return text
+    return text.slice(from: 0, to: text.len() - suffix.len())
+
+# The largest offset at or below `at` that a `slice` may cut at.
+#
+# This is the one place in the harness that cuts at an offset nobody chose
+# for its content, so it is the one place that has to ask. The module doc
+# above says why: `slice` aborts when it splits a character, and prose is
+# UTF-8. Measured 2026-09-13 — `suite_records.hero`'s `head_of` cut a
+# truncated line at a fixed 78 and took the WHOLE suite down with
+# `panic: string slice splits a character` on a 79-byte and an 80-byte line
+# ending in an em dash, while 81 and 82 passed, because at those two
+# lengths the three bytes of the dash straddled the offset. The suite has
+# paid this once already, in `suite_records.hero`'s `without_position`, and
+# that repair did not reach here.
+#
+# UTF-8 marks every byte INSIDE a character `0b10xxxxxx`, 128 through 191,
+# and no first byte is in that range, so walking down while the byte at the
+# cut is one of those lands on the start of the character containing it.
+function boundary_at_or_below(text: str, at: i64) -> i64
+    if at >= text.len()
+        return text.len()
+
+    cut: i64 @ at
+
+    while cut > 0 && text[cut] >= 128 && text[cut] <= 191
+        cut @ cut - 1
+
+    return cut
+
+# Split on one ASCII byte, keeping empty pieces.
+#
+# The separator is a byte and not a `str` because the one caller that
+# matters passes NUL, which no Heroes literal can spell: the language has
+# six escapes and `\0` is not one of them (spec § 2 Literals). `find -print0`
+# writes that byte, and reading it is what makes a directory walk sound —
+# see shell.list_entries.
+function split_on(text: str, byte: u8) -> [str]
+    pieces: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i < text.len()
+        if text[i] == byte
+            pieces @ pieces.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    return pieces.push(text.slice(from: start, to: text.len()))
+
+# The lines of `text`, with no trailing empty piece for a final newline.
+function lines(text: str) -> [str]
+    pieces = split_on(text: text, byte: 10)
+
+    if pieces.len() > 0 && pieces[pieces.len() - 1].len() == 0
+        return pieces.slice(from: 0, to: pieces.len() - 1)
+    return pieces
+
+# The part of a path after its last `/`.
+function base_name(path: str) -> str
+    cut: i64 @ 0
+    i: i64 @ 0
+
+    while i < path.len()
+        if path[i] == 47
+            cut @ i + 1
+        i @ i + 1
+
+    return path.slice(from: cut, to: path.len())
+
+# `text` without leading or trailing spaces, tabs, newlines or returns.
+function trimmed(text: str) -> str
+    head: i64 @ 0
+
+    while head < text.len() && is_space(byte: text[head])
+        head @ head + 1
+
+    tail: i64 @ text.len()
+
+    while tail > head && is_space(byte: text[tail - 1])
+        tail @ tail - 1
+
+    return text.slice(from: head, to: tail)
+
+function is_space(byte: u8) -> bool
+    return byte == 32 || byte == 9 || byte == 10 || byte == 13
+
+# Whether `needle` occurs anywhere in `text`, compared as bytes.
+#
+# Rust hands this out as `str::contains`; §1.11 says Heroes has no
+# standard library, so here it is. Byte comparison again, and for the
+# same reason as everything else in this file — a diagnostic's text is
+# UTF-8 and the needles are ASCII, so nothing may slice.
+function contains(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+    start: i64 @ 0
+
+    while start + needle.len() <= text.len()
+        i: i64 @ 0
+        hit: bool @ true
+
+        while i < needle.len()
+            if text[start + i] != needle[i]
+                hit @ false
+                i @ needle.len()
+            else
+                i @ i + 1
+
+        if hit
+            return true
+        start @ start + 1
+
+    return false
+
+# Whether `text` starts with `prefix`, and the rest of it if so.
+function starts_with(text: str, prefix: str) -> bool
+    if prefix.len() > text.len()
+        return false
+    i: i64 @ 0
+
+    while i < prefix.len()
+        if text[i] != prefix[i]
+            return false
+        i @ i + 1
+
+    return true
+
+function without_prefix(text: str, prefix: str) -> str
+    if !starts_with(text: text, prefix: prefix)
+        return text
+    return text.slice(from: prefix.len(), to: text.len())
+
+# A decimal integer, or an error naming what was found instead.
+#
+# `to_i64` takes an integer or a float and NOT a `str` (measured: it is
+# `error[bad_operand]`), so an expectation's `!exit: 3` is parsed here.
+# The failure is a value rather than an abort because the text comes from
+# a file somebody edits: `!exit: three` is a broken case, and a broken
+# case must be reported by name, not by killing the harness.
+function to_number(text: str) -> i64?
+    body: str @ text
+    negative: bool @ false
+
+    if starts_with(text: text, prefix: "-")
+        negative @ true
+        body @ without_prefix(text: text, prefix: "-")
+
+    if body.len() == 0
+        return fail(code: "not_a_number", msg: "`" + text + "` has no digits")
+    value: i64 @ 0
+    i: i64 @ 0
+
+    while i < body.len()
+        digit = body[i]
+
+        if digit < 48 || digit > 57
+            return fail(code: "not_a_number", msg: "`" + text + "` is not a decimal integer")
+        value @ value * 10 + (digit - 48).to_i64().must()
+        i @ i + 1
+
+    if negative
+        return ok(0 - value)
+    return ok(value)
+
+# Where `needle` first occurs in `text`, or an error if it does not.
+function index_of(text: str, needle: str) -> i64?
+    if needle.len() > text.len()
+        return fail(code: "absent", msg: "`" + needle + "` is not in the text")
+    start: i64 @ 0
+
+    while start + needle.len() <= text.len()
+        i: i64 @ 0
+        hit: bool @ true
+
+        while i < needle.len()
+            if text[start + i] != needle[i]
+                hit @ false
+                i @ needle.len()
+            else
+                i @ i + 1
+
+        if hit
+            return ok(start)
+        start @ start + 1
+
+    return fail(code: "absent", msg: "`" + needle + "` is not in the text")
+
+# Split on a multi-byte separator, keeping empty pieces. `split_on`
+# takes one byte and this takes a string, because `#~` is two.
+function split_text(text: str, separator: str) -> [str]
+    pieces: [str] @ []
+    rest: str @ text
+
+    if separator.len() == 0
+        return pieces.push(text)
+
+    while true
+        at = index_of(text: rest, needle: separator)
+
+        if at.is_err()
+            return pieces.push(rest)
+        pieces @ pieces.push(rest.slice(from: 0, to: at.must()))
+        rest @ rest.slice(from: at.must() + separator.len(), to: rest.len())
+
+    return pieces
+
+# The words of `text`, with runs of spaces, tabs and newlines dropped.
+function words(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    i: i64 @ 0
+
+    while i <= text.len()
+        boundary: bool @ i == text.len()
+
+        if !boundary
+            boundary @ is_space(byte: text[i])
+
+        if boundary
+            if i > start
+                out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+test "index_of, split_text and words"
+    assert index_of(text: "a#~b", needle: "#~").must() == 1
+    assert index_of(text: "#~b", needle: "#~").must() == 0
+    assert index_of(text: "abc", needle: "#~").is_err()
+    assert split_text(text: " a #~v b", separator: "#~").len() == 2
+    assert split_text(text: "abc", separator: "#~").len() == 1
+    assert split_text(text: "x#~#~y", separator: "#~").len() == 3
+    assert words(" one\ttwo\n three ").len() == 3
+    assert words("").len() == 0
+    assert words("solo") == ["solo"]
+
+test "contains finds a needle at every position and refuses a longer one"
+    assert contains(text: "abc", needle: "a")
+    assert contains(text: "abc", needle: "c")
+    assert contains(text: "abc", needle: "abc")
+    assert !contains(text: "abc", needle: "abcd")
+    assert !contains(text: "abc", needle: "ac")
+    assert contains(text: "aab", needle: "ab")
+
+test "starts_with and without_prefix"
+    assert starts_with(text: "!exit: 3", prefix: "!exit: ")
+    assert !starts_with(text: "!exit", prefix: "!exit: ")
+    assert without_prefix(text: "!exit: 3", prefix: "!exit: ") == "3"
+    assert without_prefix(text: "nope", prefix: "!exit: ") == "nope"
+
+test "to_number reads what a case can hold, and names what it cannot"
+    assert to_number("0").must() == 0
+    assert to_number("42").must() == 42
+    assert to_number("-7").must() == -7
+    assert to_number("134").must() == 134
+    assert to_number("").is_err()
+    assert to_number("-").is_err()
+    assert to_number("3x").is_err()
+    assert to_number("three").is_err()
+
+test "ends_with and without_suffix agree on the harness's own suffixes"
+    assert ends_with(text: "a/b/foo.hero", suffix: ".hero")
+    assert !ends_with(text: "a/b/foo.hero", suffix: ".expected")
+    assert !ends_with(text: ".hero", suffix: "x.hero")
+    assert without_suffix(text: "a/b/foo.hero", suffix: ".hero") == "a/b/foo"
+    assert without_suffix(text: "a/b/foo.hero", suffix: ".expected") == "a/b/foo.hero"
+
+test "ends_with walks bytes, so a multi-byte character neither matches nor aborts"
+    # The e-acute is two bytes. A suffix comparison that ended inside it
+    # would abort if it sliced; walking bytes answers false instead, and
+    # a match on the whole character still answers true.
+    name = "pé.hero"
+    assert ends_with(text: name, suffix: ".hero")
+    assert ends_with(text: "pé", suffix: "é")
+    assert !ends_with(text: "pé", suffix: "e")
+    assert without_suffix(text: name, suffix: ".hero") == "pé"
+
+test "split_on keeps empty pieces and lines drops the trailing one"
+    assert split_on(text: "a,b", byte: 44).len() == 2
+    assert split_on(text: "a,,b", byte: 44).len() == 3
+    assert split_on(text: "", byte: 44).len() == 1
+    assert lines(text: "one\ntwo\n").len() == 2
+    assert lines(text: "one\ntwo").len() == 2
+    assert lines(text: "one\n\n").len() == 2
+
+test "base_name and trimmed"
+    assert base_name(path: "tests/golden/check/x.hero") == "x.hero"
+    assert base_name(path: "x.hero") == "x.hero"
+    assert trimmed(text: "  a b \n") == "a b"
+    assert trimmed(text: "\n\n") == ""
+
+test "boundary_at_or_below never lands inside a character"
+    # Five bytes: 'a', 'b', then three for the em dash. Every offset inside
+    # the dash answers 2, which is where the dash begins.
+    dash = "ab—"
+    assert dash.len() == 5
+    assert boundary_at_or_below(text: dash, at: 2) == 2
+    assert boundary_at_or_below(text: dash, at: 3) == 2
+    assert boundary_at_or_below(text: dash, at: 4) == 2
+
+    # The end is a boundary, and so is anything past it.
+    assert boundary_at_or_below(text: dash, at: 5) == 5
+    assert boundary_at_or_below(text: dash, at: 9) == 5
+
+    # Two bytes rather than three, cut in the middle.
+    section = "a§"
+    assert section.len() == 3
+    assert boundary_at_or_below(text: section, at: 2) == 1
+
+    # ASCII: every offset is already a boundary, and the empty string has one.
+    assert boundary_at_or_below(text: "abcd", at: 2) == 2
+    assert boundary_at_or_below(text: "", at: 0) == 0
+
+    # And the whole point: the slice that panicked now does not.
+    assert dash.slice(from: 0, to: boundary_at_or_below(text: dash, at: 3)) == "ab"

@@ -1,0 +1,19 @@
+# A result that joins a life is told to the runtime whatever the program does
+# with it: `_ = ob_get(o: a)` adds C's reference all the same, so the program
+# owes two releases and gives two. Before the landing review (2026-09-24) a
+# discarded result was a comment in the C and the runtime saw one reference,
+# so the correct second `ob_put` was a stray.
+extern "handle-a-discarded-reference-is-still-owed.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put
+    function ob_get(o: Ob) -> Ob retains ob_put
+    function ob_put(o: Ob consumes)
+    function ob_refs(o: Ob) -> i64
+
+function main()
+    a = ob_new()
+    _ = ob_get(o: a)
+    print("refs: ", ob_refs(o: a))
+    ob_put(o: a)
+    ob_put(o: a)
+    print("both given back")

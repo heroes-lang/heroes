@@ -1,0 +1,20 @@
+# A comma on a line of its own between two comments, one trailing the value
+# before it and one trailing the comma (the second skeptic seat's `a: 1  # c`
+# over `,  # d`): one line cannot hold both, and `fmt` moved the second off
+# the comma, refused at exit 2. The comma keeps its line now: in a call's
+# arguments, after a call's `)`, and between two parameters.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function f(a: i64  # about a
+        ,  # after its comma
+    b: i64) -> i64
+    return g(a: g(a: 1  # the inner first
+        ,  # its comma
+        b: 2)  # the inner closer
+        ,  # the outer comma
+        b: a + b)
+
+function main()
+    print(f(a: 1, b: 2))

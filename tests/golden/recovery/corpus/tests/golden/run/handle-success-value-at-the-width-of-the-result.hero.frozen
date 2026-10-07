@@ -1,0 +1,18 @@
+# The success value is compared as a C constant of the result's own width and
+# sign, `18446744073709551615ULL` and `1`, never as the text written: a bare
+# literal past `long long` drew clang's warning on the author's line and
+# `1_000` is not C at all (the landing review, 2026-09-24). The `warnings`
+# suite holds this golden's C to zero warnings.
+extern "handle-success-value-at-the-width-of-the-result.h"
+    record Ob tag ob
+    function ob_new() -> Ob acquires ob_put | ob_release_all | ob_try_put
+    function ob_release_all(o: Ob consumes) -> u64 when 18_446_744_073_709_551_615
+    function ob_try_put(o: Ob consumes) -> bool when true
+    function ob_put(o: Ob consumes)
+
+function main()
+    a = ob_new()
+    b = ob_new()
+    total = ob_release_all(o: a)
+    done = ob_try_put(o: b)
+    print("released: ", total == 18_446_744_073_709_551_615, " ", done)

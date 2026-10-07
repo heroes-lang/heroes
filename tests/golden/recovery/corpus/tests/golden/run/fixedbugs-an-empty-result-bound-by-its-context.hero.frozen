@@ -1,0 +1,26 @@
+# Panel 105's ffi-pragmatist measured the worst three of twenty-one adjacent
+# shapes of defect 006 (docs/work/DONE.md): `-> [A]` and `-> {str: A}` with `A`
+# only in the result BUILT CLEAN and the binary panicked at run time with
+# `entered unreachable code — this is a compiler bug`, because one instance
+# `empty_of<?>` was made for every call. Now the context binds `A`, and one
+# `empty_of` called at two types is two instances — `--dump-ir` shows both, and
+# the `_3f` the mangler wrote for `?` appears nowhere in the C (the seat's
+# prediction, scored at the landing commit).
+function empty_of<A>(why: str) -> [A]
+    print(why)
+    return []
+
+function no_map<A>(why: str) -> {str: A}
+    print(why)
+    return {}
+
+function main()
+    xs: [i64] = empty_of(why: "ints")
+    fs: [f64] = empty_of(why: "floats")
+    m: {str: bool} = no_map(why: "flags")
+    print(xs.len(), " ", fs.len(), " ", len(m))
+    ys: [i64] @ xs
+    ys @ ys.push(7)
+    gs: [f64] @ fs
+    gs @ gs.push(1.5)
+    print(ys[0], " ", gs[0])

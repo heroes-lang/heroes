@@ -1,0 +1,27 @@
+# The same shapes outside any group, which defect 096's repair must not
+# change: this header is a remark with a blank line under it before the
+# first declaration; a doc sits directly above the second; a remark and a
+# blank line come before a middle one; two remarks with blank lines between
+# and under them come before the last. Measured 2026-09-25 on the seed, all
+# of it was already kept. This file is canonical: `fmt` prints it back byte
+# for byte.
+
+record Ob
+    x: i64
+
+# documentation for ob_put
+function ob_put(o: Ob)
+    print(o.x)
+
+# a remark before a middle declaration
+
+record Pool
+    y: i64
+
+# one remark
+
+# another remark
+
+function main()
+    ob_put(Ob(x: 0))
+    print(Pool(y: 1).y)

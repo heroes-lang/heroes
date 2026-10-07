@@ -1,0 +1,9 @@
+extern "13-lease.h"
+    function keep_label(s: cstr)
+    function kept_label_length() -> u64
+
+function main()
+    label: cstr @ "row-0-payload".lease()
+    keep_label(s: label)
+    end_lease(@label)
+    print(f"C still reads {kept_label_length()} bytes")

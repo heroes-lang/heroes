@@ -1,0 +1,416 @@
+# examples/ — real programs, in three configurations.
+#
+# Port of archive/bootstrap-rs/heroes-cli/tests/corpus.rs, whose four cheap checks are
+# here; the fifth (the generated C compiles with no warnings) needs the
+# flag set and lands with it.
+#
+# WHAT THIS CORPUS IS FOR, and why it is not the golden tree again: a
+# golden case is written to provoke one thing, and a program is written to
+# do a job. design.md wart 17 owes a falsifier, and the corpus is it —
+# programs that must keep working while the language changes underneath
+# them. How many is `LEAST` below, which is measured rather than written
+# twice: this sentence said "fourteen" for two milestones after the number
+# stopped being fourteen.
+#
+# Four checks:
+#   1. `heroes test` green in every configuration — the acceptance
+#      criterion. A program with no `test` block is not a failure
+#      (`heroes test` says "no tests in <path>" and exits 0, which is what
+#      the FFI programs do); what stops that from quietly becoming true of
+#      the whole corpus is check 2.
+#   2. every program either tests itself or binds C. The exemption is read
+#      OFF THE PROGRAM and not off a list of names: a directory whose
+#      modules declare an `extern` group is bound to a live library, whose
+#      version decides what the program prints — `examples/curl/` prints
+#      this machine's libcurl.
+#   3. `main.expected` — what the program prints, in three configurations,
+#      with `main.args` supplying its arguments.
+#   4. at least one program reaches the end of `main` rather than calling
+#      `exit` (author instruction 2026-08-12). `exit` bypasses
+#      `hero_runtime_check_leaks()` by design, and on Darwin arm64 that
+#      counter is the only leak instrument there is — so the corpus must
+#      keep a path that still CROSSES the gate.
+
+use expectation
+use report
+use floors
+use shell
+use strings
+
+constant EXAMPLES: str
+    "examples"
+
+# Measured 2026-09-02, twice on the same day: fifteen directories held a
+# `main.hero` in the morning and **35** hold one by the evening
+# (`examples/gallery/` still does not, which is why the floor is one under
+# the directory count). corpus.rs floors at 3; this floor was 14 until
+# `examples/shapes/` landed at M-package-layout, and 16 until
+# M-corpus-coverage wrote the TWENTY the author asked for: the first ten
+# chosen by a coverage measurement, the rest by the shape of what they can
+# get wrong. The floor moves with the corpus rather than staying where it was
+# measured, because its whole job is to notice a program that quietly stops
+# being found.
+#
+# 35 -> 37 on 2026-09-03, M-corpus-depth step 3: `examples/fannkuch/` and
+# `examples/binarytrees/`, the first two programs of the milestone's oracle
+# family. Measured the same day: 38 directories, 37 with a `main.hero`.
+#
+# 37 -> 38 on 2026-09-03, M-corpus-depth step 4: `examples/checksum/`, the
+# third of that family and the first program here whose printed output is a
+# STANDARD's own test-vector table (RFC 4648 § 10).
+#
+# 38 -> 39 on 2026-09-03, M-corpus-depth step 5: `examples/interpreter/`, the
+# milestone's large program — **eleven modules in four directories**, which is
+# also the program that made `module_texts` below read the tree instead of one
+# directory.
+#
+# 39 -> 40 on 2026-09-04, M-corpus-depth: `examples/query/`, the milestone's
+# second large program and the first in this corpus to hand the language DATA
+# at volume — a deterministic generator writes 5,000 rows, the program writes
+# them to a file, reads them back through a strict reader and then filters,
+# joins, merge-sorts and groups them whole, several times, in all three
+# configurations. Measured the day it landed: 41 directories, 40 with a
+# `main.hero`.
+#
+# 40 -> 42 on 2026-09-04, M-corpus-depth: `examples/nbody/` and
+# `examples/spectral/`, the last two of the milestone's oracle family and the
+# first two programs here where the FFI is INSIDE a real program rather than
+# beside one — both need `sqrt` from `math.h` to take a step at all. Both were
+# measured on the Mac, in the Linux image and on the Windows box before this
+# number moved, and all three print the published numbers byte for byte in all
+# three configurations. Measured the day they landed: 43 directories, 42 with a
+# `main.hero`.
+#
+# 42 -> 43 on 2026-09-04, M-corpus-depth: `examples/ledger/`, the LAST of the
+# milestone's nine programs and the one that closes its measured gap outright
+# — FFI and "a real program" were disjoint sets, every `extern` directory in
+# this corpus being 65 to 192 lines and single-module. This one is four
+# modules, binds **eighteen** SQLite functions and seven of its constants,
+# reuses one prepared statement across ten inserts inside a transaction, reads
+# three column types through a `variant` that cannot forget SQLite's fifth,
+# and checks every number twice: SQLite's own `sum … group by` against the
+# same total computed in Heroes over the same rows. It found two things on its
+# first run — an `extern` is not callable across a module boundary, and a
+# `ptr` may not be the element of a `T?` — and the record it wrote around that
+# pointer emitted C clang warned about, which is defect 009, repaired the same
+# hour. Measured the day it landed: 44 directories, 43 with a `main.hero`.
+#
+# 43 -> 44 on 2026-09-04, M-corpus-depth: `examples/tally/`, the first program
+# in this corpus that is FED rather than told where to look. Eight programs
+# read a file whose path they were given; none read standard input, measured
+# while the milestone was planned, and every other language's example suite
+# has one. It cost a file handle in the runtime's spawn on each platform and
+# `main.stdin` beside `main.args` here — the gate its scheduling item set, and
+# the reason it was built rather than filed. Measured the day it landed: 45
+# directories, 44 with a `main.hero`.
+constant LEAST: i64
+    44
+
+function run_all(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    programs = program_directories(scratch)?
+
+    floors.check(@r, label: "corpus", found: programs.len(), floor: LEAST, what: "program directories in " + EXAMPLES)
+    binaries = scratch + "/corpus"
+    shell.mkdir_all(binaries)?
+    skipped: i64 @ 0
+    crossing: i64 @ 0
+
+    for dir in programs
+        modules = module_texts(scratch: scratch, dir: dir)?
+
+        if !declares_any(modules: modules, opening: "test \"") && !declares_any(modules: modules, opening: "extern \"")
+            report.keep_failure(
+                @r,
+                label: "corpus/" + strings.base_name(path: dir),
+                detail: "  " + dir + " neither tests itself nor binds a C library — design.md's \"asserts its own behaviour in `test` blocks\", asked of each directory"
+            )
+
+        if !holds(modules: modules, needle: "exit(")
+            crossing @ crossing + 1
+        took = one_program(scratch: scratch, compiler: compiler, binaries: binaries, dir: dir, r: @r)
+
+        if took
+            skipped @ skipped + 1
+
+    if crossing == 0
+        report.keep_failure(
+            @r,
+            label: "corpus",
+            detail: "  every corpus program calls `exit`, so nothing crosses the leak gate — and on Darwin arm64 hero_runtime_check_leaks() is the only leak instrument there is"
+        )
+
+    # A machine may be missing a library; it may not be missing most of
+    # them. Without this, a runner with no C libraries at all reports the
+    # corpus green by testing none of it.
+    # One-half, not one-third, since 2026-08-31 — probe.hero's floor carries
+    # the measured reason and this one moves with it.
+    if skipped > 0 && skipped * 2 > programs.len()
+        report.keep_failure(
+            @r,
+            label: "corpus",
+            detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for want of a library — this machine is not testing the corpus"
+        )
+    return ok(r)
+
+# One program: its tests in three configurations, then what it prints.
+# Answers whether it was SKIPPED for a missing library.
+function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: report.Report) -> bool
+    name = strings.base_name(path: dir)
+    main = dir + "/main.hero"
+
+    for level in configurations()
+        said = shell.run_guarded(
+            scratch: scratch,
+            words: [compiler, "test", main, level]
+        )
+
+        if said.is_err()
+            report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
+            return false
+
+        if shell.machine_lacks_the_library(said.must().err)
+            return true
+
+        if said.must().code != 0
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at " + level,
+                detail: "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
+            )
+            return false
+
+        if strings.contains(text: said.must().out, needle: "FAIL ")
+            report.keep_failure(
+                @r,
+                label: "corpus/" + name + " at " + level,
+                detail: "  a test failed:\n" + said.must().out
+            )
+            return false
+
+        if level == "--sanitize" && (strings.contains(text: said.must().err, needle: "AddressSanitizer") || strings.contains(text: said.must().err, needle: "runtime error:"))
+            report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + said.must().err)
+            return false
+
+    prints(scratch: scratch, compiler: compiler, binaries: binaries, dir: dir, r: @r)
+    return false
+
+# `main.expected`, in the same three configurations as `run/`. A program
+# without one is not a failure: `examples/curl/` prints this machine's
+# libcurl, and pinning that would pin the machine.
+function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report.Report)
+    name = strings.base_name(path: dir)
+    main = dir + "/main.hero"
+    text = read_file(dir + "/main.expected")
+
+    if text.is_err()
+        report.keep_pass(@r)
+        return
+    want = expectation.split(text.must())
+
+    if want.is_err()
+        report.keep_failure(
+            @r,
+            label: "corpus/" + name,
+            detail: "  " + dir + "/main.expected is not a readable expectation"
+        )
+        return
+    passed = program_arguments(dir)
+    binary = binaries + "/" + name + shell.exe_suffix()
+    built = shell.run_guarded(
+        scratch: scratch,
+        words: [compiler, "build", main, "-o", binary]
+    )
+
+    if built.is_err() || built.must().code != 0
+        report.keep_failure(
+            @r,
+            label: "corpus/" + name,
+            detail: "  did not build:\n" + shell.complaint(built)
+        )
+        return
+    at_o0 = ran(scratch: scratch, dir: dir, words: shell.both(first: [binary], second: passed))
+
+    if judged(@r, name: name, level: "-O0", want: want.must(), said: at_o0)
+        return
+    at_o2 = ran(
+        scratch: scratch,
+        dir: dir,
+        words: shell.both(first: [compiler, "run", main], second: passed_after_dashes(dir))
+    )
+
+    if judged(@r, name: name, level: "-O2", want: want.must(), said: at_o2)
+        return
+    sanitised = ran(
+        scratch: scratch,
+        dir: dir,
+        words: shell.both(first: [compiler, "run", main, "--sanitize"], second: passed_after_dashes(dir))
+    )
+
+    if sanitised.is_err()
+        report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot run the compiler on " + main)
+        return
+
+    if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
+        report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
+        return
+
+    if judged(@r, name: name, level: "--sanitize", want: want.must(), said: sanitised)
+        return
+    report.keep_pass(@r)
+
+# `main.stdin` beside `main.args`, and the same shape: a file the directory
+# carries, handed to the program on its standard input. A directory without
+# one is fed nothing, which is what the empty path has always meant to the
+# runtime.
+#
+# **Every corpus program is run through this**, not only the one that reads,
+# because a spawn that redirects only sometimes is two spawns and one of
+# them would be untested. `examples/tally/` is the program that made it
+# necessary: measured while planning M-corpus-depth, nothing in this corpus
+# read its standard input, and every other language's example suite has
+# something that does.
+function fed_path(dir: str) -> str
+    path = dir + "/main.stdin"
+
+    if read_file(path).is_err()
+        return ""
+    return path
+
+function ran(scratch: str, dir: str, words: [str]) -> shell.Run?
+    return shell.run_fed(scratch: scratch, program: words[0], words: words, stdin_path: fed_path(dir))
+
+function judged(@r: report.Report, name: str, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
+    if said.is_err()
+        report.keep_failure(@r, label: "corpus/" + name, detail: "  cannot execute at " + level)
+        return true
+    wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
+    if wrong.is_err()
+        return false
+    report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: "  " + wrong.must())
+    return true
+
+# `--sanitize` is not run where clang ships no sanitiser runtime. Windows
+# is that platform — the binary links, then exits 53 with nothing on
+# either stream, because the process cannot start without
+# clang_rt.asan_dynamic.dll (measured 2026-08-14). The port has no
+# platform test, so this asks the machine the way `patience` does: a
+# sanitised build of a trivial program either runs or it does not.
+function configurations() -> [str]
+    return ["-O0", "-O2", "--sanitize"]
+
+# `main.args`, one argument per line, each quoted for the shell.
+# The words a corpus program is given, one per line of `main.args`.
+#
+# **It was called `shell_arguments` and answered a quoted STRING.** The
+# name went with the shell: nothing here composes a command line any
+# more, so the words are words, and a program whose argument holds a
+# space or an apostrophe needs no help surviving the trip.
+function program_arguments(dir: str) -> [str]
+    text = read_file(dir + "/main.args")
+
+    if text.is_err()
+        return []
+    out: [str] @ []
+
+    for row in strings.lines(text.must())
+        if row.len() > 0
+            out @ out.push(row)
+
+    return out
+
+# The same arguments, behind the `--` that `heroes run` requires.
+# The same arguments, behind the `--` that `heroes run` requires — as
+# words now, since there is no line to splice them into.
+function passed_after_dashes(dir: str) -> [str]
+    passed = program_arguments(dir)
+
+    if passed.len() == 0
+        return []
+
+    return shell.both(first: ["--"], second: passed)
+
+function program_directories(scratch: str) -> [str]?
+    found: [str] @ []
+
+    for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
+        if !read_file(dir + "/main.hero").is_err()
+            found @ found.push(dir)
+
+    return ok(found)
+
+# Every module of one program, however deep it keeps them.
+#
+# **`list_tree` and not `list_entries`, changed 2026-09-03 at M-corpus-depth
+# step 5**, which is the step that added the first program keeping most of its
+# modules two directories down. The flat listing read only the root, so check 2
+# above — *every program either tests itself or binds C* — asked its question of
+# a fraction of the program. It fails in the LOUD direction, which is why
+# nothing was wrong before: a program whose `test` blocks all live in
+# subdirectories was reported as testing nothing, a false red rather than a
+# false green. `examples/shapes/` has been deep since M-package-layout and never
+# tripped it only because `main.hero` happens to carry two tests of its own.
+# `suite_canonical.hero:84-85` made this same repair for the same reason and
+# measured what it was missing: 325 files of 371.
+function module_texts(scratch: str, dir: str) -> [str]?
+    texts: [str] @ []
+    nothing: [str] = []
+
+    for entry in shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
+        if strings.ends_with(text: entry, suffix: ".hero")
+            text = read_file(entry)
+
+            if !text.is_err()
+                texts @ texts.push(text.must())
+
+    return ok(texts)
+
+# Whether any module has a TOP-LEVEL declaration with this opening — a
+# line starting at column 0, so the word inside a comment or a string does
+# not count.
+function declares_any(modules: [str], opening: str) -> bool
+    for text in modules
+        for row in strings.lines(text)
+            if strings.starts_with(text: row, prefix: opening)
+                return true
+
+    return false
+
+function holds(modules: [str], needle: str) -> bool
+    for text in modules
+        if strings.contains(text: text, needle: needle)
+            return true
+
+    return false
+
+test "a directory that neither tests itself nor binds C is caught"
+    tested = ["function main()\n    print(1)\n\ntest \"a\"\n    assert true\n"]
+    binding = ["extern \"curl.h\"\n    function go() -> i64\n"]
+    neither = ["function main()\n    print(1)\n"]
+
+    # A `test "` inside a comment or a string is not a declaration.
+    pretending = ["# test \"not really\"\nfunction main()\n    print(\"test \\\"nope\\\"\")\n"]
+    assert declares_any(modules: tested, opening: "test \"")
+    assert declares_any(modules: binding, opening: "extern \"")
+    assert !declares_any(modules: neither, opening: "test \"")
+    assert !declares_any(modules: neither, opening: "extern \"")
+    assert !declares_any(modules: pretending, opening: "test \"")
+
+test "the leak-gate check reads `exit(` off the program"
+    assert holds(modules: ["function main()\n    exit(2)\n"], needle: "exit(")
+    assert !holds(modules: ["function main()\n    print(1)\n"], needle: "exit(")
+
+test "arguments come from main.args, one per line, quoted"
+    scratch = "build/harness-selftest"
+    tree = scratch + "/corpus-args"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert program_arguments(tree).len() == 0
+    assert passed_after_dashes(tree).len() == 0
+    assert !write_file(path: tree + "/main.args", text: "one\ntwo words\nit's\n").is_err()
+    assert program_arguments(tree) == ["one", "two words", "it's"]
+
+    # The words arrive whole: the middle one holds a space and the last
+    # an apostrophe, and neither needs a quote to survive the trip.
+    assert passed_after_dashes(tree) == ["--", "one", "two words", "it's"]

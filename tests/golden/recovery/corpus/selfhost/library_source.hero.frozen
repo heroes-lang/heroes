@@ -1,0 +1,287 @@
+# The Heroes library's own text, EMBEDDED — never read from disk.
+#
+# **`fold`'s callback names its two parameters, since M-named-callbacks**, and
+# the comment above it INSIDE the text — which has warned since panel 029 that an
+# accumulator and an element of one type make either order type-check — stopped
+# being a warning and became a check: a function that reads the two the other way
+# round is refused at the call (`error[callback_name]`) instead of printing `cba`
+# for `abc` at exit 0.
+#
+# **This note is here and not three lines lower, and the reason is measured.**
+# The strings below ARE the library's source, so a comment among them shifts
+# every `#line "<heroes library>"` in every program's emitted C by as many lines
+# as it takes: five lines of prose moved six rows of
+# `tests/golden/emit/scalars.expected` and the same in all 441 emission traces,
+# for nothing a reader of a C file would want.
+#
+# Panel 028 R3 ruled this and `archive/bootstrap-rs/heroes/src/library/source.hero`
+# states the ruling in its own header: the library "is not on disk
+# beside the compiler: it is `include_str!`d into the binary, so there
+# is no discovery, no `$HEROES_LIBRARY`, and no decoy — clang cannot
+# type-check Heroes source, so a file here would have no analogue of
+# the runtime's `_Static_assert` guarding it".
+#
+# THE PORT HAD REVERSED IT, and the reversal was not visible from
+# inside the repository. `main.hero` read the text through
+# `read_file(LIBRARY_PATH).default("")`, so outside the repository root
+# the library was silently EMPTY and every program using `range`,
+# `map`, `filter`, `fold`, `read_file` or `args` was refused ON THE
+# AUTHOR'S OWN LINE — `builtin_shape`, exit 1, measured 2026-08-18
+# (panel 085 R5). The bootstrap accepted the same program at exit 0.
+#
+# Heroes has no `include_str!`, so the text is a value in this module
+# and the test below is what keeps it honest: it reads the file the
+# bootstrap embeds and asserts the two are byte for byte the same. To
+# regenerate after editing the library, rebuild this constant from that
+# file — one quoted line per source line, `\` and `"` escaped, joined
+# with newlines and one trailing newline.
+
+constant LINES: [str]
+    [
+        "# The Heroes library — Tier 2 of design.md §1.11, written in Heroes itself."
+        "#"
+        "# This file is compiled with every program. It is not on disk beside the"
+        "# compiler: it is `include_str!`d into the binary, so there is no discovery, no"
+        "# `$HEROES_LIBRARY`, and no decoy — clang cannot type-check Heroes source, so a"
+        "# file here would have no analogue of the runtime's `_Static_assert` guarding it"
+        "# (panel 028 R3)."
+        "#"
+        "# Rules for anything added here:"
+        "#   - it declares a name from the built-in inventory and nothing else. A helper"
+        "#     outside that table would take a name a user program is entitled to;"
+        "#   - it is ordinary Heroes, checked by the ordinary rules. That is the whole"
+        "#     claim of Tier 2, and §4.11's label rule is the first place it bites:"
+        "#     `range`'s two `i64` parameters make its labels mandatory at every call"
+        "#     site (panel 028 R1);"
+        "#   - a diagnostic raised in this file is a COMPILER BUG, not a user error, and"
+        "#     the pipeline reports it as one."
+        ""
+        "# The integers from `from` up to but not including `to`, in order."
+        "#"
+        "# `to` is excluded, matching `slice(from:, to:)` — the labels and the bound"
+        "# answer each other, which is why the spec states both on one line."
+        "# An empty range is not an error: `range(from: 3, to: 3)` and"
+        "# `range(from: 5, to: 2)` are both `[]`, so a loop over a range that has run out"
+        "# runs zero times rather than aborting."
+        "function range(from: i64, to: i64) -> [i64]"
+        "    out: [i64] @ []"
+        "    i: i64 @ from"
+        "    while i < to"
+        "        out @ push(out, i)"
+        "        i @ i + 1"
+        "    return out"
+        ""
+        "# Each element, transformed. `map(xs, f)` — the signature the spec writes out at"
+        "# line 93, which is why this one needs no explaining."
+        "function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]"
+        "    out: [B] @ []"
+        "    for x in xs"
+        "        out @ push(out, f(x))"
+        "    return out"
+        ""
+        "# The elements `f` keeps."
+        "function filter<A>(xs: [A], f: (function(A) -> bool)) -> [A]"
+        "    out: [A] @ []"
+        "    for x in xs"
+        "        if f(x)"
+        "            out @ push(out, x)"
+        "    return out"
+        ""
+        "# The elements combined into one value, FROM THE LEFT, with the accumulator"
+        "# passed FIRST — `f(total, x)`, never `f(x, total)`."
+        "#"
+        "# Both of those are decisions the spec now states (panel 029 R6) and this body is"
+        "# what makes them true. They were undecidable from the spec and the wrong guess"
+        "# was SILENT: with an accumulator and an element of the same type — `sum`,"
+        "# `concat`, `max`, every string builder — either order type-checks and the program"
+        "# prints a different answer."
+        "function fold<A, B>(xs: [A], start: B, f: (function(acc: B, item: A) -> B)) -> B"
+        "    total: B @ start"
+        "    for x in xs"
+        "        total @ f(total, x)"
+        "    return total"
+        ""
+        "# The first element `f` accepts, or an error. `A?` rather than an index, so the"
+        "# caller gets the thing rather than a way to look it up again."
+        "function find<A>(xs: [A], f: (function(A) -> bool)) -> A?"
+        "    for x in xs"
+        "        if f(x)"
+        "            return ok(x)"
+        "    return fail(code: \"not_found\", msg: \"no element satisfies the test\")"
+        ""
+        "# Does any element pass? Empty is false, which is the same rule as `fold` with a"
+        "# `false` start."
+        "function any<A>(xs: [A], f: (function(A) -> bool)) -> bool"
+        "    for x in xs"
+        "        if f(x)"
+        "            return true"
+        "    return false"
+        ""
+        "# Do all of them? Empty is true — vacuously, and it is the answer that makes"
+        "# `all(xs, f) == !any(xs, not_f)` hold at every length."
+        "function all<A>(xs: [A], f: (function(A) -> bool)) -> bool"
+        "    for x in xs"
+        "        if !f(x)"
+        "            return false"
+        "    return true"
+        ""
+        "# The program's three edges (§1.11, panel 036). They are HERE, in Heroes, rather"
+        "# than in the compiler, and the argument is worth the four lines it takes."
+        "#"
+        "# §1.7's test is mechanical: a `T?` is a per-translation-unit generated struct,"
+        "# so the C runtime cannot name one and `read_file -> str?` cannot be a runtime"
+        "# entry point without a second composition form in the emitter. Written here it"
+        "# needs none — `ok` and `fail` are the same constructors every other Tier-2"
+        "# function uses."
+        "#"
+        "# And the record runs the same way. Pascal predeclared file I/O, command-line"
+        "# access and termination; Kernighan's 1981 paper itemises all three as defects;"
+        "# Oberon predefines none of them; Nim reaches the same ergonomics from an"
+        "# auto-imported module. What crosses to C is only what the language cannot say."
+        ""
+        "extern \"hero_os.h\""
+        "    # The status codes the wrappers translate, named rather than copied. Before"
+        "    # M-header-constants this file compared `status` against `0`, `1` and `2`, and"
+        "    # `hero_os.h` says why they were chosen small: *\"small integers rather than"
+        "    # errno\"* — a value picked so a Heroes reader could carry it across by hand."
+        "    # Now the header is the only place they are written, and renumbering them there"
+        "    # cannot leave this file behind."
+        "    constant HERO_OS_OK: i64"
+        "    constant HERO_OS_NOT_FOUND: i64"
+        "    constant HERO_OS_NOT_TEXT: i64"
+        "    function hero_file_read(path: cstr lent, @status: i64) -> str"
+        "    function hero_file_write(path: cstr lent, text: str) -> i64"
+        "    function hero_args_count() -> i64"
+        "    function hero_args_at(index: i64) -> str"
+        "    function hero_args_raw(index: i64) -> cstr"
+        "    function hero_exit(code: i64)"
+        ""
+        "extern \"heroes_runtime.h\""
+        "    # The text conversion that reports instead of dying (panel 089). Its codes"
+        "    # live in the header for the same reason `hero_os.h`'s do, one group up."
+        "    constant HERO_STR_OK: i64"
+        "    function hero_str_try_from_cstr(p: cstr, @status: i64) -> str"
+        ""
+        "# Text that came from C, or the reason it is not text (panel 089, adopting the"
+        "# second-name form panel 059 reserved when it refused `to_str` as the carrier)."
+        "#"
+        "# It is the ONLY way in. `c.to_str()` used to copy a C string and ABORT on a"
+        "# null pointer or on bytes that are not UTF-8 — right for the program's own"
+        "# bytes, wrong for the environment's, and retired at panel 090 for exactly"
+        "# that. A SQLite TEXT column another program wrote, a Latin-1 `PATH`,"
+        "# an argument the shell handed over: none of those are the program's mistake,"
+        "# and §1.12 says a Heroes program must not be killed by them. Every language"
+        "# whose string carries a UTF-8 invariant ships two names here and none of them"
+        "# aborts; the one that made this conversion infallible is JNI, and its runtime"
+        "# kills the VM instead."
+        "#"
+        "# It is a Tier-2 function and not a built-in for §1.7's mechanical reason,"
+        "# which design.md:476-480 already applied to `read_file`: a `T?` is a"
+        "# per-translation-unit struct the C runtime cannot name, so the built-in route"
+        "# costs a second composition arm in the emitter and this route costs zero"
+        "# backend lines."
+        "#"
+        "# **The null test is HERE and not in C, and that is the whole trick.** The"
+        "# emitter wraps every `cstr` on its way into a C function with a guard that"
+        "# aborts on a null pointer, so a C-side `if (p == NULL)` can never run: the"
+        "# guard fires first. Measured — this function's first draft put the test in C"
+        "# and died at `panic: a null cstr was passed to a C function`, exit 134, on"
+        "# the very case it exists for. What is closed is asking **C** whether a"
+        "# pointer is null; the language answers that itself with `== nullptr`, so the"
+        "# question never has to cross (panel 089, compiler-engineer)."
+        "function validated(c: cstr) -> str?"
+        "    if c == nullptr"
+        "        return fail(code: \"null_cstr\", msg: \"a null `cstr` holds no text\")"
+        "    status: i64 @ 0"
+        "    text = hero_str_try_from_cstr(c, @status)"
+        "    if status == HERO_STR_OK"
+        "        return ok(text)"
+        "    return fail(code: \"not_text\", msg: \"the bytes behind this `cstr` are not UTF-8\")"
+        ""
+        "# The whole file, or an error. The three codes are stable snake_case strings"
+        "# (§4.6), and they are distinguished because a caller almost always wants to:"
+        "# \"there is no such file\", \"the disk failed\" and \"it read, and it is not text\""
+        "# are three program states, and a walk over a directory it did not create"
+        "# meets all three."
+        "function read_file(path: str) -> str?"
+        "    status: i64 @ 0"
+        "    text = hero_file_read(path.cstr(), @status)"
+        "    if status == HERO_OS_OK"
+        "        return ok(text)"
+        "    if status == HERO_OS_NOT_FOUND"
+        "        return fail(code: \"file_not_found\", msg: \"no file at \" + path)"
+        "    # The file was there and read whole, and its bytes are not text: the same"
+        "    # code `validated` gives a cstr in that state, because it is the same state."
+        "    # Said `read_failed` until 2026-09-03, which was false — the read succeeded."
+        "    if status == HERO_OS_NOT_TEXT"
+        "        return fail(code: \"not_text\", msg: \"the bytes of \" + path + \" are not UTF-8\")"
+        "    return fail(code: \"read_failed\", msg: \"could not read \" + path)"
+        ""
+        "# The text, written whole, replacing whatever was there."
+        "function write_file(path: str, text: str) -> ()?"
+        "    if hero_file_write(path.cstr(), text) == HERO_OS_OK"
+        "        return ok()"
+        "    return fail(code: \"write_failed\", msg: \"could not write \" + path)"
+        ""
+        "# The arguments after the program's name — the off-by-one every language's first"
+        "# CLI program gets wrong, answered in the runtime and stated in the spec."
+        "function args() -> [str]"
+        "    out: [str] @ []"
+        "    i: i64 @ 0"
+        "    while i < hero_args_count()"
+        "        out @ push(out, hero_args_at(i))"
+        "        i @ i + 1"
+        "    return out"
+        ""
+        "# The same arguments, each one checked — for a program that must survive"
+        "# whatever the shell hands it (panel 089)."
+        "#"
+        "# `args()` above ABORTS on an argument that is not UTF-8, and it keeps that"
+        "# behaviour: it is right for a program that knows its arguments are text, and"
+        "# twenty programs already use it. This one gives you the failure instead."
+        "#"
+        "# **`[str?]` and not `[str]?`, which is the whole design.** One undecodable"
+        "# argument must not cost a program the other nine: `prog good.txt <bad> more.txt`"
+        "# can report argument 2 and get on with 1 and 3. A fallible ARRAY would throw the"
+        "# good ones away with the bad one, and the position — which argument — is exactly"
+        "# what the program needs to say."
+        "function args_checked() -> [str?]"
+        "    out: [str?] @ []"
+        "    i: i64 @ 0"
+        "    while i < hero_args_count()"
+        "        out @ push(out, validated(c: hero_args_raw(i)))"
+        "        i @ i + 1"
+        "    return out"
+        ""
+        "# Ends the program with this status. It never returns, and the C function it"
+        "# calls says so with `_Noreturn` — which is what keeps clang's flow analysis from"
+        "# treating the code after it as reachable."
+        "function exit(code: i64)"
+        "    hero_exit(code)"
+    ]
+
+# The library source, exactly as the bootstrap embeds it.
+function text() -> str
+    return LINES.join("\n") + "\n"
+
+## Tests
+
+# **THE BOOTSTRAP-EQUALITY TEST WAS RETIRED HERE ON 2026-08-24, BY ITS OWN
+# WRITTEN INSTRUCTION.** It compared this embedded text byte for byte against
+# `archive/bootstrap-rs/heroes/src/library/source.hero`, and it carried its own
+# retirement notice: *"the day the library legitimately GROWS — a new built-in
+# written in Heroes — this test fails, and the right response is not to edit the
+# archive: it is to delete this test, because the bootstrap has stopped being an
+# authority on what the library should say."*
+#
+# That day is this one. Panel 089 added `validated`, the first legitimate growth
+# of the library since the archive, so the test fired exactly as designed and
+# was deleted rather than worked around. Nothing was edited inside
+# `archive/bootstrap-rs/`, which is the outcome the notice existed to force.
+#
+# What still checks this text is not weaker for its going: the fixpoint compares
+# the emitted C byte for byte, the blessed emissions in `tests/emission/` carry
+# the library's own symbols, and every program in the corpus uses `range`, `map`,
+# `fold` and `read_file` from here. What is genuinely lost is the *transcription*
+# evidence — that the port copied the bootstrap's library correctly — and that
+# question is answered for good: it has been true through a fixpoint.

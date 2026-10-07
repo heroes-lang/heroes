@@ -1,0 +1,60 @@
+# The read direction, made to run (panel 059, ratified 2026-08-15).
+#
+# `tests/golden/run/` had **zero** coverage of a `cstr` coming back — the only null
+# case was `abort-null-cstr-into-c.hero`, which is the *outbound* direction and never
+# calls `to_str`. That gap is why the sitting had to measure the abort by hand.
+#
+# Three facts the spec's FFI clause states, one program each:
+#   1. `to_str` COPIES — the `str` survives the next call into C, which is what makes
+#      `getenv`, `ctime`, `strerror` and `sqlite3_column_text` bindable at all;
+#   2. `c == nullptr` is testable BEFORE converting, which is the escape the clause
+#      tells the reader to take;
+#   3. a guarded read of a genuinely absent value takes the null branch.
+#
+# `strerror` is the witness because its buffer is documented by POSIX as
+# *"invalidated or overwritten by a subsequent call"* — so if `to_str` borrowed, the
+# two `str` values would become EQUAL after the second call, both looking at one
+# buffer holding the second message.
+#
+# **Nothing platform-specific is printed, deliberately** — and the first version of
+# this file got that half right and half wrong, which is why the codes are `1` and
+# `2` rather than two large ones. It printed no libc text, and then rested on a
+# libc *property*: that two **unknown** codes give two different messages. They do
+# on Darwin and glibc, which embed the number (`Unknown error: 9999`), and they do
+# not on the MSVC CRT, which answers one generic string for every out-of-range
+# code. So `first == second` was `false` on two legs and `true` on the third, and
+# the case went red on Windows for a reason that was not the compiler's — the exact
+# failure its own paragraph claimed to have avoided (fixed 2026-08-15).
+#
+# `1` and `2` are `EPERM` and `ENOENT`, the two errno values C11 §7.5 requires
+# every implementation to define, and no libc gives them the same message. The
+# relationship being asserted — two calls, two independent strings — is unchanged;
+# what is gone is the premise about how a libc renders a code it does not know.
+#
+# `HOME` is still avoided for the reason it always was: it is not set on the
+# Windows leg, so the absent-variable witness is a name no machine has.
+
+extern "string.h"
+    function strerror(code: i32) -> cstr
+
+extern "stdlib.h"
+    function getenv(name: cstr lent) -> cstr
+
+function main()
+    first = strerror(code: 1).validated().must()
+    second = strerror(code: 2).validated().must()
+
+    # `false` here is the whole point: a borrow would make these one string.
+    print(first == second)
+    print(len(first) > 0)
+
+    # **The null test is GONE and that is the repair** (panel 090). This golden
+    # was written for `to_str`, which aborts on a null pointer, so it had to
+    # guard — and panel 087 measured that the guard does not save you anyway,
+    # because ill-formed bytes abort too. `validated` answers both as a `str?`,
+    # so the branch is where it belongs: on the value, not before it.
+    absent = getenv(name: "HEROES_NO_SUCH_VARIABLE_059".cstr())
+
+    match absent.validated()
+        .ok text => print(text)
+        .err e   => print("absent: ", e.code)

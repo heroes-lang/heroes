@@ -1,0 +1,223 @@
+# A foreign word where it STANDS in a text: the repair `keywords.foreign_word`
+# gives it once told whether the byte after it is `(` (defect 015), kept
+# `certain` only where the word it writes is right in that place, and the word
+# a certain swap writes over it (defect 133; design.md §4.17).
+#
+# **One module for a question two stages ask.** The lexer asks it to write
+# the `reserved_word` diagnostic and its fix (`scan.ident`); the parser asks
+# it to read a construct as the certain swap writes it
+# (`parse/swap_reading.hero`). Read in one place, the byte and the place that
+# decide whether a swap is certain cannot be read two ways, so the parser
+# never reads a swap `check --apply` would not write. `keywords.hero` keeps
+# the tables and the answer; this module keeps where in a text they are
+# asked.
+#
+# **A swap is certain only where the word it writes is right where it
+# stands** (defect 133's second round, 2026-09-29): defect 015's rule, the
+# byte after the word, carried one step to the place the word stands in
+# (`word_place.hero`). Measured the day it landed, over every swap in every
+# place: `function fn(` wrote `function function(`, `record struct` wrote
+# `record record`, `const x = 5` in a body wrote `constant x = 5`, `enum` in
+# an `extern` group wrote a `variant` no group holds, and `include "stdio.h"`
+# wrote `use "stdio.h"`, each a program `check` refused with a code the
+# first run had not reported. Where the word is wrong, the message says what
+# is right there, and the fix is a `guess` or none.
+
+use token
+use keywords
+use word_place
+use word_neighbours
+
+## Error codes
+
+constant ERR_NO_SWAP: str
+    "no_swap"
+
+## Where the word stands
+
+# The repair the word at `span` gets where it stands in `text`.
+function repair_at(text: str, span: token.Span) -> keywords.ForeignWord?
+    called = span.end < text.len() && text[span.end] == '('
+    word = text.slice(from: span.start, to: span.end)
+    found = keywords.foreign_word(text: word, called: called)
+
+    if found.is_err()
+        return found
+    one = found.must()
+
+    return match one.repair
+        .swap fix => ok(placed(text: text, span, one, word: word, writes: fix.word))
+        .hint _   => ok(one)
+        .drop     => ok(one)
+        .guidance => ok(one)
+
+# The swap, where the word it writes is right in the place the word stands;
+# otherwise what is right there.
+function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: str, writes: str) -> keywords.ForeignWord
+    place = word_place.place_of(text, span)
+
+    if writes == "use" && word_neighbours.header_after(text, end: span.end)
+        return keywords.ForeignWord(
+            message: "`" + word + "` is not a word in this language — a C header is named by an `extern` group, with the signatures it declares indented below it: `extern \"stdio.h\"`",
+            repair: .hint(word: "extern")
+        )
+
+    if right_at(text: text, span, writes: writes, place: place)
+        return one
+
+    if writes == "else if" && place == .statement && word_neighbours.continues_an_if(text, span)
+        return keywords.ForeignWord(
+            message: "`" + word + "` is not a word in this language — `else if` continues the `if` above it with a condition of its own: `else if x == 2`",
+            repair: .guidance
+        )
+    return keywords.ForeignWord(
+        message: misplaced(word: word, writes: writes, place: place),
+        repair: repair_there(writes, place: place)
+    )
+
+# Where each word a swap writes is right: a declaration's keyword where a
+# declaration opens, a group's three members one level under its head,
+# `function` also where a parenthesised function type opens, `i64` where a
+# type goes, `match` where a statement or a value goes, and `else if` where
+# an `if` above it continues.
+function right_at(text: str, span: token.Span, writes: str, place: word_place.Place) -> bool
+    named = word_neighbours.name_after(text, end: span.end)
+
+    if writes == "record" || writes == "constant"
+        return (place == .top || place == .member) && named
+
+    if writes == "function"
+        return (place == .top || place == .member) && named || place == .function_type
+
+    if writes == "variant" || writes == "use"
+        return place == .top && named
+
+    if writes == "i64"
+        return place == .typed
+
+    if writes == "match"
+        return (place == .statement || place == .valued) && word_neighbours.arms_below(text, span)
+
+    if writes == "else if"
+        return place == .statement && word_neighbours.continues_an_if(text, span) && word_neighbours.value_after(text, end: span.end)
+    return false
+
+# What is right where the word stands, when the swap is not.
+function misplaced(word: str, writes: str, place: word_place.Place) -> str
+    lead = "`" + word + "` is not a word in this language"
+
+    if place == .named
+        return lead + ", and a name cannot be one: choose another name"
+
+    if writes == "use" && place == .top
+        return lead + " — use `use`, followed by the module it names: `use geom`"
+
+    if place == .top && declares(writes) || place == .member && (writes == "record" || writes == "function" || writes == "constant")
+        return lead + " — use `" + writes + "`, followed by the name it declares: `" + declared_example(writes) + "`"
+
+    if writes == "constant" && place == .statement
+        return lead + " — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file"
+
+    if (writes == "function" || writes == "record" || writes == "variant" || writes == "constant") && place == .statement
+        return lead + " — a `" + writes + "` is declared at the top level of a file, never inside a body or another declaration"
+
+    if writes == "variant" && place == .member
+        return lead + " — an `extern` group holds no `variant`: a C enumeration's values are the group's `constant`s, one per line: `constant MODE_A: i32`"
+
+    if writes == "use"
+        return lead + " — a module is named by `use`, on a line of its own at the top level of a file: `use geom`"
+
+    if writes == "function" && place == .typed
+        return lead + " — a function type is `function`, written in parentheses: `(function(i64) -> i64)`"
+
+    if (writes == "record" || writes == "variant") && place == .typed
+        return lead + " — a type names the `" + writes + "` itself: `p: Point`"
+
+    if writes == "i64"
+        return lead + " — an integer type says its width, `i64`, and a type is written where a type goes: after a name and `:`, or after `->`"
+
+    if writes == "match"
+        return lead + " — `match` is an expression, written inside a body over the value it matches, with its arms below: `y = match x`"
+
+    if writes == "else if"
+        return lead + " — `else if` continues an `if` at the same margin above it, and there is none here"
+    return lead + " — and `" + writes + "` cannot stand here either: nothing of the word belongs on this line"
+
+function declares(writes: str) -> bool
+    return writes == "record" || writes == "variant" || writes == "function" || writes == "constant" || writes == "use"
+
+function declared_example(writes: str) -> str
+    return match writes
+        "record"   => "record Point"
+        "variant"  => "variant Token"
+        "function" => "function f(x: i64) -> i64"
+        "constant" => "constant MAX: i64"
+        _          => "use geom"
+
+# The repair where the swap is not right: `const x = 5` in a body loses its
+# word, a guess; everything else is the message's to say.
+function repair_there(writes: str, place: word_place.Place) -> keywords.Repair
+    if writes == "constant" && place == .statement
+        return .drop
+    return .guidance
+
+# The word a CERTAIN swap writes over the foreign word at `span`: exactly the
+# replacement `check --apply` machine-applies, and a failure where the repair
+# is a hint or guidance, which nothing applies and so nothing may read as
+# written.
+function certain_swap(text: str, span: token.Span) -> str?
+    found = repair_at(text, span)
+
+    if found.is_err()
+        return fail(code: keywords.ERR_NOT_FOREIGN, msg: text.slice(from: span.start, to: span.end))
+
+    return match found.must().repair
+        .swap fix => ok(fix.word)
+        .hint _   => fail(code: ERR_NO_SWAP, msg: "a hint is shown, never applied")
+        .drop     => fail(code: ERR_NO_SWAP, msg: "a drop is shown, never applied")
+        .guidance => fail(code: ERR_NO_SWAP, msg: "guidance names no replacement")
+
+# The parser reads a construct as the certain swap writes it, so the swap it
+# reads must be the one `--apply` writes, decided by the same byte and place.
+test "a certain swap is read where the word stands, and a hint or guidance never is"
+    text = "fn main() int(x) let y  fn(z)"
+    assert certain_swap(text, token.Span(start: 0, end: 2)).must() == "function"
+    assert certain_swap(text, token.Span(start: 3, end: 7)).is_err()
+
+    # `int(` is a hint and `let` is guidance: neither is applied, so neither
+    # is read as written.
+    assert certain_swap(text, token.Span(start: 10, end: 13)).is_err()
+    assert certain_swap(text, token.Span(start: 17, end: 20)).is_err()
+
+    # A word at the text's very end has no byte after it, so it is not called.
+    assert certain_swap("struct Point", token.Span(start: 0, end: 6)).must() == "record"
+
+    # And a declaration's keyword owes the name it declares: `struct` alone
+    # heads nothing.
+    assert certain_swap("struct", token.Span(start: 0, end: 6)).is_err()
+
+test "a swap is certain only where the word it writes is right"
+    typed = "g: (fn(i64) -> i64)"
+    assert certain_swap(typed, token.Span(start: 4, end: 6)).must() == "function"
+    bare = "g: fn(i64) -> i64"
+    assert certain_swap(bare, token.Span(start: 3, end: 5)).is_err()
+    assert certain_swap("x: int", token.Span(start: 3, end: 6)).must() == "i64"
+    assert certain_swap("int x", token.Span(start: 0, end: 3)).is_err()
+    named = "function fn(x: i64)"
+    assert certain_swap(named, token.Span(start: 9, end: 11)).is_err()
+    body = "function main()\n    const x = 5\n"
+    assert certain_swap(body, token.Span(start: 20, end: 25)).is_err()
+    assert repair_at(body, token.Span(start: 20, end: 25)).must().repair == .drop
+    group = "extern \"m.h\"\n    enum Mode\n"
+    assert certain_swap(group, token.Span(start: 17, end: 21)).is_err()
+    header = "include \"stdio.h\"\n"
+    assert repair_at(header, token.Span(start: 0, end: 7)).must().repair == .hint(word: "extern")
+    assert certain_swap("import geom", token.Span(start: 0, end: 6)).must() == "use"
+    chain = "function f()\n    if x\n        print(1)\n    elif y\n"
+    assert certain_swap(chain, token.Span(start: 43, end: 47)).must() == "else if"
+    assert certain_swap("elif", token.Span(start: 0, end: 4)).is_err()
+
+test "the repair where the word stands is the table's answer where that answer is right"
+    assert repair_at("int(", token.Span(start: 0, end: 3)).must() == keywords.foreign_word(text: "int", called: true).must()
+    assert repair_at("x: int", token.Span(start: 3, end: 6)).must() == keywords.foreign_word(text: "int", called: false).must()
+    assert repair_at("main", token.Span(start: 0, end: 4)).is_err()

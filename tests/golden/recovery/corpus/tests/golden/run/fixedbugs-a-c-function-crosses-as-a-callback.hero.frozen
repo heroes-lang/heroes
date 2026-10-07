@@ -1,0 +1,47 @@
+# Defect 069, repaired 2026-09-20 at M-declared-extents step 12.
+#
+# SYMPTOM. A C function's name standing as a callback argument was `check` exit
+# 0, `build` exit 0, and `run` exit 134 with `panic: entered unreachable code —
+# this is a compiler bug, please report it`, three runs of three.
+#
+# CAUSE. `emit/inst.hero`'s `.func_ref` arm wrote
+# `hero_unreachable(); /* the gate refuses this form */` for an `extern_fn`
+# callee, and the emitter then emitted the CALL four lines later anyway, passing
+# a temporary nothing had assigned. A gate that refuses a form and then emits it
+# is not a gate: it moves a compile-time question to run time and blames the
+# compiler for the program.
+#
+# The repair is emission and not refusal, and the reason is that **clang is
+# already the judge**: an extern's name is unmangled by design (CLAUDE.md §7),
+# so assigning it to the parameter's own typedef is checked against the real
+# header, and a mismatched signature is `incompatible function pointer types` at
+# exit 1 — `.claude/rules/c-boundary.md`'s fifth clang-failure class arriving at
+# an assignment instead of at a call.
+#
+# WHY THIS SHAPE AND NOT A SMALLER ONE. Panel 169 found that a destructor
+# callback is the one mechanism every real C library offers for the retention
+# problem defects 066 and 068 are about, and that Heroes could not pass one — so
+# this case is the ladder's own shape, a buffer handed over with the function
+# that disposes of it, rather than a callback that merely prints. The counter is
+# what makes it an assertion: a callback never called leaves `blob_frees` at
+# zero, and a callback whose address was a garbage temporary never reaches C.
+
+extern "fixedbugs-a-c-function-crosses-as-a-callback.h"
+    function blob_make() -> ptr
+    function blob_take(p: ptr, n: i64, d: (function(ptr) -> ()))
+    function counting_free(p: ptr)
+    function blob_first() -> i64
+    function blob_frees() -> i64
+
+function main()
+    b: ptr @ blob_make()
+
+    # The line the defect was about: `counting_free` is a C function's NAME
+    # standing as a value, and C is the one that calls it.
+    blob_take(p: b, n: 4, d: counting_free)
+
+    # C read the bytes before disposing of them.
+    print(blob_first())
+
+    # And C called the disposer Heroes named, exactly once.
+    print(blob_frees())

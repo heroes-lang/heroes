@@ -1,0 +1,11 @@
+# A comment trailing the last element of a bracket on the last lines of a
+# file with no newline at its end: it stays in the bracket, on the line.
+
+function main()
+    print(f()[0])
+
+function f() -> [i64]
+    return [
+        1,
+        2  # the last element
+    ]

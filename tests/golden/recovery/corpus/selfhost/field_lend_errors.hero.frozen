@@ -1,0 +1,161 @@
+# The diagnostics of the FIELD lend: `f.ptr()`, a binding's field lent to C by
+# address (design.md §4.19, §1.12; panels 164, 166, 171; defects 063, 065).
+#
+# WHY IT IS ITS OWN MODULE. `lend_errors.hero` held the lend, the field lend and
+# the lease as one family and passed §11's 300 lines twice in one day: the
+# lease's three left for `lease_errors.hero` when panel 171's two refusals
+# landed, and the field's six leave here when `suite_layout` read 307. The seam
+# is the checker's own since panel 164: a field lend hands C an ADDRESS into a
+# record C may write through, so it has a place rule, a header rule, an extent
+# rule and a write rule that a `str`'s lend does not, and `check/lending.hero`,
+# `check/lend_landing.hero`, `emit/ffi_extent.hero` and `emit/ffi_lend.hero`
+# each ask one of them. The functions moved verbatim, with the reasoning each
+# carried.
+#
+# ONE `Fix` IN THIS FILE AND IT IS A `guess`: `field_lend_extent`'s, for the
+# reason written beside it. Every other repair is a different shape of program,
+# and `.claude/rules/diagnostics-and-goldens.md` says a fix that leaves the
+# defect standing is a guess however well it compiles.
+
+use token
+use diag
+
+# The same position rule, over a FIELD's lend (panel 164).
+#
+# IT IS A SECOND DIAGNOSTIC AND NOT A WIDENING OF THE ONE ABOVE, because that
+# one says `str` four times and every sentence of it would be false here. A
+# field's bytes belong to the RECORD, not to a `str`, and they die when the
+# record's slot does rather than when a runtime string is released — so the
+# repair a reader needs is a different sentence, and §4.17 asks a diagnostic to
+# carry what fixes the program without opening another file.
+function field_lend_escapes(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_escapes",
+        message: "`.ptr()` lends this field's address to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the record it points into",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "pass it directly as an argument of the call that reads or fills it. The bytes belong to the record, which is a value: the slot holding it is released when its function returns, so an address kept past its call points into memory the next statement may reuse. A C function that keeps the pointer needs the bytes copied, which is what `validated_bytes` does for text"
+    )
+    return d
+
+# A `ptr` lend whose receiver is not a place (panel 164).
+#
+# THE LEND EXISTS SO C MAY WRITE BACK, which is what separates it from
+# `validated_bytes` beside it: that one copies the bytes out and the copy is the
+# answer, this one hands over the field itself. So the field has to still be
+# somewhere the program can see when C returns, and a returned temporary is not.
+function field_lend_needs_a_place(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_needs_a_place",
+        message: "`.ptr()` lends a field's address to C, so the field must be one this program can still name — here the bytes belong to a value nothing holds",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "bind the record first and lend the field of the binding: `s = make()` and then `s.name.ptr()`. C may write through this pointer, and a write into a value nothing holds lands in storage the next statement reuses. To READ a field's text without holding the record, `validated_bytes` copies the bytes out and needs no place"
+    )
+    return d
+
+# A `ptr` lend handed to anything but a function of an `extern` group (panel
+# 166, 2026-09-19; design.md §4.19).
+#
+# THE HEADER IS THE ONLY PLACE THE TWO QUESTIONS ABOUT A LEND ARE ANSWERED:
+# whether C writes through it — the header's `const`, which clang checks against
+# the cast the root decides — and how far it reads, the extent route C declares
+# on the group's parameter. A Heroes function taking `ptr` can carry neither:
+# its parameter is a plain `void *`, so a lend from an immutable root failed
+# inside clang at the wrapper's call at exit 2 (measured on the route's landing
+# day), and a lend from a `@` root reached C with nothing checked about it.
+function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_needs_a_header",
+        message: "`.ptr()` lends a field's address to C, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no header says whether it writes through the pointer or how far it reads",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "lend at the call that reaches C. A wrapper takes the record by value, or as `@`, and lends the field inside itself — `function total(s: Slot) -> i64` returning `slot_sum(p: s.nsap.ptr(), n: 8)` — which is the shape §4.19 prescribes as the route out of a module, and the header is asked where the lend is made"
+    )
+    return d
+
+# A `ptr` lend landing on a parameter that declares no extent (panel 166's
+# route C, ratified 2026-09-19; defect 063; design.md §4.19, §1.12).
+#
+# ABSENCE IS A REFUSAL AND NEVER SILENCE, which is the compiler-engineer's own
+# condition for approving the route: a check that applies only where somebody
+# wrote the mark leaves the corruption standing wherever nobody did, and §1.12
+# asks the compiler to CHECK rather than assume. The number a lend crosses with
+# is the call's word, and the mark is what lets the emitter compare it to the
+# field's own `sizeof` in C.
+#
+# IT IS ASKED BEFORE `lend_kept` and the note names the whole spelling, so a
+# reader who writes `counted_by n lent` in one go meets one message and not two
+# (panel 171): the extent is the first of the two words on a `ptr`, and a
+# `lent` with no extent beside it is `lent_shape`, dead text.
+function field_lend_uncounted(callee: str, parameter: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_uncounted",
+        message: "`.ptr()` lends a field's address to C with an extent this call states, and `" + parameter + "` of `" + callee + "` does not say which argument the extent is — so nothing can check the number against the field",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "declare the relation the header already has: `" + parameter + ": ptr counted_by <the parameter that carries the count>` in the `extern` group, followed by `lent` where the call keeps nothing of the address — a parameter without that word is assumed to keep it, and the lend is refused there next. The compiler then compares the number against the field's own size, in C, wherever the call states a constant — an overstated one reads and WRITES past the field, silently, at exit 0"
+    )
+    return d
+
+# An extent stated above the field's own length, read back from clang's verdict
+# on the assertion the emitter wrote (panel 166's route C; defect 063).
+#
+# THE NUMBER COMPARED IS C'S OWN `sizeof` of the field, which is what makes this
+# right where a Heroes-side check is wrong twice: a `partial` record's size is
+# C's and not the field list's, and a group `constant` lowers to a call of its
+# accessor, so a check wanting a literal would refuse the careful reader and
+# accept the careless one.
+#
+# THE FIX IS A `guess` AND THE FIRST DRAFT CERTIFIED IT, which would have been
+# wrong by `.claude/rules/diagnostics-and-goldens.md`'s own rule. Writing the
+# field's length does end the corruption, so it looks like a repair — but it
+# CHANGES WHAT THE PROGRAM ASKS C TO DO, and the author may have meant the
+# longer number and the wrong field. The note offers two repairs for that
+# reason, and a fix `--apply` may take must be the one there is no second
+# candidate for (design.md §4.17's inverse case, panel 071).
+function field_lend_extent(lend: str, callee: str, parameter: str, count: str, stated: str, length: i64, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_extent",
+        message: "`" + lend + "` lends a field of " + length.to_str() + " bytes, and `" + count + "` states " + stated + " — `" + parameter + "` of `" + callee + "` is declared `counted_by " + count + "`, and C read the field's own size from the header",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "C reads and writes exactly the bytes this number says, so a larger one reaches past the field into whatever the header put beside it — a sibling of the same record, silently, at exit 0. Write the field's own length, or lend a longer field"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "state the field's own length, " + length.to_str(), replacement: length.to_str(), span: span, certainty: .guess)
+    )
+    return d
+
+# A `ptr` lend C would write through, rooted at a name the program may not
+# write (panel 166, 2026-09-19; defect 065; design.md §4.4, §4.19).
+#
+# THE HEADER DECIDES, PER CALL, and this compiler only carries the answer. A
+# lend rooted at a `=` binding or a by-value parameter crosses as
+# `const void *`; a parameter the header spells without `const` is one C may
+# write through; and clang refuses the two together, against the real header,
+# with a flag this compiler has shipped since panel 103. `emit/ffi_lend.hero`
+# reads that refusal into this sentence. Before that sitting the lend crossed as
+# `void *` from every root, and `t = make()` followed by a C fill read back
+# changed at exit 0 — `spec § 5`'s *only a declared `@` name can be mutated*,
+# false for that program.
+#
+# THE REPAIR IS A `@`, AND STILL NO `Fix`: declaring the name mutable changes
+# what every other line may do to it, and whether the author meant to WRITE or
+# only meant to READ through a parameter the header should have marked `const`
+# is theirs to say. The note names both roads.
+function field_lend_written(lend: str, root: str, callee: str, c_type: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_written",
+        message: "`" + lend + "` lends a field of `" + root + "` to `" + callee + "`, and the header declares that parameter `" + c_type + "` — C may write through it, and `" + root + "` is not a `@` name",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.4: only a declared `@` name can be mutated, and a C write is a mutation. Declare `" + root + "` with `@` — a `@` cell, or a `@` parameter — and the bytes C writes land where this program reads them back. To only READ the field, lend it to a parameter the header declares `const`"
+    )
+    return d

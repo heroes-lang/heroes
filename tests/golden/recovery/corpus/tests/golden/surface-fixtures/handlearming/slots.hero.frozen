@@ -1,0 +1,23 @@
+# The producer lives here and the `consumes` that arms the rule lives in
+# `main.hero`, which this file does not import and has never heard of.
+#
+# **That is defect 041.** The rule is program-wide — `one_tag_one_type` makes a
+# handle's declaration a program-wide identity and `checker.hero` checks one
+# resolved PROGRAM — so the refusal lands here, and until 2026-09-15 the message
+# named `slot_close` without ever saying which file it was in. design.md §4.17
+# asks a diagnostic to carry everything needed without opening another file, and
+# a reader of this line could not even learn WHICH other file.
+#
+# The repair is `source.elsewhere`, which already shipped and which six other
+# diagnostics already called: it says `line 12` when both ends are in one file
+# and `main.hero:9` when they are not. The single-file direction is covered by
+# `tests/golden/check/fixedbugs-a-handle-reached-through-a-field.hero`, where the
+# message must stay SILENT about the location — naming the file already on
+# screen is the noise that rule exists to prevent.
+
+extern "pool.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot  #~ unmarked_handle_producer
+
+function make(n: i64) -> Slot
+    return slot_open(n: n)
