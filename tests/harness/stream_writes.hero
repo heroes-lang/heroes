@@ -16,7 +16,8 @@
 # `tokens` field, `c.tokens @ …`, `c.tokens[i] @ …` or `c.tokens[i].kind @
 # …`, or a lend of such a place, `f(@c.tokens, …)` or `f(@c.tokens[i])`,
 # whatever holds the field and whatever the holder is named, on a line of its
-# own or in a match arm. The one lend kept is `stream_tables.relaid(@<place>,
+# own or in a match arm, and a lend on an argument line of a call broken over
+# lines read as that call's. The one lend kept is `stream_tables.relaid(@<place>,
 # …)`, and a bare `relaid(` inside `selfhost/stream_tables.hero` itself.
 #
 # THE LEXER'S OWN STATE IS THE STREAM BEING MADE, not one made: a
@@ -62,6 +63,8 @@ record Site
 function sites(path: str, text: str) -> [Site]
     out: [Site] @ []
     lexers: {str: bool} @ {}
+    calls: [str] @ []
+    levels: [i64] @ []
     at: i64 @ 0
 
     for row in strings.split_on(text: text, byte: 10)
@@ -70,24 +73,40 @@ function sites(path: str, text: str) -> [Site]
 
         if code.len() == 0
             continue
+        indent = growth.indent_of(row)
 
         # A top-level item starts a new function or test: nothing it
         # declared reaches the next one. A bracket closing a header broken
         # over lines is the same item's.
-        if growth.indent_of(row) == 0 && !closes_a_header(code)
+        if indent == 0 && !closes_a_header(code)
             lexers @ {}
+
+        # A call broken over lines, its arguments one a line beneath it, is
+        # open until a line stands where it does, its closing bracket's.
+        while levels.len() > 0 && indent <= levels[levels.len() - 1]
+            levels @ levels.slice(from: 0, to: levels.len() - 1)
+            calls @ calls.slice(from: 0, to: calls.len() - 1)
+
+        opened: str @ ""
+
+        if calls.len() > 0
+            opened @ calls[calls.len() - 1]
 
         for name in lexer_names(code)
             lexers[name] @ true
 
         hit: bool @ false
 
-        for place in written_places(path: path, code: code)
+        for place in written_places(path: path, code: code, opened: opened)
             if holds_field(place) && lexers[root_of(place)].is_err()
                 hit @ true
 
         if hit
             out @ out.push(Site(line: at, code: strings.trimmed(row)))
+
+        if strings.ends_with(text: code, suffix: "(")
+            levels @ levels.push(indent)
+            calls @ calls.push(code)
 
     return out
 
@@ -96,8 +115,9 @@ function closes_a_header(code: str) -> bool
 
 # The places a line writes: the place of its store, `place @ value`, a match
 # arm's included, and each place it lends, `@place` as an argument; a place
-# lent to `relaid` is not one.
-function written_places(path: str, code: str) -> [str]
+# lent to `relaid` is not one. `opened` is the line that opened the call this
+# line is an argument of, where the call is broken over lines, else "".
+function written_places(path: str, code: str, opened: str) -> [str]
     out: [str] @ []
     body = growth.arm_body(code)
     store = strings.index_of(text: body, needle: " @ ")
@@ -113,8 +133,12 @@ function written_places(path: str, code: str) -> [str]
     while i + 1 < code.len()
         if code[i] == '@' && starts_a_name(code, at: i + 1) && (i == 0 || opens_an_argument(code[i - 1]))
             lent = place_at(code, from: i + 1)
+            before: str @ code.slice(from: 0, to: i)
 
-            if !kept_lend(path: path, before: code.slice(from: 0, to: i))
+            if i == 0
+                before @ opened
+
+            if !kept_lend(path: path, before: before)
                 out @ out.push(lent)
             i @ i + 1 + lent.len()
         else
@@ -287,6 +311,16 @@ test "relaid is kept by its own name only where it is defined, and a local lexer
     assert sites(path: "selfhost/parse/x.hero", text: alias).len() == 1
     local = "function h()\n    kept: state.LexState @ fresh()\n    kept.tokens @ []\n    push_token(@kept.tokens, t)\n"
     assert sites(path: "selfhost/x.hero", text: local).len() == 0
+
+    # A call broken over lines is the call its argument lines are lent to,
+    # nested or not, until its closing bracket.
+    broken = "function f(@c: cursor.Cursor)\n    stream_tables.relaid(\n        @c.tokens,\n        at: 1,\n        kind: .indent,\n        span: s\n    )\n    other(\n        @c.tokens,\n        at: 1\n    )\n    outer(\n        stream_tables.relaid(\n            @c.tokens,\n            at: 2\n        ),\n        @c.tokens\n    )\n"
+    lent: [i64] @ []
+
+    for one in sites(path: "selfhost/parse/x.hero", text: broken)
+        lent @ lent.push(one.line)
+
+    assert lent == [9, 17]
 
     # A lexer declared in one function is not one in the next.
     after = "function a(@l: LexState)\n    l.tokens @ []\n\nfunction b(@l: Cursor)\n    l.tokens @ []\n"
