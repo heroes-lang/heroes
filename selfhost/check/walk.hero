@@ -46,6 +46,7 @@ use inventory
 use digits
 use widths
 use check/table
+use check/type_fit
 use check/state
 use check/lower
 use check/render
@@ -692,9 +693,9 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
     if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)
         return
 
-    # `table.fits` is an id comparison with one exception, a parameter the
+    # `type_fit.fits` is an id comparison with one exception, a parameter the
     # declaration called `_` (defect 026, panel 129's ffi seat).
-    if table.fits(@c.out.types, wanted: expected, got: got)
+    if type_fit.fits(@c.out.types, wanted: expected, got: got)
         return
     a_text = state.show(c, s, decls, expected)
     b_text = state.show(c, s, decls, got)
@@ -1335,7 +1336,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # own site, and reading the name here would earn that one
                 # mistake a second message whose reason — *two of these are
                 # `str`* — is not even true.
-                if table.shared_at(params, at: position)
+                if type_fit.shared_at(params, at: position)
                     wanted @ carried
                 misnamed: bool @ false
 
@@ -1735,7 +1736,7 @@ function bind_argument(@c: state.Checker, s: source.Source, decls: [ast.Decl], @
         check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: span)
         return
 
-    if param != got && !table.fits(@c.out.types, wanted: param, got: got) && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got)
+    if param != got && !type_fit.fits(@c.out.types, wanted: param, got: got) && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got)
         a_text = state.show(c, s, decls, param)
         b_text = state.show(c, s, decls, got)
         state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: b_text, span: span))

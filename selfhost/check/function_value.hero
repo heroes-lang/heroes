@@ -38,6 +38,7 @@ use source
 use resolved
 use value_errors
 use check/table
+use check/type_fit
 use check/state
 use check/lower
 use check/render
@@ -168,7 +169,7 @@ function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
     if bound.len() == letters.len()
         got = instance_type(@c, s, decls, decl: decl, signature: signature, bindings: bindings)
 
-        if table.fits(@c.out.types, wanted: expected, got: got)
+        if type_fit.fits(@c.out.types, wanted: expected, got: got)
             c.out.instantiations[span.end] @ bound
             return got
         shown @ state.show(c, s, decls, got)
