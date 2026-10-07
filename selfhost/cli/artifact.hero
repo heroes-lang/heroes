@@ -99,11 +99,22 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     # refusal is the answer — which `emission` already knows to skip. The
     # artifact is CONDITIONAL on the machine, never DEPENDENT on it.
     #
-    # `emit_maybe` with the learned tags is exactly what `assemble.fused`
-    # compiles, so the bytes written are the bytes clang accepted. With no
-    # tagged handle the map is empty and the text is untouched. A counted
-    # parameter's unit is the pointee check's answer above, and rides the
-    # same way (panel 194's R7).
+    # **What the rounds compiled is not this text** (defect 434; this said
+    # *`emit_maybe` with the learned tags is exactly what `assemble.fused`
+    # compiles, so the bytes written are the bytes clang accepted*). Only
+    # `heroes test` compiles the fused unit (`assemble.fused`, `.tests_build`);
+    # `--emit-c` is a program build, whose rounds compile one unit per module
+    # (`assemble.per_module`), and the artifact is the same program rendered
+    # whole, as one unit, under the same two answers every one of those units
+    # was emitted with: the tags clang asked `struct` for and each counted
+    # parameter's unit, the pointee check's answer above (panel 194's R7).
+    # With neither, the pipeline's first text is already that rendering and
+    # is written as it is. So what PASSED is the program, module by module,
+    # and no clang run of this build read these bytes. Measured 2026-10-07
+    # by hand, not by any suite: clang read the artifacts of the 372
+    # `tests/golden/run/` programs under the build's own flags at `-O0`
+    # (`-fsyntax-only`, a package's `pkg-config --cflags` added for the nine
+    # that bind one), and said nothing of any of them.
     text: str @ art.c
     units = header_types.lend_units(answered)
 
