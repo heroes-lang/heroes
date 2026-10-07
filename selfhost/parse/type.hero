@@ -46,7 +46,7 @@ function parse_type(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         length = fixed_length.read(@c, text, open)
         inner @ ast.push_type(
             @a.types,
-            ast.TypeNode(kind: .fixed(element: inner, length: length), span: token.Span(start: start.start, end: cursor.previous_significant_span(c).end))
+            ast.TypeNode(kind: .fixed(element: inner, length: length), span: token.Span(start: start.start, end: cursor.previous_significant_span(@c).end))
         )
 
     if !cursor.at(c, .question)
@@ -249,7 +249,7 @@ function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     swapped = cursor.at(c, .error)
     _ = cursor.bump(@c)
     parts = function_parts(@c, @a, text)
-    span = token.Span(start: start.start, end: cursor.previous_significant_span(c).end)
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(@c).end)
 
     if !swapped
         written = cursor.slice_of(text, span)

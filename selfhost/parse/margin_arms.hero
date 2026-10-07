@@ -37,6 +37,7 @@ use parse/broken_arm
 use parse/swap_reading
 use parse/unclosed
 use lexer
+use stream_tables
 
 # Whether the line under the cursor begins at the margin of the `match` whose
 # keyword is token `head`, holds an arm, and can be that `match`'s.
@@ -250,7 +251,7 @@ function taken(@c: cursor.Cursor, lines: cursor.Cursor, from: i64)
     i: i64 @ from
 
     while i < lines.pos && c.tokens[i].kind != .eof
-        c.tokens[i] @ token.Token(kind: .terminator, span: c.tokens[i].span)
+        stream_tables.relaid(@c.tokens, at: i, kind: .terminator, span: c.tokens[i].span)
         i @ i + 1
 
 ## Tests

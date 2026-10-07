@@ -28,8 +28,8 @@ use text_lines
 # one read, spans more than one line of the text: it, or its recovery, went
 # on past its line. `function f(` over `y = 3 )` is one list the body's `)`
 # closes.
-function crossed_a_line(c: cursor.Cursor, text: str, from: i64) -> bool
-    last = cursor.previous_significant_span(c)
+function crossed_a_line(@c: cursor.Cursor, text: str, from: i64) -> bool
+    last = cursor.previous_significant_span(@c)
     return text_lines.newlines_between(text, from: c.tokens[from].span.start, to: last.end) > 0
 
 # Where the lexer joined two lines inside the head begun at token `from`: two
@@ -102,7 +102,7 @@ test "a join is two tokens on two lines with no line end between them"
     seam = joined_at(c, text, from: 0)
     assert !seam.is_err()
     assert seam.must() == token.Span(start: 5, end: 16)
-    assert crossed_a_line(c, text, from: 0)
+    assert crossed_a_line(@c, text, from: 0)
 
     # The same head on one line crossed none and was joined nowhere.
     one = "if n > m\n"
@@ -117,4 +117,4 @@ test "a join is two tokens on two lines with no line end between them"
     d: cursor.Cursor @ cursor.new_cursor(flat)
     d.pos @ 4
     assert joined_at(d, one, from: 0).is_err()
-    assert !crossed_a_line(d, one, from: 0)
+    assert !crossed_a_line(@d, one, from: 0)

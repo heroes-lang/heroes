@@ -163,7 +163,7 @@ function here_or_told(@c: cursor.Cursor, text: str, from: i64, empty: diag.Diagn
         .indented => false
         .braced _ => false
 
-    if nothing && !head_lines.crossed_a_line(c, text, from: from)
+    if nothing && !head_lines.crossed_a_line(@c, text, from: from)
         cursor.say(@c, empty)
     return below
 

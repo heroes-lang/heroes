@@ -1,0 +1,24 @@
+# Fixed defect 257, 2026-10-07 (lane b14-parse; batch 8's emit lane counted
+# it). Symptom: a body written in braces with brackets nested N deep cost the
+# square of N: 1,000 deep asked `token.is_closer` 1,004,989 times where the
+# same list outside braces asks 1,973, and a record literal 2,000 deep in
+# braces 16,016,994. Cause: since defect 344 the parse's stream pairs every
+# opener in one walk, but the braces are read through a view of their own
+# (`parse/braced_lines`), which no walk paired, so each opener in it was
+# walked from to its closer once per question. Repair: a view is paired as it
+# is made (`pairing.view`). The shape below: brackets 40 deep in braces the
+# lexer laid out and in braces it took for a bracket, a closer of another
+# kind in them, told as on the base.
+
+function f(a: [i64]) -> i64 {  #~ missing_body
+    return 1
+}
+
+function main() {  #~ missing_body
+    x = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+    y = f([1, 2)  #~ unclosed_bracket
+    z = f([[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[2]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]])
+    print(x.len() + y + z)
+}
+
+record Pair { a: [[i64]], b: {str: [i64]} }  #~ expected_end_of_line

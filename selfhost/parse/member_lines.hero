@@ -305,7 +305,7 @@ function comma(@c: cursor.Cursor, text: str, member: str, rule: str, @habit: i64
     gone = diag.Fix(
         title: "delete the `,`",
         replacement: "",
-        span: token.Span(start: cursor.previous_significant_span(c).end, end: at.end),
+        span: token.Span(start: cursor.previous_significant_span(@c).end, end: at.end),
         certainty: .certain
     )
 
