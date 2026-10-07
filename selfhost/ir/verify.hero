@@ -43,6 +43,7 @@ use ir/values
 use ir/phases
 use ir/one_exit
 use ir/agree
+use ir/instances
 
 # Whether this function's implementation is C's: an extern function's
 # code, or an extern constant's value (§4.19, panel 038). Both have no
@@ -69,6 +70,7 @@ function from_c(decls: [ast.Decl], f: containers.Function) -> bool
 function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [str]
     problems: [str] @ []
     kinds = phases.type_kinds(c)
+    held = instances.indexed(p)
 
     for f in p.functions
         label = f.name + " (" + containers.phase_name(p.phase) + "): "
@@ -90,6 +92,7 @@ function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [
             check_terminator(f, blk, at: at, problems: @problems)
             check_preds(jumps, index: index, blk: blk, at: at, problems: @problems)
             check_instructions(f, blk, at: at, problems: @problems)
+            check_named(p, f, blk, c, held: held, at: at, problems: @problems)
             check_copy_out(f, blk, at: at, problems: @problems)
             check_return_type(f, blk, c, at: at, problems: @problems)
             phases.check(p, f, blk, c, known: known, label: at, problems: @problems)
@@ -159,10 +162,16 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
         # refused to emit its own source.
         match inst.op
             .missing => is_missing @ true
+            # A built-in is a shape the emitter expands and never a symbol, so
+            # one named as a value has no C (`emit/func_ref.hero`); the checker
+            # refuses it as `builtin_as_value` (defect 417's neighbour).
             .func_ref fr =>
                 match fr.callee
-                    .indirect                             => problems @ problems.push(at + "the address of an address")
-                    .heroes_fn | .extern_fn | .builtin_fn => is_abort @ is_abort
+                    .indirect               => problems @ problems.push(at + "the address of an address")
+                    .builtin_fn             => problems @ problems.push(
+                        at + "a built-in named as a value, which C has no name for"
+                    )
+                    .heroes_fn | .extern_fn => is_abort @ is_abort
             # An `@` argument's place runs through an index only at a CALL,
             # since panel 196's R1 handed C an element's own address: the
             # emitter unshares the array right before a call and nowhere
@@ -217,6 +226,65 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
                 problems @ problems.push(at + "names slot " + slot.to_str() + ", which does not exist")
 
         index @ index + 1
+
+# A Heroes callee the emitter could not name (defect 417, 2026-10-07): a call,
+# or a function used as a value, whose declaration at the type arguments the
+# instruction names is no function of the program. The emitter's answer to
+# one was `hero_unreachable()` where it stood, so the program built at exit 0
+# and aborted on reaching that line, saying the compiler was wrong. It is the
+# compiler's fault all the same, and it is said here, at build time and before
+# any C, with the instruction's bytes, by the lookup the emitter names it with
+# (`ir/instances.hero`), read from an index of the program built once per
+# verification. Asked once monomorphisation has run: before it a generic call
+# names type arguments no copy holds yet.
+function check_named(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, held: instances.Index, at: str, @problems: [str])
+    if !after_mono(p.phase)
+        return
+
+    for inst in blk.insts
+        what: str @ ""
+        decl: i64 @ 0 - 1
+
+        match inst.op
+            .call cl =>
+                match cl.callee
+                    .heroes_fn h =>
+                        what @ "a call"
+                        decl @ h.decl
+                    .extern_fn | .builtin_fn | .indirect => what @ what
+            .func_ref fr =>
+                match fr.callee
+                    .heroes_fn h =>
+                        what @ "a function value"
+                        decl @ h.decl
+                    .extern_fn | .builtin_fn | .indirect => what @ what
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => what @ what
+            .field | .index | .map_get | .len_of | .tag_of | .payload                   => what @ what
+            .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => what @ what
+
+        if decl >= 0
+            named = instances.named_at(f, c, at: inst.span.end)
+
+            if instances.index_in(held, decl: decl, instance: named).is_err()
+                problems @ problems.push(
+                    at + what + " at bytes " + inst.span.start.to_str() + " to " + inst.span.end.to_str() + " names " + callee_name(p, decl: decl) + " at the types " + render_list(named) + ", and the program holds no such function: C would have no name for it"
+                )
+
+function after_mono(phase: containers.Phase) -> bool
+    match phase
+        .lowered       => return false
+        .mono | .owned => return true
+
+    return false
+
+# The callee's source name, from any copy of it the program holds, or its
+# declaration's index where it holds none: the verifier has no source text.
+function callee_name(p: containers.Program, decl: i64) -> str
+    for f in p.functions
+        if f.decl == decl
+            return "`" + f.name + "`"
+
+    return "declaration " + decl.to_str()
 
 # §4.8: copy-out happens ALWAYS. Every block that returns must write
 # back every @ parameter — WHICH parameters, not how many: this check
@@ -485,6 +553,97 @@ test "an element lent through @ by anything but a call is refused before the emi
     problems = verify(p, c, parsed.decls)
     assert problems.len() == 1
     assert problems[0] == "sneaky (after lowering): bb0: a construction lends an element through `@` — only a call may (ir/inout.hero)"
+
+test "a call and a value naming no function of the program are refused once monomorphisation has run (defect 417)"
+    text = "function main()\n    return\n\nfunction gone()\n    return\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    unit = table.unit_ty(c.types)
+    void: i64? = fail(code: "none", msg: "void")
+    insts: [ir.Inst] = [
+        ir.Inst(dest: void, op: .func_ref(callee: .heroes_fn(decl: 1)), ty: unit, span: token.Span(start: 30, end: 34))
+        ir.Inst(dest: void, op: .call(callee: .heroes_fn(decl: 1), arguments: ir.Run(start: 0, length: 0), variadic: false), ty: unit, span: token.Span(start: 40, end: 46))
+    ]
+    blk = containers.Block(
+        preds: [],
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
+    f = containers.Function(
+        name: "main",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: unit,
+        slots: [],
+        blocks: [blk],
+        values: [unit],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+
+    # Lowered, a callee is its template and is not asked; `gone` has no copy.
+    lowered = containers.Program(phase: .lowered, functions: [f], strings: [])
+    assert verify(lowered, c, parsed.decls).len() == 0
+
+    # Monomorphised, nothing names `gone`: both are refused, by their bytes.
+    mono = containers.Program(phase: .mono, functions: [f], strings: [])
+    assert verify(mono, c, parsed.decls) == ["main (after monomorphisation): bb0: a function value at bytes 30 to 34 names declaration 1 at the types [], and the program holds no such function: C would have no name for it", "main (after monomorphisation): bb0: a call at bytes 40 to 46 names declaration 1 at the types [], and the program holds no such function: C would have no name for it"]
+
+    # With `gone` in the program, both name it.
+    gone_fn: containers.Function @ f
+    gone_fn.name @ "gone"
+    gone_fn.decl @ 1
+    gone_fn.blocks @ [
+        containers.Block(preds: [], insts: [], term: .return_term(value: fail(code: "none", msg: "no value")), note: "t")
+    ]
+    held = containers.Program(phase: .mono, functions: [f, gone_fn], strings: [])
+    assert verify(held, c, parsed.decls).len() == 0
+
+test "a built-in named as a value is refused at every phase (defect 417)"
+    text = "function main()\n    return\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    unit = table.unit_ty(c.types)
+    void: i64? = fail(code: "none", msg: "void")
+    insts: [ir.Inst] = [
+        ir.Inst(dest: void, op: .func_ref(callee: .builtin_fn(at: 0)), ty: unit, span: token.Span(start: 0, end: 1))
+    ]
+    blk = containers.Block(
+        preds: [],
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
+    f = containers.Function(
+        name: "main",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: unit,
+        slots: [],
+        blocks: [blk],
+        values: [unit],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+    p = containers.Program(phase: .lowered, functions: [f], strings: [])
+    assert verify(p, c, parsed.decls) == ["main (after lowering): bb0: a built-in named as a value, which C has no name for"]
 
 test "preds that disagree with the terminators are named, and a stray one is named rather than aborted on"
     none: [ir.Inst] = []

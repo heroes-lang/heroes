@@ -1,0 +1,69 @@
+# FIXED DEFECT 417, 2026-10-07 (lane b14-emit): a function value or a call the
+# emitter could not name became `hero_unreachable()` in the C, a program that
+# built and aborted at run time blaming the compiler. The verifier now refuses
+# one at build time, after monomorphisation, by the lookup the emitter names
+# it with. No program was found reaching it, so this case pins the other half:
+# the shapes beside defect 402's, each a generic function named as a value
+# where only its context gives the types, verified clean and run.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant STEPS: [(function(i64) -> i64)]
+    [ident, twice]
+
+record P
+    x: i64
+
+function ident<A>(x: A) -> A
+    return x
+
+function twice(n: i64) -> i64
+    return n * 2
+
+# Its instance at i64 is reached only through the instance of `outer`, itself
+# named only as a value.
+function outer<B>(x: B) -> B
+    f: (function(B) -> B) = ident
+    return f(x)
+
+# A value of its own instance, inside itself.
+function down<A>(x: A, n: i64) -> A
+    if n == 0
+        return x
+    f: (function(A, i64) -> A) = down
+    return f(x, n - 1)
+
+# A value the result's type names, of the instance the argument binds.
+function pick<B>(x: B) -> (function(B) -> B)
+    _ = x
+    return ident
+
+# A value of an instance that nothing calls.
+function keep<B>(x: B) -> B
+    f: (function(B) -> B) = ident
+    _ = f
+    return x
+
+function main()
+    h: (function(i64) -> i64) = outer
+    print(h(4))
+    k: (function(str) -> str) = outer
+    print(k("five"))
+    print(down(11, n: 3))
+    print(down("eleven", n: 2))
+    f = pick(14)
+    print(f(15))
+    g = pick("s")
+    print(g("sixteen"))
+    print(keep(1))
+    print(keep("x"))
+    rec: (function(P) -> P) = ident
+    print(rec(P(x: 12)).x)
+    m: {str: (function(i64) -> i64)} @ {}
+    m["a"] @ ident
+    print(m["a"].must()(16))
+    print(STEPS[0](17) + STEPS[1](1))
+    spawned = hero_thread_spawn(body: ident, arg: 18)
+    print(hero_thread_join(handle: spawned))

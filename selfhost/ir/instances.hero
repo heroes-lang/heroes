@@ -49,6 +49,45 @@ function index_of(p: containers.Program, decl: i64, instance: [i64]) -> i64?
 
     return fail(code: "none", msg: "no function of this declaration at these type arguments")
 
+# The program's functions by declaration, built once for a walk that asks
+# `index_of`'s question of every instruction (the verifier's, defect 417):
+# `index_of` scans every function, and over the compiler's own source its
+# scan per call, in the verifier's two phases after monomorphisation, took
+# the front end from 146.2 to 257.3 billion instructions. The instances are
+# copied out once, so a probe compares two lists and copies no function.
+record Index
+    by_decl: {i64: [i64]}
+    instances: [[i64]]
+
+function indexed(p: containers.Program) -> Index
+    by_decl: {i64: [i64]} @ {}
+    held: [[i64]] @ []
+    at: i64 @ 0
+
+    for f in p.functions
+        some = by_decl[f.decl]
+
+        if some.is_err()
+            by_decl[f.decl] @ [at]
+        else
+            by_decl[f.decl] @ some.must().push(at)
+        held @ held.push(f.instance)
+        at @ at + 1
+
+    return Index(by_decl: by_decl, instances: held)
+
+# `index_of`'s answer read from the index: the first function of `decl` at
+# exactly these type arguments, in the program's order, as `index_of` finds.
+function index_in(ix: Index, decl: i64, instance: [i64]) -> i64?
+    some = ix.by_decl[decl]
+
+    if !some.is_err()
+        for at in some.must()
+            if ix.instances[at] == instance
+                return ok(at)
+
+    return fail(code: "none", msg: "no function of this declaration at these type arguments")
+
 ## Tests
 
 test "a call names its callee at the type arguments the checker recorded"
@@ -90,5 +129,18 @@ test "a call names its callee at the type arguments the checker recorded"
     assert index_of(p, decl: 0, instance: named[0]).is_err()
     assert !index_of(p, decl: 0, instance: none).is_err()
 
+    # The index answers as the scan does, every declaration at none and at
+    # the recorded types.
+    ix = indexed(p)
+
+    for decl in [0, 1, 2, 3]
+        assert same(a: index_in(ix, decl: decl, instance: none), b: index_of(p, decl: decl, instance: none))
+        assert same(a: index_in(ix, decl: decl, instance: named[0]), b: index_of(p, decl: decl, instance: named[0]))
+
 function source_of(text: str) -> source.Source
     return source.new_source(name: "t.hero", text: text)
+
+function same(a: i64?, b: i64?) -> bool
+    if a.is_err() || b.is_err()
+        return a.is_err() && b.is_err()
+    return a.must() == b.must()
