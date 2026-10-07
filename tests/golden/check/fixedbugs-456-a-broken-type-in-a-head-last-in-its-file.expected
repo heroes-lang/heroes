@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-last-in-its-file.hero:10:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-last-in-its-file.hero:10:13: error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-last-in-its-file.hero:10:23: error[expected_binding_symbol]: expected `@` to declare a mutable, or `=` to bind, found `)` — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once
