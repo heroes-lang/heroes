@@ -79,17 +79,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_read_u(UH_t * a0) { (void)(read_u)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
+#line 90 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_UH_eq(UH_t * const *a, UH_t * const *b);
@@ -109,7 +106,7 @@ void h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
 void h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_main(void) {
-#line 113 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
+#line 110 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
     UH_t * t1;
     int32_t t2;
     utag t3;
@@ -126,7 +123,6 @@ bb0:
     hero_print_int(t2);
 #line 17 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
     hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
     t3 = make_u();
 #line 18 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
     t4 = t3.i;
@@ -136,7 +132,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
     return;
-#line 140 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
+#line 136 "fixedbugs157ahandleandarecordreachataggedunionbytypedefs.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_UH_eq(UH_t * const *a, UH_t * const *b) {
     return hero_handle_eq(*a, *b);

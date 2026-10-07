@@ -79,25 +79,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 15 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletworeferencesattwoconsumingpositions_ob_get(ob * a0) { (void)(ob_get)(a0); }
-#line 16 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletworeferencesattwoconsumingpositions_ob_put(ob * a0) { (void)(ob_put)(a0); }
-#line 17 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletworeferencesattwoconsumingpositions_both_put(ob * a0, ob * a1) { (void)(both_put)(a0, a1); }
-#line 18 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletworeferencesattwoconsumingpositions_ob_refs(ob * a0) { (void)(ob_refs)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "handletworeferencesattwoconsumingpositions.c"
+#line 95 "handletworeferencesattwoconsumingpositions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletworeferencesattwoconsumingpositions_Ob_eq(ob * const *a, ob * const *b);
@@ -115,7 +109,7 @@ void h_handletworeferencesattwoconsumingpositions_main(void);
 
 #line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 void h_handletworeferencesattwoconsumingpositions_main(void) {
-#line 119 "handletworeferencesattwoconsumingpositions.c"
+#line 113 "handletworeferencesattwoconsumingpositions.c"
     ob * h0_a;
     ob * h1_b;
     ob * t1;
@@ -136,7 +130,6 @@ bb0:
     hero_handle_acquired(t1, "ob_put|both_put");
 #line 22 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     h0_a = t1;
-#line 23 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t2 = h0_a;
 #line 23 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     hero_handle_alive(t2, "the argument `o` of `ob_get`");
@@ -146,7 +139,6 @@ bb0:
     hero_handle_retained(t3, "ob_put|both_put", 0);
 #line 23 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     h1_b = t3;
-#line 24 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t4 = HERO_STR_LIT(hero_str_7b9bb5d3);
 #line 24 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t5 = h0_a;
@@ -160,7 +152,6 @@ bb0:
     hero_print_int(t6);
 #line 24 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     hero_print_end();
-#line 25 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t7 = h0_a;
 #line 25 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t8 = h1_b;
@@ -182,7 +173,6 @@ bb0:
     if (hero_handle_ended(t8, hero_life_1_0) && h1_b == t8) h1_b = hero_handle_dead();
 #line 25 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     }
-#line 26 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t9 = HERO_STR_LIT(hero_str_24ff3fd9);
 #line 26 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t10 = ob_last_refs();
@@ -194,7 +184,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     return;
-#line 198 "handletworeferencesattwoconsumingpositions.c"
+#line 188 "handletworeferencesattwoconsumingpositions.c"
 }
 HERO_TU_LOCAL bool h_handletworeferencesattwoconsumingpositions_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

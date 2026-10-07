@@ -75,17 +75,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_cfreesaleaseonalatercall_stash(const char * a0) { (void)(stash)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "cfreesaleaseonalatercall.c"
+#line 86 "cfreesaleaseonalatercall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -101,7 +98,7 @@ void h_cfreesaleaseonalatercall_main(void);
 
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
-#line 105 "cfreesaleaseonalatercall.c"
+#line 102 "cfreesaleaseonalatercall.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroStr t1;
@@ -116,11 +113,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t6 = h0_x;
-#line 120 "cfreesaleaseonalatercall.c"
+#line 117 "cfreesaleaseonalatercall.c"
     hero_str_incref(t1);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     h0_x = t1;
-#line 124 "cfreesaleaseonalatercall.c"
+#line 121 "cfreesaleaseonalatercall.c"
     hero_str_decref(t6);
 #line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t2 = h0_x;
@@ -128,21 +125,17 @@ bb0:
     t3 = hero_str_held(t2);
 #line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     h1_c = t3;
-#line 14 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t4 = h1_c;
 #line 14 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     (void)stash(hero_cstr_nonnull(t4));
-#line 15 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t5 = INT64_C(3);
 #line 15 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_print_int(t5);
 #line 15 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_print_end();
-#line 16 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     (void)later_free();
-#line 17 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_held_release(&h1_c);
-#line 146 "cfreesaleaseonalatercall.c"
+#line 139 "cfreesaleaseonalatercall.c"
     hero_str_decref(h0_x);
     return;
 }

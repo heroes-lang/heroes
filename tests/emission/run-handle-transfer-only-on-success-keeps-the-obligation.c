@@ -77,25 +77,19 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 8 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletransferonlyonsuccesskeepstheobligation_node_new(int64_t a0) { (void)(node_new)(a0); }
-#line 9 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletransferonlyonsuccesskeepstheobligation_node_add(node * a0, node * a1, int32_t a2) { (void)(node_add)(a0, a1, a2); }
-#line 10 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletransferonlyonsuccesskeepstheobligation_node_put(node * a0) { (void)(node_put)(a0); }
-#line 11 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handletransferonlyonsuccesskeepstheobligation_node_sum(node * a0) { (void)(node_sum)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 93 "handletransferonlyonsuccesskeepstheobligation.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b);
@@ -113,7 +107,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void);
 
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
-#line 117 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 111 "handletransferonlyonsuccesskeepstheobligation.c"
     node * h0_parent;
     node * h1_child;
     int32_t h2_rc;
@@ -151,7 +145,6 @@ bb0:
     hero_handle_acquired(t2, "node_put");
 #line 14 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     h0_parent = t2;
-#line 15 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t3 = INT64_C(5);
 #line 15 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t4 = node_new(t3);
@@ -159,7 +152,6 @@ bb0:
     hero_handle_acquired(t4, "node_put");
 #line 15 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     h1_child = t4;
-#line 16 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t5 = h0_parent;
 #line 16 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t6 = h1_child;
@@ -189,7 +181,6 @@ bb0:
     }
 #line 16 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     h2_rc = t8;
-#line 17 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t9 = HERO_STR_LIT(hero_str_6023594d);
 #line 17 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t10 = h2_rc;
@@ -217,7 +208,6 @@ bb1:
     hero_handle_acquired(t16, "node_put");
 #line 21 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     h3_other = t16;
-#line 22 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t17 = h0_parent;
 #line 22 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t18 = h3_other;
@@ -249,7 +239,6 @@ bb1:
     }
 #line 22 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     }
-#line 23 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t21 = HERO_STR_LIT(hero_str_727306ec);
 #line 23 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t22 = h0_parent;
@@ -263,7 +252,6 @@ bb1:
     hero_print_int(t23);
 #line 23 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     hero_print_end();
-#line 24 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t24 = h0_parent;
 #line 24 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     {
@@ -301,7 +289,7 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     goto bb1;
-#line 305 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 293 "handletransferonlyonsuccesskeepstheobligation.c"
 }
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

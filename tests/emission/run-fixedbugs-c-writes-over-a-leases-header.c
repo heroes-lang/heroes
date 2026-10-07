@@ -74,17 +74,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugscwritesoveraleasesheader_clobber_held(const char * a0) { (void)(clobber_held)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugscwritesoveraleasesheader.c"
+#line 85 "fixedbugscwritesoveraleasesheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,7 +97,7 @@ void h_fixedbugscwritesoveraleasesheader_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
 void h_fixedbugscwritesoveraleasesheader_main(void) {
-#line 104 "fixedbugscwritesoveraleasesheader.c"
+#line 101 "fixedbugscwritesoveraleasesheader.c"
     HeroStr h0_word = {0};
     const char * h1_x;
     HeroStr h2_own2 = {0};
@@ -125,15 +122,15 @@ bb0:
     t8 = h2_own2;
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     h2_own2 = t3;
-#line 129 "fixedbugscwritesoveraleasesheader.c"
+#line 126 "fixedbugscwritesoveraleasesheader.c"
     hero_str_decref(t8);
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t9 = h0_word;
-#line 133 "fixedbugscwritesoveraleasesheader.c"
+#line 130 "fixedbugscwritesoveraleasesheader.c"
     hero_str_incref(t3);
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     h0_word = t3;
-#line 137 "fixedbugscwritesoveraleasesheader.c"
+#line 134 "fixedbugscwritesoveraleasesheader.c"
     hero_str_decref(t9);
 #line 23 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t4 = h0_word;
@@ -141,22 +138,17 @@ bb0:
     t5 = hero_str_held(t4);
 #line 23 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     h1_x = t5;
-#line 24 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t6 = h1_x;
 #line 24 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     (void)clobber_held(hero_cstr_nonnull(t6));
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_held_release(&h1_x);
-#line 26 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t7 = h0_word;
 #line 26 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_print_str(t7);
 #line 26 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_print_end();
-#line 157 "fixedbugscwritesoveraleasesheader.c"
+#line 151 "fixedbugscwritesoveraleasesheader.c"
     hero_str_decref(h0_word);
-#line 26 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
-#line 160 "fixedbugscwritesoveraleasesheader.c"
     hero_str_decref(h2_own2);
     return;
 }

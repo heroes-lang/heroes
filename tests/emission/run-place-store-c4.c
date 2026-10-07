@@ -68,17 +68,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "placestorec4.c"
+#line 79 "placestorec4.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +91,7 @@ void h_placestorec4_main(void);
 
 #line 15 "tests/golden/run/place-store-c4.hero"
 void h_placestorec4_main(void) {
-#line 98 "placestorec4.c"
+#line 95 "placestorec4.c"
     HeroArrayHeader * h0_xs = {0};
     int64_t h1_i;
     int64_t h2_total;
@@ -153,15 +150,15 @@ bb0:
     t45 = h6_own6;
 #line 16 "tests/golden/run/place-store-c4.hero"
     h6_own6 = t1;
-#line 157 "placestorec4.c"
+#line 154 "placestorec4.c"
     hero_array_decref(t45);
 #line 16 "tests/golden/run/place-store-c4.hero"
     t46 = h0_xs;
-#line 161 "placestorec4.c"
+#line 158 "placestorec4.c"
     hero_array_incref(t1);
 #line 16 "tests/golden/run/place-store-c4.hero"
     h0_xs = t1;
-#line 165 "placestorec4.c"
+#line 162 "placestorec4.c"
     hero_array_decref(t46);
 #line 17 "tests/golden/run/place-store-c4.hero"
     t2 = INT64_C(0);
@@ -181,11 +178,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 19 "tests/golden/run/place-store-c4.hero"
 bb2:
-#line 20 "tests/golden/run/place-store-c4.hero"
     t7 = h1_i;
 #line 20 "tests/golden/run/place-store-c4.hero"
     hero_array_push_owned(&h0_xs, &t7);
-#line 21 "tests/golden/run/place-store-c4.hero"
     t9 = h1_i;
 #line 21 "tests/golden/run/place-store-c4.hero"
     t10 = INT64_C(1);
@@ -205,7 +200,6 @@ bb3:
     hero_print_int(t13);
 #line 23 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 24 "tests/golden/run/place-store-c4.hero"
     t14 = h0_xs;
 #line 24 "tests/golden/run/place-store-c4.hero"
     t15 = INT64_C(0);
@@ -233,7 +227,6 @@ bb3:
     t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
 #line 28 "tests/golden/run/place-store-c4.hero"
     hero_array_push_owned(&h0_xs, &t23);
-#line 29 "tests/golden/run/place-store-c4.hero"
     t25 = h0_xs;
 #line 29 "tests/golden/run/place-store-c4.hero"
     t26 = INT64_C(10000);
@@ -243,7 +236,6 @@ bb3:
     hero_print_int(t27);
 #line 29 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 30 "tests/golden/run/place-store-c4.hero"
     t28 = INT64_C(0);
 #line 30 "tests/golden/run/place-store-c4.hero"
     h2_total = t28;
@@ -251,11 +243,11 @@ bb3:
     t29 = h0_xs;
 #line 32 "tests/golden/run/place-store-c4.hero"
     t47 = h3_xs0;
-#line 255 "placestorec4.c"
+#line 247 "placestorec4.c"
     hero_array_incref(t29);
 #line 32 "tests/golden/run/place-store-c4.hero"
     h3_xs0 = t29;
-#line 259 "placestorec4.c"
+#line 251 "placestorec4.c"
     hero_array_decref(t47);
 #line 32 "tests/golden/run/place-store-c4.hero"
     t30 = INT64_C(0);
@@ -285,7 +277,6 @@ bb5:
     t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t35 + 1))[t36]);
 #line 32 "tests/golden/run/place-store-c4.hero"
     h5_v = t37;
-#line 33 "tests/golden/run/place-store-c4.hero"
     t38 = h2_total;
 #line 33 "tests/golden/run/place-store-c4.hero"
     t39 = h5_v;
@@ -315,13 +306,9 @@ bb7:
     hero_print_int(t44);
 #line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 319 "placestorec4.c"
+#line 310 "placestorec4.c"
     hero_array_decref(h0_xs);
-#line 35 "tests/golden/run/place-store-c4.hero"
-#line 322 "placestorec4.c"
     hero_array_decref(h3_xs0);
-#line 35 "tests/golden/run/place-store-c4.hero"
-#line 325 "placestorec4.c"
     hero_array_decref(h6_own6);
     return;
 }

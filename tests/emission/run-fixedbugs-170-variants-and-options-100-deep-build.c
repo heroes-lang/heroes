@@ -2221,17 +2221,14 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2235 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 2232 "fixedbugs170variantsandoptions100deepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs170variantsandoptions100deepbuild_R0_c_a_eq(const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *a, const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *b);
@@ -5060,7 +5057,7 @@ void h_fixedbugs170variantsandoptions100deepbuild_main(void);
 
 #line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
 void h_fixedbugs170variantsandoptions100deepbuild_main(void) {
-#line 5064 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5061 "fixedbugs170variantsandoptions100deepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -5079,15 +5076,15 @@ bb0:
     t7 = h1_own1;
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h1_own1 = t1;
-#line 5083 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5080 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t7);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t8 = h0_xs;
-#line 5087 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5084 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_incref(t1);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h0_xs = t1;
-#line 5091 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5088 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t8);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t2 = h0_xs;
@@ -5097,7 +5094,6 @@ bb0:
     hero_print_int(t3);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t4 = h0_xs;
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t5 = h0_xs;
@@ -5107,10 +5103,8 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5111 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5107 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(h0_xs);
-#line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
-#line 5114 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(h1_own1);
     return;
 }

@@ -80,17 +80,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsafixedarrayelementiswritteninplace_nums_sum(struct nums a0) { (void)(nums_sum)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 91 "fixedbugsafixedarrayelementiswritteninplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_Nums_eq(const struct nums *a, const struct nums *b);
@@ -108,7 +105,7 @@ void h_fixedbugsafixedarrayelementiswritteninplace_main(void);
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void) {
-#line 112 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 109 "fixedbugsafixedarrayelementiswritteninplace.c"
     struct nums h0_n;
     int64_t t1;
     int64_t t2;
@@ -134,13 +131,11 @@ bb0:
     t6 = (struct nums){.a = {t1, t2, t3, t4}};
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     h0_n = t6;
-#line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t7 = INT64_C(0);
 #line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t8 = INT64_C(9);
 #line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     h0_n.a[((uint64_t)(t7) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t7))] = t8;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t9 = HERO_STR_LIT(hero_str_727306ec);
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t10 = h0_n;
@@ -154,7 +149,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     return;
-#line 158 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 153 "fixedbugsafixedarrayelementiswritteninplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;

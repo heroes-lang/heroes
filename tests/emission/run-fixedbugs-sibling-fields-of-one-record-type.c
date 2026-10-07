@@ -18,9 +18,8 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(&((Inner *)0)->s, Slot * *: 1, default: 0) && sizeof(((Inner *)0)->s) == sizeof(Slot *), "heroes-ffi-field Inner s");
 #line 36 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 _Static_assert(_Generic(&((Pair *)0)->a, Inner *: 1, default: 0) && sizeof(((Pair *)0)->a) == sizeof(Inner), "heroes-ffi-field Pair a");
-#line 37 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 _Static_assert(_Generic(&((Pair *)0)->b, Inner *: 1, default: 0) && sizeof(((Pair *)0)->b) == sizeof(Inner), "heroes-ffi-field Pair b");
-#line 24 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 23 "fixedbugssiblingfieldsofonerecordtype.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -85,23 +84,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 38 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugssiblingfieldsofonerecordtype_pair_open(int64_t a0) { (void)(pair_open)(a0); }
-#line 39 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugssiblingfieldsofonerecordtype_slot_close(Slot * a0) { (void)(slot_close)(a0); }
-#line 40 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugssiblingfieldsofonerecordtype_slot_value(Slot * a0) { (void)(slot_value)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 99 "fixedbugssiblingfieldsofonerecordtype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b);
@@ -123,7 +117,7 @@ void h_fixedbugssiblingfieldsofonerecordtype_main(void);
 
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
-#line 127 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 121 "fixedbugssiblingfieldsofonerecordtype.c"
     Pair h0_p;
     int64_t t1;
     Pair t2;
@@ -154,7 +148,6 @@ bb0:
     hero_handle_acquired(t2.b.s, "slot_close");
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     h0_p = t2;
-#line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t3 = h0_p;
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t4 = t3.a;
@@ -168,7 +161,6 @@ bb0:
     hero_print_int(t6);
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_end();
-#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t7 = h0_p;
 #line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t8 = t7.b;
@@ -182,7 +174,6 @@ bb0:
     hero_print_int(t10);
 #line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_end();
-#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t11 = h0_p;
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t12 = t11.a;
@@ -200,7 +191,6 @@ bb0:
     if (hero_handle_ended(t13, hero_life_0_0) && h0_p.a.s == t13) h0_p.a.s = hero_handle_dead();
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     }
-#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t14 = h0_p;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t15 = t14.b;
@@ -218,7 +208,6 @@ bb0:
     if (hero_handle_ended(t16, hero_life_0_0) && h0_p.b.s == t16) h0_p.b.s = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     }
-#line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t17 = HERO_STR_LIT(hero_str_455ecde8);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_str(t17);
@@ -226,7 +215,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 230 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 219 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

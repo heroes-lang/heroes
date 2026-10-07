@@ -75,17 +75,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "adversarialdivergingarms.c"
+#line 86 "adversarialdivergingarms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_adversarialdivergingarms_Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b);
@@ -103,7 +100,7 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
-#line 107 "adversarialdivergingarms.c"
+#line 104 "adversarialdivergingarms.c"
     int64_t h1_seen;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -137,11 +134,11 @@ bb0:
     t2 = h0_xs;
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t18 = h2_xs0;
-#line 141 "adversarialdivergingarms.c"
+#line 138 "adversarialdivergingarms.c"
     hero_array_incref(t2);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h2_xs0 = t2;
-#line 145 "adversarialdivergingarms.c"
+#line 142 "adversarialdivergingarms.c"
     hero_array_decref(t18);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t3 = INT64_C(0);
@@ -171,7 +168,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialdivergingarms_Step) ? hero_unreachable() : (void)0), ((h_adversarialdivergingarms_Step const *)(const void *)(t8 + 1))[t9]);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h4_s = t10;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     t11 = h4_s;
 #line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
     h5_s0 = t11;
@@ -205,7 +201,7 @@ bb3:
 bb4:
 #line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
     t17 = h1_seen;
-#line 209 "adversarialdivergingarms.c"
+#line 205 "adversarialdivergingarms.c"
     hero_array_decref(h2_xs0);
     return t17;
 bb6:

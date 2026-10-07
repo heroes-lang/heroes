@@ -75,23 +75,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/ffi-acquires-and-consumes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacquiresandconsumes_slot_open(int64_t a0) { (void)(slot_open)(a0); }
-#line 14 "tests/golden/run/ffi-acquires-and-consumes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacquiresandconsumes_slot_close(Slot * a0) { (void)(slot_close)(a0); }
-#line 15 "tests/golden/run/ffi-acquires-and-consumes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiacquiresandconsumes_slot_value(Slot * a0) { (void)(slot_value)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "ffiacquiresandconsumes.c"
+#line 90 "ffiacquiresandconsumes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacquiresandconsumes_Slot_eq(Slot * const *a, Slot * const *b);
@@ -109,7 +104,7 @@ void h_ffiacquiresandconsumes_main(void);
 
 #line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
 void h_ffiacquiresandconsumes_main(void) {
-#line 113 "ffiacquiresandconsumes.c"
+#line 108 "ffiacquiresandconsumes.c"
     Slot * h0_a;
     Slot * h1_b;
     int64_t t1;
@@ -134,7 +129,6 @@ bb0:
     hero_handle_acquired(t2, "slot_close");
 #line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"
     h0_a = t2;
-#line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t3 = INT64_C(9);
 #line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t4 = slot_open(t3);
@@ -142,7 +136,6 @@ bb0:
     hero_handle_acquired(t4, "slot_close");
 #line 19 "tests/golden/run/ffi-acquires-and-consumes.hero"
     h1_b = t4;
-#line 20 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t5 = h0_a;
 #line 20 "tests/golden/run/ffi-acquires-and-consumes.hero"
     hero_handle_alive(t5, "the argument `s` of `slot_value`");
@@ -160,7 +153,6 @@ bb0:
     hero_print_int(t9);
 #line 20 "tests/golden/run/ffi-acquires-and-consumes.hero"
     hero_print_end();
-#line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t10 = h0_a;
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     {
@@ -174,7 +166,6 @@ bb0:
     if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
 #line 21 "tests/golden/run/ffi-acquires-and-consumes.hero"
     }
-#line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t11 = h1_b;
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     {
@@ -188,7 +179,6 @@ bb0:
     if (hero_handle_ended(t11, hero_life_0_0) && h1_b == t11) h1_b = hero_handle_dead();
 #line 22 "tests/golden/run/ffi-acquires-and-consumes.hero"
     }
-#line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t12 = HERO_STR_LIT(hero_str_455ecde8);
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     hero_print_str(t12);
@@ -196,7 +186,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     return;
-#line 200 "ffiacquiresandconsumes.c"
+#line 190 "ffiacquiresandconsumes.c"
 }
 HERO_TU_LOCAL bool h_ffiacquiresandconsumes_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

@@ -73,23 +73,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 42 "tests/golden/run/abort-handle-given-back-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_aborthandlegivenbacktwice_slot_open(int64_t a0) { (void)(slot_open)(a0); }
-#line 43 "tests/golden/run/abort-handle-given-back-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_aborthandlegivenbacktwice_slot_close(Slot * a0) { (void)(slot_close)(a0); }
-#line 44 "tests/golden/run/abort-handle-given-back-twice.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_aborthandlegivenbacktwice_slot_value(Slot * a0) { (void)(slot_value)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "aborthandlegivenbacktwice.c"
+#line 88 "aborthandlegivenbacktwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b);
@@ -107,7 +102,7 @@ void h_aborthandlegivenbacktwice_main(void);
 
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 void h_aborthandlegivenbacktwice_main(void) {
-#line 111 "aborthandlegivenbacktwice.c"
+#line 106 "aborthandlegivenbacktwice.c"
     Slot * h0_a;
     Slot * h1_twice;
     int64_t t1;
@@ -127,7 +122,6 @@ bb0:
     hero_handle_acquired(t2, "slot_close");
 #line 47 "tests/golden/run/abort-handle-given-back-twice.hero"
     h0_a = t2;
-#line 48 "tests/golden/run/abort-handle-given-back-twice.hero"
     t3 = h0_a;
 #line 48 "tests/golden/run/abort-handle-given-back-twice.hero"
     hero_handle_alive(t3, "the argument `s` of `slot_value`");
@@ -137,11 +131,9 @@ bb0:
     hero_print_int(t4);
 #line 48 "tests/golden/run/abort-handle-given-back-twice.hero"
     hero_print_end();
-#line 49 "tests/golden/run/abort-handle-given-back-twice.hero"
     t5 = h0_a;
 #line 49 "tests/golden/run/abort-handle-given-back-twice.hero"
     h1_twice = t5;
-#line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
     t6 = h0_a;
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
     {
@@ -155,7 +147,6 @@ bb0:
     if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
 #line 50 "tests/golden/run/abort-handle-given-back-twice.hero"
     }
-#line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     t7 = h1_twice;
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     {
@@ -171,7 +162,7 @@ bb0:
     }
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     return;
-#line 175 "aborthandlegivenbacktwice.c"
+#line 166 "aborthandlegivenbacktwice.c"
 }
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

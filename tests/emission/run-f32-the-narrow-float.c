@@ -76,17 +76,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "f32thenarrowfloat.c"
+#line 87 "f32thenarrowfloat.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *v);
@@ -106,7 +103,7 @@ void h_f32thenarrowfloat_main(void);
 
 #line 16 "tests/golden/run/f32-the-narrow-float.hero"
 void h_f32thenarrowfloat_main(void) {
-#line 110 "f32thenarrowfloat.c"
+#line 107 "f32thenarrowfloat.c"
     float h0_a;
     float h1_edge;
     float h2_tenth;
@@ -182,7 +179,6 @@ bb0:
     t1 = 0x1.8p+0;
 #line 17 "tests/golden/run/f32-the-narrow-float.hero"
     h0_a = t1;
-#line 18 "tests/golden/run/f32-the-narrow-float.hero"
     t2 = h0_a;
 #line 18 "tests/golden/run/f32-the-narrow-float.hero"
     t3 = 0x1p-2;
@@ -190,7 +186,6 @@ bb0:
     t4 = t2 + t3;
 #line 18 "tests/golden/run/f32-the-narrow-float.hero"
     h0_a = t4;
-#line 19 "tests/golden/run/f32-the-narrow-float.hero"
     t5 = h0_a;
 #line 19 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_f32(t5);
@@ -200,7 +195,6 @@ bb0:
     t6 = 0x1.000001p+24;
 #line 22 "tests/golden/run/f32-the-narrow-float.hero"
     h1_edge = t6;
-#line 23 "tests/golden/run/f32-the-narrow-float.hero"
     t7 = h1_edge;
 #line 23 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_f32(t7);
@@ -210,13 +204,11 @@ bb0:
     t8 = 0x1.999999999999ap-4;
 #line 27 "tests/golden/run/f32-the-narrow-float.hero"
     h2_tenth = t8;
-#line 28 "tests/golden/run/f32-the-narrow-float.hero"
     t9 = h2_tenth;
 #line 28 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_f32(t9);
 #line 28 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
-#line 29 "tests/golden/run/f32-the-narrow-float.hero"
     t10 = h2_tenth;
 #line 29 "tests/golden/run/f32-the-narrow-float.hero"
     t11 = hero_f32_to_f64(t10);
@@ -228,7 +220,6 @@ bb0:
     t12 = 0x1.fffffe54daff8p+127;
 #line 32 "tests/golden/run/f32-the-narrow-float.hero"
     h3_big = t12;
-#line 33 "tests/golden/run/f32-the-narrow-float.hero"
     t13 = h3_big;
 #line 33 "tests/golden/run/f32-the-narrow-float.hero"
     t14 = hero_f64_to_f32(t13);
@@ -236,11 +227,9 @@ bb0:
     hero_print_f32(t14);
 #line 33 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
-#line 34 "tests/golden/run/f32-the-narrow-float.hero"
     t15 = 0x1.3ffffef508dfbp+131;
 #line 34 "tests/golden/run/f32-the-narrow-float.hero"
     h4_huge = t15;
-#line 35 "tests/golden/run/f32-the-narrow-float.hero"
     t16 = h4_huge;
 #line 35 "tests/golden/run/f32-the-narrow-float.hero"
     t17 = hero_f64_to_f32(t16);
@@ -266,15 +255,15 @@ bb0:
     t49 = h9_own9;
 #line 39 "tests/golden/run/f32-the-narrow-float.hero"
     h9_own9 = t21;
-#line 270 "f32thenarrowfloat.c"
+#line 259 "f32thenarrowfloat.c"
     hero_array_decref(t49);
 #line 39 "tests/golden/run/f32-the-narrow-float.hero"
     t50 = h5_xs;
-#line 274 "f32thenarrowfloat.c"
+#line 263 "f32thenarrowfloat.c"
     hero_array_incref(t21);
 #line 39 "tests/golden/run/f32-the-narrow-float.hero"
     h5_xs = t21;
-#line 278 "f32thenarrowfloat.c"
+#line 267 "f32thenarrowfloat.c"
     hero_array_decref(t50);
 #line 40 "tests/golden/run/f32-the-narrow-float.hero"
     t22 = h5_xs;
@@ -284,15 +273,15 @@ bb0:
     t51 = h10_own10;
 #line 40 "tests/golden/run/f32-the-narrow-float.hero"
     h10_own10 = t23;
-#line 288 "f32thenarrowfloat.c"
+#line 277 "f32thenarrowfloat.c"
     hero_array_decref(t51);
 #line 40 "tests/golden/run/f32-the-narrow-float.hero"
     t52 = h6_sorted;
-#line 292 "f32thenarrowfloat.c"
+#line 281 "f32thenarrowfloat.c"
     hero_array_incref(t23);
 #line 40 "tests/golden/run/f32-the-narrow-float.hero"
     h6_sorted = t23;
-#line 296 "f32thenarrowfloat.c"
+#line 285 "f32thenarrowfloat.c"
     hero_array_decref(t52);
 #line 41 "tests/golden/run/f32-the-narrow-float.hero"
     t24 = h6_sorted;
@@ -304,7 +293,6 @@ bb0:
     hero_print_f32(t26);
 #line 41 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
-#line 42 "tests/golden/run/f32-the-narrow-float.hero"
     t27 = h6_sorted;
 #line 42 "tests/golden/run/f32-the-narrow-float.hero"
     t28 = INT64_C(2);
@@ -314,21 +302,20 @@ bb0:
     hero_print_f32(t29);
 #line 42 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
-#line 43 "tests/golden/run/f32-the-narrow-float.hero"
     t30 = hero_map_new(&hero_desc_str, &hero_desc_f32, 0);
 #line 43 "tests/golden/run/f32-the-narrow-float.hero"
     t53 = h11_own11;
 #line 43 "tests/golden/run/f32-the-narrow-float.hero"
     h11_own11 = t30;
-#line 324 "f32thenarrowfloat.c"
+#line 311 "f32thenarrowfloat.c"
     hero_map_decref(t53);
 #line 43 "tests/golden/run/f32-the-narrow-float.hero"
     t54 = h7_m;
-#line 328 "f32thenarrowfloat.c"
+#line 315 "f32thenarrowfloat.c"
     hero_map_incref(t30);
 #line 43 "tests/golden/run/f32-the-narrow-float.hero"
     h7_m = t30;
-#line 332 "f32thenarrowfloat.c"
+#line 319 "f32thenarrowfloat.c"
     hero_map_decref(t54);
 #line 44 "tests/golden/run/f32-the-narrow-float.hero"
     t31 = HERO_STR_LIT(hero_str_e09250b);
@@ -336,7 +323,6 @@ bb0:
     t32 = 0x1p-1;
 #line 44 "tests/golden/run/f32-the-narrow-float.hero"
     hero_map_set(&(h7_m), &t31, &t32);
-#line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t33 = h7_m;
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t34 = HERO_STR_LIT(hero_str_e09250b);
@@ -362,15 +348,15 @@ bb0:
     t55 = h12_own12;
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     h12_own12 = t35;
-#line 366 "f32thenarrowfloat.c"
+#line 352 "f32thenarrowfloat.c"
     h_0opt_db86062_release(&t55);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t56 = h8_f0;
-#line 370 "f32thenarrowfloat.c"
+#line 356 "f32thenarrowfloat.c"
     h_0opt_db86062_retain(&t35);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     h8_f0 = t35;
-#line 374 "f32thenarrowfloat.c"
+#line 360 "f32thenarrowfloat.c"
     h_0opt_db86062_release(&t56);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t36 = h8_f0;
@@ -392,7 +378,6 @@ bb1:
     hero_print_f32(t43);
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t44 = h5_xs;
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t45 = INT64_C(0);
@@ -406,28 +391,14 @@ bb1:
     hero_print_bool(t48);
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
-#line 410 "f32thenarrowfloat.c"
+#line 395 "f32thenarrowfloat.c"
     hero_array_decref(h5_xs);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 413 "f32thenarrowfloat.c"
     hero_array_decref(h6_sorted);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 416 "f32thenarrowfloat.c"
     hero_map_decref(h7_m);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 419 "f32thenarrowfloat.c"
     h_0opt_db86062_release(&h8_f0);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 422 "f32thenarrowfloat.c"
     hero_array_decref(h9_own9);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 425 "f32thenarrowfloat.c"
     hero_array_decref(h10_own10);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 428 "f32thenarrowfloat.c"
     hero_map_decref(h11_own11);
-#line 46 "tests/golden/run/f32-the-narrow-float.hero"
-#line 431 "f32thenarrowfloat.c"
     h_0opt_db86062_release(&h12_own12);
     return;
 bb2:
@@ -435,7 +406,7 @@ bb2:
     t40 = h8_f0;
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"
     t41 = t40.as.err;
-#line 439 "f32thenarrowfloat.c"
+#line 410 "f32thenarrowfloat.c"
     hero_panic_must(t41);
     hero_unreachable();
 }

@@ -76,17 +76,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_leaseckeepsthepointer_stash_put(const char * a0) { (void)(stash_put)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "leaseckeepsthepointer.c"
+#line 87 "leaseckeepsthepointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -102,7 +99,7 @@ void h_leaseckeepsthepointer_main(void);
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
-#line 106 "leaseckeepsthepointer.c"
+#line 103 "leaseckeepsthepointer.c"
     int64_t h0_at;
     const char * h1_label;
     HeroStr h2_own2 = {0};
@@ -147,7 +144,6 @@ bb1:
     if (t4) goto bb2; else goto bb3;
 #line 18 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb2:
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t5 = HERO_STR_LIT(hero_str_f63dcff);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t6 = h0_at;
@@ -157,7 +153,7 @@ bb2:
     t17 = h2_own2;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h2_own2 = t7;
-#line 161 "leaseckeepsthepointer.c"
+#line 157 "leaseckeepsthepointer.c"
     hero_str_decref(t17);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t8 = hero_str_concat(t5, t7);
@@ -165,7 +161,7 @@ bb2:
     t18 = h3_own3;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h3_own3 = t8;
-#line 169 "leaseckeepsthepointer.c"
+#line 165 "leaseckeepsthepointer.c"
     hero_str_decref(t18);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t9 = HERO_STR_LIT(hero_str_3390715c);
@@ -175,25 +171,21 @@ bb2:
     t19 = h4_own4;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h4_own4 = t10;
-#line 179 "leaseckeepsthepointer.c"
+#line 175 "leaseckeepsthepointer.c"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t11 = hero_str_held(t10);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h1_label = t11;
-#line 20 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t12 = h1_label;
 #line 20 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     (void)stash_put(hero_cstr_nonnull(t12));
-#line 21 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t13 = stash_len();
 #line 21 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     hero_print_uint(t13);
 #line 21 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     hero_print_end();
-#line 22 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     hero_held_release(&h1_label);
-#line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t14 = h0_at;
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t15 = INT64_C(1);
@@ -205,14 +197,9 @@ bb2:
     goto bb1;
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb3:
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-#line 210 "leaseckeepsthepointer.c"
+#line 201 "leaseckeepsthepointer.c"
     hero_str_decref(h2_own2);
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-#line 213 "leaseckeepsthepointer.c"
     hero_str_decref(h3_own3);
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-#line 216 "leaseckeepsthepointer.c"
     hero_str_decref(h4_own4);
     return;
 }

@@ -82,17 +82,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "bitwise.c"
+#line 93 "bitwise.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -108,7 +105,7 @@ void h_bitwise_main(void);
 
 #line 22 "tests/golden/run/bitwise.hero"
 void h_bitwise_main(void) {
-#line 112 "bitwise.c"
+#line 109 "bitwise.c"
     int64_t h0_read;
     int64_t h1_write;
     int64_t h2_exec;
@@ -216,7 +213,6 @@ bb0:
     hero_print_int(t4);
 #line 24 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 25 "tests/golden/run/bitwise.hero"
     t5 = HERO_STR_LIT(hero_str_54856257);
 #line 25 "tests/golden/run/bitwise.hero"
     t6 = INT64_C(448);
@@ -244,7 +240,6 @@ bb0:
     hero_print_int(t12);
 #line 27 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 28 "tests/golden/run/bitwise.hero"
     t13 = HERO_STR_LIT(hero_str_11c482ff);
 #line 28 "tests/golden/run/bitwise.hero"
     t14 = INT64_C(6);
@@ -258,7 +253,6 @@ bb0:
     hero_print_int(t16);
 #line 28 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 29 "tests/golden/run/bitwise.hero"
     t17 = HERO_STR_LIT(hero_str_3ede2b03);
 #line 29 "tests/golden/run/bitwise.hero"
     t18 = INT64_C(0);
@@ -270,7 +264,6 @@ bb0:
     hero_print_int(t19);
 #line 29 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 30 "tests/golden/run/bitwise.hero"
     t20 = HERO_STR_LIT(hero_str_4f8cfd93);
 #line 30 "tests/golden/run/bitwise.hero"
     t21 = INT64_C(0);
@@ -306,7 +299,6 @@ bb0:
     hero_print_int(t30);
 #line 32 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 33 "tests/golden/run/bitwise.hero"
     t31 = HERO_STR_LIT(hero_str_535eeb7d);
 #line 33 "tests/golden/run/bitwise.hero"
     t32 = INT64_C(1);
@@ -322,7 +314,6 @@ bb0:
     hero_print_int(t34);
 #line 33 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 34 "tests/golden/run/bitwise.hero"
     t35 = HERO_STR_LIT(hero_str_2d4f0d2e);
 #line 34 "tests/golden/run/bitwise.hero"
     t36 = INT64_C(1024);
@@ -338,7 +329,6 @@ bb0:
     hero_print_int(t38);
 #line 34 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 35 "tests/golden/run/bitwise.hero"
     t39 = HERO_STR_LIT(hero_str_3f189351);
 #line 35 "tests/golden/run/bitwise.hero"
     t40 = INT64_C(0);
@@ -376,7 +366,6 @@ bb0:
     hero_print_bool(t50);
 #line 38 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 39 "tests/golden/run/bitwise.hero"
     t51 = HERO_STR_LIT(hero_str_25c4466a);
 #line 39 "tests/golden/run/bitwise.hero"
     t52 = INT64_C(1);
@@ -414,7 +403,6 @@ bb0:
     t63 = (int64_t)((uint64_t)t61 << (uint64_t)t62);
 #line 42 "tests/golden/run/bitwise.hero"
     h0_read = t63;
-#line 43 "tests/golden/run/bitwise.hero"
     t64 = INT64_C(1);
 #line 43 "tests/golden/run/bitwise.hero"
     t65 = INT64_C(1);
@@ -424,7 +412,6 @@ bb0:
     t66 = (int64_t)((uint64_t)t64 << (uint64_t)t65);
 #line 43 "tests/golden/run/bitwise.hero"
     h1_write = t66;
-#line 44 "tests/golden/run/bitwise.hero"
     t67 = INT64_C(1);
 #line 44 "tests/golden/run/bitwise.hero"
     t68 = INT64_C(2);
@@ -434,7 +421,6 @@ bb0:
     t69 = (int64_t)((uint64_t)t67 << (uint64_t)t68);
 #line 44 "tests/golden/run/bitwise.hero"
     h2_exec = t69;
-#line 45 "tests/golden/run/bitwise.hero"
     t70 = h0_read;
 #line 45 "tests/golden/run/bitwise.hero"
     t71 = h1_write;
@@ -446,7 +432,6 @@ bb0:
     t74 = t72 | t73;
 #line 45 "tests/golden/run/bitwise.hero"
     h3_every = t74;
-#line 46 "tests/golden/run/bitwise.hero"
     t75 = HERO_STR_LIT(hero_str_3e4223b);
 #line 46 "tests/golden/run/bitwise.hero"
     t76 = h3_every;
@@ -456,7 +441,6 @@ bb0:
     hero_print_int(t76);
 #line 46 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 47 "tests/golden/run/bitwise.hero"
     t77 = HERO_STR_LIT(hero_str_5671f1f7);
 #line 47 "tests/golden/run/bitwise.hero"
     t78 = h3_every;
@@ -474,7 +458,6 @@ bb0:
     hero_print_bool(t82);
 #line 47 "tests/golden/run/bitwise.hero"
     hero_print_end();
-#line 48 "tests/golden/run/bitwise.hero"
     t83 = HERO_STR_LIT(hero_str_6cc5431);
 #line 48 "tests/golden/run/bitwise.hero"
     t84 = h3_every;
@@ -492,7 +475,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/bitwise.hero"
     return;
-#line 496 "bitwise.c"
+#line 479 "bitwise.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

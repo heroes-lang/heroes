@@ -72,17 +72,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "strings.c"
+#line 83 "strings.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +95,7 @@ void h_strings_main(void);
 
 #line 5 "tests/golden/run/strings.hero"
 void h_strings_main(void) {
-#line 102 "strings.c"
+#line 99 "strings.c"
     HeroStr h0_greeting = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -143,11 +140,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_2f372e9c);
 #line 6 "tests/golden/run/strings.hero"
     t27 = h0_greeting;
-#line 147 "strings.c"
+#line 144 "strings.c"
     hero_str_incref(t1);
 #line 6 "tests/golden/run/strings.hero"
     h0_greeting = t1;
-#line 151 "strings.c"
+#line 148 "strings.c"
     hero_str_decref(t27);
 #line 7 "tests/golden/run/strings.hero"
     t2 = h0_greeting;
@@ -155,7 +152,6 @@ bb0:
     hero_print_str(t2);
 #line 7 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 8 "tests/golden/run/strings.hero"
     t3 = h0_greeting;
 #line 8 "tests/golden/run/strings.hero"
     t4 = HERO_STR_LIT(hero_str_20);
@@ -165,7 +161,7 @@ bb0:
     t28 = h1_own1;
 #line 8 "tests/golden/run/strings.hero"
     h1_own1 = t5;
-#line 169 "strings.c"
+#line 165 "strings.c"
     hero_str_decref(t28);
 #line 8 "tests/golden/run/strings.hero"
     t6 = HERO_STR_LIT(hero_str_37dd7796);
@@ -175,13 +171,12 @@ bb0:
     t29 = h2_own2;
 #line 8 "tests/golden/run/strings.hero"
     h2_own2 = t7;
-#line 179 "strings.c"
+#line 175 "strings.c"
     hero_str_decref(t29);
 #line 8 "tests/golden/run/strings.hero"
     hero_print_str(t7);
 #line 8 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 9 "tests/golden/run/strings.hero"
     t8 = h0_greeting;
 #line 9 "tests/golden/run/strings.hero"
     t9 = hero_str_len(t8);
@@ -189,7 +184,6 @@ bb0:
     hero_print_int(t9);
 #line 9 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 10 "tests/golden/run/strings.hero"
     t10 = h0_greeting;
 #line 10 "tests/golden/run/strings.hero"
     t11 = INT64_C(0);
@@ -199,7 +193,6 @@ bb0:
     hero_print_int(t12);
 #line 10 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 11 "tests/golden/run/strings.hero"
     t13 = h0_greeting;
 #line 11 "tests/golden/run/strings.hero"
     t14 = INT64_C(1);
@@ -211,13 +204,12 @@ bb0:
     t30 = h3_own3;
 #line 11 "tests/golden/run/strings.hero"
     h3_own3 = t16;
-#line 215 "strings.c"
+#line 208 "strings.c"
     hero_str_decref(t30);
 #line 11 "tests/golden/run/strings.hero"
     hero_print_str(t16);
 #line 11 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 12 "tests/golden/run/strings.hero"
     t17 = HERO_STR_LIT(hero_str_61);
 #line 12 "tests/golden/run/strings.hero"
     t18 = HERO_STR_LIT(hero_str_61);
@@ -235,7 +227,6 @@ bb0:
     hero_print_bool(t22);
 #line 12 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 13 "tests/golden/run/strings.hero"
     t23 = INT64_C(42);
 #line 13 "tests/golden/run/strings.hero"
     t24 = hero_int_to_str(t23);
@@ -243,7 +234,7 @@ bb0:
     t31 = h4_own4;
 #line 13 "tests/golden/run/strings.hero"
     h4_own4 = t24;
-#line 247 "strings.c"
+#line 238 "strings.c"
     hero_str_decref(t31);
 #line 13 "tests/golden/run/strings.hero"
     t25 = true;
@@ -253,7 +244,7 @@ bb0:
     t32 = h5_own5;
 #line 13 "tests/golden/run/strings.hero"
     h5_own5 = t26;
-#line 257 "strings.c"
+#line 248 "strings.c"
     hero_str_decref(t32);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_str(t24);
@@ -261,22 +252,12 @@ bb0:
     hero_print_str(t26);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 265 "strings.c"
+#line 256 "strings.c"
     hero_str_decref(h0_greeting);
-#line 13 "tests/golden/run/strings.hero"
-#line 268 "strings.c"
     hero_str_decref(h1_own1);
-#line 13 "tests/golden/run/strings.hero"
-#line 271 "strings.c"
     hero_str_decref(h2_own2);
-#line 13 "tests/golden/run/strings.hero"
-#line 274 "strings.c"
     hero_str_decref(h3_own3);
-#line 13 "tests/golden/run/strings.hero"
-#line 277 "strings.c"
     hero_str_decref(h4_own4);
-#line 13 "tests/golden/run/strings.hero"
-#line 280 "strings.c"
     hero_str_decref(h5_own5);
     return;
 }

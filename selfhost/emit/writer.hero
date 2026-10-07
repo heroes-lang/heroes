@@ -50,6 +50,14 @@ variant Claim
         file: str
         line: i64
 
+# What `at_file` or `at_generated` asked for that `line` has not written.
+variant Pending
+    none_pending
+    source_line
+        file: str
+        line: i64
+    generated_line
+
 # One flush every this many lines. The inner array costs n*K/2 element
 # copies over n lines, the outer (n/K)^2/2; they balance at K = cuberoot(2n),
 # which is 115 for the compiler's own 764k lines. 128 stays within 2x of
@@ -72,6 +80,11 @@ record Writer
     # is written under one request; keeping just the belief is what let
     # every multi-line lowering walk off the end of the author's file.
     intent: Claim
+    # A request no line has been written under yet (defect 263): written
+    # by `line` when a line follows, and never if none does, so no `#line`
+    # stands with no statement after it. `generated` asks for the
+    # generated file's next line, which is known only when it is written.
+    pending: Pending
     generated: str
     # Each file's name as a `#line` spells it, made once (defect 262):
     # the generated file's with the writer, and the last source file's
@@ -94,6 +107,7 @@ function new_writer(module: str) -> Writer
         pushed: 0,
         claim: .no_claim,
         intent: .no_claim,
+        pending: .none_pending,
         generated: generated,
         generated_name: generated_name,
         named_file: generated,
@@ -105,6 +119,7 @@ function new_writer(module: str) -> Writer
 # auto-increment; a claim on a .hero file has to be re-asserted rather
 # than allowed to drift.
 function line(@w: Writer, text: str)
+    flush(@w)
     needs_restore: bool @ false
     restore_file: str @ ""
     restore_line: i64 @ 1
@@ -184,27 +199,67 @@ function at_file(@w: Writer, file: str, at: i64)
 
     if already
         return
-    directive(@w, file: file, at: wanted)
+    w.pending @ .source_line(file: file, line: wanted)
+    w.intent @ .at(file: file, line: wanted)
 
 # Point the next line at the generated file — around a prologue, a
 # copy-out, the shim: code no user line is responsible for.
 function at_generated(@w: Writer)
     settled: bool @ false
 
-    match w.claim
-        .at believed =>
-            if believed.file == w.generated
-                settled @ true
-        .no_claim => settled @ settled
+    match w.pending
+        .generated_line => settled @ true
+        .source_line    => settled @ false
+        .none_pending =>
+            match w.claim
+                .at believed =>
+                    if believed.file == w.generated
+                        settled @ true
+                .no_claim => settled @ settled
 
     if settled
         return
+    w.pending @ .generated_line
+    w.intent @ .at(file: w.generated, line: 0)
 
-    # This directive occupies one line first, so the next content line
-    # is pushed + 2.
-    next = w.pushed + 2
-    generated = w.generated
-    directive(@w, file: generated, at: next)
+# Write the pending request, now that a line follows it. A request the
+# claim already holds needs no directive, the generated file's being held
+# whenever the claim names it, since that file does advance a line per
+# line; its directive occupies one line first, so the next content line is
+# pushed + 2.
+function flush(@w: Writer)
+    match w.pending
+        .none_pending => return
+        .source_line asked =>
+            w.pending @ .none_pending
+            holds: bool @ false
+
+            match w.claim
+                .at believed =>
+                    if believed.file == asked.file && believed.line == asked.line
+                        holds @ true
+                .no_claim => holds @ holds
+
+            if holds
+                w.intent @ w.claim
+                return
+            directive(@w, file: asked.file, at: asked.line)
+        .generated_line =>
+            w.pending @ .none_pending
+            settled: bool @ false
+
+            match w.claim
+                .at believed =>
+                    if believed.file == w.generated
+                        settled @ true
+                .no_claim => settled @ settled
+
+            if settled
+                w.intent @ w.claim
+                return
+            next = w.pushed + 2
+            generated = w.generated
+            directive(@w, file: generated, at: next)
 
 function directive(@w: Writer, file: str, at: i64)
     # Cleared first, so the push does not increment a claim this
@@ -257,12 +312,13 @@ test "asking for what is already intended emits nothing"
     line(@w, text: "z;")
     assert finish(w) == "#line 5 \"a.hero\"\nz;\n"
 
-    # A different line IS a new directive.
+    # A different line IS a new directive, and the one it replaces, which no
+    # line followed, is never written (defect 263).
     again: Writer @ new_writer("m")
     at_file(@again, file: "a.hero", at: 5)
     at_file(@again, file: "a.hero", at: 6)
     line(@again, text: "z;")
-    assert finish(again) == "#line 5 \"a.hero\"\n#line 6 \"a.hero\"\nz;\n"
+    assert finish(again) == "#line 6 \"a.hero\"\nz;\n"
 
 test "a file's #line spelling is kept across a restore, the generated file and a turn to another file (defect 262)"
     w: Writer @ new_writer("m")
@@ -304,3 +360,34 @@ test "a writer that ends exactly on a chunk boundary adds nothing"
         n @ n + 1
 
     assert finish(w) == repeat("y;\n", CHUNK_LINES.to_u64().must())
+
+test "a request no line follows writes no #line (defect 263)"
+    # A retain or a release after a release asked for its instruction's
+    # source line and then for the generated file's: two directives, the
+    # first followed by nothing but the second.
+    w: Writer @ new_writer("m")
+    at_file(@w, file: "a.hero", at: 4)
+    line(@w, text: "x;")
+    at_file(@w, file: "a.hero", at: 9)
+    at_generated(@w)
+    line(@w, text: "hero_str_decref(h1);")
+    at_file(@w, file: "a.hero", at: 9)
+    at_generated(@w)
+    line(@w, text: "hero_str_decref(h2);")
+    assert finish(w) == "#line 4 \"a.hero\"\nx;\n#line 4 \"m.c\"\nhero_str_decref(h1);\nhero_str_decref(h2);\n"
+
+    # And a request the output ends on is never written at all.
+    tail: Writer @ new_writer("m")
+    line(@tail, text: "a;")
+    at_file(@tail, file: "a.hero", at: 2)
+    at_generated(@tail)
+    assert finish(tail) == "a;\n"
+
+    # A source line the claim already holds is not stated twice.
+    held: Writer @ new_writer("m")
+    at_file(@held, file: "a.hero", at: 7)
+    line(@held, text: "p;")
+    at_generated(@held)
+    at_file(@held, file: "a.hero", at: 8)
+    line(@held, text: "q;")
+    assert finish(held) == "#line 7 \"a.hero\"\np;\nq;\n"

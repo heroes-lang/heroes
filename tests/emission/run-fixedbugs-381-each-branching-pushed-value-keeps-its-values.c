@@ -87,17 +87,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 98 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -133,7 +130,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 13 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_e201354 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(int64_t h0_n) {
-#line 137 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 134 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354 h1_ret0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -176,10 +173,8 @@ bb1:
     t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 16 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = HERO_STR_LIT(hero_str_1d4477);
-#line 180 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 177 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t10);
-#line 16 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 183 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t11);
 #line 16 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
@@ -187,7 +182,7 @@ bb1:
     t14 = h2_own2;
 #line 16 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_own2 = t12;
-#line 191 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 186 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t14);
 #line 16 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_ret0 = t12;
@@ -211,7 +206,7 @@ bb2:
     t15 = h3_own3;
 #line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h3_own3 = t9;
-#line 215 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 210 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t15);
 #line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_ret0 = t9;
@@ -223,22 +218,17 @@ bb3:
     goto bb1;
 #line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb4:
-#line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
+#line 222 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t13 = h1_ret0;
-#line 229 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t13);
-#line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 232 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h2_own2);
-#line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 235 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;
 }
 
 #line 18 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_must(int64_t h0_n) {
-#line 242 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 232 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_at;
     h_0opt_e201354 h3_f0 = {0};
@@ -277,15 +267,15 @@ bb0:
     t24 = h4_own4;
 #line 19 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_own4 = t1;
-#line 281 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 271 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t24);
 #line 19 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t25 = h1_out;
-#line 285 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 275 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 19 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 289 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 279 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t25);
 #line 20 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -305,7 +295,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 22 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb2:
-#line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = h2_at;
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t8 = INT64_C(2);
@@ -317,15 +306,15 @@ bb2:
     t26 = h5_own5;
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_own5 = t10;
-#line 321 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 310 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t26);
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t27 = h3_f0;
-#line 325 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 314 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t10);
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h3_f0 = t10;
-#line 329 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 318 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t27);
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t11 = h3_f0;
@@ -341,19 +330,11 @@ bb2:
 bb3:
 #line 26 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = h1_out;
-#line 345 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 334 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t23);
-#line 26 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 348 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 26 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 351 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h3_f0);
-#line 26 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 354 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h4_own4);
-#line 26 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 357 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h5_own5);
     return t23;
 bb4:
@@ -363,7 +344,6 @@ bb4:
     t18 = t17.as.ok;
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_array_push_owned(&h1_out, &t18);
-#line 24 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t20 = h2_at;
 #line 24 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t21 = INT64_C(1);
@@ -379,14 +359,14 @@ bb5:
     t15 = h3_f0;
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t16 = t15.as.err;
-#line 383 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 363 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t16);
     hero_unreachable();
 }
 
 #line 28 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_default(int64_t h0_n) {
-#line 390 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 370 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -438,15 +418,15 @@ bb0:
     t31 = h7_own7;
 #line 29 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t1;
-#line 442 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 422 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t31);
 #line 29 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t32 = h1_out;
-#line 446 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 426 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 29 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 450 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 430 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t32);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -458,15 +438,15 @@ bb0:
     t33 = h8_own8;
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h8_own8 = t4;
-#line 462 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 442 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t33);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t34 = h2_xs0;
-#line 466 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 446 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 470 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 450 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t34);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -496,7 +476,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 31 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t14);
@@ -504,15 +483,15 @@ bb2:
     t35 = h9_own9;
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h9_own9 = t15;
-#line 508 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 487 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t35);
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t36 = h5_f0;
-#line 512 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 491 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t15);
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_f0 = t15;
-#line 516 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 495 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t36);
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t16 = h5_f0;
@@ -540,25 +519,13 @@ bb3:
 bb4:
 #line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t30 = h1_out;
-#line 544 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 523 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t30);
-#line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 547 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 550 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 553 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h5_f0);
-#line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 556 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h7_own7);
-#line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 559 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h8_own8);
-#line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 562 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h9_own9);
     return t30;
 bb5:
@@ -590,12 +557,12 @@ bb7:
     hero_array_push_owned(&h1_out, &t25);
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 594 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 561 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_question(int64_t h0_n) {
-#line 599 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 566 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -654,15 +621,15 @@ bb0:
     t34 = h7_own7;
 #line 37 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t1;
-#line 658 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 625 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t34);
 #line 37 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t35 = h1_out;
-#line 662 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 629 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 37 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 666 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 633 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t35);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -674,15 +641,15 @@ bb0:
     t36 = h8_own8;
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h8_own8 = t4;
-#line 678 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 645 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t36);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t37 = h2_xs0;
-#line 682 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 649 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 686 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 653 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t37);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -712,7 +679,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 39 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = INT64_C(2);
@@ -724,15 +690,15 @@ bb2:
     t38 = h9_own9;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h9_own9 = t17;
-#line 728 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 694 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t38);
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t39 = h5_f0;
-#line 732 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 698 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t17);
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_f0 = t17;
-#line 736 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 702 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t39);
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t18 = h5_f0;
@@ -760,7 +726,7 @@ bb3:
 bb4:
 #line 42 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t31 = h1_out;
-#line 764 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 730 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t31);
 #line 42 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t32 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t31};
@@ -768,7 +734,7 @@ bb4:
     t40 = h10_own10;
 #line 42 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h10_own10 = t32;
-#line 772 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 738 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t40);
 #line 42 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_ret0 = t32;
@@ -790,7 +756,7 @@ bb6:
     t22 = h5_f0;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = t22.as.err;
-#line 794 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 760 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_failure_retain(&t23);
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t24 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t23};
@@ -798,7 +764,7 @@ bb6:
     t41 = h11_own11;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h11_own11 = t24;
-#line 802 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 768 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t41);
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_ret0 = t24;
@@ -806,40 +772,23 @@ bb6:
     goto bb7;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb7:
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
+#line 776 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t33 = h6_ret0;
-#line 812 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_retain(&t33);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 815 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 818 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 821 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h5_f0);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 824 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h7_own7);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 827 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h8_own8);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 830 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h9_own9);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 833 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h10_own10);
-#line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 836 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h11_own11);
     return t33;
 }
 
 #line 44 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_stops_at_question(int64_t h0_n) {
-#line 843 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 792 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -896,15 +845,15 @@ bb0:
     t32 = h7_own7;
 #line 45 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t1;
-#line 900 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 849 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t32);
 #line 45 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t33 = h1_out;
-#line 904 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 853 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 45 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 908 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 857 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t33);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -916,15 +865,15 @@ bb0:
     t34 = h8_own8;
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h8_own8 = t4;
-#line 920 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 869 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t34);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t35 = h2_xs0;
-#line 924 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 873 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 928 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 877 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t35);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -954,7 +903,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 47 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(t14);
@@ -962,15 +910,15 @@ bb2:
     t36 = h9_own9;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h9_own9 = t15;
-#line 966 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 914 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t36);
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t37 = h5_f0;
-#line 970 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 918 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t15);
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_f0 = t15;
-#line 974 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 922 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t37);
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t16 = h5_f0;
@@ -998,7 +946,7 @@ bb3:
 bb4:
 #line 50 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t29 = h1_out;
-#line 1002 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 950 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t29);
 #line 50 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t30 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t29};
@@ -1006,7 +954,7 @@ bb4:
     t38 = h10_own10;
 #line 50 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h10_own10 = t30;
-#line 1010 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 958 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t38);
 #line 50 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_ret0 = t30;
@@ -1028,7 +976,7 @@ bb6:
     t20 = h5_f0;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t21 = t20.as.err;
-#line 1032 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 980 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_failure_retain(&t21);
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t22 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t21};
@@ -1036,7 +984,7 @@ bb6:
     t39 = h11_own11;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h11_own11 = t22;
-#line 1040 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 988 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t39);
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_ret0 = t22;
@@ -1044,40 +992,23 @@ bb6:
     goto bb7;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb7:
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
+#line 996 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t31 = h6_ret0;
-#line 1050 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_retain(&t31);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1053 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1056 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1059 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h5_f0);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1062 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h7_own7);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1065 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h8_own8);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1068 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h9_own9);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1071 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h10_own10);
-#line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1074 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h11_own11);
     return t31;
 }
 
 #line 52 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_and(int64_t h0_n) {
-#line 1081 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1012 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -1120,15 +1051,15 @@ bb0:
     t26 = h6_own6;
 #line 53 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_own6 = t1;
-#line 1124 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1055 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t26);
 #line 53 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t27 = h1_out;
-#line 1128 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1059 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 53 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 1132 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1063 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t27);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -1140,15 +1071,15 @@ bb0:
     t28 = h7_own7;
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t4;
-#line 1144 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1075 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t28);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t29 = h2_xs0;
-#line 1148 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1079 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 1152 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1083 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t29);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -1178,7 +1109,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 55 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = INT64_C(1);
@@ -1204,19 +1134,11 @@ bb3:
 bb4:
 #line 58 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t25 = h1_out;
-#line 1208 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1138 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
-#line 58 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1211 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 58 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1214 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 58 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1217 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h6_own6);
-#line 58 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1220 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h7_own7);
     return t25;
 bb5:
@@ -1238,12 +1160,12 @@ bb6:
     hero_array_push_owned(&h1_out, &t20);
 #line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 1242 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1164 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 60 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_or(int64_t h0_n) {
-#line 1247 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1169 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -1286,15 +1208,15 @@ bb0:
     t26 = h6_own6;
 #line 61 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_own6 = t1;
-#line 1290 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1212 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t26);
 #line 61 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t27 = h1_out;
-#line 1294 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1216 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 61 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 1298 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1220 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t27);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -1306,15 +1228,15 @@ bb0:
     t28 = h7_own7;
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t4;
-#line 1310 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1232 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t28);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t29 = h2_xs0;
-#line 1314 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1236 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 1318 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1240 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t29);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -1344,7 +1266,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 63 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = INT64_C(1);
@@ -1370,19 +1291,11 @@ bb3:
 bb4:
 #line 66 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t25 = h1_out;
-#line 1374 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1295 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
-#line 66 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1377 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 66 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1380 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 66 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1383 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h6_own6);
-#line 66 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1386 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h7_own7);
     return t25;
 bb5:
@@ -1404,12 +1317,12 @@ bb6:
     hero_array_push_owned(&h1_out, &t20);
 #line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 1408 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1321 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 68 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_two(int64_t h0_n) {
-#line 1413 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1326 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -1476,15 +1389,15 @@ bb0:
     t42 = h8_own8;
 #line 69 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h8_own8 = t1;
-#line 1480 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1393 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t42);
 #line 69 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t43 = h1_out;
-#line 1484 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1397 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 69 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 1488 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1401 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t43);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -1496,15 +1409,15 @@ bb0:
     t44 = h9_own9;
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h9_own9 = t4;
-#line 1500 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1413 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t44);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t45 = h2_xs0;
-#line 1504 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1417 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 1508 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1421 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t45);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -1534,7 +1447,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 71 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = INT64_C(2);
@@ -1546,15 +1458,15 @@ bb2:
     t46 = h10_own10;
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h10_own10 = t17;
-#line 1550 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1462 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t46);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t47 = h5_f0;
-#line 1554 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1466 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t17);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_f0 = t17;
-#line 1558 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1470 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t47);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t18 = h5_f0;
@@ -1582,31 +1494,15 @@ bb3:
 bb4:
 #line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t41 = h1_out;
-#line 1586 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1498 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t41);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1589 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1592 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1595 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h5_f0);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1598 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h6_f1);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1601 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h8_own8);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1604 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h9_own9);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1607 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h10_own10);
-#line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1610 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h11_own11);
     return t41;
 bb5:
@@ -1622,15 +1518,15 @@ bb5:
     t48 = h11_own11;
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h11_own11 = t27;
-#line 1626 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1522 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t48);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t49 = h6_f1;
-#line 1630 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1526 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t27);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_f1 = t27;
-#line 1634 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1530 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t49);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t28 = h6_f1;
@@ -1648,7 +1544,7 @@ bb6:
     t22 = h5_f0;
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = t22.as.err;
-#line 1652 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1548 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t23);
     hero_unreachable();
 bb7:
@@ -1678,12 +1574,12 @@ bb9:
     hero_array_push_owned(&h1_out, &t36);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 1682 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1578 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 76 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a_call(int64_t h0_n) {
-#line 1687 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1583 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -1737,15 +1633,15 @@ bb0:
     t32 = h6_own6;
 #line 77 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_own6 = t1;
-#line 1741 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1637 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t32);
 #line 77 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t33 = h1_out;
-#line 1745 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1641 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 77 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_out = t1;
-#line 1749 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1645 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t33);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = INT64_C(0);
@@ -1757,15 +1653,15 @@ bb0:
     t34 = h7_own7;
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t4;
-#line 1761 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1657 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t34);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t35 = h2_xs0;
-#line 1765 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1661 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t4);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t4;
-#line 1769 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1665 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t35);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = INT64_C(0);
@@ -1795,7 +1691,6 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 79 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_at = t12;
-#line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = h4_at;
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t15 = INT64_C(2);
@@ -1807,15 +1702,15 @@ bb2:
     t36 = h8_own8;
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h8_own8 = t17;
-#line 1811 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1706 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t36);
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t37 = h5_f0;
-#line 1815 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1710 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_retain(&t17);
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_f0 = t17;
-#line 1819 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1714 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&t37);
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t18 = h5_f0;
@@ -1843,28 +1738,14 @@ bb3:
 bb4:
 #line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t31 = h1_out;
-#line 1847 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1742 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t31);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1850 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_out);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1853 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1856 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h5_f0);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1859 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h6_own6);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1862 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h7_own7);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1865 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_e201354_release(&h8_own8);
-#line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 1868 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h9_own9);
     return t31;
 bb5:
@@ -1878,7 +1759,7 @@ bb5:
     t38 = h9_own9;
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h9_own9 = t26;
-#line 1882 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1763 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t38);
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_array_push_owned(&h1_out, &t26);
@@ -1890,14 +1771,14 @@ bb6:
     t22 = h5_f0;
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = t22.as.err;
-#line 1894 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1775 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t23);
     hero_unreachable();
 }
 
 #line 84 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(HeroArrayHeader * h0_xs) {
-#line 1901 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1782 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_parts = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -1936,25 +1817,25 @@ bb0:
     t21 = h5_own5;
 #line 85 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_own5 = t1;
-#line 1940 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1821 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t21);
 #line 85 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t22 = h1_parts;
-#line 1944 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1825 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 85 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_parts = t1;
-#line 1948 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1829 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t22);
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = h0_xs;
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = h2_xs0;
-#line 1954 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1835 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t2);
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t2;
-#line 1958 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1839 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t23);
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t3 = INT64_C(0);
@@ -1984,7 +1865,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 87 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_x = t10;
-#line 88 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t12 = h4_x;
 #line 88 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t13 = hero_int_to_str(t12);
@@ -1992,7 +1872,7 @@ bb2:
     t24 = h6_own6;
 #line 88 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_own6 = t13;
-#line 1996 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1876 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t24);
 #line 88 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_array_push_owned(&h1_parts, &t13);
@@ -2022,32 +1902,20 @@ bb4:
     t25 = h7_own7;
 #line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t20;
-#line 2026 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1906 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t25);
-#line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2029 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t20);
-#line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2032 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_parts);
-#line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2035 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2038 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h5_own5);
-#line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2041 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h6_own6);
-#line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2044 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h7_own7);
     return t20;
 }
 
 #line 92 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(HeroArrayHeader * h0_xs) {
-#line 2051 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1919 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h1_parts = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -2086,25 +1954,25 @@ bb0:
     t21 = h5_own5;
 #line 93 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_own5 = t1;
-#line 2090 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1958 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t21);
 #line 93 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t22 = h1_parts;
-#line 2094 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1962 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 93 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_parts = t1;
-#line 2098 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1966 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t22);
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t2 = h0_xs;
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = h2_xs0;
-#line 2104 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1972 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t2);
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs0 = t2;
-#line 2108 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1976 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t23);
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t3 = INT64_C(0);
@@ -2134,7 +2002,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t8 + 1))[t9]);
 #line 95 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_x = t10;
-#line 96 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t12 = h4_x;
 #line 96 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t13 = hero_bool_to_str(t12);
@@ -2142,7 +2009,7 @@ bb2:
     t24 = h6_own6;
 #line 96 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_own6 = t13;
-#line 2146 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2013 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t24);
 #line 96 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_array_push_owned(&h1_parts, &t13);
@@ -2172,32 +2039,20 @@ bb4:
     t25 = h7_own7;
 #line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t20;
-#line 2176 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2043 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t25);
-#line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2179 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t20);
-#line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2182 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h1_parts);
-#line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2185 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs0);
-#line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2188 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h5_own5);
-#line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2191 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h6_own6);
-#line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2194 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h7_own7);
     return t20;
 }
 
 #line 100 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 void h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_main(void) {
-#line 2201 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2056 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7 h0_f0 = {0};
     h_0opt_2270cbe7 h1_s0 = {0};
     HeroArrayHeader * h2_xs = {0};
@@ -2290,7 +2145,7 @@ bb0:
     t45 = h4_own4;
 #line 101 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h4_own4 = t2;
-#line 2294 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2149 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t45);
 #line 101 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t3 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(t2);
@@ -2298,13 +2153,12 @@ bb0:
     t46 = h5_own5;
 #line 101 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h5_own5 = t3;
-#line 2302 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2157 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t46);
 #line 101 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t3);
 #line 101 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t4 = INT64_C(5);
 #line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t5 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_default(t4);
@@ -2312,7 +2166,7 @@ bb0:
     t47 = h6_own6;
 #line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h6_own6 = t5;
-#line 2316 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2170 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t47);
 #line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t6 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(t5);
@@ -2320,13 +2174,12 @@ bb0:
     t48 = h7_own7;
 #line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h7_own7 = t6;
-#line 2324 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2178 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t48);
 #line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t6);
 #line 102 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t7 = INT64_C(5);
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t8 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_question(t7);
@@ -2334,15 +2187,15 @@ bb0:
     t49 = h8_own8;
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h8_own8 = t8;
-#line 2338 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2191 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t49);
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t50 = h0_f0;
-#line 2342 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2195 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_retain(&t8);
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h0_f0 = t8;
-#line 2346 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2199 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t50);
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t9 = h0_f0;
@@ -2366,7 +2219,7 @@ bb1:
     t51 = h9_own9;
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h9_own9 = t17;
-#line 2370 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2223 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t51);
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t17);
@@ -2380,15 +2233,15 @@ bb1:
     t52 = h10_own10;
 #line 105 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h10_own10 = t19;
-#line 2384 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2237 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t52);
 #line 105 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t53 = h1_s0;
-#line 2388 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2241 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_retain(&t19);
 #line 105 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h1_s0 = t19;
-#line 2392 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2245 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&t53);
 #line 105 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t20 = h1_s0;
@@ -2410,7 +2263,7 @@ bb2:
     t13 = h0_f0;
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = t13.as.err;
-#line 2414 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2267 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb3:
@@ -2422,7 +2275,7 @@ bb3:
     t54 = h11_own11;
 #line 109 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h11_own11 = t33;
-#line 2426 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2279 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t54);
 #line 109 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t34 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(t33);
@@ -2430,13 +2283,12 @@ bb3:
     t55 = h12_own12;
 #line 109 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h12_own12 = t34;
-#line 2434 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2287 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t55);
 #line 109 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t34);
 #line 109 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t35 = INT64_C(5);
 #line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t36 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_or(t35);
@@ -2444,7 +2296,7 @@ bb3:
     t56 = h13_own13;
 #line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h13_own13 = t36;
-#line 2448 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2300 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t56);
 #line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t37 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(t36);
@@ -2452,13 +2304,12 @@ bb3:
     t57 = h14_own14;
 #line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h14_own14 = t37;
-#line 2456 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2308 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t57);
 #line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t37);
 #line 110 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t38 = INT64_C(4);
 #line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t39 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_two(t38);
@@ -2466,7 +2317,7 @@ bb3:
     t58 = h15_own15;
 #line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h15_own15 = t39;
-#line 2470 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2321 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t58);
 #line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t40 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(t39);
@@ -2474,13 +2325,12 @@ bb3:
     t59 = h16_own16;
 #line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h16_own16 = t40;
-#line 2478 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2329 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t59);
 #line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t40);
 #line 111 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t41 = INT64_C(4);
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t42 = h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a_call(t41);
@@ -2488,7 +2338,7 @@ bb3:
     t60 = h17_own17;
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h17_own17 = t42;
-#line 2492 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2342 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t60);
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t43 = HERO_STR_LIT(hero_str_2c);
@@ -2498,67 +2348,31 @@ bb3:
     t61 = h18_own18;
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h18_own18 = t44;
-#line 2502 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2352 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t61);
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_str(t44);
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 2508 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2358 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h0_f0);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2511 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h1_s0);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2514 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_xs);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2517 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_failure_release(&h3_e);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2520 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h4_own4);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2523 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h5_own5);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2526 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h6_own6);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2529 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h7_own7);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2532 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h8_own8);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2535 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h9_own9);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2538 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(&h10_own10);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2541 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h11_own11);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2544 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h12_own12);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2547 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h13_own13);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2550 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h14_own14);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2553 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h15_own15);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2556 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h16_own16);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2559 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h17_own17);
-#line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-#line 2562 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(h18_own18);
     return;
 bb4:
@@ -2568,11 +2382,11 @@ bb4:
     t23 = t22.as.ok;
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t62 = h2_xs;
-#line 2572 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2386 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t23);
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h2_xs = t23;
-#line 2576 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2390 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t62);
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t24 = HERO_STR_LIT(hero_str_354737bc);
@@ -2590,17 +2404,16 @@ bb4:
     goto bb3;
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb5:
-#line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t27 = h1_s0;
 #line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t28 = t27.as.err;
 #line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t63 = h3_e;
-#line 2600 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2413 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_failure_retain(&t28);
 #line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     h3_e = t28;
-#line 2604 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2417 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_failure_release(&t63);
 #line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t29 = HERO_STR_LIT(hero_str_12cd9df2);
@@ -2616,12 +2429,12 @@ bb5:
     hero_print_end();
 #line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 2620 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2433 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 2625 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2438 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -2645,15 +2458,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 2649 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2462 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 2653 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2466 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 2657 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2470 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -2663,7 +2476,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -2673,11 +2485,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -2689,15 +2499,10 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 2695 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 2504 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 2698 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 2701 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_decref(h4_own4);
     return t12;
 }

@@ -74,17 +74,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "placepaths.c"
+#line 85 "placepaths.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_placepaths_Row_retain(const h_placepaths_Row *v);
@@ -109,7 +106,7 @@ int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c)
 
 #line 12 "tests/golden/ir/place-paths.hero"
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) {
-#line 113 "placepaths.c"
+#line 110 "placepaths.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -127,12 +124,12 @@ bb0:
     hero_array_set(&((*(h_placepaths_Row *)hero_array_at_mut((*ph0_g).f_rows, t1)).f_cells), t2, &t3);
 #line 13 "tests/golden/ir/place-paths.hero"
     return;
-#line 131 "placepaths.c"
+#line 128 "placepaths.c"
 }
 
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) {
-#line 136 "placepaths.c"
+#line 133 "placepaths.c"
     h_placepaths_Grid t1;
     HeroArrayHeader * t2;
     int64_t t3;
@@ -158,7 +155,7 @@ bb0:
     t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
 #line 16 "tests/golden/ir/place-paths.hero"
     return t7;
-#line 162 "placepaths.c"
+#line 159 "placepaths.c"
 }
 HERO_TU_LOCAL void h_placepaths_Row_retain(const h_placepaths_Row *v) {
     hero_array_incref(v->f_cells);

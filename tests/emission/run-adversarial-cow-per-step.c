@@ -79,17 +79,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "adversarialcowperstep.c"
+#line 90 "adversarialcowperstep.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_adversarialcowperstep_Row_retain(const h_adversarialcowperstep_Row *v);
@@ -153,7 +150,7 @@ void h_adversarialcowperstep_main(void);
 
 #line 47 "tests/golden/run/adversarial-cow-per-step.hero"
 void h_adversarialcowperstep_main(void) {
-#line 157 "adversarialcowperstep.c"
+#line 154 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid h0_g = {0};
     h_adversarialcowperstep_Grid h1_h = {0};
     h_adversarialcowperstep_Node h2_n = {0};
@@ -333,10 +330,8 @@ bb0:
     t122 = h6_own6;
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     h6_own6 = t3;
-#line 337 "adversarialcowperstep.c"
+#line 334 "adversarialcowperstep.c"
     hero_array_decref(t122);
-#line 50 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 340 "adversarialcowperstep.c"
     hero_array_incref(t3);
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     t4 = (h_adversarialcowperstep_Row){.f_cells = t3};
@@ -344,7 +339,7 @@ bb0:
     t123 = h7_own7;
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     h7_own7 = t4;
-#line 348 "adversarialcowperstep.c"
+#line 343 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_release(&t123);
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     t5 = hero_array_new(&h_adversarialcowperstep_Row_desc, 1);
@@ -354,10 +349,8 @@ bb0:
     t124 = h8_own8;
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     h8_own8 = t5;
-#line 358 "adversarialcowperstep.c"
+#line 353 "adversarialcowperstep.c"
     hero_array_decref(t124);
-#line 50 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 361 "adversarialcowperstep.c"
     hero_array_incref(t5);
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     t6 = (h_adversarialcowperstep_Grid){.f_rows = t5};
@@ -365,25 +358,25 @@ bb0:
     t125 = h9_own9;
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     h9_own9 = t6;
-#line 369 "adversarialcowperstep.c"
+#line 362 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&t125);
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     t126 = h0_g;
-#line 373 "adversarialcowperstep.c"
+#line 366 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_retain(&t6);
 #line 50 "tests/golden/run/adversarial-cow-per-step.hero"
     h0_g = t6;
-#line 377 "adversarialcowperstep.c"
+#line 370 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&t126);
 #line 51 "tests/golden/run/adversarial-cow-per-step.hero"
     t7 = h0_g;
 #line 51 "tests/golden/run/adversarial-cow-per-step.hero"
     t127 = h1_h;
-#line 383 "adversarialcowperstep.c"
+#line 376 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_retain(&t7);
 #line 51 "tests/golden/run/adversarial-cow-per-step.hero"
     h1_h = t7;
-#line 387 "adversarialcowperstep.c"
+#line 380 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&t127);
 #line 52 "tests/golden/run/adversarial-cow-per-step.hero"
     t8 = INT64_C(0);
@@ -395,7 +388,6 @@ bb0:
     hero_array_unshare(&(h0_g.f_rows));
 #line 52 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_set(&((*(h_adversarialcowperstep_Row *)hero_array_at_mut(h0_g.f_rows, t8)).f_cells), t9, &t10);
-#line 53 "tests/golden/run/adversarial-cow-per-step.hero"
     t11 = h0_g;
 #line 53 "tests/golden/run/adversarial-cow-per-step.hero"
     t12 = t11.f_rows;
@@ -413,7 +405,6 @@ bb0:
     hero_print_int(t17);
 #line 53 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_print_end();
-#line 54 "tests/golden/run/adversarial-cow-per-step.hero"
     t18 = h1_h;
 #line 54 "tests/golden/run/adversarial-cow-per-step.hero"
     t19 = t18.f_rows;
@@ -475,10 +466,8 @@ bb0:
     t128 = h10_own10;
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     h10_own10 = t41;
-#line 479 "adversarialcowperstep.c"
+#line 470 "adversarialcowperstep.c"
     hero_array_decref(t128);
-#line 63 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 482 "adversarialcowperstep.c"
     hero_array_incref(t41);
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     t42 = (h_adversarialcowperstep_Node){.f_label = t40, .f_children = t41};
@@ -486,7 +475,7 @@ bb0:
     t129 = h11_own11;
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     h11_own11 = t42;
-#line 490 "adversarialcowperstep.c"
+#line 479 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_release(&t129);
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     t43 = hero_array_new(&h_adversarialcowperstep_Node_desc, 1);
@@ -496,10 +485,8 @@ bb0:
     t130 = h12_own12;
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     h12_own12 = t43;
-#line 500 "adversarialcowperstep.c"
+#line 489 "adversarialcowperstep.c"
     hero_array_decref(t130);
-#line 63 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 503 "adversarialcowperstep.c"
     hero_array_incref(t43);
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     t44 = (h_adversarialcowperstep_Node){.f_label = t39, .f_children = t43};
@@ -507,25 +494,24 @@ bb0:
     t131 = h13_own13;
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     h13_own13 = t44;
-#line 511 "adversarialcowperstep.c"
+#line 498 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_release(&t131);
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     t132 = h2_n;
-#line 515 "adversarialcowperstep.c"
+#line 502 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_retain(&t44);
 #line 63 "tests/golden/run/adversarial-cow-per-step.hero"
     h2_n = t44;
-#line 519 "adversarialcowperstep.c"
+#line 506 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_release(&t132);
 #line 64 "tests/golden/run/adversarial-cow-per-step.hero"
     t45 = INT64_C(0);
 #line 64 "tests/golden/run/adversarial-cow-per-step.hero"
     t46 = h2_n;
-#line 525 "adversarialcowperstep.c"
+#line 512 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_retain(&t46);
 #line 64 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_set(&(h2_n.f_children), t45, &t46);
-#line 65 "tests/golden/run/adversarial-cow-per-step.hero"
     t47 = h2_n;
 #line 65 "tests/golden/run/adversarial-cow-per-step.hero"
     t48 = t47.f_label;
@@ -541,7 +527,6 @@ bb0:
     hero_print_int(t51);
 #line 65 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_print_end();
-#line 66 "tests/golden/run/adversarial-cow-per-step.hero"
     t52 = h2_n;
 #line 66 "tests/golden/run/adversarial-cow-per-step.hero"
     t53 = t52.f_children;
@@ -555,7 +540,6 @@ bb0:
     hero_print_int(t56);
 #line 66 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_print_end();
-#line 67 "tests/golden/run/adversarial-cow-per-step.hero"
     t57 = h2_n;
 #line 67 "tests/golden/run/adversarial-cow-per-step.hero"
     t58 = t57.f_children;
@@ -585,10 +569,8 @@ bb0:
     t133 = h14_own14;
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h14_own14 = t65;
-#line 589 "adversarialcowperstep.c"
+#line 573 "adversarialcowperstep.c"
     hero_array_decref(t133);
-#line 70 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 592 "adversarialcowperstep.c"
     hero_array_incref(t65);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     t66 = (h_adversarialcowperstep_Row){.f_cells = t65};
@@ -596,7 +578,7 @@ bb0:
     t134 = h15_own15;
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h15_own15 = t66;
-#line 600 "adversarialcowperstep.c"
+#line 582 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_release(&t134);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     t67 = INT64_C(6);
@@ -612,10 +594,8 @@ bb0:
     t135 = h16_own16;
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h16_own16 = t69;
-#line 616 "adversarialcowperstep.c"
+#line 598 "adversarialcowperstep.c"
     hero_array_decref(t135);
-#line 70 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 619 "adversarialcowperstep.c"
     hero_array_incref(t69);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     t70 = (h_adversarialcowperstep_Row){.f_cells = t69};
@@ -623,7 +603,7 @@ bb0:
     t136 = h17_own17;
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h17_own17 = t70;
-#line 627 "adversarialcowperstep.c"
+#line 607 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_release(&t136);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     t71 = hero_array_new(&h_adversarialcowperstep_Row_desc, 2);
@@ -635,10 +615,8 @@ bb0:
     t137 = h18_own18;
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h18_own18 = t71;
-#line 639 "adversarialcowperstep.c"
+#line 619 "adversarialcowperstep.c"
     hero_array_decref(t137);
-#line 70 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 642 "adversarialcowperstep.c"
     hero_array_incref(t71);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     t72 = (h_adversarialcowperstep_Grid){.f_rows = t71};
@@ -646,15 +624,15 @@ bb0:
     t138 = h19_own19;
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h19_own19 = t72;
-#line 650 "adversarialcowperstep.c"
+#line 628 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&t138);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     t139 = h3_m;
-#line 654 "adversarialcowperstep.c"
+#line 632 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_retain(&t72);
 #line 70 "tests/golden/run/adversarial-cow-per-step.hero"
     h3_m = t72;
-#line 658 "adversarialcowperstep.c"
+#line 636 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&t139);
 #line 71 "tests/golden/run/adversarial-cow-per-step.hero"
     t73 = INT64_C(0);
@@ -666,11 +644,10 @@ bb0:
     t76 = INT64_C(1);
 #line 71 "tests/golden/run/adversarial-cow-per-step.hero"
     t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), ((h_adversarialcowperstep_Row const *)(const void *)(t75 + 1))[t76]);
-#line 670 "adversarialcowperstep.c"
+#line 648 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_retain(&t77);
 #line 71 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_set(&(h3_m.f_rows), t73, &t77);
-#line 72 "tests/golden/run/adversarial-cow-per-step.hero"
     t78 = h3_m;
 #line 72 "tests/golden/run/adversarial-cow-per-step.hero"
     t79 = t78.f_rows;
@@ -704,7 +681,6 @@ bb0:
     hero_print_int(t91);
 #line 72 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_print_end();
-#line 73 "tests/golden/run/adversarial-cow-per-step.hero"
     t92 = INT64_C(0);
 #line 73 "tests/golden/run/adversarial-cow-per-step.hero"
     t93 = INT64_C(0);
@@ -714,7 +690,6 @@ bb0:
     hero_array_unshare(&(h3_m.f_rows));
 #line 73 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_set(&((*(h_adversarialcowperstep_Row *)hero_array_at_mut(h3_m.f_rows, t92)).f_cells), t93, &t94);
-#line 74 "tests/golden/run/adversarial-cow-per-step.hero"
     t95 = h3_m;
 #line 74 "tests/golden/run/adversarial-cow-per-step.hero"
     t96 = t95.f_rows;
@@ -766,25 +741,25 @@ bb0:
     t140 = h20_own20;
 #line 77 "tests/golden/run/adversarial-cow-per-step.hero"
     h20_own20 = t112;
-#line 770 "adversarialcowperstep.c"
+#line 745 "adversarialcowperstep.c"
     hero_array_decref(t140);
 #line 77 "tests/golden/run/adversarial-cow-per-step.hero"
     t141 = h4_xs;
-#line 774 "adversarialcowperstep.c"
+#line 749 "adversarialcowperstep.c"
     hero_array_incref(t112);
 #line 77 "tests/golden/run/adversarial-cow-per-step.hero"
     h4_xs = t112;
-#line 778 "adversarialcowperstep.c"
+#line 753 "adversarialcowperstep.c"
     hero_array_decref(t141);
 #line 78 "tests/golden/run/adversarial-cow-per-step.hero"
     t113 = h4_xs;
 #line 78 "tests/golden/run/adversarial-cow-per-step.hero"
     t142 = h5_ys;
-#line 784 "adversarialcowperstep.c"
+#line 759 "adversarialcowperstep.c"
     hero_array_incref(t113);
 #line 78 "tests/golden/run/adversarial-cow-per-step.hero"
     h5_ys = t113;
-#line 788 "adversarialcowperstep.c"
+#line 763 "adversarialcowperstep.c"
     hero_array_decref(t142);
 #line 79 "tests/golden/run/adversarial-cow-per-step.hero"
     t114 = INT64_C(1);
@@ -792,7 +767,6 @@ bb0:
     t115 = INT64_C(9);
 #line 79 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_set(&(h4_xs), t114, &t115);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
     t116 = h4_xs;
 #line 80 "tests/golden/run/adversarial-cow-per-step.hero"
     t117 = INT64_C(1);
@@ -810,67 +784,27 @@ bb0:
     hero_print_int(t121);
 #line 80 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_print_end();
-#line 814 "adversarialcowperstep.c"
+#line 788 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&h0_g);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 817 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&h1_h);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 820 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_release(&h2_n);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 823 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&h3_m);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 826 "adversarialcowperstep.c"
     hero_array_decref(h4_xs);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 829 "adversarialcowperstep.c"
     hero_array_decref(h5_ys);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 832 "adversarialcowperstep.c"
     hero_array_decref(h6_own6);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 835 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_release(&h7_own7);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 838 "adversarialcowperstep.c"
     hero_array_decref(h8_own8);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 841 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&h9_own9);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 844 "adversarialcowperstep.c"
     hero_array_decref(h10_own10);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 847 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_release(&h11_own11);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 850 "adversarialcowperstep.c"
     hero_array_decref(h12_own12);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 853 "adversarialcowperstep.c"
     h_adversarialcowperstep_Node_release(&h13_own13);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 856 "adversarialcowperstep.c"
     hero_array_decref(h14_own14);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 859 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_release(&h15_own15);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 862 "adversarialcowperstep.c"
     hero_array_decref(h16_own16);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 865 "adversarialcowperstep.c"
     h_adversarialcowperstep_Row_release(&h17_own17);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 868 "adversarialcowperstep.c"
     hero_array_decref(h18_own18);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 871 "adversarialcowperstep.c"
     h_adversarialcowperstep_Grid_release(&h19_own19);
-#line 80 "tests/golden/run/adversarial-cow-per-step.hero"
-#line 874 "adversarialcowperstep.c"
     hero_array_decref(h20_own20);
     return;
 }

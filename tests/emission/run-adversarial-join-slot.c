@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "adversarialjoinslot.c"
+#line 77 "adversarialjoinslot.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +91,7 @@ void h_adversarialjoinslot_main(void);
 
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_pick(bool h0_c) {
-#line 98 "adversarialjoinslot.c"
+#line 95 "adversarialjoinslot.c"
     int64_t h1_r0;
     int64_t h2_v;
     bool t1;
@@ -134,12 +131,12 @@ bb3:
     h1_r0 = t3;
 #line 18 "tests/golden/run/adversarial-join-slot.hero"
     goto bb1;
-#line 138 "adversarialjoinslot.c"
+#line 135 "adversarialjoinslot.c"
 }
 
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) {
-#line 143 "adversarialjoinslot.c"
+#line 140 "adversarialjoinslot.c"
     int64_t h2_r0;
     int64_t h3_r1;
     int64_t h4_v;
@@ -183,7 +180,6 @@ bb3:
     goto bb1;
 #line 25 "tests/golden/run/adversarial-join-slot.hero"
 bb4:
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
     t5 = h3_r1;
 #line 25 "tests/golden/run/adversarial-join-slot.hero"
     h2_r0 = t5;
@@ -205,12 +201,12 @@ bb6:
     h3_r1 = t4;
 #line 26 "tests/golden/run/adversarial-join-slot.hero"
     goto bb4;
-#line 209 "adversarialjoinslot.c"
+#line 205 "adversarialjoinslot.c"
 }
 
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 void h_adversarialjoinslot_main(void) {
-#line 214 "adversarialjoinslot.c"
+#line 210 "adversarialjoinslot.c"
     int64_t h0_i;
     int64_t h1_total;
     bool t1;
@@ -259,7 +255,6 @@ bb0:
     hero_print_int(t4);
 #line 35 "tests/golden/run/adversarial-join-slot.hero"
     hero_print_end();
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
     t5 = true;
 #line 36 "tests/golden/run/adversarial-join-slot.hero"
     t6 = true;
@@ -285,11 +280,9 @@ bb0:
     hero_print_int(t13);
 #line 36 "tests/golden/run/adversarial-join-slot.hero"
     hero_print_end();
-#line 37 "tests/golden/run/adversarial-join-slot.hero"
     t14 = INT64_C(0);
 #line 37 "tests/golden/run/adversarial-join-slot.hero"
     h0_i = t14;
-#line 38 "tests/golden/run/adversarial-join-slot.hero"
     t15 = INT64_C(0);
 #line 38 "tests/golden/run/adversarial-join-slot.hero"
     h1_total = t15;
@@ -307,7 +300,6 @@ bb1:
     if (t18) goto bb2; else goto bb3;
 #line 40 "tests/golden/run/adversarial-join-slot.hero"
 bb2:
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
     t19 = h1_total;
 #line 41 "tests/golden/run/adversarial-join-slot.hero"
     t20 = h0_i;
@@ -329,7 +321,6 @@ bb2:
     if (__builtin_add_overflow(t19, t25, &t26)) hero_panic_overflow();
 #line 41 "tests/golden/run/adversarial-join-slot.hero"
     h1_total = t26;
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
     t27 = h0_i;
 #line 42 "tests/golden/run/adversarial-join-slot.hero"
     t28 = INT64_C(1);
@@ -349,7 +340,7 @@ bb3:
     hero_print_end();
 #line 44 "tests/golden/run/adversarial-join-slot.hero"
     return;
-#line 353 "adversarialjoinslot.c"
+#line 344 "adversarialjoinslot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
