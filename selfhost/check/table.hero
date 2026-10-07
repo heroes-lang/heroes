@@ -100,6 +100,13 @@ variant Ty
 
 record Types
     nodes: [Ty]
+    # Whether each node is, or holds, `error` (`poisoned` below), one entry per
+    # node and written once, by `intern` in the same step that appends the node,
+    # so the question costs one index rather than a walk of the type for every
+    # expression that holds it, which made a deep type's cost its depth times
+    # its expressions (defect 259). The answer cannot change once the node is
+    # in, and why is `holds_error`'s comment.
+    poison: [bool]
     params: [i64]
     # Canonical structure key -> id. This is what makes the ids canonical.
     index: {str: i64}
@@ -163,12 +170,21 @@ function label_key(labels: Params) -> str
 # default entry that already means "not typed, and something said why".
 function new_types() -> Types
     nodes: [Ty] = []
+    poison: [bool] = []
     params: [i64] = []
     index: {str: i64} = {}
     runs: {str: i64} = {}
     labels: [str] = []
     label_runs: {str: i64} = {}
-    t: Types @ Types(nodes: nodes, params: params, index: index, runs: runs, labels: labels, label_runs: label_runs)
+    t: Types @ Types(
+        nodes: nodes,
+        poison: poison,
+        params: params,
+        index: index,
+        runs: runs,
+        labels: labels,
+        label_runs: label_runs
+    )
     prelude: [Ty] = [.error, .unit, .int_ty(kind: .i64), .float_ty(kind: .f64), .bool, .str, .ptr, .cstr, .failure]
 
     for ty in prelude
@@ -229,7 +245,9 @@ function intern(@t: Types, ty: Ty) -> i64
     if !found.is_err()
         return found.must()
     id = t.nodes.len()
+    bad = holds_error(t, ty)
     t.nodes @ t.nodes.push(ty)
+    t.poison @ t.poison.push(bad)
     t.index[key] @ id
     return id
 
@@ -425,18 +443,41 @@ function is_function_ty(t: Types, id: i64) -> bool
 
 # True where a type is, or contains, `error`. The checker uses it to stay
 # quiet: a mismatch between `error` and anything is a mistake already
-# reported somewhere else.
+# reported somewhere else. Read from the entry `intern` wrote beside the node
+# (defect 259), so it costs one index whatever the type's depth.
 function poisoned(t: Types, id: i64) -> bool
-    return match get(t, id)
+    return t.poison[id]
+
+# Whether a node about to be interned is, or holds, `error`, one level down:
+# what it holds is already interned, so its own entry answers for everything
+# below it. That is the whole walk `poisoned` did, said once per node.
+#
+# **Why the answer never goes stale, from this file.** `nodes` is written at
+# one site, `intern`'s push above, and `params` at one, `intern_function`'s
+# push, which runs before the function type naming that run is interned; and
+# `new_types` is the one constructor of `Types` (a grep of `selfhost/` for a
+# write to either field or a `Types(` finds those three and no other,
+# 2026-10-07). So a node, once in, is never rewritten. And a type id is only
+# ever minted here, as `t.nodes.len()` at the push, so every id a node holds
+# was minted before it and has its entry already. A node's answer is
+# therefore a function of entries that are themselves fixed, and is fixed the
+# moment it is written. An id that broke that, a node holding one not yet
+# interned, would read past the end of `poison` and abort, rather than answer.
+#
+# The cases and their answers are exactly those of the walk this replaced: a
+# fixed array, a record, a case, a type parameter and the failure type hold
+# nothing it looked into.
+function holds_error(t: Types, ty: Ty) -> bool
+    return match ty
         .error      => true
-        .array a    => poisoned(t, a.element)
-        .fallible o => poisoned(t, o.payload)
-        .map m      => poisoned(t, m.key) || poisoned(t, m.value)
+        .array a    => t.poison[a.element]
+        .fallible o => t.poison[o.payload]
+        .map m      => t.poison[m.key] || t.poison[m.value]
         .function_ty f =>
-            bad: bool @ poisoned(t, f.result)
+            bad: bool @ t.poison[f.result]
 
             for p in params_of(t, f.params)
-                if poisoned(t, p)
+                if t.poison[p]
                     bad @ true
 
             bad
@@ -537,3 +578,78 @@ test "contained walks one level down, and poison climbs back up"
     assert poisoned(t, hole)
     keyed = intern(@t, .map(key: str_ty(t), value: hole))
     assert poisoned(t, keyed)
+
+# The walk `poisoned` was until defect 259, kept as the reference the test
+# below holds every entry to: it asks the nodes and never the entries, so an
+# entry written wrong, or a node rewritten after its entry, disagrees with it.
+function walked_poison(t: Types, id: i64) -> bool
+    return match get(t, id)
+        .error      => true
+        .array a    => walked_poison(t, a.element)
+        .fallible o => walked_poison(t, o.payload)
+        .map m      => walked_poison(t, m.key) || walked_poison(t, m.value)
+        .function_ty f =>
+            bad: bool @ walked_poison(t, f.result)
+
+            for p in params_of(t, f.params)
+                if walked_poison(t, p)
+                    bad @ true
+
+            bad
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr        => false
+        .unit | .fixed | .named | .case_ty | .failure | .generic => false
+
+# Defect 259: the entry is written once, beside its node, and it answers what
+# the walk answered for every node of a table holding each case, poisoned and
+# not, at the bottom of a type forty deep and in a function type's parameter
+# and result.
+test "each node's poison is written once, beside it, and agrees with the walk"
+    t: Types @ new_types()
+    clean: i64 @ int_ty_id(t)
+    bad: i64 @ error_ty(t)
+    depth: i64 @ 0
+
+    while depth < 40
+        clean @ intern(@t, .array(element: clean))
+        bad @ intern(@t, .array(element: bad))
+        depth @ depth + 1
+
+    assert !poisoned(t, clean)
+    assert poisoned(t, bad)
+
+    # Each id is bound before it is asked about: an argument list is read left
+    # to right, so `poisoned(t, intern(@t, ...))` would hand over the table as
+    # it stood before the node was added.
+    held = intern(@t, .fallible(payload: bad))
+    keyed = intern(@t, .map(key: bad, value: clean))
+    valued = intern(@t, .map(key: clean, value: bad))
+    plain = intern(@t, .map(key: str_ty(t), value: clean))
+    assert poisoned(t, held) && poisoned(t, keyed) && poisoned(t, valued)
+    assert !poisoned(t, plain)
+
+    # A fixed array, a record and a type parameter hold nothing the walk
+    # looked into, so an `error` inside a fixed array is not poison.
+    fixed = intern(@t, .fixed(element: bad, length: 4))
+    named = intern(@t, .named(decl: 0))
+    generic = intern(@t, .generic(at: 0))
+    assert !poisoned(t, fixed) && !poisoned(t, named) && !poisoned(t, generic)
+    none: [str] = []
+    by_param: [i64] = [clean, bad]
+    by_result: [i64] = [clean]
+    takes = intern_function(@t, by_param, none, result: unit_ty(t))
+    gives = intern_function(@t, by_result, none, result: bad)
+    neither = intern_function(@t, by_result, none, result: clean)
+    assert poisoned(t, takes) && poisoned(t, gives)
+    assert !poisoned(t, neither)
+
+    # Asking again interns nothing and writes no second entry.
+    before = t.poison.len()
+    again = intern(@t, .fallible(payload: bad))
+    assert again == held
+    assert t.poison.len() == before
+    assert t.poison.len() == t.nodes.len()
+    id: i64 @ 0
+
+    while id < t.nodes.len()
+        assert poisoned(t, id) == walked_poison(t, id)
+        id @ id + 1

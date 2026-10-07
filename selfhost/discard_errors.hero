@@ -92,9 +92,11 @@ function no_readings() -> Readings
 # is read there, because a value's span leaves out the parentheses around
 # it, and `(5)` alone took `_ = ` as `(_ = 5)`, which does not parse (found
 # by the same audit). A value that does not begin its line is an arm's
-# inline body, where `_ = ` and `x @ ` are refused anew as
-# `declaration_in_arm`, so there they are written as the block an arm that
-# does nothing holds (spec § 8), one level under the arm.
+# inline body, and there `_ = ` and `x @ ` are written in a block one level
+# under the arm. Until panel 185's R3 that was the one form, either refused
+# on the arm's line as `declaration_in_arm`; since R3 spec § 8 lets both
+# stand there too (*inline one statement, where a declaration or an `=` may
+# name only `_`*), and the block is the one of the two this fix writes.
 function discarded_value(got: str, fallible: bool, readings: Readings, span: token.Span, text: str) -> diag.Diagnostic
     at = front.before(text, at: span.start)
     first = text.slice(from: at.opening, to: at.opening + 1)
@@ -374,8 +376,9 @@ test "a bool, a line in a test and a function's last line each take `_ = ` as a 
     assert ended.fixes[1].certainty == .guess
     assert has(text: ended.message, needle: "it ends a function that returns `i64`")
 
-# Inside an arm `_ = ` on the value's own line is `declaration_in_arm`, so
-# the discard is the block the spec names; a `return` stays where it is.
+# Inside an arm the discard is written as a block under the arm, the one of
+# the two forms spec § 8 allows that this fix writes; a `return` stays where
+# it is.
 test "an arm's value is discarded in a block under the arm, and returned where it stands"
     text = "function main()\n    match n\n        0 => f(0)\n"
     span = token.Span(start: 41, end: 45)

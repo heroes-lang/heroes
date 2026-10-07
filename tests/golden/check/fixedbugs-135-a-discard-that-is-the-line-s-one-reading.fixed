@@ -41,3 +41,12 @@ function main()
         _ => print(xs.len())
 
     print(xs.len())
+
+# Corrected 2026-10-07, defect 188: the header's last clause reasons from the
+# arm rule panel 185's R3 replaced on 2026-10-02. Since R3 spec § 8 reads *An
+# arm's body is an indented block, or inline one statement, where a
+# declaration or an `=` may name only `_`* and *An arm that does nothing holds
+# `_ = 0`*, so `_ = ` on the arm's own line is legal and not
+# `declaration_in_arm`, and the spec names no block. `check --apply` still
+# writes the arm's discard as a block under the arm, one of the two forms the
+# rule allows, and this case pins that it does.
