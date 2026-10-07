@@ -1,0 +1,9 @@
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:32:15: error[marker_mismatch]: `f` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:40:17: error[marker_mismatch]: `f` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:41:14: error[marker_mismatch]: `f` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:42:21: error[marker_mismatch]: `add` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:43:12: error[marker_mismatch]: `print` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:44:14: error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:45:17: error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:46:18: error[marker_mismatch]: `touch` does not change this argument — the `@` says it does
+tests/golden/check/fixedbugs-431-an-at-argument-a-call-takes-none-for.hero:49:18: error[marker_mismatch]: `f` does not change this argument — the `@` says it does
