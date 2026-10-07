@@ -5798,7 +5798,7 @@ bb4:
     return t4;
 }
 
-#line 303 "examples/ledger/main.hero"
+#line 305 "examples/ledger/main.hero"
 HeroStr h_main_err_text_of(h_0opt_a8ea2 h0_got) {
 #line 5804 "main.c"
     h_0opt_a8ea2 h1_s0 = {0};
@@ -5819,33 +5819,33 @@ HeroStr h_main_err_text_of(h_0opt_a8ea2 h0_got) {
     HeroStr t13;
     goto bb0;
 bb0:
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t1 = h0_got;
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t10 = h1_s0;
 #line 5827 "main.c"
     h_0opt_a8ea2_retain(&t1);
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     h1_s0 = t1;
 #line 5831 "main.c"
     h_0opt_a8ea2_release(&t10);
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t2 = h1_s0;
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t3 = t2.tag;
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     switch (t3) {
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
         case 0: goto bb2;
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
         case 1: goto bb3;
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
         default: hero_unreachable();
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     }
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
 bb1:
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t9 = h2_r0;
 #line 5851 "main.c"
     hero_str_incref(t9);
@@ -5854,46 +5854,46 @@ bb1:
     hero_failure_release(&h3_e);
     return t9;
 bb2:
-#line 305 "examples/ledger/main.hero"
+#line 307 "examples/ledger/main.hero"
     t4 = HERO_STR_LIT(hero_str_0);
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t11 = h2_r0;
 #line 5862 "main.c"
     hero_str_incref(t4);
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     h2_r0 = t4;
 #line 5866 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
-#line 306 "examples/ledger/main.hero"
+#line 308 "examples/ledger/main.hero"
     t5 = h1_s0;
-#line 306 "examples/ledger/main.hero"
+#line 308 "examples/ledger/main.hero"
     t6 = t5.as.err;
-#line 306 "examples/ledger/main.hero"
+#line 308 "examples/ledger/main.hero"
     t12 = h3_e;
 #line 5876 "main.c"
     hero_failure_retain(&t6);
-#line 306 "examples/ledger/main.hero"
+#line 308 "examples/ledger/main.hero"
     h3_e = t6;
 #line 5880 "main.c"
     hero_failure_release(&t12);
-#line 306 "examples/ledger/main.hero"
+#line 308 "examples/ledger/main.hero"
     t7 = h3_e;
-#line 306 "examples/ledger/main.hero"
+#line 308 "examples/ledger/main.hero"
     t8 = t7.msg;
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     t13 = h2_r0;
 #line 5888 "main.c"
     hero_str_incref(t8);
-#line 304 "examples/ledger/main.hero"
+#line 306 "examples/ledger/main.hero"
     h2_r0 = t8;
 #line 5892 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
-#line 308 "examples/ledger/main.hero"
+#line 310 "examples/ledger/main.hero"
 HeroStr h_main_why_open(h_0opt_24dfc0bb h0_got) {
 #line 5899 "main.c"
     h_0opt_24dfc0bb h1_s0 = {0};
@@ -5914,33 +5914,33 @@ HeroStr h_main_why_open(h_0opt_24dfc0bb h0_got) {
     HeroStr t13;
     goto bb0;
 bb0:
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t1 = h0_got;
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t10 = h1_s0;
 #line 5922 "main.c"
     h_0opt_24dfc0bb_retain(&t1);
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     h1_s0 = t1;
 #line 5926 "main.c"
     h_0opt_24dfc0bb_release(&t10);
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t2 = h1_s0;
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t3 = t2.tag;
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     switch (t3) {
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
         case 0: goto bb2;
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
         case 1: goto bb3;
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
         default: hero_unreachable();
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     }
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
 bb1:
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t9 = h2_r0;
 #line 5946 "main.c"
     hero_str_incref(t9);
@@ -5949,39 +5949,39 @@ bb1:
     hero_failure_release(&h3_e);
     return t9;
 bb2:
-#line 310 "examples/ledger/main.hero"
+#line 312 "examples/ledger/main.hero"
     t4 = HERO_STR_LIT(hero_str_0);
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t11 = h2_r0;
 #line 5957 "main.c"
     hero_str_incref(t4);
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     h2_r0 = t4;
 #line 5961 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
-#line 311 "examples/ledger/main.hero"
+#line 313 "examples/ledger/main.hero"
     t5 = h1_s0;
-#line 311 "examples/ledger/main.hero"
+#line 313 "examples/ledger/main.hero"
     t6 = t5.as.err;
-#line 311 "examples/ledger/main.hero"
+#line 313 "examples/ledger/main.hero"
     t12 = h3_e;
 #line 5971 "main.c"
     hero_failure_retain(&t6);
-#line 311 "examples/ledger/main.hero"
+#line 313 "examples/ledger/main.hero"
     h3_e = t6;
 #line 5975 "main.c"
     hero_failure_release(&t12);
-#line 311 "examples/ledger/main.hero"
+#line 313 "examples/ledger/main.hero"
     t7 = h3_e;
-#line 311 "examples/ledger/main.hero"
+#line 313 "examples/ledger/main.hero"
     t8 = t7.msg;
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     t13 = h2_r0;
 #line 5983 "main.c"
     hero_str_incref(t8);
-#line 309 "examples/ledger/main.hero"
+#line 311 "examples/ledger/main.hero"
     h2_r0 = t8;
 #line 5987 "main.c"
     hero_str_decref(t13);

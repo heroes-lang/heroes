@@ -424,10 +424,16 @@ test "a record named after a typedef of an opaque type is told it is one"
 
     # A name no untagged group record carries stays the compiler's, and so
     # does a line about a struct tag, which `unknown_tag` reads.
-    assert incomplete_typedef(p.s, p.decls, line: "x.c:1:1: error: variable has incomplete type 'ghost_t' (aka 'struct g')").is_err(
-    )
-    assert incomplete_typedef(p.s, p.decls, line: "x.c:1:1: error: incomplete definition of type 'struct opaque_s'").is_err(
-    )
+    assert incomplete_typedef(
+        p.s,
+        p.decls,
+        line: "x.c:1:1: error: variable has incomplete type 'ghost_t' (aka 'struct g')"
+    ).is_err()
+    assert incomplete_typedef(
+        p.s,
+        p.decls,
+        line: "x.c:1:1: error: incomplete definition of type 'struct opaque_s'"
+    ).is_err()
 
 # **The layout check's refusal says what the unit's reader says** (defect
 # 191): one message for one shape, whichever finds it, and the type behind
@@ -436,8 +442,11 @@ test "the layout check's refusal of a typedef with no layout is told as the unit
     p = program(
         "extern \"own.h\"\n    record opaque_t\n        a: i32\n\nfunction touch(v: opaque_t)\n    _ = v\n\nfunction main()\n    print(1)\n"
     )
-    read = incomplete_typedef(p.s, p.decls, line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')").must(
-    )
+    read = incomplete_typedef(
+        p.s,
+        p.decls,
+        line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')"
+    ).must()
     marked = no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " opaque_t struct opaque_s").must()
     assert marked.message == read.message
     assert marked.notes == read.notes
@@ -445,8 +454,11 @@ test "the layout check's refusal of a typedef with no layout is told as the unit
     unsaid = no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " opaque_t ").must()
     assert unsaid.message == "`opaque_t` has no fields in `own.h` — clang read the header and cannot lay the type out"
     assert no_layout(p.s, p.decls, line: layout_screen.NO_LAYOUT + " ghost_t void").is_err()
-    assert no_layout(p.s, p.decls, line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')").is_err(
-    )
+    assert no_layout(
+        p.s,
+        p.decls,
+        line: "t.hero:2:111: error: variable has incomplete type 'opaque_t' (aka 'struct opaque_s')"
+    ).is_err()
 
 test "a location names a file this compiler wrote, or a header"
     assert file_part("own.h:6:16") == "own.h"

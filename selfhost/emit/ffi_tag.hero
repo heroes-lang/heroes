@@ -422,10 +422,18 @@ test "a handle over a union's tag is told the tag's kind and the typedef that re
     assert k.must().code == "ffi_tag_is_a_union"
     assert source.span_text(s, k.must().span) == "utag"
     assert ffi_lookup.has(text: k.must().notes[0], needle: "`typedef union utag UH_t;`, and write `record UH tag UH_t`")
-    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'union' tag to refer to type 'ghost'", types: unasked).is_err(
-    )
-    assert tag_of_another_kind(s, parsed.decls, line: "m.c:28:41: error: must use 'struct' tag to refer to type 'utag'", types: unasked).is_err(
-    )
+    assert tag_of_another_kind(
+        s,
+        parsed.decls,
+        line: "m.c:28:41: error: must use 'union' tag to refer to type 'ghost'",
+        types: unasked
+    ).is_err()
+    assert tag_of_another_kind(
+        s,
+        parsed.decls,
+        line: "m.c:28:41: error: must use 'struct' tag to refer to type 'utag'",
+        types: unasked
+    ).is_err()
 
 # DEFECT 400: a unit that spells a handle's word only inside an expression, the
 # union question's `*(utag * *)0`, draws *use of undeclared identifier* and no

@@ -1335,8 +1335,14 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
         for installed in [false, true]
             bin = dir + "/bin-" + shape.to_str()
             assert !stand_in(dir: bin, answer: answer, installed: installed).is_err()
-            err = built_said(scratch: scratch, compiler: compiler, path: dir + "/package-" + shape.to_str() + ".hero", source: asking, bin: bin, alone: false).must(
-            )
+            err = built_said(
+                scratch: scratch,
+                compiler: compiler,
+                path: dir + "/package-" + shape.to_str() + ".hero",
+                source: asking,
+                bin: bin,
+                alone: false
+            ).must()
             named = absences(err)
             kind: str @ "package"
 
@@ -1353,11 +1359,20 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
     assert clang.code == 0
     only_clang = dir + "/clang-alone"
     assert !shell.mkdir_all(only_clang).is_err()
-    linked = shell.run(scratch: scratch, program: "ln", words: ["ln", "-s", strings.trimmed(clang.out), only_clang + "/clang"]).must(
-    )
+    linked = shell.run(
+        scratch: scratch,
+        program: "ln",
+        words: ["ln", "-s", strings.trimmed(clang.out), only_clang + "/clang"]
+    ).must()
     assert linked.code == 0
-    unasked = built_said(scratch: scratch, compiler: compiler, path: dir + "/tool.hero", source: asking, bin: only_clang, alone: true).must(
-    )
+    unasked = built_said(
+        scratch: scratch,
+        compiler: compiler,
+        path: dir + "/tool.hero",
+        source: asking,
+        bin: only_clang,
+        alone: true
+    ).must()
     tool = absences(unasked)
     assert tool.len() == 1
     assert tool[0].kind == "pkg-config"

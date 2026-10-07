@@ -18140,25 +18140,25 @@ bb0:
 #line 18141 "fixedbugs169chains2000longbuildandrun.c"
 }
 
-#line 26 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 25 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
 void h_fixedbugs169chains2000longbuildandrun_main(void) {
 #line 18146 "fixedbugs169chains2000longbuildandrun.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
 bb0:
-#line 27 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 26 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
     t1 = h_fixedbugs169chains2000longbuildandrun_sum();
-#line 27 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 26 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
     hero_print_int(t1);
-#line 27 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 26 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
     hero_print_end();
     t2 = h_fixedbugs169chains2000longbuildandrun_calls();
-#line 28 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 27 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
     hero_print_int(t2);
-#line 28 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 27 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
     hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
+#line 27 "tests/golden/run/fixedbugs-169-chains-2000-long-build-and-run.hero"
     return;
 #line 18164 "fixedbugs169chains2000longbuildandrun.c"
 }

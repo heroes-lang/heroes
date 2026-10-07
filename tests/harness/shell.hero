@@ -1880,8 +1880,12 @@ test "fixedbugs: on Windows `check` and `fmt --in-place` of a name above ASCII r
     assert !wide(w, words: ["mkdir", w.root + "/placed"]).is_err()
     assert !wide(w, words: ["mk", w.root + "/placed/\\u015d.hero", unformatted]).is_err()
     assert !wide(w, words: ["mk", w.root + "/placed/s.hero", unformatted]).is_err()
-    placed = launched(w, cwd: w.root + "/placed", setting: "-", words: [compiler, "fmt", "\\u015d.hero", "--in-place"]).must(
-    )
+    placed = launched(
+        w,
+        cwd: w.root + "/placed",
+        setting: "-",
+        words: [compiler, "fmt", "\\u015d.hero", "--in-place"]
+    ).must()
     assert placed.code == 0
     assert wide(w, words: ["cat", w.root + "/placed/\\u015d.hero"]).must() == "function main()\\n    print(1)\\n"
     assert wide(w, words: ["cat", w.root + "/placed/s.hero"]).must() == unformatted
@@ -1908,8 +1912,12 @@ test "fixedbugs: on Windows a built program's arguments, reads and writes keep a
     assert wide(w, words: ["cat", w.root + "/out/caf\\u00e9-out.txt"]).must() == "written"
 
     # A program reading the file its argument names, a decoy at the best fit.
-    reader = built_program(w, compiler: compiler, name: "reader", source: "function main()\n    for a in args()\n        match read_file(a)\n            .ok text => print(text)\n            .err e   => print(\"cannot read: \" + e.msg)\n").must(
-    )
+    reader = built_program(
+        w,
+        compiler: compiler,
+        name: "reader",
+        source: "function main()\n    for a in args()\n        match read_file(a)\n            .ok text => print(text)\n            .err e   => print(\"cannot read: \" + e.msg)\n"
+    ).must()
     assert !wide(w, words: ["mk", w.root + "/\\u015d.txt", "the real one"]).is_err()
     assert !wide(w, words: ["mk", w.root + "/s.txt", "decoy"]).is_err()
     read = launched(w, cwd: w.root, setting: "-", words: [reader, "\\u015d.txt"]).must()
@@ -1996,8 +2004,12 @@ test "fixedbugs: on Windows HEROES_RUNTIME above ASCII, and a compiler installed
     w = wide_world(scratch).must()
     compiler = some_compiler().must()
     copied_runtime(w, to: w.root + "/rt\\u00e9").must()
-    named = launched(w, cwd: "-", setting: "HEROES_RUNTIME=" + w.root + "/rt\\u00e9", words: [compiler, "doctor"]).must(
-    )
+    named = launched(
+        w,
+        cwd: "-",
+        setting: "HEROES_RUNTIME=" + w.root + "/rt\\u00e9",
+        words: [compiler, "doctor"]
+    ).must()
     assert strings.contains(text: named.out, needle: "\nok   runtime      " + w.root + "/rté\n")
     inst = w.root + "/inst-\\u00e9"
     assert !wide(w, words: ["mkdir", inst]).is_err()
@@ -2006,8 +2018,12 @@ test "fixedbugs: on Windows HEROES_RUNTIME above ASCII, and a compiler installed
     beside = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "doctor"]).must()
     assert strings.contains(text: beside.out, needle: "\nok   runtime      ")
     assert !wide(w, words: ["mk", w.root + "/hello.hero", "function main()\\n    print(\"hello\")\\n"]).is_err()
-    built = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "build", "hello.hero", "-o", "hello.exe"]).must(
-    )
+    built = launched(
+        w,
+        cwd: w.root,
+        setting: "HEROES_RUNTIME=",
+        words: [inst + "/heroes.exe", "build", "hello.hero", "-o", "hello.exe"]
+    ).must()
     assert built.code == 0
     hello = launched(w, cwd: w.root, setting: "-", words: [w.root + "/hello.exe"]).must()
     assert hello.out == "hello\n"
@@ -2020,8 +2036,12 @@ test "fixedbugs: on Windows a program named above ASCII builds and runs, by rela
     w = wide_world(scratch).must()
     compiler = some_compiler().must()
     assert !wide(w, words: ["mk", w.root + "/caf\\u00e9.hero", WIDE_CLEAN]).is_err()
-    built = launched(w, cwd: w.root, setting: "-", words: [compiler, "build", "caf\\u00e9.hero", "-o", "caf\\u00e9.exe"]).must(
-    )
+    built = launched(
+        w,
+        cwd: w.root,
+        setting: "-",
+        words: [compiler, "build", "caf\\u00e9.hero", "-o", "caf\\u00e9.exe"]
+    ).must()
     assert built.code == 0
     ran = launched(w, cwd: w.root, setting: "-", words: [w.root + "/caf\\u00e9.exe"]).must()
     assert ran.out == "1\n"
@@ -2030,8 +2050,12 @@ test "fixedbugs: on Windows a program named above ASCII builds and runs, by rela
     assert !wide(w, words: ["mk", proj + "/main.hero", "use helper\\n\\nfunction main()\\n    print(helper.answer())\\n"]).is_err()
     assert !wide(w, words: ["mk", proj + "/helper.hero", "function answer() -> i64\\n    return 42\\n"]).is_err()
     root = wide(w, words: ["abs", proj]).must()
-    absolute = launched(w, cwd: proj, setting: "-", words: [compiler, "build", root + "/main.hero", "-o", root + "/abs.exe"]).must(
-    )
+    absolute = launched(
+        w,
+        cwd: proj,
+        setting: "-",
+        words: [compiler, "build", root + "/main.hero", "-o", root + "/abs.exe"]
+    ).must()
     assert absolute.code == 0
     answered = launched(w, cwd: proj, setting: "-", words: [root + "/abs.exe"]).must()
     assert answered.out == "42\n"
@@ -2062,8 +2086,12 @@ test "fixedbugs: on Windows every program `heroes build` links reads the UTF-8 c
     scratch = own_scratch()
     w = wide_world(scratch).must()
     compiler = some_compiler().must()
-    acp = built_program(w, compiler: compiler, name: "acp", source: "extern \"windows.h\"\n    function GetACP() -> u32\n\nfunction main()\n    print(GetACP())\n").must(
-    )
+    acp = built_program(
+        w,
+        compiler: compiler,
+        name: "acp",
+        source: "extern \"windows.h\"\n    function GetACP() -> u32\n\nfunction main()\n    print(GetACP())\n"
+    ).must()
     page = run(scratch: scratch, program: acp, words: [acp]).must()
     assert page.out == "65001\n"
     assert !write_file(path: w.root + "/lib238.h", text: "#include <stdint.h>\nint64_t lib238_size(const char *path);\n").is_err()
@@ -2081,8 +2109,11 @@ test "fixedbugs: on Windows every program `heroes build` links reads the UTF-8 c
     # `lld-link`, exits 0. So the link is told the three runtimes Microsoft's
     # page for LNK4098 names to ignore for `msvcrt.lib` (read 2026-10-05):
     # `libcmt`, `libcmtd` and `msvcrtd`.
-    library = run(scratch: scratch, program: "clang", words: ["clang", "-shared", "-fms-runtime-lib=dll", "-Wl,-nodefaultlib:libcmt", "-Wl,-nodefaultlib:libcmtd", "-Wl,-nodefaultlib:msvcrtd", w.root + "/lib238.c", "-o", w.root + "/lib238.dll"]).must(
-    )
+    library = run(
+        scratch: scratch,
+        program: "clang",
+        words: ["clang", "-shared", "-fms-runtime-lib=dll", "-Wl,-nodefaultlib:libcmt", "-Wl,-nodefaultlib:libcmtd", "-Wl,-nodefaultlib:msvcrtd", w.root + "/lib238.c", "-o", w.root + "/lib238.dll"]
+    ).must()
 
     # A fixture that fails says why: the CI's run of `61e085ae` exited 1120
     # here and kept no word of it. The assert prints what clang said.
@@ -2091,8 +2122,11 @@ test "fixedbugs: on Windows every program `heroes build` links reads the UTF-8 c
     assert library.code == 0
     bound = w.root + "/bound.hero"
     assert !write_file(path: bound, text: "extern \"lib238.h\" link \"lib238\"\n    function lib238_size(path: cstr lent) -> i64\n\nfunction main()\n    print(lib238_size(path: \"café.txt\".cstr()))\n").is_err()
-    linked = run(scratch: scratch, program: compiler, words: [compiler, "build", bound, "--include", w.root, "--library", w.root, "-o", w.root + "/bound.exe"]).must(
-    )
+    linked = run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", bound, "--include", w.root, "--library", w.root, "-o", w.root + "/bound.exe"]
+    ).must()
     assert linked.code == 0
     assert !wide(w, words: ["mk", w.root + "/caf\\u00e9.txt", "hello\\n"]).is_err()
     sized = launched(w, cwd: w.root, setting: "-", words: [w.root + "/bound.exe"]).must()
@@ -2111,8 +2145,11 @@ test "fixedbugs: on Windows a program refuses to start where the UTF-8 code page
     unit = scratch + "/floor.c"
     binary = scratch + "/floor" + exe_suffix()
     assert !write_file(path: unit, text: "#include <windows.h>\n#define GetACP() 1252u\n#include \"runtime.c\"\nint main(int argc, char **argv) {\n    hero_args_set(argc, argv);\n    return 0;\n}\n").is_err()
-    built = run(scratch: scratch, program: "clang", words: ["clang", "-D_CRT_SECURE_NO_WARNINGS", "-I", "runtime", unit, "-o", binary]).must(
-    )
+    built = run(
+        scratch: scratch,
+        program: "clang",
+        words: ["clang", "-D_CRT_SECURE_NO_WARNINGS", "-I", "runtime", unit, "-o", binary]
+    ).must()
     assert built.code == 0
     refused = run(scratch: scratch, program: binary, words: [binary]).must()
     assert refused.code == 2
@@ -2142,8 +2179,12 @@ test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a
     match made
         .err e => assert strings.contains(text: e.msg, needle: "symlink failed 1314")
         .ok _ =>
-            followed = launched(w, cwd: w.root + "/linked", setting: "-", words: [compiler, "fmt", "L.hero", "--in-place"]).must(
-            )
+            followed = launched(
+                w,
+                cwd: w.root + "/linked",
+                setting: "-",
+                words: [compiler, "fmt", "L.hero", "--in-place"]
+            ).must()
             assert followed.code == 2
             assert strings.contains(text: followed.err, needle: "the link cannot be followed")
             assert wide(w, words: ["ls", w.root + "/linked"]).must() == "L.hero\nx\\ud800.hero\n"
@@ -2153,12 +2194,20 @@ test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a
     assert !wide(w, words: ["mkdir", inst]).is_err()
     assert !wide(w, words: ["cp", compiler, inst + "/heroes.exe"]).is_err()
     assert !wide(w, words: ["mk", w.root + "/hello.hero", WIDE_CLEAN]).is_err()
-    placed = launched(w, cwd: w.root, setting: "HEROES_RUNTIME=", words: [inst + "/heroes.exe", "build", "hello.hero"]).must(
-    )
+    placed = launched(
+        w,
+        cwd: w.root,
+        setting: "HEROES_RUNTIME=",
+        words: [inst + "/heroes.exe", "build", "hello.hero"]
+    ).must()
     assert placed.code == 2
     assert strings.contains(text: placed.err, needle: "inst-" + surrogate)
-    valued = launched(w, cwd: "-", setting: "HEROES_RUNTIME=" + w.root + "/rt\\ud800", words: [compiler, "doctor"]).must(
-    )
+    valued = launched(
+        w,
+        cwd: "-",
+        setting: "HEROES_RUNTIME=" + w.root + "/rt\\ud800",
+        words: [compiler, "doctor"]
+    ).must()
     assert strings.contains(
         text: valued.out,
         needle: "runtime      `HEROES_RUNTIME` is set, and its value, `" + w.root + "/rt" + surrogate + "`, is not UTF-8"

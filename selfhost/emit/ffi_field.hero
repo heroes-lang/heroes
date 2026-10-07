@@ -342,8 +342,11 @@ test "a const member is blamed on the field, and anybody else's stays the compil
     # group stays exit 2 and the compiler's fault. `n` is declared here
     # and `colour` is not, so the first is blamed and the second is not.
     assert !const_member(s, parsed.decls, line: "t.hero:9:5: error: cannot assign to variable 't3' with const-qualified data member 'n'").is_err()
-    assert const_member(s, parsed.decls, line: "t.hero:9:5: error: cannot assign to variable 't3' with const-qualified data member 'colour'").is_err(
-    )
+    assert const_member(
+        s,
+        parsed.decls,
+        line: "t.hero:9:5: error: cannot assign to variable 't3' with const-qualified data member 'colour'"
+    ).is_err()
 
     # A line that is not this class at all.
     assert const_member(s, parsed.decls, line: "t.hero:9:5: error: missing field 'b' initializer").is_err()

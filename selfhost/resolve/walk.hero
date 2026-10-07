@@ -302,8 +302,13 @@ function walked(text: str) -> state.Resolver
                 state.open_scope(@r)
 
                 for param in fd.value.params
-                    _ = state.declare(@r, s, p.decls, param.name, resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)).is_err(
-                    )
+                    _ = state.declare(
+                        @r,
+                        s,
+                        p.decls,
+                        param.name,
+                        resolve_binding.param_binding(ty: param.ty, mutable: param.mutable)
+                    ).is_err()
 
                 if !fd.value.body.is_err()
                     statements(@r, p.tree, s, p.decls, fd.value.body.must().stmts)

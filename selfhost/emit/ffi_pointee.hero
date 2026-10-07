@@ -376,8 +376,13 @@ test "the marker's tail is read into the parameter's own diagnostic, with the he
     )
     assert !two.is_err()
     assert two.must().fixes[0].replacement == "u64"
-    assert pointee_width(s, parsed.decls, parsed.tree, line: "t.hero:2:5: error: static assertion failed: heroes-ffi-return getline i64", word_bits: 64).is_err(
-    )
+    assert pointee_width(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed: heroes-ffi-return getline i64",
+        word_bits: 64
+    ).is_err()
 
     # The width the header's type has on the target rides its own line, and a
     # platform type is told at it, not at `long`'s: Windows, where `long` is 32
@@ -412,8 +417,12 @@ test "a void pointee is read off its guard line into ptr-and-no-@, and the fix s
 
     # A width line is not a void line, and a void line is not a width line:
     # the markers differ by one character and `after` keeps them apart.
-    assert pointee_void(s, parsed.decls, parsed.tree, line: "t.hero:2:5: error: static assertion failed: heroes-ffi-pointee memcpy dst int32_t size_t").is_err(
-    )
+    assert pointee_void(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed: heroes-ffi-pointee memcpy dst int32_t size_t"
+    ).is_err()
     assert pointee_width(s, parsed.decls, parsed.tree, line: line, word_bits: 64).is_err()
 
 test "an incomplete pointee is found from the type clang names, through what the header answered (defect 010's adjacent shape)"

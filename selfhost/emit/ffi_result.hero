@@ -297,11 +297,14 @@ test "a platform's width is answered with the word that holds it on every platfo
     s = source.new_source(name: "t.hero", text: text)
 
     for bits in [32, 64]
-        signed = declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "long", canonical: "long"), word_bits: bits).must(
-        )
+        signed = declaring(
+            s,
+            parsed.decls,
+            typed: ffi_asked.Typed(spelled: "long", canonical: "long"),
+            word_bits: bits
+        ).must()
         assert signed.heroes == "i64"
         assert signed.caveat.must() == "`long` is the platform's width, 32 bits on one and 64 on another, and a result or a constant may be wider than C's: `i64` holds every value of it on both"
         assert declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "size_t", canonical: "unsigned long"), word_bits: bits).must().heroes == "u64"
 
-    assert declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "int32_t", canonical: "int"), word_bits: 64).must().caveat.is_err(
-    )
+    assert declaring(s, parsed.decls, typed: ffi_asked.Typed(spelled: "int32_t", canonical: "int"), word_bits: 64).must().caveat.is_err()

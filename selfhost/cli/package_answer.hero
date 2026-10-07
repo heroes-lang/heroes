@@ -288,8 +288,12 @@ test "a refusal pkg-config gave no reason for is told as one, under either head 
     parsed = parse.parse(text)
     s = source.new_source(name: "silent.hero", text: text)
     head = "heroes-ffi-package `zlib` is installed, and pkg-config cannot give its flags"
-    d = ffi_build.package_problem(s, parsed.decls, stderr: worded(package: "zlib", complained: "", present: true), line: head).must(
-    )
+    d = ffi_build.package_problem(
+        s,
+        parsed.decls,
+        stderr: worded(package: "zlib", complained: "", present: true),
+        line: head
+    ).must()
     assert d.notes == ["pkg-config gave no reason", "name the library directly with `link`"]
 
 # Defect 292's search path, as the three measured `pkg-config`s read it: an

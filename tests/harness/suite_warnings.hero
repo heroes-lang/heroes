@@ -291,8 +291,11 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
     scratch = shell.own_scratch()
     main = scratch + "/x.hero"
     assert !write_file(path: main, text: "function main()\n    print(1)\n").is_err()
-    always = stub_compiler(scratch: scratch, name: "stub-refuses.sh", body: "printf 'error[boom]: the build failed\\n  at x.hero:1:1\\n' 1>&2\nexit 1").must(
-    )
+    always = stub_compiler(
+        scratch: scratch,
+        name: "stub-refuses.sh",
+        body: "printf 'error[boom]: the build failed\\n  at x.hero:1:1\\n' 1>&2\nexit 1"
+    ).must()
     refused: report.Report @ report.empty()
     none: i64 @ 0
     judge(@refused, @none, scratch: scratch, compiler: always, label: "warnings/x", main: main)
@@ -303,8 +306,11 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
         text: refused.failures[0],
         needle: " -O0` exited 1, so its C was never judged for warnings:\n    error[boom]: the build failed"
     )
-    late = stub_compiler(scratch: scratch, name: "stub-late.sh", body: "case \" $* \" in *' -O2 '*) printf 'error[boom]: at -O2 alone\\n' 1>&2; exit 1 ;; esac\nexit 0").must(
-    )
+    late = stub_compiler(
+        scratch: scratch,
+        name: "stub-late.sh",
+        body: "case \" $* \" in *' -O2 '*) printf 'error[boom]: at -O2 alone\\n' 1>&2; exit 1 ;; esac\nexit 0"
+    ).must()
     at_o2: report.Report @ report.empty()
     judge(@at_o2, @none, scratch: scratch, compiler: late, label: "warnings/x", main: main)
     assert at_o2.failed == 1

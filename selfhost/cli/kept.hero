@@ -146,7 +146,8 @@ test "a record is read only whole, its rows the ones its digest was taken of (de
     nul = read_file("tests/golden/surface-fixtures/notext357/one-nul.txt").must()
     assert record_rows(listed.slice(from: 0, to: listed.len() - 20)).is_err()
     assert record_rows(listed + "0123456789abcdef x.h\n").is_err()
-    assert record_rows(listed.slice(from: 0, to: 30) + nul.repeat(20) + listed.slice(from: 50, to: listed.len())).is_err(
-    )
+    assert record_rows(
+        listed.slice(from: 0, to: 30) + nul.repeat(20) + listed.slice(from: 50, to: listed.len())
+    ).is_err()
     assert record_rows(nul.repeat(listed.len().to_u64().must())).is_err()
     assert record_rows("").is_err()

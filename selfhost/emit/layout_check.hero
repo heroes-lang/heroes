@@ -340,14 +340,28 @@ test "the assertions for a struct holding an anonymous union: a member left out,
     assert check_unit(["u.h"], dump: unsized, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
     assert check_unit(["u.h"], dump: "", wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
     assert check_unit(["u.h"], dump: control, wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err()
-    assert check_unit(["u.h"], dump: dump.slice(from: control.len(), to: dump.len()), wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err(
-    )
+    assert check_unit(
+        ["u.h"],
+        dump: dump.slice(from: control.len(), to: dump.len()),
+        wanted: wanted,
+        s: s,
+        decls: parsed.decls,
+        u: u,
+        c: c
+    ).is_err()
 
     # The control of the route's first build, without the anonymous struct
     # and the named one, is a clang this reader does not know.
     old = "         0 | struct hero_ly_control\n         0 |   struct (unnamed) v\n         0 |     int a\n         4 |     union (anonymous) \n         4 |       int b\n         4 |       float c\n     8:0-1 |     unsigned int d\n     8:2-2 |     unsigned int \n        12 |     int[0] e\n           | [sizeof=12, align=4]\n"
-    assert check_unit(["u.h"], dump: old + dump.slice(from: control.len(), to: dump.len()), wanted: wanted, s: s, decls: parsed.decls, u: u, c: c).is_err(
-    )
+    assert check_unit(
+        ["u.h"],
+        dump: old + dump.slice(from: control.len(), to: dump.len()),
+        wanted: wanted,
+        s: s,
+        decls: parsed.decls,
+        u: u,
+        c: c
+    ).is_err()
 
 test "a field the dump does not show puts the record's every question under the preprocessor"
     text = "extern \"u.h\"\n    record S3\n        a: i32\n        cc: i32\n\nfunction main()\n    print(1)\n"

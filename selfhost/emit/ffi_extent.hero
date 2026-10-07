@@ -218,6 +218,8 @@ test "the marker's tail lands the diagnostic on the number the author wrote, wit
     assert d.must().fixes.len() == 1
     assert d.must().fixes[0].replacement == "8"
     assert d.must().fixes[0].certainty == .guess
-    assert overstated_extent(s, line: "t.hero:8:5: error: static assertion failed: heroes-ffi-pointee fill n int64_t size_t").is_err(
-    )
+    assert overstated_extent(
+        s,
+        line: "t.hero:8:5: error: static assertion failed: heroes-ffi-pointee fill n int64_t size_t"
+    ).is_err()
     assert overstated_extent(s, line: "t.hero:8:5: error: static assertion failed: heroes-ffi-extent fill p n").is_err()

@@ -135,10 +135,18 @@ test "a write through a lend from a `=` binding names the lend, its root, the ca
 
     # The same phrase at a line with no lend on it is not this class, and
     # neither is a line without the phrase.
-    assert written_lend(s, parsed.decls, low.program, line: "t.hero:8:5: error: passing 'const void *' to parameter of type 'void *' discards qualifiers").is_err(
-    )
-    assert written_lend(s, parsed.decls, low.program, line: "t.hero:9:13: error: incompatible pointer types passing 'int *' to parameter of type 'void **'").is_err(
-    )
+    assert written_lend(
+        s,
+        parsed.decls,
+        low.program,
+        line: "t.hero:8:5: error: passing 'const void *' to parameter of type 'void *' discards qualifiers"
+    ).is_err()
+    assert written_lend(
+        s,
+        parsed.decls,
+        low.program,
+        line: "t.hero:9:13: error: incompatible pointer types passing 'int *' to parameter of type 'void **'"
+    ).is_err()
 
 # The shape beside it (CL-061): a lend from a `@` cell is never `const`, so a
 # qualifier line at ITS call is somebody else's and this reader steps aside.

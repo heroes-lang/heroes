@@ -355,8 +355,14 @@ test "wrong_type splits the emitter's own tail into the two codes"
     assert wrong_type(s, parsed.decls, parsed.tree, line: echo, results: unasked, word_bits: 64).is_err()
 
     # A name no group declares stays the compiler's problem.
-    assert wrong_type(s, parsed.decls, parsed.tree, line: "e: static assertion failed: heroes-ffi-return puts i64", results: unasked, word_bits: 64).is_err(
-    )
+    assert wrong_type(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "e: static assertion failed: heroes-ffi-return puts i64",
+        results: unasked,
+        word_bits: 64
+    ).is_err()
 
     # With the refused round's answer the header's type is named and its
     # word offered (defect 186).
@@ -406,8 +412,15 @@ test "unknown_name reads both clang spellings and takes the guess"
     # A name this program never declared is refused: clang's line
     # stays a statement about the compiler.
     other = "m.c:1:1: error: use of undeclared identifier 'h_t_ghost'"
-    assert unknown_name(s, parsed.tree, parsed.decls, line: other, stderr: other, macros: no_macros, types: unasked).is_err(
-    )
+    assert unknown_name(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: other,
+        stderr: other,
+        macros: no_macros,
+        types: unasked
+    ).is_err()
 
 # DEFECT 400: `*(opaque * *)0`, the union question over a handle, is the only
 # place a program build spelled the word, and clang called it undeclared where
@@ -426,13 +439,27 @@ test "a handle's tag the header holds is never told absent (defect 400)"
     types["opaque"] @ "tag"
     types["opaqe"] @ "neither"
     held = "m.c:14:42: error: use of undeclared identifier 'opaque'"
-    assert unknown_name(s, parsed.tree, parsed.decls, line: held, stderr: held, macros: no_macros, types: types).is_err(
-    )
+    assert unknown_name(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: held,
+        stderr: held,
+        macros: no_macros,
+        types: types
+    ).is_err()
 
     for kind in ["union", "enum", "type"]
         types["opaque"] @ kind
-        assert unknown_name(s, parsed.tree, parsed.decls, line: held, stderr: held, macros: no_macros, types: types).is_err(
-        )
+        assert unknown_name(
+            s,
+            parsed.tree,
+            parsed.decls,
+            line: held,
+            stderr: held,
+            macros: no_macros,
+            types: types
+        ).is_err()
 
     misspelt = "m.c:15:42: error: use of undeclared identifier 'opaqe'"
     d = unknown_name(s, parsed.tree, parsed.decls, line: misspelt, stderr: misspelt, macros: no_macros, types: types)
@@ -453,5 +480,12 @@ test "a tag-only struct is not an absent one — the tag class owns it"
     line = "m.c:3:1: error: use of undeclared identifier 'TagOnly'"
     no_macros: {str: bool} = {}
     unasked: {str: str} = {}
-    assert unknown_name(s, parsed.tree, parsed.decls, line: line, stderr: stderr, macros: no_macros, types: unasked).is_err(
-    )
+    assert unknown_name(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: line,
+        stderr: stderr,
+        macros: no_macros,
+        types: unasked
+    ).is_err()
