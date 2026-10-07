@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 905c2a19da3390323646640a3ea9870895764727
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b12-str192, 2026-10-06, found beside panel 192's landing (its report's *found beside*); filed by the coordinator at 03:08.
 
     **Class: improvement**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): a cleaner form: no program moves, and the refresh is owed at the round anyway.
+
+    Repaired at `905c2a19`, the compiler-test half (lane b14-cli, lane b14-harness-b's patch applied whole), and `23db22d3`, the surface half (lane b14-harness-b), 2026-10-07, gated by its cases and the compiler's own tests; the net is owed at the batch's close. `measure`'s own test asserts the ending the spec's pin decides and runs the real readings through the verdict with a pin it hands, and its `--refresh` refusal names `spec/reserved-words.md`, which no ceiling judges, where `CLAUDE.md` would have reached a paid call with the key set; the compiler's own tests read 1,361 all passed on a copy whose pin is stale and on this tree, whose pin is fresh, and the stale copy with the test as it stood read 1 failed, this test.
