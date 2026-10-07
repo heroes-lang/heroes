@@ -1,0 +1,37 @@
+# fixedbugs, defect 460, lane b14-resolve, 2026-10-07, found beside defect 455.
+#
+# SYMPTOM: `function g<len>(x: len) -> len` was told `builtin_name_taken` at
+# the angle list and then `unknown_type` at every use of the name, in the
+# signature, nested in another type and in the body; a name the library
+# declares, `range`, was told `not_a_type` at each use instead.
+#
+# CAUSE: the refused type parameter was not bound, so each use was looked up
+# as a type nothing declares.
+#
+# FIX: the refused parameter is kept, marked told, and each use of it stays
+# unresolved and says nothing, as an unknown type's uses are left for the
+# checker to read as nothing (`resolve/types.hero`); a primitive's name was
+# already read as the primitive, and the same built-in twice is told twice,
+# once at each.
+
+function g<len>(x: len) -> len  #~ builtin_name_taken
+    y: len = x
+    return y
+
+function nested<len>(x: [len], y: {str: len}) -> len?  #~ builtin_name_taken
+    print(x.len(), y.len())
+    return fail(code: "none", msg: "nothing")
+
+function mixed<range, A>(x: range, y: A) -> A  #~ builtin_name_taken
+    print(x)
+    return y
+
+function primitive<i64>(x: i64) -> i64  #~ builtin_name_taken
+    return x
+
+function twice<len, len>(x: len) -> len  #~ builtin_name_taken builtin_name_taken
+    return x
+
+function main()
+    print(g(1), primitive(2), twice(3), mixed(4, 5))
+    print(nested([1], {"a": 1}).is_err())

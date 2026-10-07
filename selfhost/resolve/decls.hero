@@ -101,6 +101,7 @@ function collect_generics(@r: state.Resolver, s: source.Source, decls: [ast.Decl
 
         if !vocab.primitive(name).is_err() || builtin_names.taken(r.library, name)
             state.push_diagnostic(@r, errors.builtin_name_taken(name, span: span))
+            r.generics @ r.generics.push(state.GenericParam(name: name, position: position, told: true))
             position @ position + 1
             continue
         top = state.top_visible(r, name)
@@ -120,12 +121,12 @@ function collect_generics(@r: state.Resolver, s: source.Source, decls: [ast.Decl
                 )
                 position @ position + 1
                 continue
-        r.generics @ r.generics.push(state.GenericParam(name: name, position: position))
+        r.generics @ r.generics.push(state.GenericParam(name: name, position: position, told: false))
         position @ position + 1
 
 function generic_position(r: state.Resolver, name: str) -> i64?
     for g in r.generics
-        if g.name == name
+        if g.name == name && !g.told
             return ok(g.position)
 
     return fail(code: "absent", msg: "no generic of this name yet")

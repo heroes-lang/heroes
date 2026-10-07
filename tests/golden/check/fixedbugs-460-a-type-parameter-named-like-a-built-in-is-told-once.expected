@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-460-a-type-parameter-named-like-a-built-in-is-told-once.hero:17:12: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-460-a-type-parameter-named-like-a-built-in-is-told-once.hero:21:17: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-460-a-type-parameter-named-like-a-built-in-is-told-once.hero:25:16: error[builtin_name_taken]: `range` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-460-a-type-parameter-named-like-a-built-in-is-told-once.hero:29:20: error[builtin_name_taken]: `i64` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-460-a-type-parameter-named-like-a-built-in-is-told-once.hero:32:16: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-460-a-type-parameter-named-like-a-built-in-is-told-once.hero:32:21: error[builtin_name_taken]: `len` is a built-in of the language, so the name is taken everywhere — pick another name
