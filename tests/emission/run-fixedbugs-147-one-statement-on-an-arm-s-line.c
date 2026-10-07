@@ -282,7 +282,7 @@ bb1:
 #line 45 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t19 = INT64_C(1);
 #line 45 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    t20 = *(int64_t const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
 #line 45 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     if (__builtin_add_overflow(t17, t20, &t21)) hero_panic_overflow();
 #line 289 "fixedbugs147onestatementonanarmsline.c"
@@ -474,7 +474,7 @@ bb8:
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t16 = h3_xs0;
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t18 = t15 < t17;
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -486,7 +486,7 @@ bb9:
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t20 = h4_i0;
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 53 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h5_x = t21;
 #line 54 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -636,7 +636,7 @@ bb1:
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t7 = h2_xs0;
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t9 = t6 < t8;
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -648,7 +648,7 @@ bb2:
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t11 = h3_i0;
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 63 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     h4_i = t12;
 #line 64 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"

@@ -241,7 +241,7 @@ bb0:
 #line 30 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t4 = (*ph0_xs);
 #line 30 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 30 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     return t5;
 #line 248 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
@@ -392,7 +392,7 @@ bb1:
 #line 36 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t20 = h1_kept;
 #line 36 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t21 = hero_array_len(t20);
+    t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
 #line 36 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_print_str(t19);
 #line 36 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
@@ -580,7 +580,7 @@ bb1:
 #line 43 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t20 = h1_kept;
 #line 43 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t21 = hero_array_len(t20);
+    t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
 #line 43 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_print_str(t19);
 #line 43 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
@@ -739,7 +739,7 @@ bb1:
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t8 = h1_xs0;
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t10 = t7 < t9;
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
@@ -751,7 +751,7 @@ bb2:
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t12 = h2_i0;
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 49 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     h3_at = t13;
 #line 50 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
@@ -939,7 +939,7 @@ bb1:
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t5 = h2_xs0;
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t7 = t4 < t6;
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
@@ -951,7 +951,7 @@ bb2:
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t9 = h3_i0;
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 57 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     h4_x = t10;
 #line 58 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"

@@ -1323,7 +1323,7 @@ bb0:
 #line 197 "examples/calculator/whole.hero"
     t4 = t3.f_ts;
 #line 197 "examples/calculator/whole.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 197 "examples/calculator/whole.hero"
     t6 = t2 >= t5;
 #line 197 "examples/calculator/whole.hero"
@@ -1350,7 +1350,7 @@ bb0:
 #line 200 "examples/calculator/whole.hero"
     t4 = t3.f_pos;
 #line 200 "examples/calculator/whole.hero"
-    t5 = *(h_whole_Token const *)hero_array_at(t2, t4);
+    t5 = ((void)((t2 == NULL || t4 < 0 || t4 >= t2->len) ? ((void)hero_array_at(t2, t4), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_whole_Token) ? hero_unreachable() : (void)0), ((h_whole_Token const *)(const void *)(t2 + 1))[t4]);
 #line 1355 "whole.c"
     h_whole_Token_retain(&t5);
     return t5;
@@ -2208,7 +2208,7 @@ bb5:
 #line 246 "examples/calculator/whole.hero"
     t33 = h3_children;
 #line 246 "examples/calculator/whole.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 246 "examples/calculator/whole.hero"
     t35 = INT64_C(1);
 #line 246 "examples/calculator/whole.hero"
@@ -2581,7 +2581,7 @@ bb5:
 #line 259 "examples/calculator/whole.hero"
     t33 = h3_children;
 #line 259 "examples/calculator/whole.hero"
-    t34 = hero_array_len(t33);
+    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
 #line 259 "examples/calculator/whole.hero"
     t35 = INT64_C(1);
 #line 259 "examples/calculator/whole.hero"
@@ -3073,7 +3073,7 @@ bb1:
 #line 274 "examples/calculator/whole.hero"
     t5 = h3_xs0;
 #line 274 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 274 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 274 "examples/calculator/whole.hero"
@@ -3085,7 +3085,7 @@ bb2:
 #line 274 "examples/calculator/whole.hero"
     t9 = h4_i0;
 #line 274 "examples/calculator/whole.hero"
-    t10 = *(h_whole_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_whole_Expr) ? hero_unreachable() : (void)0), ((h_whole_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 274 "examples/calculator/whole.hero"
     t32 = h5_c;
 #line 3092 "whole.c"
@@ -3290,7 +3290,7 @@ bb1:
 #line 282 "examples/calculator/whole.hero"
     t5 = h3_xs0;
 #line 282 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 282 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 282 "examples/calculator/whole.hero"
@@ -3302,7 +3302,7 @@ bb2:
 #line 282 "examples/calculator/whole.hero"
     t9 = h4_i0;
 #line 282 "examples/calculator/whole.hero"
-    t10 = *(h_whole_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_whole_Expr) ? hero_unreachable() : (void)0), ((h_whole_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 282 "examples/calculator/whole.hero"
     t32 = h5_c;
 #line 3309 "whole.c"
@@ -4004,7 +4004,7 @@ bb1:
 #line 306 "examples/calculator/whole.hero"
     t5 = h2_xs0;
 #line 306 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 306 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 306 "examples/calculator/whole.hero"
@@ -4016,7 +4016,7 @@ bb2:
 #line 306 "examples/calculator/whole.hero"
     t9 = h3_i0;
 #line 306 "examples/calculator/whole.hero"
-    t10 = *(h_whole_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_whole_Expr) ? hero_unreachable() : (void)0), ((h_whole_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 306 "examples/calculator/whole.hero"
     t34 = h4_c;
 #line 4023 "whole.c"
@@ -4095,7 +4095,7 @@ bb5:
 #line 307 "examples/calculator/whole.hero"
     t15 = h5_xs1;
 #line 307 "examples/calculator/whole.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 307 "examples/calculator/whole.hero"
     t17 = t14 < t16;
 #line 307 "examples/calculator/whole.hero"
@@ -4107,7 +4107,7 @@ bb6:
 #line 307 "examples/calculator/whole.hero"
     t19 = h6_i1;
 #line 307 "examples/calculator/whole.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 307 "examples/calculator/whole.hero"
     t37 = h7_n;
 #line 4114 "whole.c"
@@ -4753,7 +4753,7 @@ bb1:
 #line 375 "examples/calculator/whole.hero"
     t5 = h2_xs0;
 #line 375 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 375 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 375 "examples/calculator/whole.hero"
@@ -4765,7 +4765,7 @@ bb2:
 #line 375 "examples/calculator/whole.hero"
     t9 = h3_i0;
 #line 375 "examples/calculator/whole.hero"
-    t10 = *(h_whole_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_whole_Expr) ? hero_unreachable() : (void)0), ((h_whole_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 375 "examples/calculator/whole.hero"
     t27 = h4_child;
 #line 4772 "whole.c"
@@ -4933,7 +4933,7 @@ bb1:
 #line 387 "examples/calculator/whole.hero"
     t5 = h2_xs0;
 #line 387 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 387 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 387 "examples/calculator/whole.hero"
@@ -4945,7 +4945,7 @@ bb2:
 #line 387 "examples/calculator/whole.hero"
     t9 = h3_i0;
 #line 387 "examples/calculator/whole.hero"
-    t10 = *(h_whole_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_whole_Expr) ? hero_unreachable() : (void)0), ((h_whole_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 387 "examples/calculator/whole.hero"
     t27 = h4_child;
 #line 4952 "whole.c"
@@ -5177,7 +5177,7 @@ bb0:
 #line 405 "examples/calculator/whole.hero"
     t1 = h0_kept;
 #line 405 "examples/calculator/whole.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 405 "examples/calculator/whole.hero"
     t3 = INT64_C(1);
 #line 405 "examples/calculator/whole.hero"
@@ -5189,7 +5189,7 @@ bb1:
 #line 408 "examples/calculator/whole.hero"
     t8 = h0_kept;
 #line 408 "examples/calculator/whole.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 408 "examples/calculator/whole.hero"
     t10 = INT64_C(0);
 #line 408 "examples/calculator/whole.hero"
@@ -5203,7 +5203,7 @@ bb2:
 #line 406 "examples/calculator/whole.hero"
     t6 = INT64_C(0);
 #line 406 "examples/calculator/whole.hero"
-    t7 = *(h_whole_Expr const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(h_whole_Expr) ? hero_unreachable() : (void)0), ((h_whole_Expr const *)(const void *)(t5 + 1))[t6]);
 #line 406 "examples/calculator/whole.hero"
     h2_ret0 = t7;
 #line 406 "examples/calculator/whole.hero"
@@ -5479,7 +5479,7 @@ bb1:
 #line 430 "examples/calculator/whole.hero"
     t15 = h2_xs0;
 #line 430 "examples/calculator/whole.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 430 "examples/calculator/whole.hero"
     t17 = t14 < t16;
 #line 430 "examples/calculator/whole.hero"
@@ -5491,7 +5491,7 @@ bb2:
 #line 430 "examples/calculator/whole.hero"
     t19 = h3_i0;
 #line 430 "examples/calculator/whole.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 430 "examples/calculator/whole.hero"
     t48 = h4_c;
 #line 5498 "whole.c"
@@ -5717,7 +5717,7 @@ bb1:
 #line 58 "examples/calculator/whole.hero"
     t5 = h3_xs0;
 #line 58 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 58 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 58 "examples/calculator/whole.hero"
@@ -5729,7 +5729,7 @@ bb2:
 #line 58 "examples/calculator/whole.hero"
     t9 = h4_i0;
 #line 58 "examples/calculator/whole.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 58 "examples/calculator/whole.hero"
     h5_x = t10;
 #line 59 "examples/calculator/whole.hero"
@@ -5829,7 +5829,7 @@ bb1:
 #line 68 "examples/calculator/whole.hero"
     t5 = h4_xs0;
 #line 68 "examples/calculator/whole.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 68 "examples/calculator/whole.hero"
     t7 = t4 < t6;
 #line 68 "examples/calculator/whole.hero"
@@ -5841,7 +5841,7 @@ bb2:
 #line 68 "examples/calculator/whole.hero"
     t9 = h5_i0;
 #line 68 "examples/calculator/whole.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 68 "examples/calculator/whole.hero"
     h6_x = t10;
 #line 69 "examples/calculator/whole.hero"

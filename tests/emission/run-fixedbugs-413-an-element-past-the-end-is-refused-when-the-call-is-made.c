@@ -186,7 +186,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     t7 = INT64_C(0);
 #line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t8 = *(int64_t const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]);
 #line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     hero_print_int(t8);
 #line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"

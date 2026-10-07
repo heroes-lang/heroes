@@ -161,7 +161,7 @@ bb0:
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t9 = INT64_C(0);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
-    t10 = *(double const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     hero_print_f64(t10);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
@@ -197,7 +197,7 @@ bb0:
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t16 = INT64_C(0);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
-    t17 = *(double const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     hero_print_f64(t17);
 #line 18 "tests/golden/run/abort-sort-nan.hero"

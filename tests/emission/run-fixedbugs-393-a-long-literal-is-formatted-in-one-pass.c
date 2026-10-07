@@ -2513,7 +2513,7 @@ bb1:
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t519 = h5_xs0;
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-    t520 = hero_array_len(t519);
+    t520 = ((void)(t519 == NULL ? ((void)hero_array_len(t519), hero_unreachable()) : (void)0), t519->len);
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t521 = t518 < t520;
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
@@ -2525,7 +2525,7 @@ bb2:
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t523 = h6_i0;
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-    t524 = *(int64_t const *)hero_array_at(t522, t523);
+    t524 = ((void)((t522 == NULL || t523 < 0 || t523 >= t522->len) ? ((void)hero_array_at(t522, t523), hero_unreachable()) : (void)0), (void)(t522->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t522 + 1))[t523]);
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h7_x = t524;
 #line 415 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
@@ -2601,7 +2601,7 @@ bb5:
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t542 = h9_xs1;
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-    t543 = hero_array_len(t542);
+    t543 = ((void)(t542 == NULL ? ((void)hero_array_len(t542), hero_unreachable()) : (void)0), t542->len);
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t544 = t541 < t543;
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
@@ -2613,7 +2613,7 @@ bb6:
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t546 = h10_i1;
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-    t547 = *(int64_t const *)hero_array_at(t545, t546);
+    t547 = ((void)((t545 == NULL || t546 < 0 || t546 >= t545->len) ? ((void)hero_array_at(t545, t546), hero_unreachable()) : (void)0), (void)(t545->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t545 + 1))[t546]);
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h11_k = t547;
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
@@ -2699,7 +2699,7 @@ bb8:
 #line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t571 = h0_xs;
 #line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-    t572 = hero_array_len(t571);
+    t572 = ((void)(t571 == NULL ? ((void)hero_array_len(t571), hero_unreachable()) : (void)0), t571->len);
 #line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t573 = HERO_STR_LIT(hero_str_20);
 #line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"

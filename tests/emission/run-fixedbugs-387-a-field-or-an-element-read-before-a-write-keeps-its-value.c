@@ -242,7 +242,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t4 = (*ph0_xs);
 #line 22 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 22 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     return t5;
 #line 249 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
@@ -262,7 +262,7 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t1 = h0_xs;
 #line 25 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 25 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t3 = INT64_C(1000);
 #line 25 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
@@ -879,7 +879,7 @@ bb3:
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t64 = INT64_C(0);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t65 = *(HeroArrayHeader * const *)hero_array_at(t63, t64);
+    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t63 + 1))[t64]);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t66 = INT64_C(0);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
@@ -905,7 +905,7 @@ bb3:
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t70 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t71 = *(HeroArrayHeader * const *)hero_array_at(t69, t70);
+    t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t69 + 1))[t70]);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t72 = INT64_C(4);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"

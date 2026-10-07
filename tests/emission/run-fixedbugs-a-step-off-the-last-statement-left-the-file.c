@@ -226,7 +226,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t10 = h0_xs;
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t12 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
@@ -234,7 +234,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t14 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t15 = *(int64_t const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t16 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
@@ -242,7 +242,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     t18 = INT64_C(1);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     hero_print_int(t11);
 #line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"

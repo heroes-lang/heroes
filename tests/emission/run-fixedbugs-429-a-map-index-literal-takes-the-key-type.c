@@ -985,7 +985,7 @@ bb14:
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t109 = INT64_C(1);
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t110 = *(uint8_t const *)hero_array_at(t108, t109);
+    t110 = ((void)((t108 == NULL || t109 < 0 || t109 >= t108->len) ? ((void)hero_array_at(t108, t109), hero_unreachable()) : (void)0), (void)(t108->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t108 + 1))[t109]);
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_int(t110);
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"

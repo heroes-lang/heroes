@@ -477,7 +477,7 @@ bb4:
 #line 67 "examples/firsthit/main.hero"
     t18 = h3_xs0;
 #line 67 "examples/firsthit/main.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 67 "examples/firsthit/main.hero"
     t20 = t17 < t19;
 #line 67 "examples/firsthit/main.hero"
@@ -489,7 +489,7 @@ bb5:
 #line 67 "examples/firsthit/main.hero"
     t22 = h4_i0;
 #line 67 "examples/firsthit/main.hero"
-    t23 = *(int64_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 67 "examples/firsthit/main.hero"
     h5_h = t23;
 #line 68 "examples/firsthit/main.hero"

@@ -328,7 +328,7 @@ bb0:
 #line 60 "tests/golden/run/function-values.hero"
     t21 = INT64_C(0);
 #line 60 "tests/golden/run/function-values.hero"
-    t22 = *(h_0fn_2e6a42a3 const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(h_0fn_2e6a42a3) ? hero_unreachable() : (void)0), ((h_0fn_2e6a42a3 const *)(const void *)(t20 + 1))[t21]);
 #line 60 "tests/golden/run/function-values.hero"
     t23 = INT64_C(4);
 #line 60 "tests/golden/run/function-values.hero"
@@ -342,7 +342,7 @@ bb0:
 #line 60 "tests/golden/run/function-values.hero"
     t28 = INT64_C(1);
 #line 60 "tests/golden/run/function-values.hero"
-    t29 = *(h_0fn_2e6a42a3 const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(h_0fn_2e6a42a3) ? hero_unreachable() : (void)0), ((h_0fn_2e6a42a3 const *)(const void *)(t27 + 1))[t28]);
 #line 60 "tests/golden/run/function-values.hero"
     t30 = INT64_C(4);
 #line 60 "tests/golden/run/function-values.hero"
@@ -354,7 +354,7 @@ bb0:
 #line 60 "tests/golden/run/function-values.hero"
     t34 = h1_ops;
 #line 60 "tests/golden/run/function-values.hero"
-    t35 = hero_array_len(t34);
+    t35 = ((void)(t34 == NULL ? ((void)hero_array_len(t34), hero_unreachable()) : (void)0), t34->len);
 #line 60 "tests/golden/run/function-values.hero"
     hero_print_int(t25);
 #line 60 "tests/golden/run/function-values.hero"

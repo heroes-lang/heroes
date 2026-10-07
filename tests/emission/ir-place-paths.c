@@ -149,13 +149,13 @@ bb0:
 #line 16 "tests/golden/ir/place-paths.hero"
     t3 = h1_r;
 #line 16 "tests/golden/ir/place-paths.hero"
-    t4 = *(h_placepaths_Row const *)hero_array_at(t2, t3);
+    t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t2 + 1))[t3]);
 #line 16 "tests/golden/ir/place-paths.hero"
     t5 = t4.f_cells;
 #line 16 "tests/golden/ir/place-paths.hero"
     t6 = h2_c;
 #line 16 "tests/golden/ir/place-paths.hero"
-    t7 = *(int64_t const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
 #line 16 "tests/golden/ir/place-paths.hero"
     return t7;
 #line 162 "placepaths.c"

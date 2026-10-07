@@ -142,7 +142,7 @@ bb0:
 #line 6 "tests/golden/run/abort-array-index.hero"
     t6 = INT64_C(2);
 #line 6 "tests/golden/run/abort-array-index.hero"
-    t7 = *(int64_t const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
 #line 6 "tests/golden/run/abort-array-index.hero"
     hero_print_int(t7);
 #line 6 "tests/golden/run/abort-array-index.hero"
@@ -152,7 +152,7 @@ bb0:
 #line 7 "tests/golden/run/abort-array-index.hero"
     t9 = INT64_C(5);
 #line 7 "tests/golden/run/abort-array-index.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 7 "tests/golden/run/abort-array-index.hero"
     hero_print_int(t10);
 #line 7 "tests/golden/run/abort-array-index.hero"

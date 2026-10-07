@@ -680,7 +680,7 @@ bb1:
 #line 163 "examples/nbody/main.hero"
     t7 = h4_xs0;
 #line 163 "examples/nbody/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 163 "examples/nbody/main.hero"
     t9 = t6 < t8;
 #line 163 "examples/nbody/main.hero"
@@ -692,7 +692,7 @@ bb2:
 #line 163 "examples/nbody/main.hero"
     t11 = h5_i0;
 #line 163 "examples/nbody/main.hero"
-    t12 = *(h_main_Body const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t10 + 1))[t11]);
 #line 163 "examples/nbody/main.hero"
     h6_b = t12;
 #line 164 "examples/nbody/main.hero"
@@ -764,7 +764,7 @@ bb4:
 #line 168 "examples/nbody/main.hero"
     t38 = INT64_C(0);
 #line 168 "examples/nbody/main.hero"
-    t39 = *(h_main_Body const *)hero_array_at(t37, t38);
+    t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? ((void)hero_array_at(t37, t38), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t37 + 1))[t38]);
 #line 168 "examples/nbody/main.hero"
     h7_first = t39;
 #line 170 "examples/nbody/main.hero"
@@ -840,7 +840,7 @@ bb5:
 #line 174 "examples/nbody/main.hero"
     t64 = h0_bodies;
 #line 174 "examples/nbody/main.hero"
-    t65 = hero_array_len(t64);
+    t65 = ((void)(t64 == NULL ? ((void)hero_array_len(t64), hero_unreachable()) : (void)0), t64->len);
 #line 174 "examples/nbody/main.hero"
     t66 = t63 < t65;
 #line 174 "examples/nbody/main.hero"
@@ -852,7 +852,7 @@ bb6:
 #line 175 "examples/nbody/main.hero"
     t69 = h9_at;
 #line 175 "examples/nbody/main.hero"
-    t70 = *(h_main_Body const *)hero_array_at(t68, t69);
+    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t68 + 1))[t69]);
 #line 175 "examples/nbody/main.hero"
     hero_array_push_owned(&h8_out, &t70);
 #line 176 "examples/nbody/main.hero"
@@ -1045,7 +1045,7 @@ bb1:
 #line 188 "examples/nbody/main.hero"
     t4 = h2_moved;
 #line 188 "examples/nbody/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 188 "examples/nbody/main.hero"
     t6 = t3 < t5;
 #line 188 "examples/nbody/main.hero"
@@ -1077,7 +1077,7 @@ bb4:
 #line 191 "examples/nbody/main.hero"
     t11 = h2_moved;
 #line 191 "examples/nbody/main.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 191 "examples/nbody/main.hero"
     t13 = t10 < t12;
 #line 191 "examples/nbody/main.hero"
@@ -1089,7 +1089,7 @@ bb5:
 #line 192 "examples/nbody/main.hero"
     t15 = h3_i;
 #line 192 "examples/nbody/main.hero"
-    t16 = *(h_main_Body const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t14 + 1))[t15]);
 #line 192 "examples/nbody/main.hero"
     h5_b = t16;
 #line 193 "examples/nbody/main.hero"
@@ -1097,7 +1097,7 @@ bb5:
 #line 193 "examples/nbody/main.hero"
     t18 = h4_j;
 #line 193 "examples/nbody/main.hero"
-    t19 = *(h_main_Body const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t17 + 1))[t18]);
 #line 193 "examples/nbody/main.hero"
     h6_other = t19;
 #line 194 "examples/nbody/main.hero"
@@ -1249,7 +1249,7 @@ bb7:
 #line 207 "examples/nbody/main.hero"
     t81 = h2_moved;
 #line 207 "examples/nbody/main.hero"
-    t82 = hero_array_len(t81);
+    t82 = ((void)(t81 == NULL ? ((void)hero_array_len(t81), hero_unreachable()) : (void)0), t81->len);
 #line 207 "examples/nbody/main.hero"
     t83 = t80 < t82;
 #line 207 "examples/nbody/main.hero"
@@ -1261,7 +1261,7 @@ bb8:
 #line 208 "examples/nbody/main.hero"
     t85 = h12_at;
 #line 208 "examples/nbody/main.hero"
-    t86 = *(h_main_Body const *)hero_array_at(t84, t85);
+    t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? ((void)hero_array_at(t84, t85), hero_unreachable()) : (void)0), (void)(t84->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t84 + 1))[t85]);
 #line 208 "examples/nbody/main.hero"
     h13_b = t86;
 #line 209 "examples/nbody/main.hero"
@@ -1574,7 +1574,7 @@ bb1:
 #line 243 "examples/nbody/main.hero"
     t4 = h0_bodies;
 #line 243 "examples/nbody/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 243 "examples/nbody/main.hero"
     t6 = t3 < t5;
 #line 243 "examples/nbody/main.hero"
@@ -1586,7 +1586,7 @@ bb2:
 #line 244 "examples/nbody/main.hero"
     t8 = h2_i;
 #line 244 "examples/nbody/main.hero"
-    t9 = *(h_main_Body const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t7 + 1))[t8]);
 #line 244 "examples/nbody/main.hero"
     h3_b = t9;
 #line 245 "examples/nbody/main.hero"
@@ -1662,7 +1662,7 @@ bb4:
 #line 248 "examples/nbody/main.hero"
     t38 = h0_bodies;
 #line 248 "examples/nbody/main.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 248 "examples/nbody/main.hero"
     t40 = t37 < t39;
 #line 248 "examples/nbody/main.hero"
@@ -1674,7 +1674,7 @@ bb5:
 #line 249 "examples/nbody/main.hero"
     t42 = h4_j;
 #line 249 "examples/nbody/main.hero"
-    t43 = *(h_main_Body const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t41 + 1))[t42]);
 #line 249 "examples/nbody/main.hero"
     h5_other = t43;
 #line 250 "examples/nbody/main.hero"

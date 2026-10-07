@@ -396,7 +396,7 @@ bb0:
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t2 = INT64_C(0);
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t4 = hero_int_to_str(t3);
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
@@ -489,7 +489,7 @@ bb0:
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t2 = INT64_C(1);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t4 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
@@ -503,7 +503,7 @@ bb0:
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t6 = INT64_C(1);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t7 = *(HeroStr const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t8 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
@@ -517,11 +517,11 @@ bb0:
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t10 = INT64_C(0);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t11 = *(HeroArrayHeader * const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t9 + 1))[t10]);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t12 = INT64_C(1);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t14 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
@@ -533,7 +533,7 @@ bb0:
 #line 534 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t24);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t17 = HERO_STR_LIT(hero_str_20);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
@@ -547,7 +547,7 @@ bb0:
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t19 = INT64_C(0);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     hero_print_int(t3);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"

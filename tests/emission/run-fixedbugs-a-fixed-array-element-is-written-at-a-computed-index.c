@@ -293,7 +293,7 @@ bb1:
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t13 = h1_xs0;
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t15 = t12 < t14;
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
@@ -305,7 +305,7 @@ bb2:
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t17 = h2_i0;
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t18 = *(int64_t const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     h3_i = t18;
 #line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
@@ -403,7 +403,7 @@ bb4:
 #line 404 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_decref(t73);
 #line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t52 = hero_array_len(t51);
+    t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
 #line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t53 = INT64_C(3);
 #line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"

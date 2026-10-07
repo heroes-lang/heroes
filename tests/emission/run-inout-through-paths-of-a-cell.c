@@ -382,7 +382,7 @@ bb0:
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t6 = t5.f_items;
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_int(t7);
 #line 45 "tests/golden/run/inout-through-paths-of-a-cell.hero"
@@ -470,11 +470,11 @@ bb0:
 #line 48 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t19 = INT64_C(0);
 #line 48 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t20 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(h_inoutthroughpathsofacell_Bag) ? hero_unreachable() : (void)0), ((h_inoutthroughpathsofacell_Bag const *)(const void *)(t18 + 1))[t19]);
 #line 48 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t21 = t20.f_items;
 #line 48 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t22 = hero_array_len(t21);
+    t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
 #line 48 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_int(t22);
 #line 48 "tests/golden/run/inout-through-paths-of-a-cell.hero"
@@ -492,11 +492,11 @@ bb0:
 #line 50 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t26 = INT64_C(1);
 #line 50 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t27 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t25, t26);
+    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(h_inoutthroughpathsofacell_Bag) ? hero_unreachable() : (void)0), ((h_inoutthroughpathsofacell_Bag const *)(const void *)(t25 + 1))[t26]);
 #line 50 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t28 = t27.f_items;
 #line 50 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t29 = hero_array_len(t28);
+    t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len);
 #line 50 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_int(t29);
 #line 50 "tests/golden/run/inout-through-paths-of-a-cell.hero"
@@ -569,11 +569,11 @@ bb0:
 #line 53 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t40 = INT64_C(0);
 #line 53 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t41 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(h_inoutthroughpathsofacell_Bag) ? hero_unreachable() : (void)0), ((h_inoutthroughpathsofacell_Bag const *)(const void *)(t39 + 1))[t40]);
 #line 53 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t42 = t41.f_items;
 #line 53 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t43 = hero_array_len(t42);
+    t43 = ((void)(t42 == NULL ? ((void)hero_array_len(t42), hero_unreachable()) : (void)0), t42->len);
 #line 53 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_int(t43);
 #line 53 "tests/golden/run/inout-through-paths-of-a-cell.hero"
@@ -583,11 +583,11 @@ bb0:
 #line 54 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t45 = INT64_C(0);
 #line 54 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t46 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t44, t45);
+    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(h_inoutthroughpathsofacell_Bag) ? hero_unreachable() : (void)0), ((h_inoutthroughpathsofacell_Bag const *)(const void *)(t44 + 1))[t45]);
 #line 54 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t47 = t46.f_items;
 #line 54 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t48 = hero_array_len(t47);
+    t48 = ((void)(t47 == NULL ? ((void)hero_array_len(t47), hero_unreachable()) : (void)0), t47->len);
 #line 54 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_int(t48);
 #line 54 "tests/golden/run/inout-through-paths-of-a-cell.hero"
@@ -605,11 +605,11 @@ bb0:
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t52 = INT64_C(0);
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t53 = *(h_inoutthroughpathsofacell_Bag const *)hero_array_at(t51, t52);
+    t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? ((void)hero_array_at(t51, t52), hero_unreachable()) : (void)0), (void)(t51->elem->size != sizeof(h_inoutthroughpathsofacell_Bag) ? hero_unreachable() : (void)0), ((h_inoutthroughpathsofacell_Bag const *)(const void *)(t51 + 1))[t52]);
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t54 = t53.f_items;
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-    t55 = hero_array_len(t54);
+    t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_int(t55);
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"

@@ -180,7 +180,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t9 = h1_ys;
 #line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_int(t10);
 #line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
@@ -190,13 +190,13 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t12 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t14 = h1_ys;
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t15 = INT64_C(1);
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t16 = *(int64_t const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]);
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_int(t13);
 #line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"

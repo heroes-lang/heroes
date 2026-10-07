@@ -309,7 +309,7 @@ bb1:
 #line 29 "examples/rpn/main.hero"
     t6 = h2_xs0;
 #line 29 "examples/rpn/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 29 "examples/rpn/main.hero"
     t8 = t5 < t7;
 #line 29 "examples/rpn/main.hero"
@@ -321,7 +321,7 @@ bb2:
 #line 29 "examples/rpn/main.hero"
     t10 = h3_i0;
 #line 29 "examples/rpn/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 29 "examples/rpn/main.hero"
     t36 = h4_word;
 #line 328 "main.c"
@@ -931,7 +931,7 @@ bb4:
 #line 60 "examples/rpn/main.hero"
     t16 = h5_xs0;
 #line 60 "examples/rpn/main.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 60 "examples/rpn/main.hero"
     t18 = t15 < t17;
 #line 60 "examples/rpn/main.hero"
@@ -943,7 +943,7 @@ bb5:
 #line 60 "examples/rpn/main.hero"
     t20 = h6_i0;
 #line 60 "examples/rpn/main.hero"
-    t21 = *(HeroStr const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]);
 #line 60 "examples/rpn/main.hero"
     t74 = h7_ch;
 #line 950 "main.c"
@@ -1564,7 +1564,7 @@ bb1:
 #line 93 "examples/rpn/main.hero"
     t7 = h3_xs0;
 #line 93 "examples/rpn/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 93 "examples/rpn/main.hero"
     t9 = t6 < t8;
 #line 93 "examples/rpn/main.hero"
@@ -1576,7 +1576,7 @@ bb2:
 #line 93 "examples/rpn/main.hero"
     t11 = h4_i0;
 #line 93 "examples/rpn/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 93 "examples/rpn/main.hero"
     t43 = h5_ch;
 #line 1583 "main.c"
@@ -1941,7 +1941,7 @@ bb3:
 #line 109 "examples/rpn/main.hero"
     t15 = h3_xs0;
 #line 109 "examples/rpn/main.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 109 "examples/rpn/main.hero"
     t17 = t14 < t16;
 #line 109 "examples/rpn/main.hero"
@@ -1953,7 +1953,7 @@ bb4:
 #line 109 "examples/rpn/main.hero"
     t19 = h4_i0;
 #line 109 "examples/rpn/main.hero"
-    t20 = *(h_main_Token const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(h_main_Token) ? hero_unreachable() : (void)0), ((h_main_Token const *)(const void *)(t18 + 1))[t19]);
 #line 109 "examples/rpn/main.hero"
     h5_one = t20;
 #line 110 "examples/rpn/main.hero"
@@ -1997,7 +1997,7 @@ bb6:
 #line 120 "examples/rpn/main.hero"
     t74 = h1_stack;
 #line 120 "examples/rpn/main.hero"
-    t75 = hero_array_len(t74);
+    t75 = ((void)(t74 == NULL ? ((void)hero_array_len(t74), hero_unreachable()) : (void)0), t74->len);
 #line 120 "examples/rpn/main.hero"
     t76 = INT64_C(0);
 #line 120 "examples/rpn/main.hero"
@@ -2029,7 +2029,7 @@ bb9:
 #line 113 "examples/rpn/main.hero"
     t30 = h1_stack;
 #line 113 "examples/rpn/main.hero"
-    t31 = hero_array_len(t30);
+    t31 = ((void)(t30 == NULL ? ((void)hero_array_len(t30), hero_unreachable()) : (void)0), t30->len);
 #line 113 "examples/rpn/main.hero"
     t32 = INT64_C(2);
 #line 113 "examples/rpn/main.hero"
@@ -2043,13 +2043,13 @@ bb10:
 #line 115 "examples/rpn/main.hero"
     t38 = h1_stack;
 #line 115 "examples/rpn/main.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 115 "examples/rpn/main.hero"
     t40 = INT64_C(1);
 #line 115 "examples/rpn/main.hero"
     if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow();
 #line 115 "examples/rpn/main.hero"
-    t42 = *(int64_t const *)hero_array_at(t37, t41);
+    t42 = ((void)((t37 == NULL || t41 < 0 || t41 >= t37->len) ? ((void)hero_array_at(t37, t41), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t37 + 1))[t41]);
 #line 115 "examples/rpn/main.hero"
     h8_right = t42;
 #line 116 "examples/rpn/main.hero"
@@ -2057,13 +2057,13 @@ bb10:
 #line 116 "examples/rpn/main.hero"
     t44 = h1_stack;
 #line 116 "examples/rpn/main.hero"
-    t45 = hero_array_len(t44);
+    t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
 #line 116 "examples/rpn/main.hero"
     t46 = INT64_C(2);
 #line 116 "examples/rpn/main.hero"
     if (__builtin_sub_overflow(t45, t46, &t47)) hero_panic_overflow();
 #line 116 "examples/rpn/main.hero"
-    t48 = *(int64_t const *)hero_array_at(t43, t47);
+    t48 = ((void)((t43 == NULL || t47 < 0 || t47 >= t43->len) ? ((void)hero_array_at(t43, t47), hero_unreachable()) : (void)0), (void)(t43->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t43 + 1))[t47]);
 #line 116 "examples/rpn/main.hero"
     h9_left = t48;
 #line 117 "examples/rpn/main.hero"
@@ -2073,7 +2073,7 @@ bb10:
 #line 117 "examples/rpn/main.hero"
     t51 = h1_stack;
 #line 117 "examples/rpn/main.hero"
-    t52 = hero_array_len(t51);
+    t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
 #line 117 "examples/rpn/main.hero"
     t53 = INT64_C(2);
 #line 117 "examples/rpn/main.hero"
@@ -2188,7 +2188,7 @@ bb15:
 #line 123 "examples/rpn/main.hero"
     t81 = h1_stack;
 #line 123 "examples/rpn/main.hero"
-    t82 = hero_array_len(t81);
+    t82 = ((void)(t81 == NULL ? ((void)hero_array_len(t81), hero_unreachable()) : (void)0), t81->len);
 #line 123 "examples/rpn/main.hero"
     t83 = INT64_C(1);
 #line 123 "examples/rpn/main.hero"
@@ -2229,7 +2229,7 @@ bb18:
 #line 126 "examples/rpn/main.hero"
     t89 = INT64_C(0);
 #line 126 "examples/rpn/main.hero"
-    t90 = *(int64_t const *)hero_array_at(t88, t89);
+    t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? ((void)hero_array_at(t88, t89), hero_unreachable()) : (void)0), (void)(t88->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t88 + 1))[t89]);
 #line 126 "examples/rpn/main.hero"
     t91 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t90};
 #line 126 "examples/rpn/main.hero"
@@ -2763,7 +2763,7 @@ bb1:
 #line 144 "examples/rpn/main.hero"
     t9 = h0_xs0;
 #line 144 "examples/rpn/main.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 144 "examples/rpn/main.hero"
     t11 = t8 < t10;
 #line 144 "examples/rpn/main.hero"
@@ -2775,7 +2775,7 @@ bb2:
 #line 144 "examples/rpn/main.hero"
     t13 = h1_i0;
 #line 144 "examples/rpn/main.hero"
-    t14 = *(HeroStr const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t12 + 1))[t13]);
 #line 144 "examples/rpn/main.hero"
     t65 = h2_one;
 #line 2782 "main.c"

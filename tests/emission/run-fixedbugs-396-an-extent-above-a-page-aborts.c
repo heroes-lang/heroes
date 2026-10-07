@@ -162,7 +162,7 @@ bb0:
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     t6 = h0_buf;
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_print_str(t5);
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"

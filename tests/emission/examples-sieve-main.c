@@ -226,7 +226,7 @@ bb5:
 #line 36 "examples/sieve/main.hero"
     t21 = h3_at;
 #line 36 "examples/sieve/main.hero"
-    t22 = *(bool const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t20 + 1))[t21]);
 #line 36 "examples/sieve/main.hero"
     if (t22) goto bb8; else goto bb9;
 #line 36 "examples/sieve/main.hero"
@@ -436,7 +436,7 @@ bb4:
 #line 54 "examples/sieve/main.hero"
     t13 = h2_flags;
 #line 54 "examples/sieve/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 54 "examples/sieve/main.hero"
     t15 = t12 < t14;
 #line 54 "examples/sieve/main.hero"
@@ -448,7 +448,7 @@ bb5:
 #line 55 "examples/sieve/main.hero"
     t17 = h4_i;
 #line 55 "examples/sieve/main.hero"
-    t18 = *(bool const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t16 + 1))[t17]);
 #line 55 "examples/sieve/main.hero"
     if (t18) goto bb8; else goto bb9;
 #line 55 "examples/sieve/main.hero"
@@ -550,7 +550,7 @@ bb1:
 #line 65 "examples/sieve/main.hero"
     t7 = h0_n;
 #line 65 "examples/sieve/main.hero"
-    t8 = *(bool const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t6 + 1))[t7]);
 #line 65 "examples/sieve/main.hero"
     h1_ret0 = t8;
 #line 65 "examples/sieve/main.hero"
@@ -658,7 +658,7 @@ bb1:
 #line 74 "examples/sieve/main.hero"
     t6 = h1_found;
 #line 74 "examples/sieve/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 74 "examples/sieve/main.hero"
     t8 = t5 < t7;
 #line 74 "examples/sieve/main.hero"
@@ -670,7 +670,7 @@ bb2:
 #line 75 "examples/sieve/main.hero"
     t11 = h3_i;
 #line 75 "examples/sieve/main.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 75 "examples/sieve/main.hero"
     t13 = h1_found;
 #line 75 "examples/sieve/main.hero"
@@ -680,7 +680,7 @@ bb2:
 #line 75 "examples/sieve/main.hero"
     if (__builtin_sub_overflow(t14, t15, &t16)) hero_panic_overflow();
 #line 75 "examples/sieve/main.hero"
-    t17 = *(int64_t const *)hero_array_at(t13, t16);
+    t17 = ((void)((t13 == NULL || t16 < 0 || t16 >= t13->len) ? ((void)hero_array_at(t13, t16), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t16]);
 #line 75 "examples/sieve/main.hero"
     if (__builtin_sub_overflow(t12, t17, &t18)) hero_panic_overflow();
 #line 75 "examples/sieve/main.hero"
@@ -782,7 +782,7 @@ bb0:
 #line 783 "main.c"
     hero_array_decref(t31);
 #line 81 "examples/sieve/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 81 "examples/sieve/main.hero"
     hero_print_int(t3);
 #line 81 "examples/sieve/main.hero"
@@ -830,7 +830,7 @@ bb0:
 #line 831 "main.c"
     hero_array_decref(t35);
 #line 83 "examples/sieve/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 83 "examples/sieve/main.hero"
     hero_print_int(t11);
 #line 83 "examples/sieve/main.hero"
@@ -846,7 +846,7 @@ bb0:
 #line 847 "main.c"
     hero_array_decref(t36);
 #line 84 "examples/sieve/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 84 "examples/sieve/main.hero"
     hero_print_int(t14);
 #line 84 "examples/sieve/main.hero"
@@ -862,7 +862,7 @@ bb0:
 #line 863 "main.c"
     hero_array_decref(t37);
 #line 85 "examples/sieve/main.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 85 "examples/sieve/main.hero"
     hero_print_int(t17);
 #line 85 "examples/sieve/main.hero"
@@ -1033,7 +1033,7 @@ bb1:
 #line 96 "examples/sieve/main.hero"
     t5 = h2_xs0;
 #line 96 "examples/sieve/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 96 "examples/sieve/main.hero"
     t7 = t4 < t6;
 #line 96 "examples/sieve/main.hero"
@@ -1045,7 +1045,7 @@ bb2:
 #line 96 "examples/sieve/main.hero"
     t9 = h3_i0;
 #line 96 "examples/sieve/main.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 96 "examples/sieve/main.hero"
     h4_one = t10;
 #line 97 "examples/sieve/main.hero"

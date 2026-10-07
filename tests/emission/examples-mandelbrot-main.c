@@ -758,7 +758,7 @@ bb4:
 #line 86 "examples/mandelbrot/main.hero"
     t20 = h3_xs0;
 #line 86 "examples/mandelbrot/main.hero"
-    t21 = hero_array_len(t20);
+    t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
 #line 86 "examples/mandelbrot/main.hero"
     t22 = t19 < t21;
 #line 86 "examples/mandelbrot/main.hero"
@@ -770,7 +770,7 @@ bb5:
 #line 86 "examples/mandelbrot/main.hero"
     t24 = h4_i0;
 #line 86 "examples/mandelbrot/main.hero"
-    t25 = *(int64_t const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
 #line 86 "examples/mandelbrot/main.hero"
     h5_h = t25;
 #line 87 "examples/mandelbrot/main.hero"

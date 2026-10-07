@@ -351,7 +351,7 @@ bb1:
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
     t5 = h2_xs0;
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
     t7 = t4 < t6;
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -363,7 +363,7 @@ bb2:
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
     t9 = h3_i0;
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
-    t10 = *(h_adversarialrecursivetree_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialrecursivetree_Expr) ? hero_unreachable() : (void)0), ((h_adversarialrecursivetree_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 44 "tests/golden/run/adversarial-recursive-tree.hero"
     t20 = h4_part;
 #line 370 "adversarialrecursivetree.c"
@@ -603,7 +603,7 @@ bb1:
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
     t5 = h2_xs0;
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
     t7 = t4 < t6;
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -615,7 +615,7 @@ bb2:
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
     t9 = h3_i0;
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
-    t10 = *(h_adversarialrecursivetree_Expr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialrecursivetree_Expr) ? hero_unreachable() : (void)0), ((h_adversarialrecursivetree_Expr const *)(const void *)(t8 + 1))[t9]);
 #line 58 "tests/golden/run/adversarial-recursive-tree.hero"
     t22 = h4_part;
 #line 622 "adversarialrecursivetree.c"

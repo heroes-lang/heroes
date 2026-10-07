@@ -182,7 +182,7 @@ bb1:
 #line 29 "examples/nqueens/main.hero"
     t3 = h0_placed;
 #line 29 "examples/nqueens/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 29 "examples/nqueens/main.hero"
     t5 = t2 < t4;
 #line 29 "examples/nqueens/main.hero"
@@ -194,7 +194,7 @@ bb2:
 #line 30 "examples/nqueens/main.hero"
     t7 = h2_row;
 #line 30 "examples/nqueens/main.hero"
-    t8 = *(int64_t const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]);
 #line 30 "examples/nqueens/main.hero"
     h3_other = t8;
 #line 32 "examples/nqueens/main.hero"
@@ -218,7 +218,7 @@ bb4:
 #line 34 "examples/nqueens/main.hero"
     t13 = h0_placed;
 #line 34 "examples/nqueens/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 34 "examples/nqueens/main.hero"
     t15 = h2_row;
 #line 34 "examples/nqueens/main.hero"
@@ -343,7 +343,7 @@ bb0:
 #line 44 "examples/nqueens/main.hero"
     t1 = h0_placed;
 #line 44 "examples/nqueens/main.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 44 "examples/nqueens/main.hero"
     t3 = h_main_SIZE();
 #line 44 "examples/nqueens/main.hero"
@@ -631,7 +631,7 @@ bb4:
 #line 73 "examples/nqueens/main.hero"
     t18 = h3_xs0;
 #line 73 "examples/nqueens/main.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 73 "examples/nqueens/main.hero"
     t20 = t17 < t19;
 #line 73 "examples/nqueens/main.hero"
@@ -643,7 +643,7 @@ bb5:
 #line 73 "examples/nqueens/main.hero"
     t22 = h4_i0;
 #line 73 "examples/nqueens/main.hero"
-    t23 = *(int64_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 73 "examples/nqueens/main.hero"
     h5_h = t23;
 #line 74 "examples/nqueens/main.hero"

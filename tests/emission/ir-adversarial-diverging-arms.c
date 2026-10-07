@@ -156,7 +156,7 @@ bb1:
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t5 = h2_xs0;
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t7 = t4 < t6;
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
@@ -168,7 +168,7 @@ bb2:
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t9 = h3_i0;
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t10 = *(h_adversarialdivergingarms_Step const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialdivergingarms_Step) ? hero_unreachable() : (void)0), ((h_adversarialdivergingarms_Step const *)(const void *)(t8 + 1))[t9]);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h4_s = t10;
 #line 15 "tests/golden/ir/adversarial-diverging-arms.hero"

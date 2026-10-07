@@ -768,7 +768,7 @@ bb1:
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t5 = h1_xs0;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t7 = t4 < t6;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -780,7 +780,7 @@ bb2:
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t9 = h2_i0;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h3_d = t10;
 #line 42 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -820,7 +820,7 @@ bb4:
 #line 821 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t219);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t20 = hero_array_len(t19);
+    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t21 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -834,7 +834,7 @@ bb4:
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t23 = INT64_C(7);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t24 = *(int64_t const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t22 + 1))[t23]);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t25 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -848,7 +848,7 @@ bb4:
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t27 = INT64_C(0);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t28 = *(int64_t const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t29 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -860,7 +860,7 @@ bb4:
 #line 861 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t222);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t31 = hero_array_len(t30);
+    t31 = ((void)(t30 == NULL ? ((void)hero_array_len(t30), hero_unreachable()) : (void)0), t30->len);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t17);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1002,7 +1002,7 @@ bb4:
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t53 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t54 = *(int64_t const *)hero_array_at(t52, t53);
+    t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? ((void)hero_array_at(t52, t53), hero_unreachable()) : (void)0), (void)(t52->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t52 + 1))[t53]);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t55 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1024,7 +1024,7 @@ bb4:
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t58 = INT64_C(7);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t59 = *(int64_t const *)hero_array_at(t57, t58);
+    t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t57 + 1))[t58]);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t60 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1038,7 +1038,7 @@ bb4:
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t62 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t63 = *(int64_t const *)hero_array_at(t61, t62);
+    t63 = ((void)((t61 == NULL || t62 < 0 || t62 >= t61->len) ? ((void)hero_array_at(t61, t62), hero_unreachable()) : (void)0), (void)(t61->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t61 + 1))[t62]);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t54);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1072,7 +1072,7 @@ bb4:
 #line 1073 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t235);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t68 = hero_array_len(t67);
+    t68 = ((void)(t67 == NULL ? ((void)hero_array_len(t67), hero_unreachable()) : (void)0), t67->len);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t69 = HERO_STR_LIT(hero_str_20);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1094,7 +1094,7 @@ bb4:
 #line 1095 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t237);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t73 = hero_array_len(t72);
+    t73 = ((void)(t72 == NULL ? ((void)hero_array_len(t72), hero_unreachable()) : (void)0), t72->len);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t74 = HERO_STR_LIT(hero_str_20);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1106,7 +1106,7 @@ bb4:
 #line 1107 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t238);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t76 = hero_array_len(t75);
+    t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t68);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1140,7 +1140,7 @@ bb4:
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t80 = INT64_C(5);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t81 = *(int64_t const *)hero_array_at(t79, t80);
+    t81 = ((void)((t79 == NULL || t80 < 0 || t80 >= t79->len) ? ((void)hero_array_at(t79, t80), hero_unreachable()) : (void)0), (void)(t79->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t79 + 1))[t80]);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t82 = HERO_STR_LIT(hero_str_20);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1162,7 +1162,7 @@ bb4:
 #line 1163 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t242);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t86 = hero_array_len(t85);
+    t86 = ((void)(t85 == NULL ? ((void)hero_array_len(t85), hero_unreachable()) : (void)0), t85->len);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t87 = HERO_STR_LIT(hero_str_20);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1300,7 +1300,7 @@ bb5:
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t115 = INT64_C(0);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t116 = *(int64_t const *)hero_array_at(t114, t115);
+    t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? ((void)hero_array_at(t114, t115), hero_unreachable()) : (void)0), (void)(t114->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t114 + 1))[t115]);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t117 = HERO_STR_LIT(hero_str_20);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1314,7 +1314,7 @@ bb5:
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t119 = INT64_C(0);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t120 = *(int64_t const *)hero_array_at(t118, t119);
+    t120 = ((void)((t118 == NULL || t119 < 0 || t119 >= t118->len) ? ((void)hero_array_at(t118, t119), hero_unreachable()) : (void)0), (void)(t118->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t118 + 1))[t119]);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t116);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1332,7 +1332,7 @@ bb5:
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t124 = h5_xs;
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t125 = hero_array_len(t124);
+    t125 = ((void)(t124 == NULL ? ((void)hero_array_len(t124), hero_unreachable()) : (void)0), t124->len);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t126 = HERO_STR_LIT(hero_str_20);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1340,7 +1340,7 @@ bb5:
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t128 = INT64_C(9);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t129 = *(int64_t const *)hero_array_at(t127, t128);
+    t129 = ((void)((t127 == NULL || t128 < 0 || t128 >= t127->len) ? ((void)hero_array_at(t127, t128), hero_unreachable()) : (void)0), (void)(t127->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t127 + 1))[t128]);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t130 = HERO_STR_LIT(hero_str_20);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1352,7 +1352,7 @@ bb5:
 #line 1353 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t252);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t132 = hero_array_len(t131);
+    t132 = ((void)(t131 == NULL ? ((void)hero_array_len(t131), hero_unreachable()) : (void)0), t131->len);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t125);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1388,7 +1388,7 @@ bb5:
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t137 = h6_ys;
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t138 = hero_array_len(t137);
+    t138 = ((void)(t137 == NULL ? ((void)hero_array_len(t137), hero_unreachable()) : (void)0), t137->len);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t139 = HERO_STR_LIT(hero_str_20);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1396,7 +1396,7 @@ bb5:
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t141 = INT64_C(1);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t142 = *(int64_t const *)hero_array_at(t140, t141);
+    t142 = ((void)((t140 == NULL || t141 < 0 || t141 >= t140->len) ? ((void)hero_array_at(t140, t141), hero_unreachable()) : (void)0), (void)(t140->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t140 + 1))[t141]);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t143 = HERO_STR_LIT(hero_str_20);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1408,7 +1408,7 @@ bb5:
 #line 1409 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t255);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t145 = hero_array_len(t144);
+    t145 = ((void)(t144 == NULL ? ((void)hero_array_len(t144), hero_unreachable()) : (void)0), t144->len);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t138);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1501,7 +1501,7 @@ bb5:
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t154 = INT64_C(2);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t155 = *(int64_t const *)hero_array_at(t153, t154);
+    t155 = ((void)((t153 == NULL || t154 < 0 || t154 >= t153->len) ? ((void)hero_array_at(t153, t154), hero_unreachable()) : (void)0), (void)(t153->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t153 + 1))[t154]);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t156 = HERO_STR_LIT(hero_str_20);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1509,15 +1509,15 @@ bb5:
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t158 = INT64_C(2);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t159 = *(HeroArrayHeader * const *)hero_array_at(t157, t158);
+    t159 = ((void)((t157 == NULL || t158 < 0 || t158 >= t157->len) ? ((void)hero_array_at(t157, t158), hero_unreachable()) : (void)0), (void)(t157->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t157 + 1))[t158]);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t160 = INT64_C(4);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t161 = *(int64_t const *)hero_array_at(t159, t160);
+    t161 = ((void)((t159 == NULL || t160 < 0 || t160 >= t159->len) ? ((void)hero_array_at(t159, t160), hero_unreachable()) : (void)0), (void)(t159->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t159 + 1))[t160]);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t162 = h8_both;
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t163 = hero_array_len(t162);
+    t163 = ((void)(t162 == NULL ? ((void)hero_array_len(t162), hero_unreachable()) : (void)0), t162->len);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     if (__builtin_add_overflow(t161, t163, &t164)) hero_panic_overflow();
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1527,7 +1527,7 @@ bb5:
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t167 = INT64_C(1);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t168 = *(HeroArrayHeader * const *)hero_array_at(t166, t167);
+    t168 = ((void)((t166 == NULL || t167 < 0 || t167 >= t166->len) ? ((void)hero_array_at(t166, t167), hero_unreachable()) : (void)0), (void)(t166->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t166 + 1))[t167]);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t169 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1840,7 +1840,7 @@ bb13:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t215 = INT64_C(1);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t216 = *(int64_t const *)hero_array_at(t214, t215);
+    t216 = ((void)((t214 == NULL || t215 < 0 || t215 >= t214->len) ? ((void)hero_array_at(t214, t215), hero_unreachable()) : (void)0), (void)(t214->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t214 + 1))[t215]);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_int(t190);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -2123,7 +2123,7 @@ bb1:
 #line 38 "<heroes library>"
     t5 = h3_xs0;
 #line 38 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 38 "<heroes library>"
     t7 = t4 < t6;
 #line 38 "<heroes library>"
@@ -2135,7 +2135,7 @@ bb2:
 #line 38 "<heroes library>"
     t9 = h4_i0;
 #line 38 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     h5_x = t10;
 #line 39 "<heroes library>"
@@ -2250,7 +2250,7 @@ bb1:
 #line 45 "<heroes library>"
     t5 = h3_xs0;
 #line 45 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 45 "<heroes library>"
     t7 = t4 < t6;
 #line 45 "<heroes library>"
@@ -2262,7 +2262,7 @@ bb2:
 #line 45 "<heroes library>"
     t9 = h4_i0;
 #line 45 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 45 "<heroes library>"
     h5_x = t10;
 #line 46 "<heroes library>"
@@ -2374,7 +2374,7 @@ bb1:
 #line 60 "<heroes library>"
     t5 = h4_xs0;
 #line 60 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 60 "<heroes library>"
     t7 = t4 < t6;
 #line 60 "<heroes library>"
@@ -2386,7 +2386,7 @@ bb2:
 #line 60 "<heroes library>"
     t9 = h5_i0;
 #line 60 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     h6_x = t10;
 #line 61 "<heroes library>"
@@ -2482,7 +2482,7 @@ bb1:
 #line 67 "<heroes library>"
     t4 = h2_xs0;
 #line 67 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 67 "<heroes library>"
     t6 = t3 < t5;
 #line 67 "<heroes library>"
@@ -2494,7 +2494,7 @@ bb2:
 #line 67 "<heroes library>"
     t8 = h3_i0;
 #line 67 "<heroes library>"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 67 "<heroes library>"
     h4_x = t9;
 #line 68 "<heroes library>"
@@ -2635,7 +2635,7 @@ bb1:
 #line 75 "<heroes library>"
     t4 = h2_xs0;
 #line 75 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 75 "<heroes library>"
     t6 = t3 < t5;
 #line 75 "<heroes library>"
@@ -2647,7 +2647,7 @@ bb2:
 #line 75 "<heroes library>"
     t8 = h3_i0;
 #line 75 "<heroes library>"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 75 "<heroes library>"
     h4_x = t9;
 #line 76 "<heroes library>"
@@ -2757,7 +2757,7 @@ bb1:
 #line 83 "<heroes library>"
     t4 = h2_xs0;
 #line 83 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 83 "<heroes library>"
     t6 = t3 < t5;
 #line 83 "<heroes library>"
@@ -2769,7 +2769,7 @@ bb2:
 #line 83 "<heroes library>"
     t8 = h3_i0;
 #line 83 "<heroes library>"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 83 "<heroes library>"
     h4_x = t9;
 #line 84 "<heroes library>"

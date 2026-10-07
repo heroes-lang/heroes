@@ -164,7 +164,7 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t3 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t4 = *(int64_t const *)hero_array_at(t2, t3);
+    t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t2 + 1))[t3]);
 #line 32 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 #line 170 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_decref(h2_own2);
@@ -205,7 +205,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t5 = INT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t6 = *(int64_t const *)hero_array_at(t4, t5);
+    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 #line 211 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h2_own2);
@@ -243,7 +243,7 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t4 = INT64_C(0);
 #line 42 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t5 = *(int64_t const *)hero_array_at(t3, t4);
+    t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
 #line 40 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 #line 249 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_decref(h2_own2);
@@ -297,13 +297,13 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t5 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t6 = *(int64_t const *)hero_array_at(t4, t5);
+    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t7 = h1_items;
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t8 = INT64_C(1);
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow();
 #line 44 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -500,7 +500,7 @@ bb0:
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t20 = INT64_C(0);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_int(t17);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -567,7 +567,7 @@ bb0:
 #line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t33 = INT64_C(0);
 #line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t34 = *(int64_t const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t32 + 1))[t33]);
 #line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_int(t29);
 #line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -636,7 +636,7 @@ bb0:
 #line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t47 = INT64_C(0);
 #line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t48 = *(int64_t const *)hero_array_at(t46, t47);
+    t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t46 + 1))[t47]);
 #line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_int(t43);
 #line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -705,7 +705,7 @@ bb0:
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t61 = INT64_C(0);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t62 = *(int64_t const *)hero_array_at(t60, t61);
+    t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t60 + 1))[t61]);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_int(t57);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -747,7 +747,7 @@ bb0:
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t73 = INT64_C(0);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t74 = *(int64_t const *)hero_array_at(t72, t73);
+    t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? ((void)hero_array_at(t72, t73), hero_unreachable()) : (void)0), (void)(t72->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t72 + 1))[t73]);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_int(t70);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"

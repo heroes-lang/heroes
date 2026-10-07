@@ -174,7 +174,7 @@ bb1:
 #line 28 "tests/golden/run/arrays.hero"
     t5 = h2_xs0;
 #line 28 "tests/golden/run/arrays.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 28 "tests/golden/run/arrays.hero"
     t7 = t4 < t6;
 #line 28 "tests/golden/run/arrays.hero"
@@ -186,7 +186,7 @@ bb2:
 #line 28 "tests/golden/run/arrays.hero"
     t9 = h3_i0;
 #line 28 "tests/golden/run/arrays.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 28 "tests/golden/run/arrays.hero"
     h4_n = t10;
 #line 29 "tests/golden/run/arrays.hero"
@@ -437,13 +437,13 @@ bb0:
 #line 39 "tests/golden/run/arrays.hero"
     t16 = INT64_C(0);
 #line 39 "tests/golden/run/arrays.hero"
-    t17 = *(HeroStr const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t15 + 1))[t16]);
 #line 39 "tests/golden/run/arrays.hero"
     t18 = h1_words;
 #line 39 "tests/golden/run/arrays.hero"
     t19 = INT64_C(1);
 #line 39 "tests/golden/run/arrays.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 39 "tests/golden/run/arrays.hero"
     hero_print_str(t17);
 #line 39 "tests/golden/run/arrays.hero"
@@ -453,7 +453,7 @@ bb0:
 #line 40 "tests/golden/run/arrays.hero"
     t21 = h1_words;
 #line 40 "tests/golden/run/arrays.hero"
-    t22 = hero_array_len(t21);
+    t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
 #line 40 "tests/golden/run/arrays.hero"
     hero_print_int(t22);
 #line 40 "tests/golden/run/arrays.hero"
@@ -495,7 +495,7 @@ bb0:
 #line 44 "tests/golden/run/arrays.hero"
     t31 = INT64_C(1);
 #line 44 "tests/golden/run/arrays.hero"
-    t32 = *(h_arrays_Point const *)hero_array_at(t30, t31);
+    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(h_arrays_Point) ? hero_unreachable() : (void)0), ((h_arrays_Point const *)(const void *)(t30 + 1))[t31]);
 #line 44 "tests/golden/run/arrays.hero"
     t33 = t32.f_y;
 #line 44 "tests/golden/run/arrays.hero"
@@ -615,11 +615,11 @@ bb0:
 #line 50 "tests/golden/run/arrays.hero"
     t57 = INT64_C(1);
 #line 50 "tests/golden/run/arrays.hero"
-    t58 = *(HeroArrayHeader * const *)hero_array_at(t56, t57);
+    t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t56 + 1))[t57]);
 #line 50 "tests/golden/run/arrays.hero"
     t59 = INT64_C(0);
 #line 50 "tests/golden/run/arrays.hero"
-    t60 = *(int64_t const *)hero_array_at(t58, t59);
+    t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t58 + 1))[t59]);
 #line 50 "tests/golden/run/arrays.hero"
     hero_print_int(t60);
 #line 50 "tests/golden/run/arrays.hero"
@@ -699,11 +699,11 @@ bb0:
 #line 55 "tests/golden/run/arrays.hero"
     t73 = h4_more;
 #line 55 "tests/golden/run/arrays.hero"
-    t74 = hero_array_len(t73);
+    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
 #line 55 "tests/golden/run/arrays.hero"
     t75 = h0_xs;
 #line 55 "tests/golden/run/arrays.hero"
-    t76 = hero_array_len(t75);
+    t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len);
 #line 55 "tests/golden/run/arrays.hero"
     hero_print_int(t74);
 #line 55 "tests/golden/run/arrays.hero"

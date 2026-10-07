@@ -299,7 +299,7 @@ bb0:
 #line 41 "tests/golden/run/f32-the-narrow-float.hero"
     t25 = INT64_C(0);
 #line 41 "tests/golden/run/f32-the-narrow-float.hero"
-    t26 = *(float const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t24 + 1))[t25]);
 #line 41 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_f32(t26);
 #line 41 "tests/golden/run/f32-the-narrow-float.hero"
@@ -309,7 +309,7 @@ bb0:
 #line 42 "tests/golden/run/f32-the-narrow-float.hero"
     t28 = INT64_C(2);
 #line 42 "tests/golden/run/f32-the-narrow-float.hero"
-    t29 = *(float const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t27 + 1))[t28]);
 #line 42 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_f32(t29);
 #line 42 "tests/golden/run/f32-the-narrow-float.hero"
@@ -397,7 +397,7 @@ bb1:
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t45 = INT64_C(0);
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
-    t46 = *(float const *)hero_array_at(t44, t45);
+    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t44 + 1))[t45]);
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     t47 = 0x1.4p+1;
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"

@@ -301,7 +301,7 @@ bb3:
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t16 = h1_xs0;
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t18 = t15 < t17;
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
@@ -313,7 +313,7 @@ bb4:
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t20 = h2_i0;
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     h3_b = t21;
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"

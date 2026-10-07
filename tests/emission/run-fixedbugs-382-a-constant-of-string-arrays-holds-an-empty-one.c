@@ -372,7 +372,7 @@ bb1:
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t5 = h1_xs0;
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t7 = t4 < t6;
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -384,7 +384,7 @@ bb2:
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t9 = h2_i0;
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t10 = *(HeroArrayHeader * const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t77 = h3_inner;
 #line 391 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
@@ -398,7 +398,7 @@ bb2:
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t12 = h3_inner;
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow();
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -434,11 +434,11 @@ bb4:
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t21 = INT64_C(2);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t22 = *(HeroArrayHeader * const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t20 + 1))[t21]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t23 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t24 = *(HeroStr const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t25 = HERO_STR_LIT(hero_str_20);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -452,9 +452,9 @@ bb4:
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t27 = INT64_C(1);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t28 = *(HeroArrayHeader * const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t26 + 1))[t27]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t29 = hero_array_len(t28);
+    t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t30 = HERO_STR_LIT(hero_str_20);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -468,11 +468,11 @@ bb4:
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t32 = INT64_C(3);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t33 = *(HeroArrayHeader * const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t31 + 1))[t32]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t34 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t35 = *(HeroStr const *)hero_array_at(t33, t34);
+    t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? ((void)hero_array_at(t33, t34), hero_unreachable()) : (void)0), (void)(t33->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t33 + 1))[t34]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t36 = hero_str_len(t35);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -488,7 +488,7 @@ bb4:
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t39 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t40 = *(HeroArrayHeader * const *)hero_array_at(t38, t39);
+    t40 = ((void)((t38 == NULL || t39 < 0 || t39 >= t38->len) ? ((void)hero_array_at(t38, t39), hero_unreachable()) : (void)0), (void)(t38->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t38 + 1))[t39]);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t41 = HERO_STR_LIT(hero_str_2b);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -542,7 +542,7 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t46 = INT64_C(1);
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t47 = *(HeroArrayHeader * const *)hero_array_at(t45, t46);
+    t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? ((void)hero_array_at(t45, t46), hero_unreachable()) : (void)0), (void)(t45->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t45 + 1))[t46]);
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t48 = HERO_STR_LIT(hero_str_64);
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -575,11 +575,11 @@ bb4:
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t54 = INT64_C(1);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t55 = *(HeroArrayHeader * const *)hero_array_at(t53, t54);
+    t55 = ((void)((t53 == NULL || t54 < 0 || t54 >= t53->len) ? ((void)hero_array_at(t53, t54), hero_unreachable()) : (void)0), (void)(t53->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t53 + 1))[t54]);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t56 = INT64_C(0);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t57 = *(HeroStr const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t55 + 1))[t56]);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t58 = HERO_STR_LIT(hero_str_20);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -587,7 +587,7 @@ bb4:
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t60 = INT64_C(0);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t61 = *(HeroArrayHeader * const *)hero_array_at(t59, t60);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t59 + 1))[t60]);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t62 = HERO_STR_LIT(hero_str_2b);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -611,9 +611,9 @@ bb4:
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t66 = INT64_C(1);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t67 = *(HeroArrayHeader * const *)hero_array_at(t65, t66);
+    t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? ((void)hero_array_at(t65, t66), hero_unreachable()) : (void)0), (void)(t65->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t65 + 1))[t66]);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t68 = hero_array_len(t67);
+    t68 = ((void)(t67 == NULL ? ((void)hero_array_len(t67), hero_unreachable()) : (void)0), t67->len);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t69 = HERO_STR_LIT(hero_str_20);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
@@ -627,7 +627,7 @@ bb4:
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t71 = INT64_C(0);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    t72 = *(HeroArrayHeader * const *)hero_array_at(t70, t71);
+    t72 = ((void)((t70 == NULL || t71 < 0 || t71 >= t70->len) ? ((void)hero_array_at(t70, t71), hero_unreachable()) : (void)0), (void)(t70->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t70 + 1))[t71]);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t73 = HERO_STR_LIT(hero_str_2b);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"

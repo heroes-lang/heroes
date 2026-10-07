@@ -135,7 +135,7 @@ bb0:
 #line 28 "tests/golden/run/place-store-c5.hero"
     t4 = (*ph0_v);
 #line 28 "tests/golden/run/place-store-c5.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 28 "tests/golden/run/place-store-c5.hero"
     return t5;
 #line 142 "placestorec5.c"
@@ -317,13 +317,13 @@ bb0:
 #line 37 "tests/golden/run/place-store-c5.hero"
     t12 = h0_xs;
 #line 37 "tests/golden/run/place-store-c5.hero"
-    t13 = hero_array_len(t12);
+    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
 #line 37 "tests/golden/run/place-store-c5.hero"
     t14 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/place-store-c5.hero"
     t15 = h1_ys;
 #line 37 "tests/golden/run/place-store-c5.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 37 "tests/golden/run/place-store-c5.hero"
     hero_print_int(t13);
 #line 37 "tests/golden/run/place-store-c5.hero"
@@ -355,13 +355,13 @@ bb0:
 #line 41 "tests/golden/run/place-store-c5.hero"
     t20 = h0_xs;
 #line 41 "tests/golden/run/place-store-c5.hero"
-    t21 = hero_array_len(t20);
+    t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
 #line 41 "tests/golden/run/place-store-c5.hero"
     t22 = HERO_STR_LIT(hero_str_20);
 #line 41 "tests/golden/run/place-store-c5.hero"
     t23 = h2_zs;
 #line 41 "tests/golden/run/place-store-c5.hero"
-    t24 = hero_array_len(t23);
+    t24 = ((void)(t23 == NULL ? ((void)hero_array_len(t23), hero_unreachable()) : (void)0), t23->len);
 #line 41 "tests/golden/run/place-store-c5.hero"
     hero_print_int(t21);
 #line 41 "tests/golden/run/place-store-c5.hero"
@@ -434,7 +434,7 @@ bb0:
 #line 48 "tests/golden/run/place-store-c5.hero"
     t35 = h3_hs;
 #line 48 "tests/golden/run/place-store-c5.hero"
-    t36 = hero_array_len(t35);
+    t36 = ((void)(t35 == NULL ? ((void)hero_array_len(t35), hero_unreachable()) : (void)0), t35->len);
 #line 48 "tests/golden/run/place-store-c5.hero"
     t37 = HERO_STR_LIT(hero_str_20);
 #line 48 "tests/golden/run/place-store-c5.hero"
@@ -442,7 +442,7 @@ bb0:
 #line 48 "tests/golden/run/place-store-c5.hero"
     t39 = t38.f_kids;
 #line 48 "tests/golden/run/place-store-c5.hero"
-    t40 = hero_array_len(t39);
+    t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
 #line 48 "tests/golden/run/place-store-c5.hero"
     t41 = HERO_STR_LIT(hero_str_20);
 #line 48 "tests/golden/run/place-store-c5.hero"
@@ -450,11 +450,11 @@ bb0:
 #line 48 "tests/golden/run/place-store-c5.hero"
     t43 = INT64_C(1);
 #line 48 "tests/golden/run/place-store-c5.hero"
-    t44 = *(h_placestorec5_Node const *)hero_array_at(t42, t43);
+    t44 = ((void)((t42 == NULL || t43 < 0 || t43 >= t42->len) ? ((void)hero_array_at(t42, t43), hero_unreachable()) : (void)0), (void)(t42->elem->size != sizeof(h_placestorec5_Node) ? hero_unreachable() : (void)0), ((h_placestorec5_Node const *)(const void *)(t42 + 1))[t43]);
 #line 48 "tests/golden/run/place-store-c5.hero"
     t45 = t44.f_kids;
 #line 48 "tests/golden/run/place-store-c5.hero"
-    t46 = hero_array_len(t45);
+    t46 = ((void)(t45 == NULL ? ((void)hero_array_len(t45), hero_unreachable()) : (void)0), t45->len);
 #line 48 "tests/golden/run/place-store-c5.hero"
     hero_print_int(t36);
 #line 48 "tests/golden/run/place-store-c5.hero"
@@ -560,7 +560,7 @@ bb0:
 #line 55 "tests/golden/run/place-store-c5.hero"
     t59 = t58.f_kids;
 #line 55 "tests/golden/run/place-store-c5.hero"
-    t60 = hero_array_len(t59);
+    t60 = ((void)(t59 == NULL ? ((void)hero_array_len(t59), hero_unreachable()) : (void)0), t59->len);
 #line 55 "tests/golden/run/place-store-c5.hero"
     t61 = HERO_STR_LIT(hero_str_20);
 #line 55 "tests/golden/run/place-store-c5.hero"
@@ -570,11 +570,11 @@ bb0:
 #line 55 "tests/golden/run/place-store-c5.hero"
     t64 = INT64_C(1);
 #line 55 "tests/golden/run/place-store-c5.hero"
-    t65 = *(h_placestorec5_Node const *)hero_array_at(t63, t64);
+    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(h_placestorec5_Node) ? hero_unreachable() : (void)0), ((h_placestorec5_Node const *)(const void *)(t63 + 1))[t64]);
 #line 55 "tests/golden/run/place-store-c5.hero"
     t66 = t65.f_kids;
 #line 55 "tests/golden/run/place-store-c5.hero"
-    t67 = hero_array_len(t66);
+    t67 = ((void)(t66 == NULL ? ((void)hero_array_len(t66), hero_unreachable()) : (void)0), t66->len);
 #line 55 "tests/golden/run/place-store-c5.hero"
     hero_print_int(t60);
 #line 55 "tests/golden/run/place-store-c5.hero"
@@ -608,13 +608,13 @@ bb0:
 #line 60 "tests/golden/run/place-store-c5.hero"
     t74 = INT64_C(0);
 #line 60 "tests/golden/run/place-store-c5.hero"
-    t75 = *(HeroStr const *)hero_array_at(t73, t74);
+    t75 = ((void)((t73 == NULL || t74 < 0 || t74 >= t73->len) ? ((void)hero_array_at(t73, t74), hero_unreachable()) : (void)0), (void)(t73->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t73 + 1))[t74]);
 #line 60 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h6_ws, &t75);
 #line 61 "tests/golden/run/place-store-c5.hero"
     t77 = h6_ws;
 #line 61 "tests/golden/run/place-store-c5.hero"
-    t78 = hero_array_len(t77);
+    t78 = ((void)(t77 == NULL ? ((void)hero_array_len(t77), hero_unreachable()) : (void)0), t77->len);
 #line 61 "tests/golden/run/place-store-c5.hero"
     t79 = HERO_STR_LIT(hero_str_20);
 #line 61 "tests/golden/run/place-store-c5.hero"
@@ -622,7 +622,7 @@ bb0:
 #line 61 "tests/golden/run/place-store-c5.hero"
     t81 = INT64_C(1);
 #line 61 "tests/golden/run/place-store-c5.hero"
-    t82 = *(HeroStr const *)hero_array_at(t80, t81);
+    t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? ((void)hero_array_at(t80, t81), hero_unreachable()) : (void)0), (void)(t80->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t80 + 1))[t81]);
 #line 61 "tests/golden/run/place-store-c5.hero"
     hero_print_int(t78);
 #line 61 "tests/golden/run/place-store-c5.hero"
@@ -682,7 +682,7 @@ bb0:
 #line 67 "tests/golden/run/place-store-c5.hero"
     t90 = h7_qs;
 #line 67 "tests/golden/run/place-store-c5.hero"
-    t91 = hero_array_len(t90);
+    t91 = ((void)(t90 == NULL ? ((void)hero_array_len(t90), hero_unreachable()) : (void)0), t90->len);
 #line 67 "tests/golden/run/place-store-c5.hero"
     t92 = HERO_STR_LIT(hero_str_20);
 #line 67 "tests/golden/run/place-store-c5.hero"
@@ -690,7 +690,7 @@ bb0:
 #line 67 "tests/golden/run/place-store-c5.hero"
     t94 = INT64_C(1);
 #line 67 "tests/golden/run/place-store-c5.hero"
-    t95 = *(int64_t const *)hero_array_at(t93, t94);
+    t95 = ((void)((t93 == NULL || t94 < 0 || t94 >= t93->len) ? ((void)hero_array_at(t93, t94), hero_unreachable()) : (void)0), (void)(t93->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t93 + 1))[t94]);
 #line 67 "tests/golden/run/place-store-c5.hero"
     hero_print_int(t91);
 #line 67 "tests/golden/run/place-store-c5.hero"

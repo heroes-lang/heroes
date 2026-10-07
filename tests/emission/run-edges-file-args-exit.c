@@ -429,7 +429,7 @@ bb7:
 #line 430 "edgesfileargsexit.c"
     hero_array_decref(t51);
 #line 40 "tests/golden/run/edges-file-args-exit.hero"
-    t39 = hero_array_len(t38);
+    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
 #line 40 "tests/golden/run/edges-file-args-exit.hero"
     hero_print_str(t37);
 #line 40 "tests/golden/run/edges-file-args-exit.hero"

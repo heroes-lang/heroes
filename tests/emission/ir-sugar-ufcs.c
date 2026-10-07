@@ -139,7 +139,7 @@ bb0:
 #line 140 "sugarufcs.c"
     hero_array_decref(t6);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t5 = h_sugarufcs_double(t4);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"

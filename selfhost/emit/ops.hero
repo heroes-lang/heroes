@@ -122,7 +122,8 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
                         written @ written.push(text)
                     at @ at + 1
 
-                writer.line(@w, text: "    " + assign + entry + "(" + written.join(", ") + ");")
+                called_as = builtins.called(callee: entry, arguments: written, wanted: !target.is_err())
+                writer.line(@w, text: "    " + assign + called_as + ";")
                 return
 
             # Refused by the gate; the arm exists so a new callee kind

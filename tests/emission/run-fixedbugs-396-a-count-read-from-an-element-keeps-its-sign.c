@@ -191,7 +191,7 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t8 = h1_buf;
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t10 = HERO_STR_LIT(hero_str_20);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
@@ -199,7 +199,7 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t12 = INT64_C(2);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
-    t13 = *(uint8_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t11 + 1))[t12]);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_int(t6);
 #line 14 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"

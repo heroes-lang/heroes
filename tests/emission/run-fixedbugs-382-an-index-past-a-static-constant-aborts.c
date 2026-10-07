@@ -164,7 +164,7 @@ bb0:
 #line 11 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t2 = h0_i;
 #line 11 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 169 "fixedbugs382anindexpastastaticconstantaborts.c"
     hero_array_decref(h1_own1);
     return t3;
