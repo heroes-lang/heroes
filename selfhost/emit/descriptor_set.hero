@@ -45,6 +45,7 @@ use check/state
 use ir/phases
 use emit/types
 use emit/synth
+use emit/worklist
 use source
 use parse
 use resolve
@@ -155,9 +156,12 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
 
     seen: {i64: bool} @ {}
 
-    while queue.len() > 0
-        next = queue[queue.len() - 1]
-        queue @ queue.slice(from: 0, to: queue.len() - 1)
+    # Drained from its top without copying it (`emit/worklist.hero`, defect
+    # 498).
+    size: i64 @ queue.len()
+
+    while size > 0
+        next = worklist.take(queue, size: @size)
 
         if phases.names_generic(kinds, ty: next)
             continue
@@ -177,11 +181,11 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
             .case_ty => wanted[next] @ true
             .fallible o =>
                 wanted[next] @ true
-                queue @ queue.push(o.payload)
-            .array arr => queue @ queue.push(arr.element)
+                worklist.put(@queue, size: @size, value: o.payload)
+            .array arr => worklist.put(@queue, size: @size, value: arr.element)
             .map m =>
-                queue @ queue.push(m.key)
-                queue @ queue.push(m.value)
+                worklist.put(@queue, size: @size, value: m.key)
+                worklist.put(@queue, size: @size, value: m.value)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
             .fixed | .function_ty | .failure | .generic | .error      => continue
 

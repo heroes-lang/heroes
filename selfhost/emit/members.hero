@@ -24,6 +24,7 @@ use emit
 use emit/ctype
 use emit/types
 use emit/callback_guard
+use emit/worklist
 use ir/instances
 
 # The tables every TU shares, built ONCE for the whole build.
@@ -108,6 +109,7 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
     taken: {i64: bool} @ {}
     declared: {i64: bool} @ {}
     frontier: [i64] @ []
+    size: i64 @ 0
 
     # Seeded from the FUSED unit's own selection, filtered to this
     # module: for an author module that is exactly its functions, and
@@ -119,11 +121,12 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
 
         if f.instance.len() == 0 && source.component_at(s, decls[f.decl].name.start) == module
             taken[at] @ true
-            frontier @ frontier.push(at)
+            worklist.put(@frontier, size: @size, value: at)
 
-    while frontier.len() > 0
-        at = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+    # Drained from its top without copying it (`emit/worklist.hero`, defect
+    # 498).
+    while size > 0
+        at = worklist.take(frontier, size: @size)
         f = p.functions[at]
 
         for blk in f.blocks
@@ -139,7 +142,7 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
-                                        frontier @ frontier.push(found.must())
+                                        worklist.put(@frontier, size: @size, value: found.must())
                                 else
 
                                     # An ordinary callee: its body is
@@ -169,7 +172,7 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
-                                        frontier @ frontier.push(found.must())
+                                        worklist.put(@frontier, size: @size, value: found.must())
                                 else
                                     ordinary = by_decl[hf.decl]
 
@@ -208,12 +211,13 @@ function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) 
     out: {i64: bool} @ seed
 
     # ORDER: none — a worklist whose output is a SET, and every reader
-    # below asks it a membership question.
+    # below asks it a membership question. Drained from its top without
+    # copying it (`emit/worklist.hero`, defect 498).
     frontier: [i64] @ keys(out)
+    size: i64 @ frontier.len()
 
-    while frontier.len() > 0
-        id = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+    while size > 0
+        id = worklist.take(frontier, size: @size)
         next: [i64] @ table.contained(c.types, id)
         written_ids: [i64] @ []
 
@@ -243,7 +247,7 @@ function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) 
         for ty in next
             if out[ty].is_err()
                 out[ty] @ true
-                frontier @ frontier.push(ty)
+                worklist.put(@frontier, size: @size, value: ty)
 
     return out
 

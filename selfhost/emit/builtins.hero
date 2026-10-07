@@ -19,6 +19,7 @@ use check/state
 use ir
 use ir/containers
 use emit/array_read
+use emit/worklist
 use token
 use source
 use parse
@@ -211,19 +212,20 @@ function called(callee: str, arguments: [str], wanted: bool) -> str
 # compiled with every program, but --emit-c is an artifact the author
 # reads, and seven unused definitions would be seven pieces of noise
 # about a library they cannot change. A worklist rather than one pass,
-# because a library function may call another.
+# because a library function may call another; drained from its top
+# without copying it (`emit/worklist.hero`, defect 498).
 function reachable(p: containers.Program, s: source.Source) -> {i64: bool}
     seen: {i64: bool} @ {}
     work: [i64] @ []
+    size: i64 @ 0
 
     for f in p.functions
         if !source.is_library(s, f.span.start)
             for callee in calls_of(f)
-                work @ work.push(callee)
+                worklist.put(@work, size: @size, value: callee)
 
-    while work.len() > 0
-        decl = work[work.len() - 1]
-        work @ work.slice(from: 0, to: work.len() - 1)
+    while size > 0
+        decl = worklist.take(work, size: @size)
 
         if !seen[decl].is_err()
             continue
@@ -232,7 +234,7 @@ function reachable(p: containers.Program, s: source.Source) -> {i64: bool}
         for f in p.functions
             if f.decl == decl
                 for callee in calls_of(f)
-                    work @ work.push(callee)
+                    worklist.put(@work, size: @size, value: callee)
 
     return seen
 
