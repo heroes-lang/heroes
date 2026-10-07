@@ -1,0 +1,9 @@
+# Defect 456, 2026-10-07: two parameter types of one head, each opened by
+# `(` on its line and closed on the next. `check` stopped at exit 134, as
+# for one; told now, the second type twice at one place, the recovery's as
+# it stands.
+
+function f(a: (  #~v expected_function_type expected_end_of_line
+        bool), b: (  #~v expected_function_type expected_function_type expected_binding_symbol
+        bool))
+    print(1)  #~ expected_declaration

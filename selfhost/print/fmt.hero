@@ -1690,3 +1690,43 @@ test "a negative pattern prints with its sign against its literal"
     pl = parse.parse(lowered)
     sl = source.new_source(name: "t.hero", text: lowered)
     assert format_file(pl.tree, sl, pl.comments, pl.uses, pl.decls) == "function f(n: i64) -> i64\n    return match n\n        -0x1f => 1\n        _     => 2\n"
+
+# Defect 333, 2026-10-07: a line past the width ending in an empty call was
+# broken inside its parentheses, `.must(` over `)`, which made nothing
+# shorter, and so were an empty list's brackets and an empty map's braces.
+# An empty bracket stays shut: the line breaks inside the nearest bracket
+# before it that holds something, `).must()` under its arguments, and stays
+# long where none does, a name's call, a chain of fields, a literal; the
+# author's own `f(` over `)` is joined, and one a comment opens stays open.
+# Each result is its own fixpoint.
+test "an empty bracket is never opened, and the line breaks before it or stays long"
+    main = "function main()\n    "
+    call = "some_long_function_name(first_argument_name: 1, second_argument_name: 2, third_argument_name: 3, four: 4)"
+    opened = "some_long_function_name(\n        first_argument_name: 1,\n        second_argument_name: 2,\n        third_argument_name: 3,\n        four: 4\n    )"
+    named = main + "value = some_long_function_name_here_and_more_and_more_and_more_and_more_words_and_more_words_and_x_and_more_and_y_more()\n"
+    chained = main + "value = some_long_function_name_here_and_more_and_more_and_more_and_more_words.validated_bytes_maybe_more_and_more.must()\n"
+    listed = main + "names_of_the_things_here_and_there_and_more_more_more_more_more_and_more_xyz: [some_long_type_name_here_more_xyz] = []\n"
+    mapped = main + "table_of_the_things_here_and_there_and_more_more_more_more_more_more_and_more_xyz: {str: some_long_type_name_xyz} = {}\n"
+    remarked = main + "value = g(  # why\n    )\n"
+    pairs: [[str]] = [
+        [main + "value = " + call + ".must()\n", main + "value = " + opened + ".must()\n"]
+        [main + "value = " + call + ".must().must()\n", main + "value = " + opened + ".must().must()\n"]
+        [main + "value = " + call + ".must()  # a remark\n", main + "value = " + opened + ".must()  # a remark\n"]
+        [main + "value = f(\n    )\n", main + "value = f()\n"]
+        [named, named]
+        [chained, chained]
+        [listed, listed]
+        [mapped, mapped]
+        [remarked, remarked]
+    ]
+
+    for pair in pairs
+        parsed = parse.parse(pair[0])
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: pair[0])
+        once = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+        assert once == pair[1]
+        again = parse.parse(once)
+        assert again.diagnostics.len() == 0
+        s2 = source.new_source(name: "t.hero", text: once)
+        assert format_file(again.tree, s2, again.comments, again.uses, again.decls) == once

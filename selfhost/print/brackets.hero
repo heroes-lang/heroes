@@ -27,9 +27,10 @@
 # A KNOT, and its map: `broken` is the entry; `spread` prints every line of
 # a value but its last and returns that one, so the next part of a line (a
 # comma, the rest of a chain, a method's arguments) goes on it; `spread`
-# calls `opened` for a bracket, `one_line` for one whose only comment is
-# before it, and `part` for anything else, `opened` calls `element` for
-# each element, and each of them calls `spread` again.
+# calls `opened` for a bracket, `shut` for an empty one with no comment in
+# or before it, `one_line` for one whose only comment is before it, and
+# `part` for anything else, `opened` calls `element` for each element, and
+# each of them, and `shut` for its callee or receiver, calls `spread` again.
 
 use token
 use ast
@@ -129,11 +130,29 @@ function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i
         # (the second skeptic seat's `table().  # c` and `ok  # c`).
         if !at.open && elements.holds(f, c, from: b.seam, to: b.from) && !elements.waits(f, c, span: token.Span(start: b.from, end: b.to))
             return around.one_line(@f, c, head: head, value: value, indent: indent, needed: at.needed)
+
+        # An empty bracket with no comment written in it or before it stays
+        # shut (defect 333): opened, `.must(` over `)`, it made nothing
+        # shorter.
+        if b.items.len() == 0 && !elements.waits(f, c, span: token.Span(start: b.seam, end: b.to))
+            return shut(@f, c, head: head, value: value, b: b, indent: indent, at: at)
         return opened(@f, c, head: head, b: b, indent: indent, enclosed: at.enclosed)
 
     if !inside
         return head + parens.wrapped(c.tree, c.s, id: value, needed: at.needed)
     return part(@f, c, head: head, value: value, indent: indent, at: at, paren: paren)
+
+# An empty bracket printed shut, after the callee or receiver before it,
+# which is asked open as the value was: a line too long breaks inside the
+# nearest bracket before it that holds something, `f(` over its arguments
+# and `).must()` under them, and stays long where none does, a literal's
+# `[]` or `{}` and a call whose callee is a name. The callee or receiver is
+# placed as `opened` places it.
+function shut(@f: page.Fmt, c: elements.Code, head: str, value: i64, b: elements.Bracket, indent: i64, at: around.Place) -> str
+    if b.before < 0
+        return head + parens.wrapped(c.tree, c.s, id: value, needed: at.needed)
+    before = around.Place(needed: parens.POSTFIX_POWER, open: at.open, taken: -1, all: false, enclosed: at.enclosed)
+    return spread(@f, c, head: head, value: b.before, indent: indent, at: before) + b.open + b.close
 
 # A value that is not a bracket and holds a comment: the part holding it is
 # opened, the rest printed around it, parenthesised as `render` would.
