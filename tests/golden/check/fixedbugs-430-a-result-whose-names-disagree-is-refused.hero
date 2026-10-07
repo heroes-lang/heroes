@@ -1,0 +1,25 @@
+# Fixed defect 430, 2026-10-07 (lane b13-gen402): what the repair does not
+# loosen. The IR now judges two function types one where they differ only in
+# their parameters' names, because C never sees a name; the CHECKER still
+# holds the names a reader wrote (spec § 9: the names are part of the type,
+# and the other order is another type). So a function whose names disagree
+# with the result's, or come in the other order, is refused at `check`, as it
+# was before the repair, and never reaches the build. A lone parameter's name
+# is not among them: nothing can be confused with it, so no type names it, and
+# a function naming it otherwise is returned and runs (the `run/` case).
+
+function sub(b: i64, a: i64) -> i64
+    return a - b
+
+function diff(p: i64, q: i64) -> i64
+    return p - q
+
+function swapped() -> (function(a: i64, b: i64) -> i64)
+    return sub  #~ type_mismatch
+
+function renamed_pair() -> (function(a: i64, b: i64) -> i64)
+    return diff  #~ type_mismatch
+
+function main()
+    print(swapped()(a: 3, b: 1))
+    print(renamed_pair()(a: 3, b: 1))

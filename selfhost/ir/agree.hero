@@ -1,0 +1,67 @@
+# Whether a value's type agrees with the type it lands in, as the IR judges
+# it: one type, or two function types that differ only in the names their
+# parameters carry (defect 430; spec § 9, design.md §4.13).
+#
+# A function type's names are the CHECKER's: they are part of the type so a
+# call through a value names each argument where two share a type, and
+# `check/table.hero`'s `fits` lets a value whose type names fewer positions,
+# or calls one `_`, stand where a named type is asked. The interner keeps the
+# names in the id, so such a value and the result it is returned as carry two
+# ids for one C function pointer type, and C never sees a name. Until
+# 2026-10-07 the verifier compared the ids, so `return inc` where the result
+# says `(function(x: i64) -> i64)` checked at exit 0 and stopped the build at
+# exit 2, *returns a value of the wrong type*, while the same value bound,
+# passed or stored in a field ran. The names are compared here at every depth
+# of a function type, which is the C type's own sameness; what a reader wrote
+# was held by the checker before the IR existed.
+
+use check/table
+
+function agree(t: table.Types, value: i64, lands: i64) -> bool
+    if value == lands
+        return true
+
+    match table.get(t, value)
+        .function_ty fa =>
+            match table.get(t, lands)
+                .function_ty fb =>
+                    pa = table.params_of(t, fa.params)
+                    pb = table.params_of(t, fb.params)
+
+                    if pa.len() != pb.len() || !agree(t, value: fa.result, lands: fb.result)
+                        return false
+                    i: i64 @ 0
+
+                    while i < pa.len()
+                        if !agree(t, value: pa[i], lands: pb[i])
+                            return false
+                        i @ i + 1
+
+                    return true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+                .array | .fixed | .map | .fallible | .named               => return false
+                .case_ty | .failure | .generic | .error                   => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .named               => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
+
+## Tests
+
+test "two function types agree up to their parameters' names, and nothing else does"
+    t: table.Types @ table.new_types()
+    int_id = table.int_ty_id(t)
+    str_id = table.str_ty(t)
+    one: [i64] = [int_id]
+    named: [str] = ["x"]
+    bare: [str] = [""]
+    with_name = table.intern_function(@t, one, named, result: int_id)
+    without = table.intern_function(@t, one, bare, result: int_id)
+    other_result = table.intern_function(@t, one, bare, result: str_id)
+    assert with_name != without
+    assert agree(t, value: with_name, lands: without)
+    assert agree(t, value: without, lands: with_name)
+    assert !agree(t, value: with_name, lands: other_result)
+    assert !agree(t, value: int_id, lands: str_id)
+    assert agree(t, value: str_id, lands: str_id)

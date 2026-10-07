@@ -42,6 +42,7 @@ use ir/uses
 use ir/values
 use ir/phases
 use ir/one_exit
+use ir/agree
 
 # Whether this function's implementation is C's: an extern function's
 # code, or an extern constant's value (§4.19, panel 038). Both have no
@@ -322,7 +323,9 @@ function check_return_type(f: containers.Function, blk: containers.Block, c: sta
             if value < f.values.len()
                 got = containers.value_type(f, value)
 
-                if got != f.result && got != table.error_ty(c.types)
+                # One type up to its parameters' names (defect 430,
+                # `ir/agree.hero`): the names are the checker's, never C's.
+                if !agree.agree(c.types, value: got, lands: f.result) && got != table.error_ty(c.types)
                     problems @ problems.push(at + "returns a value of the wrong type")
 
                 # A merged function's exit returns its load of the return
