@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-257-brackets-in-a-hole-without-f-are-paired-in-one-walk.hero:12:12: error[hole_without_f]: `{[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[x]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}` is in a literal without an `f`, so it prints as it stands, braces and all, and every name in it is bound here — an `f` before the opening quote writes its value

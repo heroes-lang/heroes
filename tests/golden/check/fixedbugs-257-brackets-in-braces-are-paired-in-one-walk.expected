@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-257-brackets-in-braces-are-paired-in-one-walk.hero:19:11: error[unclosed_bracket]: `[` opened here is never closed
+tests/golden/check/fixedbugs-257-brackets-in-braces-are-paired-in-one-walk.hero:13:29: error[missing_body]: the `function` `f` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-257-brackets-in-braces-are-paired-in-one-walk.hero:17:17: error[missing_body]: the `function` `main` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-257-brackets-in-braces-are-paired-in-one-walk.hero:24:13: error[expected_end_of_line]: expected the end of the line after `record Pair`, found `{` — its fields go on the lines below it, one level deeper
