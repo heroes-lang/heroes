@@ -251,7 +251,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !width.is_err()
             found @ ffi_lookup.add_once(found, d: width.must())
-        writable = ffi_mutable.writable_parameter(s, decls, p, c, names, line: line)
+
+        # A `cstr`'s pointer the header lets C write: the pointee check's answer
+        # (defect 411), then clang's phrase about the probe's call.
+        asked_w = ffi_read_only.writable_pointee(s, decls, tree, p, c, line: line)
+
+        if !asked_w.is_err()
+            found @ ffi_lookup.add_once(found, d: asked_w.must())
+        writable = ffi_mutable.writable_parameter(s, decls, tree, p, c, names, line: line)
 
         if !writable.is_err()
             found @ ffi_lookup.add_once(found, d: writable.must())

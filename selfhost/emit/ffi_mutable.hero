@@ -38,20 +38,15 @@ use emit/extern_probe
 use emit/probe_reply as probe_reply
 use emit/ffi_lookup
 use emit/ffi_site
-use emit/ffi_read_only
+use emit/ffi_pointee
 use parse
 use resolve
 use checker
 use ir/lower
 
 # A parameter the header declares WRITABLE, which .cstr() cannot
-# supply: the pointee check's answer first, then clang's phrase.
-function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, names: ctype.Names, line: str) -> diag.Diagnostic?
-    asked = ffi_read_only.writable_pointee(s, decls, p, c, line: line)
-
-    if !asked.is_err()
-        return asked
-
+# supply, as clang's phrase about the probe's call says it.
+function writable_parameter(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: containers.Program, c: state.Checked, names: ctype.Names, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.DISCARDS)
         return fail(code: "none", msg: "not a qualifier line")
     at = ffi_site.location(s, line: line)
@@ -98,7 +93,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     # than asserted to be cstr (CLAUDE.md §11 — a narrowing asks the
     # value): a future Heroes type that also lowers to a pointer would
     # otherwise be described wrong.
-    which: str @ "a parameter"
+    param: str @ ""
     declared: str @ "cstr"
     index: i64 @ 0
 
@@ -116,14 +111,68 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
                 if c_type.must() != "const char **"
                     return fail(code: "none", msg: "a marked `@cstr` owns what C writes there")
                 return ok(owned_const(name: name, param: f.slots[f.params[index]].name, span: decls[f.decl].span))
-            which @ "`" + f.slots[f.params[index]].name + "`"
+            param @ f.slots[f.params[index]].name
             none: [str] = []
             declared @ render.render_ty(c.types, s, decls, f.slots[f.params[index]].ty, none)
         index @ index + 1
 
+    spans = spans_of(s, decls, tree, decl: f.decl, param: param)
     return ok(
-        ffi_read_only.refusal(name: name, which: which, declared: declared, c_type: c_type.must(), span: decls[f.decl].span)
+        refusal(name: name, param: param, declared: declared, c_type: c_type.must(), spans: spans, whole: decls[f.decl].span)
     )
+
+# The one diagnostic both routes give, so the header's answer and clang's
+# phrase tell the author the same thing. **It lands on the parameter** (defect
+# 428, 2026-10-07): its span was the whole declaration, and one diagnostic is
+# kept per span, so a declaration's second writable parameter was told only
+# once the first was repaired; its fix replaced the whole declaration with
+# `ptr`, and now replaces the parameter's type. A parameter the route could not
+# name keeps the declaration's span and has no fix.
+function refusal(name: str, param: str, declared: str, c_type: str, spans: ffi_pointee.ParamSpans?, whole: token.Span) -> diag.Diagnostic
+    which: str @ "a parameter"
+    span: token.Span @ whole
+
+    if param.len() > 0
+        which @ "`" + param + "`"
+
+    if !spans.is_err()
+        span @ spans.must().name
+
+    # "does not promise to leave it alone", not "would write through
+    # it" (author decision 2026-08-15, from panel 059): free(void *)
+    # does not WRITE through its argument, it deallocates it — both
+    # are the same defect for this program and neither is "writing",
+    # so the message states what the header actually declares.
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_writable_parameter",
+        message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type + "` — C does not promise to leave it alone",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+    )
+
+    # The repair is not "add const", which is the header's to choose
+    # and not this program's. It is to stop lending and start owning.
+    d.notes @ d.notes.push("declare it `ptr` and give `" + name + "` a buffer C owns, then read the result back")
+
+    if !spans.is_err()
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: spans.must().ty, certainty: .guess)
+        )
+    return d
+
+# Where a parameter of the extern declared at `decl` stands, its name and its
+# type, asked of that declaration and never of another group's of one name.
+function spans_of(s: source.Source, decls: [ast.Decl], tree: ast.Ast, decl: i64, param: str) -> ffi_pointee.ParamSpans?
+    match decls[decl].kind
+        .function_decl fd =>
+            for one in fd.value.params
+                if source.span_text(s, one.name) == param
+                    return ok(ffi_pointee.ParamSpans(name: one.name, ty: tree.types[one.ty].span))
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
+
+    return fail(code: "none", msg: "no parameter of that name")
 
 # DEFECT 078 (panel 176, question 4; landed 2026-09-24 on the sitting's
 # provisional resolution, item 8). `owned` on an `@cstr` cell is emitted as
@@ -180,19 +229,22 @@ test "a writable char * names the lent parameter and the owning repair"
         arguments: arguments
     )
     line = "t.hero:2:" + columns[0].to_str() + ": warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
-    d = writable_parameter(s, parsed.decls, low.program, c, names, line: line)
+    d = writable_parameter(s, parsed.decls, parsed.tree, low.program, c, names, line: line)
     assert d.must().code == "ffi_writable_parameter"
     assert d.must().message == "`target` of `strtok` is declared `cstr`, and the header says `char *` — C does not promise to leave it alone"
     assert d.must().fixes.len() == 1
     assert d.must().fixes[0].replacement == "ptr"
     assert d.must().fixes[0].certainty == .guess
+    assert source.span_text(s, d.must().span) == "target"
+    assert source.span_text(s, d.must().fixes[0].span) == "cstr"
 
     # A line without the qualifier phrase is not this class.
     plain = "t.hero:2:9: error: implicit conversion loses integer precision: 'int64_t' to 'int'"
-    assert writable_parameter(s, parsed.decls, low.program, c, names, line: plain).is_err()
+    assert writable_parameter(s, parsed.decls, parsed.tree, low.program, c, names, line: plain).is_err()
 
     # A caret that misses every argument column still lands, with the
     # parameter unnamed — the rule is the rule, only the name is lost.
     off = "t.hero:2:1: warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
-    k = writable_parameter(s, parsed.decls, low.program, c, names, line: off)
+    k = writable_parameter(s, parsed.decls, parsed.tree, low.program, c, names, line: off)
     assert k.must().message == "a parameter of `strtok` is declared `cstr`, and the header says `char *` — C does not promise to leave it alone"
+    assert k.must().fixes.len() == 0
