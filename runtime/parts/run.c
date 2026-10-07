@@ -331,9 +331,15 @@ static void hero_run_ended(int sig) {
 
     for (int i = 0; i < 2000 && atomic_load(&hero_run_launching) > 0; i += 1) hero_run_nap(1);
 
+    /* SIGCONT after it, as a shell's `kill` does for a stopped job: a child
+     * stopped at the terminal (defect 436) acts on the signal now rather than
+     * at the SIGKILL. */
     for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
         int pid = atomic_load(&hero_run_live[i]);
-        if (pid > 0) kill(-(pid_t)pid, sig);
+        if (pid > 0) {
+            kill(-(pid_t)pid, sig);
+            kill(-(pid_t)pid, SIGCONT);
+        }
     }
     for (int waited = 0; waited < HERO_RUN_GRACE_MS; waited += 10) {
         int standing = 0;
@@ -513,6 +519,46 @@ static void hero_run_tty_restore(pid_t *holder) {
     hero_run_tty_give(*holder);
 }
 
+/* **A CHILD STOPPED AT THE TERMINAL STOPS THIS PROCESS WITH IT** (defect 436,
+ * 2026-10-07), the job control a shell user expects. A child handed the
+ * terminal is the program in front, so Ctrl-Z stops it and not this process,
+ * which went on waiting for an exit that could not come while the shell waited
+ * for this process: the terminal answered nobody. So where this process held
+ * the terminal and handed it on (`holder`), a stop is waited for as well as an
+ * exit, and on one the terminal is taken back where the child holds it and
+ * this process stops itself with SIGTSTP, so the shell sees its job stopped
+ * and has its prompt. `fg` continues this process in front: the terminal goes
+ * to the child again and the child is continued with SIGCONT. `bg` continues
+ * it in the background, holding no terminal, so the child is continued and
+ * left in the background, where a read of the terminal stops it again and
+ * this process with it, until a `fg`. With no terminal handed on, a stop is
+ * not waited for, as before.
+ *
+ * Where SIGTSTP is ignored there is no job control to answer, and SIGSTOP
+ * stops this process all the same; where this process is a group no shell
+ * holds, an orphaned one, the kernel discards SIGTSTP, the call returns at
+ * once, and the child is continued, which is what a session without job
+ * control does with Ctrl-Z. */
+static void hero_run_stopped(pid_t child, pid_t holder) {
+    if (tcgetpgrp(0) == child) hero_run_tty_give(holder);
+
+    struct sigaction now;
+    int stop = SIGTSTP;
+    if (sigaction(SIGTSTP, NULL, &now) == 0 && !(now.sa_flags & SA_SIGINFO) && now.sa_handler == SIG_IGN) {
+        stop = SIGSTOP;
+    }
+    /* `raise` and not `kill(getpid(), …)`: the signal must stop THIS thread
+     * before the call returns. Sent to the process, it was taken by another
+     * of `heroes`'s threads on Linux arm64, and this one went on past the
+     * stop, gave the terminal back to the child and continued it: `ps` read
+     * `heroes` stopped and the program running in the background. */
+    raise(stop);
+
+    /* Continued. In front again, the terminal is the child's. */
+    if (tcgetpgrp(0) == getpgrp()) hero_run_tty_give(child);
+    kill(-child, SIGCONT);
+}
+
 /* Wait for the child, and sweep its group before its pid can be reused.
  *
  * **WNOWAIT IS THE WHOLE POINT.** `waitid` reports the exit without reaping, so
@@ -524,12 +570,31 @@ static void hero_run_tty_restore(pid_t *holder) {
  * `si_pid` is zeroed first because POSIX leaves it unspecified when WNOHANG
  * finds nothing; zero is then the documented way to tell "not yet" from "here
  * it is". */
-static pid_t hero_run_reap(pid_t child, int slot, int *wait_status, int nohang) {
+static pid_t hero_run_reap(pid_t child, int slot, int *wait_status, int nohang,
+                           pid_t holder) {
     siginfo_t seen;
     memset(&seen, 0, sizeof seen);
-    int flags = WEXITED | WNOWAIT | (nohang ? WNOHANG : 0);
+    int flags = WEXITED | WNOWAIT | (nohang ? WNOHANG : 0) | (holder != -1 ? WSTOPPED : 0);
     if (waitid(P_PID, (id_t)child, &seen, flags) != 0) return -1;
     if (seen.si_pid == 0) return 0;
+
+    /* A stop is no exit (defect 436). WNOWAIT leaves its report standing, so
+     * it is taken here, without waiting, and answered where the child held the
+     * terminal; one already gone, the child continued by somebody else, is no
+     * stop to answer. **Darwin reports a stop to WEXITED alone**, measured on
+     * macOS 26 with WNOWAIT: `si_code` CLD_STOPPED, again at every call until
+     * WSTOPPED takes it. Read as an exit, the sweep's SIGKILL ended the
+     * stopped program and `heroes run` answered 137, at Ctrl-Z and at a
+     * `kill -STOP` with no terminal alike; so it is taken with no terminal
+     * too, and the wait goes on, as it does on Linux. */
+    if (seen.si_code == CLD_STOPPED || seen.si_code == CLD_TRAPPED) {
+        siginfo_t taken;
+        memset(&taken, 0, sizeof taken);
+        if (waitid(P_PID, (id_t)child, &taken, WSTOPPED | WNOHANG) == 0 && taken.si_pid != 0 && holder != -1) {
+            hero_run_stopped(child, holder);
+        }
+        return 0;
+    }
 
     /* Anything the child left behind dies here, on the ORDINARY exit as well as
      * on the timeout: the recorded holder was left by a compiler driver whose
@@ -1096,7 +1161,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
         int64_t step_ms = 1;
         int64_t limit_ms = hero_run_limit_seconds * 1000;
         for (;;) {
-            pid_t seen = hero_run_reap(child, slot, &wait_status, 1);
+            pid_t seen = hero_run_reap(child, slot, &wait_status, 1, tty_holder);
             if (seen == child) break;
             if (seen < 0 && errno != EINTR) {
                 hero_run_why_code = (int64_t)errno;
@@ -1114,11 +1179,14 @@ int64_t hero_run_go(const char *program, const char *in_path,
                  * `heroes` this watchdog killed left the program it ran,
                  * which the harness then never saw. Asked with SIGTERM, a
                  * `heroes` ends its child within `HERO_RUN_GRACE_MS`, and
-                 * this grace is longer. */
+                 * this grace is longer. SIGCONT after it, so a child stopped
+                 * meanwhile acts on it now rather than at the SIGKILL
+                 * (defect 436). */
                 kill(-child, SIGTERM);
+                kill(-child, SIGCONT);
                 int64_t grace_ms = 0;
                 while (grace_ms < HERO_RUN_WATCHDOG_GRACE_MS) {
-                    seen = hero_run_reap(child, slot, &wait_status, 1);
+                    seen = hero_run_reap(child, slot, &wait_status, 1, tty_holder);
                     if (seen == child || (seen < 0 && errno != EINTR)) break;
                     struct timespec pause_ms;
                     pause_ms.tv_sec = 0;
@@ -1143,8 +1211,11 @@ int64_t hero_run_go(const char *program, const char *in_path,
             if (step_ms < 50) step_ms *= 2;
         }
     } else {
-        while (hero_run_reap(child, slot, &wait_status, 0) < 0) {
-            if (errno != EINTR) {
+        /* A stop answered is 0, and the wait goes on (defect 436). */
+        for (;;) {
+            pid_t seen = hero_run_reap(child, slot, &wait_status, 0, tty_holder);
+            if (seen == child) break;
+            if (seen < 0 && errno != EINTR) {
                 hero_run_why_code = (int64_t)errno;
                 hero_run_let_go(slot);
                 *status = HERO_OS_FAILED;
