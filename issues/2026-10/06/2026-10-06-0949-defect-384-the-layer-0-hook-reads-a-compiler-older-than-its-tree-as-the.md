@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: a7513e79d944adb1f1c2b377d1572f969c7aa994
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b12-cli12, 2026-10-06 (its final report, *the write hook's compiler is older than this lane*); reproduced and filed by the coordinator at 09:49.
 
     **Class: improvement**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): an instrument's notice, no program moves, as defects 254 and 348 were classed; one repair could answer the three, the tree a written file stands in and the age of that tree's compiler asked before its verdict.
+
+    Repaired at `a7513e79`, 2026-10-07 (lane b14-hooks), gated by its cases, the hooks' own tests; the net is owed at the batch's close. Every refusal of `.claude/hooks/fmt_check.py` asks first whether the judging compiler was built before a source of its tree, the written file left out, and tells such a refusal as that age with the rebuild, never as *does not parse*; seven cases in `.claude/hooks/test_hooks.py`, four red before the repair, and 0f48f9f9's compiler in a scratch tree of today's sources, on a module holding `"a\u{1b}b"`, read *does not parse* on the base hook and its age on the repaired one.
