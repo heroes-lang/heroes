@@ -42,8 +42,9 @@
 # are not decoration.
 #
 # THE FOUR GUARDS, each one a way an oracle stops being one:
-#   - the FLOOR: fewer programs than the last measured count is a red
-#     harness, never a smaller green one;
+#   - the FLOOR: fewer blessed emissions than the last measured count is a
+#     red harness, never a smaller green one, and so are fewer refusals, the
+#     programs with nothing blessed, counted apart (defect 341);
 #   - COLLISION: two programs mapping to one blessed file would leave one
 #     of them uncompared and say nothing;
 #   - ORPHANS: a blessed file no program claims is a program renamed or
@@ -149,8 +150,28 @@ constant ENTRIES: [str]
 # 192's R1), whose thirteen `run/fixedbugs-245-*` cases took the count more
 # than 25% past 326: emit 7 · fixedbugs 38 · ir 25 · run 283, and 55 example
 # programs, by the commands above. The slack had reached 69 in ten days.
+#
+# **IT COUNTS THE EMISSIONS BLESSED SINCE DEFECT 341** (2026-10-07). Every
+# number above counted the programs collected, and a program `--emit-c`
+# refuses, with nothing blessed, passes here with no C compared: 35 of the 502
+# collected that day, 32 of the 40 in `fixedbugs/` and three in `ir/`, so the
+# floor could not see blessed files retired along with programs that came to
+# be refused, which is an oracle stopping comparing in silence. So the floor
+# is the programs whose emission is blessed, a count every machine reads the
+# same: one it cannot emit for a library it lacks is skipped by name, and
+# floored below a third. **467 on 2026-10-07**: `ls tests/emission/*.c | wc
+# -l`, every one claimed (the suite's `orphans`), and the suite's own count.
 constant LEAST: i64
-    408
+    467
+
+# **The refusals, counted apart** (defect 341): the programs with nothing
+# blessed, each of which passes only as a refusal, exit 1 and no C. Floored so
+# that a walk that stops reaching them, or cases deleted with them, is a red
+# and not a smaller green, as the blessed floor above does for the rest. **35
+# on 2026-10-07**, `fixedbugs/` 32 and `ir/` 3, the collected count less the
+# blessed one.
+constant LEAST_REFUSED: i64
+    35
 
 # One program and the bytes it was blessed to emit.
 record Program
@@ -166,10 +187,31 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # the seam is deliberate: `sweep` takes its floor as a parameter and the
     # cases below hand it 1 or 2 over a two-file tree, so a decay check in there
     # would call every test's stub tree outgrown. This is where the REAL floor
-    # meets the REAL count.
-    floors.check(@r, label: "emission", found: programs.len(), floor: LEAST, what: "programs reaching the emitter")
+    # meets the REAL count, and the refusals meet theirs.
+    blessed = blessed_among(programs)
+    floors.check(@r, label: "emission", found: blessed, floor: LEAST, what: "programs whose emission is blessed")
+    floors.check(
+        @r,
+        label: "emission",
+        found: programs.len() - blessed,
+        floor: LEAST_REFUSED,
+        what: "programs with nothing blessed, each one `--emit-c` must refuse"
+    )
     swept = sweep(scratch: scratch, compiler: compiler, store: STORE, programs: programs, update: blessing(), least: LEAST)?
     return ok(report.tally(one: r, two: swept))
+
+# How many of `programs` have a blessed emission: the ones this suite compares,
+# or skips by name where the machine lacks a library they bind. A program with
+# nothing blessed passes only as a refusal, so it is no emission compared and
+# is counted apart (defect 341).
+function blessed_among(programs: [Program]) -> i64
+    count: i64 @ 0
+
+    for one in programs
+        if shell.exists(one.stored)
+            count @ count + 1
+
+    return count
 
 # Whether this run blesses: `UPDATE_EMISSION=1` and nothing else. A value that
 # is not UTF-8 is not `1`, so it blesses nothing and the run compares, which
@@ -216,12 +258,13 @@ function collect(scratch: str) -> [Program]?
 # own instead of over the repository.
 function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64) -> report.Report?
     r: report.Report @ report.empty()
+    blessed = blessed_among(programs)
 
-    if programs.len() < least
+    if blessed < least
         report.keep_failure(
             @r,
             label: "emission",
-            detail: "  " + programs.len().to_str() + " programs, and there were " + least.to_str() + " — an oracle that quietly stops comparing is worse than no oracle"
+            detail: "  " + blessed.to_str() + " programs whose emission is blessed, and there were " + least.to_str() + " — an oracle that quietly stops comparing is worse than no oracle"
         )
     seen: {str: str} @ {}
     skipped: i64 @ 0
@@ -536,13 +579,15 @@ test "a program with nothing blessed says how to bless it, and blessing writes t
     stub = emitter(scratch: scratch, name: "stub-emit-new.sh", says: proper)
     assert !stub.is_err()
 
+    # Floored at 0: the floor counts the emissions blessed (defect 341), and
+    # before the blessing this tree has none.
     red = sweep(
         scratch: scratch,
         compiler: stub.must(),
         store: scratch + "/emission-new",
         programs: programs,
         update: false,
-        least: 1
+        least: 0
     )
     assert !red.is_err()
     assert red.must().failed == 1
@@ -554,7 +599,7 @@ test "a program with nothing blessed says how to bless it, and blessing writes t
         store: scratch + "/emission-new",
         programs: programs,
         update: true,
-        least: 1
+        least: 0
     )
     assert !blessed.is_err()
     assert blessed.must().failed == 0
@@ -589,8 +634,48 @@ test "a blessed file no program claims is reported, and so is a collision and a 
     ]
     clash = sweep(scratch: scratch, compiler: stub.must(), store: store, programs: twice, update: false, least: 3)
     assert !clash.is_err()
-    assert strings.contains(text: clash.must().failures[0], needle: "2 programs, and there were 3")
+    assert strings.contains(
+        text: clash.must().failures[0],
+        needle: "2 programs whose emission is blessed, and there were 3"
+    )
     assert strings.contains(text: clash.must().failures[1], needle: "claimed by one/x as well")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 341, held as a test (2026-10-07): the floor counted the programs it
+# collected, so a program `--emit-c` refuses, with nothing blessed, counted as an
+# emission compared. Two programs, one blessed and one refused: the refusal is
+# read as one and passes, and a floor of two is NOT met, since one emission is
+# blessed; until that day the floor read two programs and was met.
+test "fixedbugs: the floor counts the emissions blessed, and a refusal is read as one and counted apart (defect 341)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    one = one_program_tree(scratch: scratch, name: "emission-341")
+    assert !one.is_err()
+    assert !write_file(path: one.must().stored, text: emitted_fixture()).is_err()
+    tree = scratch + "/emission-341"
+    assert !write_file(path: tree + "/refused.hero", text: "function main()\n    print(1)\n").is_err()
+    refused = Program(source: tree + "/refused.hero", stored: tree + "/refused.c", label: "one/refused")
+    path = scratch + "/stub-emit-341.sh"
+    script = "#!/bin/sh\ncase \"$2\" in\n    *refused.hero) printf 'error[ffi_return_type]: refused\\n' 1>&2; exit 1 ;;\nesac\nprintf '%s' " + inside_a_script(emitted_fixture()) + "\nexit 0\n"
+    assert !write_file(path: path, text: script).is_err()
+    assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path]).is_err()
+    programs: [Program] = [one.must(), refused]
+    assert blessed_among(programs) == 1
+    met = sweep(scratch: scratch, compiler: path, store: tree, programs: programs, update: false, least: 1)
+    assert !met.is_err()
+
+    # The blessed one twice (its bytes, its descriptors), the refusal once, and
+    # the store: four, and nothing failed.
+    assert met.must().passed == 4
+    assert met.must().failed == 0
+    short = sweep(scratch: scratch, compiler: path, store: tree, programs: programs, update: false, least: 2)
+    assert !short.is_err()
+    assert short.must().failed == 1
+    assert strings.contains(
+        text: short.must().failures[0],
+        needle: "1 programs whose emission is blessed, and there were 2"
+    )
     assert !shell.remove_tree(scratch).is_err()
 
 test "two emissions of different lengths report the lengths rather than a line"
@@ -629,6 +714,8 @@ test "a blessing refuses a capture that does not open with the emitter's header,
 
     # A capture with no header — what another run's stdout, or a wrong
     # compiler's, would leave: refused, and nothing is written.
+    # Floored at 0 here and below: nothing is blessed before the blessing, and
+    # the floor counts the emissions blessed (defect 341).
     wrong = emitter(scratch: scratch, name: "stub-emit-doctored.sh", says: "int main(void) { return 0; }\n")
     assert !wrong.is_err()
     refused = sweep(
@@ -637,7 +724,7 @@ test "a blessing refuses a capture that does not open with the emitter's header,
         store: scratch + "/emission-doctored",
         programs: programs,
         update: true,
-        least: 1
+        least: 0
     )
     assert !refused.is_err()
     assert refused.must().failed == 1
@@ -653,7 +740,7 @@ test "a blessing refuses a capture that does not open with the emitter's header,
         store: scratch + "/emission-doctored",
         programs: programs,
         update: true,
-        least: 1
+        least: 0
     )
     assert !blessed.is_err()
     assert blessed.must().failed == 0
@@ -701,6 +788,10 @@ test "fixedbugs: a program that cannot emit is skipped only where the machine la
     assert strings.contains(text: refuted.must().failures[0], needle: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
+
+    # Blessed as well, as a program is that emits where its library is: the
+    # floor of 1 counts it (defect 341), and only the skip answers here.
+    assert !write_file(path: tree + "/store-lacks/lacks.c", text: "int main(void) { return 0; }\n").is_err()
     excused = sweep(
         scratch: scratch,
         compiler: compiler.must(),
