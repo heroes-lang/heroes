@@ -1,0 +1,108 @@
+# Fixed 2026-10-07, defect 409 (class improvement): a list of reports grown
+# through a field copied every report before it at each push, so a file of N
+# functions that run off their end cost N squared copies of a diagnostic
+# before it was told: 499,500 at 1,000 functions and 7,998,000 at 4,000 on
+# the base, counted per call site in an instrumented runtime. The checker
+# holds them back in `c.missing_returns` and now appends them through a lent
+# list (`check/state.append_diagnostic`), in place. What this case pins is
+# that the list keeps every report, once, in the order the functions stand:
+# 24 functions, each told at its own line. The cost is the lane's report.
+
+function f0(x: i64) -> i64  #~ missing_return
+    if x > 0
+        return x
+
+function f1(x: i64) -> i64  #~ missing_return
+    if x > 1
+        return x
+
+function f2(x: i64) -> i64  #~ missing_return
+    if x > 2
+        return x
+
+function f3(x: i64) -> i64  #~ missing_return
+    if x > 3
+        return x
+
+function f4(x: i64) -> i64  #~ missing_return
+    if x > 4
+        return x
+
+function f5(x: i64) -> i64  #~ missing_return
+    if x > 5
+        return x
+
+function f6(x: i64) -> i64  #~ missing_return
+    if x > 6
+        return x
+
+function f7(x: i64) -> i64  #~ missing_return
+    if x > 7
+        return x
+
+function f8(x: i64) -> i64  #~ missing_return
+    if x > 8
+        return x
+
+function f9(x: i64) -> i64  #~ missing_return
+    if x > 9
+        return x
+
+function f10(x: i64) -> i64  #~ missing_return
+    if x > 10
+        return x
+
+function f11(x: i64) -> i64  #~ missing_return
+    if x > 11
+        return x
+
+function f12(x: i64) -> i64  #~ missing_return
+    if x > 12
+        return x
+
+function f13(x: i64) -> i64  #~ missing_return
+    if x > 13
+        return x
+
+function f14(x: i64) -> i64  #~ missing_return
+    if x > 14
+        return x
+
+function f15(x: i64) -> i64  #~ missing_return
+    if x > 15
+        return x
+
+function f16(x: i64) -> i64  #~ missing_return
+    if x > 16
+        return x
+
+function f17(x: i64) -> i64  #~ missing_return
+    if x > 17
+        return x
+
+function f18(x: i64) -> i64  #~ missing_return
+    if x > 18
+        return x
+
+function f19(x: i64) -> i64  #~ missing_return
+    if x > 19
+        return x
+
+function f20(x: i64) -> i64  #~ missing_return
+    if x > 20
+        return x
+
+function f21(x: i64) -> i64  #~ missing_return
+    if x > 21
+        return x
+
+function f22(x: i64) -> i64  #~ missing_return
+    if x > 22
+        return x
+
+function f23(x: i64) -> i64  #~ missing_return
+    if x > 23
+        return x
+
+function main()
+    print(f0(1))
