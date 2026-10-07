@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-429-a-map-index-literal-is-held-to-the-key-type.hero:11:17: error[int_out_of_range]: `300` does not fit a `u8`
+tests/golden/check/fixedbugs-429-a-map-index-literal-is-held-to-the-key-type.hero:15:11: error[int_out_of_range]: `256` does not fit a `u8`
+tests/golden/check/fixedbugs-429-a-map-index-literal-is-held-to-the-key-type.hero:20:17: error[int_out_of_range]: `-1` does not fit a `u8`
+tests/golden/check/fixedbugs-429-a-map-index-literal-is-held-to-the-key-type.hero:25:11: error[type_mismatch]: expected `u8`, found `i64`
+tests/golden/check/fixedbugs-429-a-map-index-literal-is-held-to-the-key-type.hero:29:11: error[type_mismatch]: expected `str`, found `i64`

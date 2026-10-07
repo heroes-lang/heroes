@@ -1,0 +1,39 @@
+# Fixed defect 429, 2026-10-07 (lane b13-gen402, found beside defect 415).
+# Symptom: `names: {u8: str} = {11: "eleven"}`, then `names[11]`, was refused
+# `type_mismatch`, *expected `u8`, found `i64`*, and so was the store
+# `names[12] @ "twelve"`. Cause: an index was synthesised before the map's key
+# type was asked, so a literal there took `i64`, its type with no context.
+# Repair: spec § 2, a literal takes the type its context asks for, and a map's
+# key type is what its index is asked: an index with no type of its own (a
+# number literal, a `.case`) is checked against the key type
+# (`check/access.hero`'s `key_asked`); an index with a type keeps it and is
+# held to the key as before. The shapes: a read, a store, `.default`, a
+# negative key, a key read through a record's field, a `.case` key, and the
+# indexes this does not touch, an `i64` key, an array's and a string's.
+
+variant Op
+    plus
+    minus
+
+record Holder
+    m: {u16: str}
+
+function main()
+    names: {u8: str} @ {11: "eleven"}
+    print(names[11].must())
+    names[12] @ "twelve"
+    print(names[12].must())
+    print(names[13].default("none"))
+    low: {i8: str} = {-128: "lowest"}
+    print(low[-128].must())
+    h = Holder(m: {7: "seven"})
+    print(h.m[7].must())
+    ops: {Op: str} = {.plus: "plus"}
+    print(ops[.plus].must())
+    print(ops[.minus].is_err())
+    wide: {i64: str} = {5: "five"}
+    print(wide[5].must())
+    xs: [u8] = [1, 2, 3]
+    print(xs[1])
+    s = "abc"
+    print(s[2])
