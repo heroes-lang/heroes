@@ -1,0 +1,22 @@
+error[unknown_name]: nothing named `sqrt` is in scope — did you mean `sort`?
+  at tests/golden/full/fixedbugs-270-a-name-called-and-bound-nowhere-is-told-how-c-binds-one.hero:11:11
+     |
+  11 |     print(sqrt(2.0))  #~ unknown_name
+     |           ^^^^
+  note: if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function sqrt(…) -> …` (§4.19)
+  fix (guess): rename to `sort`
+
+error[unknown_function]: no function named `sqrt` — `x.sqrt(…)` means `sqrt(x, …)`, so `sqrt` has to be a top-level function or a built-in — did you mean `sort`?
+  at tests/golden/full/fixedbugs-270-a-name-called-and-bound-nowhere-is-told-how-c-binds-one.hero:12:15
+     |
+  12 |     print(2.0.sqrt())  #~ unknown_function
+     |               ^^^^
+  note: if `sqrt` is a function of C, an `extern` group in this file binds it: the group's line names the header, `extern "<header>.h"`, and the signature is indented below it, `function sqrt(…) -> …` (§4.19)
+  fix (guess): rename to `sort`
+
+error[unknown_name]: nothing named `sqrt` is in scope — did you mean `sort`?
+  at tests/golden/full/fixedbugs-270-a-name-called-and-bound-nowhere-is-told-how-c-binds-one.hero:14:18
+     |
+  14 |     print(xs.map(sqrt))  #~ unknown_name
+     |                  ^^^^
+  fix (guess): rename to `sort`

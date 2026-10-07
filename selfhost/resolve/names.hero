@@ -27,7 +27,9 @@ use resolve/qualified
 use module/diagnostics
 use keywords
 
-function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+# `called` says the name is a call's callee, `sqrt(2.0)`: one nothing binds
+# is then told how a function of C is bound (defect 270).
+function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, called: bool)
     span = a.exprs[id].span
     text = source.span_text(s, span)
     local = state.lookup_local(r, text)
@@ -113,7 +115,11 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
         return
     candidates = read_candidates(@r)
     near = state.near_names(@r, text, candidates)
-    state.push_diagnostic(@r, errors.unknown_name(text, near, span))
+
+    if called
+        state.push_diagnostic(@r, errors.unknown_called(text, near, span))
+    else
+        state.push_diagnostic(@r, errors.unknown_name(text, near, span))
 
 # The candidates for a name READ as a value: the value candidates, and the
 # three keywords that are values, `true`, `false` and `nullptr` (spec § 7
