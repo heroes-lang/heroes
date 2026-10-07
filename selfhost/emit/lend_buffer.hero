@@ -34,7 +34,7 @@ use emit/ctype
 use emit/aggregate
 use emit/lend_count
 use emit/lend_extent
-use emit/extern_probe
+use emit/probe_params
 use widths
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader.
@@ -110,7 +110,7 @@ function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, d
     if header.is_err()
         return "_Static_assert(0, \"" + lend_extent.UNASKED_MARKER + callee + " " + params[index] + ": the pointee check read no unit for this counted parameter\");"
     pointee = "__typeof__(*(" + header.must() + ")0)"
-    spelled = extern_probe.c_type_of(names, c, ty: element)
+    spelled = probe_params.c_type_of(names, c, ty: element)
 
     if spelled.is_err()
         return ""
