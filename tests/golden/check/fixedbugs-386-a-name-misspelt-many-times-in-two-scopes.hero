@@ -1,0 +1,25 @@
+# fixedbugs, defect 386, lane b14-resolve, 2026-10-07 (lane b12-fit12's
+# measurement): a name misspelt many times asked the did-you-mean again at
+# each, and each of a rename's trial readings (`rename_fit.hero`) asked again
+# every question the reading before had asked. A question is now answered
+# once, by its name and its candidate lists read by their values
+# (`resolve/asked.hero`), and the trials share their answers, so this file
+# asks four questions where it asked 35 in each of its readings; every
+# message and every rename's verdict is what it was, byte for byte, and
+# `check --apply` writes all 35 renames. The cost is the lane's counts: one
+# line of 2,000 such names from 24.13 to 8.94 billion instructions.
+function total_of(xs: [i64]) -> i64
+    return xs.len()
+
+function main()
+    total = 1
+    count = 2
+    a = totl + totl + totl + totl + totl + totl + totl + totl  #~ unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name
+    b = totl + totl + totl + totl + totl + totl + totl + totl  #~ unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name
+    c = totl + totl + totl + totl + totl + totl + totl + totl  #~ unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name
+    print(a + b + c + coutn * coutn)  #~ unknown_name unknown_name
+    print(totl_of([1, 2]))  #~ unknown_name
+
+function other() -> i64
+    total = 3
+    return totl + totl + totl + totl + totl + totl + totl + totl  #~ unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name unknown_name

@@ -35,9 +35,20 @@ use resolve/decls as resolve_decls
 use resolve/cycles
 use resolve/plain_literal
 use resolve/rest_zero
+use resolve/asked
 
 function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
+    asking: asked.Asking @ asked.new_asking()
+    return resolve_asking(a, s, decls, uses, @asking)
+
+# The same, the did-you-mean answering from `asking` and keeping its new
+# answers there, so a reading after this one asks no question this one
+# asked: `rename_fit.fits` reads each trial so (defect 386). The resolver
+# holds the one reference while it works, so the answers grow in place.
+function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use], @asking: asked.Asking) -> resolved.Resolved
     r: state.Resolver @ state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
+    r.asking @ asking
+    asking @ asked.new_asking()
 
     # A flat scan of the arena, not a walk: a hole suspends the unused rule
     # wherever it is, including inside a construct the walk gives up on.
@@ -84,6 +95,7 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
     # ahead of these (parse's rule): grouped by the stage that can explain
     # them, ordered by position inside it.
     r.out.diagnostics @ by_position(r.out.diagnostics)
+    asking @ r.asking
     return r.out
 
 # The diagnostics in order of the span's start, equal starts in the order
@@ -207,6 +219,24 @@ test "an @ a function takes none for asks nothing of the name it marks"
     )
     assert written.diagnostics.len() == 1
     assert written.diagnostics[0].code == "not_mutable"
+
+# Defect 386: a reading handed the answers of another asks none of their
+# questions again, and says what it says alone, byte for byte: a name
+# misspelt many times, in two scopes, and the same program read twice.
+test "a reading handed another's answers says what it says alone"
+    text = "function total_of(xs: [i64]) -> i64\n    return xs.len()\n\nfunction f() -> i64\n    total = 1\n    return totl + totl + totl + totl_of([1])\n\nfunction g() -> i64\n    count = 2\n    return totl + coutn\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    alone = resolve(p.tree, s, p.decls, p.uses)
+    asking: asked.Asking @ asked.new_asking()
+    first = resolve_asking(p.tree, s, p.decls, p.uses, @asking)
+    answered = keys(asking.answers).len()
+    second = resolve_asking(p.tree, s, p.decls, p.uses, @asking)
+    assert first.diagnostics == alone.diagnostics
+    assert second.diagnostics == alone.diagnostics
+    assert keys(asking.answers).len() == answered
+    assert answered == 4
+    assert alone.diagnostics.len() == 6
 
 # Defect 439: an `@` no parameter of the call takes, past the last or handed
 # to a callee that is no function, asks nothing of the name it marks and

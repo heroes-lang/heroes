@@ -41,7 +41,7 @@ use resolve/vocab
 use resolve/binding as resolve_binding
 use inventory
 use resolve/errors
-use resolve/near_names as nearness
+use resolve/asked
 use resolve/braced_names
 use resolve/offered
 use module/diagnostics
@@ -171,6 +171,8 @@ record Resolver
     zero_words: {i64: token.Span}
     # What each module offers the did-you-mean, gathered once (defect 385).
     offered: {str: offered.Offered}
+    # What the did-you-mean has answered (`resolve/did_you_mean.hero`).
+    asking: asked.Asking
 
 # The two arenas start full of `.unresolved`, one slot per expression and
 # one per written type in the whole program.
@@ -212,7 +214,8 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
         module_reads: name_rows.new_name_sets(),
         braced: [],
         zero_words: {},
-        offered: held
+        offered: held,
+        asking: asked.new_asking()
     )
 
 # Appended in place, the list lent: a push through the field place copied
@@ -273,19 +276,6 @@ function field_in_reach(r: Resolver, text: str) -> bool
                 return true
 
     return false
-
-# The candidates for a name that resolved to nothing, remembered so the
-# unused sweep can stay quiet about them — keyed by the module that was
-# offered the repair, so a did-you-mean in geom.hero cannot exempt a name
-# in main.hero (a dropped error, 2026-08-12). The candidates are lists read
-# one after another, never joined (defect 385).
-function near_names(@r: Resolver, name: str, candidates: [[str]]) -> [str]
-    near = nearness.nearest_in(name, candidates)
-
-    for candidate in near
-        keyed_add(@r.suggested, module: r.module, name: candidate)
-
-    return near
 
 # Records what an occurrence resolved to, and counts the read.
 function record_use(@r: Resolver, at: i64, to: resolved.Ref)
