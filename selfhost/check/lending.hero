@@ -95,7 +95,7 @@ function is_builtin_named(a: ast.Ast, r: resolved.Resolved, at: i64, name: str) 
         return false
 
     match r.uses[named]
-        .builtin b                            => return inventory.table()[b.at].name == name
+        .builtin b                            => return inventory.name_of(b.at) == name
         .top | .local | .module | .unresolved => return false
 
 # The call this expression is an argument of, for every expression in the

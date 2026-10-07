@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-03
-commit: ce369512151c18bae33ee6c0f0f4b0c99eedb97c
+commit: b2be2c9c016ac96a13762f7f9ae6cbcdbf88a996
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a cost growing with the type's depth times the expressions; no program refused or wrong.
 
     Repaired at `ce369512`, 2026-10-07 (lane b14-check), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `intern` writes each type's poison beside it once, from what it holds, and `poisoned` reads that entry: on an index chain 2,000 deep, `check --brief` ran `poisoned` 2,005,128 times before (2,005,125 on the emit lane's tip `96473596`, re-run) and 2,089 after, and retired 2,252M instructions before and 1,203M after, every output byte-identical.
+
+    Repaired at `b2be2c9c`, 2026-10-07 (lane b14-check), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `ce369512` took `check/table.hero` to 447 lines of code in `layout`'s unit, past its decided 389, which the round's `layout` found red at `b467b826`: `fits` and `shared_at`, the relation §4.9 asks of two function types, moved to `check/type_fit.hero`, so the table is 370 and `layout` whole reads 5 passed, 0 failed.

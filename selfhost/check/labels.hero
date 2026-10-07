@@ -5,7 +5,7 @@
 # reads `fd.value.params[position].name`, a span into the source the author
 # wrote, and compares the call site's label against the text at that position.
 # A Tier-1 built-in has no declaration and therefore no span, so the name has
-# to be a `str` the compiler carries: `inventory.labelled()`.
+# to be a `str` the compiler carries: `inventory.labelled_of`.
 #
 # Both halves of the rule live here, because they are one rule: a missing label
 # is `needs_label` and a label at the wrong position is `wrong_label`. The
@@ -28,7 +28,7 @@ use source
 use label_errors
 use resolved
 use inventory
-use check/table
+use check/type_fit
 use check/state
 use check/contextual
 
@@ -299,7 +299,7 @@ function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) 
     while i < lowered.len()
         written = source.span_text(s, params[i].name)
 
-        if table.shared_at(lowered, at: i) && written != "_"
+        if type_fit.shared_at(lowered, at: i) && written != "_"
             any_shared @ true
             names @ names.push(written)
         else
@@ -310,7 +310,7 @@ function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) 
             # one type. And a position the body called `_` makes no claim about
             # itself — which is what `_` means at every other site in this
             # language — so it fits whatever the expected type calls it
-            # (`table.fits`). Panel 129's ffi seat is why: zlib's `free_func`
+            # (`type_fit.fits`). Panel 129's ffi seat is why: zlib's `free_func`
             # ignores `opaque` in most implementations and reads it in the ones
             # that pool, and one header typedef takes both.
             names @ names.push("")

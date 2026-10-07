@@ -59,6 +59,23 @@ record Builtin
 # that module's own comment says a program is free to declare its own
 # `validated`. Reserving that name would have broken a shipped feature to save a
 # word, which is what panel 162's resolution assumed could be done and could not.
+#
+# **The names are also a constant, `NAMES` below, and a lookup reads that**
+# (defect 264). `table()` is a function, so every call builds its forty-one
+# records again: 137,680 tables in the compiler's own check, about 18,400
+# instructions each, when every one of those callers wanted one name or one
+# index. A constant of literals is laid out once by clang and a read of it
+# builds nothing (panel 195, `emit/static_constant.hero`).
+#
+# **Why the names are written twice, and what holds the two together.** A
+# constant's body may not construct a record, a construction being a call
+# (`resolve/constant_body.hero`), so the records cannot be the constant; and
+# `table()` built from `NAMES` with a loop measured 41,000 instructions a call,
+# against the literal's 18,400 (2026-10-07), so it keeps its literal for the
+# readers that want an entry whole. The test *the names and the table are one
+# list* holds them to each other position by position, so an entry added to
+# one and not the other, or written in another place, fails the compiler's own
+# tests and is never a wrong index in silence.
 
 function table() -> [Builtin]
     return [
@@ -105,6 +122,57 @@ function table() -> [Builtin]
         Builtin(name: "ptr", tier: .runtime)
     ]
 
+# `table()`'s names in its order, which is their identity (above).
+constant NAMES: [str]
+    [
+        "all"
+        "args"
+        "any"
+        "chars"
+        "cstr"
+        "default"
+        "exit"
+        "fail"
+        "filter"
+        "find"
+        "fold"
+        "keys"
+        "is_err"
+        "join"
+        "len"
+        "map"
+        "must"
+        "ok"
+        "print"
+        "push"
+        "range"
+        "read_file"
+        "repeat"
+        "slice"
+        "sort"
+        "to_f32"
+        "to_f64"
+        "to_i16"
+        "to_i32"
+        "to_i64"
+        "to_i8"
+        "to_str"
+        "to_u16"
+        "to_u32"
+        "to_u64"
+        "to_u8"
+        "write_file"
+        "lease"
+        "end_lease"
+        "validated_bytes"
+        "ptr"
+    ]
+
+# The name of the built-in a `Ref`'s builtin case points at: one read of the
+# constant, nothing built.
+function name_of(at: i64) -> str
+    return NAMES[at]
+
 # The banner, and only the banner (panel 054): the one program
 # measurement 007 found NO route to without it.
 
@@ -117,11 +185,11 @@ function table() -> [Builtin]
 # free. Linear search: the table needs no index of its own, and every list
 # the compiler shows stays in the table's one deterministic order.
 function index_of(name: str) -> i64?
-    entries = table()
+    names = NAMES
     i: i64 @ 0
 
-    while i < entries.len()
-        if entries[i].name == name
+    while i < names.len()
+        if names[i] == name
             return ok(i)
         i @ i + 1
 
@@ -152,19 +220,15 @@ record Labelled
     # The type those positions share, as the diagnostic pronounces it.
     shared: str
 
-function labelled() -> [Labelled]
-    return [
-        Labelled(name: "fail", params: ["code", "msg"], shared: "str")
-        Labelled(name: "slice", params: ["", "from", "to"], shared: "i64")
-    ]
-
-# The entry for a built-in, or absent when its arguments need no labels.
+# The entry for a built-in, or absent when its arguments need no labels. A
+# match on the name, so a lookup builds the one entry it answers with and
+# nothing for any other name: it built both entries at every call until
+# defect 264, 6,279 times in the compiler's own check.
 function labelled_of(name: str) -> Labelled?
-    for entry in labelled()
-        if entry.name == name
-            return ok(entry)
-
-    return fail(code: "free", msg: "this built-in has no two parameters of one type")
+    return match name
+        "fail"  => ok(Labelled(name: name, params: ["code", "msg"], shared: "str"))
+        "slice" => ok(Labelled(name: name, params: ["", "from", "to"], shared: "i64"))
+        _       => fail(code: "free", msg: "this built-in has no two parameters of one type")
 
 ## Tests
 
@@ -200,6 +264,20 @@ test "the inventory is forty-one names and the order is identity"
     assert entries[2].name == "any"
     assert entries[11].name == "keys"
     assert entries[12].name == "is_err"
+
+# Defect 264: the constant a lookup reads and the table its readers take whole
+# are one list, name for name in one order, and each lookup answers what the
+# table says.
+test "the names and the table are one list, position for position"
+    entries = table()
+    assert NAMES.len() == entries.len()
+    i: i64 @ 0
+
+    while i < entries.len()
+        assert NAMES[i] == entries[i].name
+        assert name_of(i) == entries[i].name
+        assert index_of(entries[i].name).must() == i
+        i @ i + 1
 
 test "the tier says where the implementation lives"
     entries = table()
