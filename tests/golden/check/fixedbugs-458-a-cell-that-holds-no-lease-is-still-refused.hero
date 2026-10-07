@@ -1,0 +1,13 @@
+# Fixed 2026-10-07, defect 458, lane b14-check: the refusal the repair must
+# keep. A cell that does not hold a lease, `nullptr` or a parameter, is still
+# told it is not such a cell, with its `@` or without it, since the `@` is not
+# what is wrong there. This case pins it; it was not red on the base.
+
+function free(@p: cstr)
+    end_lease(@p)  #~ end_lease_of_no_lease
+
+function main()
+    d: cstr @ nullptr
+    end_lease(@d)  #~ end_lease_of_no_lease
+    end_lease(d)  #~ end_lease_of_no_lease
+    free(@d)

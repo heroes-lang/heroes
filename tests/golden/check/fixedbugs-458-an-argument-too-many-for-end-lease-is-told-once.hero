@@ -1,0 +1,18 @@
+# Fixed 2026-10-07, defect 458, lane b14-check.
+# Symptom: `end_lease(@c, 1)` on a lease cell was told `builtin_shape`, the
+# count, and `end_lease_of_no_lease`, *this argument is not such a cell*,
+# which is false of `@c`: one mistake, the argument too many, and a second
+# message that was not true.
+# Cause: the lease rule judged the call's count again, with one message for
+# every way an `end_lease` can be wrong. Now the count is the built-in
+# dispatch's alone to tell.
+# This case: an argument too many after the cell, before it, and a second
+# cell where one is taken.
+
+function main()
+    x = "abc"
+    c: cstr @ x.lease()
+    end_lease(@c, 1)  #~ builtin_shape
+    end_lease(1, @c)  #~ builtin_shape
+    d: cstr @ x.lease()
+    end_lease(@c, @d)  #~ builtin_shape

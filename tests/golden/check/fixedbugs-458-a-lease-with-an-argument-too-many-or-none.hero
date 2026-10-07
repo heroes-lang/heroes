@@ -1,0 +1,12 @@
+# Fixed 2026-10-07, defect 458, lane b14-check: the shape beside it on the
+# other half of the pair. A `lease` with an argument too many, or none, is
+# told its count and nothing more, measured so on the base, and the cell it
+# initialises is still a lease cell, so its `end_lease` is quiet. This case
+# pins it; it was not red on the base.
+
+function main()
+    x = "abc"
+    c: cstr @ x.lease(1)  #~ builtin_shape
+    d: cstr @ lease()  #~ builtin_shape
+    end_lease(@c)
+    end_lease(@d)

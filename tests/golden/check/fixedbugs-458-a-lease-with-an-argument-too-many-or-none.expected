@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-458-a-lease-with-an-argument-too-many-or-none.hero:9:15: error[builtin_shape]: `lease` does not take 2 argument(s) of those types
+tests/golden/check/fixedbugs-458-a-lease-with-an-argument-too-many-or-none.hero:10:15: error[builtin_shape]: `lease` does not take 0 argument(s) of those types

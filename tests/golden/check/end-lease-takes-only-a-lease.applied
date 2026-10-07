@@ -1,0 +1,21 @@
+# M-held-bytes, panel 125. `end_lease` frees what `.lease()` made and takes the
+# cell that holds it. Anything else — a pointer C handed back, a lend, a lease
+# passed by value rather than by cell — is refused, because the release must
+# null the one cell the pointer lives in, and these have no such cell.
+
+extern "stdlib.h"
+    function getenv(name: cstr lent) -> cstr
+
+function main()
+    d: cstr @ getenv(name: "HOME".cstr())
+    end_lease(@d)  #~ end_lease_of_no_lease
+    c: cstr @ "abc".lease()
+    end_lease(@c)  #~ marker_mismatch
+    end_lease(@c)
+
+# Moved 2026-10-07, defect 458: the lease passed by value, `end_lease(c)` on
+# the cell `c`, is still refused, and is now told what is wrong with it, the
+# `@` it owes (`marker_mismatch`, with the certain fix that writes it), where
+# it was told it is not such a cell. `c` is one; the release needs the cell
+# itself, which only `@c` hands over. The pointer C handed back, above it,
+# has no such cell and is told so as before.
