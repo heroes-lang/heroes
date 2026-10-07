@@ -217,35 +217,31 @@ function success_on_parameter(@c: cursor.Cursor)
         span: keyword
     )
 
-# `counted_by <sibling>` after a `ptr` parameter: how far C reads or writes
-# through it (panel 166's route C, ratified 2026-09-19; defect 063).
+# `counted_by <extent>` after a parameter's type: how far C reads or writes
+# through it (panel 166's route C; defect 063; panel 196's R5). The extent is
+# the sibling C reads the count from, `sl_fill(p: s.name.ptr(), n: 64)` on an
+# `i8[8]` having moved the next field to `0x41414141` at exit 0 before the mark
+# tied the two; or, where C's extent is fixed and no argument carries it
+# (`SHA256_Final`), a group `constant` or a number, `counted_by 32`. A span is
+# all this reader returns; `check/lend_extent.hero` tells the three apart, and
+# the emitter writes the C assertion against the place's own `sizeof`.
 #
-# IT NAMES A SIBLING AND NOT A NUMBER, which is the whole of the route. The
-# extent a lend crosses with is stated by the CALL, and until this mark nothing
-# related that number to the field: `sl_fill(p: s.name.ptr(), n: 64)` on an
-# `i8[8]` moved the sibling field to `0x41414141` at exit 0. The mark says which
-# argument is the count, so the emitter can write one C assertion against the
-# field's own `sizeof`.
-#
-# THE SPELLING IS C'S OWN. Apple's SDK and the Linux kernel both write
-# `__counted_by(n)` for this relation, and `check/lend_extent.hero` judges the
-# name against the signature in hand. The word is contextual, like `owned`,
-# `consumes`, `acquires` and `borrows`: `in_group` is what keeps it readable
-# after a parameter's type and nowhere else, so a program may still call
-# anything `counted_by`.
+# THE SPELLING IS C'S OWN, `__counted_by(n)` in Apple's SDK and the Linux
+# kernel. The word is contextual, like `owned` and `borrows`: `in_group` keeps
+# it readable after a parameter's type and nowhere else.
 function counted_by_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
     if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_COUNTED_BY
         return fail(code: "absent", msg: "nothing here is counted")
     keyword = cursor.bump(@c).span
 
-    if !cursor.at(c, .ident)
+    if !cursor.at(c, .ident) && !cursor.at(c, .int_lit)
         cursor.error(
             @c,
             code: "expected_extent",
-            message: "`counted_by` names the parameter beside it that says how far C reads: `read(fd: i32, buf: ptr counted_by n, n: u64)`",
+            message: "`counted_by` names the parameter beside it that says how far C reads, a constant of the group, or the number itself: `read(fd: i32, buf: ptr counted_by n, n: u64)`, `@md: [u8] counted_by 32 lent`",
             span: cursor.here_or(c, keyword)
         )
-        return fail(code: "absent", msg: "the extent's name is missing")
+        return fail(code: "absent", msg: "the extent is missing")
     return ok(cursor.bump(@c).span)
 
 function owned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> token.Span?
@@ -331,3 +327,16 @@ test "a dangling bar is reported at the bar and not at what follows"
     assert c.diagnostics[0].code == "expected_releaser"
     assert c.diagnostics[0].span.start == 13
     assert c.diagnostics[0].span.end == 14
+
+# Panel 196's R5: the extent is a sibling's name, a group constant's, or the
+# number itself; a string or nothing is no extent.
+test "counted_by reads a name or a number, and nothing else"
+    for extent in ["n", "SHA256_DIGEST_LENGTH", "32", "0x20", "1_000"]
+        text = keywords.WORD_COUNTED_BY + " " + extent
+        c: cursor.Cursor @ tokens_of(text)
+        assert !counted_by_marker(@c, text, in_group: true).is_err()
+
+    for extent in [" \"n\"", " 1.5", ""]
+        text = keywords.WORD_COUNTED_BY + extent
+        c: cursor.Cursor @ tokens_of(text)
+        assert counted_by_marker(@c, text, in_group: true).is_err()

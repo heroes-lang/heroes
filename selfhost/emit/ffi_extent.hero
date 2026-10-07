@@ -25,6 +25,14 @@ constant MARKER: str
 function overstated_extent(s: source.Source, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
+    stated_record = ffi_lookup.after(text: line, marker: lend_extent.STATED_RECORD_MARKER)
+
+    if !stated_record.is_err()
+        return short_place(s, rest: stated_record.must(), whole: true)
+    stated_field = ffi_lookup.after(text: line, marker: lend_extent.STATED_MARKER)
+
+    if !stated_field.is_err()
+        return short_place(s, rest: stated_field.must(), whole: false)
     record_rest = ffi_lookup.after(text: line, marker: lend_extent.RECORD_MARKER)
 
     if !record_rest.is_err()
@@ -94,6 +102,55 @@ function overstated_record(s: source.Source, rest: str) -> diag.Diagnostic?
     )
     d.notes @ d.notes.push(
         "a record lent whole is the one object at that address, so C reaching further writes over whatever the stack holds beside it, silently, at exit 0. State at most the record's own size in that unit"
+    )
+    return ok(d)
+
+# `<name> <param> <stated> <lend start> <lend end> <length> <bytes|unit>
+# <header type…>`: the DECLARATION states the extent (panel 196's R5), so the
+# number is C's word about itself and what is short is the place the call
+# lends, a field or a record whole. The message lands on the lend, and there
+# is no `Fix`: a longer place is the program's to choose, and the declaration
+# is the author's word about C, which no fix may rewrite (panel 196's R8).
+function short_place(s: source.Source, rest: str, whole: bool) -> diag.Diagnostic?
+    parts = ffi_lookup.words(text: rest)
+
+    if parts.len() < 8
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    lend_start = ffi_lookup.number(parts[3])
+    lend_end = ffi_lookup.number(parts[4])
+    length = ffi_lookup.number(parts[5])
+
+    if lend_start.is_err() || lend_end.is_err() || length.is_err()
+        return fail(code: "none", msg: "a position is not numeric")
+    lend = token.Span(start: lend_start.must(), end: lend_end.must())
+    header_type = trim_quote(tail_from(parts, at: 7))
+    declared = "`" + parts[1] + "` of `" + parts[0] + "` is declared `counted_by " + parts[2] + "`, an extent the declaration states"
+    unit: str @ "bytes"
+    counted_in: str @ "bytes"
+    measured: str @ "C read its size from the header"
+
+    if parts[6] != "bytes"
+        unit @ "of what the header's `" + header_type + "` points at"
+        counted_in @ "what the header's `" + header_type + "` points at"
+        measured @ "C read both sizes from the header"
+
+    if whole
+        r: diag.Diagnostic @ diag.new_diagnostic(
+            code: "record_lend_extent",
+            message: "the record lent whole here holds fewer than " + parts[2] + " " + unit + " — " + declared + ", so C reaches past the record: " + measured,
+            span: lend
+        )
+        r.notes @ r.notes.push(
+            "the declaration says how far C reaches, whatever the call hands it, so a record shorter than that is written past, over whatever the stack holds beside it. Lend a record that holds the extent; if C reaches less, the declaration is what is wrong"
+        )
+        return ok(r)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "field_lend_extent",
+        message: "`" + source.span_text(s, lend) + "` lends a field of " + length.must().to_str() + " bytes, and " + declared + ", counted in " + counted_in + ", so C reaches past the field: " + measured,
+        span: lend
+    )
+    d.notes @ d.notes.push(
+        "the declaration says how far C reaches, whatever the call hands it, so a field shorter than that is written past, into whatever the header put beside it. Lend a field that holds the extent; if C reaches less, the declaration is what is wrong"
     )
     return ok(d)
 

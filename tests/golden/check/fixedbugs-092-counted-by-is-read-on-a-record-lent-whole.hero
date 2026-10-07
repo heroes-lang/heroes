@@ -7,6 +7,10 @@
 # sitting the record was `counted_by_shape` too, so `read` into a record had
 # no checked spelling, and the undeclared one wrote over the stack at
 # `check` 0 (`tests/golden/unsupported/fixedbugs-092-read-into-a-record-names-its-count`).
+#
+# **Corrected 2026-10-07, panel 196's R5 (lane b13-land-buf):** a count may
+# also be a `constant` of the group or a number the declaration states, so
+# `no_sibling`'s message names all three; it is refused as before.
 extern "fixedbugs-092-counted-by.h"
     record One tag one
         a: i32
