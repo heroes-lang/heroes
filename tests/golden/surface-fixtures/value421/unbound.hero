@@ -1,0 +1,9 @@
+# Beside defect 421 (lane b14-harness-b, 2026-10-07): nothing here asks a type
+# of `helper.ident`, so its letter is bound by nothing and the name is refused
+# `cannot_infer` where it stands. On the compiler before defect 402's repair
+# this checked clean and the build stopped at exit 2, *monomorphisation
+# produced an ill-formed program*.
+use helper
+
+function main()
+    _ = helper.ident  #~ cannot_infer

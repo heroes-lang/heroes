@@ -34,7 +34,12 @@
 #               copy of the language that reads from nothing (added 2026-09-13,
 #               after it painted a correct program as an error for three days);
 #               and since 2026-10-02 it paints an `f` literal's two brace
-#               escapes and its lone brace as the lexer reads them (`braces`).
+#               escapes and its lone brace as the lexer reads them (`braces`);
+#               and since 2026-10-07 every escape § 2 names, and each other
+#               spelling of its escape by code, is painted as one exactly
+#               where the lexer reads one, in each of the three literals, the
+#               grammar's rules RUN by `textmate.hero` (`escapes_painted`,
+#               defect 377).
 #
 # WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
 # what it refuses — are read out of `selfhost/`'s own source, not copied
@@ -48,6 +53,7 @@ use floors
 use shell
 use spec_text
 use strings
+use textmate
 
 constant SPEC: str
     "spec/heroes-spec.md"
@@ -365,6 +371,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     anchors(@r)
     colouring(@r)
     braces(@r, scratch: scratch, compiler: compiler)
+    escapes_painted(@r, scratch: scratch, compiler: compiler, spec: text.must())
     return ok(r)
 
 # The two gated numbers, and the headroom.
@@ -1282,6 +1289,258 @@ function lexed_in_piece(scratch: str, compiler: str, brace: str) -> shell.Run?
     write_file(path: path, text: "function main()\n    print(f\"a" + brace + "b\")\n")?
     return shell.run(scratch: scratch, program: compiler, words: [compiler, "lex", path])
 
+## The escapes the spec names, run through the grammar
+
+# Every escape § 2 names, and the other spellings of its escape by code, asked
+# of the lexer in each of the three literals an escape stands in and of the
+# grammar's rules for that literal, RUN (defect 377): the grammar paints one
+# escape exactly where the lexer reads one.
+#
+# `colouring` above compares the members of the first `[…]` of a rule's
+# `match` with `escape_text`'s arms, which sees a class of letters and nothing
+# else. Panel 192's R5 put `\u{1b}` in the language and its rule beside the
+# first in two of the grammar's literals, and no check read either: the lane
+# that landed it tested the pattern with Python's `re` alone (its report,
+# 2026-10-06). A pattern is a program, so this runs it (`textmate.hero`), and
+# what it is held to is read rather than pinned: the escapes are the spec's
+# own, every code span of § 2 that opens with a backslash, and the verdict on
+# each is the compiler's lexer's, by lexing a program that holds it.
+#
+# The other spellings are made from the spec's own `\u{…}`, and the lexer must
+# refuse each, the spec giving that escape one spelling: its digits in
+# capitals, a leading zero, no digits, no closing brace, no braces, seven
+# digits. Each is a way the pattern can break: a class admitting capitals, a
+# first digit admitting 0, a count with no ceiling, a brace made optional. A
+# code spelled the one way that the lexer refuses for what it names (`\u{41}`,
+# which a string writes `A`) is not among them, and the grammar paints it by
+# design: which codes `\u{…}` may name is the compiler's to say (the rule's own
+# comment, panel 192's R5).
+constant LEAST_SPEC_ESCAPES: i64
+    7
+
+# The literals an escape stands in, by the name of the grammar's repository
+# entry that paints its text: a string, an `f` literal's text, a character
+# literal.
+constant LITERALS: [str]
+    [
+        "string"
+        "interpolated"
+        "char"
+    ]
+
+# What the lexer said of one escape in one literal.
+record Lexed
+    escape: str
+    literal: str
+    read: bool
+
+function escapes_painted(@r: report.Report, scratch: str, compiler: str, spec: str)
+    grammar = read_file(GRAMMAR)
+
+    if grammar.is_err()
+        report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
+        return
+    spelled = spec_escapes(spec)
+
+    if !floors.sound(@r, label: "spec/colouring", found: spelled.len(), floor: LEAST_SPEC_ESCAPES, what: "escapes named by the code spans of " + SPEC + "'s § 2")
+        return
+    said: [Lexed] @ []
+    probes: [str] @ spelled
+
+    for other in other_spellings(spelled)
+        probes @ probes.push(other)
+
+    for escape in probes
+        for literal in LITERALS
+            ran = lexed_escape(scratch: scratch, compiler: compiler, literal: literal, escape: escape)
+
+            if ran.is_err() || ran.must().code != 0 && ran.must().code != 1
+                report.keep_failure(
+                    @r,
+                    label: "spec/colouring",
+                    detail: "  the lexer gave no verdict on `" + escape + "` in " + literal_said(literal) + ": " + shell.ending(ran)
+                )
+                return
+            said @ said.push(Lexed(escape: escape, literal: literal, read: ran.must().code == 0))
+
+    wrong = disagreements(grammar: grammar.must(), spelled: spelled, said: said)
+
+    if wrong.is_err()
+        report.keep_failure(
+            @r,
+            label: "spec/colouring",
+            detail: "  the grammar's rules for a literal cannot be run: " + why_unrun(wrong) + "\n  Teach `tests/harness/textmate.hero` the construct, or write the rule without it: a rule the check cannot run is a rule nothing judges."
+        )
+        return
+
+    if wrong.must().len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/colouring",
+        detail: "  " + wrong.must().join("\n  ") + "\n  " + GRAMMAR + "'s rules for each literal were run as an editor runs them,\n  first match wins (`tests/harness/textmate.hero`). An escape the lexer reads\n  and the grammar does not paint falls to the `invalid.illegal` rule, a correct\n  program shown as an error; one the lexer refuses and the grammar paints is a\n  mistake shown as legal."
+    )
+
+function why_unrun(got: [str]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# Where the grammar and the lexer part, one sentence each; an error where a
+# rule cannot be run. `spelled` are the escapes the spec names, `said` the
+# lexer's verdict on each of them and on the other spellings, in each literal.
+function disagreements(grammar: str, spelled: [str], said: [Lexed]) -> [str]?
+    wrong: [str] @ []
+
+    for literal in LITERALS
+        rules = textmate.rules_of(grammar: grammar, name: literal)?
+
+        for one in said
+            if one.literal != literal
+                continue
+            subject: str @ one.escape + "z\")"
+            whole: i64 @ one.escape.chars().len()
+
+            if literal == "char"
+                subject @ "'" + one.escape + "')"
+                whole @ whole + 2
+            got = textmate.painted(rules: rules, text: subject)?
+            as_escape = strings.starts_with(text: got.scope, prefix: "constant.character") && got.reach == whole
+
+            if one.read && !as_escape
+                wrong @ wrong.push(
+                    "`" + one.escape + "` in " + literal_said(literal) + ": the lexer reads it, and the grammar paints " + painted_said(got)
+                )
+            else if !one.read && as_escape
+                wrong @ wrong.push(
+                    "`" + one.escape + "` in " + literal_said(literal) + ": the lexer refuses it, and the grammar paints it `" + got.scope + "`, an escape"
+                )
+
+    for escape in spelled
+        read_somewhere: bool @ false
+
+        for one in said
+            if one.escape == escape && one.read
+                read_somewhere @ true
+
+        if !read_somewhere
+            wrong @ wrong.push("the spec names `" + escape + "`, and the lexer reads it in no literal")
+
+    for one in said
+        if one.read && absent_from(want: [one.escape], got: spelled).len() == 1
+            wrong @ wrong.push(
+                "`" + one.escape + "` is read in " + literal_said(one.literal) + ", a second spelling of an escape the spec gives one"
+            )
+
+    return ok(wrong)
+
+function painted_said(got: textmate.Painted) -> str
+    if got.scope.len() == 0
+        return "no rule over it"
+    return "`" + got.scope + "` over " + got.reach.to_str() + " characters"
+
+function literal_said(literal: str) -> str
+    if literal == "interpolated"
+        return "an `f` literal's text"
+
+    if literal == "char"
+        return "a character literal"
+    return "a string"
+
+# Every code span of § 2 that opens with a backslash, each once, in the order
+# met: the escapes the spec names, read where it names them.
+function spec_escapes(spec: str) -> [str]
+    out: [str] @ []
+    at = spec_text.section_named(text: spec, name: "Literals")
+
+    if at.is_err()
+        return out
+    rows = strings.lines(spec.slice(from: at.must(), to: spec.len()))
+    kept_rows: [str] @ []
+    in_fence: bool @ false
+
+    for row in rows.slice(from: 1, to: rows.len())
+        if strings.starts_with(text: row, prefix: "## ")
+            break
+
+        if strings.starts_with(text: row, prefix: "```")
+            in_fence @ !in_fence
+            continue
+
+        if !in_fence
+            kept_rows @ kept_rows.push(row)
+
+    pieces = strings.split_text(text: kept_rows.join("\n"), separator: "`")
+    i: i64 @ 1
+
+    while i < pieces.len()
+        span = pieces[i]
+
+        if strings.starts_with(text: span, prefix: "\\") && span.len() >= 2 && absent_from(want: [span], got: out).len() == 1
+            out @ out.push(span)
+        i @ i + 2
+
+    return out
+
+# The other spellings of each `\u{…}` in `spelled`, made from its digits: in
+# capitals, after a zero, none, without the closing brace, without either
+# brace, and run to seven. None of them is one of `spelled`.
+function other_spellings(spelled: [str]) -> [str]
+    out: [str] @ []
+
+    for escape in spelled
+        if !strings.starts_with(text: escape, prefix: "\\u{") || !strings.ends_with(text: escape, suffix: "}")
+            continue
+        digits = escape.slice(from: 3, to: escape.len() - 1)
+        made: [str] @ [
+            "\\u{" + capitals(digits) + "}"
+            "\\u{0" + digits + "}"
+            "\\u{}"
+            "\\u{" + digits
+            "\\u" + digits
+        ]
+
+        if digits.len() < 7
+            made @ made.push("\\u{" + digits + "0".repeat((7 - digits.len()).to_u64().must()) + "}")
+
+        for other in made
+            if absent_from(want: [other], got: spelled).len() == 1 && absent_from(want: [other], got: out).len() == 1
+                out @ out.push(other)
+
+    return out
+
+function capitals(text: str) -> str
+    out: str @ ""
+
+    for c in text.chars()
+        at = strings.index_of(text: "abcdef", needle: c)
+
+        if at.is_err()
+            out @ out + c
+        else
+            out @ out + "ABCDEF".slice(from: at.must(), to: at.must() + 1)
+
+    return out
+
+# What the lexer says of `escape` inside one literal, alone in a program of its
+# own under `scratch`: between two letters in a string or an `f` literal, `z`
+# after it so no digit of a code can run on, alone between the quotes of a
+# character literal.
+function lexed_escape(scratch: str, compiler: str, literal: str, escape: str) -> shell.Run?
+    path = scratch + "/spec-escape.hero"
+    write_file(path: path, text: escape_program(literal: literal, escape: escape))?
+    return shell.run(scratch: scratch, program: compiler, words: [compiler, "lex", path])
+
+function escape_program(literal: str, escape: str) -> str
+    if literal == "char"
+        return "function main()\n    print('" + escape + "')\n"
+    opener: str @ "\""
+
+    if literal == "interpolated"
+        opener @ "f\""
+    return "function main()\n    print(" + opener + "a" + escape + "z\")\n"
+
 # The alternatives of a rule's `"match"` whose whole pattern is one or more
 # literal texts joined by `|`, each with its regular expression's backslashes
 # taken off: `\\{\\{|\\}\\}` in the JSON reads as `{{` and `}}`.
@@ -1608,6 +1867,140 @@ test "a rule's literal alternatives are read with their backslashes off, and a r
     assert regex_alternatives(text: rows, marker: "constant.character.escape.brace.hero") == ["{{", "}}"]
     assert regex_alternatives(text: rows, marker: "invalid.illegal.lone-brace.hero") == ["}"]
     assert regex_alternatives(text: rows, marker: "no.such.scope").len() == 0
+
+test "the escapes § 2 names are read from its code spans, and the other spellings of the one by code are made from it"
+    text = "## 1. Files\n`\\q` is no escape of § 2\n## 2. Literals\n- Two escapes: `\\n` and `\\u{7f}`, and `x` is not one; `\\n` again.\n\n```\nprint(\"`\\\\t`\")\n```\n## 3. Types\n`\\t` is not in § 2\n"
+    assert spec_escapes(text) == ["\\n", "\\u{7f}"]
+    assert other_spellings(["\\n", "\\u{7f}"]) == ["\\u{7F}", "\\u{07f}", "\\u{}", "\\u{7f", "\\u7f", "\\u{7f00000}"]
+
+    # Digits with no letter have no spelling in capitals: that would be the
+    # escape itself, which is not another spelling.
+    assert other_spellings(["\\u{85}"]) == ["\\u{085}", "\\u{}", "\\u{85", "\\u85", "\\u{8500000}"]
+    assert escape_program(literal: "interpolated", escape: "\\n") == "function main()\n    print(f\"a\\nz\")\n"
+    assert escape_program(literal: "char", escape: "\\'") == "function main()\n    print('\\'')\n"
+    real = read_file(SPEC)
+    assert !real.is_err()
+    assert spec_escapes(real.must()).len() >= LEAST_SPEC_ESCAPES
+
+test "the grammar paints an escape exactly where the lexer reads one, and each way to break the pattern is red"
+    # THE REAL FILE against what § 2 says the lexer reads, so the comparison is
+    # tested on the rules an editor runs; the suite asks the lexer itself.
+    real = read_file(GRAMMAR)
+    assert !real.is_err()
+    spelled = ["\\n", "\\t", "\\r", "\\\\", "\\\"", "\\'", "\\u{1b}"]
+    said = said_by_section_two(spelled)
+    assert disagreements(grammar: real.must(), spelled: spelled, said: said).must().len() == 0
+
+    # Each way the escape by code's pattern can break, and the sentence that
+    # names it: a class admitting capitals, a first digit admitting 0, a count
+    # with no ceiling, a rule that matches nothing.
+    capitals_wrong = said_of_broken(
+        grammar: real.must(),
+        was: "[1-9a-f][0-9a-f]{0,5}",
+        now: "[1-9a-fA-F][0-9a-fA-F]{0,5}",
+        spelled: spelled,
+        said: said
+    )
+    assert strings.contains(text: capitals_wrong, needle: "`\\u{1B}` in a string: the lexer refuses it")
+    assert strings.contains(text: capitals_wrong, needle: "`\\u{1B}` in an `f` literal's text: the lexer refuses it")
+    zero_wrong = said_of_broken(
+        grammar: real.must(),
+        was: "[1-9a-f][0-9a-f]{0,5}",
+        now: "[0-9a-f][0-9a-f]{0,5}",
+        spelled: spelled,
+        said: said
+    )
+    assert strings.contains(text: zero_wrong, needle: "`\\u{01b}` in a string: the lexer refuses it")
+    ceiling_wrong = said_of_broken(
+        grammar: real.must(),
+        was: "[1-9a-f][0-9a-f]{0,5}",
+        now: "[1-9a-f][0-9a-f]*",
+        spelled: spelled,
+        said: said
+    )
+    assert strings.contains(text: ceiling_wrong, needle: "`\\u{1b00000}` in a string: the lexer refuses it")
+    never = said_of_broken(
+        grammar: real.must(),
+        was: "[1-9a-f][0-9a-f]{0,5}",
+        now: "[1-9a-f][0-9a-f]{0,5}x",
+        spelled: spelled,
+        said: said
+    )
+    assert strings.contains(
+        text: never,
+        needle: "`\\u{1b}` in a string: the lexer reads it, and the grammar paints `invalid.illegal.unknown-escape.hero` over 2 characters"
+    )
+
+    # The `f` literal's own rules, which no check read until this one: its
+    # escapes painted as text is red, as the string's would be.
+    piece = said_of_broken(
+        grammar: real.must(),
+        was: "constant.character.escape.interpolated.hero",
+        now: "string.quoted.double.interpolated.hero",
+        spelled: spelled,
+        said: said
+    )
+    assert strings.contains(text: piece, needle: "`\\n` in an `f` literal's text: the lexer reads it")
+
+    # The other direction: a character literal the lexer refuses painted as one.
+    leak = said_of_broken(
+        grammar: real.must(),
+        was: "invalid.illegal.char-literal.hero",
+        now: "constant.character.hero",
+        spelled: spelled,
+        said: said
+    )
+    assert strings.contains(text: leak, needle: "`\\u{1b}` in a character literal: the lexer refuses it")
+
+    # And a rule the reader cannot run is an error, never a pass.
+    lazy = strings.split_text(text: real.must(), separator: "'[^']*'").join("'[^']*?'")
+    assert disagreements(grammar: lazy, spelled: spelled, said: said).is_err()
+
+    # The lexer's side is checked too: a spelled escape no literal reads, and a
+    # second spelling one does, are each a sentence.
+    nowhere: [Lexed] @ []
+
+    for one in said
+        if one.escape == "\\t"
+            nowhere @ nowhere.push(Lexed(escape: one.escape, literal: one.literal, read: false))
+        else
+            nowhere @ nowhere.push(one)
+
+    unread = disagreements(grammar: real.must(), spelled: spelled, said: nowhere).must().join("\n")
+    assert strings.contains(text: unread, needle: "the spec names `\\t`, and the lexer reads it in no literal")
+
+# What § 2 says the lexer reads, as verdicts: the four letter escapes in every
+# literal, `\"` and the escape by code in the two string literals, `\'` in a
+# character literal alone, and the other spellings of the escape by code
+# nowhere.
+function said_by_section_two(spelled: [str]) -> [Lexed]
+    out: [Lexed] @ []
+    probes: [str] @ spelled
+
+    for other in other_spellings(spelled)
+        probes @ probes.push(other)
+
+    for escape in probes
+        for literal in LITERALS
+            read: bool @ false
+
+            if escape == "\\n" || escape == "\\t" || escape == "\\r" || escape == "\\\\"
+                read @ true
+            else if escape == "\\\"" || escape == "\\u{1b}"
+                read @ literal != "char"
+            else if escape == "\\'"
+                read @ literal == "char"
+            out @ out.push(Lexed(escape: escape, literal: literal, read: read))
+
+    return out
+
+# The sentences `disagreements` says of `grammar` with `was` written `now`,
+# joined; `was` must be there, or the case would test the grammar unbroken.
+function said_of_broken(grammar: str, was: str, now: str, spelled: [str], said: [Lexed]) -> str
+    assert strings.contains(text: grammar, needle: was)
+    return disagreements(grammar: strings.split_text(text: grammar, separator: was).join(now), spelled: spelled, said: said).must().join(
+        "\n"
+    )
 
 test "the two sides of the colouring check are read out of the compiler's own source"
     # Not pinned here: read from the files, so this test dies with a rename
