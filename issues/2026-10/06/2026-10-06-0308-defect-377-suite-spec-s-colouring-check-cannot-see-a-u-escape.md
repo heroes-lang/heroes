@@ -14,3 +14,5 @@ github: none
     **Class: improvement**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): coverage, no program moves.
 
     Repaired at `3c687c3a`, 2026-10-07 (lane b14-harness-b), gated by its cases and the net's own tests; the net is owed at the batch's close. `tests/harness/textmate.hero` runs the grammar's rules for a string, an `f` literal and a character literal as an editor does, and `suite_spec`'s `escapes_painted` holds them to the lexer on the seven escapes § 2 names and six other spellings of its `\u{1b}`, 39 `heroes lex` runs: on a copy of the tree, three breaks of the `\u{…}` pattern each read spec 21 passed, 0 failed on the base and 22 and 1 with this check, which reads 23 and 0 on the grammar as it is.
+
+    And at `57a95932`, 2026-10-07, before the repair left the lane: the reader named a `\xHH` below the space by a slice of printable text and panicked on `[\x00-\x1f]`; it now writes the byte the code names, four assertions red at `3c687c3a` and green there, the net's own tests 296, all passed.
