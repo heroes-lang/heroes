@@ -95,7 +95,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 
     if linked.is_err()
         _ = process.remove_tree(stage).is_err()
-        return fail(code: units.failure_code(linked), msg: units.failure_note(linked))
+        return fail(code: link_code(linked), msg: units.failure_note(linked))
     wrote = process.files_under(stage)
 
     if wrote.is_err()
@@ -162,8 +162,24 @@ function linked_into(line: [str], t: toolchain.Toolchain, at: str, binary: str) 
     publish.discard(err_path)
 
     if linked.is_err()
-        return fail(code: units.failure_code(linked), msg: units.failure_note(linked))
+        return fail(code: link_code(linked), msg: units.failure_note(linked))
     return ok(binary)
+
+# A refused link's code (defect 443): `clang` is a compile clang refused, and a
+# link whose objects the linker refused is this, so the sentence said after it
+# names the linker and never *clang refused the generated C*, which was said
+# of a zeroed object. To `cli/whose.hero` it is clang's refusal all the same,
+# read for the author's missing `link` as a refused compile is read for the
+# author's extern.
+constant REFUSED: str
+    "clang_link"
+
+function link_code(failed: ()?) -> str
+    code = units.failure_code(failed)
+
+    if code == "clang"
+        return REFUSED
+    return code
 
 # **The author's `-o` takes the platform's suffix where its last part has
 # none** (defect 359, 2026-10-05): on Windows `build -o name` wrote `name`,

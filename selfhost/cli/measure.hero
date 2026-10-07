@@ -293,15 +293,46 @@ test "no operand measures the spec, and an unreadable file is the tool failing"
     # The whole pipeline, on the real tables and the real spec: this is the
     # one test here that costs a second, and it is the one that would have
     # caught every mistake in the two modules under it.
+    #
+    # **Its ending is the one the pin decides, and both are asserted** (defect
+    # 379). This asked for exit 0, which holds only while `pinned.SPEC_DIGEST`
+    # is the spec's own digest, so a lane that amended the spec read the
+    # compiler's own tests red until a paid `measure --refresh` re-pinned it.
+    # Whether the pin is fresh is `suite_spec`'s `real` and `budget` at the
+    # gate, which stay as strict; what this owes is that no operand is the spec,
+    # read through the real tables to the ending its pin decides: the verdict
+    # when the pin is its digest, the stale record's refusal when it is not.
     none: str? = fail(code: "no_operand", msg: "measure was given no file")
-    assert cli_table.exit_code(run(asked(none))) == 0
+    spec = read_file(budgets.SPEC)
+    assert !spec.is_err()
+    ending: i64 @ 1
+
+    if digest.digest(spec.must()) == pinned.SPEC_DIGEST
+        ending @ 0
+    assert pinned.SPEC_REAL_TOKENS <= budgets.CEILING
+    assert cli_table.exit_code(run(asked(none))) == ending
+    assert cli_table.exit_code(run(asked(ok(budgets.SPEC)))) == ending
+
+    # And the verdict itself on the real spec's readings, whatever the file's
+    # pin, with the pin this test hands it: the branch past the digest, which a
+    # stale pin withholds, is still run on the real tables.
+    readings = vendored.readings_of(spec.must())
+    assert !readings.is_err()
+    assert cli_table.exit_code(reported(path: budgets.SPEC, here: pinned.SPEC_DIGEST, readings: readings.must())) == 0
+    assert cli_table.exit_code(reported(path: budgets.SPEC, here: "beefbeefbeefbeef", readings: readings.must())) == 1
     named: str? = ok("no/such/file.md")
     assert cli_table.exit_code(run(asked(named))) == 2
 
-    # And a file that is not the spec is refused BEFORE the network, which is
-    # the half of `--refresh` a test can reach without a key: `.env` is not
-    # here, and the refusal above happens on the path rather than on the key.
-    other: str? = ok(budgets.CONTRACT)
+    # And a file no ceiling judges is refused BEFORE the network, which is the
+    # half of `--refresh` a test can reach without a key. **It named `CLAUDE.md`
+    # until 2026-10-07**, which has been a judged document since panel 134
+    # (2026-09-12): its refresh goes past the path to the key, so this read 2
+    # only because `ANTHROPIC_API_KEY` was unset, and with the key in the
+    # environment it would ask the network for a paid count and read red
+    # (defect 379; read from `cli/refresh.hero`, never run, a run being a paid
+    # one). The registry beside the spec is read and measured, and no ceiling
+    # judges it.
+    other: str? = ok("spec/reserved-words.md")
     refused: [argv.FlagHit] = [argv.FlagHit(spelling: "--refresh", value: fail(code: "none", msg: "plain"))]
     asking = argv.Invocation(tag: .measure_cmd, file: other, program_args: [], flags: refused)
     assert cli_table.exit_code(run(asking)) == 2
