@@ -5092,7 +5092,7 @@ bb0:
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t2 = h0_xs;
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_int(t3);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"

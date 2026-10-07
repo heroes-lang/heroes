@@ -18,6 +18,7 @@ use check/table
 use check/state
 use ir
 use ir/containers
+use emit/array_read
 use token
 use source
 use parse
@@ -196,6 +197,16 @@ function entry(name: str, f: containers.Function, c: state.Checked, run: ir.Run)
         return found.must()
     return "hero_unreachable"
 
+# The C a built-in call becomes, given the name `entry` gave it and the
+# rendered arguments: an array's length is read in place where a value is
+# wanted (defect 389, `emit/array_read.hero`), and every other callee is
+# called. An unread length stays a call, which checks its array all the same
+# and leaves no value for clang to call unused.
+function called(callee: str, arguments: [str], wanted: bool) -> str
+    if callee == "hero_array_len" && wanted && arguments.len() == 1
+        return array_read.length(arguments[0])
+    return callee + "(" + arguments.join(", ") + ")"
+
 # Which library functions this program actually reaches. The library is
 # compiled with every program, but --emit-c is an artifact the author
 # reads, and seven unused definitions would be seven pieces of noise
@@ -321,3 +332,9 @@ test "the panel-052 pair: u64 to its own entry point, on BOTH paths"
     assert to_str_entry(.bool).must() == "hero_bool_to_str"
     assert to_str_entry(.str).must() == "hero_str_identity"
     assert to_str_entry(.unit).is_err()
+
+test "an array's length is read in place where a value is wanted, and every other call stays a call (defect 389)"
+    assert called(callee: "hero_array_len", arguments: ["t1"], wanted: true) == array_read.length("t1")
+    assert called(callee: "hero_array_len", arguments: ["t1"], wanted: false) == "hero_array_len(t1)"
+    assert called(callee: "hero_str_len", arguments: ["t2"], wanted: true) == "hero_str_len(t2)"
+    assert called(callee: "hero_array_slice", arguments: ["t3", "t4", "t5"], wanted: true) == "hero_array_slice(t3, t4, t5)"

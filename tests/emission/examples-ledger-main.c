@@ -1592,7 +1592,7 @@ bb9:
 #line 66 "examples/ledger/main.hero"
     t52 = h6_xs0;
 #line 66 "examples/ledger/main.hero"
-    t53 = hero_array_len(t52);
+    t53 = ((void)(t52 == NULL ? ((void)hero_array_len(t52), hero_unreachable()) : (void)0), t52->len);
 #line 66 "examples/ledger/main.hero"
     t54 = t51 < t53;
 #line 66 "examples/ledger/main.hero"
@@ -1604,7 +1604,7 @@ bb10:
 #line 66 "examples/ledger/main.hero"
     t56 = h7_i0;
 #line 66 "examples/ledger/main.hero"
-    t57 = *(h_bookentry_Account const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(h_bookentry_Account) ? hero_unreachable() : (void)0), ((h_bookentry_Account const *)(const void *)(t55 + 1))[t56]);
 #line 66 "examples/ledger/main.hero"
     t242 = h8_a;
 #line 1611 "main.c"
@@ -1931,7 +1931,7 @@ bb23:
 #line 75 "examples/ledger/main.hero"
     t126 = h15_xs1;
 #line 75 "examples/ledger/main.hero"
-    t127 = hero_array_len(t126);
+    t127 = ((void)(t126 == NULL ? ((void)hero_array_len(t126), hero_unreachable()) : (void)0), t126->len);
 #line 75 "examples/ledger/main.hero"
     t128 = t125 < t127;
 #line 75 "examples/ledger/main.hero"
@@ -1943,7 +1943,7 @@ bb24:
 #line 75 "examples/ledger/main.hero"
     t130 = h16_i1;
 #line 75 "examples/ledger/main.hero"
-    t131 = *(h_bookentry_Entry const *)hero_array_at(t129, t130);
+    t131 = ((void)((t129 == NULL || t130 < 0 || t130 >= t129->len) ? ((void)hero_array_at(t129, t130), hero_unreachable()) : (void)0), (void)(t129->elem->size != sizeof(h_bookentry_Entry) ? hero_unreachable() : (void)0), ((h_bookentry_Entry const *)(const void *)(t129 + 1))[t130]);
 #line 75 "examples/ledger/main.hero"
     t260 = h17_e;
 #line 1950 "main.c"
@@ -2918,7 +2918,7 @@ bb1:
 #line 93 "examples/ledger/main.hero"
     t7 = h1_xs0;
 #line 93 "examples/ledger/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 93 "examples/ledger/main.hero"
     t9 = t6 < t8;
 #line 93 "examples/ledger/main.hero"
@@ -2930,7 +2930,7 @@ bb2:
 #line 93 "examples/ledger/main.hero"
     t11 = h2_i0;
 #line 93 "examples/ledger/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 93 "examples/ledger/main.hero"
     t209 = h3_line;
 #line 2937 "main.c"
@@ -3094,7 +3094,7 @@ bb7:
 #line 102 "examples/ledger/main.hero"
     t36 = h7_xs1;
 #line 102 "examples/ledger/main.hero"
-    t37 = hero_array_len(t36);
+    t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len);
 #line 102 "examples/ledger/main.hero"
     t38 = t35 < t37;
 #line 102 "examples/ledger/main.hero"
@@ -3106,7 +3106,7 @@ bb8:
 #line 102 "examples/ledger/main.hero"
     t40 = h8_i1;
 #line 102 "examples/ledger/main.hero"
-    t41 = *(h_bookentry_Balance const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t39 + 1))[t40]);
 #line 102 "examples/ledger/main.hero"
     t219 = h9_b;
 #line 3113 "main.c"
@@ -3414,7 +3414,7 @@ bb15:
 #line 3415 "main.c"
     hero_array_decref(t235);
 #line 118 "examples/ledger/main.hero"
-    t106 = hero_array_len(t105);
+    t106 = ((void)(t105 == NULL ? ((void)hero_array_len(t105), hero_unreachable()) : (void)0), t105->len);
 #line 118 "examples/ledger/main.hero"
     t107 = t104 == t106;
 #line 118 "examples/ledger/main.hero"
@@ -3512,7 +3512,7 @@ bb17:
 #line 3513 "main.c"
     hero_array_decref(t241);
 #line 124 "examples/ledger/main.hero"
-    t126 = hero_array_len(t125);
+    t126 = ((void)(t125 == NULL ? ((void)hero_array_len(t125), hero_unreachable()) : (void)0), t125->len);
 #line 124 "examples/ledger/main.hero"
     t127 = hero_int_to_f64(t126);
 #line 124 "examples/ledger/main.hero"
@@ -3732,7 +3732,7 @@ bb23:
 #line 135 "examples/ledger/main.hero"
     t165 = h23_xs2;
 #line 135 "examples/ledger/main.hero"
-    t166 = hero_array_len(t165);
+    t166 = ((void)(t165 == NULL ? ((void)hero_array_len(t165), hero_unreachable()) : (void)0), t165->len);
 #line 135 "examples/ledger/main.hero"
     t167 = t164 < t166;
 #line 135 "examples/ledger/main.hero"
@@ -3744,7 +3744,7 @@ bb24:
 #line 135 "examples/ledger/main.hero"
     t169 = h24_i2;
 #line 135 "examples/ledger/main.hero"
-    t170 = *(h_bookentry_Entry const *)hero_array_at(t168, t169);
+    t170 = ((void)((t168 == NULL || t169 < 0 || t169 >= t168->len) ? ((void)hero_array_at(t168, t169), hero_unreachable()) : (void)0), (void)(t168->elem->size != sizeof(h_bookentry_Entry) ? hero_unreachable() : (void)0), ((h_bookentry_Entry const *)(const void *)(t168 + 1))[t169]);
 #line 135 "examples/ledger/main.hero"
     t252 = h25_e;
 #line 3751 "main.c"
@@ -5946,11 +5946,11 @@ bb0:
 #line 208 "examples/ledger/main.hero"
     t1 = h0_from_db;
 #line 208 "examples/ledger/main.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 208 "examples/ledger/main.hero"
     t3 = h1_mine;
 #line 208 "examples/ledger/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 208 "examples/ledger/main.hero"
     t5 = t2 != t4;
 #line 208 "examples/ledger/main.hero"
@@ -5982,7 +5982,7 @@ bb4:
 #line 212 "examples/ledger/main.hero"
     t9 = h1_mine;
 #line 212 "examples/ledger/main.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 212 "examples/ledger/main.hero"
     t11 = t8 < t10;
 #line 212 "examples/ledger/main.hero"
@@ -5994,7 +5994,7 @@ bb5:
 #line 213 "examples/ledger/main.hero"
     t13 = h2_at;
 #line 213 "examples/ledger/main.hero"
-    t14 = *(h_bookentry_Balance const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t12 + 1))[t13]);
 #line 213 "examples/ledger/main.hero"
     t15 = t14.f_account;
 #line 213 "examples/ledger/main.hero"
@@ -6002,7 +6002,7 @@ bb5:
 #line 213 "examples/ledger/main.hero"
     t17 = h2_at;
 #line 213 "examples/ledger/main.hero"
-    t18 = *(h_bookentry_Balance const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t16 + 1))[t17]);
 #line 213 "examples/ledger/main.hero"
     t19 = t18.f_account;
 #line 213 "examples/ledger/main.hero"
@@ -6024,7 +6024,7 @@ bb7:
 #line 216 "examples/ledger/main.hero"
     t23 = h2_at;
 #line 216 "examples/ledger/main.hero"
-    t24 = *(h_bookentry_Balance const *)hero_array_at(t22, t23);
+    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t22 + 1))[t23]);
 #line 216 "examples/ledger/main.hero"
     t25 = t24.f_entries;
 #line 216 "examples/ledger/main.hero"
@@ -6032,7 +6032,7 @@ bb7:
 #line 216 "examples/ledger/main.hero"
     t27 = h2_at;
 #line 216 "examples/ledger/main.hero"
-    t28 = *(h_bookentry_Balance const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t26 + 1))[t27]);
 #line 216 "examples/ledger/main.hero"
     t29 = t28.f_entries;
 #line 216 "examples/ledger/main.hero"
@@ -6058,7 +6058,7 @@ bb10:
 #line 219 "examples/ledger/main.hero"
     t33 = h2_at;
 #line 219 "examples/ledger/main.hero"
-    t34 = *(h_bookentry_Balance const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t32 + 1))[t33]);
 #line 219 "examples/ledger/main.hero"
     t35 = t34.f_total;
 #line 219 "examples/ledger/main.hero"
@@ -6068,7 +6068,7 @@ bb10:
 #line 219 "examples/ledger/main.hero"
     t38 = h2_at;
 #line 219 "examples/ledger/main.hero"
-    t39 = *(h_bookentry_Balance const *)hero_array_at(t37, t38);
+    t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? ((void)hero_array_at(t37, t38), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(h_bookentry_Balance) ? hero_unreachable() : (void)0), ((h_bookentry_Balance const *)(const void *)(t37 + 1))[t38]);
 #line 219 "examples/ledger/main.hero"
     t40 = t39.f_total;
 #line 219 "examples/ledger/main.hero"
@@ -7783,7 +7783,7 @@ bb1:
 #line 117 "examples/ledger/book/entry.hero"
     t7 = h4_xs0;
 #line 117 "examples/ledger/book/entry.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 117 "examples/ledger/book/entry.hero"
     t9 = t6 < t8;
 #line 117 "examples/ledger/book/entry.hero"
@@ -7795,7 +7795,7 @@ bb2:
 #line 117 "examples/ledger/book/entry.hero"
     t11 = h5_i0;
 #line 117 "examples/ledger/book/entry.hero"
-    t12 = *(h_bookentry_Entry const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_bookentry_Entry) ? hero_unreachable() : (void)0), ((h_bookentry_Entry const *)(const void *)(t10 + 1))[t11]);
 #line 117 "examples/ledger/book/entry.hero"
     t117 = h6_e;
 #line 7802 "main.c"
@@ -8081,7 +8081,7 @@ bb12:
 #line 132 "examples/ledger/book/entry.hero"
     t73 = h12_xs1;
 #line 132 "examples/ledger/book/entry.hero"
-    t74 = hero_array_len(t73);
+    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
 #line 132 "examples/ledger/book/entry.hero"
     t75 = t72 < t74;
 #line 132 "examples/ledger/book/entry.hero"
@@ -8093,7 +8093,7 @@ bb13:
 #line 132 "examples/ledger/book/entry.hero"
     t77 = h13_i1;
 #line 132 "examples/ledger/book/entry.hero"
-    t78 = *(HeroStr const *)hero_array_at(t76, t77);
+    t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? ((void)hero_array_at(t76, t77), hero_unreachable()) : (void)0), (void)(t76->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t76 + 1))[t77]);
 #line 132 "examples/ledger/book/entry.hero"
     t128 = h14_name;
 #line 8100 "main.c"
@@ -8392,7 +8392,7 @@ bb1:
 #line 143 "examples/ledger/book/entry.hero"
     t6 = h2_xs0;
 #line 143 "examples/ledger/book/entry.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 143 "examples/ledger/book/entry.hero"
     t8 = t5 < t7;
 #line 143 "examples/ledger/book/entry.hero"
@@ -8404,7 +8404,7 @@ bb2:
 #line 143 "examples/ledger/book/entry.hero"
     t10 = h3_i0;
 #line 143 "examples/ledger/book/entry.hero"
-    t11 = *(h_bookentry_Entry const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_bookentry_Entry) ? hero_unreachable() : (void)0), ((h_bookentry_Entry const *)(const void *)(t9 + 1))[t10]);
 #line 143 "examples/ledger/book/entry.hero"
     t21 = h4_e;
 #line 8411 "main.c"
@@ -8514,7 +8514,7 @@ bb1:
 #line 150 "examples/ledger/book/entry.hero"
     t4 = h2_xs0;
 #line 150 "examples/ledger/book/entry.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 150 "examples/ledger/book/entry.hero"
     t6 = t3 < t5;
 #line 150 "examples/ledger/book/entry.hero"
@@ -8526,7 +8526,7 @@ bb2:
 #line 150 "examples/ledger/book/entry.hero"
     t8 = h3_i0;
 #line 150 "examples/ledger/book/entry.hero"
-    t9 = *(h_bookentry_Account const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_bookentry_Account) ? hero_unreachable() : (void)0), ((h_bookentry_Account const *)(const void *)(t7 + 1))[t8]);
 #line 150 "examples/ledger/book/entry.hero"
     t27 = h4_a;
 #line 8533 "main.c"
@@ -12138,7 +12138,7 @@ bb1:
 #line 19 "examples/ledger/report/lines.hero"
     t5 = h3_xs0;
 #line 19 "examples/ledger/report/lines.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 19 "examples/ledger/report/lines.hero"
     t7 = t4 < t6;
 #line 19 "examples/ledger/report/lines.hero"
@@ -12150,7 +12150,7 @@ bb2:
 #line 19 "examples/ledger/report/lines.hero"
     t9 = h4_i0;
 #line 19 "examples/ledger/report/lines.hero"
-    t10 = *(h_bookentry_Entry const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_bookentry_Entry) ? hero_unreachable() : (void)0), ((h_bookentry_Entry const *)(const void *)(t8 + 1))[t9]);
 #line 19 "examples/ledger/report/lines.hero"
     t59 = h5_e;
 #line 12157 "main.c"

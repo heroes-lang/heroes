@@ -764,7 +764,7 @@ bb1:
 #line 54 "tests/golden/run/closure-list.hero"
     t18 = h4_xs0;
 #line 54 "tests/golden/run/closure-list.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 54 "tests/golden/run/closure-list.hero"
     t20 = t17 < t19;
 #line 54 "tests/golden/run/closure-list.hero"
@@ -776,7 +776,7 @@ bb2:
 #line 54 "tests/golden/run/closure-list.hero"
     t22 = h5_i0;
 #line 54 "tests/golden/run/closure-list.hero"
-    t23 = *(HeroStr const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t21 + 1))[t22]);
 #line 54 "tests/golden/run/closure-list.hero"
     t114 = h6_k;
 #line 783 "closurelist.c"
@@ -880,7 +880,7 @@ bb7:
 #line 59 "tests/golden/run/closure-list.hero"
     t42 = h0_xs;
 #line 59 "tests/golden/run/closure-list.hero"
-    t43 = hero_array_len(t42);
+    t43 = ((void)(t42 == NULL ? ((void)hero_array_len(t42), hero_unreachable()) : (void)0), t42->len);
 #line 59 "tests/golden/run/closure-list.hero"
     t44 = t41 < t43;
 #line 59 "tests/golden/run/closure-list.hero"
@@ -892,7 +892,7 @@ bb8:
 #line 60 "tests/golden/run/closure-list.hero"
     t46 = h8_i;
 #line 60 "tests/golden/run/closure-list.hero"
-    t47 = *(int64_t const *)hero_array_at(t45, t46);
+    t47 = ((void)((t45 == NULL || t46 < 0 || t46 >= t45->len) ? ((void)hero_array_at(t45, t46), hero_unreachable()) : (void)0), (void)(t45->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t45 + 1))[t46]);
 #line 60 "tests/golden/run/closure-list.hero"
     t48 = INT64_C(2);
 #line 60 "tests/golden/run/closure-list.hero"
@@ -950,7 +950,7 @@ bb10:
 #line 63 "tests/golden/run/closure-list.hero"
     t55 = h8_i;
 #line 63 "tests/golden/run/closure-list.hero"
-    t56 = *(int64_t const *)hero_array_at(t54, t55);
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t54 + 1))[t55]);
 #line 63 "tests/golden/run/closure-list.hero"
     if (__builtin_add_overflow(t53, t56, &t57)) hero_panic_overflow();
 #line 63 "tests/golden/run/closure-list.hero"
@@ -1022,7 +1022,7 @@ bb15:
 #line 67 "tests/golden/run/closure-list.hero"
     t79 = h0_xs;
 #line 67 "tests/golden/run/closure-list.hero"
-    t80 = hero_array_len(t79);
+    t80 = ((void)(t79 == NULL ? ((void)hero_array_len(t79), hero_unreachable()) : (void)0), t79->len);
 #line 67 "tests/golden/run/closure-list.hero"
     t81 = HERO_STR_LIT(hero_str_20);
 #line 67 "tests/golden/run/closure-list.hero"
@@ -1068,7 +1068,7 @@ bb15:
 #line 68 "tests/golden/run/closure-list.hero"
     t89 = INT64_C(0);
 #line 68 "tests/golden/run/closure-list.hero"
-    t90 = *(HeroStr const *)hero_array_at(t88, t89);
+    t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? ((void)hero_array_at(t88, t89), hero_unreachable()) : (void)0), (void)(t88->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t88 + 1))[t89]);
 #line 68 "tests/golden/run/closure-list.hero"
     t91 = HERO_STR_LIT(hero_str_1998f2);
 #line 68 "tests/golden/run/closure-list.hero"
@@ -1276,7 +1276,7 @@ bb1:
 #line 38 "<heroes library>"
     t5 = h3_xs0;
 #line 38 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 38 "<heroes library>"
     t7 = t4 < t6;
 #line 38 "<heroes library>"
@@ -1288,7 +1288,7 @@ bb2:
 #line 38 "<heroes library>"
     t9 = h4_i0;
 #line 38 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     h5_x = t10;
 #line 39 "<heroes library>"

@@ -312,7 +312,7 @@ bb3:
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t16 = h1_xs0;
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t18 = t15 < t17;
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
@@ -324,7 +324,7 @@ bb4:
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t20 = h2_i0;
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     h3_b = t21;
 #line 26 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
@@ -644,7 +644,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t15 = INT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
-    t16 = *(HeroStr const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 38 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     h_fixedbugs245astrmadewithoutitsnulislent_lent(t12, t16);
 #line 39 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"

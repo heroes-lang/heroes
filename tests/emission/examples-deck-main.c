@@ -470,7 +470,7 @@ bb0:
 #line 471 "main.c"
     hero_array_decref(t84);
 #line 114 "examples/deck/main.hero"
-    t45 = hero_array_len(t44);
+    t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
 #line 114 "examples/deck/main.hero"
     hero_print_int(t45);
 #line 114 "examples/deck/main.hero"
@@ -488,7 +488,7 @@ bb0:
 #line 489 "main.c"
     hero_array_decref(t85);
 #line 115 "examples/deck/main.hero"
-    t49 = hero_array_len(t48);
+    t49 = ((void)(t48 == NULL ? ((void)hero_array_len(t48), hero_unreachable()) : (void)0), t48->len);
 #line 115 "examples/deck/main.hero"
     hero_print_int(t49);
 #line 115 "examples/deck/main.hero"
@@ -508,7 +508,7 @@ bb0:
 #line 116 "examples/deck/main.hero"
     t53 = INT64_C(0);
 #line 116 "examples/deck/main.hero"
-    t54 = *(int64_t const *)hero_array_at(t52, t53);
+    t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? ((void)hero_array_at(t52, t53), hero_unreachable()) : (void)0), (void)(t52->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t52 + 1))[t53]);
 #line 116 "examples/deck/main.hero"
     hero_print_int(t54);
 #line 116 "examples/deck/main.hero"
@@ -526,7 +526,7 @@ bb0:
 #line 117 "examples/deck/main.hero"
     t57 = INT64_C(0);
 #line 117 "examples/deck/main.hero"
-    t58 = *(int64_t const *)hero_array_at(t56, t57);
+    t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t56 + 1))[t57]);
 #line 117 "examples/deck/main.hero"
     hero_print_int(t58);
 #line 117 "examples/deck/main.hero"
@@ -576,7 +576,7 @@ bb0:
 #line 577 "main.c"
     hero_array_decref(t90);
 #line 118 "examples/deck/main.hero"
-    t67 = hero_array_len(t66);
+    t67 = ((void)(t66 == NULL ? ((void)hero_array_len(t66), hero_unreachable()) : (void)0), t66->len);
 #line 118 "examples/deck/main.hero"
     hero_print_int(t67);
 #line 118 "examples/deck/main.hero"
@@ -711,7 +711,7 @@ bb1:
 #line 37 "examples/deck/main.hero"
     t4 = h0_deck;
 #line 37 "examples/deck/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 37 "examples/deck/main.hero"
     t6 = t3 < t5;
 #line 37 "examples/deck/main.hero"
@@ -725,7 +725,7 @@ bb2:
 #line 38 "examples/deck/main.hero"
     t13 = h3_i;
 #line 38 "examples/deck/main.hero"
-    t14 = *(HeroStr const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t12 + 1))[t13]);
 #line 38 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t14);
 #line 39 "examples/deck/main.hero"
@@ -828,7 +828,7 @@ bb1:
 #line 47 "examples/deck/main.hero"
     t4 = h0_deck;
 #line 47 "examples/deck/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 47 "examples/deck/main.hero"
     t6 = t3 < t5;
 #line 47 "examples/deck/main.hero"
@@ -874,7 +874,7 @@ bb5:
 #line 49 "examples/deck/main.hero"
     t12 = h3_i;
 #line 49 "examples/deck/main.hero"
-    t13 = *(HeroStr const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]);
 #line 49 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t13);
 #line 49 "examples/deck/main.hero"
@@ -975,7 +975,7 @@ bb2:
 #line 57 "examples/deck/main.hero"
     t5 = h0_deck;
 #line 57 "examples/deck/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 57 "examples/deck/main.hero"
     t7 = t4 >= t6;
 #line 57 "examples/deck/main.hero"
@@ -1007,7 +1007,7 @@ bb6:
 #line 62 "examples/deck/main.hero"
     t13 = h0_deck;
 #line 62 "examples/deck/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 62 "examples/deck/main.hero"
     t15 = t12 < t14;
 #line 62 "examples/deck/main.hero"
@@ -1019,7 +1019,7 @@ bb7:
 #line 63 "examples/deck/main.hero"
     t18 = h4_i;
 #line 63 "examples/deck/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 63 "examples/deck/main.hero"
     hero_array_push_owned(&h3_out, &t19);
 #line 64 "examples/deck/main.hero"
@@ -1057,7 +1057,7 @@ bb10:
 #line 69 "examples/deck/main.hero"
     t30 = h5_j;
 #line 69 "examples/deck/main.hero"
-    t31 = *(HeroStr const *)hero_array_at(t29, t30);
+    t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? ((void)hero_array_at(t29, t30), hero_unreachable()) : (void)0), (void)(t29->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t29 + 1))[t30]);
 #line 69 "examples/deck/main.hero"
     hero_array_push_owned(&h3_out, &t31);
 #line 70 "examples/deck/main.hero"
@@ -1139,7 +1139,7 @@ bb0:
 #line 76 "examples/deck/main.hero"
     t2 = h0_deck;
 #line 76 "examples/deck/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 76 "examples/deck/main.hero"
     t4 = INT64_C(1);
 #line 76 "examples/deck/main.hero"
@@ -1165,7 +1165,7 @@ bb2:
 #line 79 "examples/deck/main.hero"
     t11 = h2_i;
 #line 79 "examples/deck/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 79 "examples/deck/main.hero"
     hero_array_push_owned(&h1_out, &t12);
 #line 80 "examples/deck/main.hero"
@@ -1264,7 +1264,7 @@ bb1:
 #line 91 "examples/deck/main.hero"
     t4 = h0_left;
 #line 91 "examples/deck/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 91 "examples/deck/main.hero"
     t6 = t3 < t5;
 #line 91 "examples/deck/main.hero"
@@ -1278,7 +1278,7 @@ bb2:
 #line 92 "examples/deck/main.hero"
     t13 = h0_left;
 #line 92 "examples/deck/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 92 "examples/deck/main.hero"
     t15 = t12 < t14;
 #line 92 "examples/deck/main.hero"
@@ -1302,7 +1302,7 @@ bb4:
 #line 91 "examples/deck/main.hero"
     t8 = h1_right;
 #line 91 "examples/deck/main.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 91 "examples/deck/main.hero"
     t10 = t7 < t9;
 #line 91 "examples/deck/main.hero"
@@ -1322,7 +1322,7 @@ bb6:
 #line 95 "examples/deck/main.hero"
     t22 = h1_right;
 #line 95 "examples/deck/main.hero"
-    t23 = hero_array_len(t22);
+    t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
 #line 95 "examples/deck/main.hero"
     t24 = t21 < t23;
 #line 95 "examples/deck/main.hero"
@@ -1334,7 +1334,7 @@ bb7:
 #line 93 "examples/deck/main.hero"
     t18 = h3_i;
 #line 93 "examples/deck/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 93 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t19);
 #line 93 "examples/deck/main.hero"
@@ -1362,7 +1362,7 @@ bb10:
 #line 96 "examples/deck/main.hero"
     t27 = h3_i;
 #line 96 "examples/deck/main.hero"
-    t28 = *(HeroStr const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t26 + 1))[t27]);
 #line 96 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t28);
 #line 96 "examples/deck/main.hero"
@@ -1433,7 +1433,7 @@ bb1:
 #line 37 "examples/deck/main.hero"
     t4 = h0_deck;
 #line 37 "examples/deck/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 37 "examples/deck/main.hero"
     t6 = t3 < t5;
 #line 37 "examples/deck/main.hero"
@@ -1447,7 +1447,7 @@ bb2:
 #line 38 "examples/deck/main.hero"
     t13 = h3_i;
 #line 38 "examples/deck/main.hero"
-    t14 = *(int64_t const *)hero_array_at(t12, t13);
+    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]);
 #line 38 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t14);
 #line 39 "examples/deck/main.hero"
@@ -1550,7 +1550,7 @@ bb1:
 #line 47 "examples/deck/main.hero"
     t4 = h0_deck;
 #line 47 "examples/deck/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 47 "examples/deck/main.hero"
     t6 = t3 < t5;
 #line 47 "examples/deck/main.hero"
@@ -1596,7 +1596,7 @@ bb5:
 #line 49 "examples/deck/main.hero"
     t12 = h3_i;
 #line 49 "examples/deck/main.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 49 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t13);
 #line 49 "examples/deck/main.hero"
@@ -1697,7 +1697,7 @@ bb2:
 #line 57 "examples/deck/main.hero"
     t5 = h0_deck;
 #line 57 "examples/deck/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 57 "examples/deck/main.hero"
     t7 = t4 >= t6;
 #line 57 "examples/deck/main.hero"
@@ -1729,7 +1729,7 @@ bb6:
 #line 62 "examples/deck/main.hero"
     t13 = h0_deck;
 #line 62 "examples/deck/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 62 "examples/deck/main.hero"
     t15 = t12 < t14;
 #line 62 "examples/deck/main.hero"
@@ -1741,7 +1741,7 @@ bb7:
 #line 63 "examples/deck/main.hero"
     t18 = h4_i;
 #line 63 "examples/deck/main.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 63 "examples/deck/main.hero"
     hero_array_push_owned(&h3_out, &t19);
 #line 64 "examples/deck/main.hero"
@@ -1779,7 +1779,7 @@ bb10:
 #line 69 "examples/deck/main.hero"
     t30 = h5_j;
 #line 69 "examples/deck/main.hero"
-    t31 = *(int64_t const *)hero_array_at(t29, t30);
+    t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? ((void)hero_array_at(t29, t30), hero_unreachable()) : (void)0), (void)(t29->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t29 + 1))[t30]);
 #line 69 "examples/deck/main.hero"
     hero_array_push_owned(&h3_out, &t31);
 #line 70 "examples/deck/main.hero"
@@ -1861,7 +1861,7 @@ bb0:
 #line 76 "examples/deck/main.hero"
     t2 = h0_deck;
 #line 76 "examples/deck/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 76 "examples/deck/main.hero"
     t4 = INT64_C(1);
 #line 76 "examples/deck/main.hero"
@@ -1887,7 +1887,7 @@ bb2:
 #line 79 "examples/deck/main.hero"
     t11 = h2_i;
 #line 79 "examples/deck/main.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 79 "examples/deck/main.hero"
     hero_array_push_owned(&h1_out, &t12);
 #line 80 "examples/deck/main.hero"
@@ -1986,7 +1986,7 @@ bb1:
 #line 91 "examples/deck/main.hero"
     t4 = h0_left;
 #line 91 "examples/deck/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 91 "examples/deck/main.hero"
     t6 = t3 < t5;
 #line 91 "examples/deck/main.hero"
@@ -2000,7 +2000,7 @@ bb2:
 #line 92 "examples/deck/main.hero"
     t13 = h0_left;
 #line 92 "examples/deck/main.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 92 "examples/deck/main.hero"
     t15 = t12 < t14;
 #line 92 "examples/deck/main.hero"
@@ -2024,7 +2024,7 @@ bb4:
 #line 91 "examples/deck/main.hero"
     t8 = h1_right;
 #line 91 "examples/deck/main.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 91 "examples/deck/main.hero"
     t10 = t7 < t9;
 #line 91 "examples/deck/main.hero"
@@ -2044,7 +2044,7 @@ bb6:
 #line 95 "examples/deck/main.hero"
     t22 = h1_right;
 #line 95 "examples/deck/main.hero"
-    t23 = hero_array_len(t22);
+    t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
 #line 95 "examples/deck/main.hero"
     t24 = t21 < t23;
 #line 95 "examples/deck/main.hero"
@@ -2056,7 +2056,7 @@ bb7:
 #line 93 "examples/deck/main.hero"
     t18 = h3_i;
 #line 93 "examples/deck/main.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 93 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t19);
 #line 93 "examples/deck/main.hero"
@@ -2084,7 +2084,7 @@ bb10:
 #line 96 "examples/deck/main.hero"
     t27 = h3_i;
 #line 96 "examples/deck/main.hero"
-    t28 = *(int64_t const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]);
 #line 96 "examples/deck/main.hero"
     hero_array_push_owned(&h2_out, &t28);
 #line 96 "examples/deck/main.hero"

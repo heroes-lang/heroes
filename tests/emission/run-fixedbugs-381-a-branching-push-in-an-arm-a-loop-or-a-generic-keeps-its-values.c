@@ -403,7 +403,7 @@ bb1:
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -415,7 +415,7 @@ bb2:
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t11 = h3_i0;
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 18 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     h4_at = t12;
 #line 19 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -740,7 +740,7 @@ bb1:
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t5 = h2_xs0;
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = t4 < t6;
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -752,7 +752,7 @@ bb2:
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = h3_i0;
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t10 = *(HeroArrayHeader * const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]);
 #line 28 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t44 = h4_row;
 #line 759 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
@@ -823,7 +823,7 @@ bb5:
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t14 = h5_xs1;
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t15 = hero_array_len(t14);
+    t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len);
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t16 = t13 < t15;
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -835,7 +835,7 @@ bb6:
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t18 = h6_i1;
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     h7_x = t19;
 #line 30 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1017,7 +1017,7 @@ bb1:
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1029,7 +1029,7 @@ bb2:
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t11 = h3_i0;
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 45 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     h4_at = t12;
 #line 46 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1252,7 +1252,7 @@ bb1:
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1264,7 +1264,7 @@ bb2:
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t11 = h3_i0;
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 53 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     h4_at = t12;
 #line 54 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1490,7 +1490,7 @@ bb1:
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = h2_xs0;
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = t6 < t8;
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1502,13 +1502,13 @@ bb2:
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t11 = h3_i0;
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t12 = *(int64_t const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 62 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     h4_at = t12;
 #line 63 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t14 = h1_out;
 #line 63 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t15 = hero_array_len(t14);
+    t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len);
 #line 63 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t16 = INT64_C(100);
 #line 63 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1678,7 +1678,7 @@ bb1:
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t5 = h2_xs0;
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = t4 < t6;
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1690,7 +1690,7 @@ bb2:
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = h3_i0;
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 70 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     h4_x = t10;
 #line 71 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -2125,7 +2125,7 @@ bb0:
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t36 = h2_grid;
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t37 = hero_array_len(t36);
+    t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len);
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t38 = HERO_STR_LIT(hero_str_20);
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -2133,7 +2133,7 @@ bb0:
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t40 = INT64_C(2);
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t41 = *(HeroArrayHeader * const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t39 + 1))[t40]);
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t42 = h_fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues_shown(t41);
 #line 84 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -2418,7 +2418,7 @@ bb1:
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t5 = h2_xs0;
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = t4 < t6;
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -2430,7 +2430,7 @@ bb2:
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = h3_i0;
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t10 = *(h_0opt_e201354 const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_0opt_e201354) ? hero_unreachable() : (void)0), ((h_0opt_e201354 const *)(const void *)(t8 + 1))[t9]);
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t29 = h4_x;
 #line 2437 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
@@ -2593,7 +2593,7 @@ bb1:
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t5 = h2_xs0;
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t7 = t4 < t6;
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -2605,7 +2605,7 @@ bb2:
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t9 = h3_i0;
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
-    t10 = *(h_0opt_f87774a const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t8 + 1))[t9]);
 #line 37 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     t29 = h4_x;
 #line 2612 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"

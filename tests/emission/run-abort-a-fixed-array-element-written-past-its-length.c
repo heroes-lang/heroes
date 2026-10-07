@@ -209,7 +209,7 @@ bb1:
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t13 = h1_xs0;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-    t14 = hero_array_len(t13);
+    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t15 = t12 < t14;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
@@ -221,7 +221,7 @@ bb2:
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t17 = h2_i0;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-    t18 = *(int64_t const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h3_i = t18;
 #line 27 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"

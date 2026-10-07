@@ -534,7 +534,7 @@ bb0:
 #line 32 "examples/tree/main.hero"
     t39 = t38.f_nodes;
 #line 32 "examples/tree/main.hero"
-    t40 = hero_array_len(t39);
+    t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
 #line 32 "examples/tree/main.hero"
     hero_print_int(t40);
 #line 32 "examples/tree/main.hero"
@@ -825,7 +825,7 @@ bb0:
 #line 62 "examples/tree/node.hero"
     t6 = t5.f_nodes;
 #line 62 "examples/tree/node.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 62 "examples/tree/node.hero"
     t8 = INT64_C(1);
 #line 62 "examples/tree/node.hero"
@@ -903,7 +903,7 @@ bb0:
 #line 70 "examples/tree/node.hero"
     t3 = h1_at;
 #line 70 "examples/tree/node.hero"
-    t4 = *(h_node_Node const *)hero_array_at(t2, t3);
+    t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t2 + 1))[t3]);
 #line 70 "examples/tree/node.hero"
     t48 = h2_s0;
 #line 910 "main.c"
@@ -1149,7 +1149,7 @@ bb0:
 #line 80 "examples/tree/node.hero"
     t3 = h1_at;
 #line 80 "examples/tree/node.hero"
-    t4 = *(h_node_Node const *)hero_array_at(t2, t3);
+    t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t2 + 1))[t3]);
 #line 80 "examples/tree/node.hero"
     t52 = h2_s0;
 #line 1156 "main.c"
@@ -1499,7 +1499,7 @@ bb0:
 #line 96 "examples/tree/node.hero"
     t3 = h1_at;
 #line 96 "examples/tree/node.hero"
-    t4 = *(h_node_Node const *)hero_array_at(t2, t3);
+    t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_node_Node) ? hero_unreachable() : (void)0), ((h_node_Node const *)(const void *)(t2 + 1))[t3]);
 #line 96 "examples/tree/node.hero"
     t62 = h2_s0;
 #line 1506 "main.c"

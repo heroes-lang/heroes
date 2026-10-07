@@ -734,7 +734,7 @@ bb0:
 #line 72 "examples/readings/main.hero"
     t5 = h1_good;
 #line 72 "examples/readings/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 72 "examples/readings/main.hero"
     hero_print_int(t6);
 #line 72 "examples/readings/main.hero"
@@ -778,7 +778,7 @@ bb0:
 #line 76 "examples/readings/main.hero"
     t16 = h1_good;
 #line 76 "examples/readings/main.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 76 "examples/readings/main.hero"
     if (t17 == 0) hero_panic("division by zero");
 #line 76 "examples/readings/main.hero"
@@ -938,7 +938,7 @@ bb1:
 #line 94 "examples/readings/main.hero"
     t54 = h0_all_week;
 #line 94 "examples/readings/main.hero"
-    t55 = hero_array_len(t54);
+    t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
 #line 94 "examples/readings/main.hero"
     t56 = h_library_range(t53, t55);
 #line 94 "examples/readings/main.hero"
@@ -1057,7 +1057,7 @@ bb0:
 #line 98 "examples/readings/main.hero"
     t2 = h1_item;
 #line 98 "examples/readings/main.hero"
-    t3 = *(h_main_Reading const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t1 + 1))[t2]);
 #line 98 "examples/readings/main.hero"
     t13 = h2_one;
 #line 1064 "main.c"
@@ -1446,7 +1446,7 @@ bb1:
 #line 45 "<heroes library>"
     t5 = h3_xs0;
 #line 45 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 45 "<heroes library>"
     t7 = t4 < t6;
 #line 45 "<heroes library>"
@@ -1458,7 +1458,7 @@ bb2:
 #line 45 "<heroes library>"
     t9 = h4_i0;
 #line 45 "<heroes library>"
-    t10 = *(h_main_Reading const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t8 + 1))[t9]);
 #line 45 "<heroes library>"
     t24 = h5_x;
 #line 1465 "main.c"
@@ -1594,7 +1594,7 @@ bb1:
 #line 38 "<heroes library>"
     t5 = h3_xs0;
 #line 38 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 38 "<heroes library>"
     t7 = t4 < t6;
 #line 38 "<heroes library>"
@@ -1606,7 +1606,7 @@ bb2:
 #line 38 "<heroes library>"
     t9 = h4_i0;
 #line 38 "<heroes library>"
-    t10 = *(h_main_Reading const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     t23 = h5_x;
 #line 1613 "main.c"
@@ -1715,7 +1715,7 @@ bb1:
 #line 60 "<heroes library>"
     t5 = h4_xs0;
 #line 60 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 60 "<heroes library>"
     t7 = t4 < t6;
 #line 60 "<heroes library>"
@@ -1727,7 +1727,7 @@ bb2:
 #line 60 "<heroes library>"
     t9 = h5_i0;
 #line 60 "<heroes library>"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     h6_x = t10;
 #line 61 "<heroes library>"
@@ -1824,7 +1824,7 @@ bb1:
 #line 67 "<heroes library>"
     t4 = h2_xs0;
 #line 67 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 67 "<heroes library>"
     t6 = t3 < t5;
 #line 67 "<heroes library>"
@@ -1836,7 +1836,7 @@ bb2:
 #line 67 "<heroes library>"
     t8 = h3_i0;
 #line 67 "<heroes library>"
-    t9 = *(h_main_Reading const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t7 + 1))[t8]);
 #line 67 "<heroes library>"
     t23 = h4_x;
 #line 1843 "main.c"
@@ -1989,7 +1989,7 @@ bb1:
 #line 75 "<heroes library>"
     t4 = h2_xs0;
 #line 75 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 75 "<heroes library>"
     t6 = t3 < t5;
 #line 75 "<heroes library>"
@@ -2001,7 +2001,7 @@ bb2:
 #line 75 "<heroes library>"
     t8 = h3_i0;
 #line 75 "<heroes library>"
-    t9 = *(h_main_Reading const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t7 + 1))[t8]);
 #line 75 "<heroes library>"
     t20 = h4_x;
 #line 2008 "main.c"
@@ -2121,7 +2121,7 @@ bb1:
 #line 83 "<heroes library>"
     t4 = h2_xs0;
 #line 83 "<heroes library>"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 83 "<heroes library>"
     t6 = t3 < t5;
 #line 83 "<heroes library>"
@@ -2133,7 +2133,7 @@ bb2:
 #line 83 "<heroes library>"
     t8 = h3_i0;
 #line 83 "<heroes library>"
-    t9 = *(h_main_Reading const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t7 + 1))[t8]);
 #line 83 "<heroes library>"
     t21 = h4_x;
 #line 2140 "main.c"
@@ -2274,7 +2274,7 @@ bb1:
 #line 38 "<heroes library>"
     t5 = h3_xs0;
 #line 38 "<heroes library>"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 38 "<heroes library>"
     t7 = t4 < t6;
 #line 38 "<heroes library>"
@@ -2286,7 +2286,7 @@ bb2:
 #line 38 "<heroes library>"
     t9 = h4_i0;
 #line 38 "<heroes library>"
-    t10 = *(h_main_Reading const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     t23 = h5_x;
 #line 2293 "main.c"

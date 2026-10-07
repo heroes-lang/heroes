@@ -498,7 +498,7 @@ bb4:
 #line 59 "examples/histogram/main.hero"
     t18 = h3_xs0;
 #line 59 "examples/histogram/main.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 59 "examples/histogram/main.hero"
     t20 = t17 < t19;
 #line 59 "examples/histogram/main.hero"
@@ -510,7 +510,7 @@ bb5:
 #line 59 "examples/histogram/main.hero"
     t22 = h4_i0;
 #line 59 "examples/histogram/main.hero"
-    t23 = *(int64_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 59 "examples/histogram/main.hero"
     h5_h = t23;
 #line 60 "examples/histogram/main.hero"
@@ -626,7 +626,7 @@ bb2:
 #line 69 "examples/histogram/main.hero"
     t10 = h1_d;
 #line 69 "examples/histogram/main.hero"
-    t11 = *(int64_t const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
 #line 69 "examples/histogram/main.hero"
     hero_print_str(t6);
 #line 69 "examples/histogram/main.hero"

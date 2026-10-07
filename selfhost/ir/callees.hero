@@ -1,0 +1,76 @@
+# The verifier's question of every call and function value (defect 417,
+# 2026-10-07; design.md §4.12, §4.13): does the Heroes callee it names exist
+# as a function of the program at the type arguments it names? Asked by
+# `ir/verify.hero` after monomorphisation and after the ownership pass, by
+# the emitter's own lookup (`ir/instances.hero`), so the verifier and the
+# emitter cannot disagree on what a name means.
+#
+# Its own file since the check took `verify.hero` past section 11's ceiling:
+# what an instruction names is one question, and the verifier's other
+# invariants, a block's shape and §4.8's copy-out, are another.
+
+use ir/containers
+use ir/instances
+use check/state
+
+# A Heroes callee the emitter could not name (defect 417, 2026-10-07): a call,
+# or a function used as a value, whose declaration at the type arguments the
+# instruction names is no function of the program. The emitter's answer to
+# one was `hero_unreachable()` where it stood, so the program built at exit 0
+# and aborted on reaching that line, saying the compiler was wrong. It is the
+# compiler's fault all the same, and it is said here, at build time and before
+# any C, with the instruction's bytes, by the lookup the emitter names it with
+# (`ir/instances.hero`), read from an index of the program built once per
+# verification. Asked once monomorphisation has run: before it a generic call
+# names type arguments no copy holds yet.
+#
+# A BUILT-IN named as a value is refused at every phase: it is a shape the
+# emitter expands and never a symbol, so it has no C name at all
+# (`emit/func_ref.hero`); the checker refuses it as `builtin_as_value`.
+function check(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, held: instances.Index, at: str, @problems: [str])
+    for inst in blk.insts
+        what: str @ ""
+        decl: i64 @ 0 - 1
+
+        match inst.op
+            .call cl =>
+                match cl.callee
+                    .heroes_fn h =>
+                        what @ "a call"
+                        decl @ h.decl
+                    .extern_fn | .builtin_fn | .indirect => what @ what
+            .func_ref fr =>
+                match fr.callee
+                    .heroes_fn h =>
+                        what @ "a function value"
+                        decl @ h.decl
+                    .builtin_fn =>
+                        problems @ problems.push(at + "a built-in named as a value, which C has no name for")
+                    .extern_fn | .indirect => what @ what
+            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => what @ what
+            .field | .index | .map_get | .len_of | .tag_of | .payload                   => what @ what
+            .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => what @ what
+
+        if decl >= 0 && after_mono(p.phase)
+            named = instances.named_at(f, c, at: inst.span.end)
+
+            if instances.index_in(held, decl: decl, instance: named).is_err()
+                problems @ problems.push(
+                    at + what + " at bytes " + inst.span.start.to_str() + " to " + inst.span.end.to_str() + " names " + callee_name(p, decl: decl) + " at the types " + instances.spelled(named) + ", and the program holds no such function: C would have no name for it"
+                )
+
+function after_mono(phase: containers.Phase) -> bool
+    match phase
+        .lowered       => return false
+        .mono | .owned => return true
+
+    return false
+
+# The callee's source name, from any copy of it the program holds, or its
+# declaration's index where it holds none: the verifier has no source text.
+function callee_name(p: containers.Program, decl: i64) -> str
+    for f in p.functions
+        if f.decl == decl
+            return "`" + f.name + "`"
+
+    return "declaration " + decl.to_str()

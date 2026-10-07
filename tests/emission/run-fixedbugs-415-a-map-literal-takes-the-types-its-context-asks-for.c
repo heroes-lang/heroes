@@ -313,7 +313,7 @@ bb1:
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t6 = h2_xs0;
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t8 = t5 < t7;
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
@@ -325,7 +325,7 @@ bb2:
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t10 = h3_i0;
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t31 = h4_k;
 #line 332 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
@@ -1423,7 +1423,7 @@ bb13:
 #line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t102 = INT64_C(1);
 #line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t103 = *(uint8_t const *)hero_array_at(t101, t102);
+    t103 = ((void)((t101 == NULL || t102 < 0 || t102 >= t101->len) ? ((void)hero_array_at(t101, t102), hero_unreachable()) : (void)0), (void)(t101->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t101 + 1))[t102]);
 #line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     hero_print_int(t103);
 #line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
@@ -1489,7 +1489,7 @@ bb15:
 #line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t114 = t113.as.ok;
 #line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t115 = hero_array_len(t114);
+    t115 = ((void)(t114 == NULL ? ((void)hero_array_len(t114), hero_unreachable()) : (void)0), t114->len);
 #line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     hero_print_int(t115);
 #line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"

@@ -440,7 +440,7 @@ bb2:
 #line 24 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t8 = h1_at;
 #line 24 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 24 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow();
 #line 24 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -472,7 +472,7 @@ bb3:
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t17 = INT64_C(3);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t18 = *(int64_t const *)hero_array_at(t16, t17);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t19 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -486,7 +486,7 @@ bb3:
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t21 = INT64_C(4);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t22 = *(int64_t const *)hero_array_at(t20, t21);
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t20 + 1))[t21]);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t23 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -500,7 +500,7 @@ bb3:
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t25 = INT64_C(3);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t26 = *(int64_t const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t24 + 1))[t25]);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t27 = h_fixedbugs382anegativeelementkeepsitssign_NEG();
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -512,7 +512,7 @@ bb3:
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t28 = INT64_C(1);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t29 = *(int64_t const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t27 + 1))[t28]);
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t30 = t26 < t29;
 #line 27 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -542,7 +542,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t32 = INT64_C(0);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t33 = *(int8_t const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t31 + 1))[t32]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t34 = HERO_STR_LIT(hero_str_20);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -556,7 +556,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t36 = INT64_C(1);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t37 = *(int8_t const *)hero_array_at(t35, t36);
+    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t35 + 1))[t36]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t38 = HERO_STR_LIT(hero_str_20);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -570,7 +570,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t40 = INT64_C(2);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t41 = *(int8_t const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t39 + 1))[t40]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t42 = HERO_STR_LIT(hero_str_20);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -584,7 +584,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t44 = INT64_C(0);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t45 = *(int16_t const *)hero_array_at(t43, t44);
+    t45 = ((void)((t43 == NULL || t44 < 0 || t44 >= t43->len) ? ((void)hero_array_at(t43, t44), hero_unreachable()) : (void)0), (void)(t43->elem->size != sizeof(int16_t) ? hero_unreachable() : (void)0), ((int16_t const *)(const void *)(t43 + 1))[t44]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t46 = HERO_STR_LIT(hero_str_20);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -598,7 +598,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t48 = INT64_C(1);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t49 = *(int16_t const *)hero_array_at(t47, t48);
+    t49 = ((void)((t47 == NULL || t48 < 0 || t48 >= t47->len) ? ((void)hero_array_at(t47, t48), hero_unreachable()) : (void)0), (void)(t47->elem->size != sizeof(int16_t) ? hero_unreachable() : (void)0), ((int16_t const *)(const void *)(t47 + 1))[t48]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t50 = HERO_STR_LIT(hero_str_20);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -612,7 +612,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t52 = INT64_C(0);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t53 = *(int32_t const *)hero_array_at(t51, t52);
+    t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? ((void)hero_array_at(t51, t52), hero_unreachable()) : (void)0), (void)(t51->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t51 + 1))[t52]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t54 = HERO_STR_LIT(hero_str_20);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -626,7 +626,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t56 = INT64_C(1);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t57 = *(int32_t const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t55 + 1))[t56]);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_print_int(t33);
 #line 28 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -674,7 +674,7 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t60 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t61 = *(int64_t const *)hero_array_at(t59, t60);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t59 + 1))[t60]);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t62 = HERO_STR_LIT(hero_str_20);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
@@ -696,7 +696,7 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t65 = INT64_C(2);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
-    t66 = *(int8_t const *)hero_array_at(t64, t65);
+    t66 = ((void)((t64 == NULL || t65 < 0 || t65 >= t64->len) ? ((void)hero_array_at(t64, t65), hero_unreachable()) : (void)0), (void)(t64->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t64 + 1))[t65]);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_print_int(t61);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"

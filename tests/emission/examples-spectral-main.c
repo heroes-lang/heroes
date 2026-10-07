@@ -284,7 +284,7 @@ bb1:
 #line 65 "examples/spectral/main.hero"
     t4 = h0_u;
 #line 65 "examples/spectral/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 65 "examples/spectral/main.hero"
     t6 = t3 < t5;
 #line 65 "examples/spectral/main.hero"
@@ -320,7 +320,7 @@ bb4:
 #line 69 "examples/spectral/main.hero"
     t10 = h0_u;
 #line 69 "examples/spectral/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 69 "examples/spectral/main.hero"
     t12 = t9 < t11;
 #line 69 "examples/spectral/main.hero"
@@ -340,7 +340,7 @@ bb5:
 #line 70 "examples/spectral/main.hero"
     t18 = h4_j;
 #line 70 "examples/spectral/main.hero"
-    t19 = *(double const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t17 + 1))[t18]);
 #line 70 "examples/spectral/main.hero"
     t20 = t16 * t19;
 #line 70 "examples/spectral/main.hero"
@@ -446,7 +446,7 @@ bb1:
 #line 84 "examples/spectral/main.hero"
     t4 = h0_u;
 #line 84 "examples/spectral/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 84 "examples/spectral/main.hero"
     t6 = t3 < t5;
 #line 84 "examples/spectral/main.hero"
@@ -482,7 +482,7 @@ bb4:
 #line 88 "examples/spectral/main.hero"
     t10 = h0_u;
 #line 88 "examples/spectral/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 88 "examples/spectral/main.hero"
     t12 = t9 < t11;
 #line 88 "examples/spectral/main.hero"
@@ -502,7 +502,7 @@ bb5:
 #line 89 "examples/spectral/main.hero"
     t18 = h4_j;
 #line 89 "examples/spectral/main.hero"
-    t19 = *(double const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t17 + 1))[t18]);
 #line 89 "examples/spectral/main.hero"
     t20 = t16 * t19;
 #line 89 "examples/spectral/main.hero"
@@ -867,13 +867,13 @@ bb5:
 #line 131 "examples/spectral/main.hero"
     t24 = h6_at;
 #line 131 "examples/spectral/main.hero"
-    t25 = *(double const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t23 + 1))[t24]);
 #line 131 "examples/spectral/main.hero"
     t26 = h2_v;
 #line 131 "examples/spectral/main.hero"
     t27 = h6_at;
 #line 131 "examples/spectral/main.hero"
-    t28 = *(double const *)hero_array_at(t26, t27);
+    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t26 + 1))[t27]);
 #line 131 "examples/spectral/main.hero"
     t29 = t25 * t28;
 #line 131 "examples/spectral/main.hero"
@@ -887,13 +887,13 @@ bb5:
 #line 132 "examples/spectral/main.hero"
     t33 = h6_at;
 #line 132 "examples/spectral/main.hero"
-    t34 = *(double const *)hero_array_at(t32, t33);
+    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t32 + 1))[t33]);
 #line 132 "examples/spectral/main.hero"
     t35 = h2_v;
 #line 132 "examples/spectral/main.hero"
     t36 = h6_at;
 #line 132 "examples/spectral/main.hero"
-    t37 = *(double const *)hero_array_at(t35, t36);
+    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t35 + 1))[t36]);
 #line 132 "examples/spectral/main.hero"
     t38 = t34 * t37;
 #line 132 "examples/spectral/main.hero"

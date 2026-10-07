@@ -547,7 +547,7 @@ bb1:
 #line 38 "examples/ini/main.hero"
     t11 = h5_xs0;
 #line 38 "examples/ini/main.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 38 "examples/ini/main.hero"
     t13 = t10 < t12;
 #line 38 "examples/ini/main.hero"
@@ -559,7 +559,7 @@ bb2:
 #line 38 "examples/ini/main.hero"
     t15 = h6_i0;
 #line 38 "examples/ini/main.hero"
-    t16 = *(HeroStr const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 38 "examples/ini/main.hero"
     t162 = h7_line;
 #line 566 "main.c"
@@ -2025,7 +2025,7 @@ bb1:
 #line 104 "examples/ini/main.hero"
     t8 = h2_xs0;
 #line 104 "examples/ini/main.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 104 "examples/ini/main.hero"
     t10 = t7 < t9;
 #line 104 "examples/ini/main.hero"
@@ -2037,7 +2037,7 @@ bb2:
 #line 104 "examples/ini/main.hero"
     t12 = h3_i0;
 #line 104 "examples/ini/main.hero"
-    t13 = *(HeroStr const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]);
 #line 104 "examples/ini/main.hero"
     t41 = h4_name;
 #line 2044 "main.c"
@@ -2283,7 +2283,7 @@ bb1:
 #line 114 "examples/ini/main.hero"
     t7 = h3_xs0;
 #line 114 "examples/ini/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 114 "examples/ini/main.hero"
     t9 = t6 < t8;
 #line 114 "examples/ini/main.hero"
@@ -2295,7 +2295,7 @@ bb2:
 #line 114 "examples/ini/main.hero"
     t11 = h4_i0;
 #line 114 "examples/ini/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 114 "examples/ini/main.hero"
     t39 = h5_ch;
 #line 2302 "main.c"

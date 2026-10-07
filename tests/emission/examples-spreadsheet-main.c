@@ -379,7 +379,7 @@ bb0:
 #line 25 "examples/spreadsheet/main.hero"
     t2 = h0_given;
 #line 25 "examples/spreadsheet/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 25 "examples/spreadsheet/main.hero"
     t4 = INT64_C(0);
 #line 25 "examples/spreadsheet/main.hero"
@@ -393,7 +393,7 @@ bb1:
 #line 29 "examples/spreadsheet/main.hero"
     t9 = INT64_C(0);
 #line 29 "examples/spreadsheet/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 29 "examples/spreadsheet/main.hero"
     t11 = h_library_read_file(t10);
 #line 29 "examples/spreadsheet/main.hero"
@@ -492,7 +492,7 @@ bb5:
 #line 30 "examples/spreadsheet/main.hero"
     t18 = INT64_C(0);
 #line 30 "examples/spreadsheet/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 30 "examples/spreadsheet/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 30 "examples/spreadsheet/main.hero"
@@ -842,7 +842,7 @@ bb1:
 #line 45 "examples/spreadsheet/main.hero"
     t6 = h2_xs0;
 #line 45 "examples/spreadsheet/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 45 "examples/spreadsheet/main.hero"
     t8 = t5 < t7;
 #line 45 "examples/spreadsheet/main.hero"
@@ -854,7 +854,7 @@ bb2:
 #line 45 "examples/spreadsheet/main.hero"
     t10 = h3_i0;
 #line 45 "examples/spreadsheet/main.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 45 "examples/spreadsheet/main.hero"
     t52 = h4_name;
 #line 861 "main.c"
@@ -930,7 +930,7 @@ bb4:
 #line 931 "main.c"
     hero_array_decref(t56);
 #line 53 "examples/spreadsheet/main.hero"
-    t40 = hero_array_len(t39);
+    t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
 #line 53 "examples/spreadsheet/main.hero"
     t41 = hero_int_to_str(t40);
 #line 53 "examples/spreadsheet/main.hero"
@@ -1517,7 +1517,7 @@ bb1:
 #line 64 "examples/spreadsheet/formula.hero"
     t4 = h2_xs0;
 #line 64 "examples/spreadsheet/formula.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 64 "examples/spreadsheet/formula.hero"
     t6 = t3 < t5;
 #line 64 "examples/spreadsheet/formula.hero"
@@ -1529,7 +1529,7 @@ bb2:
 #line 64 "examples/spreadsheet/formula.hero"
     t8 = h3_i0;
 #line 64 "examples/spreadsheet/formula.hero"
-    t9 = *(HeroStr const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 64 "examples/spreadsheet/formula.hero"
     t20 = h4_one;
 #line 1536 "main.c"
@@ -4734,7 +4734,7 @@ bb16:
 #line 216 "examples/spreadsheet/formula.hero"
     t46 = h9_xs0;
 #line 216 "examples/spreadsheet/formula.hero"
-    t47 = hero_array_len(t46);
+    t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len);
 #line 216 "examples/spreadsheet/formula.hero"
     t48 = t45 < t47;
 #line 216 "examples/spreadsheet/formula.hero"
@@ -4746,7 +4746,7 @@ bb17:
 #line 216 "examples/spreadsheet/formula.hero"
     t50 = h10_i0;
 #line 216 "examples/spreadsheet/formula.hero"
-    t51 = *(HeroStr const *)hero_array_at(t49, t50);
+    t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]);
 #line 216 "examples/spreadsheet/formula.hero"
     t83 = h11_name;
 #line 4753 "main.c"
@@ -6772,7 +6772,7 @@ bb8:
 #line 114 "examples/spreadsheet/sheet.hero"
     t57 = h7_xs0;
 #line 114 "examples/spreadsheet/sheet.hero"
-    t58 = hero_array_len(t57);
+    t58 = ((void)(t57 == NULL ? ((void)hero_array_len(t57), hero_unreachable()) : (void)0), t57->len);
 #line 114 "examples/spreadsheet/sheet.hero"
     t59 = t56 < t58;
 #line 114 "examples/spreadsheet/sheet.hero"
@@ -6784,7 +6784,7 @@ bb9:
 #line 114 "examples/spreadsheet/sheet.hero"
     t61 = h8_i0;
 #line 114 "examples/spreadsheet/sheet.hero"
-    t62 = *(int64_t const *)hero_array_at(t60, t61);
+    t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t60 + 1))[t61]);
 #line 114 "examples/spreadsheet/sheet.hero"
     h9_row = t62;
 #line 115 "examples/spreadsheet/sheet.hero"
@@ -6858,7 +6858,7 @@ bb12:
 #line 115 "examples/spreadsheet/sheet.hero"
     t72 = h10_xs1;
 #line 115 "examples/spreadsheet/sheet.hero"
-    t73 = hero_array_len(t72);
+    t73 = ((void)(t72 == NULL ? ((void)hero_array_len(t72), hero_unreachable()) : (void)0), t72->len);
 #line 115 "examples/spreadsheet/sheet.hero"
     t74 = t71 < t73;
 #line 115 "examples/spreadsheet/sheet.hero"
@@ -6870,7 +6870,7 @@ bb13:
 #line 115 "examples/spreadsheet/sheet.hero"
     t76 = h11_i1;
 #line 115 "examples/spreadsheet/sheet.hero"
-    t77 = *(int64_t const *)hero_array_at(t75, t76);
+    t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t75 + 1))[t76]);
 #line 115 "examples/spreadsheet/sheet.hero"
     h12_column = t77;
 #line 116 "examples/spreadsheet/sheet.hero"
@@ -7250,7 +7250,7 @@ bb1:
 #line 136 "examples/spreadsheet/sheet.hero"
     t6 = h2_xs0;
 #line 136 "examples/spreadsheet/sheet.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 136 "examples/spreadsheet/sheet.hero"
     t8 = t5 < t7;
 #line 136 "examples/spreadsheet/sheet.hero"
@@ -7262,7 +7262,7 @@ bb2:
 #line 136 "examples/spreadsheet/sheet.hero"
     t10 = h3_i0;
 #line 136 "examples/spreadsheet/sheet.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 136 "examples/spreadsheet/sheet.hero"
     t71 = h4_line;
 #line 7269 "main.c"
@@ -7819,7 +7819,7 @@ bb1:
 #line 160 "examples/spreadsheet/sheet.hero"
     t14 = h3_xs0;
 #line 160 "examples/spreadsheet/sheet.hero"
-    t15 = hero_array_len(t14);
+    t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len);
 #line 160 "examples/spreadsheet/sheet.hero"
     t16 = t13 < t15;
 #line 160 "examples/spreadsheet/sheet.hero"
@@ -7831,7 +7831,7 @@ bb2:
 #line 160 "examples/spreadsheet/sheet.hero"
     t18 = h4_i0;
 #line 160 "examples/spreadsheet/sheet.hero"
-    t19 = *(int64_t const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 160 "examples/spreadsheet/sheet.hero"
     h5_row = t19;
 #line 161 "examples/spreadsheet/sheet.hero"
@@ -7924,7 +7924,7 @@ bb5:
 #line 161 "examples/spreadsheet/sheet.hero"
     t25 = h6_xs1;
 #line 161 "examples/spreadsheet/sheet.hero"
-    t26 = hero_array_len(t25);
+    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
 #line 161 "examples/spreadsheet/sheet.hero"
     t27 = t24 < t26;
 #line 161 "examples/spreadsheet/sheet.hero"
@@ -7936,7 +7936,7 @@ bb6:
 #line 161 "examples/spreadsheet/sheet.hero"
     t29 = h7_i1;
 #line 161 "examples/spreadsheet/sheet.hero"
-    t30 = *(int64_t const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t28 + 1))[t29]);
 #line 161 "examples/spreadsheet/sheet.hero"
     h8_column = t30;
 #line 162 "examples/spreadsheet/sheet.hero"
@@ -8113,7 +8113,7 @@ bb1:
 #line 172 "examples/spreadsheet/sheet.hero"
     t5 = h2_xs0;
 #line 172 "examples/spreadsheet/sheet.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 172 "examples/spreadsheet/sheet.hero"
     t7 = t4 < t6;
 #line 172 "examples/spreadsheet/sheet.hero"
@@ -8125,7 +8125,7 @@ bb2:
 #line 172 "examples/spreadsheet/sheet.hero"
     t9 = h3_i0;
 #line 172 "examples/spreadsheet/sheet.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 172 "examples/spreadsheet/sheet.hero"
     t26 = h4_name;
 #line 8132 "main.c"

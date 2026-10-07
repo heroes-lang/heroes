@@ -266,7 +266,7 @@ bb1:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     t5 = h2_xs0;
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     t7 = t4 < t6;
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
@@ -278,7 +278,7 @@ bb2:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     t9 = h3_i0;
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    t10 = *(h_0fn_48ac9712 const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t8 + 1))[t9]);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     h4_f = t10;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
@@ -382,7 +382,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     t11 = INT64_C(1);
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    t12 = *(h_0fn_48ac9712 const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t10 + 1))[t11]);
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     t13 = INT64_C(4);
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
@@ -398,7 +398,7 @@ bb0:
 #line 399 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
     hero_array_decref(t19);
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     hero_print_int(t5);
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"

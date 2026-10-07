@@ -225,7 +225,7 @@ bb0:
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t15 = INT64_C(0);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
-    t16 = *(int64_t const *)hero_array_at(t14, t15);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t17 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
@@ -233,7 +233,7 @@ bb0:
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t19 = INT64_C(1);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
-    t20 = *(int64_t const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     hero_print_int(t16);
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
@@ -249,13 +249,13 @@ bb0:
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
     t24 = h1_part;
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
-    t25 = hero_array_len(t24);
+    t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len);
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
     t26 = HERO_STR_LIT(hero_str_20);
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
     t27 = h0_xs;
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
-    t28 = hero_array_len(t27);
+    t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len);
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
     hero_print_int(t25);
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"

@@ -320,7 +320,7 @@ bb0:
 #line 25 "examples/logs/main.hero"
     t2 = h0_given;
 #line 25 "examples/logs/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 25 "examples/logs/main.hero"
     t4 = INT64_C(0);
 #line 25 "examples/logs/main.hero"
@@ -334,7 +334,7 @@ bb1:
 #line 29 "examples/logs/main.hero"
     t9 = INT64_C(0);
 #line 29 "examples/logs/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 29 "examples/logs/main.hero"
     t11 = h_library_read_file(t10);
 #line 29 "examples/logs/main.hero"
@@ -436,7 +436,7 @@ bb5:
 #line 30 "examples/logs/main.hero"
     t18 = INT64_C(0);
 #line 30 "examples/logs/main.hero"
-    t19 = *(HeroStr const *)hero_array_at(t17, t18);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]);
 #line 30 "examples/logs/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 30 "examples/logs/main.hero"
@@ -684,7 +684,7 @@ bb0:
 #line 38 "examples/logs/main.hero"
     t1 = h1_given;
 #line 38 "examples/logs/main.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 38 "examples/logs/main.hero"
     t3 = INT64_C(1);
 #line 38 "examples/logs/main.hero"
@@ -700,7 +700,7 @@ bb1:
 #line 44 "examples/logs/main.hero"
     t26 = t25.f_entries;
 #line 44 "examples/logs/main.hero"
-    t27 = hero_array_len(t26);
+    t27 = ((void)(t26 == NULL ? ((void)hero_array_len(t26), hero_unreachable()) : (void)0), t26->len);
 #line 44 "examples/logs/main.hero"
     t28 = HERO_STR_LIT(hero_str_1140de69);
 #line 44 "examples/logs/main.hero"
@@ -708,7 +708,7 @@ bb1:
 #line 44 "examples/logs/main.hero"
     t30 = t29.f_skipped;
 #line 44 "examples/logs/main.hero"
-    t31 = hero_array_len(t30);
+    t31 = ((void)(t30 == NULL ? ((void)hero_array_len(t30), hero_unreachable()) : (void)0), t30->len);
 #line 44 "examples/logs/main.hero"
     t32 = HERO_STR_LIT(hero_str_7c1981d8);
 #line 44 "examples/logs/main.hero"
@@ -778,7 +778,7 @@ bb2:
 #line 39 "examples/logs/main.hero"
     t6 = INT64_C(1);
 #line 39 "examples/logs/main.hero"
-    t7 = *(HeroStr const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]);
 #line 39 "examples/logs/main.hero"
     t8 = h_mask_read(t7);
 #line 39 "examples/logs/main.hero"
@@ -884,7 +884,7 @@ bb7:
 #line 47 "examples/logs/main.hero"
     t41 = h5_xs0;
 #line 47 "examples/logs/main.hero"
-    t42 = hero_array_len(t41);
+    t42 = ((void)(t41 == NULL ? ((void)hero_array_len(t41), hero_unreachable()) : (void)0), t41->len);
 #line 47 "examples/logs/main.hero"
     t43 = t40 < t42;
 #line 47 "examples/logs/main.hero"
@@ -896,7 +896,7 @@ bb8:
 #line 47 "examples/logs/main.hero"
     t45 = h6_i0;
 #line 47 "examples/logs/main.hero"
-    t46 = *(HeroStr const *)hero_array_at(t44, t45);
+    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t44 + 1))[t45]);
 #line 47 "examples/logs/main.hero"
     t113 = h7_line;
 #line 903 "main.c"
@@ -982,7 +982,7 @@ bb11:
 #line 52 "examples/logs/main.hero"
     t59 = h8_xs1;
 #line 52 "examples/logs/main.hero"
-    t60 = hero_array_len(t59);
+    t60 = ((void)(t59 == NULL ? ((void)hero_array_len(t59), hero_unreachable()) : (void)0), t59->len);
 #line 52 "examples/logs/main.hero"
     t61 = t58 < t60;
 #line 52 "examples/logs/main.hero"
@@ -994,7 +994,7 @@ bb12:
 #line 52 "examples/logs/main.hero"
     t63 = h9_i1;
 #line 52 "examples/logs/main.hero"
-    t64 = *(HeroStr const *)hero_array_at(t62, t63);
+    t64 = ((void)((t62 == NULL || t63 < 0 || t63 >= t62->len) ? ((void)hero_array_at(t62, t63), hero_unreachable()) : (void)0), (void)(t62->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t62 + 1))[t63]);
 #line 52 "examples/logs/main.hero"
     t118 = h10_line;
 #line 1001 "main.c"
@@ -1064,7 +1064,7 @@ bb14:
 #line 57 "examples/logs/main.hero"
     t74 = h11_busiest;
 #line 57 "examples/logs/main.hero"
-    t75 = hero_array_len(t74);
+    t75 = ((void)(t74 == NULL ? ((void)hero_array_len(t74), hero_unreachable()) : (void)0), t74->len);
 #line 57 "examples/logs/main.hero"
     t76 = INT64_C(0);
 #line 57 "examples/logs/main.hero"
@@ -1118,7 +1118,7 @@ bb16:
 #line 58 "examples/logs/main.hero"
     t80 = INT64_C(0);
 #line 58 "examples/logs/main.hero"
-    t81 = *(HeroStr const *)hero_array_at(t79, t80);
+    t81 = ((void)((t79 == NULL || t80 < 0 || t80 >= t79->len) ? ((void)hero_array_at(t79, t80), hero_unreachable()) : (void)0), (void)(t79->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t79 + 1))[t80]);
 #line 58 "examples/logs/main.hero"
     hero_print_str(t78);
 #line 58 "examples/logs/main.hero"
@@ -1362,7 +1362,7 @@ bb1:
 #line 76 "examples/logs/main.hero"
     t6 = h3_xs0;
 #line 76 "examples/logs/main.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 76 "examples/logs/main.hero"
     t8 = t5 < t7;
 #line 76 "examples/logs/main.hero"
@@ -1374,7 +1374,7 @@ bb2:
 #line 76 "examples/logs/main.hero"
     t10 = h4_i0;
 #line 76 "examples/logs/main.hero"
-    t11 = *(h_entry_Entry const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_entry_Entry) ? hero_unreachable() : (void)0), ((h_entry_Entry const *)(const void *)(t9 + 1))[t10]);
 #line 76 "examples/logs/main.hero"
     t38 = h5_one;
 #line 1381 "main.c"
@@ -2223,7 +2223,7 @@ bb1:
 #line 83 "examples/logs/entry.hero"
     t9 = h4_xs0;
 #line 83 "examples/logs/entry.hero"
-    t10 = hero_array_len(t9);
+    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
 #line 83 "examples/logs/entry.hero"
     t11 = t8 < t10;
 #line 83 "examples/logs/entry.hero"
@@ -2499,7 +2499,7 @@ bb0:
 #line 102 "examples/logs/entry.hero"
     t5 = INT64_C(0);
 #line 102 "examples/logs/entry.hero"
-    t6 = *(HeroStr const *)hero_array_at(t4, t5);
+    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t4 + 1))[t5]);
 #line 102 "examples/logs/entry.hero"
     t7 = HERO_STR_LIT(hero_str_0);
 #line 102 "examples/logs/entry.hero"
@@ -2515,13 +2515,13 @@ bb1:
 #line 105 "examples/logs/entry.hero"
     t25 = INT64_C(2);
 #line 105 "examples/logs/entry.hero"
-    t26 = *(HeroStr const *)hero_array_at(t24, t25);
+    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]);
 #line 105 "examples/logs/entry.hero"
     t27 = h1_parts;
 #line 105 "examples/logs/entry.hero"
     t28 = INT64_C(2);
 #line 105 "examples/logs/entry.hero"
-    t29 = *(HeroStr const *)hero_array_at(t27, t28);
+    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]);
 #line 105 "examples/logs/entry.hero"
     t30 = hero_str_len(t29);
 #line 105 "examples/logs/entry.hero"
@@ -2543,7 +2543,7 @@ bb2:
 #line 102 "examples/logs/entry.hero"
     t10 = INT64_C(1);
 #line 102 "examples/logs/entry.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 102 "examples/logs/entry.hero"
     t12 = HERO_STR_LIT(hero_str_0);
 #line 102 "examples/logs/entry.hero"
@@ -2567,7 +2567,7 @@ bb4:
 #line 102 "examples/logs/entry.hero"
     t16 = INT64_C(2);
 #line 102 "examples/logs/entry.hero"
-    t17 = *(HeroStr const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t15 + 1))[t16]);
 #line 102 "examples/logs/entry.hero"
     t18 = HERO_STR_LIT(hero_str_0);
 #line 102 "examples/logs/entry.hero"
@@ -2622,7 +2622,7 @@ bb8:
 #line 108 "examples/logs/entry.hero"
     t40 = INT64_C(0);
 #line 108 "examples/logs/entry.hero"
-    t41 = *(HeroStr const *)hero_array_at(t39, t40);
+    t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t39 + 1))[t40]);
 #line 108 "examples/logs/entry.hero"
     t42 = UINT64_C(84);
 #line 108 "examples/logs/entry.hero"
@@ -2673,7 +2673,7 @@ bb11:
 #line 110 "examples/logs/entry.hero"
     t50 = INT64_C(2);
 #line 110 "examples/logs/entry.hero"
-    t51 = *(HeroStr const *)hero_array_at(t49, t50);
+    t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]);
 #line 110 "examples/logs/entry.hero"
     t52 = INT64_C(0);
 #line 110 "examples/logs/entry.hero"
@@ -2681,7 +2681,7 @@ bb11:
 #line 110 "examples/logs/entry.hero"
     t54 = INT64_C(2);
 #line 110 "examples/logs/entry.hero"
-    t55 = *(HeroStr const *)hero_array_at(t53, t54);
+    t55 = ((void)((t53 == NULL || t54 < 0 || t54 >= t53->len) ? ((void)hero_array_at(t53, t54), hero_unreachable()) : (void)0), (void)(t53->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t53 + 1))[t54]);
 #line 110 "examples/logs/entry.hero"
     t56 = hero_str_len(t55);
 #line 110 "examples/logs/entry.hero"
@@ -2709,13 +2709,13 @@ bb11:
 #line 111 "examples/logs/entry.hero"
     t61 = INT64_C(0);
 #line 111 "examples/logs/entry.hero"
-    t62 = *(HeroStr const *)hero_array_at(t60, t61);
+    t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t60 + 1))[t61]);
 #line 111 "examples/logs/entry.hero"
     t63 = h1_parts;
 #line 111 "examples/logs/entry.hero"
     t64 = INT64_C(1);
 #line 111 "examples/logs/entry.hero"
-    t65 = *(HeroStr const *)hero_array_at(t63, t64);
+    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t63 + 1))[t64]);
 #line 111 "examples/logs/entry.hero"
     t66 = h4_source;
 #line 111 "examples/logs/entry.hero"
@@ -2723,7 +2723,7 @@ bb11:
 #line 111 "examples/logs/entry.hero"
     t68 = INT64_C(3);
 #line 111 "examples/logs/entry.hero"
-    t69 = *(HeroStr const *)hero_array_at(t67, t68);
+    t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? ((void)hero_array_at(t67, t68), hero_unreachable()) : (void)0), (void)(t67->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t67 + 1))[t68]);
 #line 2728 "main.c"
     hero_str_incref(t62);
 #line 111 "examples/logs/entry.hero"
@@ -2968,7 +2968,7 @@ bb1:
 #line 119 "examples/logs/entry.hero"
     t8 = h4_xs0;
 #line 119 "examples/logs/entry.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 119 "examples/logs/entry.hero"
     t10 = t7 < t9;
 #line 119 "examples/logs/entry.hero"
@@ -2980,7 +2980,7 @@ bb2:
 #line 119 "examples/logs/entry.hero"
     t12 = h5_i0;
 #line 119 "examples/logs/entry.hero"
-    t13 = *(HeroStr const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]);
 #line 119 "examples/logs/entry.hero"
     t45 = h6_line;
 #line 2987 "main.c"
@@ -4007,7 +4007,7 @@ bb1:
 #line 108 "examples/logs/mask.hero"
     t10 = h2_xs0;
 #line 108 "examples/logs/mask.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 108 "examples/logs/mask.hero"
     t12 = t9 < t11;
 #line 108 "examples/logs/mask.hero"
@@ -4019,7 +4019,7 @@ bb2:
 #line 108 "examples/logs/mask.hero"
     t14 = h3_i0;
 #line 108 "examples/logs/mask.hero"
-    t15 = *(HeroStr const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]);
 #line 108 "examples/logs/mask.hero"
     t30 = h4_level;
 #line 4026 "main.c"
@@ -4190,7 +4190,7 @@ bb1:
 #line 118 "examples/logs/mask.hero"
     t7 = h2_xs0;
 #line 118 "examples/logs/mask.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 118 "examples/logs/mask.hero"
     t9 = t6 < t8;
 #line 118 "examples/logs/mask.hero"
@@ -4202,7 +4202,7 @@ bb2:
 #line 118 "examples/logs/mask.hero"
     t11 = h3_i0;
 #line 118 "examples/logs/mask.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 118 "examples/logs/mask.hero"
     t40 = h4_name;
 #line 4209 "main.c"
@@ -4699,7 +4699,7 @@ bb1:
 #line 26 "examples/logs/summary.hero"
     t5 = h2_xs0;
 #line 26 "examples/logs/summary.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 26 "examples/logs/summary.hero"
     t7 = t4 < t6;
 #line 26 "examples/logs/summary.hero"
@@ -4711,7 +4711,7 @@ bb2:
 #line 26 "examples/logs/summary.hero"
     t9 = h3_i0;
 #line 26 "examples/logs/summary.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 26 "examples/logs/summary.hero"
     t32 = h4_name;
 #line 4718 "main.c"
@@ -4906,7 +4906,7 @@ bb1:
 #line 34 "examples/logs/summary.hero"
     t5 = h2_xs0;
 #line 34 "examples/logs/summary.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 34 "examples/logs/summary.hero"
     t7 = t4 < t6;
 #line 34 "examples/logs/summary.hero"
@@ -4918,7 +4918,7 @@ bb2:
 #line 34 "examples/logs/summary.hero"
     t9 = h3_i0;
 #line 34 "examples/logs/summary.hero"
-    t10 = *(h_entry_Entry const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_entry_Entry) ? hero_unreachable() : (void)0), ((h_entry_Entry const *)(const void *)(t8 + 1))[t9]);
 #line 34 "examples/logs/summary.hero"
     t22 = h4_one;
 #line 4925 "main.c"
@@ -5037,7 +5037,7 @@ bb1:
 #line 42 "examples/logs/summary.hero"
     t5 = h2_xs0;
 #line 42 "examples/logs/summary.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 42 "examples/logs/summary.hero"
     t7 = t4 < t6;
 #line 42 "examples/logs/summary.hero"
@@ -5049,7 +5049,7 @@ bb2:
 #line 42 "examples/logs/summary.hero"
     t9 = h3_i0;
 #line 42 "examples/logs/summary.hero"
-    t10 = *(h_entry_Entry const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_entry_Entry) ? hero_unreachable() : (void)0), ((h_entry_Entry const *)(const void *)(t8 + 1))[t9]);
 #line 42 "examples/logs/summary.hero"
     t22 = h4_one;
 #line 5056 "main.c"
@@ -5170,7 +5170,7 @@ bb1:
 #line 50 "examples/logs/summary.hero"
     t5 = h2_xs0;
 #line 50 "examples/logs/summary.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 50 "examples/logs/summary.hero"
     t7 = t4 < t6;
 #line 50 "examples/logs/summary.hero"
@@ -5182,7 +5182,7 @@ bb2:
 #line 50 "examples/logs/summary.hero"
     t9 = h3_i0;
 #line 50 "examples/logs/summary.hero"
-    t10 = *(h_entry_Entry const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_entry_Entry) ? hero_unreachable() : (void)0), ((h_entry_Entry const *)(const void *)(t8 + 1))[t9]);
 #line 50 "examples/logs/summary.hero"
     t22 = h4_one;
 #line 5189 "main.c"
@@ -5382,7 +5382,7 @@ bb1:
 #line 61 "examples/logs/summary.hero"
     t5 = h1_left;
 #line 61 "examples/logs/summary.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 61 "examples/logs/summary.hero"
     t7 = INT64_C(0);
 #line 61 "examples/logs/summary.hero"
@@ -5400,7 +5400,7 @@ bb2:
 #line 64 "examples/logs/summary.hero"
     t11 = h1_left;
 #line 64 "examples/logs/summary.hero"
-    t12 = hero_array_len(t11);
+    t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
 #line 64 "examples/logs/summary.hero"
     t13 = h_library_range(t10, t12);
 #line 64 "examples/logs/summary.hero"
@@ -5472,7 +5472,7 @@ bb4:
 #line 64 "examples/logs/summary.hero"
     t16 = h4_xs0;
 #line 64 "examples/logs/summary.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 64 "examples/logs/summary.hero"
     t18 = t15 < t17;
 #line 64 "examples/logs/summary.hero"
@@ -5484,7 +5484,7 @@ bb5:
 #line 64 "examples/logs/summary.hero"
     t20 = h5_i0;
 #line 64 "examples/logs/summary.hero"
-    t21 = *(int64_t const *)hero_array_at(t19, t20);
+    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
 #line 64 "examples/logs/summary.hero"
     h6_i = t21;
 #line 65 "examples/logs/summary.hero"
@@ -5494,7 +5494,7 @@ bb5:
 #line 65 "examples/logs/summary.hero"
     t24 = h6_i;
 #line 65 "examples/logs/summary.hero"
-    t25 = *(HeroStr const *)hero_array_at(t23, t24);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t24]);
 #line 65 "examples/logs/summary.hero"
     {
 #line 65 "examples/logs/summary.hero"
@@ -5556,7 +5556,7 @@ bb7:
 #line 68 "examples/logs/summary.hero"
     t55 = h3_best;
 #line 68 "examples/logs/summary.hero"
-    t56 = *(HeroStr const *)hero_array_at(t54, t55);
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t54 + 1))[t55]);
 #line 68 "examples/logs/summary.hero"
     hero_array_push_owned(&h2_out, &t56);
 #line 69 "examples/logs/summary.hero"
@@ -5610,7 +5610,7 @@ bb11:
 #line 65 "examples/logs/summary.hero"
     t37 = h3_best;
 #line 65 "examples/logs/summary.hero"
-    t38 = *(HeroStr const *)hero_array_at(t36, t37);
+    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t36 + 1))[t37]);
 #line 65 "examples/logs/summary.hero"
     {
 #line 65 "examples/logs/summary.hero"
@@ -5753,7 +5753,7 @@ bb0:
 #line 76 "examples/logs/summary.hero"
     t3 = h0_names;
 #line 76 "examples/logs/summary.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 76 "examples/logs/summary.hero"
     t5 = h_library_range(t2, t4);
 #line 76 "examples/logs/summary.hero"
@@ -5783,7 +5783,7 @@ bb1:
 #line 76 "examples/logs/summary.hero"
     t8 = h3_xs0;
 #line 76 "examples/logs/summary.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 76 "examples/logs/summary.hero"
     t10 = t7 < t9;
 #line 76 "examples/logs/summary.hero"
@@ -5795,7 +5795,7 @@ bb2:
 #line 76 "examples/logs/summary.hero"
     t12 = h4_i0;
 #line 76 "examples/logs/summary.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 76 "examples/logs/summary.hero"
     h5_i = t13;
 #line 77 "examples/logs/summary.hero"
@@ -5845,7 +5845,7 @@ bb6:
 #line 78 "examples/logs/summary.hero"
     t19 = h5_i;
 #line 78 "examples/logs/summary.hero"
-    t20 = *(HeroStr const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t18 + 1))[t19]);
 #line 78 "examples/logs/summary.hero"
     hero_array_push_owned(&h2_out, &t20);
 #line 78 "examples/logs/summary.hero"
@@ -5966,7 +5966,7 @@ bb1:
 #line 86 "examples/logs/summary.hero"
     t6 = h2_xs0;
 #line 86 "examples/logs/summary.hero"
-    t7 = hero_array_len(t6);
+    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
 #line 86 "examples/logs/summary.hero"
     t8 = t5 < t7;
 #line 86 "examples/logs/summary.hero"
@@ -5978,7 +5978,7 @@ bb2:
 #line 86 "examples/logs/summary.hero"
     t10 = h3_i0;
 #line 86 "examples/logs/summary.hero"
-    t11 = *(HeroStr const *)hero_array_at(t9, t10);
+    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 86 "examples/logs/summary.hero"
     t40 = h4_name;
 #line 5985 "main.c"
@@ -6217,7 +6217,7 @@ bb1:
 #line 93 "examples/logs/summary.hero"
     t4 = h2_xs0;
 #line 93 "examples/logs/summary.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 93 "examples/logs/summary.hero"
     t6 = t3 < t5;
 #line 93 "examples/logs/summary.hero"
@@ -6229,7 +6229,7 @@ bb2:
 #line 93 "examples/logs/summary.hero"
     t8 = h3_i0;
 #line 93 "examples/logs/summary.hero"
-    t9 = *(h_entry_Entry const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_entry_Entry) ? hero_unreachable() : (void)0), ((h_entry_Entry const *)(const void *)(t7 + 1))[t8]);
 #line 93 "examples/logs/summary.hero"
     t26 = h4_one;
 #line 6236 "main.c"

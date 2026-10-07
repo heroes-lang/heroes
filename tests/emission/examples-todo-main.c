@@ -288,7 +288,7 @@ bb0:
 #line 33 "examples/todo/main.hero"
     t2 = h0_given;
 #line 33 "examples/todo/main.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 33 "examples/todo/main.hero"
     t4 = INT64_C(0);
 #line 33 "examples/todo/main.hero"
@@ -302,7 +302,7 @@ bb1:
 #line 37 "examples/todo/main.hero"
     t9 = INT64_C(0);
 #line 37 "examples/todo/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 37 "examples/todo/main.hero"
     t11 = h_library_read_file(t10);
 #line 37 "examples/todo/main.hero"
@@ -380,7 +380,7 @@ bb5:
 #line 38 "examples/todo/main.hero"
     t16 = INT64_C(0);
 #line 38 "examples/todo/main.hero"
-    t17 = *(HeroStr const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t15 + 1))[t16]);
 #line 38 "examples/todo/main.hero"
     t18 = hero_str_concat(t14, t17);
 #line 38 "examples/todo/main.hero"
@@ -699,7 +699,7 @@ bb0:
 #line 51 "examples/todo/main.hero"
     t1 = h1_given;
 #line 51 "examples/todo/main.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 51 "examples/todo/main.hero"
     t3 = INT64_C(1);
 #line 51 "examples/todo/main.hero"
@@ -713,7 +713,7 @@ bb1:
 #line 54 "examples/todo/main.hero"
     t7 = INT64_C(1);
 #line 54 "examples/todo/main.hero"
-    t8 = *(HeroStr const *)hero_array_at(t6, t7);
+    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]);
 #line 54 "examples/todo/main.hero"
     t64 = h2_command;
 #line 720 "main.c"
@@ -871,7 +871,7 @@ bb9:
 #line 59 "examples/todo/main.hero"
     t32 = INT64_C(0);
 #line 59 "examples/todo/main.hero"
-    t33 = *(HeroStr const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t31 + 1))[t32]);
 #line 59 "examples/todo/main.hero"
     h_main_save(t30, t33);
 #line 59 "examples/todo/main.hero"
@@ -1013,7 +1013,7 @@ bb14:
 #line 63 "examples/todo/main.hero"
     t57 = INT64_C(0);
 #line 63 "examples/todo/main.hero"
-    t58 = *(HeroStr const *)hero_array_at(t56, t57);
+    t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? ((void)hero_array_at(t56, t57), hero_unreachable()) : (void)0), (void)(t56->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t56 + 1))[t57]);
 #line 63 "examples/todo/main.hero"
     h_main_finish(t54, t55, t58);
 #line 63 "examples/todo/main.hero"
@@ -1400,7 +1400,7 @@ bb1:
 #line 79 "examples/todo/main.hero"
     t5 = h1_xs0;
 #line 79 "examples/todo/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 79 "examples/todo/main.hero"
     t7 = t4 < t6;
 #line 79 "examples/todo/main.hero"
@@ -1412,7 +1412,7 @@ bb2:
 #line 79 "examples/todo/main.hero"
     t9 = h2_i0;
 #line 79 "examples/todo/main.hero"
-    t10 = *(HeroStr const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 79 "examples/todo/main.hero"
     t23 = h3_line;
 #line 1419 "main.c"
@@ -1452,7 +1452,7 @@ bb4:
 #line 82 "examples/todo/main.hero"
     t18 = h0_tasks;
 #line 82 "examples/todo/main.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 82 "examples/todo/main.hero"
     t20 = HERO_STR_LIT(hero_str_404a2ebb);
 #line 82 "examples/todo/main.hero"
@@ -1536,7 +1536,7 @@ bb0:
 #line 89 "examples/todo/main.hero"
     t3 = h0_given;
 #line 89 "examples/todo/main.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 89 "examples/todo/main.hero"
     t5 = h_library_range(t2, t4);
 #line 89 "examples/todo/main.hero"
@@ -1566,7 +1566,7 @@ bb1:
 #line 89 "examples/todo/main.hero"
     t8 = h3_xs0;
 #line 89 "examples/todo/main.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 89 "examples/todo/main.hero"
     t10 = t7 < t9;
 #line 89 "examples/todo/main.hero"
@@ -1578,7 +1578,7 @@ bb2:
 #line 89 "examples/todo/main.hero"
     t12 = h4_i0;
 #line 89 "examples/todo/main.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 89 "examples/todo/main.hero"
     h5_i = t13;
 #line 90 "examples/todo/main.hero"
@@ -1586,7 +1586,7 @@ bb2:
 #line 90 "examples/todo/main.hero"
     t16 = h5_i;
 #line 90 "examples/todo/main.hero"
-    t17 = *(HeroStr const *)hero_array_at(t15, t16);
+    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t15 + 1))[t16]);
 #line 90 "examples/todo/main.hero"
     hero_array_push_owned(&h2_words, &t17);
 #line 90 "examples/todo/main.hero"
@@ -1816,7 +1816,7 @@ bb4:
 #line 99 "examples/todo/main.hero"
     t15 = h2_xs0;
 #line 99 "examples/todo/main.hero"
-    t16 = hero_array_len(t15);
+    t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
 #line 99 "examples/todo/main.hero"
     t17 = t14 < t16;
 #line 99 "examples/todo/main.hero"
@@ -1828,7 +1828,7 @@ bb5:
 #line 99 "examples/todo/main.hero"
     t19 = h3_i0;
 #line 99 "examples/todo/main.hero"
-    t20 = *(int64_t const *)hero_array_at(t18, t19);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
 #line 99 "examples/todo/main.hero"
     h4_i = t20;
 #line 100 "examples/todo/main.hero"
@@ -2746,7 +2746,7 @@ bb1:
 #line 75 "examples/todo/list.hero"
     t7 = h3_xs0;
 #line 75 "examples/todo/list.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 75 "examples/todo/list.hero"
     t9 = t6 < t8;
 #line 75 "examples/todo/list.hero"
@@ -2758,7 +2758,7 @@ bb2:
 #line 75 "examples/todo/list.hero"
     t11 = h4_i0;
 #line 75 "examples/todo/list.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 75 "examples/todo/list.hero"
     t91 = h5_line;
 #line 2765 "main.c"
@@ -3263,7 +3263,7 @@ bb0:
 #line 93 "examples/todo/list.hero"
     t1 = h0_tasks;
 #line 93 "examples/todo/list.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 93 "examples/todo/list.hero"
     t3 = INT64_C(0);
 #line 93 "examples/todo/list.hero"
@@ -3323,7 +3323,7 @@ bb4:
 #line 97 "examples/todo/list.hero"
     t10 = h2_xs0;
 #line 97 "examples/todo/list.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 97 "examples/todo/list.hero"
     t12 = t9 < t11;
 #line 97 "examples/todo/list.hero"
@@ -3335,7 +3335,7 @@ bb5:
 #line 97 "examples/todo/list.hero"
     t14 = h3_i0;
 #line 97 "examples/todo/list.hero"
-    t15 = *(h_list_Task const *)hero_array_at(t13, t14);
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t13 + 1))[t14]);
 #line 97 "examples/todo/list.hero"
     t37 = h4_task;
 #line 3342 "main.c"
@@ -3787,7 +3787,7 @@ bb1:
 #line 125 "examples/todo/list.hero"
     t23 = h0_tasks;
 #line 125 "examples/todo/list.hero"
-    t24 = hero_array_len(t23);
+    t24 = ((void)(t23 == NULL ? ((void)hero_array_len(t23), hero_unreachable()) : (void)0), t23->len);
 #line 125 "examples/todo/list.hero"
     t25 = h_library_range(t22, t24);
 #line 125 "examples/todo/list.hero"
@@ -3817,7 +3817,7 @@ bb2:
 #line 118 "examples/todo/list.hero"
     t5 = h0_tasks;
 #line 118 "examples/todo/list.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 118 "examples/todo/list.hero"
     t7 = t4 > t6;
 #line 118 "examples/todo/list.hero"
@@ -3873,7 +3873,7 @@ bb4:
 #line 121 "examples/todo/list.hero"
     t16 = h0_tasks;
 #line 121 "examples/todo/list.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 121 "examples/todo/list.hero"
     t18 = hero_int_to_str(t17);
 #line 121 "examples/todo/list.hero"
@@ -3919,7 +3919,7 @@ bb6:
 #line 125 "examples/todo/list.hero"
     t28 = h4_xs0;
 #line 125 "examples/todo/list.hero"
-    t29 = hero_array_len(t28);
+    t29 = ((void)(t28 == NULL ? ((void)hero_array_len(t28), hero_unreachable()) : (void)0), t28->len);
 #line 125 "examples/todo/list.hero"
     t30 = t27 < t29;
 #line 125 "examples/todo/list.hero"
@@ -3931,7 +3931,7 @@ bb7:
 #line 125 "examples/todo/list.hero"
     t32 = h5_i0;
 #line 125 "examples/todo/list.hero"
-    t33 = *(int64_t const *)hero_array_at(t31, t32);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t31 + 1))[t32]);
 #line 125 "examples/todo/list.hero"
     h6_i = t33;
 #line 126 "examples/todo/list.hero"
@@ -3989,7 +3989,7 @@ bb11:
 #line 127 "examples/todo/list.hero"
     t42 = h6_i;
 #line 127 "examples/todo/list.hero"
-    t43 = *(h_list_Task const *)hero_array_at(t41, t42);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t41 + 1))[t42]);
 #line 127 "examples/todo/list.hero"
     t44 = t43.f_text;
 #line 3996 "main.c"
@@ -4013,7 +4013,7 @@ bb12:
 #line 129 "examples/todo/list.hero"
     t49 = h6_i;
 #line 129 "examples/todo/list.hero"
-    t50 = *(h_list_Task const *)hero_array_at(t48, t49);
+    t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? ((void)hero_array_at(t48, t49), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t48 + 1))[t49]);
 #line 129 "examples/todo/list.hero"
     hero_array_push_owned(&h3_out, &t50);
 #line 129 "examples/todo/list.hero"
@@ -4124,7 +4124,7 @@ bb1:
 #line 136 "examples/todo/list.hero"
     t5 = h2_xs0;
 #line 136 "examples/todo/list.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 136 "examples/todo/list.hero"
     t7 = t4 < t6;
 #line 136 "examples/todo/list.hero"
@@ -4136,7 +4136,7 @@ bb2:
 #line 136 "examples/todo/list.hero"
     t9 = h3_i0;
 #line 136 "examples/todo/list.hero"
-    t10 = *(h_list_Task const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t8 + 1))[t9]);
 #line 136 "examples/todo/list.hero"
     t22 = h4_task;
 #line 4143 "main.c"
@@ -4278,7 +4278,7 @@ bb0:
 #line 146 "examples/todo/list.hero"
     t3 = h0_tasks;
 #line 146 "examples/todo/list.hero"
-    t4 = hero_array_len(t3);
+    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 146 "examples/todo/list.hero"
     t5 = h_library_range(t2, t4);
 #line 146 "examples/todo/list.hero"
@@ -4308,7 +4308,7 @@ bb1:
 #line 146 "examples/todo/list.hero"
     t8 = h2_xs0;
 #line 146 "examples/todo/list.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 146 "examples/todo/list.hero"
     t10 = t7 < t9;
 #line 146 "examples/todo/list.hero"
@@ -4320,7 +4320,7 @@ bb2:
 #line 146 "examples/todo/list.hero"
     t12 = h3_i0;
 #line 146 "examples/todo/list.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 146 "examples/todo/list.hero"
     h4_i = t13;
 #line 147 "examples/todo/list.hero"
@@ -4352,7 +4352,7 @@ bb2:
 #line 147 "examples/todo/list.hero"
     t22 = h4_i;
 #line 147 "examples/todo/list.hero"
-    t23 = *(h_list_Task const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t21 + 1))[t22]);
 #line 147 "examples/todo/list.hero"
     t24 = h_list_marker_of(t23);
 #line 147 "examples/todo/list.hero"
@@ -4384,7 +4384,7 @@ bb2:
 #line 147 "examples/todo/list.hero"
     t29 = h4_i;
 #line 147 "examples/todo/list.hero"
-    t30 = *(h_list_Task const *)hero_array_at(t28, t29);
+    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(h_list_Task) ? hero_unreachable() : (void)0), ((h_list_Task const *)(const void *)(t28 + 1))[t29]);
 #line 147 "examples/todo/list.hero"
     t31 = t30.f_text;
 #line 147 "examples/todo/list.hero"

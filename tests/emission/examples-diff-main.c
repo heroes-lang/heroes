@@ -306,7 +306,7 @@ bb1:
 #line 42 "examples/diff/main.hero"
     t4 = h0_old;
 #line 42 "examples/diff/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 42 "examples/diff/main.hero"
     t6 = t3 <= t5;
 #line 42 "examples/diff/main.hero"
@@ -350,7 +350,7 @@ bb4:
 #line 46 "examples/diff/main.hero"
     t10 = h1_new;
 #line 46 "examples/diff/main.hero"
-    t11 = hero_array_len(t10);
+    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
 #line 46 "examples/diff/main.hero"
     t12 = t9 <= t11;
 #line 46 "examples/diff/main.hero"
@@ -394,7 +394,7 @@ bb7:
 #line 55 "examples/diff/main.hero"
     t27 = h0_old;
 #line 55 "examples/diff/main.hero"
-    t28 = hero_array_len(t27);
+    t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len);
 #line 55 "examples/diff/main.hero"
     t29 = t26 <= t28;
 #line 55 "examples/diff/main.hero"
@@ -432,7 +432,7 @@ bb10:
 #line 58 "examples/diff/main.hero"
     t32 = h1_new;
 #line 58 "examples/diff/main.hero"
-    t33 = hero_array_len(t32);
+    t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
 #line 58 "examples/diff/main.hero"
     t34 = t31 <= t33;
 #line 58 "examples/diff/main.hero"
@@ -448,7 +448,7 @@ bb11:
 #line 59 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t36, t37, &t38)) hero_panic_overflow();
 #line 59 "examples/diff/main.hero"
-    t39 = *(HeroStr const *)hero_array_at(t35, t38);
+    t39 = ((void)((t35 == NULL || t38 < 0 || t38 >= t35->len) ? ((void)hero_array_at(t35, t38), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t38]);
 #line 59 "examples/diff/main.hero"
     t40 = h1_new;
 #line 59 "examples/diff/main.hero"
@@ -458,7 +458,7 @@ bb11:
 #line 59 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t41, t42, &t43)) hero_panic_overflow();
 #line 59 "examples/diff/main.hero"
-    t44 = *(HeroStr const *)hero_array_at(t40, t43);
+    t44 = ((void)((t40 == NULL || t43 < 0 || t43 >= t40->len) ? ((void)hero_array_at(t40, t43), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t40 + 1))[t43]);
 #line 59 "examples/diff/main.hero"
     t45 = hero_str_eq(t39, t44);
 #line 59 "examples/diff/main.hero"
@@ -502,7 +502,7 @@ bb14:
 #line 60 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t49, t50, &t51)) hero_panic_overflow();
 #line 60 "examples/diff/main.hero"
-    t52 = *(HeroArrayHeader * const *)hero_array_at(t48, t51);
+    t52 = ((void)((t48 == NULL || t51 < 0 || t51 >= t48->len) ? ((void)hero_array_at(t48, t51), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t48 + 1))[t51]);
 #line 60 "examples/diff/main.hero"
     t53 = h6_j;
 #line 60 "examples/diff/main.hero"
@@ -510,7 +510,7 @@ bb14:
 #line 60 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t53, t54, &t55)) hero_panic_overflow();
 #line 60 "examples/diff/main.hero"
-    t56 = *(int64_t const *)hero_array_at(t52, t55);
+    t56 = ((void)((t52 == NULL || t55 < 0 || t55 >= t52->len) ? ((void)hero_array_at(t52, t55), hero_unreachable()) : (void)0), (void)(t52->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t52 + 1))[t55]);
 #line 60 "examples/diff/main.hero"
     t57 = INT64_C(1);
 #line 60 "examples/diff/main.hero"
@@ -528,7 +528,7 @@ bb15:
 #line 62 "examples/diff/main.hero"
     t60 = h3_i;
 #line 62 "examples/diff/main.hero"
-    t61 = *(HeroArrayHeader * const *)hero_array_at(t59, t60);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t59 + 1))[t60]);
 #line 62 "examples/diff/main.hero"
     t62 = h6_j;
 #line 62 "examples/diff/main.hero"
@@ -536,7 +536,7 @@ bb15:
 #line 62 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t62, t63, &t64)) hero_panic_overflow();
 #line 62 "examples/diff/main.hero"
-    t65 = *(int64_t const *)hero_array_at(t61, t64);
+    t65 = ((void)((t61 == NULL || t64 < 0 || t64 >= t61->len) ? ((void)hero_array_at(t61, t64), hero_unreachable()) : (void)0), (void)(t61->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t61 + 1))[t64]);
 #line 62 "examples/diff/main.hero"
     h7_left = t65;
 #line 63 "examples/diff/main.hero"
@@ -548,11 +548,11 @@ bb15:
 #line 63 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t67, t68, &t69)) hero_panic_overflow();
 #line 63 "examples/diff/main.hero"
-    t70 = *(HeroArrayHeader * const *)hero_array_at(t66, t69);
+    t70 = ((void)((t66 == NULL || t69 < 0 || t69 >= t66->len) ? ((void)hero_array_at(t66, t69), hero_unreachable()) : (void)0), (void)(t66->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t66 + 1))[t69]);
 #line 63 "examples/diff/main.hero"
     t71 = h6_j;
 #line 63 "examples/diff/main.hero"
-    t72 = *(int64_t const *)hero_array_at(t70, t71);
+    t72 = ((void)((t70 == NULL || t71 < 0 || t71 >= t70->len) ? ((void)hero_array_at(t70, t71), hero_unreachable()) : (void)0), (void)(t70->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t70 + 1))[t71]);
 #line 63 "examples/diff/main.hero"
     h8_up = t72;
 #line 65 "examples/diff/main.hero"
@@ -768,13 +768,13 @@ bb0:
 #line 81 "examples/diff/main.hero"
     t5 = h0_old;
 #line 81 "examples/diff/main.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 81 "examples/diff/main.hero"
     h4_i = t6;
 #line 82 "examples/diff/main.hero"
     t7 = h1_new;
 #line 82 "examples/diff/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 82 "examples/diff/main.hero"
     h5_j = t8;
 #line 82 "examples/diff/main.hero"
@@ -824,7 +824,7 @@ bb3:
 #line 103 "examples/diff/main.hero"
     t95 = h3_backwards;
 #line 103 "examples/diff/main.hero"
-    t96 = hero_array_len(t95);
+    t96 = ((void)(t95 == NULL ? ((void)hero_array_len(t95), hero_unreachable()) : (void)0), t95->len);
 #line 103 "examples/diff/main.hero"
     t97 = INT64_C(1);
 #line 103 "examples/diff/main.hero"
@@ -894,7 +894,7 @@ bb9:
 #line 85 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow();
 #line 85 "examples/diff/main.hero"
-    t27 = *(HeroStr const *)hero_array_at(t23, t26);
+    t27 = ((void)((t23 == NULL || t26 < 0 || t26 >= t23->len) ? ((void)hero_array_at(t23, t26), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t26]);
 #line 85 "examples/diff/main.hero"
     t28 = h1_new;
 #line 85 "examples/diff/main.hero"
@@ -904,7 +904,7 @@ bb9:
 #line 85 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t29, t30, &t31)) hero_panic_overflow();
 #line 85 "examples/diff/main.hero"
-    t32 = *(HeroStr const *)hero_array_at(t28, t31);
+    t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? ((void)hero_array_at(t28, t31), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t31]);
 #line 85 "examples/diff/main.hero"
     t33 = hero_str_eq(t27, t32);
 #line 85 "examples/diff/main.hero"
@@ -928,7 +928,7 @@ bb11:
 #line 86 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t37, t38, &t39)) hero_panic_overflow();
 #line 86 "examples/diff/main.hero"
-    t40 = *(HeroStr const *)hero_array_at(t36, t39);
+    t40 = ((void)((t36 == NULL || t39 < 0 || t39 >= t36->len) ? ((void)hero_array_at(t36, t39), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t36 + 1))[t39]);
 #line 933 "main.c"
     hero_str_incref(t40);
 #line 86 "examples/diff/main.hero"
@@ -974,7 +974,7 @@ bb13:
 #line 99 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t85, t86, &t87)) hero_panic_overflow();
 #line 99 "examples/diff/main.hero"
-    t88 = *(HeroStr const *)hero_array_at(t84, t87);
+    t88 = ((void)((t84 == NULL || t87 < 0 || t87 >= t84->len) ? ((void)hero_array_at(t84, t87), hero_unreachable()) : (void)0), (void)(t84->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t84 + 1))[t87]);
 #line 979 "main.c"
     hero_str_incref(t88);
 #line 99 "examples/diff/main.hero"
@@ -1022,7 +1022,7 @@ bb16:
 #line 95 "examples/diff/main.hero"
     t56 = h4_i;
 #line 95 "examples/diff/main.hero"
-    t57 = *(HeroArrayHeader * const *)hero_array_at(t55, t56);
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t55 + 1))[t56]);
 #line 95 "examples/diff/main.hero"
     t58 = h5_j;
 #line 95 "examples/diff/main.hero"
@@ -1030,7 +1030,7 @@ bb16:
 #line 95 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t58, t59, &t60)) hero_panic_overflow();
 #line 95 "examples/diff/main.hero"
-    t61 = *(int64_t const *)hero_array_at(t57, t60);
+    t61 = ((void)((t57 == NULL || t60 < 0 || t60 >= t57->len) ? ((void)hero_array_at(t57, t60), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t57 + 1))[t60]);
 #line 95 "examples/diff/main.hero"
     t62 = h2_same;
 #line 95 "examples/diff/main.hero"
@@ -1040,11 +1040,11 @@ bb16:
 #line 95 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t63, t64, &t65)) hero_panic_overflow();
 #line 95 "examples/diff/main.hero"
-    t66 = *(HeroArrayHeader * const *)hero_array_at(t62, t65);
+    t66 = ((void)((t62 == NULL || t65 < 0 || t65 >= t62->len) ? ((void)hero_array_at(t62, t65), hero_unreachable()) : (void)0), (void)(t62->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t62 + 1))[t65]);
 #line 95 "examples/diff/main.hero"
     t67 = h5_j;
 #line 95 "examples/diff/main.hero"
-    t68 = *(int64_t const *)hero_array_at(t66, t67);
+    t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? ((void)hero_array_at(t66, t67), hero_unreachable()) : (void)0), (void)(t66->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t66 + 1))[t67]);
 #line 95 "examples/diff/main.hero"
     t69 = t61 >= t68;
 #line 95 "examples/diff/main.hero"
@@ -1070,7 +1070,7 @@ bb18:
 #line 96 "examples/diff/main.hero"
     if (__builtin_sub_overflow(t74, t75, &t76)) hero_panic_overflow();
 #line 96 "examples/diff/main.hero"
-    t77 = *(HeroStr const *)hero_array_at(t73, t76);
+    t77 = ((void)((t73 == NULL || t76 < 0 || t76 >= t73->len) ? ((void)hero_array_at(t73, t76), hero_unreachable()) : (void)0), (void)(t73->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t73 + 1))[t76]);
 #line 1075 "main.c"
     hero_str_incref(t77);
 #line 96 "examples/diff/main.hero"
@@ -1114,7 +1114,7 @@ bb21:
 #line 106 "examples/diff/main.hero"
     t104 = h12_at;
 #line 106 "examples/diff/main.hero"
-    t105 = *(h_main_Edit const *)hero_array_at(t103, t104);
+    t105 = ((void)((t103 == NULL || t104 < 0 || t104 >= t103->len) ? ((void)hero_array_at(t103, t104), hero_unreachable()) : (void)0), (void)(t103->elem->size != sizeof(h_main_Edit) ? hero_unreachable() : (void)0), ((h_main_Edit const *)(const void *)(t103 + 1))[t104]);
 #line 106 "examples/diff/main.hero"
     hero_array_push_owned(&h11_out, &t105);
 #line 107 "examples/diff/main.hero"
@@ -1194,15 +1194,15 @@ bb0:
 #line 112 "examples/diff/main.hero"
     t4 = h0_old;
 #line 112 "examples/diff/main.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 112 "examples/diff/main.hero"
-    t6 = *(HeroArrayHeader * const *)hero_array_at(t3, t5);
+    t6 = ((void)((t3 == NULL || t5 < 0 || t5 >= t3->len) ? ((void)hero_array_at(t3, t5), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t3 + 1))[t5]);
 #line 112 "examples/diff/main.hero"
     t7 = h1_new;
 #line 112 "examples/diff/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 112 "examples/diff/main.hero"
-    t9 = *(int64_t const *)hero_array_at(t6, t8);
+    t9 = ((void)((t6 == NULL || t8 < 0 || t8 >= t6->len) ? ((void)hero_array_at(t6, t8), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t8]);
 #line 1207 "main.c"
     hero_array_decref(h2_own2);
     return t9;
@@ -1509,7 +1509,7 @@ bb1:
 #line 123 "examples/diff/main.hero"
     t7 = h3_xs0;
 #line 123 "examples/diff/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 123 "examples/diff/main.hero"
     t9 = t6 < t8;
 #line 123 "examples/diff/main.hero"
@@ -1521,7 +1521,7 @@ bb2:
 #line 123 "examples/diff/main.hero"
     t11 = h4_i0;
 #line 123 "examples/diff/main.hero"
-    t12 = *(h_main_Edit const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_main_Edit) ? hero_unreachable() : (void)0), ((h_main_Edit const *)(const void *)(t10 + 1))[t11]);
 #line 123 "examples/diff/main.hero"
     t27 = h5_one;
 #line 1528 "main.c"
@@ -1672,7 +1672,7 @@ bb1:
 #line 131 "examples/diff/main.hero"
     t7 = h4_xs0;
 #line 131 "examples/diff/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 131 "examples/diff/main.hero"
     t9 = t6 < t8;
 #line 131 "examples/diff/main.hero"
@@ -1684,7 +1684,7 @@ bb2:
 #line 131 "examples/diff/main.hero"
     t11 = h5_i0;
 #line 131 "examples/diff/main.hero"
-    t12 = *(h_main_Edit const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(h_main_Edit) ? hero_unreachable() : (void)0), ((h_main_Edit const *)(const void *)(t10 + 1))[t11]);
 #line 131 "examples/diff/main.hero"
     t26 = h6_one;
 #line 1691 "main.c"

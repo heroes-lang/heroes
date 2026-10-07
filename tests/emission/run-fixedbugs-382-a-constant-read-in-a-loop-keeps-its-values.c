@@ -712,7 +712,7 @@ bb2:
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t13 = t11 % t12;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t14 = *(int64_t const *)hero_array_at(t10, t13);
+    t14 = ((void)((t10 == NULL || t13 < 0 || t13 >= t10->len) ? ((void)hero_array_at(t10, t13), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t13]);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     if (__builtin_add_overflow(t9, t14, &t15)) hero_panic_overflow();
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -724,7 +724,7 @@ bb2:
 #line 725 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_decref(t85);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     if (__builtin_add_overflow(t15, t17, &t18)) hero_panic_overflow();
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -750,7 +750,7 @@ bb2:
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t23 = t21 % t22;
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t24 = *(HeroStr const *)hero_array_at(t20, t23);
+    t24 = ((void)((t20 == NULL || t23 < 0 || t23 >= t20->len) ? ((void)hero_array_at(t20, t23), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t20 + 1))[t23]);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t25 = hero_str_len(t24);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -778,9 +778,9 @@ bb2:
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t31 = t29 % t30;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t32 = *(HeroArrayHeader * const *)hero_array_at(t28, t31);
+    t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? ((void)hero_array_at(t28, t31), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t28 + 1))[t31]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t33 = hero_array_len(t32);
+    t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     if (__builtin_add_overflow(t27, t33, &t34)) hero_panic_overflow();
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -802,7 +802,7 @@ bb2:
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t38 = t36 % t37;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t39 = *(h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape const *)hero_array_at(t35, t38);
+    t39 = ((void)((t35 == NULL || t38 < 0 || t38 >= t35->len) ? ((void)hero_array_at(t35, t38), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape const *)(const void *)(t35 + 1))[t38]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t40 = h_fixedbugs382aconstantreadinaloopkeepsitsvalues_measure(t39);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -850,7 +850,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t51 = h5_here;
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t52 = hero_array_len(t51);
+    t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     if (__builtin_add_overflow(t50, t52, &t53)) hero_panic_overflow();
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -858,7 +858,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t55 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t56 = *(int64_t const *)hero_array_at(t54, t55);
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t54 + 1))[t55]);
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     if (__builtin_add_overflow(t53, t56, &t57)) hero_panic_overflow();
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -866,7 +866,7 @@ bb2:
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t59 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t60 = *(int64_t const *)hero_array_at(t58, t59);
+    t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t58 + 1))[t59]);
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     if (__builtin_sub_overflow(t57, t60, &t61)) hero_panic_overflow();
 #line 55 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -924,7 +924,7 @@ bb3:
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t73 = INT64_C(1);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t74 = *(HeroStr const *)hero_array_at(t72, t73);
+    t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? ((void)hero_array_at(t72, t73), hero_unreachable()) : (void)0), (void)(t72->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t72 + 1))[t73]);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t75 = HERO_STR_LIT(hero_str_20);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -938,11 +938,11 @@ bb3:
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t77 = INT64_C(2);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t78 = *(HeroArrayHeader * const *)hero_array_at(t76, t77);
+    t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? ((void)hero_array_at(t76, t77), hero_unreachable()) : (void)0), (void)(t76->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t76 + 1))[t77]);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t79 = INT64_C(2);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t80 = *(int64_t const *)hero_array_at(t78, t79);
+    t80 = ((void)((t78 == NULL || t79 < 0 || t79 >= t78->len) ? ((void)hero_array_at(t78, t79), hero_unreachable()) : (void)0), (void)(t78->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t78 + 1))[t79]);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     t81 = HERO_STR_LIT(hero_str_20);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -954,7 +954,7 @@ bb3:
 #line 955 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_decref(t93);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t83 = hero_array_len(t82);
+    t83 = ((void)(t82 == NULL ? ((void)hero_array_len(t82), hero_unreachable()) : (void)0), t82->len);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     hero_print_str(t74);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"

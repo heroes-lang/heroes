@@ -272,7 +272,7 @@ bb0:
 #line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     t4 = t3.f_words;
 #line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     t6 = t2 >= t5;
 #line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
@@ -288,7 +288,7 @@ bb1:
 #line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     t13 = t12.f_pos;
 #line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t14 = *(HeroStr const *)hero_array_at(t11, t13);
+    t14 = ((void)((t11 == NULL || t13 < 0 || t13 >= t11->len) ? ((void)hero_array_at(t11, t13), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t13]);
 #line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     t32 = h1_word;
 #line 295 "fixedbugs231oneexitcopiesoutonce.c"

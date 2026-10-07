@@ -199,7 +199,7 @@ bb1:
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t8 = h2_xs0;
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t10 = t7 < t9;
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
@@ -211,7 +211,7 @@ bb2:
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t12 = h3_i0;
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h4_i = t13;
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"

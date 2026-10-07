@@ -255,7 +255,7 @@ bb1:
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t4 = h2_xs0;
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    t5 = hero_array_len(t4);
+    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t6 = t3 < t5;
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
@@ -267,7 +267,7 @@ bb2:
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t8 = h3_i0;
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    t9 = *(int64_t const *)hero_array_at(t7, t8);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     h4_x = t9;
 #line 28 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"

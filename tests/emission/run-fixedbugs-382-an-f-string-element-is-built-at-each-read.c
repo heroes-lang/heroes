@@ -313,7 +313,7 @@ bb2:
 #line 18 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
     t10 = t8 % t9;
 #line 18 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
-    t11 = *(HeroStr const *)hero_array_at(t7, t10);
+    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t10]);
 #line 18 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
     t12 = hero_str_len(t11);
 #line 18 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
@@ -391,7 +391,7 @@ bb3:
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
     t26 = INT64_C(0);
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
-    t27 = *(HeroStr const *)hero_array_at(t25, t26);
+    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t25 + 1))[t26]);
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
     t28 = HERO_STR_LIT(hero_str_20);
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
@@ -405,7 +405,7 @@ bb3:
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
     t30 = INT64_C(0);
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
-    t31 = *(HeroStr const *)hero_array_at(t29, t30);
+    t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? ((void)hero_array_at(t29, t30), hero_unreachable()) : (void)0), (void)(t29->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t29 + 1))[t30]);
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
     hero_print_str(t27);
 #line 24 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"

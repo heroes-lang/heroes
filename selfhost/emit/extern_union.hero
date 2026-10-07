@@ -37,12 +37,12 @@
 use ast
 use token
 use source
-use check/table
 use check/state
 use ir/containers
 use emit/ctype
 use emit/writer
 use emit/layout_compare
+use emit/extern_reach
 use parse
 use resolve
 use checker
@@ -229,14 +229,20 @@ function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Use
                                     sites @ sites.push(
                                         Site(decl: r.decl, given: r.given, rest: !c.rested[inst.span.end].is_err(), span: inst.span)
                                     )
-                            .map_shape => reach(out: @operated, seen: @seen, c, decls, ty: inst.ty)
+                            .map_shape => extern_reach.reach(out: @operated, seen: @seen, c, decls, ty: inst.ty)
                             .case_shape | .array_shape | .ok_shape | .fail_shape | .err_shape => continue
                     .binary b =>
                         if b.op == .eq || b.op == .ne
-                            reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, b.left))
+                            extern_reach.reach(
+                                out: @operated,
+                                seen: @seen,
+                                c,
+                                decls,
+                                ty: containers.value_type(f, b.left)
+                            )
                     .map_get mg =>
-                        reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, mg.map))
-                        reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, mg.key))
+                        extern_reach.reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, mg.map))
+                        extern_reach.reach(out: @operated, seen: @seen, c, decls, ty: containers.value_type(f, mg.key))
                     .lit | .load | .store | .push_owned | .unary | .cast | .call | .func_ref    => continue
                     .field | .index | .len_of | .tag_of | .payload                              => continue
                     .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
@@ -251,71 +257,6 @@ function group_record(decls: [ast.Decl], decl: i64) -> bool
         .constant_decl | .function_decl | .variant_decl | .test_decl => return false
 
     return false
-
-# The extern records a type reaches by value: a SET, which the caller
-# reads sorted, so the order the queue drains in reaches nothing.
-#
-# **TOTAL SINCE DEFECT 140 (2026-10-01).** It stopped at `depth > 16`,
-# saying it was bounded like the checker's partial walk and that a nest of
-# extern records sixteen deep does not exist. The partial walk lost its
-# bound to defect 046 on 2026-09-16, and the nest needs no extern record
-# but the last: `==` over a value holding a union sixteen PLAIN records
-# down was built, measured, and printed `true`, the generated eq reading
-# the union's bytes under two types, where fifteen down was refused. A set
-# of the type ids walked makes it total, and a cyclic generic the old
-# comment feared ends there too, since every id is entered once.
-#
-# `seen` is the CALLER's, one for all its calls (defect 229, 2026-10-03):
-# each call drains its queue, so a type walked before has already put every
-# record it reaches in `out`, and walking it again for each of 2,000 nested
-# map literals cost 4 million steps.
-function reach(@out: {i64: bool}, @seen: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
-    queue: [i64] @ [ty]
-    next: i64 @ 0
-
-    while next < queue.len()
-        at = queue[next]
-        next @ next + 1
-
-        if !seen[at].is_err()
-            continue
-        seen[at] @ true
-
-        match table.get(c.types, at)
-            .named n =>
-                out[n.decl] @ true
-
-                match decls[n.decl].kind
-                    .record_decl rec =>
-                        for field in rec.fields
-                            written = state.written_type(c, field.ty)
-
-                            if !written.is_err()
-                                queue @ queue.push(written.must())
-                    # **A VARIANT'S CASES ARE A ROUTE TOO** (2026-10-01,
-                    # found beside defect 140). This arm stopped at a variant,
-                    # so `==` over a variant whose case holds a union was
-                    # built and printed `true`, and a map keyed by one was
-                    # built, the generated eq and hash calling the payload's:
-                    # the transitivity this file's `used` states, missed at
-                    # the one kind `check/partial.hero` names as what a list
-                    # of container kinds would miss.
-                    .variant_decl v =>
-                        for one_case in v.cases
-                            for field in one_case.fields
-                                written = state.written_type(c, field.ty)
-
-                                if !written.is_err()
-                                    queue @ queue.push(written.must())
-                    .constant_decl | .function_decl | .test_decl => continue
-            .array a     => queue @ queue.push(a.element)
-            .fixed x     => queue @ queue.push(x.element)
-            .fallible fl => queue @ queue.push(fl.payload)
-            .map m =>
-                queue @ queue.push(m.key)
-                queue @ queue.push(m.value)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .function_ty | .case_ty | .failure | .generic | .error    => continue
 
 ## Tests
 

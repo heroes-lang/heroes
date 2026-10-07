@@ -598,7 +598,7 @@ bb1:
 #line 59 "examples/wordbands/main.hero"
     t7 = h2_xs0;
 #line 59 "examples/wordbands/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 59 "examples/wordbands/main.hero"
     t9 = t6 < t8;
 #line 59 "examples/wordbands/main.hero"
@@ -610,7 +610,7 @@ bb2:
 #line 59 "examples/wordbands/main.hero"
     t11 = h3_i0;
 #line 59 "examples/wordbands/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 59 "examples/wordbands/main.hero"
     t69 = h4_word;
 #line 617 "main.c"
@@ -764,7 +764,7 @@ bb8:
 #line 65 "examples/wordbands/main.hero"
     t37 = h9_xs1;
 #line 65 "examples/wordbands/main.hero"
-    t38 = hero_array_len(t37);
+    t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len);
 #line 65 "examples/wordbands/main.hero"
     t39 = t36 < t38;
 #line 65 "examples/wordbands/main.hero"
@@ -776,7 +776,7 @@ bb9:
 #line 65 "examples/wordbands/main.hero"
     t41 = h10_i1;
 #line 65 "examples/wordbands/main.hero"
-    t42 = *(HeroStr const *)hero_array_at(t40, t41);
+    t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t40 + 1))[t41]);
 #line 65 "examples/wordbands/main.hero"
     t76 = h11_key;
 #line 783 "main.c"
@@ -1080,7 +1080,7 @@ bb1:
 #line 78 "examples/wordbands/main.hero"
     t7 = h3_xs0;
 #line 78 "examples/wordbands/main.hero"
-    t8 = hero_array_len(t7);
+    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 78 "examples/wordbands/main.hero"
     t9 = t6 < t8;
 #line 78 "examples/wordbands/main.hero"
@@ -1092,7 +1092,7 @@ bb2:
 #line 78 "examples/wordbands/main.hero"
     t11 = h4_i0;
 #line 78 "examples/wordbands/main.hero"
-    t12 = *(HeroStr const *)hero_array_at(t10, t11);
+    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 78 "examples/wordbands/main.hero"
     t48 = h5_ch;
 #line 1099 "main.c"
@@ -1126,7 +1126,7 @@ bb4:
 #line 86 "examples/wordbands/main.hero"
     t32 = h2_current;
 #line 86 "examples/wordbands/main.hero"
-    t33 = hero_array_len(t32);
+    t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
 #line 86 "examples/wordbands/main.hero"
     t34 = INT64_C(0);
 #line 86 "examples/wordbands/main.hero"
@@ -1142,7 +1142,7 @@ bb6:
 #line 80 "examples/wordbands/main.hero"
     t16 = h2_current;
 #line 80 "examples/wordbands/main.hero"
-    t17 = hero_array_len(t16);
+    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
 #line 80 "examples/wordbands/main.hero"
     t18 = INT64_C(0);
 #line 80 "examples/wordbands/main.hero"
@@ -1381,7 +1381,7 @@ bb4:
 #line 101 "examples/wordbands/main.hero"
     t18 = h3_xs0;
 #line 101 "examples/wordbands/main.hero"
-    t19 = hero_array_len(t18);
+    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
 #line 101 "examples/wordbands/main.hero"
     t20 = t17 < t19;
 #line 101 "examples/wordbands/main.hero"
@@ -1393,7 +1393,7 @@ bb5:
 #line 101 "examples/wordbands/main.hero"
     t22 = h4_i0;
 #line 101 "examples/wordbands/main.hero"
-    t23 = *(int64_t const *)hero_array_at(t21, t22);
+    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
 #line 101 "examples/wordbands/main.hero"
     h5_h = t23;
 #line 102 "examples/wordbands/main.hero"

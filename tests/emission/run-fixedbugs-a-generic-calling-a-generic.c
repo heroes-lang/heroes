@@ -563,7 +563,7 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ds;
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
 #line 570 "fixedbugsagenericcallingageneric.c"
@@ -581,7 +581,7 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ds;
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
 #line 588 "fixedbugsagenericcallingageneric.c"
@@ -602,7 +602,7 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
 #line 609 "fixedbugsagenericcallingageneric.c"
@@ -623,7 +623,7 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t3 = *(HeroStr const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
 #line 628 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t3);
     return t3;
@@ -644,7 +644,7 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t3 = *(h_fixedbugsagenericcallingageneric_P const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_fixedbugsagenericcallingageneric_P) ? hero_unreachable() : (void)0), ((h_fixedbugsagenericcallingageneric_P const *)(const void *)(t1 + 1))[t2]);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
 #line 651 "fixedbugsagenericcallingageneric.c"

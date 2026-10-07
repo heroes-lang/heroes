@@ -499,7 +499,7 @@ bb0:
 #line 500 "generics.c"
     hero_array_decref(t65);
 #line 48 "tests/golden/run/generics.hero"
-    t45 = hero_array_len(t44);
+    t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
 #line 48 "tests/golden/run/generics.hero"
     t46 = HERO_STR_LIT(hero_str_20);
 #line 48 "tests/golden/run/generics.hero"
@@ -599,7 +599,7 @@ bb0:
 #line 17 "tests/golden/run/generics.hero"
     t2 = INT64_C(0);
 #line 17 "tests/golden/run/generics.hero"
-    t3 = *(HeroStr const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
 #line 604 "generics.c"
     hero_str_incref(t3);
     return t3;
@@ -620,7 +620,7 @@ bb0:
 #line 17 "tests/golden/run/generics.hero"
     t2 = INT64_C(0);
 #line 17 "tests/golden/run/generics.hero"
-    t3 = *(int64_t const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 17 "tests/golden/run/generics.hero"
     return t3;
 #line 627 "generics.c"
@@ -644,13 +644,13 @@ bb0:
 #line 20 "tests/golden/run/generics.hero"
     t2 = h0_xs;
 #line 20 "tests/golden/run/generics.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 20 "tests/golden/run/generics.hero"
     t4 = INT64_C(1);
 #line 20 "tests/golden/run/generics.hero"
     if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 20 "tests/golden/run/generics.hero"
-    t6 = *(HeroStr const *)hero_array_at(t1, t5);
+    t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? ((void)hero_array_at(t1, t5), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t5]);
 #line 655 "generics.c"
     hero_str_incref(t6);
     return t6;
@@ -674,13 +674,13 @@ bb0:
 #line 20 "tests/golden/run/generics.hero"
     t2 = h0_xs;
 #line 20 "tests/golden/run/generics.hero"
-    t3 = hero_array_len(t2);
+    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 20 "tests/golden/run/generics.hero"
     t4 = INT64_C(1);
 #line 20 "tests/golden/run/generics.hero"
     if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 20 "tests/golden/run/generics.hero"
-    t6 = *(int64_t const *)hero_array_at(t1, t5);
+    t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? ((void)hero_array_at(t1, t5), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t5]);
 #line 20 "tests/golden/run/generics.hero"
     return t6;
 #line 687 "generics.c"
@@ -759,7 +759,7 @@ bb1:
 #line 26 "tests/golden/run/generics.hero"
     t5 = h3_xs0;
 #line 26 "tests/golden/run/generics.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 26 "tests/golden/run/generics.hero"
     t7 = t4 < t6;
 #line 26 "tests/golden/run/generics.hero"
@@ -771,7 +771,7 @@ bb2:
 #line 26 "tests/golden/run/generics.hero"
     t9 = h4_i0;
 #line 26 "tests/golden/run/generics.hero"
-    t10 = *(int64_t const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 26 "tests/golden/run/generics.hero"
     h5_x = t10;
 #line 27 "tests/golden/run/generics.hero"
@@ -838,7 +838,7 @@ bb0:
 #line 17 "tests/golden/run/generics.hero"
     t2 = INT64_C(0);
 #line 17 "tests/golden/run/generics.hero"
-    t3 = *(HeroArrayHeader * const *)hero_array_at(t1, t2);
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t1 + 1))[t2]);
 #line 843 "generics.c"
     hero_array_incref(t3);
     return t3;

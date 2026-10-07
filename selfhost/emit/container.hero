@@ -17,8 +17,9 @@
 #   inserts, so there is no element to descend into; xs[i] @ v has one,
 #   and descending means unsharing this level first.
 #
-# What is NOT here: hero_array_at's bounds check and hero_map_find's
-# NULL are the runtime's. This module only spells the calls. A fixed
+# What is NOT here: hero_map_find's NULL is the runtime's, and so is
+# every abort of an array read, whose words and exit code `hero_array_at`
+# and `hero_array_len` keep (`emit/array_read.hero`, defect 389). A fixed
 # array's bound is the compiler's, in `places.subscript` (defect 097).
 
 use ast
@@ -34,6 +35,7 @@ use emit/descriptors
 use emit/aggregate
 use emit/places
 use emit/storageless
+use emit/array_read
 use parse
 use resolve
 use checker
@@ -81,11 +83,10 @@ function build_array(c: state.Checked, names: ctype.Names, result: i64, argument
 
     return ok(lines)
 
-# t9 = *(const int64_t *)hero_array_at(t7, t8); — the read goes through
-# the runtime because that is where the bounds check lives. The cast is
-# on the RESULT, so the element type is stated at every read and clang
-# checks the assignment. `{spelling} const *`, not `const {spelling} *`:
-# the two differ exactly when the element is itself a pointer.
+# `xs[i]`: a fixed array is subscripted where it lies, and a `[T]` is read
+# in place by `emit/array_read.hero`, every failing read handed to
+# `hero_array_at` (defect 389). The cast is on the RESULT's type, so the
+# element type is stated at every read and clang checks the assignment.
 function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, base: i64, index: i64) -> str?
     # A fixed array is no runtime container: it is subscripted directly and
     # guarded by the compiler, and `storageless.element` owns that read.
@@ -107,9 +108,7 @@ function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], nam
 
     if spelling.is_err()
         return fail(code: "none", msg: "an element with no C type")
-    return ok(
-        "*(" + spelling.must() + " const *)hero_array_at(" + mangle.value(base) + ", " + mangle.value(index) + ")"
-    )
+    return ok(array_read.element(spelling: spelling.must(), base: mangle.value(base), index: mangle.value(index)))
 
 # What replaces the value at a C lvalue the walk reached in place, a field or a
 # fixed-array element: release the old value where it is counted, then assign.
@@ -356,7 +355,7 @@ test "an array literal is one block and a push in place per element, a read is a
         span: token.Span(start: 0, end: 1)
     )
     read = read_element(got.c, got.s, got.decls, got.names, f, base: 0, index: 1)
-    assert read.must() == "*(int64_t const *)hero_array_at(t0, t1)"
+    assert read.must() == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? ((void)hero_array_at(t0, t1), hero_unreachable()) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
 
 test "the session's own fixedbug: a trailing field behind an index releases then assigns"
     got = ready(

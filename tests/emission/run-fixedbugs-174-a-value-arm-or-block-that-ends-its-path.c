@@ -1727,7 +1727,7 @@ bb0:
 #line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t1 = h0_xs;
 #line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = hero_array_len(t1);
+    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t3 = INT64_C(0);
 #line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
@@ -1749,7 +1749,7 @@ bb2:
 #line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t6 = INT64_C(0);
 #line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = *(int64_t const *)hero_array_at(t5, t6);
+    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
 #line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     return t7;
 #line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"

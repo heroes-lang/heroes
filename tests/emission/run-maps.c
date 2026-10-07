@@ -1809,7 +1809,7 @@ bb28:
 #line 86 "tests/golden/run/maps.hero"
     t226 = h30_xs0;
 #line 86 "tests/golden/run/maps.hero"
-    t227 = hero_array_len(t226);
+    t227 = ((void)(t226 == NULL ? ((void)hero_array_len(t226), hero_unreachable()) : (void)0), t226->len);
 #line 86 "tests/golden/run/maps.hero"
     t228 = t225 < t227;
 #line 86 "tests/golden/run/maps.hero"
@@ -1821,7 +1821,7 @@ bb29:
 #line 86 "tests/golden/run/maps.hero"
     t230 = h31_i0;
 #line 86 "tests/golden/run/maps.hero"
-    t231 = *(HeroStr const *)hero_array_at(t229, t230);
+    t231 = ((void)((t229 == NULL || t230 < 0 || t230 >= t229->len) ? ((void)hero_array_at(t229, t230), hero_unreachable()) : (void)0), (void)(t229->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t229 + 1))[t230]);
 #line 86 "tests/golden/run/maps.hero"
     t308 = h32_k;
 #line 1828 "maps.c"
@@ -1907,7 +1907,7 @@ bb31:
 #line 1908 "maps.c"
     hero_array_decref(t311);
 #line 89 "tests/golden/run/maps.hero"
-    t252 = hero_array_len(t251);
+    t252 = ((void)(t251 == NULL ? ((void)hero_array_len(t251), hero_unreachable()) : (void)0), t251->len);
 #line 89 "tests/golden/run/maps.hero"
     t253 = h29_total;
 #line 89 "tests/golden/run/maps.hero"

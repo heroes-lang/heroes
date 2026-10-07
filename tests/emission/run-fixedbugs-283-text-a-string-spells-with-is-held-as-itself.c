@@ -197,7 +197,7 @@ bb1:
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t8 = h2_xs0;
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t9 = hero_array_len(t8);
+    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t10 = t7 < t9;
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
@@ -209,7 +209,7 @@ bb2:
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     t12 = h3_i0;
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t13 = *(int64_t const *)hero_array_at(t11, t12);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
 #line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
     h4_i = t13;
 #line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"

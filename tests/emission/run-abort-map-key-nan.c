@@ -258,7 +258,7 @@ bb1:
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t5 = h2_xs0;
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
-    t6 = hero_array_len(t5);
+    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t7 = t4 < t6;
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
@@ -270,7 +270,7 @@ bb2:
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t9 = h3_i0;
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
-    t10 = *(double const *)hero_array_at(t8, t9);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     h4_k = t10;
 #line 31 "tests/golden/run/abort-map-key-nan.hero"
