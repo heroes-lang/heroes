@@ -35,6 +35,13 @@ passes to every child it started (defect 425's repair), then SIGKILL after
 and SIGKILL is the one signal `heroes` cannot pass on, so the clang processes
 building the harness ran on with no parent (seen that day, in a scratch tree).
 A run that did not end in time gives no opinion.
+
+RAISED 2026-10-07, 45 s to 100 s, with both hooks' `timeout` set to 120 in
+`.claude/settings.json` (lane b14-hooks' recommendation, taken by the batch's
+rule): under thirteen lanes' load a warm narrowed harness run took 45 to 79 s
+of wall time, quiet about 15 s, so at 45 s the questions of defects 334 and
+215 gave no opinion under exactly the load lanes work in. The settings' 120
+is written rather than left to the installed version's default.
 """
 
 import os
@@ -45,7 +52,7 @@ import subprocess
 SUITE = os.path.join("tests", "harness", "suite_annotations.hero")
 MARK = re.compile(r"#~v? [a-z_]+")
 ROW = re.compile(r'^\s*"(tests/golden/[^"\s]+)"\s*$')
-LIMIT = 45.0
+LIMIT = 100.0
 GRACE = 5.0
 
 

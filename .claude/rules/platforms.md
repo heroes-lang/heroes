@@ -25,8 +25,9 @@ emulated Linux x86-64 container leaves the routine, and the CI's native
 Linux x86-64 leg judges after the push; a defect at the C boundary closes
 only after the push's legs ran its cases. What it gives up, unmeasured on
 the day: whether the arm64 container runs the `--sanitize` cases
-LeakSanitizer needs (CL-055 put that leg on x86-64). The rule of
-2026-09-29 below stands as history.
+LeakSanitizer needs (CL-055 put that leg on x86-64). **Measured 2026-10-07**
+(lane b14-box): LeakSanitizer runs in the arm64 container, which reported a
+77-byte leak there. The rule of 2026-09-29 below stands as history.
 
 **A case on a header or a library one platform does not have** (the
 author's answer *A*, 2026-10-03): skipped there by name, its build reading
