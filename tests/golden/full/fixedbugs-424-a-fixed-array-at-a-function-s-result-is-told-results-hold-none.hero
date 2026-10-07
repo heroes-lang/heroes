@@ -1,0 +1,23 @@
+# Defect 424, 2026-10-06 (lane b13-fixed405, found beside defect 408; filed
+# by the coordinator). Symptom: at a function's result, the
+# `fixed_outside_a_group` note said *no binding, constant or parameter holds
+# a fixed array*, the one place it stood in not among them. Repair: the
+# list names the result (`selfhost/ffi_errors.hero`), at every position, a
+# result holding none either. Two results: one the program builds into a
+# group record's field, which names that construction, and one it builds
+# into nothing, which is told both readings.
+
+extern "fixedbugs-424-a-fixed-array-at-a-function-s-result-is-told-results-hold-none.h"
+    record Tag
+        name: i8[4]
+        id: i32
+
+function four() -> i8[4]  #~ fixed_outside_a_group
+    return [1, 2, 3, 4]
+
+function counts() -> i32[4]  #~ fixed_outside_a_group
+    return [5, 6, 7, 8]
+
+function main()
+    t = Tag(name: four(), id: 1)
+    print(t.id, counts()[0])

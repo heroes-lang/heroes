@@ -1,0 +1,23 @@
+# Probe: `counted_by` naming EVP_DigestFinal_ex's OUT count, which C never reads; SHA-512 writes 64 bytes into a 32-byte field, s set to 32.
+extern "evp_box2.h" package "libcrypto"
+    record Box tag box32
+        b: u8[32]
+        after: i64
+    record MdCtx tag evp_md_ctx_st
+    function EVP_MD_CTX_new() -> MdCtx acquires EVP_MD_CTX_free
+    function EVP_MD_CTX_free(c: MdCtx consumes)
+    function EVP_sha512() -> ptr
+    function EVP_DigestInit(c: MdCtx, t: ptr) -> i32
+    function EVP_DigestUpdate(c: MdCtx, d: cstr lent, n: u64) -> i32
+    function EVP_DigestFinal_ex(c: MdCtx, md: ptr counted_by s lent, @s: u32) -> i32
+
+function main()
+    c = EVP_MD_CTX_new()
+    d: Box @ Box(after: 7, rest: zero)
+    s: u32 @ 32
+    print(EVP_DigestInit(c, t: EVP_sha512()))
+    print(EVP_DigestUpdate(c, d: "abc".cstr(), n: 3))
+    print(EVP_DigestFinal_ex(c, md: d.b.ptr(), @s))
+    print(s)
+    print(d.after)
+    EVP_MD_CTX_free(c)

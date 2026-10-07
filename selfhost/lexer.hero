@@ -437,6 +437,24 @@ test "a template over lines is one stretch, and a stray backtick takes no line b
     assert flood.diagnostics.len() == 8
     assert flood.diagnostics[7].notes == ["128 more characters of this file are not part of the language's syntax either, not told one by one"]
 
+# Defect 414: a backtick its line leaves open is told once with the rest of
+# its line, the holes, runs and quotes in it no message of their own; a
+# closer that closes nothing in it is the line's, and a `$` with no backtick
+# before it is told as it always was.
+test "a backtick its line leaves open is told once, with the rest of its line"
+    one = lex_one("s = `never closed ${x}\nprint(s)\n")
+    assert one.diagnostics.len() == 1
+    assert kind_line(one.tokens) == "ident eq error terminator ident lparen ident rparen terminator eof"
+    call = lex_one("print(`a ${x} and ${y})\n")
+    assert call.diagnostics.len() == 1
+    assert kind_line(call.tokens) == "ident lparen error rparen terminator eof"
+    hole = lex_one("print(f\"{`a ${x}}\")\n")
+    assert hole.diagnostics.len() == 1
+    assert kind_line(hole.tokens) == "ident lparen str_piece error str_piece rparen terminator eof"
+    quoted = lex_one("s = `it is \"open ключ ${x}\n")
+    assert quoted.diagnostics.len() == 1
+    assert lex_one("s = $x\nt = ${x}\n").diagnostics.len() == 2
+
 # Defect 250: an escape the language does not have inside a header's name
 # is the head's to tell (`escape_in_header_name`, at the parser), so the
 # lexer says nothing of it there; elsewhere it says what it always said.

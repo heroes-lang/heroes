@@ -1,0 +1,9 @@
+# Defect 414, 2026-10-06: a backtick its line leaves open, before a hole,
+# was told at the backtick and again at the `$` under `check --permissive`
+# as under `check`; the control arm reads the same lexer, and tells it once,
+# with the rest of its line.
+
+function main()
+    x = 7
+    s = `never closed ${x}  #~ unexpected_character
+    print(s)

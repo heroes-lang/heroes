@@ -649,3 +649,33 @@ wakeups that did not fire. So a gate, a sitting or a loop that expects to run
 longer than a minute holds its own assertion: `caffeinate -i <command>`, or
 `caffeinate -i -w <pid>` beside a run already started. It costs nothing and
 depends on no application.
+
+## A run that may not end is bounded in time and in bytes
+
+Measured 2026-10-06 to 07. Panel 196's completeness critic probed libuv with
+a program that prints its loop's handles without end, under `timeout 60
+heroes run`. The timeout ended `heroes`, and the program `heroes run` had
+started kept running, its parent now `launchd`: the runtime gives a child its
+own process group (`runtime/parts/run.c:810`, so the terminal's Ctrl-C reaches
+the program in front), and `heroes` forwards no signal when it is itself
+killed (defect 425). It wrote **146 GB** into one file of the scratchpad (the
+process had run 44 minutes when `ps` read it), the data volume filled at about
+23:47 by the lanes' reports, every lane, seat and shell stopped on `ENOSPC`
+(even `df`, the harness writing its own output first), and the author found
+it with `ps`, killed it (the file's last write 00:04) and removed it before
+00:09. The coordinator's
+brief had asked for the probe and bounded neither its output nor how it is
+stopped. Reproduced at 00:09 with a program of four lines: `timeout 3 heroes
+run` exits 124 and the program is still running, its parent 1.
+
+So, until defect 425 is repaired and after:
+
+- **a program that may not end** (a probe of an endless loop, a server, a
+  reader of a pipe nobody closes) is built with `heroes build` and its BINARY
+  run under `timeout`, never `timeout heroes run`;
+- **its output goes to `/dev/null`, or through `head -c <bytes>` into a
+  file**, never into a file nothing bounds;
+- **a brief that asks a seat or a lane for such a probe names both bounds**, the
+  time and the bytes, as it names a paid run's budget;
+- **after a timeout the built binary is looked for** (`pgrep -f build/`) and
+  stopped, before the run's verdict is written down.

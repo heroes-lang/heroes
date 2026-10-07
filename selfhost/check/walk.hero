@@ -517,6 +517,9 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                     mismatch_shown(@c, s, decls, expected: expected, got: "{}", span: span)
                 _ = state.record_expr(@c, at: id, ty: expected)
                 return
+
+            if checked_map_literal(@c, a, r, s, decls, id: id, entries: entries.entries, expected: expected)
+                return
             got = synth(@c, a, r, s, decls, id)
             compare(@c, s, decls, expected: expected, got: got, span: span)
             return
@@ -662,6 +665,24 @@ function checked_array_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
             return true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
         .map | .fallible | .function_ty | .named                  => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
+
+# The map-literal half (defect 415): a map type asked for hands every key its
+# key type and every value its value type, as an array's hands each element
+# its own (spec § 2: a literal takes the type its context asks for).
+function checked_map_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, entries: [ast.MapEntry], expected: i64) -> bool
+    match table.get(c.out.types, expected)
+        .map m =>
+            for entry in entries
+                check(@c, a, r, s, decls, id: entry.key, expected: m.key)
+                check(@c, a, r, s, decls, id: entry.value, expected: m.value)
+
+            _ = state.record_expr(@c, at: id, ty: expected)
+            return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .fallible | .function_ty | .named       => return false
         .case_ty | .failure | .generic | .error                   => return false
 
     return false

@@ -1,0 +1,17 @@
+# Probe: a `str` lent through `.cstr()` to SHA256_Final's writable `unsigned char *md`; a copy made before is printed after.
+extern "box.h" package "libcrypto"
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(md: cstr lent, @c: Sha256Ctx) -> i32
+
+function main()
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    s = "0123456789abcdef0123456789abcdef".repeat(1)
+    t = s
+    print(SHA256_Init(@c))
+    print(SHA256_Update(@c, data: "abc".cstr(), len: 3))
+    print(SHA256_Final(md: s.cstr(), @c))
+    print(t.len())
+    print(t[0])

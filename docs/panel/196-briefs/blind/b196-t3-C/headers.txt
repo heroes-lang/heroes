@@ -1,0 +1,5 @@
+From `unistd.h`:
+
+```c
+int	 gethostname(char *_LIBC_COUNT(__namelen), size_t __namelen);
+```

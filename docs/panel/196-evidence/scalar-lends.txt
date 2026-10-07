@@ -1,0 +1,41 @@
+archive/bootstrap-rs/heroes/src/library/source.hero:111:    function hero_file_read(path: cstr, @status: i64) -> str
+docs/panel/186-briefs/probes/coordinator/signchar/s8.hero:2:    function fill(@p: i8)
+docs/panel/186-briefs/probes/coordinator/signchar/u8.hero:2:    function fill(@p: u8)
+docs/panel/194-evidence/092/a-count-through-a-cell.hero:4:    function fill_len(@buf: One counted_by n, @n: u32) -> i64
+docs/panel/194-evidence/092/b-count-through-a-cell.hero:4:    function fill_len(buf: ptr counted_by n lent, @n: u32) -> i64
+docs/panel/194-evidence/092/today-count-through-a-cell.hero:4:    function fill_len(@buf: One, @n: u32) -> i64
+docs/panel/194-evidence/new-defects/single-cell/md_field.hero:11:    function SHA256_Final(@md: u8, @c: Sha256Ctx) -> i32
+docs/panel/194-evidence/new-defects/single-cell/md_scalar.hero:10:    function SHA256_Final(@md: u8, @c: Sha256Ctx) -> i32
+docs/panel/194-evidence/new-defects/single-cell/md_scalar_canary.hero:7:    function SHA256_Final(@md: u8, @c: Sha256Ctx) -> i32
+selfhost/cli/process.hero:47:    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+selfhost/cli/process.hero:60:    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+selfhost/cli/process.hero:61:    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+selfhost/cli/runtime_places.hero:17:    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+selfhost/main.hero:78:    function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+selfhost/main.hero:81:    function hero_args_shown(index: i64, @status: i64, @marks: i64) -> str
+selfhost/module/reading.hero:30:    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+tests/golden/check/ffi-counted-by-shape.hero:28:    function out_parameter(p: ptr counted_by n, @n: i64) -> i64
+tests/golden/check/fixedbugs-092-counted-by-is-read-on-a-record-lent-whole.hero:15:    function cell_count(@buf: One counted_by n, @n: u32) -> i64
+tests/golden/check/fixedbugs-092-counted-by-is-read-on-a-record-lent-whole.hero:18:    function a_float(@buf: One counted_by n, @n: f64) -> i64  #~ counted_by_shape
+tests/golden/check/fixedbugs-138-a-mark-the-library-does-not-write.hero:11:    function hero_str_try_from_cstr(p: cstr lent, @status: i64) -> str  #~ contract_differs
+tests/golden/check/fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:21:    function frexp(x: f64, @e: i32) -> f64
+tests/golden/fixedbugs/ffi-pointee-opaque.hero:22:    function fill(@out: i64) -> i32  #~ ffi_parameter_type
+tests/golden/fixedbugs/ffi-pointee-sign.hero:18:    function time(@t: u64) -> i64  #~ ffi_parameter_type
+tests/golden/fixedbugs/ffi-pointee-void.hero:29:    function memcpy(@dst: i32, src: ptr, n: u64) -> ptr  #~ ffi_parameter_type
+tests/golden/fixedbugs/ffi-pointee-width.hero:29:    function frexp(x: f64, @e: i64) -> f64  #~ ffi_parameter_type
+tests/golden/run/ffi-pointee-at-the-headers-width.hero:11:    function frexp(x: f64, @e: i32) -> f64
+tests/golden/run/ffi-pointee-at-the-headers-width.hero:14:    function time(@t: i64) -> i64
+tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero:12:    function fill_len(@buf: One counted_by n, @n: u32) -> i64
+tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero:28:    function fill_len(@buf: One counted_by n, @n: u32) -> i64
+tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero:18:    function getsockopt(fd: i32, level: i32, name: i32, @value: Linger counted_by len, @len: u32) -> i32
+tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero:13:    function fill(@p: i8)
+tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero:18:    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:32:    function fill_len(buf: ptr counted_by n lent, @n: u32) -> i64
+tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero:23:    function put_seven(@out: i64)
+tests/golden/unsupported/fixedbugs-092-a-record-lent-whole-to-a-void-pointer-names-its-count.hero:30:    function fill_len(@buf: One, @n: u32) -> i64  #~ ffi_parameter_type
+tests/golden/unsupported/fixedbugs-163-a-plain-char-pointee-bound-as-u8-is-refused.hero:10:    function fill(@p: u8)  #~ ffi_parameter_type
+tests/harness/cases.hero:24:    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+tests/harness/shell.hero:49:    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+tests/harness/shell.hero:65:    function hero_dir_at_shown(index: i64, @status: i64, @marks: i64) -> str
+tests/harness/shell.hero:66:    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+tests/harness/shell.hero:70:    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str

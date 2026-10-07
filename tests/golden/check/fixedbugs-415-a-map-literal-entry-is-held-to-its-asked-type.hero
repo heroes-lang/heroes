@@ -1,0 +1,55 @@
+# Fixed defect 415, 2026-10-06 (lane b13-gen402, found beside defect 402): the
+# refusals, now each told at the entry that is wrong. Before the repair a map
+# literal checked against a type synthesised itself, so its numbers were `i64`
+# and a whole-map `type_mismatch` stood where the entry's own message belonged.
+# Each key and value is now held to the type its context asks for (spec § 2),
+# as an array literal's elements are: a value past the width asked for is that
+# literal's own `int_out_of_range`, a key the same, a value of another type is
+# `type_mismatch` at the value. Where nothing asks, the literal keeps its
+# synthesised types, so `{"a": 1}` stays `{str: i64}` and a `.case` or a
+# generic function value in it has no context, told as before.
+
+variant Op
+    plus
+    minus
+
+function ident<A>(x: A) -> A
+    return x
+
+function a_value_past_its_width()
+    m: {str: u8} = {"a": 300}  #~ int_out_of_range
+    print(m.len())
+
+function a_key_past_its_width()
+    m: {u8: str} = {256: "b"}  #~ int_out_of_range
+    print(m.len())
+
+function a_value_of_another_type()
+    m: {str: u8} = {"c": "three"}  #~ type_mismatch
+    print(m.len())
+
+function a_map_where_no_map_is_asked()
+    n: i64 = {"d": 4}  #~ type_mismatch
+    print(n)
+
+function no_context_stays_i64()
+    m = {"e": 5}
+    n: u8 = m["e"].must()  #~ type_mismatch
+    print(n)
+
+function a_case_with_no_context()
+    m = {"f": .plus}  #~ cannot_infer
+    print(m.len())
+
+function a_generic_value_with_no_context()
+    m = {"g": ident}  #~ cannot_infer
+    print(m.len())
+
+function main()
+    a_value_past_its_width()
+    a_key_past_its_width()
+    a_value_of_another_type()
+    a_map_where_no_map_is_asked()
+    no_context_stays_i64()
+    a_case_with_no_context()
+    a_generic_value_with_no_context()

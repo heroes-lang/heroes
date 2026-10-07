@@ -1,0 +1,18 @@
+# Prints this machine's host name, read through gethostname.
+
+extern "unistd.h"
+    function gethostname(name: ptr counted_by size lent, size: u64) -> i32
+
+extern "hostbuf.h"
+    record HostBuf tag host_buf
+        name: i8[256]
+
+function main()
+    buf: HostBuf @ HostBuf(rest: zero)
+    status = gethostname(name: buf.name.ptr(), size: 256)
+    if status != 0
+        print("gethostname failed")
+        exit(code: 1)
+    match buf.name.validated_bytes()
+        .ok host => print(host)
+        .err e => print(e.msg)

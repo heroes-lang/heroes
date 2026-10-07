@@ -1,0 +1,4 @@
+362a363,365
+> An `@` parameter is ONE element. Where C writes several through it and no
+> argument says how many, declare the fixed array it fills, `@md: u8[32]`, and
+> lend a field of exactly that type: `@d.b`.
