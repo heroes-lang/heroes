@@ -85,17 +85,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 96 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_retain(const h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node *v);
@@ -161,7 +158,7 @@ void h_fixedbugsadeepvaluereleasedwithoutadeepstack_main(void);
 
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
 h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node h_fixedbugsadeepvaluereleasedwithoutadeepstack_deep(int64_t h0_n) {
-#line 165 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 162 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node h1_out = {0};
     int64_t h2_i;
     HeroArrayHeader * h3_own3 = {0};
@@ -199,10 +196,8 @@ bb0:
     t16 = h3_own3;
 #line 46 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h3_own3 = t2;
-#line 203 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 200 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_decref(t16);
-#line 46 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 206 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_incref(t2);
 #line 46 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t3 = (h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node){.f_label = t1, .f_children = t2};
@@ -210,15 +205,15 @@ bb0:
     t17 = h4_own4;
 #line 46 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h4_own4 = t3;
-#line 214 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 209 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t17);
 #line 46 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t18 = h1_out;
-#line 218 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 213 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_retain(&t3);
 #line 46 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h1_out = t3;
-#line 222 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 217 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t18);
 #line 47 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t4 = INT64_C(0);
@@ -238,7 +233,6 @@ bb1:
     if (t7) goto bb2; else goto bb3;
 #line 49 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
 bb2:
-#line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t8 = h2_i;
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t9 = h1_out;
@@ -250,10 +244,8 @@ bb2:
     t19 = h5_own5;
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h5_own5 = t10;
-#line 254 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 248 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_decref(t19);
-#line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 257 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_incref(t10);
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t11 = (h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node){.f_label = t8, .f_children = t10};
@@ -261,15 +253,15 @@ bb2:
     t20 = h6_own6;
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h6_own6 = t11;
-#line 265 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 257 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t20);
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t21 = h1_out;
-#line 269 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 261 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_retain(&t11);
 #line 50 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h1_out = t11;
-#line 273 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 265 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t21);
 #line 51 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t12 = h2_i;
@@ -285,29 +277,19 @@ bb2:
 bb3:
 #line 53 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t15 = h1_out;
-#line 289 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 281 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_retain(&t15);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 292 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h1_out);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 295 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_decref(h3_own3);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 298 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h4_own4);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 301 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_decref(h5_own5);
-#line 53 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 304 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h6_own6);
     return t15;
 }
 
 #line 55 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
 h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer h_fixedbugsadeepvaluereleasedwithoutadeepstack_alternating(int64_t h0_n) {
-#line 311 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 293 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer h1_out = {0};
     int64_t h2_i;
     HeroMapHeader * h3_inner = {0};
@@ -348,10 +330,8 @@ bb0:
     t17 = h4_own4;
 #line 56 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h4_own4 = t1;
-#line 352 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 334 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_decref(t17);
-#line 56 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 355 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_incref(t1);
 #line 56 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t2 = (h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer){.f_kids = t1};
@@ -359,15 +339,15 @@ bb0:
     t18 = h5_own5;
 #line 56 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h5_own5 = t2;
-#line 363 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 343 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&t18);
 #line 56 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t19 = h1_out;
-#line 367 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 347 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_retain(&t2);
 #line 56 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h1_out = t2;
-#line 371 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 351 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&t19);
 #line 57 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t3 = INT64_C(0);
@@ -387,21 +367,20 @@ bb1:
     if (t6) goto bb2; else goto bb3;
 #line 59 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
 bb2:
-#line 60 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t7 = hero_map_new(&hero_desc_int, &hero_desc_array, 0);
 #line 60 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t20 = h6_own6;
 #line 60 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h6_own6 = t7;
-#line 397 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 376 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_decref(t20);
 #line 60 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t21 = h3_inner;
-#line 401 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 380 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_incref(t7);
 #line 60 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h3_inner = t7;
-#line 405 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 384 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_decref(t21);
 #line 61 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t8 = INT64_C(0);
@@ -415,16 +394,13 @@ bb2:
     t22 = h7_own7;
 #line 61 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h7_own7 = t10;
-#line 419 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 398 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_decref(t22);
-#line 61 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 422 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_incref(t10);
 #line 61 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     hero_map_set(&(h3_inner), &t8, &t10);
-#line 62 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t11 = h3_inner;
-#line 428 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 404 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_incref(t11);
 #line 62 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t12 = (h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer){.f_kids = t11};
@@ -432,15 +408,15 @@ bb2:
     t23 = h8_own8;
 #line 62 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h8_own8 = t12;
-#line 436 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 412 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&t23);
 #line 62 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t24 = h1_out;
-#line 440 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 416 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_retain(&t12);
 #line 62 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h1_out = t12;
-#line 444 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 420 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&t24);
 #line 63 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t13 = h2_i;
@@ -456,35 +432,21 @@ bb2:
 bb3:
 #line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t16 = h1_out;
-#line 460 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 436 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_retain(&t16);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 463 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&h1_out);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 466 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_decref(h3_inner);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 469 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_decref(h4_own4);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 472 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&h5_own5);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 475 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_map_decref(h6_own6);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 478 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     hero_array_decref(h7_own7);
-#line 65 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 481 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&h8_own8);
     return t16;
 }
 
 #line 67 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
 void h_fixedbugsadeepvaluereleasedwithoutadeepstack_main(void) {
-#line 488 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 450 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node h0_a = {0};
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer h1_b = {0};
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node h2_c = {0};
@@ -524,15 +486,15 @@ bb0:
     t18 = h3_own3;
 #line 71 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h3_own3 = t2;
-#line 528 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 490 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t18);
 #line 71 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t19 = h0_a;
-#line 532 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 494 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_retain(&t2);
 #line 71 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h0_a = t2;
-#line 536 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 498 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t19);
 #line 72 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t3 = h0_a;
@@ -550,15 +512,15 @@ bb0:
     t20 = h4_own4;
 #line 77 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h4_own4 = t6;
-#line 554 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 516 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&t20);
 #line 77 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t21 = h1_b;
-#line 558 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 520 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_retain(&t6);
 #line 77 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h1_b = t6;
-#line 562 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 524 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&t21);
 #line 78 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t7 = h1_b;
@@ -578,15 +540,15 @@ bb0:
     t22 = h5_own5;
 #line 82 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h5_own5 = t11;
-#line 582 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 544 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t22);
 #line 82 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t23 = h2_c;
-#line 586 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 548 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_retain(&t11);
 #line 82 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     h2_c = t11;
-#line 590 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 552 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&t23);
 #line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     t12 = h2_c;
@@ -608,22 +570,12 @@ bb0:
     hero_print_int(t17);
 #line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
     hero_print_end();
-#line 612 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
+#line 574 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h0_a);
-#line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 615 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&h1_b);
-#line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 618 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h2_c);
-#line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 621 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h3_own3);
-#line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 624 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Layer_release(&h4_own4);
-#line 83 "tests/golden/run/fixedbugs-a-deep-value-released-without-a-deep-stack.hero"
-#line 627 "fixedbugsadeepvaluereleasedwithoutadeepstack.c"
     h_fixedbugsadeepvaluereleasedwithoutadeepstack_Node_release(&h5_own5);
     return;
 }

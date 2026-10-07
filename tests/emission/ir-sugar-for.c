@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "sugarfor.c"
+#line 77 "sugarfor.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs);
 
 #line 4 "tests/golden/ir/sugar-for.hero"
 int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs) {
-#line 96 "sugarfor.c"
+#line 93 "sugarfor.c"
     int64_t h1_sum;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -125,11 +122,11 @@ bb0:
     t2 = h0_xs;
 #line 7 "tests/golden/ir/sugar-for.hero"
     t18 = h2_xs0;
-#line 129 "sugarfor.c"
+#line 126 "sugarfor.c"
     hero_array_incref(t2);
 #line 7 "tests/golden/ir/sugar-for.hero"
     h2_xs0 = t2;
-#line 133 "sugarfor.c"
+#line 130 "sugarfor.c"
     hero_array_decref(t18);
 #line 7 "tests/golden/ir/sugar-for.hero"
     t3 = INT64_C(0);
@@ -159,7 +156,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 7 "tests/golden/ir/sugar-for.hero"
     h4_x = t10;
-#line 8 "tests/golden/ir/sugar-for.hero"
     t11 = h1_sum;
 #line 8 "tests/golden/ir/sugar-for.hero"
     t12 = h4_x;
@@ -185,7 +181,7 @@ bb3:
 bb4:
 #line 10 "tests/golden/ir/sugar-for.hero"
     t17 = h1_sum;
-#line 189 "sugarfor.c"
+#line 185 "sugarfor.c"
     hero_array_decref(h2_xs0);
     return t17;
 }

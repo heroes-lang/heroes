@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs139constantsthatgiveavalue.c"
+#line 77 "fixedbugs139constantsthatgiveavalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +92,7 @@ void h_fixedbugs139constantsthatgiveavalue_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_MATCH(void) {
-#line 99 "fixedbugs139constantsthatgiveavalue.c"
+#line 96 "fixedbugs139constantsthatgiveavalue.c"
     int64_t h0_s0;
     int64_t h1_r0;
     int64_t t1;
@@ -113,7 +110,6 @@ bb0:
     h0_s0 = t1;
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t2 = h0_s0;
-#line 9 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t3 = INT64_C(1);
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t4 = t2 == t3;
@@ -127,7 +123,6 @@ bb1:
     return t7;
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb2:
-#line 9 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t5 = INT64_C(5);
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     h1_r0 = t5;
@@ -145,12 +140,12 @@ bb4:
     h1_r0 = t6;
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 149 "fixedbugs139constantsthatgiveavalue.c"
+#line 144 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_IF(void) {
-#line 154 "fixedbugs139constantsthatgiveavalue.c"
+#line 149 "fixedbugs139constantsthatgiveavalue.c"
     int64_t h0_r0;
     bool t1;
     int64_t t2;
@@ -170,7 +165,6 @@ bb1:
     return t4;
 #line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb2:
-#line 14 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t2 = INT64_C(8);
 #line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     h0_r0 = t2;
@@ -184,12 +178,12 @@ bb3:
     h0_r0 = t3;
 #line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 188 "fixedbugs139constantsthatgiveavalue.c"
+#line 182 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH(void) {
-#line 193 "fixedbugs139constantsthatgiveavalue.c"
+#line 187 "fixedbugs139constantsthatgiveavalue.c"
     int64_t h0_s0;
     int64_t t1;
     int64_t t2;
@@ -204,7 +198,6 @@ bb0:
     h0_s0 = t1;
 #line 19 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t2 = h0_s0;
-#line 20 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t3 = INT64_C(3);
 #line 19 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t4 = t2 == t3;
@@ -228,12 +221,12 @@ bb3:
 bb4:
 #line 23 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 232 "fixedbugs139constantsthatgiveavalue.c"
+#line 225 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 void h_fixedbugs139constantsthatgiveavalue_main(void) {
-#line 237 "fixedbugs139constantsthatgiveavalue.c"
+#line 230 "fixedbugs139constantsthatgiveavalue.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -245,13 +238,11 @@ bb0:
     hero_print_int(t1);
 #line 28 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t2 = h_fixedbugs139constantsthatgiveavalue_BY_IF();
 #line 29 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     hero_print_int(t2);
 #line 29 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     hero_print_end();
-#line 30 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t3 = h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH();
 #line 30 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     hero_print_int(t3);
@@ -259,7 +250,7 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     return;
-#line 263 "fixedbugs139constantsthatgiveavalue.c"
+#line 254 "fixedbugs139constantsthatgiveavalue.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

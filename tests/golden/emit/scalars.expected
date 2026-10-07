@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "scalars.c"
+#line 77 "scalars.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_scalars_main(void);
 
 #line 5 "tests/golden/emit/scalars.hero"
 void h_scalars_main(void) {
-#line 96 "scalars.c"
+#line 93 "scalars.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -123,7 +120,6 @@ bb0:
     hero_print_int(t5);
 #line 6 "tests/golden/emit/scalars.hero"
     hero_print_end();
-#line 7 "tests/golden/emit/scalars.hero"
     t6 = INT64_C(7);
 #line 7 "tests/golden/emit/scalars.hero"
     t7 = INT64_C(2);
@@ -137,7 +133,6 @@ bb0:
     hero_print_int(t8);
 #line 7 "tests/golden/emit/scalars.hero"
     hero_print_end();
-#line 8 "tests/golden/emit/scalars.hero"
     t9 = INT64_C(7);
 #line 8 "tests/golden/emit/scalars.hero"
     t10 = INT64_C(2);
@@ -151,7 +146,6 @@ bb0:
     hero_print_int(t11);
 #line 8 "tests/golden/emit/scalars.hero"
     hero_print_end();
-#line 9 "tests/golden/emit/scalars.hero"
     t12 = INT64_C(0);
 #line 9 "tests/golden/emit/scalars.hero"
     t13 = INT64_C(5);
@@ -163,7 +157,7 @@ bb0:
     hero_print_end();
 #line 9 "tests/golden/emit/scalars.hero"
     return;
-#line 167 "scalars.c"
+#line 161 "scalars.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

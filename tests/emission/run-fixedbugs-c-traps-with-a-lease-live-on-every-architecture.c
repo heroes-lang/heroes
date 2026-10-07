@@ -75,17 +75,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsctrapswithaleaseliveoneveryarchitecture_c_trap(const char * a0) { (void)(c_trap)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 86 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -101,7 +98,7 @@ void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void) {
-#line 105 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 102 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     HeroStr h0_word = {0};
     const char * h1_held;
     HeroStr h2_own2 = {0};
@@ -126,15 +123,15 @@ bb0:
     t8 = h2_own2;
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h2_own2 = t3;
-#line 130 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 127 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(t8);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t9 = h0_word;
-#line 134 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 131 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_incref(t3);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h0_word = t3;
-#line 138 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 135 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(t9);
 #line 16 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t4 = h0_word;
@@ -142,22 +139,17 @@ bb0:
     t5 = hero_str_held(t4);
 #line 16 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h1_held = t5;
-#line 17 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t6 = h1_held;
 #line 17 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     (void)c_trap(hero_cstr_nonnull(t6));
-#line 18 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_held_release(&h1_held);
-#line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t7 = HERO_STR_LIT(hero_str_4414937d);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_print_str(t7);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_print_end();
-#line 158 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 152 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(h0_word);
-#line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
-#line 161 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(h2_own2);
     return;
 }

@@ -15,17 +15,15 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-flex Slot nsap");
 #line 35 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(_Generic(&((Slot *)0)->nsap, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot nsap");
-#line 36 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, tag) != 0, "heroes-ffi-flex Slot tag");
 #line 36 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(_Generic(&((Slot *)0)->tag, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot tag");
-#line 37 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 25 "ffiabytefieldcrossestoc.c"
+#line 23 "ffiabytefieldcrossestoc.c"
 
 #line 34 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(__builtin_classify_type(*(Slot *)0) != 13, "heroes-ffi-union Slot nsap tag id");
-#line 29 "ffiabytefieldcrossestoc.c"
+#line 27 "ffiabytefieldcrossestoc.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -96,21 +94,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 38 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiabytefieldcrossestoc_slot_sum(void * a0, int64_t a1) { (void)(slot_sum)(a0, a1); }
-#line 39 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiabytefieldcrossestoc_slot_fill(void * a0, int64_t a1) { (void)(slot_fill)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "ffiabytefieldcrossestoc.c"
+#line 108 "ffiabytefieldcrossestoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_Slot_eq(const Slot *a, const Slot *b);
@@ -132,7 +126,7 @@ void h_ffiabytefieldcrossestoc_main(void);
 
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 void h_ffiabytefieldcrossestoc_main(void) {
-#line 136 "ffiabytefieldcrossestoc.c"
+#line 130 "ffiabytefieldcrossestoc.c"
     Slot h0_s;
     h_0opt_e201354 h1_f0 = {0};
     Slot h2_t;
@@ -274,7 +268,6 @@ bb0:
     _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 2821 2833 2838 2839 8 void *");
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     (void)slot_fill(t29, t30);
-#line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t33 = (void *)(h0_s.nsap);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t34 = INT64_C(8);
@@ -288,7 +281,6 @@ bb0:
     hero_print_int(t35);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t36 = h0_s;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t38 = INT64_C(3);
@@ -300,15 +292,15 @@ bb0:
     t76 = h4_own4;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h4_own4 = t40;
-#line 304 "ffiabytefieldcrossestoc.c"
+#line 296 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t76);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t77 = h1_f0;
-#line 308 "ffiabytefieldcrossestoc.c"
+#line 300 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_retain(&t40);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h1_f0 = t40;
-#line 312 "ffiabytefieldcrossestoc.c"
+#line 304 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t77);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t41 = h1_f0;
@@ -360,7 +352,6 @@ bb1:
     t64 = (Slot){.nsap = {t49, t50, t51, t52, t53, t54, t55, t56}, .tag = {t58, t59, t60, t61}, .id = t63};
 #line 60 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h2_t = t64;
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t65 = h2_t;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     {
@@ -384,15 +375,15 @@ bb1:
     t78 = h5_own5;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h5_own5 = t67;
-#line 388 "ffiabytefieldcrossestoc.c"
+#line 379 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t78);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t79 = h3_f1;
-#line 392 "ffiabytefieldcrossestoc.c"
+#line 383 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_retain(&t67);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h3_f1 = t67;
-#line 396 "ffiabytefieldcrossestoc.c"
+#line 387 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t79);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t68 = h3_f1;
@@ -410,7 +401,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 414 "ffiabytefieldcrossestoc.c"
+#line 405 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -422,16 +413,10 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 426 "ffiabytefieldcrossestoc.c"
+#line 417 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&h1_f0);
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 429 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&h3_f1);
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 432 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&h4_own4);
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-#line 435 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&h5_own5);
     return;
 bb4:
@@ -439,7 +424,7 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 443 "ffiabytefieldcrossestoc.c"
+#line 428 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }

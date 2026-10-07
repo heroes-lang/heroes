@@ -68,17 +68,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 79 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -105,14 +102,14 @@ HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerb
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID_9, HeroArrayHeader *, &hero_desc_array, 3, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID_3), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID_4), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID_8));
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID(void) {
-#line 109 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 106 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID_9);
 }
 #else
 
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID(void) {
-#line 116 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 113 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -146,7 +143,7 @@ bb0:
     t10 = h0_own0;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h0_own0 = t3;
-#line 150 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 147 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t10);
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t4 = hero_array_new(&hero_desc_int, 1);
@@ -154,7 +151,7 @@ bb0:
     t11 = h1_own1;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h1_own1 = t4;
-#line 158 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 155 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t11);
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t5 = INT64_C(3);
@@ -174,7 +171,7 @@ bb0:
     t12 = h2_own2;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h2_own2 = t8;
-#line 178 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 175 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t12);
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t9 = hero_array_new(&hero_desc_array, 3);
@@ -188,22 +185,12 @@ bb0:
     t13 = h3_own3;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h3_own3 = t9;
-#line 192 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 189 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t13);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 195 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t9);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 198 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h0_own0);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 201 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h1_own1);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 204 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h2_own2);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 207 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h3_own3);
     return t9;
 }
@@ -228,14 +215,14 @@ HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerb
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_12, HeroArrayHeader *, &hero_desc_array, 3, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_4), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_5), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_11));
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP(void) {
-#line 232 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 219 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_12);
 }
 #else
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP(void) {
-#line 239 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 226 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -276,7 +263,7 @@ bb0:
     t13 = h0_own0;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h0_own0 = t2;
-#line 280 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 267 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t13);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t3 = hero_array_new(&hero_desc_int, 1);
@@ -284,7 +271,7 @@ bb0:
     t14 = h1_own1;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h1_own1 = t3;
-#line 288 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 275 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t14);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t4 = hero_array_new(&hero_desc_array, 2);
@@ -296,7 +283,7 @@ bb0:
     t15 = h2_own2;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h2_own2 = t4;
-#line 300 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 287 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t15);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t5 = hero_array_new(&hero_desc_array, 1);
@@ -304,7 +291,7 @@ bb0:
     t16 = h3_own3;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h3_own3 = t5;
-#line 308 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 295 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t16);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t6 = INT64_C(2);
@@ -320,7 +307,7 @@ bb0:
     t17 = h4_own4;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h4_own4 = t8;
-#line 324 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 311 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t17);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t9 = INT64_C(4);
@@ -332,7 +319,7 @@ bb0:
     t18 = h5_own5;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h5_own5 = t10;
-#line 336 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 323 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t18);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t11 = hero_array_new(&hero_desc_array, 2);
@@ -344,7 +331,7 @@ bb0:
     t19 = h6_own6;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h6_own6 = t11;
-#line 348 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 335 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t19);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t12 = hero_array_new(&hero_desc_array, 3);
@@ -358,34 +345,16 @@ bb0:
     t20 = h7_own7;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h7_own7 = t12;
-#line 362 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 349 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t20);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 365 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t12);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 368 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h0_own0);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 371 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h1_own1);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 374 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h2_own2);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 377 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h3_own3);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 380 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h4_own4);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 383 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h5_own5);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 386 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h6_own6);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 389 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h7_own7);
     return t12;
 }
@@ -393,7 +362,7 @@ bb0:
 
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 void h_fixedbugs382aconstantofarrayslaysouteachinnerblock_main(void) {
-#line 397 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 366 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     int64_t h0_cells;
     int64_t h1_at;
     HeroArrayHeader * h2_ys = {0};
@@ -568,7 +537,6 @@ bb0:
     t1 = INT64_C(0);
 #line 15 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h0_cells = t1;
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t2 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h1_at = t2;
@@ -586,7 +554,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 bb2:
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t6 = h0_cells;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t7 = h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID();
@@ -594,7 +561,7 @@ bb2:
     t125 = h4_own4;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h4_own4 = t7;
-#line 598 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 565 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t125);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t8 = h1_at;
@@ -618,7 +585,7 @@ bb2:
     t126 = h5_own5;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h5_own5 = t14;
-#line 622 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 589 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t126);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t15 = h1_at;
@@ -638,7 +605,6 @@ bb2:
     if (__builtin_add_overflow(t13, t19, &t20)) hero_panic_overflow();
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h0_cells = t20;
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t21 = h1_at;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t22 = INT64_C(1);
@@ -660,7 +626,7 @@ bb3:
     t127 = h6_own6;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h6_own6 = t26;
-#line 664 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 630 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t127);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t27 = INT64_C(2);
@@ -678,7 +644,7 @@ bb3:
     t128 = h7_own7;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h7_own7 = t32;
-#line 682 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 648 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t128);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t33 = INT64_C(1);
@@ -694,7 +660,7 @@ bb3:
     t129 = h8_own8;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h8_own8 = t37;
-#line 698 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 664 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t129);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t38 = INT64_C(2);
@@ -716,7 +682,7 @@ bb3:
     t130 = h9_own9;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h9_own9 = t45;
-#line 720 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 686 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t130);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t46 = INT64_C(0);
@@ -748,21 +714,20 @@ bb3:
     hero_print_int(t50);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t51 = h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID();
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t131 = h10_own10;
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h10_own10 = t51;
-#line 758 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 723 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t131);
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t132 = h2_ys;
-#line 762 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 727 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t51);
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h2_ys = t51;
-#line 766 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 731 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t132);
 #line 24 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t52 = INT64_C(2);
@@ -774,7 +739,6 @@ bb3:
     hero_array_unshare(&(h2_ys));
 #line 24 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut(h2_ys, t52))), t53, &t54);
-#line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t55 = INT64_C(1);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t56 = h2_ys;
@@ -790,14 +754,11 @@ bb3:
     t133 = h11_own11;
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h11_own11 = t60;
-#line 794 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 758 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t133);
-#line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 797 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t60);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_set(&(h2_ys), t55, &t60);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t61 = h2_ys;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t62 = INT64_C(2);
@@ -827,7 +788,7 @@ bb3:
     t134 = h12_own12;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h12_own12 = t73;
-#line 831 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 792 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t134);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t74 = INT64_C(2);
@@ -845,7 +806,7 @@ bb3:
     t135 = h13_own13;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h13_own13 = t79;
-#line 849 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 810 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t135);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t80 = INT64_C(1);
@@ -869,21 +830,20 @@ bb3:
     hero_print_int(t82);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_print_end();
-#line 27 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t83 = h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP();
 #line 27 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t136 = h14_own14;
 #line 27 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h14_own14 = t83;
-#line 879 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 839 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t136);
 #line 27 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t137 = h3_zs;
-#line 883 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 843 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t83);
 #line 27 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h3_zs = t83;
-#line 887 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 847 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t137);
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t84 = INT64_C(2);
@@ -899,7 +859,6 @@ bb3:
     hero_array_unshare(&((*(HeroArrayHeader * *)hero_array_at_mut(h3_zs, t84))));
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut((*(HeroArrayHeader * *)hero_array_at_mut(h3_zs, t84)), t85))), t86, &t87);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t88 = h3_zs;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t89 = INT64_C(2);
@@ -921,7 +880,7 @@ bb3:
     t138 = h15_own15;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h15_own15 = t96;
-#line 925 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 884 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t138);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t97 = INT64_C(2);
@@ -943,7 +902,7 @@ bb3:
     t139 = h16_own16;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h16_own16 = t104;
-#line 947 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 906 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t139);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t105 = INT64_C(1);
@@ -959,7 +918,7 @@ bb3:
     t140 = h17_own17;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h17_own17 = t107;
-#line 963 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 922 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t140);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t108 = hero_array_new(&hero_desc_int, 1);
@@ -967,7 +926,7 @@ bb3:
     t141 = h18_own18;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h18_own18 = t108;
-#line 971 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 930 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t141);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t109 = INT64_C(3);
@@ -987,7 +946,7 @@ bb3:
     t142 = h19_own19;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h19_own19 = t112;
-#line 991 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 950 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t142);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t113 = hero_array_new(&hero_desc_array, 3);
@@ -1001,7 +960,7 @@ bb3:
     t143 = h20_own20;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h20_own20 = t113;
-#line 1005 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 964 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t143);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t114 = hero_array_eq(t104, t113);
@@ -1013,7 +972,7 @@ bb3:
     t144 = h21_own21;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h21_own21 = t116;
-#line 1017 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 976 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t144);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t117 = INT64_C(0);
@@ -1025,7 +984,7 @@ bb3:
     t145 = h22_own22;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h22_own22 = t119;
-#line 1029 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 988 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(t145);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t120 = INT64_C(0);
@@ -1053,67 +1012,27 @@ bb3:
     hero_print_bool(t124);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_print_end();
-#line 1057 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 1016 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h2_ys);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1060 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h3_zs);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1063 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h4_own4);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1066 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h5_own5);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1069 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h6_own6);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1072 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h7_own7);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1075 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h8_own8);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1078 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h9_own9);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1081 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h10_own10);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1084 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h11_own11);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1087 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h12_own12);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1090 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h13_own13);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1093 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h14_own14);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1096 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h15_own15);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1099 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h16_own16);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1102 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h17_own17);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1105 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h18_own18);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1108 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h19_own19);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1111 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h20_own20);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1114 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h21_own21);
-#line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-#line 1117 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_decref(h22_own22);
     return;
 }

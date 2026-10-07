@@ -15,9 +15,8 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 16 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->i) == 1 && sizeof(((W *)0)->i) == sizeof(int32_t) && (_Generic(((W *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W i");
-#line 17 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->n) == 1 && sizeof(((W *)0)->n) == sizeof(uint32_t) && (_Generic(((W *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field W n");
-#line 21 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 20 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -78,17 +77,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 88 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b);
@@ -106,7 +102,7 @@ void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) {
-#line 110 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 106 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
     W h0_w;
     W t1;
     W t2;
@@ -119,7 +115,6 @@ bb0:
     t1 = make_w();
 #line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     h0_w = t1;
-#line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     t2 = h0_w;
 #line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     t3 = t2.i;
@@ -127,7 +122,6 @@ bb0:
     hero_print_int(t3);
 #line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     t4 = h0_w;
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     t5 = t4.n;
@@ -137,7 +131,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     return;
-#line 141 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 135 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;

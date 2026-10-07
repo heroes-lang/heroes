@@ -15,21 +15,19 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct held) - __builtin_offsetof(struct held, buf) != 0, "heroes-ffi-flex Held buf");
 #line 17 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(_Generic(&((struct held *)0)->buf, _Bool (*)[16]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[16]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[16]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[16]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[16]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[16]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[16]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[16]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[16]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[16]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[16]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[16]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Held buf");
-#line 18 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof(((struct held *)0)->after) == sizeof(int64_t) && (_Generic(((struct held *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held after");
 #line 20 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(sizeof(struct ten) - __builtin_offsetof(struct ten, buf) != 0, "heroes-ffi-flex Ten buf");
 #line 20 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(_Generic(&((struct ten *)0)->buf, _Bool (*)[10]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[10]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[10]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[10]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[10]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[10]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[10]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[10]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[10]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[10]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[10]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[10]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Ten buf");
-#line 21 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(__builtin_classify_type(((struct ten *)0)->after) == 1 && sizeof(((struct ten *)0)->after) == sizeof(int64_t) && (_Generic(((struct ten *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Ten after");
-#line 27 "fixedbugs395acountincsownunitruns.c"
+#line 25 "fixedbugs395acountincsownunitruns.c"
 
 #line 16 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
 #line 19 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct ten *)0) != 13, "heroes-ffi-union Ten buf after");
-#line 33 "fixedbugs395acountincsownunitruns.c"
+#line 31 "fixedbugs395acountincsownunitruns.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -103,39 +101,26 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 22 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_ints(void * a0, uint64_t a1) { (void)(fill_ints)(a0, a1); }
-#line 23 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_read_ints(void * a0, uint64_t a1) { (void)(read_ints)(a0, a1); }
-#line 24 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_shorts(void * a0, uint64_t a1) { (void)(fill_shorts)(a0, a1); }
-#line 25 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_poll_like(void * a0, uint64_t a1) { (void)(poll_like)(a0, a1); }
-#line 26 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_poll_typedef(void * a0, uint64_t a1) { (void)(poll_typedef)(a0, a1); }
-#line 27 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_rows(void * a0, uint64_t a1) { (void)(fill_rows)(a0, a1); }
-#line 28 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_copy_n(void * a0, void * a1, uint64_t a2) { (void)(copy_n)(a0, a1, a2); }
-#line 29 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_bytes(void * a0, uint64_t a1) { (void)(fill_bytes)(a0, a1); }
-#line 30 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_lpvoid(void * a0, uint64_t a1) { (void)(fill_lpvoid)(a0, a1); }
-#line 31 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_wide(void * a0, uint64_t a1) { (void)(fill_wide)(a0, a1); }
-#line 32 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs395acountincsownunitruns_fill_len(void * a0, uint32_t * a1) { (void)(fill_len)(a0, (void *)a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "fixedbugs395acountincsownunitruns.c"
+#line 124 "fixedbugs395acountincsownunitruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b);
@@ -157,13 +142,13 @@ void h_fixedbugs395acountincsownunitruns_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
-#line 161 "fixedbugs395acountincsownunitruns.c"
+#line 146 "fixedbugs395acountincsownunitruns.c"
     return HELD_INTS;
 }
 
 #line 34 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_at_run_time(uint64_t h0_k) {
-#line 167 "fixedbugs395acountincsownunitruns.c"
+#line 152 "fixedbugs395acountincsownunitruns.c"
     uint64_t t1;
     goto bb0;
 bb0:
@@ -171,12 +156,12 @@ bb0:
     t1 = h0_k;
 #line 35 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return t1;
-#line 175 "fixedbugs395acountincsownunitruns.c"
+#line 160 "fixedbugs395acountincsownunitruns.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 void h_fixedbugs395acountincsownunitruns_main(void) {
-#line 180 "fixedbugs395acountincsownunitruns.c"
+#line 165 "fixedbugs395acountincsownunitruns.c"
     struct held h0_h;
     struct ten h1_t;
     uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n");
@@ -301,7 +286,6 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 38 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     h0_h = t19;
-#line 39 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t20 = UINT64_C(0);
 #line 39 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t21 = UINT64_C(0);
@@ -327,7 +311,6 @@ bb0:
     t32 = (struct ten){.buf = {t20, t21, t22, t23, t24, t25, t26, t27, t28, t29}, .after = t31};
 #line 39 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     h1_t = t32;
-#line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t35 = (void *)(h0_h.buf);
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t36 = UINT64_C(4);
@@ -341,7 +324,6 @@ bb0:
     hero_print_int(t37);
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t40 = (void *)(h0_h.buf);
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t41 = h_fixedbugs395acountincsownunitruns_HELD_INTS();
@@ -355,7 +337,6 @@ bb0:
     hero_print_int(t42);
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 42 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t45 = (void *)(h0_h.buf);
 #line 42 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t46 = UINT64_C(4);
@@ -369,7 +350,6 @@ bb0:
     hero_print_int(t48);
 #line 42 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t51 = (void *)(h1_t.buf);
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t52 = UINT64_C(5);
@@ -383,7 +363,6 @@ bb0:
     hero_print_int(t53);
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t56 = (void *)(h1_t.buf);
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t57 = UINT64_C(2);
@@ -397,7 +376,6 @@ bb0:
     hero_print_int(t58);
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t61 = (void *)(h0_h.buf);
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t62 = UINT64_C(2);
@@ -411,7 +389,6 @@ bb0:
     hero_print_int(t63);
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 46 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t66 = (void *)(h0_h.buf);
 #line 46 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t67 = UINT64_C(2);
@@ -425,7 +402,6 @@ bb0:
     hero_print_int(t69);
 #line 46 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t72 = (void *)(h0_h.buf);
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t73 = UINT64_C(1);
@@ -439,7 +415,6 @@ bb0:
     hero_print_int(t74);
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t77 = (void *)(h0_h.buf);
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t78 = UINT64_C(16);
@@ -453,7 +428,6 @@ bb0:
     hero_print_int(t79);
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 49 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t82 = (void *)(h0_h.buf);
 #line 49 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t83 = UINT64_C(16);
@@ -467,7 +441,6 @@ bb0:
     hero_print_int(t85);
 #line 49 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t88 = (void *)(h0_h.buf);
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t89 = UINT64_C(4);
@@ -481,7 +454,6 @@ bb0:
     hero_print_int(t90);
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t93 = (void *)(h0_h.buf);
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t96 = (void *)(h1_t.buf);
@@ -501,7 +473,6 @@ bb0:
     hero_print_int(t98);
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t101 = (void *)(h0_h.buf);
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t102 = UINT64_C(2);
@@ -515,11 +486,9 @@ bb0:
     hero_print_int(t103);
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 53 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t104 = UINT64_C(16);
 #line 53 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     h2_n = t104;
-#line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t107 = (void *)(h0_h.buf);
 #line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     if ((uint64_t)(h2_n) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))) hero_panic(sizeof(*(void *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:54: `fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero:54: `fill_len` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `void *` points at");
@@ -531,7 +500,6 @@ bb0:
     hero_print_int(t108);
 #line 54 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 55 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t109 = h0_h;
 #line 55 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t110 = t109.after;
@@ -539,7 +507,6 @@ bb0:
     hero_print_int(t110);
 #line 55 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     hero_print_end();
-#line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t111 = h1_t;
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t112 = t111.after;
@@ -551,7 +518,7 @@ bb0:
     hero_lend_local_give(hero_lend_h2_n);
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return;
-#line 555 "fixedbugs395acountincsownunitruns.c"
+#line 522 "fixedbugs395acountincsownunitruns.c"
 }
 #undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {

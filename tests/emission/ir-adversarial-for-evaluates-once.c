@@ -68,17 +68,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "adversarialforevaluatesonce.c"
+#line 79 "adversarialforevaluatesonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +92,7 @@ int64_t h_adversarialforevaluatesonce_total(void);
 
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) {
-#line 99 "adversarialforevaluatesonce.c"
+#line 96 "adversarialforevaluatesonce.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroStr t1;
     int64_t t2;
@@ -111,7 +108,6 @@ bb0:
     hero_print_str(t1);
 #line 8 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_print_end();
-#line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t2 = INT64_C(1);
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t3 = INT64_C(2);
@@ -129,20 +125,16 @@ bb0:
     t6 = h0_own0;
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h0_own0 = t5;
-#line 133 "adversarialforevaluatesonce.c"
+#line 129 "adversarialforevaluatesonce.c"
     hero_array_decref(t6);
-#line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-#line 136 "adversarialforevaluatesonce.c"
     hero_array_incref(t5);
-#line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-#line 139 "adversarialforevaluatesonce.c"
     hero_array_decref(h0_own0);
     return t5;
 }
 
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 int64_t h_adversarialforevaluatesonce_total(void) {
-#line 146 "adversarialforevaluatesonce.c"
+#line 138 "adversarialforevaluatesonce.c"
     int64_t h0_sum;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -179,15 +171,15 @@ bb0:
     t18 = h4_own4;
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h4_own4 = t2;
-#line 183 "adversarialforevaluatesonce.c"
+#line 175 "adversarialforevaluatesonce.c"
     hero_array_decref(t18);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t19 = h1_xs0;
-#line 187 "adversarialforevaluatesonce.c"
+#line 179 "adversarialforevaluatesonce.c"
     hero_array_incref(t2);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h1_xs0 = t2;
-#line 191 "adversarialforevaluatesonce.c"
+#line 183 "adversarialforevaluatesonce.c"
     hero_array_decref(t19);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t3 = INT64_C(0);
@@ -217,7 +209,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h3_n = t10;
-#line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t11 = h0_sum;
 #line 15 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t12 = h3_n;
@@ -243,10 +234,8 @@ bb3:
 bb4:
 #line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t17 = h0_sum;
-#line 247 "adversarialforevaluatesonce.c"
+#line 238 "adversarialforevaluatesonce.c"
     hero_array_decref(h1_xs0);
-#line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-#line 250 "adversarialforevaluatesonce.c"
     hero_array_decref(h4_own4);
     return t17;
 }

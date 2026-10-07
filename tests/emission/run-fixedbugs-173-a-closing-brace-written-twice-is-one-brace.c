@@ -85,17 +85,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 96 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -117,20 +114,20 @@ void h_fixedbugs173aclosingbracewrittentwiceisonebrace_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
 HeroStr h_fixedbugs173aclosingbracewrittentwiceisonebrace_BRACED(void) {
-#line 121 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 118 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 12 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t1 = HERO_STR_LIT(hero_str_10ce6de9);
-#line 127 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 124 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 14 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
 HeroStr h_fixedbugs173aclosingbracewrittentwiceisonebrace_wrapped(int64_t h0_n) {
-#line 134 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 131 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -155,7 +152,7 @@ bb0:
     t7 = h1_own1;
 #line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h1_own1 = t3;
-#line 159 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 156 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t7);
 #line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t4 = HERO_STR_LIT(hero_str_7d);
@@ -165,7 +162,7 @@ bb0:
     t8 = h2_own2;
 #line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h2_own2 = t5;
-#line 169 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 166 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t8);
 #line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t6 = hero_str_concat(t5, t4);
@@ -173,26 +170,18 @@ bb0:
     t9 = h3_own3;
 #line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h3_own3 = t6;
-#line 177 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 174 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t9);
-#line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 180 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_incref(t6);
-#line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 183 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h1_own1);
-#line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 186 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h2_own2);
-#line 15 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 189 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h3_own3);
     return t6;
 }
 
 #line 17 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
 void h_fixedbugs173aclosingbracewrittentwiceisonebrace_main(void) {
-#line 196 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 185 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     int64_t h0_x;
     HeroStr h1_word = {0};
     HeroMapHeader * h2_m = {0};
@@ -294,15 +283,14 @@ bb0:
     t1 = INT64_C(5);
 #line 18 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h0_x = t1;
-#line 19 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t2 = HERO_STR_LIT(hero_str_77);
 #line 19 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t53 = h1_word;
-#line 302 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 290 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_incref(t2);
 #line 19 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h1_word = t2;
-#line 306 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 294 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t53);
 #line 20 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t3 = HERO_STR_LIT(hero_str_206773);
@@ -310,19 +298,16 @@ bb0:
     hero_print_str(t3);
 #line 20 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t4 = HERO_STR_LIT(hero_str_7d);
 #line 21 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t4);
 #line 21 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 22 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t5 = HERO_STR_LIT(hero_str_7b);
 #line 22 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t5);
 #line 22 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t6 = h0_x;
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t7 = HERO_STR_LIT(hero_str_7b);
@@ -332,7 +317,7 @@ bb0:
     t54 = h4_own4;
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h4_own4 = t8;
-#line 336 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 321 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t54);
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t9 = HERO_STR_LIT(hero_str_7d);
@@ -342,7 +327,7 @@ bb0:
     t55 = h5_own5;
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h5_own5 = t10;
-#line 346 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 331 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t55);
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t11 = hero_str_concat(t10, t9);
@@ -350,13 +335,12 @@ bb0:
     t56 = h6_own6;
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h6_own6 = t11;
-#line 354 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 339 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t56);
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t11);
 #line 23 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t12 = h0_x;
 #line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t13 = hero_int_to_str(t12);
@@ -364,7 +348,7 @@ bb0:
     t57 = h7_own7;
 #line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h7_own7 = t13;
-#line 368 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 352 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t57);
 #line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t14 = HERO_STR_LIT(hero_str_7d);
@@ -374,13 +358,12 @@ bb0:
     t58 = h8_own8;
 #line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h8_own8 = t15;
-#line 378 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 362 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t58);
 #line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t15);
 #line 24 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t16 = h0_x;
 #line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t17 = HERO_STR_LIT(hero_str_7d);
@@ -390,7 +373,7 @@ bb0:
     t59 = h9_own9;
 #line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h9_own9 = t18;
-#line 394 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 377 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t59);
 #line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t19 = hero_str_concat(t17, t18);
@@ -398,13 +381,12 @@ bb0:
     t60 = h10_own10;
 #line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h10_own10 = t19;
-#line 402 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 385 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t60);
 #line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t19);
 #line 25 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t20 = h0_x;
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t21 = HERO_STR_LIT(hero_str_37474803);
@@ -414,7 +396,7 @@ bb0:
     t61 = h11_own11;
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h11_own11 = t22;
-#line 418 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 400 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t61);
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t23 = HERO_STR_LIT(hero_str_1a6fe0);
@@ -424,7 +406,7 @@ bb0:
     t62 = h12_own12;
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h12_own12 = t24;
-#line 428 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 410 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t62);
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t25 = hero_str_concat(t24, t23);
@@ -432,13 +414,12 @@ bb0:
     t63 = h13_own13;
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h13_own13 = t25;
-#line 436 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 418 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t63);
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t25);
 #line 26 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t26 = h1_word;
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t27 = HERO_STR_LIT(hero_str_7d);
@@ -450,7 +431,7 @@ bb0:
     t64 = h14_own14;
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h14_own14 = t29;
-#line 454 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 435 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t64);
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t30 = hero_str_concat(t29, t28);
@@ -458,7 +439,7 @@ bb0:
     t65 = h15_own15;
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h15_own15 = t30;
-#line 462 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 443 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t65);
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t31 = HERO_STR_LIT(hero_str_7d);
@@ -470,7 +451,7 @@ bb0:
     t66 = h16_own16;
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h16_own16 = t33;
-#line 474 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 455 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t66);
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t34 = hero_str_concat(t33, t31);
@@ -478,25 +459,23 @@ bb0:
     t67 = h17_own17;
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h17_own17 = t34;
-#line 482 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 463 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t67);
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t34);
 #line 27 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t35 = h_fixedbugs173aclosingbracewrittentwiceisonebrace_BRACED();
 #line 28 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t68 = h18_own18;
 #line 28 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h18_own18 = t35;
-#line 494 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 474 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t68);
 #line 28 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t35);
 #line 28 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t36 = INT64_C(7);
 #line 29 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t37 = h_fixedbugs173aclosingbracewrittentwiceisonebrace_wrapped(t36);
@@ -504,27 +483,26 @@ bb0:
     t69 = h19_own19;
 #line 29 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h19_own19 = t37;
-#line 508 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 487 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t69);
 #line 29 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t37);
 #line 29 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 30 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t38 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
 #line 30 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t70 = h20_own20;
 #line 30 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h20_own20 = t38;
-#line 520 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 498 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_map_decref(t70);
 #line 30 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t71 = h2_m;
-#line 524 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 502 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_map_incref(t38);
 #line 30 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h2_m = t38;
-#line 528 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 506 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_map_decref(t71);
 #line 31 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t39 = HERO_STR_LIT(hero_str_206c91);
@@ -532,7 +510,6 @@ bb0:
     t40 = INT64_C(1);
 #line 31 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_map_set(&(h2_m), &t39, &t40);
-#line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t41 = h2_m;
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t42 = HERO_STR_LIT(hero_str_206c91);
@@ -558,15 +535,15 @@ bb0:
     t72 = h21_own21;
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h21_own21 = t43;
-#line 562 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 539 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     h_0opt_e201354_release(&t72);
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t73 = h3_f0;
-#line 566 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 543 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     h_0opt_e201354_retain(&t43);
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     h3_f0 = t43;
-#line 570 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 547 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     h_0opt_e201354_release(&t73);
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t44 = h3_f0;
@@ -588,73 +565,32 @@ bb1:
     hero_print_int(t51);
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t52 = HERO_STR_LIT(hero_str_14fec1fb);
 #line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_str(t52);
 #line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
-#line 598 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 574 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h1_word);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 601 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_map_decref(h2_m);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 604 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     h_0opt_e201354_release(&h3_f0);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 607 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h4_own4);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 610 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h5_own5);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 613 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h6_own6);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 616 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h7_own7);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 619 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h8_own8);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 622 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h9_own9);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 625 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h10_own10);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 628 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h11_own11);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 631 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h12_own12);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 634 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h13_own13);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 637 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h14_own14);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 640 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h15_own15);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 643 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h16_own16);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 646 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h17_own17);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 649 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h18_own18);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 652 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(h19_own19);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 655 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_map_decref(h20_own20);
-#line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
-#line 658 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     h_0opt_e201354_release(&h21_own21);
     return;
 bb2:
@@ -662,7 +598,7 @@ bb2:
     t48 = h3_f0;
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     t49 = t48.as.err;
-#line 666 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
+#line 602 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_panic_must(t49);
     hero_unreachable();
 }

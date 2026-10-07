@@ -87,17 +87,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "libraryhigherorder.c"
+#line 98 "libraryhigherorder.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -132,7 +129,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, 
 
 #line 16 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_double(int64_t h0_n) {
-#line 136 "libraryhigherorder.c"
+#line 133 "libraryhigherorder.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -146,12 +143,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 17 "tests/golden/run/library-higher-order.hero"
     return t3;
-#line 150 "libraryhigherorder.c"
+#line 147 "libraryhigherorder.c"
 }
 
 #line 19 "tests/golden/run/library-higher-order.hero"
 bool h_libraryhigherorder_odd(int64_t h0_n) {
-#line 155 "libraryhigherorder.c"
+#line 152 "libraryhigherorder.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -175,12 +172,12 @@ bb0:
     t5 = t3 == t4;
 #line 20 "tests/golden/run/library-higher-order.hero"
     return t5;
-#line 179 "libraryhigherorder.c"
+#line 176 "libraryhigherorder.c"
 }
 
 #line 22 "tests/golden/run/library-higher-order.hero"
 bool h_libraryhigherorder_big(int64_t h0_n) {
-#line 184 "libraryhigherorder.c"
+#line 181 "libraryhigherorder.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -194,12 +191,12 @@ bb0:
     t3 = t1 > t2;
 #line 23 "tests/golden/run/library-higher-order.hero"
     return t3;
-#line 198 "libraryhigherorder.c"
+#line 195 "libraryhigherorder.c"
 }
 
 #line 25 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_add(int64_t h0_acc, int64_t h1_item) {
-#line 203 "libraryhigherorder.c"
+#line 200 "libraryhigherorder.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -213,12 +210,12 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 26 "tests/golden/run/library-higher-order.hero"
     return t3;
-#line 217 "libraryhigherorder.c"
+#line 214 "libraryhigherorder.c"
 }
 
 #line 28 "tests/golden/run/library-higher-order.hero"
 HeroStr h_libraryhigherorder_label(int64_t h0_n) {
-#line 222 "libraryhigherorder.c"
+#line 219 "libraryhigherorder.c"
     HeroStr h1_own1 = {0};
     int64_t t1;
     HeroStr t2;
@@ -233,20 +230,16 @@ bb0:
     t3 = h1_own1;
 #line 29 "tests/golden/run/library-higher-order.hero"
     h1_own1 = t2;
-#line 237 "libraryhigherorder.c"
+#line 234 "libraryhigherorder.c"
     hero_str_decref(t3);
-#line 29 "tests/golden/run/library-higher-order.hero"
-#line 240 "libraryhigherorder.c"
     hero_str_incref(t2);
-#line 29 "tests/golden/run/library-higher-order.hero"
-#line 243 "libraryhigherorder.c"
     hero_str_decref(h1_own1);
     return t2;
 }
 
 #line 35 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_sub(int64_t h0_acc, int64_t h1_item) {
-#line 250 "libraryhigherorder.c"
+#line 243 "libraryhigherorder.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -260,12 +253,12 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "tests/golden/run/library-higher-order.hero"
     return t3;
-#line 264 "libraryhigherorder.c"
+#line 257 "libraryhigherorder.c"
 }
 
 #line 38 "tests/golden/run/library-higher-order.hero"
 HeroStr h_libraryhigherorder_glue(HeroStr h0_acc, HeroStr h1_item) {
-#line 269 "libraryhigherorder.c"
+#line 262 "libraryhigherorder.c"
     HeroStr h2_own2 = {0};
     HeroStr t1;
     HeroStr t2;
@@ -283,20 +276,16 @@ bb0:
     t4 = h2_own2;
 #line 39 "tests/golden/run/library-higher-order.hero"
     h2_own2 = t3;
-#line 287 "libraryhigherorder.c"
+#line 280 "libraryhigherorder.c"
     hero_str_decref(t4);
-#line 39 "tests/golden/run/library-higher-order.hero"
-#line 290 "libraryhigherorder.c"
     hero_str_incref(t3);
-#line 39 "tests/golden/run/library-higher-order.hero"
-#line 293 "libraryhigherorder.c"
     hero_str_decref(h2_own2);
     return t3;
 }
 
 #line 41 "tests/golden/run/library-higher-order.hero"
 void h_libraryhigherorder_main(void) {
-#line 300 "libraryhigherorder.c"
+#line 289 "libraryhigherorder.c"
     HeroArrayHeader * h0_xs = {0};
     h_0opt_e201354 h1_f0 = {0};
     int64_t h2_r0;
@@ -448,15 +437,15 @@ bb0:
     t90 = h7_own7;
 #line 42 "tests/golden/run/library-higher-order.hero"
     h7_own7 = t5;
-#line 452 "libraryhigherorder.c"
+#line 441 "libraryhigherorder.c"
     hero_array_decref(t90);
 #line 42 "tests/golden/run/library-higher-order.hero"
     t91 = h0_xs;
-#line 456 "libraryhigherorder.c"
+#line 445 "libraryhigherorder.c"
     hero_array_incref(t5);
 #line 42 "tests/golden/run/library-higher-order.hero"
     h0_xs = t5;
-#line 460 "libraryhigherorder.c"
+#line 449 "libraryhigherorder.c"
     hero_array_decref(t91);
 #line 43 "tests/golden/run/library-higher-order.hero"
     t6 = h0_xs;
@@ -468,7 +457,7 @@ bb0:
     t92 = h8_own8;
 #line 43 "tests/golden/run/library-higher-order.hero"
     h8_own8 = t8;
-#line 472 "libraryhigherorder.c"
+#line 461 "libraryhigherorder.c"
     hero_array_decref(t92);
 #line 43 "tests/golden/run/library-higher-order.hero"
     t9 = HERO_STR_LIT(hero_str_2c);
@@ -478,13 +467,12 @@ bb0:
     t93 = h9_own9;
 #line 43 "tests/golden/run/library-higher-order.hero"
     h9_own9 = t10;
-#line 482 "libraryhigherorder.c"
+#line 471 "libraryhigherorder.c"
     hero_str_decref(t93);
 #line 43 "tests/golden/run/library-higher-order.hero"
     hero_print_str(t10);
 #line 43 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 44 "tests/golden/run/library-higher-order.hero"
     t11 = h0_xs;
 #line 44 "tests/golden/run/library-higher-order.hero"
     t12 = h_libraryhigherorder_odd;
@@ -494,7 +482,7 @@ bb0:
     t94 = h10_own10;
 #line 44 "tests/golden/run/library-higher-order.hero"
     h10_own10 = t13;
-#line 498 "libraryhigherorder.c"
+#line 486 "libraryhigherorder.c"
     hero_array_decref(t94);
 #line 44 "tests/golden/run/library-higher-order.hero"
     t14 = h_libraryhigherorder_label;
@@ -504,7 +492,7 @@ bb0:
     t95 = h11_own11;
 #line 44 "tests/golden/run/library-higher-order.hero"
     h11_own11 = t15;
-#line 508 "libraryhigherorder.c"
+#line 496 "libraryhigherorder.c"
     hero_array_decref(t95);
 #line 44 "tests/golden/run/library-higher-order.hero"
     t16 = HERO_STR_LIT(hero_str_2c);
@@ -514,13 +502,12 @@ bb0:
     t96 = h12_own12;
 #line 44 "tests/golden/run/library-higher-order.hero"
     h12_own12 = t17;
-#line 518 "libraryhigherorder.c"
+#line 506 "libraryhigherorder.c"
     hero_str_decref(t96);
 #line 44 "tests/golden/run/library-higher-order.hero"
     hero_print_str(t17);
 #line 44 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 45 "tests/golden/run/library-higher-order.hero"
     t18 = h0_xs;
 #line 45 "tests/golden/run/library-higher-order.hero"
     t19 = INT64_C(0);
@@ -562,7 +549,7 @@ bb0:
     t97 = h13_own13;
 #line 52 "tests/golden/run/library-higher-order.hero"
     h13_own13 = t29;
-#line 566 "libraryhigherorder.c"
+#line 553 "libraryhigherorder.c"
     hero_array_decref(t97);
 #line 52 "tests/golden/run/library-higher-order.hero"
     t30 = HERO_STR_LIT(hero_str_0);
@@ -574,7 +561,7 @@ bb0:
     t98 = h14_own14;
 #line 52 "tests/golden/run/library-higher-order.hero"
     h14_own14 = t32;
-#line 578 "libraryhigherorder.c"
+#line 565 "libraryhigherorder.c"
     hero_str_decref(t98);
 #line 52 "tests/golden/run/library-higher-order.hero"
     hero_print_str(t32);
@@ -590,15 +577,15 @@ bb0:
     t99 = h15_own15;
 #line 54 "tests/golden/run/library-higher-order.hero"
     h15_own15 = t35;
-#line 594 "libraryhigherorder.c"
+#line 581 "libraryhigherorder.c"
     h_0opt_e201354_release(&t99);
 #line 54 "tests/golden/run/library-higher-order.hero"
     t100 = h1_f0;
-#line 598 "libraryhigherorder.c"
+#line 585 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t35);
 #line 54 "tests/golden/run/library-higher-order.hero"
     h1_f0 = t35;
-#line 602 "libraryhigherorder.c"
+#line 589 "libraryhigherorder.c"
     h_0opt_e201354_release(&t100);
 #line 54 "tests/golden/run/library-higher-order.hero"
     t36 = h1_f0;
@@ -646,15 +633,15 @@ bb3:
     t101 = h16_own16;
 #line 54 "tests/golden/run/library-higher-order.hero"
     h16_own16 = t48;
-#line 650 "libraryhigherorder.c"
+#line 637 "libraryhigherorder.c"
     h_0opt_e201354_release(&t101);
 #line 54 "tests/golden/run/library-higher-order.hero"
     t102 = h3_f1;
-#line 654 "libraryhigherorder.c"
+#line 641 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t48);
 #line 54 "tests/golden/run/library-higher-order.hero"
     h3_f1 = t48;
-#line 658 "libraryhigherorder.c"
+#line 645 "libraryhigherorder.c"
     h_0opt_e201354_release(&t102);
 #line 54 "tests/golden/run/library-higher-order.hero"
     t49 = h3_f1;
@@ -698,7 +685,6 @@ bb6:
     hero_print_int(t58);
 #line 54 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 55 "tests/golden/run/library-higher-order.hero"
     t59 = h0_xs;
 #line 55 "tests/golden/run/library-higher-order.hero"
     t60 = h_libraryhigherorder_odd;
@@ -730,15 +716,15 @@ bb6:
     t103 = h17_own17;
 #line 59 "tests/golden/run/library-higher-order.hero"
     h17_own17 = t68;
-#line 734 "libraryhigherorder.c"
+#line 720 "libraryhigherorder.c"
     hero_array_decref(t103);
 #line 59 "tests/golden/run/library-higher-order.hero"
     t104 = h5_empty;
-#line 738 "libraryhigherorder.c"
+#line 724 "libraryhigherorder.c"
     hero_array_incref(t68);
 #line 59 "tests/golden/run/library-higher-order.hero"
     h5_empty = t68;
-#line 742 "libraryhigherorder.c"
+#line 728 "libraryhigherorder.c"
     hero_array_decref(t104);
 #line 60 "tests/golden/run/library-higher-order.hero"
     t69 = h5_empty;
@@ -750,7 +736,7 @@ bb6:
     t105 = h18_own18;
 #line 60 "tests/golden/run/library-higher-order.hero"
     h18_own18 = t71;
-#line 754 "libraryhigherorder.c"
+#line 740 "libraryhigherorder.c"
     hero_array_decref(t105);
 #line 60 "tests/golden/run/library-higher-order.hero"
     t72 = ((void)(t71 == NULL ? ((void)hero_array_len(t71), hero_unreachable()) : (void)0), t71->len);
@@ -768,7 +754,6 @@ bb6:
     hero_print_int(t76);
 #line 60 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 61 "tests/golden/run/library-higher-order.hero"
     t77 = h5_empty;
 #line 61 "tests/golden/run/library-higher-order.hero"
     t78 = h_libraryhigherorder_odd;
@@ -790,15 +775,15 @@ bb6:
     t106 = h19_own19;
 #line 61 "tests/golden/run/library-higher-order.hero"
     h19_own19 = t85;
-#line 794 "libraryhigherorder.c"
+#line 779 "libraryhigherorder.c"
     h_0opt_e201354_release(&t106);
 #line 61 "tests/golden/run/library-higher-order.hero"
     t107 = h6_f2;
-#line 798 "libraryhigherorder.c"
+#line 783 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t85);
 #line 61 "tests/golden/run/library-higher-order.hero"
     h6_f2 = t85;
-#line 802 "libraryhigherorder.c"
+#line 787 "libraryhigherorder.c"
     h_0opt_e201354_release(&t107);
 #line 61 "tests/golden/run/library-higher-order.hero"
     t86 = h6_f2;
@@ -816,58 +801,24 @@ bb6:
     hero_print_bool(t89);
 #line 61 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
-#line 820 "libraryhigherorder.c"
+#line 805 "libraryhigherorder.c"
     hero_array_decref(h0_xs);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 823 "libraryhigherorder.c"
     h_0opt_e201354_release(&h1_f0);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 826 "libraryhigherorder.c"
     h_0opt_e201354_release(&h3_f1);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 829 "libraryhigherorder.c"
     hero_array_decref(h5_empty);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 832 "libraryhigherorder.c"
     h_0opt_e201354_release(&h6_f2);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 835 "libraryhigherorder.c"
     hero_array_decref(h7_own7);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 838 "libraryhigherorder.c"
     hero_array_decref(h8_own8);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 841 "libraryhigherorder.c"
     hero_str_decref(h9_own9);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 844 "libraryhigherorder.c"
     hero_array_decref(h10_own10);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 847 "libraryhigherorder.c"
     hero_array_decref(h11_own11);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 850 "libraryhigherorder.c"
     hero_str_decref(h12_own12);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 853 "libraryhigherorder.c"
     hero_array_decref(h13_own13);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 856 "libraryhigherorder.c"
     hero_str_decref(h14_own14);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 859 "libraryhigherorder.c"
     h_0opt_e201354_release(&h15_own15);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 862 "libraryhigherorder.c"
     h_0opt_e201354_release(&h16_own16);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 865 "libraryhigherorder.c"
     hero_array_decref(h17_own17);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 868 "libraryhigherorder.c"
     hero_array_decref(h18_own18);
-#line 61 "tests/golden/run/library-higher-order.hero"
-#line 871 "libraryhigherorder.c"
     h_0opt_e201354_release(&h19_own19);
     return;
 }
@@ -876,7 +827,7 @@ bb6:
 /* map<i64, str> */
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
-#line 880 "libraryhigherorder.c"
+#line 831 "libraryhigherorder.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -912,25 +863,25 @@ bb0:
     t20 = h6_own6;
 #line 37 "<heroes library>"
     h6_own6 = t1;
-#line 916 "libraryhigherorder.c"
+#line 867 "libraryhigherorder.c"
     hero_array_decref(t20);
 #line 37 "<heroes library>"
     t21 = h2_out;
-#line 920 "libraryhigherorder.c"
+#line 871 "libraryhigherorder.c"
     hero_array_incref(t1);
 #line 37 "<heroes library>"
     h2_out = t1;
-#line 924 "libraryhigherorder.c"
+#line 875 "libraryhigherorder.c"
     hero_array_decref(t21);
 #line 38 "<heroes library>"
     t2 = h0_xs;
 #line 38 "<heroes library>"
     t22 = h3_xs0;
-#line 930 "libraryhigherorder.c"
+#line 881 "libraryhigherorder.c"
     hero_array_incref(t2);
 #line 38 "<heroes library>"
     h3_xs0 = t2;
-#line 934 "libraryhigherorder.c"
+#line 885 "libraryhigherorder.c"
     hero_array_decref(t22);
 #line 38 "<heroes library>"
     t3 = INT64_C(0);
@@ -960,7 +911,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     h5_x = t10;
-#line 39 "<heroes library>"
     t12 = h1_f;
 #line 39 "<heroes library>"
     t13 = h5_x;
@@ -970,7 +920,7 @@ bb2:
     t23 = h7_own7;
 #line 39 "<heroes library>"
     h7_own7 = t14;
-#line 974 "libraryhigherorder.c"
+#line 924 "libraryhigherorder.c"
     hero_str_decref(t23);
 #line 39 "<heroes library>"
     hero_array_push_owned(&h2_out, &t14);
@@ -992,19 +942,11 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 996 "libraryhigherorder.c"
+#line 946 "libraryhigherorder.c"
     hero_array_incref(t19);
-#line 40 "<heroes library>"
-#line 999 "libraryhigherorder.c"
     hero_array_decref(h2_out);
-#line 40 "<heroes library>"
-#line 1002 "libraryhigherorder.c"
     hero_array_decref(h3_xs0);
-#line 40 "<heroes library>"
-#line 1005 "libraryhigherorder.c"
     hero_array_decref(h6_own6);
-#line 40 "<heroes library>"
-#line 1008 "libraryhigherorder.c"
     hero_str_decref(h7_own7);
     return t19;
 }
@@ -1013,7 +955,7 @@ bb4:
 /* filter<i64> */
 #line 43 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_filter_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
-#line 1017 "libraryhigherorder.c"
+#line 959 "libraryhigherorder.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -1048,25 +990,25 @@ bb0:
     t21 = h6_own6;
 #line 44 "<heroes library>"
     h6_own6 = t1;
-#line 1052 "libraryhigherorder.c"
+#line 994 "libraryhigherorder.c"
     hero_array_decref(t21);
 #line 44 "<heroes library>"
     t22 = h2_out;
-#line 1056 "libraryhigherorder.c"
+#line 998 "libraryhigherorder.c"
     hero_array_incref(t1);
 #line 44 "<heroes library>"
     h2_out = t1;
-#line 1060 "libraryhigherorder.c"
+#line 1002 "libraryhigherorder.c"
     hero_array_decref(t22);
 #line 45 "<heroes library>"
     t2 = h0_xs;
 #line 45 "<heroes library>"
     t23 = h3_xs0;
-#line 1066 "libraryhigherorder.c"
+#line 1008 "libraryhigherorder.c"
     hero_array_incref(t2);
 #line 45 "<heroes library>"
     h3_xs0 = t2;
-#line 1070 "libraryhigherorder.c"
+#line 1012 "libraryhigherorder.c"
     hero_array_decref(t23);
 #line 45 "<heroes library>"
     t3 = INT64_C(0);
@@ -1096,7 +1038,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 45 "<heroes library>"
     h5_x = t10;
-#line 46 "<heroes library>"
     t11 = h1_f;
 #line 46 "<heroes library>"
     t12 = h5_x;
@@ -1120,16 +1061,10 @@ bb3:
 bb4:
 #line 48 "<heroes library>"
     t20 = h2_out;
-#line 1124 "libraryhigherorder.c"
+#line 1065 "libraryhigherorder.c"
     hero_array_incref(t20);
-#line 48 "<heroes library>"
-#line 1127 "libraryhigherorder.c"
     hero_array_decref(h2_out);
-#line 48 "<heroes library>"
-#line 1130 "libraryhigherorder.c"
     hero_array_decref(h3_xs0);
-#line 48 "<heroes library>"
-#line 1133 "libraryhigherorder.c"
     hero_array_decref(h6_own6);
     return t20;
 bb5:
@@ -1145,14 +1080,14 @@ bb6:
 bb7:
 #line 47 "<heroes library>"
     goto bb5;
-#line 1149 "libraryhigherorder.c"
+#line 1084 "libraryhigherorder.c"
 }
 
 #line 58 "<heroes library>"
 /* fold<i64, i64> */
 #line 58 "<heroes library>"
 HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_6ca17148 h2_f) {
-#line 1156 "libraryhigherorder.c"
+#line 1091 "libraryhigherorder.c"
     int64_t h3_total;
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -1182,15 +1117,14 @@ bb0:
     t1 = h1_start;
 #line 59 "<heroes library>"
     h3_total = t1;
-#line 60 "<heroes library>"
     t2 = h0_xs;
 #line 60 "<heroes library>"
     t19 = h4_xs0;
-#line 1190 "libraryhigherorder.c"
+#line 1124 "libraryhigherorder.c"
     hero_array_incref(t2);
 #line 60 "<heroes library>"
     h4_xs0 = t2;
-#line 1194 "libraryhigherorder.c"
+#line 1128 "libraryhigherorder.c"
     hero_array_decref(t19);
 #line 60 "<heroes library>"
     t3 = INT64_C(0);
@@ -1220,7 +1154,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     h6_x = t10;
-#line 61 "<heroes library>"
     t11 = h2_f;
 #line 61 "<heroes library>"
     t12 = h3_total;
@@ -1248,7 +1181,7 @@ bb3:
 bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
-#line 1252 "libraryhigherorder.c"
+#line 1185 "libraryhigherorder.c"
     hero_array_decref(h4_xs0);
     return t18;
 }
@@ -1257,7 +1190,7 @@ bb4:
 /* fold<str, str> */
 #line 58 "<heroes library>"
 HERO_TU_LOCAL HeroStr h_library_fold_f720dcd(HeroArrayHeader * h0_xs, HeroStr h1_start, h_0fn_2248724e h2_f) {
-#line 1261 "libraryhigherorder.c"
+#line 1194 "libraryhigherorder.c"
     HeroStr h3_total = {0};
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -1292,21 +1225,21 @@ bb0:
     t1 = h1_start;
 #line 59 "<heroes library>"
     t19 = h3_total;
-#line 1296 "libraryhigherorder.c"
+#line 1229 "libraryhigherorder.c"
     hero_str_incref(t1);
 #line 59 "<heroes library>"
     h3_total = t1;
-#line 1300 "libraryhigherorder.c"
+#line 1233 "libraryhigherorder.c"
     hero_str_decref(t19);
 #line 60 "<heroes library>"
     t2 = h0_xs;
 #line 60 "<heroes library>"
     t20 = h4_xs0;
-#line 1306 "libraryhigherorder.c"
+#line 1239 "libraryhigherorder.c"
     hero_array_incref(t2);
 #line 60 "<heroes library>"
     h4_xs0 = t2;
-#line 1310 "libraryhigherorder.c"
+#line 1243 "libraryhigherorder.c"
     hero_array_decref(t20);
 #line 60 "<heroes library>"
     t3 = INT64_C(0);
@@ -1336,11 +1269,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     t21 = h6_x;
-#line 1340 "libraryhigherorder.c"
+#line 1273 "libraryhigherorder.c"
     hero_str_incref(t10);
 #line 60 "<heroes library>"
     h6_x = t10;
-#line 1344 "libraryhigherorder.c"
+#line 1277 "libraryhigherorder.c"
     hero_str_decref(t21);
 #line 61 "<heroes library>"
     t11 = h2_f;
@@ -1354,15 +1287,15 @@ bb2:
     t22 = h7_own7;
 #line 61 "<heroes library>"
     h7_own7 = t14;
-#line 1358 "libraryhigherorder.c"
+#line 1291 "libraryhigherorder.c"
     hero_str_decref(t22);
 #line 61 "<heroes library>"
     t23 = h3_total;
-#line 1362 "libraryhigherorder.c"
+#line 1295 "libraryhigherorder.c"
     hero_str_incref(t14);
 #line 61 "<heroes library>"
     h3_total = t14;
-#line 1366 "libraryhigherorder.c"
+#line 1299 "libraryhigherorder.c"
     hero_str_decref(t23);
     goto bb3;
 bb3:
@@ -1380,19 +1313,11 @@ bb3:
 bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
-#line 1384 "libraryhigherorder.c"
+#line 1317 "libraryhigherorder.c"
     hero_str_incref(t18);
-#line 62 "<heroes library>"
-#line 1387 "libraryhigherorder.c"
     hero_str_decref(h3_total);
-#line 62 "<heroes library>"
-#line 1390 "libraryhigherorder.c"
     hero_array_decref(h4_xs0);
-#line 62 "<heroes library>"
-#line 1393 "libraryhigherorder.c"
     hero_str_decref(h6_x);
-#line 62 "<heroes library>"
-#line 1396 "libraryhigherorder.c"
     hero_str_decref(h7_own7);
     return t18;
 }
@@ -1401,7 +1326,7 @@ bb4:
 /* find<i64> */
 #line 66 "<heroes library>"
 HERO_TU_LOCAL h_0opt_e201354 h_library_find_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
-#line 1405 "libraryhigherorder.c"
+#line 1330 "libraryhigherorder.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_x;
@@ -1438,11 +1363,11 @@ bb0:
     t1 = h0_xs;
 #line 67 "<heroes library>"
     t22 = h2_xs0;
-#line 1442 "libraryhigherorder.c"
+#line 1367 "libraryhigherorder.c"
     hero_array_incref(t1);
 #line 67 "<heroes library>"
     h2_xs0 = t1;
-#line 1446 "libraryhigherorder.c"
+#line 1371 "libraryhigherorder.c"
     hero_array_decref(t22);
 #line 67 "<heroes library>"
     t2 = INT64_C(0);
@@ -1472,7 +1397,6 @@ bb2:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 67 "<heroes library>"
     h4_x = t9;
-#line 68 "<heroes library>"
     t10 = h1_f;
 #line 68 "<heroes library>"
     t11 = h4_x;
@@ -1498,10 +1422,8 @@ bb4:
     t18 = HERO_STR_LIT(hero_str_59e06249);
 #line 70 "<heroes library>"
     t19 = HERO_STR_LIT(hero_str_7bc7477f);
-#line 1502 "libraryhigherorder.c"
+#line 1426 "libraryhigherorder.c"
     hero_str_incref(t18);
-#line 70 "<heroes library>"
-#line 1505 "libraryhigherorder.c"
     hero_str_incref(t19);
 #line 70 "<heroes library>"
     t20 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t19}};
@@ -1509,7 +1431,7 @@ bb4:
     t23 = h6_own6;
 #line 70 "<heroes library>"
     h6_own6 = t20;
-#line 1513 "libraryhigherorder.c"
+#line 1435 "libraryhigherorder.c"
     h_0opt_e201354_release(&t23);
 #line 70 "<heroes library>"
     h5_ret0 = t20;
@@ -1529,7 +1451,7 @@ bb6:
     t24 = h7_own7;
 #line 69 "<heroes library>"
     h7_own7 = t14;
-#line 1533 "libraryhigherorder.c"
+#line 1455 "libraryhigherorder.c"
     h_0opt_e201354_release(&t24);
 #line 69 "<heroes library>"
     h5_ret0 = t14;
@@ -1541,18 +1463,11 @@ bb7:
     goto bb5;
 #line 69 "<heroes library>"
 bb8:
-#line 69 "<heroes library>"
+#line 1467 "libraryhigherorder.c"
     t21 = h5_ret0;
-#line 1547 "libraryhigherorder.c"
     h_0opt_e201354_retain(&t21);
-#line 69 "<heroes library>"
-#line 1550 "libraryhigherorder.c"
     hero_array_decref(h2_xs0);
-#line 69 "<heroes library>"
-#line 1553 "libraryhigherorder.c"
     h_0opt_e201354_release(&h6_own6);
-#line 69 "<heroes library>"
-#line 1556 "libraryhigherorder.c"
     h_0opt_e201354_release(&h7_own7);
     return t21;
 }
@@ -1561,7 +1476,7 @@ bb8:
 /* any<i64> */
 #line 74 "<heroes library>"
 HERO_TU_LOCAL bool h_library_any_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
-#line 1565 "libraryhigherorder.c"
+#line 1480 "libraryhigherorder.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_x;
@@ -1591,11 +1506,11 @@ bb0:
     t1 = h0_xs;
 #line 75 "<heroes library>"
     t19 = h2_xs0;
-#line 1595 "libraryhigherorder.c"
+#line 1510 "libraryhigherorder.c"
     hero_array_incref(t1);
 #line 75 "<heroes library>"
     h2_xs0 = t1;
-#line 1599 "libraryhigherorder.c"
+#line 1514 "libraryhigherorder.c"
     hero_array_decref(t19);
 #line 75 "<heroes library>"
     t2 = INT64_C(0);
@@ -1625,7 +1540,6 @@ bb2:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 75 "<heroes library>"
     h4_x = t9;
-#line 76 "<heroes library>"
     t10 = h1_f;
 #line 76 "<heroes library>"
     t11 = h4_x;
@@ -1671,9 +1585,8 @@ bb7:
     goto bb5;
 #line 77 "<heroes library>"
 bb8:
-#line 77 "<heroes library>"
+#line 1589 "libraryhigherorder.c"
     t18 = h5_ret0;
-#line 1677 "libraryhigherorder.c"
     hero_array_decref(h2_xs0);
     return t18;
 }
@@ -1682,7 +1595,7 @@ bb8:
 /* all<i64> */
 #line 82 "<heroes library>"
 HERO_TU_LOCAL bool h_library_all_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
-#line 1686 "libraryhigherorder.c"
+#line 1599 "libraryhigherorder.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_x;
@@ -1713,11 +1626,11 @@ bb0:
     t1 = h0_xs;
 #line 83 "<heroes library>"
     t20 = h2_xs0;
-#line 1717 "libraryhigherorder.c"
+#line 1630 "libraryhigherorder.c"
     hero_array_incref(t1);
 #line 83 "<heroes library>"
     h2_xs0 = t1;
-#line 1721 "libraryhigherorder.c"
+#line 1634 "libraryhigherorder.c"
     hero_array_decref(t20);
 #line 83 "<heroes library>"
     t2 = INT64_C(0);
@@ -1747,7 +1660,6 @@ bb2:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 83 "<heroes library>"
     h4_x = t9;
-#line 84 "<heroes library>"
     t10 = h1_f;
 #line 84 "<heroes library>"
     t11 = h4_x;
@@ -1795,9 +1707,8 @@ bb7:
     goto bb5;
 #line 85 "<heroes library>"
 bb8:
-#line 85 "<heroes library>"
+#line 1711 "libraryhigherorder.c"
     t19 = h5_ret0;
-#line 1801 "libraryhigherorder.c"
     hero_array_decref(h2_xs0);
     return t19;
 }
@@ -1806,7 +1717,7 @@ bb8:
 /* map<i64, i64> */
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
-#line 1810 "libraryhigherorder.c"
+#line 1721 "libraryhigherorder.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -1840,25 +1751,25 @@ bb0:
     t20 = h6_own6;
 #line 37 "<heroes library>"
     h6_own6 = t1;
-#line 1844 "libraryhigherorder.c"
+#line 1755 "libraryhigherorder.c"
     hero_array_decref(t20);
 #line 37 "<heroes library>"
     t21 = h2_out;
-#line 1848 "libraryhigherorder.c"
+#line 1759 "libraryhigherorder.c"
     hero_array_incref(t1);
 #line 37 "<heroes library>"
     h2_out = t1;
-#line 1852 "libraryhigherorder.c"
+#line 1763 "libraryhigherorder.c"
     hero_array_decref(t21);
 #line 38 "<heroes library>"
     t2 = h0_xs;
 #line 38 "<heroes library>"
     t22 = h3_xs0;
-#line 1858 "libraryhigherorder.c"
+#line 1769 "libraryhigherorder.c"
     hero_array_incref(t2);
 #line 38 "<heroes library>"
     h3_xs0 = t2;
-#line 1862 "libraryhigherorder.c"
+#line 1773 "libraryhigherorder.c"
     hero_array_decref(t22);
 #line 38 "<heroes library>"
     t3 = INT64_C(0);
@@ -1888,7 +1799,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 38 "<heroes library>"
     h5_x = t10;
-#line 39 "<heroes library>"
     t12 = h1_f;
 #line 39 "<heroes library>"
     t13 = h5_x;
@@ -1914,16 +1824,10 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1918 "libraryhigherorder.c"
+#line 1828 "libraryhigherorder.c"
     hero_array_incref(t19);
-#line 40 "<heroes library>"
-#line 1921 "libraryhigherorder.c"
     hero_array_decref(h2_out);
-#line 40 "<heroes library>"
-#line 1924 "libraryhigherorder.c"
     hero_array_decref(h3_xs0);
-#line 40 "<heroes library>"
-#line 1927 "libraryhigherorder.c"
     hero_array_decref(h6_own6);
     return t19;
 }

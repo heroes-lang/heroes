@@ -77,21 +77,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 35 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffioutparameterguard_sqlite3_open(const char * a0, void * * a1) { (void)(sqlite3_open)(a0, (void *)a1); }
-#line 36 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffioutparameterguard_sqlite3_prepare_v2(void * a0, const char * a1, int32_t a2, void * * a3, const char * * a4) { (void)(sqlite3_prepare_v2)(a0, a1, a2, (void *)a3, a4); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "ffioutparameterguard.c"
+#line 91 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -108,13 +104,13 @@ void h_ffioutparameterguard_main(void);
 
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 112 "ffioutparameterguard.c"
+#line 108 "ffioutparameterguard.c"
     return SQLITE_OK;
 }
 
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 void h_ffioutparameterguard_main(void) {
-#line 118 "ffioutparameterguard.c"
+#line 114 "ffioutparameterguard.c"
     void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db");
 #define h0_db (*hero_lend_h0_db)
     void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt");
@@ -165,11 +161,9 @@ bb1:
     t8 = ((void *)0);
 #line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h1_stmt = t8;
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t9 = ((void *)0);
 #line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h2_tail = t9;
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t10 = h0_db;
 #line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t11 = HERO_STR_LIT(hero_str_5689c81);
@@ -185,7 +179,6 @@ bb1:
     t14 = sqlite3_prepare_v2(t10, hero_cstr_nonnull(t12), t13, (void *)&h1_stmt, &h2_tail);
 #line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     h3_rc = t14;
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t15 = h3_rc;
 #line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     t16 = h_ffioutparameterguard_SQLITE_OK();
@@ -221,7 +214,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 225 "ffioutparameterguard.c"
+#line 218 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

@@ -78,23 +78,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 19 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereusedasaretainsoutcell_ob_get_shared(ob * * a0) { (void)(ob_get_shared)(a0); }
-#line 20 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereusedasaretainsoutcell_ob_put(ob * a0) { (void)(ob_put)(a0); }
-#line 21 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereusedasaretainsoutcell_ob_refs(ob * a0) { (void)(ob_refs)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "deadhandlereusedasaretainsoutcell.c"
+#line 93 "deadhandlereusedasaretainsoutcell.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereusedasaretainsoutcell_X509_eq(ob * const *a, ob * const *b);
@@ -112,7 +107,7 @@ void h_deadhandlereusedasaretainsoutcell_main(void);
 
 #line 24 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 void h_deadhandlereusedasaretainsoutcell_main(void) {
-#line 116 "deadhandlereusedasaretainsoutcell.c"
+#line 111 "deadhandlereusedasaretainsoutcell.c"
     ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereusedasaretainsoutcell.main", "cert");
 #define h0_cert (*hero_lend_h0_cert)
     ob * t1;
@@ -204,7 +199,6 @@ bb4:
     hero_print_int(t12);
 #line 30 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     hero_print_end();
-#line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     t13 = h0_cert;
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
     {
@@ -224,8 +218,7 @@ bb4:
     return;
 #line 31 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
 bb5:
-#line 29 "tests/golden/run/dead-handle-reused-as-a-retains-out-cell.hero"
-#line 229 "deadhandlereusedasaretainsoutcell.c"
+#line 222 "deadhandlereusedasaretainsoutcell.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

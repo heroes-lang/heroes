@@ -80,17 +80,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs152anobjectthroughafunctionoftheprogramsown_strtoll(const char * a0, void * a1, int32_t a2) { (void)(strtoll)(a0, a1, a2); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 91 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -107,13 +104,13 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
-#line 111 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 108 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
     return ERANGE;
 }
 
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) {
-#line 117 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 114 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
     int64_t h0_big;
     int32_t t1;
     HeroStr t2;
@@ -129,13 +126,11 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) {
 bb0:
 #line 22 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     (void)hero_errno_clear();
-#line 23 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     t1 = hero_errno();
 #line 23 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     hero_print_int(t1);
 #line 23 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     t2 = HERO_STR_LIT(hero_str_19d86d81);
 #line 24 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     t3 = hero_str_lend(t2);
@@ -147,13 +142,11 @@ bb0:
     t6 = strtoll(hero_cstr_nonnull(t3), t4, t5);
 #line 24 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     h0_big = t6;
-#line 25 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     t7 = h0_big;
 #line 25 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     hero_print_int(t7);
 #line 25 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     hero_print_end();
-#line 26 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     t8 = hero_errno();
 #line 26 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     t9 = h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE();
@@ -165,7 +158,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return;
-#line 169 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 162 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

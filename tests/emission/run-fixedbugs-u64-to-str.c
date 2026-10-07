@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugsu64tostr.c"
+#line 77 "fixedbugsu64tostr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_fixedbugsu64tostr_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
 void h_fixedbugsu64tostr_main(void) {
-#line 96 "fixedbugsu64tostr.c"
+#line 93 "fixedbugsu64tostr.c"
     uint64_t h0_n;
     uint64_t h1_small;
     HeroStr h2_own2 = {0};
@@ -112,13 +109,11 @@ bb0:
     t1 = UINT64_C(18446744073709551615);
 #line 26 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h0_n = t1;
-#line 27 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t2 = h0_n;
 #line 27 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_uint(t2);
 #line 27 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t3 = h0_n;
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t4 = hero_uint_to_str(t3);
@@ -126,17 +121,15 @@ bb0:
     t8 = h2_own2;
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h2_own2 = t4;
-#line 130 "fixedbugsu64tostr.c"
+#line 125 "fixedbugsu64tostr.c"
     hero_str_decref(t8);
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t4);
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t5 = UINT64_C(42);
 #line 29 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h1_small = t5;
-#line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t6 = h1_small;
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t7 = hero_uint_to_str(t6);
@@ -144,16 +137,14 @@ bb0:
     t9 = h3_own3;
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h3_own3 = t7;
-#line 148 "fixedbugsu64tostr.c"
+#line 141 "fixedbugsu64tostr.c"
     hero_str_decref(t9);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t7);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_end();
-#line 154 "fixedbugsu64tostr.c"
+#line 147 "fixedbugsu64tostr.c"
     hero_str_decref(h2_own2);
-#line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
-#line 157 "fixedbugsu64tostr.c"
     hero_str_decref(h3_own3);
     return;
 }

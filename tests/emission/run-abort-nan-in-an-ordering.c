@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "abortnaninanordering.c"
+#line 77 "abortnaninanordering.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_abortnaninanordering_main(void);
 
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
 void h_abortnaninanordering_main(void) {
-#line 96 "abortnaninanordering.c"
+#line 93 "abortnaninanordering.c"
     double h0_zero;
     double h1_n;
     double t1;
@@ -117,7 +114,6 @@ bb0:
     t1 = 0x0p+0;
 #line 44 "tests/golden/run/abort-nan-in-an-ordering.hero"
     h0_zero = t1;
-#line 45 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t2 = h0_zero;
 #line 45 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t3 = h0_zero;
@@ -125,7 +121,6 @@ bb0:
     t4 = t2 / t3;
 #line 45 "tests/golden/run/abort-nan-in-an-ordering.hero"
     h1_n = t4;
-#line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t5 = h1_n;
 #line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t6 = h1_n;
@@ -135,7 +130,6 @@ bb0:
     hero_print_bool(t7);
 #line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
     hero_print_end();
-#line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t8 = h1_n;
 #line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t9 = h1_n;
@@ -145,7 +139,6 @@ bb0:
     hero_print_bool(t10);
 #line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
     hero_print_end();
-#line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t11 = 0x1p+0;
 #line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t12 = 0x1p+1;
@@ -157,7 +150,6 @@ bb0:
     hero_print_bool(t13);
 #line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
     hero_print_end();
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t14 = h1_n;
 #line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t15 = 0x1p+0;
@@ -171,7 +163,7 @@ bb0:
     hero_print_end();
 #line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
     return;
-#line 175 "abortnaninanordering.c"
+#line 167 "abortnaninanordering.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

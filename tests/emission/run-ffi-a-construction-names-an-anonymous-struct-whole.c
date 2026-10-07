@@ -14,17 +14,14 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 _Static_assert(__builtin_classify_type(((SB *)0)->kind) == 1 && sizeof(((SB *)0)->kind) == sizeof(int32_t) && (_Generic(((SB *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB kind");
-#line 14 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 _Static_assert(__builtin_classify_type(((SB *)0)->i) == 1 && sizeof(((SB *)0)->i) == sizeof(int32_t) && (_Generic(((SB *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB i");
-#line 15 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 _Static_assert(__builtin_classify_type(((SB *)0)->lo) == 1 && sizeof(((SB *)0)->lo) == sizeof(int16_t) && (_Generic(((SB *)0)->lo, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB lo");
-#line 16 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 _Static_assert(__builtin_classify_type(((SB *)0)->hi) == 1 && sizeof(((SB *)0)->hi) == sizeof(int16_t) && (_Generic(((SB *)0)->hi, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB hi");
-#line 24 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 21 "ffiaconstructionnamesananonymousstructwhole.c"
 
 #line 12 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 _Static_assert(__builtin_classify_type(*(SB *)0) != 13, "heroes-ffi-union SB kind i lo hi");
-#line 28 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 25 "ffiaconstructionnamesananonymousstructwhole.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -87,21 +84,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 17 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamesananonymousstructwhole_sb_i(SB a0) { (void)(sb_i)(a0); }
-#line 18 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamesananonymousstructwhole_sb_kind(SB a0) { (void)(sb_kind)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 98 "ffiaconstructionnamesananonymousstructwhole.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b);
@@ -119,7 +112,7 @@ void h_ffiaconstructionnamesananonymousstructwhole_main(void);
 
 #line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 void h_ffiaconstructionnamesananonymousstructwhole_main(void) {
-#line 123 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 116 "ffiaconstructionnamesananonymousstructwhole.c"
     SB h0_b;
     SB h1_c;
     int32_t t1;
@@ -149,7 +142,6 @@ bb0:
     t4 = (SB){.kind = t1, .lo = t2, .hi = t3};
 #line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     h0_b = t4;
-#line 22 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t5 = h0_b;
 #line 22 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t6 = sb_i(t5);
@@ -157,7 +149,6 @@ bb0:
     hero_print_int(t6);
 #line 22 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     hero_print_end();
-#line 23 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t7 = h0_b;
 #line 23 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t8 = sb_kind(t7);
@@ -165,7 +156,6 @@ bb0:
     hero_print_int(t8);
 #line 23 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     hero_print_end();
-#line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t9 = INT64_C(1);
 #line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t10 = INT64_C(196610);
@@ -173,7 +163,6 @@ bb0:
     t11 = (SB){.kind = t9, .i = t10};
 #line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     h1_c = t11;
-#line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t12 = h1_c;
 #line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t13 = t12.lo;
@@ -181,7 +170,6 @@ bb0:
     hero_print_int(t13);
 #line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     hero_print_end();
-#line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t14 = h1_c;
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t15 = t14.hi;
@@ -191,7 +179,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     return;
-#line 195 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 183 "ffiaconstructionnamesananonymousstructwhole.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;
