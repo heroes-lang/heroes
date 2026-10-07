@@ -686,11 +686,20 @@ Part 2 rules out as a justification.
   itself is the *author's* activity, not the tool's capability: it is three lines in the emitter's
   test helper, and `--no-line` is refused by CLAUDE.md §10's stopping rule (panel 016's watch
   list, settled in panel 020).
-- **The `@` parameter is a pointer parameter.** `Op::CopyOut` writes the *caller's* place, which
-  the callee cannot reach in C, so §4.8's copy-in/copy-out becomes: a `T *p_l` parameter, a
-  prologue `T l = *p_l;`, and `*p_l = l;` at every `CopyOut` — in parameter order. `f(@x, @x)`
-  cannot arise, because panel 010 made two `@` arguments sharing a root a compile error; that rule
-  is what makes this convention total (panel 020).
+- **The `@` parameter is a pointer parameter, and the body works through it** (panel 196's R1,
+  ratified 2026-10-06). The callee is handed a `T *p_l`, and its every read and write of `l` is
+  `(*p_l)`, the caller's place itself: no local copy, no copy-in, and `Op::CopyOut` writes no C,
+  the IR keeping it as the point the place is the caller's again. An element argument is handed
+  the element's own address after its array is unshared, one unshare per array step, written
+  right before the call once every argument is computed. §4.8's copy in, copy out stays the
+  meaning because an `@` place is exclusive: `f(@x, @x)` cannot arise, because panel 010 made two
+  `@` arguments of one place a compile error (defect 011), and a by-value argument whose header
+  the same call writes through `@` is retained for the call and released after it, so the
+  callee's write copies the block the argument still names. Until panel 196 the convention was
+  panel 020's, a prologue `T l = *p_l;` and `*p_l = l;` at every `CopyOut`, in parameter order,
+  and an element was read into a temporary stored back after the call: inside Heroes the same
+  meaning, but to C two addresses, and a library that keeps one (zlib's stream, libuv's handle)
+  was handed a frame that died when the call returned (defect 413).
 - **UB is not a diagnostic.** Arithmetic aborts via `__builtin_*_overflow` (§4.14) — whose
   overflow verdict is against the *destination* type, not the operands, which is why Part 7's
   `c_int` will move the threshold from 2⁶³ to 2³¹ with no visible change at the call site — every
@@ -2805,19 +2814,28 @@ Two passes sit between type checking and emission, and they are **core obligatio
   `ElaborateDrops` does the alternative and then optimises it into the same thing), with
   `ptr == NULL` as the one non-value that every runtime entry point rejects: the store's load of
   the old value reads each such slot before its first store, and the sweep releases it whether
-  the path that stored it ran or not. An `@` parameter's slot is not zeroed, because its copy-in
-  writes it before the first block, and a temporary is never initialised: its one definition
+  the path that stored it ran or not. An `@` parameter has no slot in C to zero, since panel
+  196's R1: the body reaches the caller's place through its pointer. A temporary is never
+  initialised: its one definition
   precedes every read of it on every path, which the verifier proves between blocks and within
   one, and the C writes it whole, so `-Werror=uninitialized` goes on checking it. **Every way out
   of a function that has two or more**, a `return`, the early return a `?` lowers to and the edge
   that falls off the end, stores what it returns into the function's return slot and jumps to the
-  function's one exit block, which performs the `@` copy-out, retains what it returns and releases
+  function's one exit block, which performs the `@` copy-out (the IR's point the place is the
+  caller's again, which writes no C since panel 196's R1), retains what it returns and releases
   every local and synthetic slot (§4.8: "copy-out happens always"). The return slot only borrows,
   so a store into it retains nothing and the exit does not release it. A function with one way out
   does all of this in the block that returns. `break`, `continue` and a `match`'s arms are jumps
   inside the function and release nothing, and a panic (`hero_panic` and its kin, `_Noreturn`)
   aborts the process where it stands, releasing nothing and copying nothing out. The runtime
   cannot know where a scope ends; only lowering can.
+
+  **AMENDED 2026-10-07 by panel 196's R1**
+  (`docs/panel/196-an-argument-reaches-c-as-its-own-place-one-element-unless-an-extent-is-stated-and-a-buffer-c-fills-is-lent-and-guarded.md`):
+  the paragraph read *"An `@` parameter's slot is not zeroed, because its copy-in writes it
+  before the first block"*, true of panel 020's lowering, which declared the slot and copied the
+  caller's place into it; since R1 the slot is the caller's place through its pointer, and there
+  is nothing to declare or to copy in.
 
   **AMENDED 2026-09-28 by panel 182**
   (`docs/panel/182-a-value-is-never-zeroed-a-slot-is-and-a-definition-is-whole.md`), and what
