@@ -17,7 +17,7 @@ function g(a: i64, b: i64) -> i64
 
 # Two openers, both named at the one line that ended their reach.
 function two_at_one_line(c: bool)
-    x = g(g(1,  #~ unclosed_bracket unclosed_bracket
+    x = g(g(1,  #~ unclosed_bracket
     if c
         print(1)
     print(x)
@@ -54,3 +54,8 @@ function main()
 # At the file's end the opener is never closed.
 function at_the_end()
     x = g(1  #~ unclosed_bracket
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `two_at_one_line`'s `g(g(1,`, both still open at the `if`.

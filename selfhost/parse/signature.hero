@@ -70,7 +70,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
         )
         parse_marks.success_needs_result(@c, text, in_group: in_group)
     return ok(
-        Signature(generics: generic_names, params: parameters, result: result, marks: marks, end: cursor.previous_significant_span(c))
+        Signature(generics: generic_names, params: parameters, result: result, marks: marks, end: cursor.previous_significant_span(@c))
     )
 
 # A result type written after `:`, the habit of TypeScript and Kotlin, or
@@ -114,7 +114,7 @@ function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) 
         certainty @ .certain
         tail @ ""
     written = cursor.current_span(c)
-    shown = text.slice(from: first.start, to: cursor.previous_significant_span(probe).end)
+    shown = text.slice(from: first.start, to: cursor.previous_significant_span(@probe).end)
     fix: str @ "->"
 
     if written.start > 0 && text[written.start - 1] != ' '

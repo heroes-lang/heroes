@@ -1,0 +1,58 @@
+# Fixed defect 410, 2026-10-07 (lane b14-parse; lane b13-front found it
+# beside its work, 2026-10-06). Symptom: a line of 10,000 `[` left open was
+# told 10,000 `unclosed_bracket`, `x = [[1` two for the one `]]` its author
+# owes, `check` and `check --permissive` alike, and the full form wrote the
+# line once under each, 152.6 MB. Cause: the lexer names each opener it finds
+# left open where it finds that, one report an opener, and the parse told
+# them all. Repair: the openers of one line the lexer named open at one place
+# are one report at the first, saying how many more stand after it on its
+# line (`unclosed_runs`, after the parser withdrew what its own message
+# stands for); the full form of the 10,000 is 10,290 bytes. The shapes: two,
+# three and a hundred openers on one line, mixed kinds, one closed between
+# them, an element between, a run still open where a line ended its reach, a
+# run a closer of another kind named; and apart, as before: openers on lines
+# of their own, and openers with a place the lexer named openers at between
+# them.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function two()
+    x = [[1  #~ unclosed_bracket
+
+function three()
+    x = [[[1  #~ unclosed_bracket
+
+function a_hundred()
+    x = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1  #~ unclosed_bracket
+
+function mixed()
+    x = g(1, ([2  #~ unclosed_bracket
+
+function one_closed_between()
+    x = [[1], [2  #~ unclosed_bracket
+
+function an_element_between()
+    x = [1, [2  #~ unclosed_bracket
+
+function its_reach_ended(c: bool)
+    x = g(g(1,  #~ unclosed_bracket
+    if c
+        print(1)
+    print(x)
+
+function a_closer_of_another_kind()
+    x = g(1, [[2)  #~ unclosed_bracket
+    print(x)
+
+function on_lines_of_their_own()
+    x = g(1,  #~ unclosed_bracket
+        [2,  #~ unclosed_bracket
+            (3  #~ unclosed_bracket
+
+function a_place_between()
+    #~v unclosed_bracket unclosed_bracket unclosed_bracket expected_map_entry_colon
+    x = [g(1, {2) [3
+
+function main()
+    two()

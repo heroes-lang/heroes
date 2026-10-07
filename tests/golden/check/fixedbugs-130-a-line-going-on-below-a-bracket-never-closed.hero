@@ -26,7 +26,7 @@ function an_index(xs: [i64])
     print(x)
 
 function a_call_going_on()
-    print(f(1  #~ unclosed_bracket unclosed_bracket
+    print(f(1  #~ unclosed_bracket
     .len()  #~ line_end_before_continuation
     print(2)
 
@@ -35,3 +35,8 @@ function two_lines_going_on()
     + 2  #~ line_end_before_continuation
     + 3  #~ line_end_before_continuation
     print(y)
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `a_call_going_on`'s `print(f(1`, its two `(`.

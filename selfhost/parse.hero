@@ -18,6 +18,7 @@ use parse/quote_held
 use wrap_break
 use parse/unclosed
 use pairing
+use unclosed_runs
 
 record ParseOutput
     decls: [ast.Decl]
@@ -117,9 +118,18 @@ function parse_source(s: source.Source) -> ParseOutput
 
         index @ index + 1
 
-    # A brace habit's `{` that never closed is told once, by the parser.
-    diagnostics: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexer_said, said: normal, text: s.text)
-    control: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexer_said, said: controlled, text: s.text)
+    # A brace habit's `{` that never closed is told once, by the parser; and
+    # the openers of a line the lexer named open at one place, once.
+    diagnostics: [diag.Diagnostic] @ told_once(
+        unclosed.withdrawn(lexed: lexer_said, said: normal, text: s.text),
+        lexed: lexed,
+        text: s.text
+    )
+    control: [diag.Diagnostic] @ told_once(
+        unclosed.withdrawn(lexed: lexer_said, said: controlled, text: s.text),
+        lexed: lexed,
+        text: s.text
+    )
 
     for d in normal
         diagnostics @ diagnostics.push(d)
@@ -165,8 +175,16 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
     if lexed.breaks.len() > 0
         apart.weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
     said = quote_held.held(which_arm.placed(c, lexed: lexed.diagnostics), lexed: lexed.diagnostics, text: text)
-    diagnostics: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexed.diagnostics, said: said.normal, text: text)
-    control: [diag.Diagnostic] @ unclosed.withdrawn(lexed: lexed.diagnostics, said: said.control, text: text)
+    diagnostics: [diag.Diagnostic] @ told_once(
+        unclosed.withdrawn(lexed: lexed.diagnostics, said: said.normal, text: text),
+        lexed: lexed,
+        text: text
+    )
+    control: [diag.Diagnostic] @ told_once(
+        unclosed.withdrawn(lexed: lexed.diagnostics, said: said.control, text: text),
+        lexed: lexed,
+        text: text
+    )
 
     for d in said.normal
         diagnostics @ diagnostics.push(d)
@@ -183,6 +201,11 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         tree: a,
         tokens: lexed.tokens
     )
+
+# The lexer's reports as the parse tells them, every run of openers a line
+# left open told once (`unclosed_runs`, defect 410).
+function told_once(said: [diag.Diagnostic], lexed: lexer.LexOutput, text: str) -> [diag.Diagnostic]
+    return unclosed_runs.told_once(said, closes: lexed.closes, text: text)
 
 # Which file each diagnostic of a parse points into, in order.
 function files_of(s: source.Source, p: ParseOutput) -> [i64]
@@ -642,8 +665,10 @@ test "a construct the lexer named never closed ends at its line, and a line goin
     for text in ["function main()\n    x = (1 + 2\n    print(x)\n", "function main()\n    print(1, 2\n    print(3)\n", "function main()\n    x = xs[1\n    print(x)\n", "function main()\n    x = f(1,\n        2\n    print(x)\n"]
         assert codes(parse(text).diagnostics) == ["unclosed_bracket"]
 
+    # Its two openers left open are one report since defect 410.
     nested = parse("function main()\n    xs = [[1], [2\n    print(xs)\n")
-    assert codes(nested.diagnostics) == ["unclosed_bracket", "unclosed_bracket"]
+    assert codes(nested.diagnostics) == ["unclosed_bracket"]
+    assert codes(nested.control) == ["unclosed_bracket"]
 
     for text in ["function main()\n    x = (1\n    + 2\n    print(x)\n", "function main()\n    xs = [1\n    + 2\n    print(xs)\n"]
         assert codes(parse(text).diagnostics) == ["unclosed_bracket", "line_end_before_continuation"]

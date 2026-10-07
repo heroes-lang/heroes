@@ -9,5 +9,4 @@ tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:42:22: error[u
 tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:44:13: error[unexpected_character]: `\` is not part of the language's syntax
 tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:44:19: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
 tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:22: error[unterminated_string]: this string never closes — strings are single-line, `"` to `"`
-tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:10: error[unclosed_bracket]: `(` opened here is never closed
-tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:12: error[unclosed_bracket]: `(` opened here is never closed
+tests/golden/check/fixedbugs-131-a-lost-quote-is-one-message.hero:46:10: error[unclosed_bracket]: `(` opened here and 1 more after it on its line are never closed

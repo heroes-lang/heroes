@@ -1,0 +1,12 @@
+# Fixed defect 257, 2026-10-07 (lane b14-parse), the shape beside
+# `fixedbugs-257-brackets-in-braces-are-paired-in-one-walk`. Symptom: a plain
+# literal whose braces hold brackets nested N deep cost the square of N:
+# 1,000 deep asked `token.is_closer` 1,003,973 times. Cause: the braces are
+# read as an `f` literal's hole would be (`plain_holes.hole`), through a
+# cursor over the hole's tokens that no walk paired, so each opener in it was
+# walked from to its closer once per question. Repair: that cursor is paired
+# as it is made. The shape below, 40 deep, told as on the base.
+
+function main()
+    x = 1
+    print("{[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[x]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]} and {x}")  #~ hole_without_f

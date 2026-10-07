@@ -32,7 +32,7 @@ function a_map_left_open()
     print(m)
 
 function a_list_left_open_in_a_call()
-    #~v unclosed_bracket unclosed_bracket
+    #~v unclosed_bracket
     k = f([1
     print(k)
 
@@ -66,3 +66,8 @@ function a_long_list_closed()
 
 function main()
     print(1)
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: `k = f([1`'s `(` and `[`.

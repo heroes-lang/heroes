@@ -1,0 +1,114 @@
+# The openers of one line the lexer named left open at one place, told once
+# (design.md §4.17: one mistake is one edit its author owes; defect 410).
+#
+# The lexer names each opener it finds left open where it finds that, at a
+# closer of another kind (`closers.close_to_its_kind`), at a line no bracket
+# can hold (`bracket_reach`), at a body's `}` and at the file's end
+# (`layout.close_brackets`), one report an opener: `x = [[1` drew two
+# `unclosed_bracket` for the one `]]` its author owes, and a line of 10,000
+# `[` drew 10,000. So once the parser has withdrawn the reports its own
+# message stands for (`parse/unclosed.withdrawn`), such a run is told in one
+# report, the first opener's, saying how many more stand after it on its line
+# in the words the lexer said of each (`closers.run_of`). Openers on lines of
+# their own keep a report each: each may be closed on its own line. The
+# lexer's own reports are as they were, one at each opener (design.md §4.15,
+# panel 183: the lexer names every opener still open, at the opener), which
+# `heroes lex` prints; the parse tells them.
+#
+# **Which reports are one run**, read from the reports, the text and the
+# offsets where the lexer named what was open (`LexOutput.closes`) alone: two
+# that follow each other, each an opener's, the second after the first on its
+# line, said in the same words, with none of those offsets after the first and
+# not after the second. The lexer names the openers of one place together,
+# in the order its stack holds them, and every place it names openers at but
+# the file's end is such an offset, past the openers it names and before any
+# opener it reads after them; and an opener named at a closer of another kind
+# stands above, and after, every one still open below it, which the lexer
+# names later, so the two follow each other the other way round. Two openers
+# of one place with another place between them, `[f(1, {2) [3` at the file's
+# end, are told apart, as they were: a merge needs the place each was named
+# at, which no report carries, and two true reports are the cost.
+#
+# | entry | called by |
+# |---|---|
+# | `told_once` | `parse.parse_source`, `parse.parse_bounded` |
+
+use diag
+use closers
+use text_lines
+use text_outline
+use lexer
+
+# `said`, the lexer's reports in the order it said them, with each run of
+# openers left open told once, at its first.
+function told_once(said: [diag.Diagnostic], closes: [i64], text: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    i: i64 @ 0
+
+    while i < said.len()
+        j: i64 @ i + 1
+
+        while j < said.len() && follows(first: said[j - 1], next: said[j], closes: closes, text: text)
+            j @ j + 1
+
+        if j - i > 1
+            out @ out.push(closers.run_of(said[i], text, more: j - i - 1))
+        else
+            out @ out.push(said[i])
+        i @ j
+
+    return out
+
+# Whether `next` is an opener the lexer named at the same place as `first`,
+# right after it on its line.
+function follows(first: diag.Diagnostic, next: diag.Diagnostic, closes: [i64], text: str) -> bool
+    words = closers.said_of(first, text)
+
+    if words == "" || closers.said_of(next, text) != words || next.span.start <= first.span.start
+        return false
+
+    if text_lines.newlines_between(text, from: first.span.start, to: next.span.start) > 0
+        return false
+    after = text_outline.last_at_most(closes, at: first.span.start) + 1
+    return after >= closes.len() || closes[after] > next.span.start
+
+## Tests
+
+function told(text: str) -> [diag.Diagnostic]
+    out = lexer.lex_one(text)
+    return told_once(out.diagnostics, closes: out.closes, text: text)
+
+# Defect 410: two, three and a hundred openers of one line, of one kind or
+# mixed, one closed between them, are one report at the first; on lines of
+# their own, one each.
+test "a run of openers one line left open is one report at its first"
+    two = told("x = [[1\n")
+    assert two.len() == 1
+    assert two[0].span.start == 4
+    assert two[0].message == "`[` opened here and 1 more after it on its line are never closed"
+    mixed = told("x = ([{1\n")
+    assert mixed.len() == 1
+    assert mixed[0].message == "`(` opened here and 2 more after it on its line are never closed"
+    openers: [str] @ []
+
+    for _ in range(from: 0, to: 100)
+        openers @ openers.push("[")
+
+    many = told("x = " + openers.join("") + "1\n")
+    assert many.len() == 1
+    assert many[0].message == "`[` opened here and 99 more after it on its line are never closed"
+    between = told("x = [[1], [2\n")
+    assert between.len() == 1
+    assert between[0].span.start == 4
+    assert told("x = f(a,\n    [b,\n        (c\n").len() == 3
+
+# Where the lexer named an opener at a closer of another kind, the `{` the
+# call's `)` closed over, an opener before that closer and one after it are
+# told apart, whatever else is open: a place the lexer named openers at lies
+# between them.
+test "openers with a place the lexer named openers at between them are told apart"
+    said = told("x = [f(1, {2) [3\n")
+    assert said.len() == 3
+    assert said[0].span.start == 10
+    assert said[1].span.start == 4
+    assert said[2].span.start == 14

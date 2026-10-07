@@ -42,5 +42,11 @@ function main()
     print(g(a: x, b: "y)
     #~v unexpected_character unterminated_string
     print(x \ 1 + "c)
-    #~v unterminated_string unclosed_bracket unclosed_bracket
+    #~v unterminated_string unclosed_bracket
     print(g(a: x, b: "y
+
+# Moved 2026-10-07 with defect 410's repair (lane b14-parse): the openers
+# of one line the lexer named open at one place are one report, at the
+# first, saying how many more stand after it on its line, where each was a
+# report of its own: the two `(` the lost quote's line left open, beside the
+# quote's own report.

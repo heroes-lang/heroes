@@ -15,6 +15,7 @@
 use token
 use cursor
 use lexer
+use stream_tables
 
 # A block where a statement should start, which no head opens: named, once,
 # and read by the caller, its own mistakes told, where until 2026-09-29 it
@@ -50,7 +51,7 @@ function passed(@c: cursor.Cursor)
         i @ i + 1
 
     was = c.tokens[i].kind
-    c.tokens[i] @ token.Token(kind: .terminator, span: c.tokens[i].span)
+    stream_tables.relaid(@c.tokens, at: i, kind: .terminator, span: c.tokens[i].span)
 
     if was == .kw_else
         flattened(@c, from: i + 1)
@@ -76,8 +77,8 @@ function flattened(@c: cursor.Cursor, from: i64)
             depth @ depth - 1
 
             if depth == 0
-                c.tokens[i] @ token.Token(kind: .terminator, span: c.tokens[i].span)
-                c.tokens[j] @ token.Token(kind: .terminator, span: c.tokens[j].span)
+                stream_tables.relaid(@c.tokens, at: i, kind: .terminator, span: c.tokens[i].span)
+                stream_tables.relaid(@c.tokens, at: j, kind: .terminator, span: c.tokens[j].span)
                 return
         j @ j + 1
 

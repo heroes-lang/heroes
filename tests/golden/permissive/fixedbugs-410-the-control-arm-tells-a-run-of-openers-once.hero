@@ -1,0 +1,26 @@
+# Fixed defect 410, 2026-10-07 (lane b14-parse), its control-arm half; the
+# normal arm's case is check's fixedbugs-410. Symptom: `check --permissive`
+# told each opener a line left open a report of its own, as the normal arm
+# did. Repair: the openers of one line the lexer named open at one place are
+# one report at the first in both arms, the parse folding the lexer's
+# reports once the parser withdrew what its own message stands for, which it
+# does in each arm.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function two()
+    x = [[1  #~ unclosed_bracket
+
+function mixed()
+    x = g(1, ([2  #~ unclosed_bracket
+
+function one_closed_between()
+    x = [[1], [2  #~ unclosed_bracket
+
+function on_lines_of_their_own()
+    x = g(1,  #~ unclosed_bracket
+        [2  #~ unclosed_bracket
+
+function main()
+    two()

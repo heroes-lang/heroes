@@ -46,6 +46,7 @@ use parse/line_end
 use word_place
 use text_lines
 use lexer
+use stream_tables
 
 ## The `:` that ends its line
 
@@ -113,8 +114,8 @@ function read_below(@c: cursor.Cursor, text: str)
             diag.Fix(title: "write it on the line below, one level deeper", replacement: text_lines.line_break(text, at: rest.start) + margin + "    ", span: written, certainty: .certain)
         )
         cursor.say(@c, d)
-        c.tokens[end] @ token.Token(kind: .dedent, span: c.tokens[end].span)
-    c.tokens[colon] @ token.Token(kind: .indent, span: token.Span(start: rest.start, end: rest.start))
+        stream_tables.relaid(@c.tokens, at: end, kind: .dedent, span: c.tokens[end].span)
+    stream_tables.relaid(@c.tokens, at: colon, kind: .indent, span: token.Span(start: rest.start, end: rest.start))
 
 # The report of the suite whose block begins at `at`, given one more certain
 # fix, for the `:` at `written`, one level deeper than its own; false where
