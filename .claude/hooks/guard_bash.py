@@ -25,6 +25,7 @@ import sys
 import commits
 import staged
 import trees
+import unseen
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
@@ -79,6 +80,27 @@ def without_heredocs(command):
             i += 1  # the delimiter line itself
 
     return "\n".join(out)
+
+
+def heredoc_bodies(command):
+    """Every heredoc BODY of `command`, in order: what `without_heredocs` drops
+    is what a commit's `-F -` or `-m "$(cat <<EOF ...)"` reads as its message
+    (defect 378)."""
+    out = []
+    lines = command.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        i += 1
+        for match in HEREDOC.finditer(line):
+            marker = match.group(1) or match.group(2) or match.group(3)
+            body = []
+            while i < len(lines) and lines[i].strip() != marker:
+                body.append(lines[i])
+                i += 1
+            i += 1
+            out.append("\n".join(body))
+    return out
 
 
 def segments(command):
@@ -436,6 +458,16 @@ def verdict(command, cwd=None):
                 return inner
             continue
         where = git_dir(w, here)
+
+        # **A message is read for what its reader cannot see** (defect 378): the
+        # list is the `unseen` suite's, read from the tree the command stands in.
+        for verb in unseen.VERBS:
+            more = git_args(w, verb)
+            if more is not None:
+                tree = trees.tree_of(where) if where is not None else None
+                said = unseen.verdict(more, verb, where, heredoc_bodies(command), unseen.runs(tree or trees.tree_of(cwd)))
+                if said is not None:
+                    return said
 
         rest = git_args(w, "add")
         if rest is not None:
