@@ -144,9 +144,9 @@ bb3:
     goto bb1;
 #line 8 "tests/golden/run/functions.hero"
 bb4:
-#line 6 "tests/golden/run/functions.hero"
+#line 8 "tests/golden/run/functions.hero"
     t9 = h1_ret0;
-#line 6 "tests/golden/run/functions.hero"
+#line 8 "tests/golden/run/functions.hero"
     return t9;
 #line 152 "functions.c"
 }
@@ -202,9 +202,9 @@ bb3:
     goto bb1;
 #line 13 "tests/golden/run/functions.hero"
 bb4:
-#line 11 "tests/golden/run/functions.hero"
+#line 13 "tests/golden/run/functions.hero"
     t9 = h1_ret0;
-#line 11 "tests/golden/run/functions.hero"
+#line 13 "tests/golden/run/functions.hero"
     return t9;
 #line 210 "functions.c"
 }
@@ -315,9 +315,9 @@ bb3:
     goto bb1;
 #line 23 "tests/golden/run/functions.hero"
 bb4:
-#line 21 "tests/golden/run/functions.hero"
+#line 23 "tests/golden/run/functions.hero"
     t14 = h1_ret0;
-#line 21 "tests/golden/run/functions.hero"
+#line 23 "tests/golden/run/functions.hero"
     return t14;
 #line 323 "functions.c"
 }

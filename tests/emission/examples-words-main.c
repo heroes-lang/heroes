@@ -534,9 +534,9 @@ bb9:
     goto bb7;
 #line 46 "examples/words/main.hero"
 bb10:
-#line 40 "examples/words/main.hero"
+#line 44 "examples/words/main.hero"
     t24 = h5_ret0;
-#line 40 "examples/words/main.hero"
+#line 44 "examples/words/main.hero"
     return t24;
 #line 542 "main.c"
 }
@@ -666,11 +666,11 @@ bb8:
     goto bb4;
 #line 54 "examples/words/main.hero"
 bb9:
-#line 48 "examples/words/main.hero"
+#line 50 "examples/words/main.hero"
     t21 = h3_ret0;
 #line 672 "main.c"
     hero_str_incref(t21);
-#line 48 "examples/words/main.hero"
+#line 50 "examples/words/main.hero"
 #line 675 "main.c"
     hero_str_decref(h4_own4);
     return t21;
@@ -798,14 +798,14 @@ bb6:
     goto bb4;
 #line 67 "examples/words/main.hero"
 bb7:
-#line 61 "examples/words/main.hero"
+#line 67 "examples/words/main.hero"
     t21 = h3_ret0;
 #line 804 "main.c"
     hero_str_incref(t21);
-#line 61 "examples/words/main.hero"
+#line 67 "examples/words/main.hero"
 #line 807 "main.c"
     hero_str_decref(h1_lower);
-#line 61 "examples/words/main.hero"
+#line 67 "examples/words/main.hero"
 #line 810 "main.c"
     hero_str_decref(h4_own4);
     return t21;

@@ -670,41 +670,41 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
     t38 = h3_ret0;
 #line 676 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_retain(&t38);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 679 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_decref(h2_text);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 682 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_decref(h4_own4);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 685 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 688 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 691 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_decref(h7_own7);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 694 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 697 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_decref(h9_own9);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 700 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 703 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_decref(h11_own11);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 706 "fixedbugs273readfileonadirectoryisanerror.c"
     hero_str_decref(h12_own12);
-#line 167 "<heroes library>"
+#line 171 "<heroes library>"
 #line 709 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_release(&h13_own13);
     hero_lend_local_give(hero_lend_h1_status);

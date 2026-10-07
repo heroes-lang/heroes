@@ -1212,20 +1212,20 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
     t19 = h3_ret0;
 #line 1218 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_retain(&t19);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1221 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_release(&h4_own4);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1224 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_decref(h5_own5);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1227 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_release(&h6_own6);
-#line 186 "<heroes library>"
+#line 189 "<heroes library>"
 #line 1230 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_release(&h7_own7);
     return t19;

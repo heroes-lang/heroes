@@ -206,14 +206,14 @@ bb3:
     goto bb1;
 #line 15 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb4:
-#line 13 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 15 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t13 = h1_ret0;
 #line 212 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t13);
-#line 13 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 15 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 215 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h2_own2);
-#line 13 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 15 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 218 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h3_own3);
     return t13;
@@ -346,9 +346,9 @@ bb3:
     goto bb1;
 #line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb4:
-#line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t12 = h2_ret0;
-#line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 31 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     return t12;
 #line 354 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
 }
@@ -757,29 +757,29 @@ bb2:
     goto bb3;
 #line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb3:
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
     t21 = h2_ret0;
 #line 763 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_retain(&t21);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 766 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h0_out);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 769 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h1_f0);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 772 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h3_own3);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 775 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     hero_array_decref(h4_own4);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 778 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h5_own5);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 781 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h6_own6);
-#line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
+#line 47 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 #line 784 "fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread.c"
     h_0opt_e201354_release(&h7_own7);
     return t21;

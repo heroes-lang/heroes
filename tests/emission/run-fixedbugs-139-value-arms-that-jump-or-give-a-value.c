@@ -176,9 +176,9 @@ bb3:
     goto bb1;
 #line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb4:
-#line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 17 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t8 = h4_ret0;
-#line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 17 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     return t8;
 #line 184 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
@@ -248,9 +248,9 @@ bb3:
     goto bb4;
 #line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb4:
-#line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t8 = h4_ret0;
-#line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     return t8;
 #line 256 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
@@ -607,9 +607,9 @@ bb3:
     goto bb1;
 #line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb4:
-#line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 58 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t6 = h3_ret0;
-#line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 58 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     return t6;
 #line 615 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
@@ -662,9 +662,9 @@ bb3:
     goto bb4;
 #line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb4:
-#line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t6 = h3_ret0;
-#line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     return t6;
 #line 670 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }

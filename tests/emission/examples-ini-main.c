@@ -1379,158 +1379,158 @@ bb36:
     goto bb34;
 #line 73 "examples/ini/main.hero"
 bb37:
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
     t154 = h24_ret0;
 #line 1385 "main.c"
     h_0opt_1ee56d5a_retain(&t154);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1388 "main.c"
     hero_map_decref(h1_sections);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1391 "main.c"
     hero_str_decref(h2_current);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1394 "main.c"
     hero_map_decref(h3_empty);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1397 "main.c"
     hero_array_decref(h5_xs0);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1400 "main.c"
     hero_str_decref(h7_line);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1403 "main.c"
     hero_str_decref(h8_trimmed);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1406 "main.c"
     h_0opt_f87774a_release(&h10_f0);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1409 "main.c"
     hero_str_decref(h11_name);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1412 "main.c"
     h_0opt_36226bb0_release(&h12_f1);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1415 "main.c"
     hero_map_decref(h13_fresh);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1418 "main.c"
     h_0opt_e201354_release(&h14_at);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1421 "main.c"
     h_0opt_e201354_release(&h15_f2);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1424 "main.c"
     h_0opt_e201354_release(&h16_f3);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1427 "main.c"
     hero_str_decref(h17_key);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1430 "main.c"
     h_0opt_e201354_release(&h18_f4);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1433 "main.c"
     hero_str_decref(h19_value);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1436 "main.c"
     h_0opt_36226bb0_release(&h20_f5);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1439 "main.c"
     hero_map_decref(h21_r0);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1442 "main.c"
     hero_map_decref(h22_inner);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1445 "main.c"
     h_0opt_f87774a_release(&h23_f6);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1448 "main.c"
     hero_map_decref(h25_own25);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1451 "main.c"
     hero_map_decref(h26_own26);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1454 "main.c"
     hero_array_decref(h27_own27);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1457 "main.c"
     hero_str_decref(h28_own28);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1460 "main.c"
     h_main_Config_release(&h29_own29);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1463 "main.c"
     h_0opt_1ee56d5a_release(&h30_own30);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1466 "main.c"
     h_0opt_e201354_release(&h31_own31);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1469 "main.c"
     h_0opt_f87774a_release(&h32_own32);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1472 "main.c"
     h_0opt_36226bb0_release(&h33_own33);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1475 "main.c"
     h_0opt_1ee56d5a_release(&h34_own34);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1478 "main.c"
     hero_map_decref(h35_own35);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1481 "main.c"
     hero_str_decref(h36_own36);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1484 "main.c"
     hero_str_decref(h37_own37);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1487 "main.c"
     hero_str_decref(h38_own38);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1490 "main.c"
     h_0opt_1ee56d5a_release(&h39_own39);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1493 "main.c"
     hero_str_decref(h40_own40);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1496 "main.c"
     hero_str_decref(h41_own41);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1499 "main.c"
     hero_str_decref(h42_own42);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1502 "main.c"
     hero_str_decref(h43_own43);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1505 "main.c"
     h_0opt_36226bb0_release(&h44_own44);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1508 "main.c"
     hero_str_decref(h45_own45);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1511 "main.c"
     hero_str_decref(h46_own46);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1514 "main.c"
     hero_str_decref(h47_own47);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1517 "main.c"
     h_0opt_1ee56d5a_release(&h48_own48);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1520 "main.c"
     h_0opt_f87774a_release(&h49_own49);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1523 "main.c"
     hero_str_decref(h50_own50);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1526 "main.c"
     hero_str_decref(h51_own51);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1529 "main.c"
     hero_str_decref(h52_own52);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1532 "main.c"
     hero_str_decref(h53_own53);
-#line 31 "examples/ini/main.hero"
+#line 49 "examples/ini/main.hero"
 #line 1535 "main.c"
     h_0opt_1ee56d5a_release(&h54_own54);
     return t154;
@@ -1711,26 +1711,26 @@ bb6:
     goto bb4;
 #line 88 "examples/ini/main.hero"
 bb7:
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
     t25 = h2_ret0;
 #line 1717 "main.c"
     h_0opt_f87774a_retain(&t25);
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
 #line 1720 "main.c"
     hero_str_decref(h1_inner);
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
 #line 1723 "main.c"
     hero_str_decref(h3_own3);
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
 #line 1726 "main.c"
     hero_str_decref(h4_own4);
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
 #line 1729 "main.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
 #line 1732 "main.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 82 "examples/ini/main.hero"
+#line 84 "examples/ini/main.hero"
 #line 1735 "main.c"
     h_0opt_f87774a_release(&h7_own7);
     return t25;
@@ -2675,7 +2675,7 @@ bb3:
     goto bb1;
 #line 140 "examples/ini/main.hero"
 bb4:
-#line 138 "examples/ini/main.hero"
+#line 140 "examples/ini/main.hero"
     t14 = h2_ret0;
 #line 2681 "main.c"
     hero_str_decref(h3_own3);
@@ -2768,7 +2768,7 @@ bb3:
     goto bb1;
 #line 146 "examples/ini/main.hero"
 bb4:
-#line 144 "examples/ini/main.hero"
+#line 146 "examples/ini/main.hero"
     t18 = h2_ret0;
 #line 2774 "main.c"
     hero_str_decref(h3_own3);
@@ -2894,14 +2894,14 @@ bb6:
     goto bb4;
 #line 155 "examples/ini/main.hero"
 bb7:
-#line 150 "examples/ini/main.hero"
+#line 155 "examples/ini/main.hero"
     t19 = h2_ret0;
 #line 2900 "main.c"
     h_0opt_e201354_retain(&t19);
-#line 150 "examples/ini/main.hero"
+#line 155 "examples/ini/main.hero"
 #line 2903 "main.c"
     h_0opt_e201354_release(&h3_own3);
-#line 150 "examples/ini/main.hero"
+#line 155 "examples/ini/main.hero"
 #line 2906 "main.c"
     h_0opt_e201354_release(&h4_own4);
     return t19;

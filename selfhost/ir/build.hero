@@ -149,11 +149,6 @@ function end_fn(@b: Lowering)
     append_function(@b.out.program.functions, b.building)
     b.building @ empty_function()
 
-# The span of the whole declaration being lowered — what an instruction
-# the author did not write points at (a copy-out, for instance).
-function declaration_span(b: Lowering) -> token.Span
-    return b.building.span
-
 # The result type the enclosing function promised. `?` needs it: the
 # error it propagates is wrapped into THIS function's T?.
 function result_type(b: Lowering) -> i64
