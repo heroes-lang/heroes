@@ -21,3 +21,9 @@ function main()
     count_down(n: @n, seen: @seen)
     print(n)
     print(seen)
+
+# Corrected 2026-10-07, panel 196's R1 (lane b13-land-addr, `c1f87af5`), below the
+# program so no line moves: the callee no longer works on a copy in the emitted
+# C. An `@` parameter is lowered by pointer, the body reaching its caller's place
+# through `(*phN_x)`, and the IR's copy-out writes no C. What the case pins is
+# unchanged: `seen` is 3 after the early return.
