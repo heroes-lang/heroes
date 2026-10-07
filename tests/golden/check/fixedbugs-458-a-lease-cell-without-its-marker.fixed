@@ -1,0 +1,10 @@
+# Fixed 2026-10-07, defect 458, lane b14-check: the shape beside it with
+# the `@` left off. Symptom: `end_lease(c)` on a lease cell was told *this
+# argument is not such a cell*, where `c` is one and the mistake is the
+# missing `@`. Now it is told the `@` it owes, as a call to any function that
+# changes its argument is, with the certain fix that writes it.
+
+function main()
+    x = "abc"
+    c: cstr @ x.lease()
+    end_lease(@c)  #~ marker_mismatch
