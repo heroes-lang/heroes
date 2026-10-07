@@ -1,0 +1,75 @@
+# Fixed 2026-10-07, defect 409 (class improvement): `check/moved_walk.hero`
+# grew its reports through the walk's field, `w.found @ w.found.push(...)`,
+# so each handle read after the call that ended it copied every report
+# before it: 499,500 copies at 1,000 such reads and 7,998,000 at 4,000 on the
+# base, counted per call site in an instrumented runtime. The list is lent
+# now (`check/state.append_diagnostic`) and grows in place. What this case
+# pins is that every read is told, once, at its own line and in order: 20
+# handles opened and given back, then each given back again. `check` never
+# opens the header.
+extern "fixedbugs-409-every-handle-read-after-its-end-is-told-in-order.h"
+    record Cell tag hh
+    function f_open() -> Cell acquires f_close
+    function f_close(x: Cell consumes)
+
+function main()
+    a0 = f_open()
+    f_close(x: a0)
+    a1 = f_open()
+    f_close(x: a1)
+    a2 = f_open()
+    f_close(x: a2)
+    a3 = f_open()
+    f_close(x: a3)
+    a4 = f_open()
+    f_close(x: a4)
+    a5 = f_open()
+    f_close(x: a5)
+    a6 = f_open()
+    f_close(x: a6)
+    a7 = f_open()
+    f_close(x: a7)
+    a8 = f_open()
+    f_close(x: a8)
+    a9 = f_open()
+    f_close(x: a9)
+    a10 = f_open()
+    f_close(x: a10)
+    a11 = f_open()
+    f_close(x: a11)
+    a12 = f_open()
+    f_close(x: a12)
+    a13 = f_open()
+    f_close(x: a13)
+    a14 = f_open()
+    f_close(x: a14)
+    a15 = f_open()
+    f_close(x: a15)
+    a16 = f_open()
+    f_close(x: a16)
+    a17 = f_open()
+    f_close(x: a17)
+    a18 = f_open()
+    f_close(x: a18)
+    a19 = f_open()
+    f_close(x: a19)
+    f_close(x: a0)  #~ handle_used_after_end
+    f_close(x: a1)  #~ handle_used_after_end
+    f_close(x: a2)  #~ handle_used_after_end
+    f_close(x: a3)  #~ handle_used_after_end
+    f_close(x: a4)  #~ handle_used_after_end
+    f_close(x: a5)  #~ handle_used_after_end
+    f_close(x: a6)  #~ handle_used_after_end
+    f_close(x: a7)  #~ handle_used_after_end
+    f_close(x: a8)  #~ handle_used_after_end
+    f_close(x: a9)  #~ handle_used_after_end
+    f_close(x: a10)  #~ handle_used_after_end
+    f_close(x: a11)  #~ handle_used_after_end
+    f_close(x: a12)  #~ handle_used_after_end
+    f_close(x: a13)  #~ handle_used_after_end
+    f_close(x: a14)  #~ handle_used_after_end
+    f_close(x: a15)  #~ handle_used_after_end
+    f_close(x: a16)  #~ handle_used_after_end
+    f_close(x: a17)  #~ handle_used_after_end
+    f_close(x: a18)  #~ handle_used_after_end
+    f_close(x: a19)  #~ handle_used_after_end

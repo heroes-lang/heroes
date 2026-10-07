@@ -142,7 +142,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
         .hole =>
             missing = state.error_ty_of(c)
-            c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: missing))
+            state.append_hole(@c.out.holes, state.Hole(at: id, span: span, expected: missing))
             return state.record_expr(@c, at: id, ty: missing)
         .unary u =>
             operand_ty = synth(@c, a, r, s, decls, u.operand)
@@ -384,7 +384,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => false
 
     if is_hole
-        c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: expected))
+        state.append_hole(@c.out.holes, state.Hole(at: id, span: span, expected: expected))
         _ = state.record_expr(@c, at: id, ty: expected)
         return
 
@@ -2380,3 +2380,22 @@ test "an arm an earlier arm covers is refused, however its value is spelled"
     )
     assert kept.out.diagnostics.len() == 0
     assert checked_program("function f(n: i64) -> i64\n    return match n\n        0 => 0\n        -0 => 1\n        _ => 2\n").out.diagnostics[0].message == "`-0` is already covered by an earlier arm, written `0`, the same value: no value reaches this one"
+
+test "defect 409: forty holes are kept, each once and in the order they stand"
+    # `c.out.holes` is lent to `state.append_hole` now, from both the
+    # checked position (a hole with a type to meet) and the synthesised one.
+    lines: [str] @ ["function main()", "    total: i64 @ 0"]
+    k: i64 @ 0
+
+    while k < 20
+        lines @ lines.push("    total @ total + ???")
+        lines @ lines.push("    print(???)")
+        k @ k + 1
+
+    c = checked_program(lines.join("\n") + "\n")
+    assert c.out.holes.len() == 40
+    k @ 1
+
+    while k < 40
+        assert c.out.holes[k - 1].span.start < c.out.holes[k].span.start
+        k @ k + 1
