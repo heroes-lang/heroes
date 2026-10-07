@@ -24,6 +24,7 @@
 #   the same shape is kept for the same reason wearing the other sign.
 
 use widths
+use check/type_runs
 
 ## What a type is
 
@@ -246,47 +247,21 @@ function intern(@t: Types, ty: Ty) -> i64
         return found.must()
     id = t.nodes.len()
     bad = holds_error(t, ty)
-    t.nodes @ t.nodes.push(ty)
-    t.poison @ t.poison.push(bad)
+    append_node(@t.nodes, @t.poison, ty: ty, bad: bad)
     t.index[key] @ id
     return id
 
+# Lent, so each array grows in place (defect 409): pushed through the field,
+# `t.nodes @ t.nodes.push(ty)`, each new type copied every type before it.
+function append_node(@nodes: [Ty], @poison: [bool], ty: Ty, bad: bool)
+    nodes @ nodes.push(ty)
+    poison @ poison.push(bad)
+
 # Interns a function type, canonicalising its parameter run and its NAME
-# run first. Both keys join on a comma and both are safe to: a parameter id
-# renders in decimal and a label is an identifier, so neither can contain
-# the separator.
+# run first (`check/type_runs.hero`, which writes each once and keys it).
 function intern_function(@t: Types, params: [i64], labels: [str], result: i64) -> i64
-    rendered: [str] @ []
-
-    for p in params
-        rendered @ rendered.push(p.to_str())
-
-    key = rendered.join(",")
-    start: i64 @ 0
-    found = t.runs[key]
-
-    if !found.is_err()
-        start @ found.must()
-    else
-        start @ t.params.len()
-
-        for p in params
-            t.params @ t.params.push(p)
-
-        t.runs[key] @ start
-    joined_labels = labels.join(",")
-    label_start: i64 @ 0
-    seen = t.label_runs[joined_labels]
-
-    if !seen.is_err()
-        label_start @ seen.must()
-    else
-        label_start @ t.labels.len()
-
-        for name in labels
-            t.labels @ t.labels.push(name)
-
-        t.label_runs[joined_labels] @ label_start
+    start = type_runs.id_run(ids: @t.params, @t.runs, run: params)
+    label_start = type_runs.name_run(names: @t.labels, @t.label_runs, run: labels)
     return intern(
         @t,
         .function_ty(params: Params(start: start, len: params.len()), labels: Params(start: label_start, len: labels.len()), result: result)
@@ -366,11 +341,12 @@ function poisoned(t: Types, id: i64) -> bool
 # below it. That is the whole walk `poisoned` did, said once per node.
 #
 # **Why the answer never goes stale, from this file.** `nodes` is written at
-# one site, `intern`'s push above, and `params` at one, `intern_function`'s
-# push, which runs before the function type naming that run is interned; and
-# `new_types` is the one constructor of `Types` (a grep of `selfhost/` for a
-# write to either field or a `Types(` finds those three and no other,
-# 2026-10-07). So a node, once in, is never rewritten. And a type id is only
+# one site, `intern`'s lend of it to `append_node` above, and `params` at one,
+# `intern_function`'s lend of it to `type_runs.id_run`, which runs before the
+# function type naming that run is interned; and `new_types` is the one
+# constructor of `Types` (a grep of `selfhost/` for a write to either field, a
+# lend of it, or a `Types(` finds those three and no other, 2026-10-07, after
+# defect 409). So a node, once in, is never rewritten. And a type id is only
 # ever minted here, as `t.nodes.len()` at the push, so every id a node holds
 # was minted before it and has its entry already. A node's answer is
 # therefore a function of entries that are themselves fixed, and is fixed the
