@@ -716,6 +716,9 @@ function verb_probes() -> [probe.Probe]
         row(name: "mutate reads the WHOLE corpus — the gate every leg runs, one cheap operator, so a program the tool cannot read is red the day it lands", argv: "mutate examples --operator typo-digit", code: 0).out_has("corpus: ").out_has("| typo-digit |").err_empty()
         row(name: "mutate prints the survivors of one operator", argv: "mutate examples/gallery --operator swap-args --survivors", code: 0).out_has("| swap-args |").out_lacks("| typo-ident |")
         row(name: "an unknown operator names the ones there are", argv: "mutate --operator swapargs", code: 2).err_has("no operator `swapargs`").err_has("swap-args")
+        row(name: "the recovery arm refuses a run folder that already holds anything, before it starts a compiler, so a run never mixes with another's records (defect 210)", argv: "mutate --recovery --compiler no/such/compiler -o tests/golden/surface-fixtures/recovery210/head", code: 2).err_has("tests/golden/surface-fixtures/recovery210/head already holds something, and a run writes into a folder of its own: name a new one").err_lacks("cannot start the compiler").out_empty()
+        row(name: "and a word of the arm given without `--recovery` is refused by name, never read as the metric's (defect 210)", argv: "mutate --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--compare` is a word of the recovery arm alone: `heroes mutate --recovery`\n").out_empty()
+        row(name: "and two runs read against each other are refused where one replayed another plan than the one they are read over (defect 210)", argv: "mutate --recovery -o tests/golden/surface-fixtures/recovery210/head --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_has("a run replayed another plan than tests/golden/recovery: its digests are plan-singles.jsonl 0000000000000001").out_empty()
         row(name: "the zen prints and says nothing on stderr", argv: "this", code: 0).err_empty().out_has("20. We can be heroes, just for one day.\n")
     ]
 
@@ -1133,7 +1136,11 @@ test "the tables are what this module is, so they are counted"
     # function of another module used as a value, `value421/`, run at the
     # default level and under the sanitizers, through the module's other name,
     # and refused `cannot_infer` where nothing asks its type.
-    assert verb_probes().len() == 190
+    # 190 -> 193 the same day, defect 210's recovery arm (lane b14-mutate's,
+    # these rows lane b14-harness-b's, the two meeting at the round): a run
+    # folder that holds something, `--compare` without `--recovery`, and two
+    # runs of another plan, over `recovery210/`.
+    assert verb_probes().len() == 193
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
