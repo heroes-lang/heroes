@@ -22,6 +22,7 @@ import re
 import shlex
 import sys
 
+import commits
 import staged
 import trees
 
@@ -132,6 +133,73 @@ def segments(command):
     return [s.strip() for s in out if s.strip()]
 
 
+# What a shell runs a command THROUGH, each with its options that take a value:
+# `GIT_EDITOR=true git merge --continue`, `caffeinate -i git ...` and
+# `/usr/bin/time -p git ...` are git commands, and until 2026-10-07 this guard
+# read their first word and saw none (defect 403's route of 2026-10-06 began
+# with an assignment).
+WRAPPERS = {
+    "env": frozenset({"-u", "--unset", "-C", "--chdir"}),
+    "command": frozenset(),
+    "builtin": frozenset(),
+    "exec": frozenset({"-a"}),
+    "nohup": frozenset(),
+    "time": frozenset(),
+    "nice": frozenset({"-n"}),
+    "caffeinate": frozenset({"-w", "-t"}),
+    "timeout": frozenset({"-s", "--signal", "-k", "--kill-after"}),
+    "xargs": frozenset({"-P", "-n", "-I", "-L", "-s", "-E", "-d", "-a"}),
+}
+ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+# The shells whose `-c` script is a command line of its own, and `eval`.
+SHELLS = frozenset({"bash", "sh", "zsh", "dash", "ksh"})
+
+
+def command_words(w):
+    """`w` from the command it runs: the assignments before it and the
+    wrappers it runs through, with their options, left out."""
+    i = 0
+    while i < len(w):
+        if ASSIGNMENT.match(w[i]):
+            i += 1
+            continue
+        base = os.path.basename(w[i])
+        if base not in WRAPPERS:
+            break
+        takes = WRAPPERS[base]
+        i += 1
+        while i < len(w) and w[i].startswith("-") and w[i] != "-":
+            if w[i] == "--":
+                i += 1
+                break
+            i += 2 if w[i] in takes else 1
+        if base == "timeout" and i < len(w):
+            i += 1  # its duration
+    return w[i:]
+
+
+def script_of(w):
+    """The command line a shell's `-c` or `eval` runs, or None. Lanes are told
+    to run a list of paths through `bash -c` under zsh, and every rule here was
+    blind inside one until 2026-10-07 (defect 403)."""
+    if not w:
+        return None
+    base = os.path.basename(w[0])
+    if base == "eval":
+        return " ".join(w[1:])
+    if base not in SHELLS:
+        return None
+    i = 1
+    while i < len(w) and w[i][:1] in ("-", "+") and w[i] != "--":
+        if w[i] in ("-o", "+o", "-O", "+O"):
+            i += 2
+            continue
+        if not w[i].startswith("--") and "c" in w[i][1:]:
+            return w[i + 1] if i + 1 < len(w) else None
+        i += 1
+    return None
+
+
 def words(segment):
     try:
         return shlex.split(segment)
@@ -145,7 +213,7 @@ def git_dir(w, here):
     """The directory a `git` command runs in: `here`, moved by each `-C` in
     turn as git moves it; None where the text cannot tell. Defect 287: the
     staged files of a `git -C <lane> commit` are the lane's."""
-    if not w or w[0] != "git":
+    if not w or os.path.basename(w[0]) != "git":
         return here
     i = 1
     while i < len(w) and w[i].startswith("-"):
@@ -173,7 +241,7 @@ def git_args(w, *verbs):
     belongs to `-C`, and reading the whole word list saw `git add .` and refused
     a legitimate command. Measured against that case on 2026-09-07.
     """
-    if not w or w[0] != "git":
+    if not w or os.path.basename(w[0]) != "git":
         return None
     i = 1
     while i < len(w) and w[i].startswith("-"):
@@ -325,7 +393,7 @@ def verdict(command, cwd=None):
     # Twice in one week a commit went past a red `records` because the chain
     # read the exit status of the pipe's last command (journal 061, `f22c8baf`,
     # `efaf5564`). The gate's line is read, then the commit is its own command.
-    if any(is_gate(w) for w in parsed) and any(git_args(w, "commit") is not None for w in parsed):
+    if any(is_gate(w) for w in parsed) and any(git_args(command_words(bare(w)), "commit") is not None for w in parsed):
         return (
             "refused: a gate and a `git commit` on one command line, so the commit "
             "cannot wait for the gate's line to be read. Run the gate, read its "
@@ -348,7 +416,26 @@ def verdict(command, cwd=None):
         if stale is not None:
             return stale
 
-    for w, here, segment in steps:
+    for raw, here, segment in steps:
+        # **A bare dump** is read before the wrappers are left out, `env`
+        # being one of them (its rule is below, with its story).
+        if raw[0] in DUMPERS and len(raw) == 1:
+            return (
+                "refused: a bare `" + raw[0] + "` prints every variable in the "
+                "environment, the live keys included. Name the one you want. "
+                "`.env.example`"
+            )
+        w = command_words(bare(raw))
+        if not w:
+            continue
+
+        script = script_of(w)
+        if script is not None:
+            inner = verdict(script, here or cwd)
+            if inner is not None:
+                return inner
+            continue
+        where = git_dir(w, here)
 
         rest = git_args(w, "add")
         if rest is not None:
@@ -381,16 +468,38 @@ def verdict(command, cwd=None):
         # for exactly what this prevents and its own procedure could not deliver
         # it. The pathspec is the only thing that limits a commit, so this guard
         # asks for the pathspec rather than for care.
+        #
+        # **One route takes no pathspec, and it is checked by its index**
+        # (defect 403, 2026-10-07): a merge, a cherry-pick or a revert that
+        # stopped on a conflict is concluded with the whole index, git refusing
+        # a partial commit while it stands, so a bare commit then is allowed
+        # when the index holds no file the operation did not bring
+        # (`commits.concluded`).
         if rest is not None and "--" not in rest:
-            return (
-                "refused: `git commit` with no `--` takes the WHOLE index, "
-                "including whatever a parallel session has staged in this "
-                "shared checkout. Naming the paths to `git add` does not limit "
-                "the commit; only the pathspec does. Write "
-                "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
-            )
+            sequence = commits.concluded(where, None)
+            if sequence:
+                return sequence
+            if sequence is None:
+                return (
+                    "refused: `git commit` with no `--` takes the WHOLE index, "
+                    "including whatever a parallel session has staged in this "
+                    "shared checkout. Naming the paths to `git add` does not limit "
+                    "the commit; only the pathspec does. Write "
+                    "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
+                )
         if rest is not None:
-            offences = staged.offences(git_dir(w, here))
+            said = commits.pathspec(rest, where)
+            if said is not None:
+                return said
+        for name, _head in commits.OPERATIONS:
+            more = git_args(w, name)
+            if more is not None and "--continue" in more:
+                said = commits.concluded(where, name)
+                if said:
+                    return said
+                rest = more
+        if rest is not None:
+            offences = staged.offences(where)
             if offences:
                 return (
                     "refused: a staged `.hero` file would reach the suites with what a "
@@ -416,7 +525,7 @@ def verdict(command, cwd=None):
         # An ASSIGNMENT, not the bare word: `grep -rn UPDATE_GOLDEN .` is how
         # somebody checks the rule still holds, and refusing that would be a
         # guard that punishes reading.
-        if any(t.startswith("UPDATE_GOLDEN=") for t in w):
+        if any(t.startswith("UPDATE_GOLDEN=") for t in raw):
             return (
                 "refused: UPDATE_GOLDEN does not exist and must not; a red "
                 "golden is read and repaired, never regenerated. " + CONTRACT
@@ -464,12 +573,8 @@ def verdict(command, cwd=None):
         # asking what the guard actually costs, 2026-09-09. A dump with
         # ARGUMENTS is somebody's legitimate `env FOO=1 cmd` prefix or
         # `printenv PATH`, so only the bare form goes.
-        if w[0] in DUMPERS and len(w) == 1:
-            return (
-                "refused: a bare `" + w[0] + "` prints every variable in the "
-                "environment, the live keys included. Name the one you want. "
-                "`.env.example`"
-            )
+        # Performed at the top of this loop, on the words as written, since
+        # `env` is also a wrapper the words above are read through.
         if w[0] in READERS and any(t == ".env" or t.endswith("/.env") for t in w):
             return (
                 "refused: `.env` holds the live keys. `.env.example` is the "

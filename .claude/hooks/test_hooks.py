@@ -396,5 +396,105 @@ class CommitTree(unittest.TestCase):
         self.assertIsNone(said)
 
 
+def conflicted(tree, op, extra=None):
+    """`tree` stopped in a conflicted `op`, `merge` or `cherry-pick`, of a
+    branch that changed `a.txt` and `b.txt`, both resolved and staged; and
+    `extra`, a file the operation never touched, staged beside them."""
+    write(os.path.join(tree, "a.txt"), "a\n")
+    write(os.path.join(tree, "b.txt"), "b\n")
+    git(tree, "add", "--", "a.txt", "b.txt")
+    git(tree, "commit", "-q", "-m", "ab", "--", "a.txt", "b.txt")
+    git(tree, "checkout", "-q", "-b", "other")
+    write(os.path.join(tree, "a.txt"), "a other\n")
+    write(os.path.join(tree, "b.txt"), "b other\n")
+    git(tree, "commit", "-q", "-m", "other", "--", "a.txt", "b.txt")
+    git(tree, "checkout", "-q", "main")
+    write(os.path.join(tree, "a.txt"), "a main\n")
+    git(tree, "commit", "-q", "-m", "main", "--", "a.txt")
+    stopped = git(tree, op, "other", check=False)
+    assert stopped.returncode != 0, stopped.stdout + stopped.stderr
+    staged(tree, "a.txt", "a resolved\n")
+    git(tree, "add", "--", "b.txt")
+    if extra is not None:
+        staged(tree, extra, "not the operation's\n")
+
+
+class Pathspec(unittest.TestCase):
+    """Defect 403: a commit whose `--` limits nothing, and an operation
+    concluded with the whole index, are refused; the routes that limit it are
+    not."""
+
+    def setUp(self):
+        self.top = fresh("hooks-403-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+
+    def refused(self, command):
+        said = guard_bash.verdict(command, self.tree)
+        self.assertIsNotNone(said, command)
+        return said
+
+    def passed(self, command):
+        said = guard_bash.verdict(command, self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_dash_dash_with_no_path_is_refused(self):
+        said = self.refused("git commit -F m --")
+        self.assertIn("names no path", said)
+
+    def test_a_path_list_of_expansions_alone_is_refused(self):
+        said = self.refused('git commit -F m -- "${paths[@]}"')
+        self.assertIn("expansion", said)
+        self.refused("git commit -F m -- $(cat list.txt)")
+
+    def test_a_path_list_with_a_word_in_it_passes(self):
+        self.passed("git commit -F m -- examples/a.hero $more")
+
+    def test_amending_the_message_alone_passes(self):
+        self.passed("git commit --amend --only -m better --")
+
+    def test_a_pathspec_naming_the_whole_tree_is_refused(self):
+        self.assertIn("whole tree", self.refused("git commit -m x -- ."))
+        self.refused("git commit -m x -- :/")
+        self.refused("git commit -m x -- " + self.tree)
+        self.refused("cd selfhost && git commit -m x -- ..")
+        self.passed("git commit -m x -- selfhost/")
+
+    def test_a_merge_concluded_with_a_file_it_did_not_bring_is_refused(self):
+        conflicted(self.tree, "merge", extra="c.txt")
+        said = self.refused("GIT_EDITOR=true git merge --continue")
+        self.assertIn("c.txt", said)
+        self.assertNotIn("a.txt", said)
+        self.refused("git commit --no-edit")
+
+    def test_a_merge_concluded_with_its_own_files_passes(self):
+        conflicted(self.tree, "merge")
+        self.passed("GIT_EDITOR=true git merge --continue")
+        self.passed("git commit --no-edit")
+
+    def test_a_bare_commit_outside_a_merge_is_still_refused(self):
+        self.refused("git commit -m x")
+
+    def test_a_cherry_pick_concluded_with_a_file_it_did_not_bring_is_refused(self):
+        conflicted(self.tree, "cherry-pick", extra="c.txt")
+        said = self.refused("git cherry-pick --continue")
+        self.assertIn("c.txt", said)
+
+    def test_a_commit_inside_a_shell_script_is_read(self):
+        self.refused("bash -c 'git commit -F m --'")
+        self.refused("sh -c \"cd x && git add -A\"")
+
+    def test_a_command_behind_an_assignment_or_a_wrapper_is_read(self):
+        self.refused("env X=1 git add -A")
+        self.refused("caffeinate -i git add .")
+        self.refused("/usr/bin/time -p git commit -m x")
+        self.refused("timeout 30 git stash")
+
+    def test_the_rules_read_on_the_words_as_written_still_fire(self):
+        self.refused("UPDATE_GOLDEN=1 ./heroes run tests/harness/main.hero -- ./heroes check")
+        self.refused("env")
+        self.passed("env FOO=1 ls")
+        self.passed("git -C . add CLAUDE.md")
+
+
 if __name__ == "__main__":
     unittest.main()
