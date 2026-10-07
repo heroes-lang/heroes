@@ -1,0 +1,47 @@
+# Defect 421 (lane b14-harness-b, 2026-10-07): a generic function of another
+# module used as a value, `helper.ident`, is the instance its position's type
+# names, as one of the same module is since defect 402's repair (spec § 9: a
+# type parameter takes its type from the arguments, else from the type the
+# context asks for). On the compiler before that repair every line here naming
+# `helper.ident` or `helper.first` as a value was refused `type_mismatch`,
+# *found `(function(a type parameter) -> a type parameter)`*. The shapes: an
+# annotated binding at two types, a parameter, a declared result, a record's
+# field, an annotated array beside this file's own generic of the same name at
+# the same type, two letters bound to two types, the value inside a generic
+# function at two types, and an instance shared with a direct call and with
+# the module's own use of it. No golden form holds two modules, so
+# `suite_surface`'s rows are this shape's golden.
+use helper
+
+record Holder
+    f: (function(i64) -> i64)
+
+function ident<A>(x: A) -> A
+    return x
+
+function apply(f: (function(i64) -> i64), v: i64) -> i64
+    return f(v)
+
+function shout() -> (function(str) -> str)
+    return helper.ident
+
+function outer<B>(x: B) -> B
+    f: (function(B) -> B) = helper.ident
+    return f(x)
+
+function main()
+    f: (function(str) -> str) = helper.ident
+    print(f("q1"))
+    g: (function(i64) -> i64) = helper.ident
+    print(g(31))
+    print(apply(f: helper.ident, v: 2))
+    print(shout()("three"))
+    k = Holder(f: helper.ident)
+    print(k.f(4))
+    fs: [(function(i64) -> i64)] = [helper.ident, ident]
+    print(fs[0](5) + fs[1](5))
+    pair: (function(x: i64, y: str) -> i64) = helper.first
+    print(pair(x: 6, y: "no"))
+    print(outer(7))
+    print(outer("eight"))
+    print(helper.ident(9) + helper.inside(10))

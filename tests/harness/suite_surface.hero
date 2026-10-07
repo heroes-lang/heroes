@@ -472,6 +472,10 @@ function verb_probes() -> [probe.Probe]
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
         row(name: "a function with an `@` parameter named as a value across a module is refused as written, and its qualified call is quiet (defect 398)", argv: "check tests/golden/surface-fixtures/value398/main.hero", code: 1).err_has("error[mutable_parameter_as_value]").err_has("`helper.bump` changes its argument `n` through `@`").err_has("main.hero:8:9").err_lines(6).err_lacks("internal error")
+        row(name: "a generic function of another module used as a value is the instance its position's type names, as one of the same module is (defect 421, beside defect 402)", argv: "run tests/golden/surface-fixtures/value421/main.hero", code: 0).out_is("q1\n31\n2\nthree\n4\n10\n6\n7\neight\n19\n").err_empty()
+        row(name: "and under the sanitizers, the instance two modules reach being one", argv: "run tests/golden/surface-fixtures/value421/main.hero --sanitize", code: 0).out_is("q1\n31\n2\nthree\n4\n10\n6\n7\neight\n19\n").err_empty()
+        row(name: "and through the module's other name", argv: "run tests/golden/surface-fixtures/value421/alias.hero", code: 0).out_is("11\n").err_empty()
+        row(name: "and where nothing asks its type it is refused where it stands, where the build stopped at exit 2", argv: "check tests/golden/surface-fixtures/value421/unbound.hero", code: 1).err_has("error[cannot_infer]").err_has("nothing here says what `A` of `helper.ident` is").err_has("unbound.hero:9:9").err_lacks("internal error")
         row(name: "both spellings of the failure constructor compile, and the label rule still binds a user function", argv: "run tests/golden/surface-fixtures/faillabels/main.hero", code: 0).out_is("1\n2\nthe rule still binds a user function\n").err_empty()
         row(name: "a foreign word that is CALLED keeps its message and loses its certain fix (defect 015)", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero", code: 1).err_has("error[reserved_word]").err_has("to_i64").err_has("fix (guess)").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "and apply leaves that program untouched, because a fix that broke the program was no fix", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero --apply", code: 0).out_has("n @ int(3)").out_has("n @ switch(3)").out_has("n @ const(3)").out_lacks("i64(3)").out_lacks("match(3)").out_lacks("constant(3)")
@@ -1001,7 +1005,11 @@ test "the tables are what this module is, so they are counted"
     # 185 -> 186 the same day, defect 398 (lane b13-unit): a function with an
     # `@` parameter named as a value across a module, `value398/`, the one
     # shape of that defect no `check/` case can hold.
-    assert verb_probes().len() == 186
+    # 186 -> 190 on 2026-10-07, defect 421 (lane b14-harness-b): a generic
+    # function of another module used as a value, `value421/`, run at the
+    # default level and under the sanitizers, through the module's other name,
+    # and refused `cannot_infer` where nothing asks its type.
+    assert verb_probes().len() == 190
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
