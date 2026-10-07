@@ -74,17 +74,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "abortmapkeynan.c"
+#line 85 "abortmapkeynan.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -106,7 +103,7 @@ HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks);
 
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
 double h_abortmapkeynan_nan(void) {
-#line 110 "abortmapkeynan.c"
+#line 107 "abortmapkeynan.c"
     double t1;
     double t2;
     double t3;
@@ -120,12 +117,12 @@ bb0:
     t3 = t1 / t2;
 #line 25 "tests/golden/run/abort-map-key-nan.hero"
     return t3;
-#line 124 "abortmapkeynan.c"
+#line 121 "abortmapkeynan.c"
 }
 
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
 void h_abortmapkeynan_main(void) {
-#line 129 "abortmapkeynan.c"
+#line 126 "abortmapkeynan.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     double t1;
@@ -153,7 +150,7 @@ bb0:
     t8 = h0_own0;
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     h0_own0 = t3;
-#line 157 "abortmapkeynan.c"
+#line 154 "abortmapkeynan.c"
     hero_array_decref(t8);
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     t4 = h_abortmapkeynan_count_1ad16c(t3);
@@ -171,7 +168,7 @@ bb0:
     t9 = h1_own1;
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     h1_own1 = t6;
-#line 175 "abortmapkeynan.c"
+#line 172 "abortmapkeynan.c"
     hero_array_decref(t9);
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     t7 = h_abortmapkeynan_count_1ad16c(t6);
@@ -179,10 +176,8 @@ bb0:
     hero_print_int(t7);
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_end();
-#line 183 "abortmapkeynan.c"
+#line 180 "abortmapkeynan.c"
     hero_array_decref(h0_own0);
-#line 40 "tests/golden/run/abort-map-key-nan.hero"
-#line 186 "abortmapkeynan.c"
     hero_array_decref(h1_own1);
     return;
 }
@@ -191,7 +186,7 @@ bb0:
 /* count<f64> */
 #line 27 "tests/golden/run/abort-map-key-nan.hero"
 HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks) {
-#line 195 "abortmapkeynan.c"
+#line 190 "abortmapkeynan.c"
     HeroMapHeader * h1_m = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -225,25 +220,25 @@ bb0:
     t18 = h5_own5;
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     h5_own5 = t1;
-#line 229 "abortmapkeynan.c"
+#line 224 "abortmapkeynan.c"
     hero_map_decref(t18);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     t19 = h1_m;
-#line 233 "abortmapkeynan.c"
+#line 228 "abortmapkeynan.c"
     hero_map_incref(t1);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     h1_m = t1;
-#line 237 "abortmapkeynan.c"
+#line 232 "abortmapkeynan.c"
     hero_map_decref(t19);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t2 = h0_ks;
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t20 = h2_xs0;
-#line 243 "abortmapkeynan.c"
+#line 238 "abortmapkeynan.c"
     hero_array_incref(t2);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     h2_xs0 = t2;
-#line 247 "abortmapkeynan.c"
+#line 242 "abortmapkeynan.c"
     hero_array_decref(t20);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t3 = INT64_C(0);
@@ -273,7 +268,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     h4_k = t10;
-#line 31 "tests/golden/run/abort-map-key-nan.hero"
     t11 = h4_k;
 #line 31 "tests/golden/run/abort-map-key-nan.hero"
     t12 = INT64_C(1);
@@ -299,13 +293,9 @@ bb4:
     t16 = h1_m;
 #line 33 "tests/golden/run/abort-map-key-nan.hero"
     t17 = hero_map_len(t16);
-#line 303 "abortmapkeynan.c"
+#line 297 "abortmapkeynan.c"
     hero_map_decref(h1_m);
-#line 33 "tests/golden/run/abort-map-key-nan.hero"
-#line 306 "abortmapkeynan.c"
     hero_array_decref(h2_xs0);
-#line 33 "tests/golden/run/abort-map-key-nan.hero"
-#line 309 "abortmapkeynan.c"
     hero_map_decref(h5_own5);
     return t17;
 }

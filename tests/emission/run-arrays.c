@@ -76,17 +76,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "arrays.c"
+#line 87 "arrays.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_arrays_Point_eq(const h_arrays_Point *a, const h_arrays_Point *b);
@@ -122,7 +119,7 @@ void h_arrays_main(void);
 
 #line 25 "tests/golden/run/arrays.hero"
 int64_t h_arrays_total(HeroArrayHeader * h0_xs) {
-#line 126 "arrays.c"
+#line 123 "arrays.c"
     int64_t h1_sum;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -155,11 +152,11 @@ bb0:
     t2 = h0_xs;
 #line 28 "tests/golden/run/arrays.hero"
     t18 = h2_xs0;
-#line 159 "arrays.c"
+#line 156 "arrays.c"
     hero_array_incref(t2);
 #line 28 "tests/golden/run/arrays.hero"
     h2_xs0 = t2;
-#line 163 "arrays.c"
+#line 160 "arrays.c"
     hero_array_decref(t18);
 #line 28 "tests/golden/run/arrays.hero"
     t3 = INT64_C(0);
@@ -189,7 +186,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 28 "tests/golden/run/arrays.hero"
     h4_n = t10;
-#line 29 "tests/golden/run/arrays.hero"
     t11 = h1_sum;
 #line 29 "tests/golden/run/arrays.hero"
     t12 = h4_n;
@@ -215,14 +211,14 @@ bb3:
 bb4:
 #line 31 "tests/golden/run/arrays.hero"
     t17 = h1_sum;
-#line 219 "arrays.c"
+#line 215 "arrays.c"
     hero_array_decref(h2_xs0);
     return t17;
 }
 
 #line 33 "tests/golden/run/arrays.hero"
 void h_arrays_main(void) {
-#line 226 "arrays.c"
+#line 222 "arrays.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_words = {0};
     HeroArrayHeader * h2_ps = {0};
@@ -370,15 +366,15 @@ bb0:
     t84 = h5_own5;
 #line 34 "tests/golden/run/arrays.hero"
     h5_own5 = t5;
-#line 374 "arrays.c"
+#line 370 "arrays.c"
     hero_array_decref(t84);
 #line 34 "tests/golden/run/arrays.hero"
     t85 = h0_xs;
-#line 378 "arrays.c"
+#line 374 "arrays.c"
     hero_array_incref(t5);
 #line 34 "tests/golden/run/arrays.hero"
     h0_xs = t5;
-#line 382 "arrays.c"
+#line 378 "arrays.c"
     hero_array_decref(t85);
 #line 35 "tests/golden/run/arrays.hero"
     t6 = h0_xs;
@@ -398,7 +394,7 @@ bb0:
     t86 = h6_own6;
 #line 38 "tests/golden/run/arrays.hero"
     h6_own6 = t10;
-#line 402 "arrays.c"
+#line 398 "arrays.c"
     hero_str_decref(t86);
 #line 38 "tests/golden/run/arrays.hero"
     t11 = HERO_STR_LIT(hero_str_63);
@@ -410,7 +406,7 @@ bb0:
     t87 = h7_own7;
 #line 38 "tests/golden/run/arrays.hero"
     h7_own7 = t13;
-#line 414 "arrays.c"
+#line 410 "arrays.c"
     hero_str_decref(t87);
 #line 38 "tests/golden/run/arrays.hero"
     t14 = hero_array_new(&hero_desc_str, 2);
@@ -422,15 +418,15 @@ bb0:
     t88 = h8_own8;
 #line 38 "tests/golden/run/arrays.hero"
     h8_own8 = t14;
-#line 426 "arrays.c"
+#line 422 "arrays.c"
     hero_array_decref(t88);
 #line 38 "tests/golden/run/arrays.hero"
     t89 = h1_words;
-#line 430 "arrays.c"
+#line 426 "arrays.c"
     hero_array_incref(t14);
 #line 38 "tests/golden/run/arrays.hero"
     h1_words = t14;
-#line 434 "arrays.c"
+#line 430 "arrays.c"
     hero_array_decref(t89);
 #line 39 "tests/golden/run/arrays.hero"
     t15 = h1_words;
@@ -450,7 +446,6 @@ bb0:
     hero_print_str(t20);
 #line 39 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 40 "tests/golden/run/arrays.hero"
     t21 = h1_words;
 #line 40 "tests/golden/run/arrays.hero"
     t22 = ((void)(t21 == NULL ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
@@ -480,15 +475,15 @@ bb0:
     t90 = h9_own9;
 #line 43 "tests/golden/run/arrays.hero"
     h9_own9 = t29;
-#line 484 "arrays.c"
+#line 479 "arrays.c"
     hero_array_decref(t90);
 #line 43 "tests/golden/run/arrays.hero"
     t91 = h2_ps;
-#line 488 "arrays.c"
+#line 483 "arrays.c"
     hero_array_incref(t29);
 #line 43 "tests/golden/run/arrays.hero"
     h2_ps = t29;
-#line 492 "arrays.c"
+#line 487 "arrays.c"
     hero_array_decref(t91);
 #line 44 "tests/golden/run/arrays.hero"
     t30 = h2_ps;
@@ -502,7 +497,6 @@ bb0:
     hero_print_int(t33);
 #line 44 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 45 "tests/golden/run/arrays.hero"
     t34 = h2_ps;
 #line 45 "tests/golden/run/arrays.hero"
     t35 = INT64_C(1);
@@ -526,7 +520,7 @@ bb0:
     t92 = h10_own10;
 #line 45 "tests/golden/run/arrays.hero"
     h10_own10 = t41;
-#line 530 "arrays.c"
+#line 524 "arrays.c"
     hero_array_decref(t92);
 #line 45 "tests/golden/run/arrays.hero"
     t42 = hero_array_eq(t34, t41);
@@ -534,7 +528,6 @@ bb0:
     hero_print_bool(t42);
 #line 45 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 46 "tests/golden/run/arrays.hero"
     t43 = h2_ps;
 #line 46 "tests/golden/run/arrays.hero"
     t44 = INT64_C(1);
@@ -550,7 +543,7 @@ bb0:
     t93 = h11_own11;
 #line 46 "tests/golden/run/arrays.hero"
     h11_own11 = t47;
-#line 554 "arrays.c"
+#line 547 "arrays.c"
     hero_array_decref(t93);
 #line 46 "tests/golden/run/arrays.hero"
     t48 = hero_array_eq(t43, t47);
@@ -572,7 +565,7 @@ bb0:
     t94 = h12_own12;
 #line 49 "tests/golden/run/arrays.hero"
     h12_own12 = t51;
-#line 576 "arrays.c"
+#line 569 "arrays.c"
     hero_array_decref(t94);
 #line 49 "tests/golden/run/arrays.hero"
     t52 = INT64_C(3);
@@ -588,7 +581,7 @@ bb0:
     t95 = h13_own13;
 #line 49 "tests/golden/run/arrays.hero"
     h13_own13 = t54;
-#line 592 "arrays.c"
+#line 585 "arrays.c"
     hero_array_decref(t95);
 #line 49 "tests/golden/run/arrays.hero"
     t55 = hero_array_new(&hero_desc_array, 2);
@@ -600,15 +593,15 @@ bb0:
     t96 = h14_own14;
 #line 49 "tests/golden/run/arrays.hero"
     h14_own14 = t55;
-#line 604 "arrays.c"
+#line 597 "arrays.c"
     hero_array_decref(t96);
 #line 49 "tests/golden/run/arrays.hero"
     t97 = h3_grid;
-#line 608 "arrays.c"
+#line 601 "arrays.c"
     hero_array_incref(t55);
 #line 49 "tests/golden/run/arrays.hero"
     h3_grid = t55;
-#line 612 "arrays.c"
+#line 605 "arrays.c"
     hero_array_decref(t97);
 #line 50 "tests/golden/run/arrays.hero"
     t56 = h3_grid;
@@ -624,7 +617,6 @@ bb0:
     hero_print_int(t60);
 #line 50 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 51 "tests/golden/run/arrays.hero"
     t61 = h3_grid;
 #line 51 "tests/golden/run/arrays.hero"
     t62 = INT64_C(1);
@@ -640,7 +632,7 @@ bb0:
     t98 = h15_own15;
 #line 51 "tests/golden/run/arrays.hero"
     h15_own15 = t64;
-#line 644 "arrays.c"
+#line 636 "arrays.c"
     hero_array_decref(t98);
 #line 51 "tests/golden/run/arrays.hero"
     t65 = INT64_C(3);
@@ -656,7 +648,7 @@ bb0:
     t99 = h16_own16;
 #line 51 "tests/golden/run/arrays.hero"
     h16_own16 = t67;
-#line 660 "arrays.c"
+#line 652 "arrays.c"
     hero_array_decref(t99);
 #line 51 "tests/golden/run/arrays.hero"
     t68 = hero_array_new(&hero_desc_array, 2);
@@ -668,7 +660,7 @@ bb0:
     t100 = h17_own17;
 #line 51 "tests/golden/run/arrays.hero"
     h17_own17 = t68;
-#line 672 "arrays.c"
+#line 664 "arrays.c"
     hero_array_decref(t100);
 #line 51 "tests/golden/run/arrays.hero"
     t69 = hero_array_eq(t61, t68);
@@ -686,15 +678,15 @@ bb0:
     t101 = h18_own18;
 #line 54 "tests/golden/run/arrays.hero"
     h18_own18 = t72;
-#line 690 "arrays.c"
+#line 682 "arrays.c"
     hero_array_decref(t101);
 #line 54 "tests/golden/run/arrays.hero"
     t102 = h4_more;
-#line 694 "arrays.c"
+#line 686 "arrays.c"
     hero_array_incref(t72);
 #line 54 "tests/golden/run/arrays.hero"
     h4_more = t72;
-#line 698 "arrays.c"
+#line 690 "arrays.c"
     hero_array_decref(t102);
 #line 55 "tests/golden/run/arrays.hero"
     t73 = h4_more;
@@ -710,7 +702,6 @@ bb0:
     hero_print_int(t76);
 #line 55 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 56 "tests/golden/run/arrays.hero"
     t77 = h0_xs;
 #line 56 "tests/golden/run/arrays.hero"
     t78 = INT64_C(1);
@@ -734,7 +725,7 @@ bb0:
     t103 = h19_own19;
 #line 56 "tests/golden/run/arrays.hero"
     h19_own19 = t82;
-#line 738 "arrays.c"
+#line 729 "arrays.c"
     hero_array_decref(t103);
 #line 56 "tests/golden/run/arrays.hero"
     t83 = hero_array_eq(t77, t82);
@@ -742,64 +733,26 @@ bb0:
     hero_print_bool(t83);
 #line 56 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 746 "arrays.c"
+#line 737 "arrays.c"
     hero_array_decref(h0_xs);
-#line 56 "tests/golden/run/arrays.hero"
-#line 749 "arrays.c"
     hero_array_decref(h1_words);
-#line 56 "tests/golden/run/arrays.hero"
-#line 752 "arrays.c"
     hero_array_decref(h2_ps);
-#line 56 "tests/golden/run/arrays.hero"
-#line 755 "arrays.c"
     hero_array_decref(h3_grid);
-#line 56 "tests/golden/run/arrays.hero"
-#line 758 "arrays.c"
     hero_array_decref(h4_more);
-#line 56 "tests/golden/run/arrays.hero"
-#line 761 "arrays.c"
     hero_array_decref(h5_own5);
-#line 56 "tests/golden/run/arrays.hero"
-#line 764 "arrays.c"
     hero_str_decref(h6_own6);
-#line 56 "tests/golden/run/arrays.hero"
-#line 767 "arrays.c"
     hero_str_decref(h7_own7);
-#line 56 "tests/golden/run/arrays.hero"
-#line 770 "arrays.c"
     hero_array_decref(h8_own8);
-#line 56 "tests/golden/run/arrays.hero"
-#line 773 "arrays.c"
     hero_array_decref(h9_own9);
-#line 56 "tests/golden/run/arrays.hero"
-#line 776 "arrays.c"
     hero_array_decref(h10_own10);
-#line 56 "tests/golden/run/arrays.hero"
-#line 779 "arrays.c"
     hero_array_decref(h11_own11);
-#line 56 "tests/golden/run/arrays.hero"
-#line 782 "arrays.c"
     hero_array_decref(h12_own12);
-#line 56 "tests/golden/run/arrays.hero"
-#line 785 "arrays.c"
     hero_array_decref(h13_own13);
-#line 56 "tests/golden/run/arrays.hero"
-#line 788 "arrays.c"
     hero_array_decref(h14_own14);
-#line 56 "tests/golden/run/arrays.hero"
-#line 791 "arrays.c"
     hero_array_decref(h15_own15);
-#line 56 "tests/golden/run/arrays.hero"
-#line 794 "arrays.c"
     hero_array_decref(h16_own16);
-#line 56 "tests/golden/run/arrays.hero"
-#line 797 "arrays.c"
     hero_array_decref(h17_own17);
-#line 56 "tests/golden/run/arrays.hero"
-#line 800 "arrays.c"
     hero_array_decref(h18_own18);
-#line 56 "tests/golden/run/arrays.hero"
-#line 803 "arrays.c"
     hero_array_decref(h19_own19);
     return;
 }

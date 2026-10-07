@@ -141,17 +141,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 152 "fixedbugs393alongliteralisformattedinonepass.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -172,7 +169,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 20 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
 void h_fixedbugs393alongliteralisformattedinonepass_main(void) {
-#line 176 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 173 "fixedbugs393alongliteralisformattedinonepass.c"
     HeroArrayHeader * h0_xs = {0};
     HeroMapHeader * h1_m = {0};
     int64_t h2_chained;
@@ -788,515 +785,260 @@ void h_fixedbugs393alongliteralisformattedinonepass_main(void) {
 bb0:
 #line 22 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t1 = INT64_C(0);
-#line 23 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t2 = INT64_C(37);
-#line 24 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t3 = INT64_C(74);
-#line 25 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t4 = INT64_C(10);
-#line 26 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t5 = INT64_C(47);
-#line 27 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t6 = INT64_C(84);
-#line 28 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t7 = INT64_C(20);
-#line 29 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t8 = INT64_C(57);
-#line 30 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t9 = INT64_C(94);
-#line 31 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t10 = INT64_C(30);
-#line 32 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t11 = INT64_C(67);
-#line 33 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t12 = INT64_C(3);
-#line 34 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t13 = INT64_C(40);
-#line 35 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t14 = INT64_C(77);
-#line 36 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t15 = INT64_C(13);
-#line 37 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t16 = INT64_C(50);
-#line 38 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t17 = INT64_C(87);
-#line 39 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t18 = INT64_C(23);
-#line 40 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t19 = INT64_C(60);
-#line 41 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t20 = INT64_C(97);
-#line 42 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t21 = INT64_C(33);
-#line 43 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t22 = INT64_C(70);
-#line 44 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t23 = INT64_C(6);
-#line 45 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t24 = INT64_C(43);
-#line 46 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t25 = INT64_C(80);
-#line 47 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t26 = INT64_C(16);
-#line 48 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t27 = INT64_C(53);
-#line 49 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t28 = INT64_C(90);
-#line 50 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t29 = INT64_C(26);
-#line 51 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t30 = INT64_C(63);
-#line 52 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t31 = INT64_C(100);
-#line 53 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t32 = INT64_C(36);
-#line 54 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t33 = INT64_C(73);
-#line 55 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t34 = INT64_C(9);
-#line 56 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t35 = INT64_C(46);
-#line 57 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t36 = INT64_C(83);
-#line 58 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t37 = INT64_C(19);
-#line 59 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t38 = INT64_C(56);
-#line 60 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t39 = INT64_C(93);
-#line 61 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t40 = INT64_C(29);
-#line 62 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t41 = INT64_C(66);
-#line 63 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t42 = INT64_C(2);
-#line 64 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t43 = INT64_C(39);
-#line 65 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t44 = INT64_C(76);
-#line 66 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t45 = INT64_C(12);
-#line 67 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t46 = INT64_C(49);
-#line 68 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t47 = INT64_C(86);
-#line 69 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t48 = INT64_C(22);
-#line 70 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t49 = INT64_C(59);
-#line 71 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t50 = INT64_C(96);
-#line 72 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t51 = INT64_C(32);
-#line 73 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t52 = INT64_C(69);
-#line 74 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t53 = INT64_C(5);
-#line 75 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t54 = INT64_C(42);
-#line 76 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t55 = INT64_C(79);
-#line 77 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t56 = INT64_C(15);
-#line 78 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t57 = INT64_C(52);
-#line 79 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t58 = INT64_C(89);
-#line 80 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t59 = INT64_C(25);
-#line 81 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t60 = INT64_C(62);
-#line 82 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t61 = INT64_C(99);
-#line 83 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t62 = INT64_C(35);
-#line 84 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t63 = INT64_C(72);
-#line 85 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t64 = INT64_C(8);
-#line 86 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t65 = INT64_C(45);
-#line 87 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t66 = INT64_C(82);
-#line 88 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t67 = INT64_C(18);
-#line 89 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t68 = INT64_C(55);
-#line 90 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t69 = INT64_C(92);
-#line 91 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t70 = INT64_C(28);
-#line 92 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t71 = INT64_C(65);
-#line 93 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t72 = INT64_C(1);
-#line 94 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t73 = INT64_C(38);
-#line 95 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t74 = INT64_C(75);
-#line 96 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t75 = INT64_C(11);
-#line 97 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t76 = INT64_C(48);
-#line 98 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t77 = INT64_C(85);
-#line 99 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t78 = INT64_C(21);
-#line 100 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t79 = INT64_C(58);
-#line 101 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t80 = INT64_C(95);
-#line 102 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t81 = INT64_C(31);
-#line 103 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t82 = INT64_C(68);
-#line 104 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t83 = INT64_C(4);
-#line 105 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t84 = INT64_C(41);
-#line 106 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t85 = INT64_C(78);
-#line 107 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t86 = INT64_C(14);
-#line 108 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t87 = INT64_C(51);
-#line 109 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t88 = INT64_C(88);
-#line 110 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t89 = INT64_C(24);
-#line 111 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t90 = INT64_C(61);
-#line 112 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t91 = INT64_C(98);
-#line 113 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t92 = INT64_C(34);
-#line 114 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t93 = INT64_C(71);
-#line 115 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t94 = INT64_C(7);
-#line 116 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t95 = INT64_C(44);
-#line 117 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t96 = INT64_C(81);
-#line 118 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t97 = INT64_C(17);
-#line 119 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t98 = INT64_C(54);
-#line 120 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t99 = INT64_C(91);
-#line 121 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t100 = INT64_C(27);
-#line 122 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t101 = INT64_C(64);
-#line 123 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t102 = INT64_C(0);
-#line 124 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t103 = INT64_C(37);
-#line 125 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t104 = INT64_C(74);
-#line 126 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t105 = INT64_C(10);
-#line 127 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t106 = INT64_C(47);
-#line 128 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t107 = INT64_C(84);
-#line 129 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t108 = INT64_C(20);
-#line 130 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t109 = INT64_C(57);
-#line 131 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t110 = INT64_C(94);
-#line 132 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t111 = INT64_C(30);
-#line 133 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t112 = INT64_C(67);
-#line 134 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t113 = INT64_C(3);
-#line 135 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t114 = INT64_C(40);
-#line 136 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t115 = INT64_C(77);
-#line 137 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t116 = INT64_C(13);
-#line 138 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t117 = INT64_C(50);
-#line 139 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t118 = INT64_C(87);
-#line 140 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t119 = INT64_C(23);
-#line 141 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t120 = INT64_C(60);
-#line 142 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t121 = INT64_C(97);
-#line 143 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t122 = INT64_C(33);
-#line 144 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t123 = INT64_C(70);
-#line 145 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t124 = INT64_C(6);
-#line 146 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t125 = INT64_C(43);
-#line 147 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t126 = INT64_C(80);
-#line 148 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t127 = INT64_C(16);
-#line 149 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t128 = INT64_C(53);
-#line 150 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t129 = INT64_C(90);
-#line 151 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t130 = INT64_C(26);
-#line 152 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t131 = INT64_C(63);
-#line 153 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t132 = INT64_C(100);
-#line 154 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t133 = INT64_C(36);
-#line 155 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t134 = INT64_C(73);
-#line 156 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t135 = INT64_C(9);
-#line 157 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t136 = INT64_C(46);
-#line 158 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t137 = INT64_C(83);
-#line 159 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t138 = INT64_C(19);
-#line 160 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t139 = INT64_C(56);
-#line 161 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t140 = INT64_C(93);
-#line 162 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t141 = INT64_C(29);
-#line 163 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t142 = INT64_C(66);
-#line 164 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t143 = INT64_C(2);
-#line 165 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t144 = INT64_C(39);
-#line 166 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t145 = INT64_C(76);
-#line 167 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t146 = INT64_C(12);
-#line 168 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t147 = INT64_C(49);
-#line 169 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t148 = INT64_C(86);
-#line 170 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t149 = INT64_C(22);
-#line 171 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t150 = INT64_C(59);
-#line 172 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t151 = INT64_C(96);
-#line 173 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t152 = INT64_C(32);
-#line 174 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t153 = INT64_C(69);
-#line 175 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t154 = INT64_C(5);
-#line 176 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t155 = INT64_C(42);
-#line 177 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t156 = INT64_C(79);
-#line 178 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t157 = INT64_C(15);
-#line 179 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t158 = INT64_C(52);
-#line 180 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t159 = INT64_C(89);
-#line 181 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t160 = INT64_C(25);
-#line 182 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t161 = INT64_C(62);
-#line 183 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t162 = INT64_C(99);
-#line 184 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t163 = INT64_C(35);
-#line 185 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t164 = INT64_C(72);
-#line 186 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t165 = INT64_C(8);
-#line 187 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t166 = INT64_C(45);
-#line 188 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t167 = INT64_C(82);
-#line 189 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t168 = INT64_C(18);
-#line 190 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t169 = INT64_C(55);
-#line 191 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t170 = INT64_C(92);
-#line 192 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t171 = INT64_C(28);
-#line 193 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t172 = INT64_C(65);
-#line 194 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t173 = INT64_C(1);
-#line 195 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t174 = INT64_C(38);
-#line 196 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t175 = INT64_C(75);
-#line 197 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t176 = INT64_C(11);
-#line 198 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t177 = INT64_C(48);
-#line 199 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t178 = INT64_C(85);
-#line 200 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t179 = INT64_C(21);
-#line 201 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t180 = INT64_C(58);
-#line 202 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t181 = INT64_C(95);
-#line 203 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t182 = INT64_C(31);
-#line 204 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t183 = INT64_C(68);
-#line 205 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t184 = INT64_C(4);
-#line 206 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t185 = INT64_C(41);
-#line 207 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t186 = INT64_C(78);
-#line 208 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t187 = INT64_C(14);
-#line 209 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t188 = INT64_C(51);
-#line 210 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t189 = INT64_C(88);
-#line 211 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t190 = INT64_C(24);
-#line 212 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t191 = INT64_C(61);
-#line 213 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t192 = INT64_C(98);
-#line 214 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t193 = INT64_C(34);
-#line 215 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t194 = INT64_C(71);
-#line 216 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t195 = INT64_C(7);
-#line 217 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t196 = INT64_C(44);
-#line 218 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t197 = INT64_C(81);
-#line 219 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t198 = INT64_C(17);
-#line 220 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t199 = INT64_C(54);
-#line 221 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t200 = INT64_C(91);
-#line 222 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t201 = INT64_C(27);
-#line 223 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t202 = INT64_C(64);
-#line 224 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t203 = INT64_C(0);
-#line 225 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t204 = INT64_C(37);
-#line 226 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t205 = INT64_C(74);
-#line 227 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t206 = INT64_C(10);
-#line 228 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t207 = INT64_C(47);
-#line 229 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t208 = INT64_C(84);
-#line 230 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t209 = INT64_C(20);
-#line 231 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t210 = INT64_C(57);
-#line 232 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t211 = INT64_C(94);
-#line 233 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t212 = INT64_C(30);
-#line 234 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t213 = INT64_C(67);
-#line 235 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t214 = INT64_C(3);
-#line 236 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t215 = INT64_C(40);
-#line 237 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t216 = INT64_C(77);
-#line 238 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t217 = INT64_C(13);
-#line 239 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t218 = INT64_C(50);
-#line 240 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t219 = INT64_C(87);
-#line 241 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t220 = INT64_C(23);
-#line 242 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t221 = INT64_C(60);
-#line 243 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t222 = INT64_C(97);
-#line 244 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t223 = INT64_C(33);
-#line 245 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t224 = INT64_C(70);
-#line 246 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t225 = INT64_C(6);
-#line 247 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t226 = INT64_C(43);
-#line 248 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t227 = INT64_C(80);
-#line 249 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t228 = INT64_C(16);
-#line 250 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t229 = INT64_C(53);
-#line 251 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t230 = INT64_C(90);
-#line 252 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t231 = INT64_C(26);
-#line 253 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t232 = INT64_C(63);
-#line 254 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t233 = INT64_C(100);
-#line 255 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t234 = INT64_C(36);
-#line 256 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t235 = INT64_C(73);
-#line 257 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t236 = INT64_C(9);
-#line 258 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t237 = INT64_C(46);
-#line 259 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t238 = INT64_C(83);
-#line 260 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t239 = INT64_C(19);
-#line 261 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t240 = INT64_C(56);
-#line 262 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t241 = INT64_C(93);
-#line 263 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t242 = INT64_C(29);
-#line 264 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t243 = INT64_C(66);
-#line 265 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t244 = INT64_C(2);
-#line 266 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t245 = INT64_C(39);
-#line 267 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t246 = INT64_C(76);
-#line 268 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t247 = INT64_C(12);
-#line 269 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t248 = INT64_C(49);
-#line 270 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t249 = INT64_C(86);
-#line 271 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t250 = INT64_C(22);
-#line 272 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t251 = INT64_C(59);
-#line 273 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t252 = INT64_C(96);
-#line 274 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t253 = INT64_C(32);
-#line 275 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t254 = INT64_C(69);
-#line 276 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t255 = INT64_C(5);
-#line 277 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t256 = INT64_C(42);
 #line 21 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t257 = hero_array_new(&hero_desc_int, 256);
@@ -1816,269 +1558,206 @@ bb0:
     t582 = h13_own13;
 #line 21 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h13_own13 = t257;
-#line 1820 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 1562 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t582);
 #line 21 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t583 = h0_xs;
-#line 1824 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 1566 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t257);
 #line 21 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h0_xs = t257;
-#line 1828 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 1570 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t583);
 #line 280 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t258 = HERO_STR_LIT(hero_str_36f1);
 #line 280 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t259 = INT64_C(0);
-#line 281 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t260 = HERO_STR_LIT(hero_str_36f2);
 #line 281 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t261 = INT64_C(13);
-#line 282 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t262 = HERO_STR_LIT(hero_str_36f3);
 #line 282 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t263 = INT64_C(26);
-#line 283 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t264 = HERO_STR_LIT(hero_str_36f4);
 #line 283 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t265 = INT64_C(39);
-#line 284 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t266 = HERO_STR_LIT(hero_str_36f5);
 #line 284 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t267 = INT64_C(52);
-#line 285 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t268 = HERO_STR_LIT(hero_str_36f6);
 #line 285 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t269 = INT64_C(4);
-#line 286 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t270 = HERO_STR_LIT(hero_str_36f7);
 #line 286 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t271 = INT64_C(17);
-#line 287 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t272 = HERO_STR_LIT(hero_str_36f8);
 #line 287 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t273 = INT64_C(30);
-#line 288 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t274 = HERO_STR_LIT(hero_str_36f9);
 #line 288 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t275 = INT64_C(43);
-#line 289 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t276 = HERO_STR_LIT(hero_str_36fa);
 #line 289 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t277 = INT64_C(56);
-#line 290 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t278 = HERO_STR_LIT(hero_str_1c1e06);
 #line 290 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t279 = INT64_C(8);
-#line 291 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t280 = HERO_STR_LIT(hero_str_1c1e07);
 #line 291 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t281 = INT64_C(21);
-#line 292 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t282 = HERO_STR_LIT(hero_str_1c1e08);
 #line 292 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t283 = INT64_C(34);
-#line 293 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t284 = HERO_STR_LIT(hero_str_1c1e09);
 #line 293 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t285 = INT64_C(47);
-#line 294 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t286 = HERO_STR_LIT(hero_str_1c1e0a);
 #line 294 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t287 = INT64_C(60);
-#line 295 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t288 = HERO_STR_LIT(hero_str_1c1e0b);
 #line 295 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t289 = INT64_C(12);
-#line 296 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t290 = HERO_STR_LIT(hero_str_1c1e0c);
 #line 296 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t291 = INT64_C(25);
-#line 297 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t292 = HERO_STR_LIT(hero_str_1c1e0d);
 #line 297 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t293 = INT64_C(38);
-#line 298 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t294 = HERO_STR_LIT(hero_str_1c1e0e);
 #line 298 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t295 = INT64_C(51);
-#line 299 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t296 = HERO_STR_LIT(hero_str_1c1e0f);
 #line 299 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t297 = INT64_C(3);
-#line 300 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t298 = HERO_STR_LIT(hero_str_1c1e89);
 #line 300 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t299 = INT64_C(16);
-#line 301 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t300 = HERO_STR_LIT(hero_str_1c1e8a);
 #line 301 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t301 = INT64_C(29);
-#line 302 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t302 = HERO_STR_LIT(hero_str_1c1e8b);
 #line 302 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t303 = INT64_C(42);
-#line 303 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t304 = HERO_STR_LIT(hero_str_1c1e8c);
 #line 303 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t305 = INT64_C(55);
-#line 304 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t306 = HERO_STR_LIT(hero_str_1c1e8d);
 #line 304 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t307 = INT64_C(7);
-#line 305 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t308 = HERO_STR_LIT(hero_str_1c1e8e);
 #line 305 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t309 = INT64_C(20);
-#line 306 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t310 = HERO_STR_LIT(hero_str_1c1e8f);
 #line 306 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t311 = INT64_C(33);
-#line 307 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t312 = HERO_STR_LIT(hero_str_1c1e90);
 #line 307 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t313 = INT64_C(46);
-#line 308 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t314 = HERO_STR_LIT(hero_str_1c1e91);
 #line 308 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t315 = INT64_C(59);
-#line 309 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t316 = HERO_STR_LIT(hero_str_1c1e92);
 #line 309 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t317 = INT64_C(11);
-#line 310 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t318 = HERO_STR_LIT(hero_str_1c1f0c);
 #line 310 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t319 = INT64_C(24);
-#line 311 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t320 = HERO_STR_LIT(hero_str_1c1f0d);
 #line 311 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t321 = INT64_C(37);
-#line 312 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t322 = HERO_STR_LIT(hero_str_1c1f0e);
 #line 312 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t323 = INT64_C(50);
-#line 313 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t324 = HERO_STR_LIT(hero_str_1c1f0f);
 #line 313 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t325 = INT64_C(2);
-#line 314 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t326 = HERO_STR_LIT(hero_str_1c1f10);
 #line 314 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t327 = INT64_C(15);
-#line 315 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t328 = HERO_STR_LIT(hero_str_1c1f11);
 #line 315 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t329 = INT64_C(28);
-#line 316 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t330 = HERO_STR_LIT(hero_str_1c1f12);
 #line 316 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t331 = INT64_C(41);
-#line 317 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t332 = HERO_STR_LIT(hero_str_1c1f13);
 #line 317 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t333 = INT64_C(54);
-#line 318 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t334 = HERO_STR_LIT(hero_str_1c1f14);
 #line 318 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t335 = INT64_C(6);
-#line 319 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t336 = HERO_STR_LIT(hero_str_1c1f15);
 #line 319 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t337 = INT64_C(19);
-#line 320 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t338 = HERO_STR_LIT(hero_str_1c1f8f);
 #line 320 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t339 = INT64_C(32);
-#line 321 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t340 = HERO_STR_LIT(hero_str_1c1f90);
 #line 321 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t341 = INT64_C(45);
-#line 322 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t342 = HERO_STR_LIT(hero_str_1c1f91);
 #line 322 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t343 = INT64_C(58);
-#line 323 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t344 = HERO_STR_LIT(hero_str_1c1f92);
 #line 323 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t345 = INT64_C(10);
-#line 324 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t346 = HERO_STR_LIT(hero_str_1c1f93);
 #line 324 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t347 = INT64_C(23);
-#line 325 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t348 = HERO_STR_LIT(hero_str_1c1f94);
 #line 325 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t349 = INT64_C(36);
-#line 326 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t350 = HERO_STR_LIT(hero_str_1c1f95);
 #line 326 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t351 = INT64_C(49);
-#line 327 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t352 = HERO_STR_LIT(hero_str_1c1f96);
 #line 327 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t353 = INT64_C(1);
-#line 328 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t354 = HERO_STR_LIT(hero_str_1c1f97);
 #line 328 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t355 = INT64_C(14);
-#line 329 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t356 = HERO_STR_LIT(hero_str_1c1f98);
 #line 329 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t357 = INT64_C(27);
-#line 330 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t358 = HERO_STR_LIT(hero_str_1c2012);
 #line 330 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t359 = INT64_C(40);
-#line 331 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t360 = HERO_STR_LIT(hero_str_1c2013);
 #line 331 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t361 = INT64_C(53);
-#line 332 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t362 = HERO_STR_LIT(hero_str_1c2014);
 #line 332 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t363 = INT64_C(5);
-#line 333 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t364 = HERO_STR_LIT(hero_str_1c2015);
 #line 333 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t365 = INT64_C(18);
-#line 334 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t366 = HERO_STR_LIT(hero_str_1c2016);
 #line 334 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t367 = INT64_C(31);
-#line 335 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t368 = HERO_STR_LIT(hero_str_1c2017);
 #line 335 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t369 = INT64_C(44);
-#line 336 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t370 = HERO_STR_LIT(hero_str_1c2018);
 #line 336 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t371 = INT64_C(57);
-#line 337 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t372 = HERO_STR_LIT(hero_str_1c2019);
 #line 337 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t373 = INT64_C(9);
-#line 338 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t374 = HERO_STR_LIT(hero_str_1c201a);
 #line 338 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t375 = INT64_C(22);
-#line 339 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t376 = HERO_STR_LIT(hero_str_1c201b);
 #line 339 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t377 = INT64_C(35);
-#line 340 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t378 = HERO_STR_LIT(hero_str_1c2095);
 #line 340 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t379 = INT64_C(48);
-#line 341 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t380 = HERO_STR_LIT(hero_str_1c2096);
 #line 341 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t381 = INT64_C(0);
-#line 342 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t382 = HERO_STR_LIT(hero_str_1c2097);
 #line 342 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t383 = INT64_C(13);
-#line 343 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t384 = HERO_STR_LIT(hero_str_1c2098);
 #line 343 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t385 = INT64_C(26);
@@ -2216,19 +1895,18 @@ bb0:
     t584 = h14_own14;
 #line 279 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h14_own14 = t386;
-#line 2220 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 1899 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_map_decref(t584);
 #line 279 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t585 = h1_m;
-#line 2224 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 1903 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_map_incref(t386);
 #line 279 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h1_m = t386;
-#line 2228 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 1907 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_map_decref(t585);
 #line 346 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t387 = INT64_C(1);
-#line 347 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t388 = INT64_C(2);
 #line 346 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     if (__builtin_add_overflow(t387, t388, &t389)) hero_panic_overflow();
@@ -2486,7 +2164,6 @@ bb0:
     t514 = INT64_C(0);
 #line 411 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h3_weighted = t514;
-#line 412 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t515 = INT64_C(1);
 #line 412 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h4_at = t515;
@@ -2494,11 +2171,11 @@ bb0:
     t516 = h0_xs;
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t586 = h5_xs0;
-#line 2498 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2175 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t516);
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h5_xs0 = t516;
-#line 2502 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2179 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t586);
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t517 = INT64_C(0);
@@ -2528,7 +2205,6 @@ bb2:
     t524 = ((void)((t522 == NULL || t523 < 0 || t523 >= t522->len) ? ((void)hero_array_at(t522, t523), hero_unreachable()) : (void)0), (void)(t522->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t522 + 1))[t523]);
 #line 414 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h7_x = t524;
-#line 415 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t525 = h3_weighted;
 #line 415 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t526 = h7_x;
@@ -2540,7 +2216,6 @@ bb2:
     if (__builtin_add_overflow(t525, t528, &t529)) hero_panic_overflow();
 #line 415 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h3_weighted = t529;
-#line 416 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t530 = h4_at;
 #line 416 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t531 = INT64_C(1);
@@ -2578,15 +2253,15 @@ bb4:
     t587 = h15_own15;
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h15_own15 = t539;
-#line 2582 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2257 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t587);
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t588 = h9_xs1;
-#line 2586 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2261 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t539);
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h9_xs1 = t539;
-#line 2590 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2265 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t588);
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t540 = INT64_C(0);
@@ -2616,7 +2291,6 @@ bb6:
     t547 = ((void)((t545 == NULL || t546 < 0 || t546 >= t545->len) ? ((void)hero_array_at(t545, t546), hero_unreachable()) : (void)0), (void)(t545->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t545 + 1))[t546]);
 #line 420 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h11_k = t547;
-#line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t548 = h8_keyed;
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t549 = h1_m;
@@ -2630,7 +2304,7 @@ bb6:
     t589 = h16_own16;
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h16_own16 = t552;
-#line 2634 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2308 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_str_decref(t589);
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t553 = hero_str_concat(t551, t552);
@@ -2638,7 +2312,7 @@ bb6:
     t590 = h17_own17;
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h17_own17 = t553;
-#line 2642 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2316 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_str_decref(t590);
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     {
@@ -2662,15 +2336,15 @@ bb6:
     t591 = h18_own18;
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h18_own18 = t554;
-#line 2666 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2340 "fixedbugs393alongliteralisformattedinonepass.c"
     h_0opt_e201354_release(&t591);
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t592 = h12_f0;
-#line 2670 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2344 "fixedbugs393alongliteralisformattedinonepass.c"
     h_0opt_e201354_retain(&t554);
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     h12_f0 = t554;
-#line 2674 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2348 "fixedbugs393alongliteralisformattedinonepass.c"
     h_0opt_e201354_release(&t592);
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t555 = h12_f0;
@@ -2738,37 +2412,17 @@ bb8:
     hero_print_int(t581);
 #line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     hero_print_end();
-#line 2742 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2416 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h0_xs);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2745 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_map_decref(h1_m);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2748 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h5_xs0);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2751 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h9_xs1);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2754 "fixedbugs393alongliteralisformattedinonepass.c"
     h_0opt_e201354_release(&h12_f0);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2757 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h13_own13);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2760 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_map_decref(h14_own14);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2763 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h15_own15);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2766 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_str_decref(h16_own16);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2769 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_str_decref(h17_own17);
-#line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
-#line 2772 "fixedbugs393alongliteralisformattedinonepass.c"
     h_0opt_e201354_release(&h18_own18);
     return;
 bb9:
@@ -2796,14 +2450,14 @@ bb10:
     t559 = h12_f0;
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     t560 = t559.as.err;
-#line 2800 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2454 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_panic_must(t560);
     hero_unreachable();
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 2807 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2461 "fixedbugs393alongliteralisformattedinonepass.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -2827,15 +2481,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 2831 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2485 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 2835 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2489 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 2839 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2493 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -2845,7 +2499,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -2855,11 +2508,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -2871,15 +2522,10 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 2877 "fixedbugs393alongliteralisformattedinonepass.c"
+#line 2527 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 2880 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 2883 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_decref(h4_own4);
     return t12;
 }

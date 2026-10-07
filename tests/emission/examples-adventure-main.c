@@ -162,17 +162,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "main.c"
+#line 173 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_game_Game_retain(const h_game_Game *v);
@@ -262,7 +259,7 @@ HeroArrayHeader * h_library_args(void);
 
 #line 25 "examples/adventure/main.hero"
 void h_main_main(void) {
-#line 266 "main.c"
+#line 263 "main.c"
     HeroArrayHeader * h0_given = {0};
     h_0opt_f87774a h1_s0 = {0};
     HeroFailure h2_e = {0};
@@ -307,15 +304,15 @@ bb0:
     t25 = h4_own4;
 #line 26 "examples/adventure/main.hero"
     h4_own4 = t1;
-#line 311 "main.c"
+#line 308 "main.c"
     hero_array_decref(t25);
 #line 26 "examples/adventure/main.hero"
     t26 = h0_given;
-#line 315 "main.c"
+#line 312 "main.c"
     hero_array_incref(t1);
 #line 26 "examples/adventure/main.hero"
     h0_given = t1;
-#line 319 "main.c"
+#line 316 "main.c"
     hero_array_decref(t26);
 #line 28 "examples/adventure/main.hero"
     t2 = h0_given;
@@ -341,15 +338,15 @@ bb1:
     t27 = h5_own5;
 #line 32 "examples/adventure/main.hero"
     h5_own5 = t10;
-#line 345 "main.c"
+#line 342 "main.c"
     h_0opt_f87774a_release(&t27);
 #line 32 "examples/adventure/main.hero"
     t28 = h1_s0;
-#line 349 "main.c"
+#line 346 "main.c"
     h_0opt_f87774a_retain(&t10);
 #line 32 "examples/adventure/main.hero"
     h1_s0 = t10;
-#line 353 "main.c"
+#line 350 "main.c"
     h_0opt_f87774a_release(&t28);
 #line 32 "examples/adventure/main.hero"
     t11 = h1_s0;
@@ -391,11 +388,11 @@ bb5:
     t14 = t13.as.err;
 #line 33 "examples/adventure/main.hero"
     t29 = h2_e;
-#line 395 "main.c"
+#line 392 "main.c"
     hero_failure_retain(&t14);
 #line 33 "examples/adventure/main.hero"
     h2_e = t14;
-#line 399 "main.c"
+#line 396 "main.c"
     hero_failure_release(&t29);
 #line 33 "examples/adventure/main.hero"
     t15 = HERO_STR_LIT(hero_str_2d78c599);
@@ -425,17 +422,16 @@ bb5:
     goto bb4;
 #line 33 "examples/adventure/main.hero"
 bb6:
-#line 34 "examples/adventure/main.hero"
     t22 = h1_s0;
 #line 34 "examples/adventure/main.hero"
     t23 = t22.as.ok;
 #line 34 "examples/adventure/main.hero"
     t30 = h3_script;
-#line 435 "main.c"
+#line 431 "main.c"
     hero_str_incref(t23);
 #line 34 "examples/adventure/main.hero"
     h3_script = t23;
-#line 439 "main.c"
+#line 435 "main.c"
     hero_str_decref(t30);
 #line 34 "examples/adventure/main.hero"
     t24 = h3_script;
@@ -445,30 +441,19 @@ bb6:
     goto bb4;
 #line 34 "examples/adventure/main.hero"
 bb7:
-#line 25 "examples/adventure/main.hero"
-#line 450 "main.c"
+#line 445 "main.c"
     hero_array_decref(h0_given);
-#line 25 "examples/adventure/main.hero"
-#line 453 "main.c"
     h_0opt_f87774a_release(&h1_s0);
-#line 25 "examples/adventure/main.hero"
-#line 456 "main.c"
     hero_failure_release(&h2_e);
-#line 25 "examples/adventure/main.hero"
-#line 459 "main.c"
     hero_str_decref(h3_script);
-#line 25 "examples/adventure/main.hero"
-#line 462 "main.c"
     hero_array_decref(h4_own4);
-#line 25 "examples/adventure/main.hero"
-#line 465 "main.c"
     h_0opt_f87774a_release(&h5_own5);
     return;
 }
 
 #line 36 "examples/adventure/main.hero"
 void h_main_run(HeroStr h0_script) {
-#line 472 "main.c"
+#line 457 "main.c"
     h_world_World h1_w = {0};
     HeroArrayHeader * h2_lines = {0};
     h_game_Turn h3_turn = {0};
@@ -524,15 +509,15 @@ bb0:
     t29 = h7_own7;
 #line 37 "examples/adventure/main.hero"
     h7_own7 = t1;
-#line 528 "main.c"
+#line 513 "main.c"
     h_world_World_release(&t29);
 #line 37 "examples/adventure/main.hero"
     t30 = h1_w;
-#line 532 "main.c"
+#line 517 "main.c"
     h_world_World_retain(&t1);
 #line 37 "examples/adventure/main.hero"
     h1_w = t1;
-#line 536 "main.c"
+#line 521 "main.c"
     h_world_World_release(&t30);
 #line 38 "examples/adventure/main.hero"
     t2 = h0_script;
@@ -542,15 +527,15 @@ bb0:
     t31 = h8_own8;
 #line 38 "examples/adventure/main.hero"
     h8_own8 = t3;
-#line 546 "main.c"
+#line 531 "main.c"
     hero_array_decref(t31);
 #line 38 "examples/adventure/main.hero"
     t32 = h2_lines;
-#line 550 "main.c"
+#line 535 "main.c"
     hero_array_incref(t3);
 #line 38 "examples/adventure/main.hero"
     h2_lines = t3;
-#line 554 "main.c"
+#line 539 "main.c"
     hero_array_decref(t32);
 #line 39 "examples/adventure/main.hero"
     t4 = h1_w;
@@ -562,15 +547,15 @@ bb0:
     t33 = h9_own9;
 #line 39 "examples/adventure/main.hero"
     h9_own9 = t6;
-#line 566 "main.c"
+#line 551 "main.c"
     h_game_Turn_release(&t33);
 #line 39 "examples/adventure/main.hero"
     t34 = h3_turn;
-#line 570 "main.c"
+#line 555 "main.c"
     h_game_Turn_retain(&t6);
 #line 39 "examples/adventure/main.hero"
     h3_turn = t6;
-#line 574 "main.c"
+#line 559 "main.c"
     h_game_Turn_release(&t34);
 #line 41 "examples/adventure/main.hero"
     t7 = h3_turn;
@@ -578,11 +563,11 @@ bb0:
     t8 = t7.f_said;
 #line 41 "examples/adventure/main.hero"
     t35 = h4_xs0;
-#line 582 "main.c"
+#line 567 "main.c"
     hero_array_incref(t8);
 #line 41 "examples/adventure/main.hero"
     h4_xs0 = t8;
-#line 586 "main.c"
+#line 571 "main.c"
     hero_array_decref(t35);
 #line 41 "examples/adventure/main.hero"
     t9 = INT64_C(0);
@@ -612,11 +597,11 @@ bb2:
     t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 41 "examples/adventure/main.hero"
     t36 = h6_said;
-#line 616 "main.c"
+#line 601 "main.c"
     hero_str_incref(t16);
 #line 41 "examples/adventure/main.hero"
     h6_said = t16;
-#line 620 "main.c"
+#line 605 "main.c"
     hero_str_decref(t36);
 #line 42 "examples/adventure/main.hero"
     t17 = h6_said;
@@ -646,7 +631,6 @@ bb4:
     hero_print_str(t21);
 #line 44 "examples/adventure/main.hero"
     hero_print_end();
-#line 45 "examples/adventure/main.hero"
     t22 = h3_turn;
 #line 45 "examples/adventure/main.hero"
     t23 = t22.f_next;
@@ -664,7 +648,7 @@ bb4:
     t37 = h10_own10;
 #line 45 "examples/adventure/main.hero"
     h10_own10 = t28;
-#line 668 "main.c"
+#line 652 "main.c"
     hero_str_decref(t37);
 #line 45 "examples/adventure/main.hero"
     hero_print_int(t24);
@@ -674,38 +658,22 @@ bb4:
     hero_print_str(t28);
 #line 45 "examples/adventure/main.hero"
     hero_print_end();
-#line 678 "main.c"
+#line 662 "main.c"
     h_world_World_release(&h1_w);
-#line 45 "examples/adventure/main.hero"
-#line 681 "main.c"
     hero_array_decref(h2_lines);
-#line 45 "examples/adventure/main.hero"
-#line 684 "main.c"
     h_game_Turn_release(&h3_turn);
-#line 45 "examples/adventure/main.hero"
-#line 687 "main.c"
     hero_array_decref(h4_xs0);
-#line 45 "examples/adventure/main.hero"
-#line 690 "main.c"
     hero_str_decref(h6_said);
-#line 45 "examples/adventure/main.hero"
-#line 693 "main.c"
     h_world_World_release(&h7_own7);
-#line 45 "examples/adventure/main.hero"
-#line 696 "main.c"
     hero_array_decref(h8_own8);
-#line 45 "examples/adventure/main.hero"
-#line 699 "main.c"
     h_game_Turn_release(&h9_own9);
-#line 45 "examples/adventure/main.hero"
-#line 702 "main.c"
     hero_str_decref(h10_own10);
     return;
 }
 
 #line 47 "examples/adventure/main.hero"
 HeroStr h_main_ending_of(h_game_Game h0_g) {
-#line 709 "main.c"
+#line 677 "main.c"
     HeroStr h1_ret0 = {0};
     h_game_Game t1;
     bool t2;
@@ -742,16 +710,15 @@ bb3:
     goto bb1;
 #line 49 "examples/adventure/main.hero"
 bb4:
-#line 49 "examples/adventure/main.hero"
+#line 714 "main.c"
     t5 = h1_ret0;
-#line 748 "main.c"
     hero_str_incref(t5);
     return t5;
 }
 
 #line 55 "examples/adventure/main.hero"
 HeroArrayHeader * h_main_commands(HeroStr h0_script) {
-#line 755 "main.c"
+#line 722 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -803,15 +770,15 @@ bb0:
     t30 = h7_own7;
 #line 56 "examples/adventure/main.hero"
     h7_own7 = t1;
-#line 807 "main.c"
+#line 774 "main.c"
     hero_array_decref(t30);
 #line 56 "examples/adventure/main.hero"
     t31 = h1_out;
-#line 811 "main.c"
+#line 778 "main.c"
     hero_array_incref(t1);
 #line 56 "examples/adventure/main.hero"
     h1_out = t1;
-#line 815 "main.c"
+#line 782 "main.c"
     hero_array_decref(t31);
 #line 58 "examples/adventure/main.hero"
     t2 = h0_script;
@@ -821,15 +788,15 @@ bb0:
     t32 = h8_own8;
 #line 58 "examples/adventure/main.hero"
     h8_own8 = t3;
-#line 825 "main.c"
+#line 792 "main.c"
     hero_array_decref(t32);
 #line 58 "examples/adventure/main.hero"
     t33 = h2_xs0;
-#line 829 "main.c"
+#line 796 "main.c"
     hero_array_incref(t3);
 #line 58 "examples/adventure/main.hero"
     h2_xs0 = t3;
-#line 833 "main.c"
+#line 800 "main.c"
     hero_array_decref(t33);
 #line 58 "examples/adventure/main.hero"
     t4 = INT64_C(0);
@@ -859,11 +826,11 @@ bb2:
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 58 "examples/adventure/main.hero"
     t34 = h4_line;
-#line 863 "main.c"
+#line 830 "main.c"
     hero_str_incref(t11);
 #line 58 "examples/adventure/main.hero"
     h4_line = t11;
-#line 867 "main.c"
+#line 834 "main.c"
     hero_str_decref(t34);
 #line 59 "examples/adventure/main.hero"
     t12 = h4_line;
@@ -873,15 +840,15 @@ bb2:
     t35 = h9_own9;
 #line 59 "examples/adventure/main.hero"
     h9_own9 = t13;
-#line 877 "main.c"
+#line 844 "main.c"
     hero_str_decref(t35);
 #line 59 "examples/adventure/main.hero"
     t36 = h5_head;
-#line 881 "main.c"
+#line 848 "main.c"
     hero_str_incref(t13);
 #line 59 "examples/adventure/main.hero"
     h5_head = t13;
-#line 885 "main.c"
+#line 852 "main.c"
     hero_str_decref(t36);
 #line 61 "examples/adventure/main.hero"
     t14 = h5_head;
@@ -909,28 +876,14 @@ bb3:
 bb4:
 #line 65 "examples/adventure/main.hero"
     t29 = h1_out;
-#line 913 "main.c"
+#line 880 "main.c"
     hero_array_incref(t29);
-#line 65 "examples/adventure/main.hero"
-#line 916 "main.c"
     hero_array_decref(h1_out);
-#line 65 "examples/adventure/main.hero"
-#line 919 "main.c"
     hero_array_decref(h2_xs0);
-#line 65 "examples/adventure/main.hero"
-#line 922 "main.c"
     hero_str_decref(h4_line);
-#line 65 "examples/adventure/main.hero"
-#line 925 "main.c"
     hero_str_decref(h5_head);
-#line 65 "examples/adventure/main.hero"
-#line 928 "main.c"
     hero_array_decref(h7_own7);
-#line 65 "examples/adventure/main.hero"
-#line 931 "main.c"
     hero_array_decref(h8_own8);
-#line 65 "examples/adventure/main.hero"
-#line 934 "main.c"
     hero_str_decref(h9_own9);
     return t29;
 bb5:
@@ -970,12 +923,12 @@ bb8:
 bb9:
 #line 61 "examples/adventure/main.hero"
     goto bb5;
-#line 974 "main.c"
+#line 927 "main.c"
 }
 
 #line 67 "examples/adventure/main.hero"
 bool h_main_is_space(uint8_t h0_c) {
-#line 979 "main.c"
+#line 932 "main.c"
     bool h1_b0;
     bool h2_b1;
     uint8_t t1;
@@ -1039,12 +992,12 @@ bb4:
     t11 = h1_b0;
 #line 68 "examples/adventure/main.hero"
     return t11;
-#line 1043 "main.c"
+#line 996 "main.c"
 }
 
 #line 70 "examples/adventure/main.hero"
 HeroStr h_main_trimmed(HeroStr h0_line) {
-#line 1048 "main.c"
+#line 1001 "main.c"
     int64_t h1_from;
     bool h2_b0;
     int64_t h3_to;
@@ -1107,7 +1060,6 @@ bb1:
     if (t5) goto bb4; else goto bb5;
 #line 73 "examples/adventure/main.hero"
 bb2:
-#line 74 "examples/adventure/main.hero"
     t11 = h1_from;
 #line 74 "examples/adventure/main.hero"
     t12 = INT64_C(1);
@@ -1161,7 +1113,6 @@ bb6:
     if (t18) goto bb9; else goto bb10;
 #line 78 "examples/adventure/main.hero"
 bb7:
-#line 79 "examples/adventure/main.hero"
     t26 = h3_to;
 #line 79 "examples/adventure/main.hero"
     t27 = INT64_C(1);
@@ -1185,13 +1136,9 @@ bb8:
     t33 = h5_own5;
 #line 81 "examples/adventure/main.hero"
     h5_own5 = t32;
-#line 1189 "main.c"
+#line 1140 "main.c"
     hero_str_decref(t33);
-#line 81 "examples/adventure/main.hero"
-#line 1192 "main.c"
     hero_str_incref(t32);
-#line 81 "examples/adventure/main.hero"
-#line 1195 "main.c"
     hero_str_decref(h5_own5);
     return t32;
 bb9:
@@ -1217,12 +1164,12 @@ bb10:
     t25 = h4_b1;
 #line 78 "examples/adventure/main.hero"
     if (t25) goto bb7; else goto bb8;
-#line 1221 "main.c"
+#line 1168 "main.c"
 }
 
 #line 83 "examples/adventure/main.hero"
 HeroArrayHeader * h_main_split_lines(HeroStr h0_text) {
-#line 1226 "main.c"
+#line 1173 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_start;
     int64_t h3_i;
@@ -1273,21 +1220,20 @@ bb0:
     t37 = h4_own4;
 #line 84 "examples/adventure/main.hero"
     h4_own4 = t1;
-#line 1277 "main.c"
+#line 1224 "main.c"
     hero_array_decref(t37);
 #line 84 "examples/adventure/main.hero"
     t38 = h1_out;
-#line 1281 "main.c"
+#line 1228 "main.c"
     hero_array_incref(t1);
 #line 84 "examples/adventure/main.hero"
     h1_out = t1;
-#line 1285 "main.c"
+#line 1232 "main.c"
     hero_array_decref(t38);
 #line 85 "examples/adventure/main.hero"
     t2 = INT64_C(0);
 #line 85 "examples/adventure/main.hero"
     h2_start = t2;
-#line 86 "examples/adventure/main.hero"
     t3 = INT64_C(0);
 #line 86 "examples/adventure/main.hero"
     h3_i = t3;
@@ -1307,7 +1253,6 @@ bb1:
     if (t7) goto bb2; else goto bb3;
 #line 88 "examples/adventure/main.hero"
 bb2:
-#line 89 "examples/adventure/main.hero"
     t8 = h0_text;
 #line 89 "examples/adventure/main.hero"
     t9 = h3_i;
@@ -1357,11 +1302,10 @@ bb5:
     t39 = h5_own5;
 #line 90 "examples/adventure/main.hero"
     h5_own5 = t17;
-#line 1361 "main.c"
+#line 1306 "main.c"
     hero_str_decref(t39);
 #line 90 "examples/adventure/main.hero"
     hero_array_push_owned(&h1_out, &t17);
-#line 91 "examples/adventure/main.hero"
     t19 = h3_i;
 #line 91 "examples/adventure/main.hero"
     t20 = INT64_C(1);
@@ -1379,19 +1323,11 @@ bb6:
 bb7:
 #line 96 "examples/adventure/main.hero"
     t36 = h1_out;
-#line 1383 "main.c"
+#line 1327 "main.c"
     hero_array_incref(t36);
-#line 96 "examples/adventure/main.hero"
-#line 1386 "main.c"
     hero_array_decref(h1_out);
-#line 96 "examples/adventure/main.hero"
-#line 1389 "main.c"
     hero_array_decref(h4_own4);
-#line 96 "examples/adventure/main.hero"
-#line 1392 "main.c"
     hero_str_decref(h5_own5);
-#line 96 "examples/adventure/main.hero"
-#line 1395 "main.c"
     hero_str_decref(h6_own6);
     return t36;
 bb8:
@@ -1409,7 +1345,7 @@ bb8:
     t40 = h6_own6;
 #line 95 "examples/adventure/main.hero"
     h6_own6 = t34;
-#line 1413 "main.c"
+#line 1349 "main.c"
     hero_str_decref(t40);
 #line 95 "examples/adventure/main.hero"
     hero_array_push_owned(&h1_out, &t34);
@@ -1419,12 +1355,12 @@ bb8:
 bb9:
 #line 95 "examples/adventure/main.hero"
     goto bb7;
-#line 1423 "main.c"
+#line 1359 "main.c"
 }
 
 #line 23 "examples/adventure/game.hero"
 h_game_Game h_game_begin(h_world_World h0_w) {
-#line 1428 "main.c"
+#line 1364 "main.c"
     HeroArrayHeader * h1_own1 = {0};
     HeroMapHeader * h2_own2 = {0};
     h_game_Game h3_own3 = {0};
@@ -1450,7 +1386,7 @@ bb0:
     t8 = h1_own1;
 #line 24 "examples/adventure/game.hero"
     h1_own1 = t3;
-#line 1454 "main.c"
+#line 1390 "main.c"
     hero_array_decref(t8);
 #line 24 "examples/adventure/game.hero"
     t4 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
@@ -1458,19 +1394,15 @@ bb0:
     t9 = h2_own2;
 #line 24 "examples/adventure/game.hero"
     h2_own2 = t4;
-#line 1462 "main.c"
+#line 1398 "main.c"
     hero_map_decref(t9);
 #line 24 "examples/adventure/game.hero"
     t5 = INT64_C(0);
 #line 24 "examples/adventure/game.hero"
     t6 = false;
-#line 1468 "main.c"
+#line 1404 "main.c"
     hero_str_incref(t2);
-#line 24 "examples/adventure/game.hero"
-#line 1471 "main.c"
     hero_array_incref(t3);
-#line 24 "examples/adventure/game.hero"
-#line 1474 "main.c"
     hero_map_incref(t4);
 #line 24 "examples/adventure/game.hero"
     t7 = (h_game_Game){.f_here = t2, .f_carrying = t3, .f_taken = t4, .f_moves = t5, .f_won = t6};
@@ -1478,26 +1410,18 @@ bb0:
     t10 = h3_own3;
 #line 24 "examples/adventure/game.hero"
     h3_own3 = t7;
-#line 1482 "main.c"
+#line 1414 "main.c"
     h_game_Game_release(&t10);
-#line 24 "examples/adventure/game.hero"
-#line 1485 "main.c"
     h_game_Game_retain(&t7);
-#line 24 "examples/adventure/game.hero"
-#line 1488 "main.c"
     hero_array_decref(h1_own1);
-#line 24 "examples/adventure/game.hero"
-#line 1491 "main.c"
     hero_map_decref(h2_own2);
-#line 24 "examples/adventure/game.hero"
-#line 1494 "main.c"
     h_game_Game_release(&h3_own3);
     return t7;
 }
 
 #line 26 "examples/adventure/game.hero"
 bool h_game_is_space(uint8_t h0_c) {
-#line 1501 "main.c"
+#line 1425 "main.c"
     bool h1_b0;
     bool h2_b1;
     uint8_t t1;
@@ -1561,12 +1485,12 @@ bb4:
     t11 = h1_b0;
 #line 27 "examples/adventure/game.hero"
     return t11;
-#line 1565 "main.c"
+#line 1489 "main.c"
 }
 
 #line 29 "examples/adventure/game.hero"
 HeroStr h_game_trimmed(HeroStr h0_line) {
-#line 1570 "main.c"
+#line 1494 "main.c"
     int64_t h1_from;
     bool h2_b0;
     int64_t h3_to;
@@ -1629,7 +1553,6 @@ bb1:
     if (t5) goto bb4; else goto bb5;
 #line 32 "examples/adventure/game.hero"
 bb2:
-#line 33 "examples/adventure/game.hero"
     t11 = h1_from;
 #line 33 "examples/adventure/game.hero"
     t12 = INT64_C(1);
@@ -1683,7 +1606,6 @@ bb6:
     if (t18) goto bb9; else goto bb10;
 #line 37 "examples/adventure/game.hero"
 bb7:
-#line 38 "examples/adventure/game.hero"
     t26 = h3_to;
 #line 38 "examples/adventure/game.hero"
     t27 = INT64_C(1);
@@ -1707,13 +1629,9 @@ bb8:
     t33 = h5_own5;
 #line 40 "examples/adventure/game.hero"
     h5_own5 = t32;
-#line 1711 "main.c"
+#line 1633 "main.c"
     hero_str_decref(t33);
-#line 40 "examples/adventure/game.hero"
-#line 1714 "main.c"
     hero_str_incref(t32);
-#line 40 "examples/adventure/game.hero"
-#line 1717 "main.c"
     hero_str_decref(h5_own5);
     return t32;
 bb9:
@@ -1739,12 +1657,12 @@ bb10:
     t25 = h4_b1;
 #line 37 "examples/adventure/game.hero"
     if (t25) goto bb7; else goto bb8;
-#line 1743 "main.c"
+#line 1661 "main.c"
 }
 
 #line 42 "examples/adventure/game.hero"
 HeroStr h_game_first_word(HeroStr h0_line) {
-#line 1748 "main.c"
+#line 1666 "main.c"
     int64_t h1_i;
     bool h2_b0;
     HeroStr h3_own3 = {0};
@@ -1791,7 +1709,6 @@ bb1:
     if (t5) goto bb4; else goto bb5;
 #line 45 "examples/adventure/game.hero"
 bb2:
-#line 46 "examples/adventure/game.hero"
     t12 = h1_i;
 #line 46 "examples/adventure/game.hero"
     t13 = INT64_C(1);
@@ -1815,13 +1732,9 @@ bb3:
     t19 = h3_own3;
 #line 48 "examples/adventure/game.hero"
     h3_own3 = t18;
-#line 1819 "main.c"
+#line 1736 "main.c"
     hero_str_decref(t19);
-#line 48 "examples/adventure/game.hero"
-#line 1822 "main.c"
     hero_str_incref(t18);
-#line 48 "examples/adventure/game.hero"
-#line 1825 "main.c"
     hero_str_decref(h3_own3);
     return t18;
 bb4:
@@ -1845,12 +1758,12 @@ bb5:
     t11 = h2_b0;
 #line 45 "examples/adventure/game.hero"
     if (t11) goto bb2; else goto bb3;
-#line 1849 "main.c"
+#line 1762 "main.c"
 }
 
 #line 50 "examples/adventure/game.hero"
 HeroStr h_game_rest_after(HeroStr h0_line, HeroStr h1_word) {
-#line 1854 "main.c"
+#line 1767 "main.c"
     HeroStr h2_ret0 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -1902,7 +1815,7 @@ bb1:
     t15 = h3_own3;
 #line 53 "examples/adventure/game.hero"
     h3_own3 = t12;
-#line 1906 "main.c"
+#line 1819 "main.c"
     hero_str_decref(t15);
 #line 53 "examples/adventure/game.hero"
     t13 = h_game_trimmed(t12);
@@ -1910,7 +1823,7 @@ bb1:
     t16 = h4_own4;
 #line 53 "examples/adventure/game.hero"
     h4_own4 = t13;
-#line 1914 "main.c"
+#line 1827 "main.c"
     hero_str_decref(t16);
 #line 53 "examples/adventure/game.hero"
     h2_ret0 = t13;
@@ -1930,22 +1843,17 @@ bb3:
     goto bb1;
 #line 52 "examples/adventure/game.hero"
 bb4:
-#line 52 "examples/adventure/game.hero"
+#line 1847 "main.c"
     t14 = h2_ret0;
-#line 1936 "main.c"
     hero_str_incref(t14);
-#line 52 "examples/adventure/game.hero"
-#line 1939 "main.c"
     hero_str_decref(h3_own3);
-#line 52 "examples/adventure/game.hero"
-#line 1942 "main.c"
     hero_str_decref(h4_own4);
     return t14;
 }
 
 #line 55 "examples/adventure/game.hero"
 bool h_game_carrying(h_game_Game h0_g, HeroStr h1_what) {
-#line 1949 "main.c"
+#line 1857 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     HeroStr h4_one = {0};
@@ -1979,11 +1887,11 @@ bb0:
     t2 = t1.f_carrying;
 #line 56 "examples/adventure/game.hero"
     t20 = h2_xs0;
-#line 1983 "main.c"
+#line 1891 "main.c"
     hero_array_incref(t2);
 #line 56 "examples/adventure/game.hero"
     h2_xs0 = t2;
-#line 1987 "main.c"
+#line 1895 "main.c"
     hero_array_decref(t20);
 #line 56 "examples/adventure/game.hero"
     t3 = INT64_C(0);
@@ -2013,11 +1921,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 56 "examples/adventure/game.hero"
     t21 = h4_one;
-#line 2017 "main.c"
+#line 1925 "main.c"
     hero_str_incref(t10);
 #line 56 "examples/adventure/game.hero"
     h4_one = t10;
-#line 2021 "main.c"
+#line 1929 "main.c"
     hero_str_decref(t21);
 #line 57 "examples/adventure/game.hero"
     t11 = h4_one;
@@ -2065,19 +1973,16 @@ bb7:
     goto bb5;
 #line 58 "examples/adventure/game.hero"
 bb8:
-#line 58 "examples/adventure/game.hero"
+#line 1977 "main.c"
     t19 = h5_ret0;
-#line 2071 "main.c"
     hero_array_decref(h2_xs0);
-#line 58 "examples/adventure/game.hero"
-#line 2074 "main.c"
     hero_str_decref(h4_one);
     return t19;
 }
 
 #line 64 "examples/adventure/game.hero"
 h_game_Turn h_game_play(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_line) {
-#line 2081 "main.c"
+#line 1986 "main.c"
     HeroStr h3_command = {0};
     HeroStr h4_verb = {0};
     h_game_Turn h5_ret0 = {0};
@@ -2182,15 +2087,15 @@ bb0:
     t56 = h6_own6;
 #line 65 "examples/adventure/game.hero"
     h6_own6 = t2;
-#line 2186 "main.c"
+#line 2091 "main.c"
     hero_str_decref(t56);
 #line 65 "examples/adventure/game.hero"
     t57 = h3_command;
-#line 2190 "main.c"
+#line 2095 "main.c"
     hero_str_incref(t2);
 #line 65 "examples/adventure/game.hero"
     h3_command = t2;
-#line 2194 "main.c"
+#line 2099 "main.c"
     hero_str_decref(t57);
 #line 66 "examples/adventure/game.hero"
     t3 = h3_command;
@@ -2200,15 +2105,15 @@ bb0:
     t58 = h7_own7;
 #line 66 "examples/adventure/game.hero"
     h7_own7 = t4;
-#line 2204 "main.c"
+#line 2109 "main.c"
     hero_str_decref(t58);
 #line 66 "examples/adventure/game.hero"
     t59 = h4_verb;
-#line 2208 "main.c"
+#line 2113 "main.c"
     hero_str_incref(t4);
 #line 66 "examples/adventure/game.hero"
     h4_verb = t4;
-#line 2212 "main.c"
+#line 2117 "main.c"
     hero_str_decref(t59);
 #line 68 "examples/adventure/game.hero"
     t5 = h4_verb;
@@ -2242,7 +2147,7 @@ bb2:
     t60 = h8_own8;
 #line 69 "examples/adventure/game.hero"
     h8_own8 = t11;
-#line 2246 "main.c"
+#line 2151 "main.c"
     hero_array_decref(t60);
 #line 69 "examples/adventure/game.hero"
     t12 = h_game_same(t8, t11);
@@ -2250,7 +2155,7 @@ bb2:
     t61 = h9_own9;
 #line 69 "examples/adventure/game.hero"
     h9_own9 = t12;
-#line 2254 "main.c"
+#line 2159 "main.c"
     h_game_Turn_release(&t61);
 #line 69 "examples/adventure/game.hero"
     h5_ret0 = t12;
@@ -2286,7 +2191,7 @@ bb5:
     t62 = h10_own10;
 #line 72 "examples/adventure/game.hero"
     h10_own10 = t20;
-#line 2290 "main.c"
+#line 2195 "main.c"
     hero_str_decref(t62);
 #line 72 "examples/adventure/game.hero"
     t21 = h_game_go(t16, t17, t20);
@@ -2294,7 +2199,7 @@ bb5:
     t63 = h11_own11;
 #line 72 "examples/adventure/game.hero"
     h11_own11 = t21;
-#line 2298 "main.c"
+#line 2203 "main.c"
     h_game_Turn_release(&t63);
 #line 72 "examples/adventure/game.hero"
     h5_ret0 = t21;
@@ -2326,7 +2231,7 @@ bb8:
     t64 = h12_own12;
 #line 75 "examples/adventure/game.hero"
     h12_own12 = t27;
-#line 2330 "main.c"
+#line 2235 "main.c"
     h_game_Turn_release(&t64);
 #line 75 "examples/adventure/game.hero"
     h5_ret0 = t27;
@@ -2358,7 +2263,7 @@ bb11:
     t65 = h13_own13;
 #line 78 "examples/adventure/game.hero"
     h13_own13 = t33;
-#line 2362 "main.c"
+#line 2267 "main.c"
     hero_str_decref(t65);
 #line 78 "examples/adventure/game.hero"
     t34 = hero_array_new(&hero_desc_str, 1);
@@ -2368,7 +2273,7 @@ bb11:
     t66 = h14_own14;
 #line 78 "examples/adventure/game.hero"
     h14_own14 = t34;
-#line 2372 "main.c"
+#line 2277 "main.c"
     hero_array_decref(t66);
 #line 78 "examples/adventure/game.hero"
     t35 = h_game_same(t31, t34);
@@ -2376,7 +2281,7 @@ bb11:
     t67 = h15_own15;
 #line 78 "examples/adventure/game.hero"
     h15_own15 = t35;
-#line 2380 "main.c"
+#line 2285 "main.c"
     h_game_Turn_release(&t67);
 #line 78 "examples/adventure/game.hero"
     h5_ret0 = t35;
@@ -2406,7 +2311,7 @@ bb14:
     t68 = h16_own16;
 #line 81 "examples/adventure/game.hero"
     h16_own16 = t40;
-#line 2410 "main.c"
+#line 2315 "main.c"
     h_game_Turn_release(&t68);
 #line 81 "examples/adventure/game.hero"
     h5_ret0 = t40;
@@ -2430,7 +2335,7 @@ bb16:
     t69 = h17_own17;
 #line 85 "examples/adventure/game.hero"
     h17_own17 = t50;
-#line 2434 "main.c"
+#line 2339 "main.c"
     hero_str_decref(t69);
 #line 85 "examples/adventure/game.hero"
     t51 = HERO_STR_LIT(hero_str_2e);
@@ -2440,7 +2345,7 @@ bb16:
     t70 = h18_own18;
 #line 85 "examples/adventure/game.hero"
     h18_own18 = t52;
-#line 2444 "main.c"
+#line 2349 "main.c"
     hero_str_decref(t70);
 #line 85 "examples/adventure/game.hero"
     t53 = hero_array_new(&hero_desc_str, 1);
@@ -2450,7 +2355,7 @@ bb16:
     t71 = h19_own19;
 #line 85 "examples/adventure/game.hero"
     h19_own19 = t53;
-#line 2454 "main.c"
+#line 2359 "main.c"
     hero_array_decref(t71);
 #line 85 "examples/adventure/game.hero"
     t54 = h_game_same(t47, t53);
@@ -2458,7 +2363,7 @@ bb16:
     t72 = h20_own20;
 #line 85 "examples/adventure/game.hero"
     h20_own20 = t54;
-#line 2462 "main.c"
+#line 2367 "main.c"
     h_game_Turn_release(&t72);
 #line 85 "examples/adventure/game.hero"
     h5_ret0 = t54;
@@ -2474,7 +2379,7 @@ bb17:
     t73 = h21_own21;
 #line 84 "examples/adventure/game.hero"
     h21_own21 = t45;
-#line 2478 "main.c"
+#line 2383 "main.c"
     hero_array_decref(t73);
 #line 84 "examples/adventure/game.hero"
     t46 = h_game_same(t44, t45);
@@ -2482,7 +2387,7 @@ bb17:
     t74 = h22_own22;
 #line 84 "examples/adventure/game.hero"
     h22_own22 = t46;
-#line 2486 "main.c"
+#line 2391 "main.c"
     h_game_Turn_release(&t74);
 #line 84 "examples/adventure/game.hero"
     h5_ret0 = t46;
@@ -2494,73 +2399,34 @@ bb18:
     goto bb16;
 #line 84 "examples/adventure/game.hero"
 bb19:
-#line 69 "examples/adventure/game.hero"
+#line 2403 "main.c"
     t55 = h5_ret0;
-#line 2500 "main.c"
     h_game_Turn_retain(&t55);
-#line 69 "examples/adventure/game.hero"
-#line 2503 "main.c"
     hero_str_decref(h3_command);
-#line 69 "examples/adventure/game.hero"
-#line 2506 "main.c"
     hero_str_decref(h4_verb);
-#line 69 "examples/adventure/game.hero"
-#line 2509 "main.c"
     hero_str_decref(h6_own6);
-#line 69 "examples/adventure/game.hero"
-#line 2512 "main.c"
     hero_str_decref(h7_own7);
-#line 69 "examples/adventure/game.hero"
-#line 2515 "main.c"
     hero_array_decref(h8_own8);
-#line 69 "examples/adventure/game.hero"
-#line 2518 "main.c"
     h_game_Turn_release(&h9_own9);
-#line 69 "examples/adventure/game.hero"
-#line 2521 "main.c"
     hero_str_decref(h10_own10);
-#line 69 "examples/adventure/game.hero"
-#line 2524 "main.c"
     h_game_Turn_release(&h11_own11);
-#line 69 "examples/adventure/game.hero"
-#line 2527 "main.c"
     h_game_Turn_release(&h12_own12);
-#line 69 "examples/adventure/game.hero"
-#line 2530 "main.c"
     hero_str_decref(h13_own13);
-#line 69 "examples/adventure/game.hero"
-#line 2533 "main.c"
     hero_array_decref(h14_own14);
-#line 69 "examples/adventure/game.hero"
-#line 2536 "main.c"
     h_game_Turn_release(&h15_own15);
-#line 69 "examples/adventure/game.hero"
-#line 2539 "main.c"
     h_game_Turn_release(&h16_own16);
-#line 69 "examples/adventure/game.hero"
-#line 2542 "main.c"
     hero_str_decref(h17_own17);
-#line 69 "examples/adventure/game.hero"
-#line 2545 "main.c"
     hero_str_decref(h18_own18);
-#line 69 "examples/adventure/game.hero"
-#line 2548 "main.c"
     hero_array_decref(h19_own19);
-#line 69 "examples/adventure/game.hero"
-#line 2551 "main.c"
     h_game_Turn_release(&h20_own20);
-#line 69 "examples/adventure/game.hero"
-#line 2554 "main.c"
     hero_array_decref(h21_own21);
-#line 69 "examples/adventure/game.hero"
-#line 2557 "main.c"
     h_game_Turn_release(&h22_own22);
     return t55;
 }
 
 #line 87 "examples/adventure/game.hero"
 h_game_Turn h_game_same(h_game_Game h0_g, HeroArrayHeader * h1_said) {
-#line 2564 "main.c"
+#line 2430 "main.c"
     h_game_Turn h2_own2 = {0};
     HeroArrayHeader * t1;
     h_game_Game t2;
@@ -2572,10 +2438,8 @@ bb0:
     t1 = h1_said;
 #line 88 "examples/adventure/game.hero"
     t2 = h0_g;
-#line 2576 "main.c"
+#line 2442 "main.c"
     hero_array_incref(t1);
-#line 88 "examples/adventure/game.hero"
-#line 2579 "main.c"
     h_game_Game_retain(&t2);
 #line 88 "examples/adventure/game.hero"
     t3 = (h_game_Turn){.f_said = t1, .f_next = t2};
@@ -2583,20 +2447,16 @@ bb0:
     t4 = h2_own2;
 #line 88 "examples/adventure/game.hero"
     h2_own2 = t3;
-#line 2587 "main.c"
+#line 2451 "main.c"
     h_game_Turn_release(&t4);
-#line 88 "examples/adventure/game.hero"
-#line 2590 "main.c"
     h_game_Turn_retain(&t3);
-#line 88 "examples/adventure/game.hero"
-#line 2593 "main.c"
     h_game_Turn_release(&h2_own2);
     return t3;
 }
 
 #line 90 "examples/adventure/game.hero"
 HeroArrayHeader * h_game_describe(h_world_World h0_w, h_game_Game h1_g) {
-#line 2600 "main.c"
+#line 2460 "main.c"
     h_0opt_5e724113 h2_s0 = {0};
     h_world_Room h3_room = {0};
     HeroArrayHeader * h4_lines = {0};
@@ -2668,15 +2528,15 @@ bb0:
     t38 = h8_own8;
 #line 91 "examples/adventure/game.hero"
     h8_own8 = t4;
-#line 2672 "main.c"
+#line 2532 "main.c"
     h_0opt_5e724113_release(&t38);
 #line 91 "examples/adventure/game.hero"
     t39 = h2_s0;
-#line 2676 "main.c"
+#line 2536 "main.c"
     h_0opt_5e724113_retain(&t4);
 #line 91 "examples/adventure/game.hero"
     h2_s0 = t4;
-#line 2680 "main.c"
+#line 2540 "main.c"
     h_0opt_5e724113_release(&t39);
 #line 91 "examples/adventure/game.hero"
     t5 = h2_s0;
@@ -2694,7 +2554,6 @@ bb0:
     }
 #line 91 "examples/adventure/game.hero"
 bb2:
-#line 92 "examples/adventure/game.hero"
     t7 = HERO_STR_LIT(hero_str_7f800d8a);
 #line 92 "examples/adventure/game.hero"
     t8 = hero_array_new(&hero_desc_str, 1);
@@ -2704,7 +2563,7 @@ bb2:
     t40 = h9_own9;
 #line 92 "examples/adventure/game.hero"
     h9_own9 = t8;
-#line 2708 "main.c"
+#line 2567 "main.c"
     hero_array_decref(t40);
 #line 92 "examples/adventure/game.hero"
     h7_ret0 = t8;
@@ -2712,17 +2571,16 @@ bb2:
     goto bb9;
 #line 92 "examples/adventure/game.hero"
 bb3:
-#line 93 "examples/adventure/game.hero"
     t9 = h2_s0;
 #line 93 "examples/adventure/game.hero"
     t10 = t9.as.ok;
 #line 93 "examples/adventure/game.hero"
     t41 = h3_room;
-#line 2722 "main.c"
+#line 2580 "main.c"
     h_world_Room_retain(&t10);
 #line 93 "examples/adventure/game.hero"
     h3_room = t10;
-#line 2726 "main.c"
+#line 2584 "main.c"
     h_world_Room_release(&t41);
 #line 94 "examples/adventure/game.hero"
     t11 = h3_room;
@@ -2736,15 +2594,15 @@ bb3:
     t42 = h10_own10;
 #line 94 "examples/adventure/game.hero"
     h10_own10 = t13;
-#line 2740 "main.c"
+#line 2598 "main.c"
     hero_array_decref(t42);
 #line 94 "examples/adventure/game.hero"
     t43 = h4_lines;
-#line 2744 "main.c"
+#line 2602 "main.c"
     hero_array_incref(t13);
 #line 94 "examples/adventure/game.hero"
     h4_lines = t13;
-#line 2748 "main.c"
+#line 2606 "main.c"
     hero_array_decref(t43);
 #line 96 "examples/adventure/game.hero"
     t14 = h3_room;
@@ -2798,15 +2656,15 @@ bb5:
     t44 = h11_own11;
 #line 96 "examples/adventure/game.hero"
     h11_own11 = t22;
-#line 2802 "main.c"
+#line 2660 "main.c"
     h_0opt_473cb9ae_release(&t44);
 #line 96 "examples/adventure/game.hero"
     t45 = h6_f0;
-#line 2806 "main.c"
+#line 2664 "main.c"
     h_0opt_473cb9ae_retain(&t22);
 #line 96 "examples/adventure/game.hero"
     h6_f0 = t22;
-#line 2810 "main.c"
+#line 2668 "main.c"
     h_0opt_473cb9ae_release(&t45);
 #line 96 "examples/adventure/game.hero"
     t23 = h6_f0;
@@ -2828,7 +2686,6 @@ bb6:
     if (t27) goto bb7; else goto bb8;
 #line 96 "examples/adventure/game.hero"
 bb7:
-#line 97 "examples/adventure/game.hero"
     t29 = HERO_STR_LIT(hero_str_32321b5);
 #line 97 "examples/adventure/game.hero"
     t30 = h3_room;
@@ -2840,7 +2697,7 @@ bb7:
     t46 = h12_own12;
 #line 97 "examples/adventure/game.hero"
     h12_own12 = t32;
-#line 2844 "main.c"
+#line 2701 "main.c"
     hero_str_decref(t46);
 #line 97 "examples/adventure/game.hero"
     t33 = HERO_STR_LIT(hero_str_1fc22d9b);
@@ -2850,7 +2707,7 @@ bb7:
     t47 = h13_own13;
 #line 97 "examples/adventure/game.hero"
     h13_own13 = t34;
-#line 2854 "main.c"
+#line 2711 "main.c"
     hero_str_decref(t47);
 #line 97 "examples/adventure/game.hero"
     hero_array_push_owned(&h4_lines, &t34);
@@ -2862,46 +2719,25 @@ bb8:
     goto bb4;
 #line 97 "examples/adventure/game.hero"
 bb9:
-#line 92 "examples/adventure/game.hero"
+#line 2723 "main.c"
     t37 = h7_ret0;
-#line 2868 "main.c"
     hero_array_incref(t37);
-#line 92 "examples/adventure/game.hero"
-#line 2871 "main.c"
     h_0opt_5e724113_release(&h2_s0);
-#line 92 "examples/adventure/game.hero"
-#line 2874 "main.c"
     h_world_Room_release(&h3_room);
-#line 92 "examples/adventure/game.hero"
-#line 2877 "main.c"
     hero_array_decref(h4_lines);
-#line 92 "examples/adventure/game.hero"
-#line 2880 "main.c"
     h_0opt_473cb9ae_release(&h6_f0);
-#line 92 "examples/adventure/game.hero"
-#line 2883 "main.c"
     h_0opt_5e724113_release(&h8_own8);
-#line 92 "examples/adventure/game.hero"
-#line 2886 "main.c"
     hero_array_decref(h9_own9);
-#line 92 "examples/adventure/game.hero"
-#line 2889 "main.c"
     hero_array_decref(h10_own10);
-#line 92 "examples/adventure/game.hero"
-#line 2892 "main.c"
     h_0opt_473cb9ae_release(&h11_own11);
-#line 92 "examples/adventure/game.hero"
-#line 2895 "main.c"
     hero_str_decref(h12_own12);
-#line 92 "examples/adventure/game.hero"
-#line 2898 "main.c"
     hero_str_decref(h13_own13);
     return t37;
 }
 
 #line 100 "examples/adventure/game.hero"
 h_game_Turn h_game_go(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_direction) {
-#line 2905 "main.c"
+#line 2741 "main.c"
     h_0opt_f87774a h3_s0 = {0};
     HeroFailure h4_e = {0};
     HeroStr h5_there = {0};
@@ -2994,15 +2830,15 @@ bb1:
     t42 = h8_own8;
 #line 104 "examples/adventure/game.hero"
     h8_own8 = t12;
-#line 2998 "main.c"
+#line 2834 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 104 "examples/adventure/game.hero"
     t43 = h3_s0;
-#line 3002 "main.c"
+#line 2838 "main.c"
     h_0opt_f87774a_retain(&t12);
 #line 104 "examples/adventure/game.hero"
     h3_s0 = t12;
-#line 3006 "main.c"
+#line 2842 "main.c"
     h_0opt_f87774a_release(&t43);
 #line 104 "examples/adventure/game.hero"
     t13 = h3_s0;
@@ -3032,7 +2868,7 @@ bb2:
     t44 = h9_own9;
 #line 102 "examples/adventure/game.hero"
     h9_own9 = t6;
-#line 3036 "main.c"
+#line 2872 "main.c"
     hero_array_decref(t44);
 #line 102 "examples/adventure/game.hero"
     t7 = h_game_same(t4, t6);
@@ -3040,7 +2876,7 @@ bb2:
     t45 = h10_own10;
 #line 102 "examples/adventure/game.hero"
     h10_own10 = t7;
-#line 3044 "main.c"
+#line 2880 "main.c"
     h_game_Turn_release(&t45);
 #line 102 "examples/adventure/game.hero"
     h7_ret0 = t7;
@@ -3058,11 +2894,11 @@ bb5:
     t16 = t15.as.err;
 #line 105 "examples/adventure/game.hero"
     t46 = h4_e;
-#line 3062 "main.c"
+#line 2898 "main.c"
     hero_failure_retain(&t16);
 #line 105 "examples/adventure/game.hero"
     h4_e = t16;
-#line 3066 "main.c"
+#line 2902 "main.c"
     hero_failure_release(&t46);
 #line 105 "examples/adventure/game.hero"
     t17 = h1_g;
@@ -3078,7 +2914,7 @@ bb5:
     t47 = h11_own11;
 #line 105 "examples/adventure/game.hero"
     h11_own11 = t20;
-#line 3082 "main.c"
+#line 2918 "main.c"
     hero_array_decref(t47);
 #line 105 "examples/adventure/game.hero"
     t21 = h_game_same(t17, t20);
@@ -3086,7 +2922,7 @@ bb5:
     t48 = h12_own12;
 #line 105 "examples/adventure/game.hero"
     h12_own12 = t21;
-#line 3090 "main.c"
+#line 2926 "main.c"
     h_game_Turn_release(&t48);
 #line 105 "examples/adventure/game.hero"
     h7_ret0 = t21;
@@ -3094,29 +2930,25 @@ bb5:
     goto bb7;
 #line 105 "examples/adventure/game.hero"
 bb6:
-#line 106 "examples/adventure/game.hero"
     t22 = h3_s0;
 #line 106 "examples/adventure/game.hero"
     t23 = t22.as.ok;
 #line 106 "examples/adventure/game.hero"
     t49 = h5_there;
-#line 3104 "main.c"
+#line 2939 "main.c"
     hero_str_incref(t23);
 #line 106 "examples/adventure/game.hero"
     h5_there = t23;
-#line 3108 "main.c"
+#line 2943 "main.c"
     hero_str_decref(t49);
 #line 108 "examples/adventure/game.hero"
     t24 = h5_there;
-#line 109 "examples/adventure/game.hero"
     t25 = h1_g;
 #line 109 "examples/adventure/game.hero"
     t26 = t25.f_carrying;
-#line 110 "examples/adventure/game.hero"
     t27 = h1_g;
 #line 110 "examples/adventure/game.hero"
     t28 = t27.f_taken;
-#line 111 "examples/adventure/game.hero"
     t29 = h1_g;
 #line 111 "examples/adventure/game.hero"
     t30 = t29.f_moves;
@@ -3124,18 +2956,12 @@ bb6:
     t31 = INT64_C(1);
 #line 111 "examples/adventure/game.hero"
     if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 112 "examples/adventure/game.hero"
     t33 = h1_g;
 #line 112 "examples/adventure/game.hero"
     t34 = t33.f_won;
-#line 107 "examples/adventure/game.hero"
-#line 3133 "main.c"
+#line 2963 "main.c"
     hero_str_incref(t24);
-#line 107 "examples/adventure/game.hero"
-#line 3136 "main.c"
     hero_array_incref(t26);
-#line 107 "examples/adventure/game.hero"
-#line 3139 "main.c"
     hero_map_incref(t28);
 #line 107 "examples/adventure/game.hero"
     t35 = (h_game_Game){.f_here = t24, .f_carrying = t26, .f_taken = t28, .f_moves = t32, .f_won = t34};
@@ -3143,15 +2969,15 @@ bb6:
     t50 = h13_own13;
 #line 107 "examples/adventure/game.hero"
     h13_own13 = t35;
-#line 3147 "main.c"
+#line 2973 "main.c"
     h_game_Game_release(&t50);
 #line 107 "examples/adventure/game.hero"
     t51 = h6_moved;
-#line 3151 "main.c"
+#line 2977 "main.c"
     h_game_Game_retain(&t35);
 #line 107 "examples/adventure/game.hero"
     h6_moved = t35;
-#line 3155 "main.c"
+#line 2981 "main.c"
     h_game_Game_release(&t51);
 #line 114 "examples/adventure/game.hero"
     t36 = h0_w;
@@ -3163,14 +2989,12 @@ bb6:
     t52 = h14_own14;
 #line 114 "examples/adventure/game.hero"
     h14_own14 = t38;
-#line 3167 "main.c"
+#line 2993 "main.c"
     hero_array_decref(t52);
 #line 114 "examples/adventure/game.hero"
     t39 = h6_moved;
-#line 3171 "main.c"
+#line 2997 "main.c"
     hero_array_incref(t38);
-#line 114 "examples/adventure/game.hero"
-#line 3174 "main.c"
     h_game_Game_retain(&t39);
 #line 114 "examples/adventure/game.hero"
     t40 = (h_game_Turn){.f_said = t38, .f_next = t39};
@@ -3178,7 +3002,7 @@ bb6:
     t53 = h15_own15;
 #line 114 "examples/adventure/game.hero"
     h15_own15 = t40;
-#line 3182 "main.c"
+#line 3006 "main.c"
     h_game_Turn_release(&t53);
 #line 114 "examples/adventure/game.hero"
     h7_ret0 = t40;
@@ -3186,52 +3010,27 @@ bb6:
     goto bb7;
 #line 114 "examples/adventure/game.hero"
 bb7:
-#line 102 "examples/adventure/game.hero"
+#line 3014 "main.c"
     t41 = h7_ret0;
-#line 3192 "main.c"
     h_game_Turn_retain(&t41);
-#line 102 "examples/adventure/game.hero"
-#line 3195 "main.c"
     h_0opt_f87774a_release(&h3_s0);
-#line 102 "examples/adventure/game.hero"
-#line 3198 "main.c"
     hero_failure_release(&h4_e);
-#line 102 "examples/adventure/game.hero"
-#line 3201 "main.c"
     hero_str_decref(h5_there);
-#line 102 "examples/adventure/game.hero"
-#line 3204 "main.c"
     h_game_Game_release(&h6_moved);
-#line 102 "examples/adventure/game.hero"
-#line 3207 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 102 "examples/adventure/game.hero"
-#line 3210 "main.c"
     hero_array_decref(h9_own9);
-#line 102 "examples/adventure/game.hero"
-#line 3213 "main.c"
     h_game_Turn_release(&h10_own10);
-#line 102 "examples/adventure/game.hero"
-#line 3216 "main.c"
     hero_array_decref(h11_own11);
-#line 102 "examples/adventure/game.hero"
-#line 3219 "main.c"
     h_game_Turn_release(&h12_own12);
-#line 102 "examples/adventure/game.hero"
-#line 3222 "main.c"
     h_game_Game_release(&h13_own13);
-#line 102 "examples/adventure/game.hero"
-#line 3225 "main.c"
     hero_array_decref(h14_own14);
-#line 102 "examples/adventure/game.hero"
-#line 3228 "main.c"
     h_game_Turn_release(&h15_own15);
     return t41;
 }
 
 #line 116 "examples/adventure/game.hero"
 h_game_Turn h_game_take(h_world_World h0_w, h_game_Game h1_g) {
-#line 3235 "main.c"
+#line 3034 "main.c"
     h_0opt_5e724113 h2_s0 = {0};
     h_world_Room h3_room = {0};
     bool h4_b0;
@@ -3342,15 +3141,15 @@ bb0:
     t61 = h8_own8;
 #line 117 "examples/adventure/game.hero"
     h8_own8 = t4;
-#line 3346 "main.c"
+#line 3145 "main.c"
     h_0opt_5e724113_release(&t61);
 #line 117 "examples/adventure/game.hero"
     t62 = h2_s0;
-#line 3350 "main.c"
+#line 3149 "main.c"
     h_0opt_5e724113_retain(&t4);
 #line 117 "examples/adventure/game.hero"
     h2_s0 = t4;
-#line 3354 "main.c"
+#line 3153 "main.c"
     h_0opt_5e724113_release(&t62);
 #line 117 "examples/adventure/game.hero"
     t5 = h2_s0;
@@ -3368,7 +3167,6 @@ bb0:
     }
 #line 117 "examples/adventure/game.hero"
 bb2:
-#line 118 "examples/adventure/game.hero"
     t7 = h1_g;
 #line 118 "examples/adventure/game.hero"
     t8 = HERO_STR_LIT(hero_str_60b7b9c7);
@@ -3380,7 +3178,7 @@ bb2:
     t63 = h9_own9;
 #line 118 "examples/adventure/game.hero"
     h9_own9 = t9;
-#line 3384 "main.c"
+#line 3182 "main.c"
     hero_array_decref(t63);
 #line 118 "examples/adventure/game.hero"
     t10 = h_game_same(t7, t9);
@@ -3388,7 +3186,7 @@ bb2:
     t64 = h10_own10;
 #line 118 "examples/adventure/game.hero"
     h10_own10 = t10;
-#line 3392 "main.c"
+#line 3190 "main.c"
     h_game_Turn_release(&t64);
 #line 118 "examples/adventure/game.hero"
     h7_ret0 = t10;
@@ -3396,17 +3194,16 @@ bb2:
     goto bb9;
 #line 118 "examples/adventure/game.hero"
 bb3:
-#line 119 "examples/adventure/game.hero"
     t11 = h2_s0;
 #line 119 "examples/adventure/game.hero"
     t12 = t11.as.ok;
 #line 119 "examples/adventure/game.hero"
     t65 = h3_room;
-#line 3406 "main.c"
+#line 3203 "main.c"
     h_world_Room_retain(&t12);
 #line 119 "examples/adventure/game.hero"
     h3_room = t12;
-#line 3410 "main.c"
+#line 3207 "main.c"
     h_world_Room_release(&t65);
 #line 120 "examples/adventure/game.hero"
     t13 = h3_room;
@@ -3426,7 +3223,6 @@ bb4:
     t32 = h1_g;
 #line 123 "examples/adventure/game.hero"
     t33 = t32.f_here;
-#line 124 "examples/adventure/game.hero"
     t34 = h1_g;
 #line 124 "examples/adventure/game.hero"
     t35 = t34.f_carrying;
@@ -3440,7 +3236,7 @@ bb4:
     t66 = h11_own11;
 #line 124 "examples/adventure/game.hero"
     h11_own11 = t38;
-#line 3444 "main.c"
+#line 3240 "main.c"
     hero_array_decref(t66);
 #line 125 "examples/adventure/game.hero"
     t39 = h1_g;
@@ -3456,7 +3252,7 @@ bb4:
     t67 = h12_own12;
 #line 125 "examples/adventure/game.hero"
     h12_own12 = t43;
-#line 3460 "main.c"
+#line 3256 "main.c"
     hero_map_decref(t67);
 #line 126 "examples/adventure/game.hero"
     t44 = h1_g;
@@ -3466,18 +3262,12 @@ bb4:
     t46 = INT64_C(1);
 #line 126 "examples/adventure/game.hero"
     if (__builtin_add_overflow(t45, t46, &t47)) hero_panic_overflow();
-#line 127 "examples/adventure/game.hero"
     t48 = h1_g;
 #line 127 "examples/adventure/game.hero"
     t49 = t48.f_won;
-#line 122 "examples/adventure/game.hero"
-#line 3475 "main.c"
+#line 3269 "main.c"
     hero_str_incref(t33);
-#line 122 "examples/adventure/game.hero"
-#line 3478 "main.c"
     hero_array_incref(t38);
-#line 122 "examples/adventure/game.hero"
-#line 3481 "main.c"
     hero_map_incref(t43);
 #line 122 "examples/adventure/game.hero"
     t50 = (h_game_Game){.f_here = t33, .f_carrying = t38, .f_taken = t43, .f_moves = t47, .f_won = t49};
@@ -3485,15 +3275,15 @@ bb4:
     t68 = h13_own13;
 #line 122 "examples/adventure/game.hero"
     h13_own13 = t50;
-#line 3489 "main.c"
+#line 3279 "main.c"
     h_game_Game_release(&t68);
 #line 122 "examples/adventure/game.hero"
     t69 = h6_picked;
-#line 3493 "main.c"
+#line 3283 "main.c"
     h_game_Game_retain(&t50);
 #line 122 "examples/adventure/game.hero"
     h6_picked = t50;
-#line 3497 "main.c"
+#line 3287 "main.c"
     h_game_Game_release(&t69);
 #line 129 "examples/adventure/game.hero"
     t51 = HERO_STR_LIT(hero_str_45eeb27);
@@ -3507,7 +3297,7 @@ bb4:
     t70 = h14_own14;
 #line 129 "examples/adventure/game.hero"
     h14_own14 = t54;
-#line 3511 "main.c"
+#line 3301 "main.c"
     hero_str_decref(t70);
 #line 129 "examples/adventure/game.hero"
     t55 = HERO_STR_LIT(hero_str_2e);
@@ -3517,7 +3307,7 @@ bb4:
     t71 = h15_own15;
 #line 129 "examples/adventure/game.hero"
     h15_own15 = t56;
-#line 3521 "main.c"
+#line 3311 "main.c"
     hero_str_decref(t71);
 #line 129 "examples/adventure/game.hero"
     t57 = hero_array_new(&hero_desc_str, 1);
@@ -3527,14 +3317,12 @@ bb4:
     t72 = h16_own16;
 #line 129 "examples/adventure/game.hero"
     h16_own16 = t57;
-#line 3531 "main.c"
+#line 3321 "main.c"
     hero_array_decref(t72);
 #line 129 "examples/adventure/game.hero"
     t58 = h6_picked;
-#line 3535 "main.c"
+#line 3325 "main.c"
     hero_array_incref(t57);
-#line 129 "examples/adventure/game.hero"
-#line 3538 "main.c"
     h_game_Game_retain(&t58);
 #line 129 "examples/adventure/game.hero"
     t59 = (h_game_Turn){.f_said = t57, .f_next = t58};
@@ -3542,7 +3330,7 @@ bb4:
     t73 = h17_own17;
 #line 129 "examples/adventure/game.hero"
     h17_own17 = t59;
-#line 3546 "main.c"
+#line 3334 "main.c"
     h_game_Turn_release(&t73);
 #line 129 "examples/adventure/game.hero"
     h7_ret0 = t59;
@@ -3580,15 +3368,15 @@ bb5:
     t74 = h18_own18;
 #line 120 "examples/adventure/game.hero"
     h18_own18 = t21;
-#line 3584 "main.c"
+#line 3372 "main.c"
     h_0opt_473cb9ae_release(&t74);
 #line 120 "examples/adventure/game.hero"
     t75 = h5_f0;
-#line 3588 "main.c"
+#line 3376 "main.c"
     h_0opt_473cb9ae_retain(&t21);
 #line 120 "examples/adventure/game.hero"
     h5_f0 = t21;
-#line 3592 "main.c"
+#line 3380 "main.c"
     h_0opt_473cb9ae_release(&t75);
 #line 120 "examples/adventure/game.hero"
     t22 = h5_f0;
@@ -3612,7 +3400,6 @@ bb6:
     if (t27) goto bb7; else goto bb8;
 #line 120 "examples/adventure/game.hero"
 bb7:
-#line 121 "examples/adventure/game.hero"
     t28 = h1_g;
 #line 121 "examples/adventure/game.hero"
     t29 = HERO_STR_LIT(hero_str_247d54f0);
@@ -3624,7 +3411,7 @@ bb7:
     t76 = h19_own19;
 #line 121 "examples/adventure/game.hero"
     h19_own19 = t30;
-#line 3628 "main.c"
+#line 3415 "main.c"
     hero_array_decref(t76);
 #line 121 "examples/adventure/game.hero"
     t31 = h_game_same(t28, t30);
@@ -3632,7 +3419,7 @@ bb7:
     t77 = h20_own20;
 #line 121 "examples/adventure/game.hero"
     h20_own20 = t31;
-#line 3636 "main.c"
+#line 3423 "main.c"
     h_game_Turn_release(&t77);
 #line 121 "examples/adventure/game.hero"
     h7_ret0 = t31;
@@ -3644,67 +3431,32 @@ bb8:
     goto bb4;
 #line 121 "examples/adventure/game.hero"
 bb9:
-#line 118 "examples/adventure/game.hero"
+#line 3435 "main.c"
     t60 = h7_ret0;
-#line 3650 "main.c"
     h_game_Turn_retain(&t60);
-#line 118 "examples/adventure/game.hero"
-#line 3653 "main.c"
     h_0opt_5e724113_release(&h2_s0);
-#line 118 "examples/adventure/game.hero"
-#line 3656 "main.c"
     h_world_Room_release(&h3_room);
-#line 118 "examples/adventure/game.hero"
-#line 3659 "main.c"
     h_0opt_473cb9ae_release(&h5_f0);
-#line 118 "examples/adventure/game.hero"
-#line 3662 "main.c"
     h_game_Game_release(&h6_picked);
-#line 118 "examples/adventure/game.hero"
-#line 3665 "main.c"
     h_0opt_5e724113_release(&h8_own8);
-#line 118 "examples/adventure/game.hero"
-#line 3668 "main.c"
     hero_array_decref(h9_own9);
-#line 118 "examples/adventure/game.hero"
-#line 3671 "main.c"
     h_game_Turn_release(&h10_own10);
-#line 118 "examples/adventure/game.hero"
-#line 3674 "main.c"
     hero_array_decref(h11_own11);
-#line 118 "examples/adventure/game.hero"
-#line 3677 "main.c"
     hero_map_decref(h12_own12);
-#line 118 "examples/adventure/game.hero"
-#line 3680 "main.c"
     h_game_Game_release(&h13_own13);
-#line 118 "examples/adventure/game.hero"
-#line 3683 "main.c"
     hero_str_decref(h14_own14);
-#line 118 "examples/adventure/game.hero"
-#line 3686 "main.c"
     hero_str_decref(h15_own15);
-#line 118 "examples/adventure/game.hero"
-#line 3689 "main.c"
     hero_array_decref(h16_own16);
-#line 118 "examples/adventure/game.hero"
-#line 3692 "main.c"
     h_game_Turn_release(&h17_own17);
-#line 118 "examples/adventure/game.hero"
-#line 3695 "main.c"
     h_0opt_473cb9ae_release(&h18_own18);
-#line 118 "examples/adventure/game.hero"
-#line 3698 "main.c"
     hero_array_decref(h19_own19);
-#line 118 "examples/adventure/game.hero"
-#line 3701 "main.c"
     h_game_Turn_release(&h20_own20);
     return t60;
 }
 
 #line 131 "examples/adventure/game.hero"
 HeroMapHeader * h_game_with_taken(HeroMapHeader * h0_taken, HeroStr h1_item) {
-#line 3708 "main.c"
+#line 3460 "main.c"
     HeroMapHeader * h2_out = {0};
     HeroMapHeader * t1;
     HeroStr t2;
@@ -3717,11 +3469,11 @@ bb0:
     t1 = h0_taken;
 #line 132 "examples/adventure/game.hero"
     t5 = h2_out;
-#line 3721 "main.c"
+#line 3473 "main.c"
     hero_map_incref(t1);
 #line 132 "examples/adventure/game.hero"
     h2_out = t1;
-#line 3725 "main.c"
+#line 3477 "main.c"
     hero_map_decref(t5);
 #line 133 "examples/adventure/game.hero"
     t2 = h1_item;
@@ -3729,19 +3481,16 @@ bb0:
     t3 = true;
 #line 133 "examples/adventure/game.hero"
     hero_map_set(&(h2_out), &t2, &t3);
-#line 134 "examples/adventure/game.hero"
     t4 = h2_out;
-#line 3735 "main.c"
+#line 3486 "main.c"
     hero_map_incref(t4);
-#line 134 "examples/adventure/game.hero"
-#line 3738 "main.c"
     hero_map_decref(h2_out);
     return t4;
 }
 
 #line 136 "examples/adventure/game.hero"
 HeroStr h_game_bag_of(h_game_Game h0_g) {
-#line 3745 "main.c"
+#line 3494 "main.c"
     HeroStr h1_ret0 = {0};
     HeroArrayHeader * h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -3795,7 +3544,7 @@ bb1:
     t17 = h2_own2;
 #line 139 "examples/adventure/game.hero"
     h2_own2 = t10;
-#line 3799 "main.c"
+#line 3548 "main.c"
     hero_array_decref(t17);
 #line 139 "examples/adventure/game.hero"
     t11 = HERO_STR_LIT(hero_str_16a4);
@@ -3805,7 +3554,7 @@ bb1:
     t18 = h3_own3;
 #line 139 "examples/adventure/game.hero"
     h3_own3 = t12;
-#line 3809 "main.c"
+#line 3558 "main.c"
     hero_str_decref(t18);
 #line 139 "examples/adventure/game.hero"
     t13 = hero_str_concat(t7, t12);
@@ -3813,7 +3562,7 @@ bb1:
     t19 = h4_own4;
 #line 139 "examples/adventure/game.hero"
     h4_own4 = t13;
-#line 3817 "main.c"
+#line 3566 "main.c"
     hero_str_decref(t19);
 #line 139 "examples/adventure/game.hero"
     t14 = HERO_STR_LIT(hero_str_2e);
@@ -3823,7 +3572,7 @@ bb1:
     t20 = h5_own5;
 #line 139 "examples/adventure/game.hero"
     h5_own5 = t15;
-#line 3827 "main.c"
+#line 3576 "main.c"
     hero_str_decref(t20);
 #line 139 "examples/adventure/game.hero"
     h1_ret0 = t15;
@@ -3843,28 +3592,19 @@ bb3:
     goto bb1;
 #line 138 "examples/adventure/game.hero"
 bb4:
-#line 138 "examples/adventure/game.hero"
+#line 3596 "main.c"
     t16 = h1_ret0;
-#line 3849 "main.c"
     hero_str_incref(t16);
-#line 138 "examples/adventure/game.hero"
-#line 3852 "main.c"
     hero_array_decref(h2_own2);
-#line 138 "examples/adventure/game.hero"
-#line 3855 "main.c"
     hero_str_decref(h3_own3);
-#line 138 "examples/adventure/game.hero"
-#line 3858 "main.c"
     hero_str_decref(h4_own4);
-#line 138 "examples/adventure/game.hero"
-#line 3861 "main.c"
     hero_str_decref(h5_own5);
     return t16;
 }
 
 #line 143 "examples/adventure/game.hero"
 h_game_Turn h_game_open(h_game_Game h0_g) {
-#line 3868 "main.c"
+#line 3608 "main.c"
     h_game_Game h1_won = {0};
     h_game_Turn h2_ret0 = {0};
     HeroArrayHeader * h3_own3 = {0};
@@ -3953,7 +3693,7 @@ bb2:
     t34 = h3_own3;
 #line 145 "examples/adventure/game.hero"
     h3_own3 = t7;
-#line 3957 "main.c"
+#line 3697 "main.c"
     hero_array_decref(t34);
 #line 145 "examples/adventure/game.hero"
     t8 = h_game_same(t5, t7);
@@ -3961,7 +3701,7 @@ bb2:
     t35 = h4_own4;
 #line 145 "examples/adventure/game.hero"
     h4_own4 = t8;
-#line 3965 "main.c"
+#line 3705 "main.c"
     h_game_Turn_release(&t35);
 #line 145 "examples/adventure/game.hero"
     h2_ret0 = t8;
@@ -3977,15 +3717,12 @@ bb4:
     t17 = h0_g;
 #line 150 "examples/adventure/game.hero"
     t18 = t17.f_here;
-#line 151 "examples/adventure/game.hero"
     t19 = h0_g;
 #line 151 "examples/adventure/game.hero"
     t20 = t19.f_carrying;
-#line 152 "examples/adventure/game.hero"
     t21 = h0_g;
 #line 152 "examples/adventure/game.hero"
     t22 = t21.f_taken;
-#line 153 "examples/adventure/game.hero"
     t23 = h0_g;
 #line 153 "examples/adventure/game.hero"
     t24 = t23.f_moves;
@@ -3993,16 +3730,10 @@ bb4:
     t25 = INT64_C(1);
 #line 153 "examples/adventure/game.hero"
     if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 154 "examples/adventure/game.hero"
     t27 = true;
-#line 149 "examples/adventure/game.hero"
-#line 4000 "main.c"
+#line 3735 "main.c"
     hero_str_incref(t18);
-#line 149 "examples/adventure/game.hero"
-#line 4003 "main.c"
     hero_array_incref(t20);
-#line 149 "examples/adventure/game.hero"
-#line 4006 "main.c"
     hero_map_incref(t22);
 #line 149 "examples/adventure/game.hero"
     t28 = (h_game_Game){.f_here = t18, .f_carrying = t20, .f_taken = t22, .f_moves = t26, .f_won = t27};
@@ -4010,15 +3741,15 @@ bb4:
     t36 = h5_own5;
 #line 149 "examples/adventure/game.hero"
     h5_own5 = t28;
-#line 4014 "main.c"
+#line 3745 "main.c"
     h_game_Game_release(&t36);
 #line 149 "examples/adventure/game.hero"
     t37 = h1_won;
-#line 4018 "main.c"
+#line 3749 "main.c"
     h_game_Game_retain(&t28);
 #line 149 "examples/adventure/game.hero"
     h1_won = t28;
-#line 4022 "main.c"
+#line 3753 "main.c"
     h_game_Game_release(&t37);
 #line 156 "examples/adventure/game.hero"
     t29 = HERO_STR_LIT(hero_str_403631d2);
@@ -4030,14 +3761,12 @@ bb4:
     t38 = h6_own6;
 #line 156 "examples/adventure/game.hero"
     h6_own6 = t30;
-#line 4034 "main.c"
+#line 3765 "main.c"
     hero_array_decref(t38);
 #line 156 "examples/adventure/game.hero"
     t31 = h1_won;
-#line 4038 "main.c"
+#line 3769 "main.c"
     hero_array_incref(t30);
-#line 156 "examples/adventure/game.hero"
-#line 4041 "main.c"
     h_game_Game_retain(&t31);
 #line 156 "examples/adventure/game.hero"
     t32 = (h_game_Turn){.f_said = t30, .f_next = t31};
@@ -4045,7 +3774,7 @@ bb4:
     t39 = h7_own7;
 #line 156 "examples/adventure/game.hero"
     h7_own7 = t32;
-#line 4049 "main.c"
+#line 3778 "main.c"
     h_game_Turn_release(&t39);
 #line 156 "examples/adventure/game.hero"
     h2_ret0 = t32;
@@ -4065,7 +3794,7 @@ bb5:
     t40 = h8_own8;
 #line 148 "examples/adventure/game.hero"
     h8_own8 = t15;
-#line 4069 "main.c"
+#line 3798 "main.c"
     hero_array_decref(t40);
 #line 148 "examples/adventure/game.hero"
     t16 = h_game_same(t13, t15);
@@ -4073,7 +3802,7 @@ bb5:
     t41 = h9_own9;
 #line 148 "examples/adventure/game.hero"
     h9_own9 = t16;
-#line 4077 "main.c"
+#line 3806 "main.c"
     h_game_Turn_release(&t41);
 #line 148 "examples/adventure/game.hero"
     h2_ret0 = t16;
@@ -4085,40 +3814,23 @@ bb6:
     goto bb4;
 #line 148 "examples/adventure/game.hero"
 bb7:
-#line 145 "examples/adventure/game.hero"
+#line 3818 "main.c"
     t33 = h2_ret0;
-#line 4091 "main.c"
     h_game_Turn_retain(&t33);
-#line 145 "examples/adventure/game.hero"
-#line 4094 "main.c"
     h_game_Game_release(&h1_won);
-#line 145 "examples/adventure/game.hero"
-#line 4097 "main.c"
     hero_array_decref(h3_own3);
-#line 145 "examples/adventure/game.hero"
-#line 4100 "main.c"
     h_game_Turn_release(&h4_own4);
-#line 145 "examples/adventure/game.hero"
-#line 4103 "main.c"
     h_game_Game_release(&h5_own5);
-#line 145 "examples/adventure/game.hero"
-#line 4106 "main.c"
     hero_array_decref(h6_own6);
-#line 145 "examples/adventure/game.hero"
-#line 4109 "main.c"
     h_game_Turn_release(&h7_own7);
-#line 145 "examples/adventure/game.hero"
-#line 4112 "main.c"
     hero_array_decref(h8_own8);
-#line 145 "examples/adventure/game.hero"
-#line 4115 "main.c"
     h_game_Turn_release(&h9_own9);
     return t33;
 }
 
 #line 160 "examples/adventure/game.hero"
 h_game_Turn h_game_play_all(h_world_World h0_w, HeroArrayHeader * h1_lines) {
-#line 4122 "main.c"
+#line 3834 "main.c"
     h_game_Game h2_g = {0};
     HeroArrayHeader * h3_said = {0};
     HeroArrayHeader * h4_xs0 = {0};
@@ -4192,15 +3904,15 @@ bb0:
     t41 = h11_own11;
 #line 161 "examples/adventure/game.hero"
     h11_own11 = t2;
-#line 4196 "main.c"
+#line 3908 "main.c"
     h_game_Game_release(&t41);
 #line 161 "examples/adventure/game.hero"
     t42 = h2_g;
-#line 4200 "main.c"
+#line 3912 "main.c"
     h_game_Game_retain(&t2);
 #line 161 "examples/adventure/game.hero"
     h2_g = t2;
-#line 4204 "main.c"
+#line 3916 "main.c"
     h_game_Game_release(&t42);
 #line 162 "examples/adventure/game.hero"
     t3 = hero_array_new(&hero_desc_str, 1);
@@ -4208,25 +3920,25 @@ bb0:
     t43 = h12_own12;
 #line 162 "examples/adventure/game.hero"
     h12_own12 = t3;
-#line 4212 "main.c"
+#line 3924 "main.c"
     hero_array_decref(t43);
 #line 162 "examples/adventure/game.hero"
     t44 = h3_said;
-#line 4216 "main.c"
+#line 3928 "main.c"
     hero_array_incref(t3);
 #line 162 "examples/adventure/game.hero"
     h3_said = t3;
-#line 4220 "main.c"
+#line 3932 "main.c"
     hero_array_decref(t44);
 #line 164 "examples/adventure/game.hero"
     t4 = h1_lines;
 #line 164 "examples/adventure/game.hero"
     t45 = h4_xs0;
-#line 4226 "main.c"
+#line 3938 "main.c"
     hero_array_incref(t4);
 #line 164 "examples/adventure/game.hero"
     h4_xs0 = t4;
-#line 4230 "main.c"
+#line 3942 "main.c"
     hero_array_decref(t45);
 #line 164 "examples/adventure/game.hero"
     t5 = INT64_C(0);
@@ -4256,11 +3968,11 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 164 "examples/adventure/game.hero"
     t46 = h6_line;
-#line 4260 "main.c"
+#line 3972 "main.c"
     hero_str_incref(t12);
 #line 164 "examples/adventure/game.hero"
     h6_line = t12;
-#line 4264 "main.c"
+#line 3976 "main.c"
     hero_str_decref(t46);
 #line 165 "examples/adventure/game.hero"
     t13 = h0_w;
@@ -4274,15 +3986,15 @@ bb2:
     t47 = h13_own13;
 #line 165 "examples/adventure/game.hero"
     h13_own13 = t16;
-#line 4278 "main.c"
+#line 3990 "main.c"
     h_game_Turn_release(&t47);
 #line 165 "examples/adventure/game.hero"
     t48 = h7_turn;
-#line 4282 "main.c"
+#line 3994 "main.c"
     h_game_Turn_retain(&t16);
 #line 165 "examples/adventure/game.hero"
     h7_turn = t16;
-#line 4286 "main.c"
+#line 3998 "main.c"
     h_game_Turn_release(&t48);
 #line 167 "examples/adventure/game.hero"
     t17 = h7_turn;
@@ -4290,11 +4002,11 @@ bb2:
     t18 = t17.f_said;
 #line 167 "examples/adventure/game.hero"
     t49 = h8_xs1;
-#line 4294 "main.c"
+#line 4006 "main.c"
     hero_array_incref(t18);
 #line 167 "examples/adventure/game.hero"
     h8_xs1 = t18;
-#line 4298 "main.c"
+#line 4010 "main.c"
     hero_array_decref(t49);
 #line 167 "examples/adventure/game.hero"
     t19 = INT64_C(0);
@@ -4320,10 +4032,8 @@ bb4:
     t38 = h3_said;
 #line 172 "examples/adventure/game.hero"
     t39 = h2_g;
-#line 4324 "main.c"
+#line 4036 "main.c"
     hero_array_incref(t38);
-#line 172 "examples/adventure/game.hero"
-#line 4327 "main.c"
     h_game_Game_retain(&t39);
 #line 172 "examples/adventure/game.hero"
     t40 = (h_game_Turn){.f_said = t38, .f_next = t39};
@@ -4331,43 +4041,19 @@ bb4:
     t50 = h14_own14;
 #line 172 "examples/adventure/game.hero"
     h14_own14 = t40;
-#line 4335 "main.c"
+#line 4045 "main.c"
     h_game_Turn_release(&t50);
-#line 172 "examples/adventure/game.hero"
-#line 4338 "main.c"
     h_game_Turn_retain(&t40);
-#line 172 "examples/adventure/game.hero"
-#line 4341 "main.c"
     h_game_Game_release(&h2_g);
-#line 172 "examples/adventure/game.hero"
-#line 4344 "main.c"
     hero_array_decref(h3_said);
-#line 172 "examples/adventure/game.hero"
-#line 4347 "main.c"
     hero_array_decref(h4_xs0);
-#line 172 "examples/adventure/game.hero"
-#line 4350 "main.c"
     hero_str_decref(h6_line);
-#line 172 "examples/adventure/game.hero"
-#line 4353 "main.c"
     h_game_Turn_release(&h7_turn);
-#line 172 "examples/adventure/game.hero"
-#line 4356 "main.c"
     hero_array_decref(h8_xs1);
-#line 172 "examples/adventure/game.hero"
-#line 4359 "main.c"
     hero_str_decref(h10_one);
-#line 172 "examples/adventure/game.hero"
-#line 4362 "main.c"
     h_game_Game_release(&h11_own11);
-#line 172 "examples/adventure/game.hero"
-#line 4365 "main.c"
     hero_array_decref(h12_own12);
-#line 172 "examples/adventure/game.hero"
-#line 4368 "main.c"
     h_game_Turn_release(&h13_own13);
-#line 172 "examples/adventure/game.hero"
-#line 4371 "main.c"
     h_game_Turn_release(&h14_own14);
     return t40;
 bb5:
@@ -4391,11 +4077,11 @@ bb6:
     t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t24 + 1))[t25]);
 #line 167 "examples/adventure/game.hero"
     t51 = h10_one;
-#line 4395 "main.c"
+#line 4081 "main.c"
     hero_str_incref(t26);
 #line 167 "examples/adventure/game.hero"
     h10_one = t26;
-#line 4399 "main.c"
+#line 4085 "main.c"
     hero_str_decref(t51);
 #line 168 "examples/adventure/game.hero"
     t28 = h10_one;
@@ -4423,31 +4109,31 @@ bb8:
     t34 = t33.f_next;
 #line 170 "examples/adventure/game.hero"
     t52 = h2_g;
-#line 4427 "main.c"
+#line 4113 "main.c"
     h_game_Game_retain(&t34);
 #line 170 "examples/adventure/game.hero"
     h2_g = t34;
-#line 4431 "main.c"
+#line 4117 "main.c"
     h_game_Game_release(&t52);
     goto bb3;
 }
 
 #line 17 "examples/adventure/world.hero"
 HeroStr h_world_ERR_NO_WAY(void) {
-#line 4438 "main.c"
+#line 4124 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 18 "examples/adventure/world.hero"
     t1 = HERO_STR_LIT(hero_str_3c24a820);
-#line 4444 "main.c"
+#line 4130 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 30 "examples/adventure/world.hero"
 h_world_World h_world_make(void) {
-#line 4451 "main.c"
+#line 4137 "main.c"
     HeroMapHeader * h0_rooms = {0};
     HeroMapHeader * h1_own1 = {0};
     HeroMapHeader * h2_own2 = {0};
@@ -4532,23 +4218,20 @@ bb0:
     t51 = h1_own1;
 #line 31 "examples/adventure/world.hero"
     h1_own1 = t1;
-#line 4536 "main.c"
+#line 4222 "main.c"
     hero_map_decref(t51);
 #line 31 "examples/adventure/world.hero"
     t52 = h0_rooms;
-#line 4540 "main.c"
+#line 4226 "main.c"
     hero_map_incref(t1);
 #line 31 "examples/adventure/world.hero"
     h0_rooms = t1;
-#line 4544 "main.c"
+#line 4230 "main.c"
     hero_map_decref(t52);
 #line 32 "examples/adventure/world.hero"
     t2 = HERO_STR_LIT(hero_str_de6db87);
-#line 33 "examples/adventure/world.hero"
     t3 = HERO_STR_LIT(hero_str_de6db87);
-#line 34 "examples/adventure/world.hero"
     t4 = HERO_STR_LIT(hero_str_441765f2);
-#line 35 "examples/adventure/world.hero"
     t5 = HERO_STR_LIT(hero_str_19e212d8);
 #line 35 "examples/adventure/world.hero"
     t6 = HERO_STR_LIT(hero_str_10504f66);
@@ -4560,21 +4243,14 @@ bb0:
     t53 = h2_own2;
 #line 35 "examples/adventure/world.hero"
     h2_own2 = t7;
-#line 4564 "main.c"
+#line 4247 "main.c"
     hero_map_decref(t53);
 #line 36 "examples/adventure/world.hero"
     t8 = HERO_STR_LIT(hero_str_0);
-#line 32 "examples/adventure/world.hero"
-#line 4569 "main.c"
+#line 4251 "main.c"
     hero_str_incref(t3);
-#line 32 "examples/adventure/world.hero"
-#line 4572 "main.c"
     hero_str_incref(t4);
-#line 32 "examples/adventure/world.hero"
-#line 4575 "main.c"
     hero_map_incref(t7);
-#line 32 "examples/adventure/world.hero"
-#line 4578 "main.c"
     hero_str_incref(t8);
 #line 32 "examples/adventure/world.hero"
     t9 = (h_world_Room){.f_name = t3, .f_description = t4, .f_exits = t7, .f_item = t8};
@@ -4582,20 +4258,15 @@ bb0:
     t54 = h3_own3;
 #line 32 "examples/adventure/world.hero"
     h3_own3 = t9;
-#line 4586 "main.c"
+#line 4262 "main.c"
     h_world_Room_release(&t54);
-#line 32 "examples/adventure/world.hero"
-#line 4589 "main.c"
     h_world_Room_retain(&t9);
 #line 32 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t2, &t9);
 #line 38 "examples/adventure/world.hero"
     t10 = HERO_STR_LIT(hero_str_10504f66);
-#line 39 "examples/adventure/world.hero"
     t11 = HERO_STR_LIT(hero_str_10504f66);
-#line 40 "examples/adventure/world.hero"
     t12 = HERO_STR_LIT(hero_str_3b130ef7);
-#line 41 "examples/adventure/world.hero"
     t13 = HERO_STR_LIT(hero_str_71a76b88);
 #line 41 "examples/adventure/world.hero"
     t14 = HERO_STR_LIT(hero_str_de6db87);
@@ -4619,21 +4290,14 @@ bb0:
     t55 = h4_own4;
 #line 41 "examples/adventure/world.hero"
     h4_own4 = t19;
-#line 4623 "main.c"
+#line 4294 "main.c"
     hero_map_decref(t55);
 #line 42 "examples/adventure/world.hero"
     t20 = HERO_STR_LIT(hero_str_23086c30);
-#line 38 "examples/adventure/world.hero"
-#line 4628 "main.c"
+#line 4298 "main.c"
     hero_str_incref(t11);
-#line 38 "examples/adventure/world.hero"
-#line 4631 "main.c"
     hero_str_incref(t12);
-#line 38 "examples/adventure/world.hero"
-#line 4634 "main.c"
     hero_map_incref(t19);
-#line 38 "examples/adventure/world.hero"
-#line 4637 "main.c"
     hero_str_incref(t20);
 #line 38 "examples/adventure/world.hero"
     t21 = (h_world_Room){.f_name = t11, .f_description = t12, .f_exits = t19, .f_item = t20};
@@ -4641,20 +4305,15 @@ bb0:
     t56 = h5_own5;
 #line 38 "examples/adventure/world.hero"
     h5_own5 = t21;
-#line 4645 "main.c"
+#line 4309 "main.c"
     h_world_Room_release(&t56);
-#line 38 "examples/adventure/world.hero"
-#line 4648 "main.c"
     h_world_Room_retain(&t21);
 #line 38 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t10, &t21);
 #line 44 "examples/adventure/world.hero"
     t22 = HERO_STR_LIT(hero_str_3184045d);
-#line 45 "examples/adventure/world.hero"
     t23 = HERO_STR_LIT(hero_str_3184045d);
-#line 46 "examples/adventure/world.hero"
     t24 = HERO_STR_LIT(hero_str_55bcc48b);
-#line 47 "examples/adventure/world.hero"
     t25 = HERO_STR_LIT(hero_str_100cc0e7);
 #line 47 "examples/adventure/world.hero"
     t26 = HERO_STR_LIT(hero_str_10504f66);
@@ -4666,21 +4325,14 @@ bb0:
     t57 = h6_own6;
 #line 47 "examples/adventure/world.hero"
     h6_own6 = t27;
-#line 4670 "main.c"
+#line 4329 "main.c"
     hero_map_decref(t57);
 #line 48 "examples/adventure/world.hero"
     t28 = HERO_STR_LIT(hero_str_1c38eb);
-#line 44 "examples/adventure/world.hero"
-#line 4675 "main.c"
+#line 4333 "main.c"
     hero_str_incref(t23);
-#line 44 "examples/adventure/world.hero"
-#line 4678 "main.c"
     hero_str_incref(t24);
-#line 44 "examples/adventure/world.hero"
-#line 4681 "main.c"
     hero_map_incref(t27);
-#line 44 "examples/adventure/world.hero"
-#line 4684 "main.c"
     hero_str_incref(t28);
 #line 44 "examples/adventure/world.hero"
     t29 = (h_world_Room){.f_name = t23, .f_description = t24, .f_exits = t27, .f_item = t28};
@@ -4688,20 +4340,15 @@ bb0:
     t58 = h7_own7;
 #line 44 "examples/adventure/world.hero"
     h7_own7 = t29;
-#line 4692 "main.c"
+#line 4344 "main.c"
     h_world_Room_release(&t58);
-#line 44 "examples/adventure/world.hero"
-#line 4695 "main.c"
     h_world_Room_retain(&t29);
 #line 44 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t22, &t29);
 #line 50 "examples/adventure/world.hero"
     t30 = HERO_STR_LIT(hero_str_2c40953b);
-#line 51 "examples/adventure/world.hero"
     t31 = HERO_STR_LIT(hero_str_2c40953b);
-#line 52 "examples/adventure/world.hero"
     t32 = HERO_STR_LIT(hero_str_35400eac);
-#line 53 "examples/adventure/world.hero"
     t33 = HERO_STR_LIT(hero_str_da23fdd);
 #line 53 "examples/adventure/world.hero"
     t34 = HERO_STR_LIT(hero_str_10504f66);
@@ -4719,21 +4366,14 @@ bb0:
     t59 = h8_own8;
 #line 53 "examples/adventure/world.hero"
     h8_own8 = t37;
-#line 4723 "main.c"
+#line 4370 "main.c"
     hero_map_decref(t59);
 #line 54 "examples/adventure/world.hero"
     t38 = HERO_STR_LIT(hero_str_0);
-#line 50 "examples/adventure/world.hero"
-#line 4728 "main.c"
+#line 4374 "main.c"
     hero_str_incref(t31);
-#line 50 "examples/adventure/world.hero"
-#line 4731 "main.c"
     hero_str_incref(t32);
-#line 50 "examples/adventure/world.hero"
-#line 4734 "main.c"
     hero_map_incref(t37);
-#line 50 "examples/adventure/world.hero"
-#line 4737 "main.c"
     hero_str_incref(t38);
 #line 50 "examples/adventure/world.hero"
     t39 = (h_world_Room){.f_name = t31, .f_description = t32, .f_exits = t37, .f_item = t38};
@@ -4741,20 +4381,15 @@ bb0:
     t60 = h9_own9;
 #line 50 "examples/adventure/world.hero"
     h9_own9 = t39;
-#line 4745 "main.c"
+#line 4385 "main.c"
     h_world_Room_release(&t60);
-#line 50 "examples/adventure/world.hero"
-#line 4748 "main.c"
     h_world_Room_retain(&t39);
 #line 50 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t30, &t39);
 #line 56 "examples/adventure/world.hero"
     t40 = HERO_STR_LIT(hero_str_24704bf6);
-#line 57 "examples/adventure/world.hero"
     t41 = HERO_STR_LIT(hero_str_24704bf6);
-#line 58 "examples/adventure/world.hero"
     t42 = HERO_STR_LIT(hero_str_6349b7f7);
-#line 59 "examples/adventure/world.hero"
     t43 = HERO_STR_LIT(hero_str_71a76b88);
 #line 59 "examples/adventure/world.hero"
     t44 = HERO_STR_LIT(hero_str_2c40953b);
@@ -4766,21 +4401,14 @@ bb0:
     t61 = h10_own10;
 #line 59 "examples/adventure/world.hero"
     h10_own10 = t45;
-#line 4770 "main.c"
+#line 4405 "main.c"
     hero_map_decref(t61);
 #line 60 "examples/adventure/world.hero"
     t46 = HERO_STR_LIT(hero_str_0);
-#line 56 "examples/adventure/world.hero"
-#line 4775 "main.c"
+#line 4409 "main.c"
     hero_str_incref(t41);
-#line 56 "examples/adventure/world.hero"
-#line 4778 "main.c"
     hero_str_incref(t42);
-#line 56 "examples/adventure/world.hero"
-#line 4781 "main.c"
     hero_map_incref(t45);
-#line 56 "examples/adventure/world.hero"
-#line 4784 "main.c"
     hero_str_incref(t46);
 #line 56 "examples/adventure/world.hero"
     t47 = (h_world_Room){.f_name = t41, .f_description = t42, .f_exits = t45, .f_item = t46};
@@ -4788,10 +4416,8 @@ bb0:
     t62 = h11_own11;
 #line 56 "examples/adventure/world.hero"
     h11_own11 = t47;
-#line 4792 "main.c"
+#line 4420 "main.c"
     h_world_Room_release(&t62);
-#line 56 "examples/adventure/world.hero"
-#line 4795 "main.c"
     h_world_Room_retain(&t47);
 #line 56 "examples/adventure/world.hero"
     hero_map_set(&(h0_rooms), &t40, &t47);
@@ -4799,10 +4425,8 @@ bb0:
     t48 = h0_rooms;
 #line 62 "examples/adventure/world.hero"
     t49 = HERO_STR_LIT(hero_str_de6db87);
-#line 4803 "main.c"
+#line 4429 "main.c"
     hero_map_incref(t48);
-#line 62 "examples/adventure/world.hero"
-#line 4806 "main.c"
     hero_str_incref(t49);
 #line 62 "examples/adventure/world.hero"
     t50 = (h_world_World){.f_rooms = t48, .f_start = t49};
@@ -4810,56 +4434,28 @@ bb0:
     t63 = h12_own12;
 #line 62 "examples/adventure/world.hero"
     h12_own12 = t50;
-#line 4814 "main.c"
+#line 4438 "main.c"
     h_world_World_release(&t63);
-#line 62 "examples/adventure/world.hero"
-#line 4817 "main.c"
     h_world_World_retain(&t50);
-#line 62 "examples/adventure/world.hero"
-#line 4820 "main.c"
     hero_map_decref(h0_rooms);
-#line 62 "examples/adventure/world.hero"
-#line 4823 "main.c"
     hero_map_decref(h1_own1);
-#line 62 "examples/adventure/world.hero"
-#line 4826 "main.c"
     hero_map_decref(h2_own2);
-#line 62 "examples/adventure/world.hero"
-#line 4829 "main.c"
     h_world_Room_release(&h3_own3);
-#line 62 "examples/adventure/world.hero"
-#line 4832 "main.c"
     hero_map_decref(h4_own4);
-#line 62 "examples/adventure/world.hero"
-#line 4835 "main.c"
     h_world_Room_release(&h5_own5);
-#line 62 "examples/adventure/world.hero"
-#line 4838 "main.c"
     hero_map_decref(h6_own6);
-#line 62 "examples/adventure/world.hero"
-#line 4841 "main.c"
     h_world_Room_release(&h7_own7);
-#line 62 "examples/adventure/world.hero"
-#line 4844 "main.c"
     hero_map_decref(h8_own8);
-#line 62 "examples/adventure/world.hero"
-#line 4847 "main.c"
     h_world_Room_release(&h9_own9);
-#line 62 "examples/adventure/world.hero"
-#line 4850 "main.c"
     hero_map_decref(h10_own10);
-#line 62 "examples/adventure/world.hero"
-#line 4853 "main.c"
     h_world_Room_release(&h11_own11);
-#line 62 "examples/adventure/world.hero"
-#line 4856 "main.c"
     h_world_World_release(&h12_own12);
     return t50;
 }
 
 #line 64 "examples/adventure/world.hero"
 h_0opt_5e724113 h_world_room_at(h_world_World h0_w, HeroStr h1_name) {
-#line 4863 "main.c"
+#line 4459 "main.c"
     h_0opt_5e724113 h2_own2 = {0};
     h_world_World t1;
     HeroMapHeader * t2;
@@ -4896,20 +4492,16 @@ bb0:
     t5 = h2_own2;
 #line 65 "examples/adventure/world.hero"
     h2_own2 = t4;
-#line 4900 "main.c"
+#line 4496 "main.c"
     h_0opt_5e724113_release(&t5);
-#line 65 "examples/adventure/world.hero"
-#line 4903 "main.c"
     h_0opt_5e724113_retain(&t4);
-#line 65 "examples/adventure/world.hero"
-#line 4906 "main.c"
     h_0opt_5e724113_release(&h2_own2);
     return t4;
 }
 
 #line 69 "examples/adventure/world.hero"
 h_0opt_f87774a h_world_through(h_world_World h0_w, HeroStr h1_here, HeroStr h2_direction) {
-#line 4913 "main.c"
+#line 4505 "main.c"
     h_0opt_5e724113 h3_f0 = {0};
     h_world_Room h4_room = {0};
     h_0opt_f87774a h5_s0 = {0};
@@ -4992,15 +4584,15 @@ bb0:
     t38 = h8_own8;
 #line 70 "examples/adventure/world.hero"
     h8_own8 = t3;
-#line 4996 "main.c"
+#line 4588 "main.c"
     h_0opt_5e724113_release(&t38);
 #line 70 "examples/adventure/world.hero"
     t39 = h3_f0;
-#line 5000 "main.c"
+#line 4592 "main.c"
     h_0opt_5e724113_retain(&t3);
 #line 70 "examples/adventure/world.hero"
     h3_f0 = t3;
-#line 5004 "main.c"
+#line 4596 "main.c"
     h_0opt_5e724113_release(&t39);
 #line 70 "examples/adventure/world.hero"
     t4 = h3_f0;
@@ -5020,11 +4612,11 @@ bb1:
     t12 = t11.as.ok;
 #line 70 "examples/adventure/world.hero"
     t40 = h4_room;
-#line 5024 "main.c"
+#line 4616 "main.c"
     h_world_Room_retain(&t12);
 #line 70 "examples/adventure/world.hero"
     h4_room = t12;
-#line 5028 "main.c"
+#line 4620 "main.c"
     h_world_Room_release(&t40);
 #line 72 "examples/adventure/world.hero"
     t13 = h4_room;
@@ -5054,15 +4646,15 @@ bb1:
     t41 = h9_own9;
 #line 72 "examples/adventure/world.hero"
     h9_own9 = t16;
-#line 5058 "main.c"
+#line 4650 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 72 "examples/adventure/world.hero"
     t42 = h5_s0;
-#line 5062 "main.c"
+#line 4654 "main.c"
     h_0opt_f87774a_retain(&t16);
 #line 72 "examples/adventure/world.hero"
     h5_s0 = t16;
-#line 5066 "main.c"
+#line 4658 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 72 "examples/adventure/world.hero"
     t17 = h5_s0;
@@ -5084,7 +4676,7 @@ bb2:
     t8 = h3_f0;
 #line 70 "examples/adventure/world.hero"
     t9 = t8.as.err;
-#line 5088 "main.c"
+#line 4680 "main.c"
     hero_failure_retain(&t9);
 #line 70 "examples/adventure/world.hero"
     t10 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t9};
@@ -5092,7 +4684,7 @@ bb2:
     t43 = h10_own10;
 #line 70 "examples/adventure/world.hero"
     h10_own10 = t10;
-#line 5096 "main.c"
+#line 4688 "main.c"
     h_0opt_f87774a_release(&t43);
 #line 70 "examples/adventure/world.hero"
     h7_ret0 = t10;
@@ -5106,15 +4698,15 @@ bb4:
     t20 = t19.as.ok;
 #line 73 "examples/adventure/world.hero"
     t44 = h6_there;
-#line 5110 "main.c"
+#line 4702 "main.c"
     hero_str_incref(t20);
 #line 73 "examples/adventure/world.hero"
     h6_there = t20;
-#line 5114 "main.c"
+#line 4706 "main.c"
     hero_str_decref(t44);
 #line 73 "examples/adventure/world.hero"
     t21 = h6_there;
-#line 5118 "main.c"
+#line 4710 "main.c"
     hero_str_incref(t21);
 #line 73 "examples/adventure/world.hero"
     t22 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t21};
@@ -5122,7 +4714,7 @@ bb4:
     t45 = h11_own11;
 #line 73 "examples/adventure/world.hero"
     h11_own11 = t22;
-#line 5126 "main.c"
+#line 4718 "main.c"
     h_0opt_f87774a_release(&t45);
 #line 73 "examples/adventure/world.hero"
     h7_ret0 = t22;
@@ -5136,7 +4728,7 @@ bb5:
     t46 = h12_own12;
 #line 75 "examples/adventure/world.hero"
     h12_own12 = t23;
-#line 5140 "main.c"
+#line 4732 "main.c"
     hero_str_decref(t46);
 #line 76 "examples/adventure/world.hero"
     t24 = HERO_STR_LIT(hero_str_6a96d55b);
@@ -5148,7 +4740,7 @@ bb5:
     t47 = h13_own13;
 #line 76 "examples/adventure/world.hero"
     h13_own13 = t26;
-#line 5152 "main.c"
+#line 4744 "main.c"
     hero_str_decref(t47);
 #line 76 "examples/adventure/world.hero"
     t27 = HERO_STR_LIT(hero_str_5e59cb00);
@@ -5158,7 +4750,7 @@ bb5:
     t48 = h14_own14;
 #line 76 "examples/adventure/world.hero"
     h14_own14 = t28;
-#line 5162 "main.c"
+#line 4754 "main.c"
     hero_str_decref(t48);
 #line 76 "examples/adventure/world.hero"
     t29 = h4_room;
@@ -5170,7 +4762,7 @@ bb5:
     t49 = h15_own15;
 #line 76 "examples/adventure/world.hero"
     h15_own15 = t31;
-#line 5174 "main.c"
+#line 4766 "main.c"
     hero_array_decref(t49);
 #line 76 "examples/adventure/world.hero"
     t32 = hero_array_sort(t31);
@@ -5178,7 +4770,7 @@ bb5:
     t50 = h16_own16;
 #line 76 "examples/adventure/world.hero"
     h16_own16 = t32;
-#line 5182 "main.c"
+#line 4774 "main.c"
     hero_array_decref(t50);
 #line 76 "examples/adventure/world.hero"
     t33 = HERO_STR_LIT(hero_str_16a4);
@@ -5188,7 +4780,7 @@ bb5:
     t51 = h17_own17;
 #line 76 "examples/adventure/world.hero"
     h17_own17 = t34;
-#line 5192 "main.c"
+#line 4784 "main.c"
     hero_str_decref(t51);
 #line 76 "examples/adventure/world.hero"
     t35 = hero_str_concat(t28, t34);
@@ -5196,13 +4788,9 @@ bb5:
     t52 = h18_own18;
 #line 76 "examples/adventure/world.hero"
     h18_own18 = t35;
-#line 5200 "main.c"
+#line 4792 "main.c"
     hero_str_decref(t52);
-#line 74 "examples/adventure/world.hero"
-#line 5203 "main.c"
     hero_str_incref(t23);
-#line 74 "examples/adventure/world.hero"
-#line 5206 "main.c"
     hero_str_incref(t35);
 #line 74 "examples/adventure/world.hero"
     t36 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t35}};
@@ -5210,7 +4798,7 @@ bb5:
     t53 = h19_own19;
 #line 74 "examples/adventure/world.hero"
     h19_own19 = t36;
-#line 5214 "main.c"
+#line 4802 "main.c"
     h_0opt_f87774a_release(&t53);
 #line 74 "examples/adventure/world.hero"
     h7_ret0 = t36;
@@ -5218,64 +4806,31 @@ bb5:
     goto bb6;
 #line 74 "examples/adventure/world.hero"
 bb6:
-#line 70 "examples/adventure/world.hero"
+#line 4810 "main.c"
     t37 = h7_ret0;
-#line 5224 "main.c"
     h_0opt_f87774a_retain(&t37);
-#line 70 "examples/adventure/world.hero"
-#line 5227 "main.c"
     h_0opt_5e724113_release(&h3_f0);
-#line 70 "examples/adventure/world.hero"
-#line 5230 "main.c"
     h_world_Room_release(&h4_room);
-#line 70 "examples/adventure/world.hero"
-#line 5233 "main.c"
     h_0opt_f87774a_release(&h5_s0);
-#line 70 "examples/adventure/world.hero"
-#line 5236 "main.c"
     hero_str_decref(h6_there);
-#line 70 "examples/adventure/world.hero"
-#line 5239 "main.c"
     h_0opt_5e724113_release(&h8_own8);
-#line 70 "examples/adventure/world.hero"
-#line 5242 "main.c"
     h_0opt_f87774a_release(&h9_own9);
-#line 70 "examples/adventure/world.hero"
-#line 5245 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 70 "examples/adventure/world.hero"
-#line 5248 "main.c"
     h_0opt_f87774a_release(&h11_own11);
-#line 70 "examples/adventure/world.hero"
-#line 5251 "main.c"
     hero_str_decref(h12_own12);
-#line 70 "examples/adventure/world.hero"
-#line 5254 "main.c"
     hero_str_decref(h13_own13);
-#line 70 "examples/adventure/world.hero"
-#line 5257 "main.c"
     hero_str_decref(h14_own14);
-#line 70 "examples/adventure/world.hero"
-#line 5260 "main.c"
     hero_array_decref(h15_own15);
-#line 70 "examples/adventure/world.hero"
-#line 5263 "main.c"
     hero_array_decref(h16_own16);
-#line 70 "examples/adventure/world.hero"
-#line 5266 "main.c"
     hero_str_decref(h17_own17);
-#line 70 "examples/adventure/world.hero"
-#line 5269 "main.c"
     hero_str_decref(h18_own18);
-#line 70 "examples/adventure/world.hero"
-#line 5272 "main.c"
     h_0opt_f87774a_release(&h19_own19);
     return t37;
 }
 
 #line 112 "examples/adventure/world.hero"
 HeroArrayHeader * h_world_reachable(h_world_World h0_w) {
-#line 5279 "main.c"
+#line 4834 "main.c"
     HeroMapHeader * h1_seen = {0};
     HeroArrayHeader * h2_queue = {0};
     int64_t h3_head;
@@ -5389,15 +4944,15 @@ bb0:
     t68 = h13_own13;
 #line 113 "examples/adventure/world.hero"
     h13_own13 = t1;
-#line 5393 "main.c"
+#line 4948 "main.c"
     hero_map_decref(t68);
 #line 113 "examples/adventure/world.hero"
     t69 = h1_seen;
-#line 5397 "main.c"
+#line 4952 "main.c"
     hero_map_incref(t1);
 #line 113 "examples/adventure/world.hero"
     h1_seen = t1;
-#line 5401 "main.c"
+#line 4956 "main.c"
     hero_map_decref(t69);
 #line 114 "examples/adventure/world.hero"
     t2 = h0_w;
@@ -5407,7 +4962,6 @@ bb0:
     t4 = true;
 #line 114 "examples/adventure/world.hero"
     hero_map_set(&(h1_seen), &t3, &t4);
-#line 115 "examples/adventure/world.hero"
     t5 = h0_w;
 #line 115 "examples/adventure/world.hero"
     t6 = t5.f_start;
@@ -5419,15 +4973,15 @@ bb0:
     t70 = h14_own14;
 #line 115 "examples/adventure/world.hero"
     h14_own14 = t7;
-#line 5423 "main.c"
+#line 4977 "main.c"
     hero_array_decref(t70);
 #line 115 "examples/adventure/world.hero"
     t71 = h2_queue;
-#line 5427 "main.c"
+#line 4981 "main.c"
     hero_array_incref(t7);
 #line 115 "examples/adventure/world.hero"
     h2_queue = t7;
-#line 5431 "main.c"
+#line 4985 "main.c"
     hero_array_decref(t71);
 #line 116 "examples/adventure/world.hero"
     t8 = INT64_C(0);
@@ -5449,7 +5003,6 @@ bb1:
     if (t12) goto bb2; else goto bb3;
 #line 118 "examples/adventure/world.hero"
 bb2:
-#line 119 "examples/adventure/world.hero"
     t13 = h2_queue;
 #line 119 "examples/adventure/world.hero"
     t14 = h3_head;
@@ -5457,11 +5010,11 @@ bb2:
     t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]);
 #line 119 "examples/adventure/world.hero"
     t72 = h4_here;
-#line 5461 "main.c"
+#line 5014 "main.c"
     hero_str_incref(t15);
 #line 119 "examples/adventure/world.hero"
     h4_here = t15;
-#line 5465 "main.c"
+#line 5018 "main.c"
     hero_str_decref(t72);
 #line 120 "examples/adventure/world.hero"
     t16 = h3_head;
@@ -5481,15 +5034,15 @@ bb2:
     t73 = h15_own15;
 #line 122 "examples/adventure/world.hero"
     h15_own15 = t21;
-#line 5485 "main.c"
+#line 5038 "main.c"
     h_0opt_5e724113_release(&t73);
 #line 122 "examples/adventure/world.hero"
     t74 = h5_s0;
-#line 5489 "main.c"
+#line 5042 "main.c"
     h_0opt_5e724113_retain(&t21);
 #line 122 "examples/adventure/world.hero"
     h5_s0 = t21;
-#line 5493 "main.c"
+#line 5046 "main.c"
     h_0opt_5e724113_release(&t74);
 #line 122 "examples/adventure/world.hero"
     t22 = h5_s0;
@@ -5515,7 +5068,7 @@ bb3:
     t75 = h16_own16;
 #line 132 "examples/adventure/world.hero"
     h16_own16 = t66;
-#line 5519 "main.c"
+#line 5072 "main.c"
     hero_array_decref(t75);
 #line 132 "examples/adventure/world.hero"
     t67 = hero_array_sort(t66);
@@ -5523,67 +5076,27 @@ bb3:
     t76 = h17_own17;
 #line 132 "examples/adventure/world.hero"
     h17_own17 = t67;
-#line 5527 "main.c"
+#line 5080 "main.c"
     hero_array_decref(t76);
-#line 132 "examples/adventure/world.hero"
-#line 5530 "main.c"
     hero_array_incref(t67);
-#line 132 "examples/adventure/world.hero"
-#line 5533 "main.c"
     hero_map_decref(h1_seen);
-#line 132 "examples/adventure/world.hero"
-#line 5536 "main.c"
     hero_array_decref(h2_queue);
-#line 132 "examples/adventure/world.hero"
-#line 5539 "main.c"
     hero_str_decref(h4_here);
-#line 132 "examples/adventure/world.hero"
-#line 5542 "main.c"
     h_0opt_5e724113_release(&h5_s0);
-#line 132 "examples/adventure/world.hero"
-#line 5545 "main.c"
     h_world_Room_release(&h6_room);
-#line 132 "examples/adventure/world.hero"
-#line 5548 "main.c"
     hero_array_decref(h7_xs0);
-#line 132 "examples/adventure/world.hero"
-#line 5551 "main.c"
     hero_str_decref(h9_direction);
-#line 132 "examples/adventure/world.hero"
-#line 5554 "main.c"
     h_0opt_f87774a_release(&h10_f0);
-#line 132 "examples/adventure/world.hero"
-#line 5557 "main.c"
     hero_str_decref(h11_there);
-#line 132 "examples/adventure/world.hero"
-#line 5560 "main.c"
     h_0opt_473cb9ae_release(&h12_f1);
-#line 132 "examples/adventure/world.hero"
-#line 5563 "main.c"
     hero_map_decref(h13_own13);
-#line 132 "examples/adventure/world.hero"
-#line 5566 "main.c"
     hero_array_decref(h14_own14);
-#line 132 "examples/adventure/world.hero"
-#line 5569 "main.c"
     h_0opt_5e724113_release(&h15_own15);
-#line 132 "examples/adventure/world.hero"
-#line 5572 "main.c"
     hero_array_decref(h16_own16);
-#line 132 "examples/adventure/world.hero"
-#line 5575 "main.c"
     hero_array_decref(h17_own17);
-#line 132 "examples/adventure/world.hero"
-#line 5578 "main.c"
     hero_array_decref(h18_own18);
-#line 132 "examples/adventure/world.hero"
-#line 5581 "main.c"
     hero_array_decref(h19_own19);
-#line 132 "examples/adventure/world.hero"
-#line 5584 "main.c"
     h_0opt_f87774a_release(&h20_own20);
-#line 132 "examples/adventure/world.hero"
-#line 5587 "main.c"
     h_0opt_473cb9ae_release(&h21_own21);
     return t67;
 bb4:
@@ -5597,11 +5110,11 @@ bb6:
     t25 = t24.as.ok;
 #line 124 "examples/adventure/world.hero"
     t77 = h6_room;
-#line 5601 "main.c"
+#line 5114 "main.c"
     h_world_Room_retain(&t25);
 #line 124 "examples/adventure/world.hero"
     h6_room = t25;
-#line 5605 "main.c"
+#line 5118 "main.c"
     h_world_Room_release(&t77);
 #line 125 "examples/adventure/world.hero"
     t26 = h6_room;
@@ -5613,7 +5126,7 @@ bb6:
     t78 = h18_own18;
 #line 125 "examples/adventure/world.hero"
     h18_own18 = t28;
-#line 5617 "main.c"
+#line 5130 "main.c"
     hero_array_decref(t78);
 #line 125 "examples/adventure/world.hero"
     t29 = hero_array_sort(t28);
@@ -5621,15 +5134,15 @@ bb6:
     t79 = h19_own19;
 #line 125 "examples/adventure/world.hero"
     h19_own19 = t29;
-#line 5625 "main.c"
+#line 5138 "main.c"
     hero_array_decref(t79);
 #line 125 "examples/adventure/world.hero"
     t80 = h7_xs0;
-#line 5629 "main.c"
+#line 5142 "main.c"
     hero_array_incref(t29);
 #line 125 "examples/adventure/world.hero"
     h7_xs0 = t29;
-#line 5633 "main.c"
+#line 5146 "main.c"
     hero_array_decref(t80);
 #line 125 "examples/adventure/world.hero"
     t30 = INT64_C(0);
@@ -5659,11 +5172,11 @@ bb8:
     t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t36]);
 #line 125 "examples/adventure/world.hero"
     t81 = h9_direction;
-#line 5663 "main.c"
+#line 5176 "main.c"
     hero_str_incref(t37);
 #line 125 "examples/adventure/world.hero"
     h9_direction = t37;
-#line 5667 "main.c"
+#line 5180 "main.c"
     hero_str_decref(t81);
 #line 126 "examples/adventure/world.hero"
     t38 = h6_room;
@@ -5693,15 +5206,15 @@ bb8:
     t82 = h20_own20;
 #line 126 "examples/adventure/world.hero"
     h20_own20 = t41;
-#line 5697 "main.c"
+#line 5210 "main.c"
     h_0opt_f87774a_release(&t82);
 #line 126 "examples/adventure/world.hero"
     t83 = h10_f0;
-#line 5701 "main.c"
+#line 5214 "main.c"
     h_0opt_f87774a_retain(&t41);
 #line 126 "examples/adventure/world.hero"
     h10_f0 = t41;
-#line 5705 "main.c"
+#line 5218 "main.c"
     h_0opt_f87774a_release(&t83);
 #line 126 "examples/adventure/world.hero"
     t42 = h10_f0;
@@ -5731,17 +5244,16 @@ bb10:
     goto bb4;
 #line 125 "examples/adventure/world.hero"
 bb11:
-#line 126 "examples/adventure/world.hero"
     t48 = h10_f0;
 #line 126 "examples/adventure/world.hero"
     t49 = t48.as.ok;
 #line 126 "examples/adventure/world.hero"
     t84 = h11_there;
-#line 5741 "main.c"
+#line 5253 "main.c"
     hero_str_incref(t49);
 #line 126 "examples/adventure/world.hero"
     h11_there = t49;
-#line 5745 "main.c"
+#line 5257 "main.c"
     hero_str_decref(t84);
 #line 128 "examples/adventure/world.hero"
     t50 = h1_seen;
@@ -5769,15 +5281,15 @@ bb11:
     t85 = h21_own21;
 #line 128 "examples/adventure/world.hero"
     h21_own21 = t52;
-#line 5773 "main.c"
+#line 5285 "main.c"
     h_0opt_473cb9ae_release(&t85);
 #line 128 "examples/adventure/world.hero"
     t86 = h12_f1;
-#line 5777 "main.c"
+#line 5289 "main.c"
     h_0opt_473cb9ae_retain(&t52);
 #line 128 "examples/adventure/world.hero"
     h12_f1 = t52;
-#line 5781 "main.c"
+#line 5293 "main.c"
     h_0opt_473cb9ae_release(&t86);
 #line 128 "examples/adventure/world.hero"
     t53 = h12_f1;
@@ -5795,7 +5307,7 @@ bb12:
     t46 = h10_f0;
 #line 126 "examples/adventure/world.hero"
     t47 = t46.as.err;
-#line 5799 "main.c"
+#line 5311 "main.c"
     hero_panic_must(t47);
     hero_unreachable();
 bb13:
@@ -5807,7 +5319,6 @@ bb14:
     t58 = true;
 #line 129 "examples/adventure/world.hero"
     hero_map_set(&(h1_seen), &t57, &t58);
-#line 130 "examples/adventure/world.hero"
     t60 = h11_there;
 #line 130 "examples/adventure/world.hero"
     hero_array_push_owned(&h2_queue, &t60);
@@ -5817,36 +5328,36 @@ bb14:
 bb15:
 #line 130 "examples/adventure/world.hero"
     goto bb13;
-#line 5821 "main.c"
+#line 5332 "main.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 5826 "main.c"
+#line 5337 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 5832 "main.c"
+#line 5343 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 5838 "main.c"
+#line 5349 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 5844 "main.c"
+#line 5355 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 5850 "main.c"
+#line 5361 "main.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -5916,7 +5427,6 @@ bb0:
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
-#line 169 "<heroes library>"
     t2 = h0_path;
 #line 169 "<heroes library>"
     hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status");
@@ -5926,15 +5436,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 5930 "main.c"
+#line 5440 "main.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 5934 "main.c"
+#line 5444 "main.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 5938 "main.c"
+#line 5448 "main.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -5958,7 +5468,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 5962 "main.c"
+#line 5472 "main.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -5966,7 +5476,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 5970 "main.c"
+#line 5480 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -5992,10 +5502,8 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 5996 "main.c"
+#line 5506 "main.c"
     hero_str_incref(t12);
-#line 175 "<heroes library>"
-#line 5999 "main.c"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -6003,7 +5511,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 6007 "main.c"
+#line 5515 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -6037,13 +5545,9 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 6041 "main.c"
+#line 5549 "main.c"
     hero_str_decref(t43);
-#line 177 "<heroes library>"
-#line 6044 "main.c"
     hero_str_incref(t18);
-#line 177 "<heroes library>"
-#line 6047 "main.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -6051,7 +5555,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 6055 "main.c"
+#line 5559 "main.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -6075,13 +5579,9 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 6079 "main.c"
+#line 5583 "main.c"
     hero_str_decref(t45);
-#line 183 "<heroes library>"
-#line 6082 "main.c"
     hero_str_incref(t33);
-#line 183 "<heroes library>"
-#line 6085 "main.c"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -6089,7 +5589,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 6093 "main.c"
+#line 5593 "main.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -6109,7 +5609,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 6113 "main.c"
+#line 5613 "main.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -6119,13 +5619,9 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 6123 "main.c"
+#line 5623 "main.c"
     hero_str_decref(t48);
-#line 182 "<heroes library>"
-#line 6126 "main.c"
     hero_str_incref(t26);
-#line 182 "<heroes library>"
-#line 6129 "main.c"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -6133,7 +5629,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 6137 "main.c"
+#line 5633 "main.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -6145,42 +5641,19 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 171 "<heroes library>"
+#line 5645 "main.c"
     t38 = h3_ret0;
-#line 6151 "main.c"
     h_0opt_f87774a_retain(&t38);
-#line 171 "<heroes library>"
-#line 6154 "main.c"
     hero_str_decref(h2_text);
-#line 171 "<heroes library>"
-#line 6157 "main.c"
     hero_str_decref(h4_own4);
-#line 171 "<heroes library>"
-#line 6160 "main.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 171 "<heroes library>"
-#line 6163 "main.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 171 "<heroes library>"
-#line 6166 "main.c"
     hero_str_decref(h7_own7);
-#line 171 "<heroes library>"
-#line 6169 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 171 "<heroes library>"
-#line 6172 "main.c"
     hero_str_decref(h9_own9);
-#line 171 "<heroes library>"
-#line 6175 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 171 "<heroes library>"
-#line 6178 "main.c"
     hero_str_decref(h11_own11);
-#line 171 "<heroes library>"
-#line 6181 "main.c"
     hero_str_decref(h12_own12);
-#line 171 "<heroes library>"
-#line 6184 "main.c"
     h_0opt_f87774a_release(&h13_own13);
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
@@ -6189,7 +5662,7 @@ bb13:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 6193 "main.c"
+#line 5666 "main.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -6216,15 +5689,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 6220 "main.c"
+#line 5693 "main.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 6224 "main.c"
+#line 5697 "main.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 6228 "main.c"
+#line 5701 "main.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -6234,7 +5707,6 @@ bb0:
     goto bb1;
 #line 198 "<heroes library>"
 bb1:
-#line 199 "<heroes library>"
     t3 = h1_i;
 #line 199 "<heroes library>"
     t4 = hero_args_count();
@@ -6244,7 +5716,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 199 "<heroes library>"
 bb2:
-#line 200 "<heroes library>"
     t7 = h1_i;
 #line 200 "<heroes library>"
     t8 = hero_args_at(t7);
@@ -6252,11 +5723,10 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 6256 "main.c"
+#line 5727 "main.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
-#line 201 "<heroes library>"
     t10 = h1_i;
 #line 201 "<heroes library>"
     t11 = INT64_C(1);
@@ -6268,18 +5738,11 @@ bb2:
     goto bb1;
 #line 201 "<heroes library>"
 bb3:
-#line 202 "<heroes library>"
     t13 = h0_out;
-#line 6274 "main.c"
+#line 5743 "main.c"
     hero_array_incref(t13);
-#line 202 "<heroes library>"
-#line 6277 "main.c"
     hero_array_decref(h0_out);
-#line 202 "<heroes library>"
-#line 6280 "main.c"
     hero_array_decref(h2_own2);
-#line 202 "<heroes library>"
-#line 6283 "main.c"
     hero_str_decref(h3_own3);
     return t13;
 }

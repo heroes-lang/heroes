@@ -168,17 +168,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 182 "main.c"
+#line 179 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_formula_Parse_retain(const h_formula_Parse *v);
@@ -311,7 +308,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 22 "examples/spreadsheet/main.hero"
 void h_main_main(void) {
-#line 315 "main.c"
+#line 312 "main.c"
     HeroArrayHeader * h0_given = {0};
     h_0opt_f87774a h1_s0 = {0};
     HeroFailure h2_e = {0};
@@ -366,15 +363,15 @@ bb0:
     t29 = h4_own4;
 #line 23 "examples/spreadsheet/main.hero"
     h4_own4 = t1;
-#line 370 "main.c"
+#line 367 "main.c"
     hero_array_decref(t29);
 #line 23 "examples/spreadsheet/main.hero"
     t30 = h0_given;
-#line 374 "main.c"
+#line 371 "main.c"
     hero_array_incref(t1);
 #line 23 "examples/spreadsheet/main.hero"
     h0_given = t1;
-#line 378 "main.c"
+#line 375 "main.c"
     hero_array_decref(t30);
 #line 25 "examples/spreadsheet/main.hero"
     t2 = h0_given;
@@ -400,15 +397,15 @@ bb1:
     t31 = h5_own5;
 #line 29 "examples/spreadsheet/main.hero"
     h5_own5 = t11;
-#line 404 "main.c"
+#line 401 "main.c"
     h_0opt_f87774a_release(&t31);
 #line 29 "examples/spreadsheet/main.hero"
     t32 = h1_s0;
-#line 408 "main.c"
+#line 405 "main.c"
     h_0opt_f87774a_retain(&t11);
 #line 29 "examples/spreadsheet/main.hero"
     h1_s0 = t11;
-#line 412 "main.c"
+#line 409 "main.c"
     h_0opt_f87774a_release(&t32);
 #line 29 "examples/spreadsheet/main.hero"
     t12 = h1_s0;
@@ -432,7 +429,6 @@ bb2:
     hero_print_str(t6);
 #line 26 "examples/spreadsheet/main.hero"
     hero_print_end();
-#line 27 "examples/spreadsheet/main.hero"
     t7 = INT64_C(2);
 #line 27 "examples/spreadsheet/main.hero"
     h_library_exit(t7);
@@ -444,32 +440,15 @@ bb3:
     goto bb1;
 #line 27 "examples/spreadsheet/main.hero"
 bb4:
-#line 22 "examples/spreadsheet/main.hero"
-#line 449 "main.c"
+#line 444 "main.c"
     hero_array_decref(h0_given);
-#line 22 "examples/spreadsheet/main.hero"
-#line 452 "main.c"
     h_0opt_f87774a_release(&h1_s0);
-#line 22 "examples/spreadsheet/main.hero"
-#line 455 "main.c"
     hero_failure_release(&h2_e);
-#line 22 "examples/spreadsheet/main.hero"
-#line 458 "main.c"
     hero_str_decref(h3_text);
-#line 22 "examples/spreadsheet/main.hero"
-#line 461 "main.c"
     hero_array_decref(h4_own4);
-#line 22 "examples/spreadsheet/main.hero"
-#line 464 "main.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 22 "examples/spreadsheet/main.hero"
-#line 467 "main.c"
     hero_str_decref(h6_own6);
-#line 22 "examples/spreadsheet/main.hero"
-#line 470 "main.c"
     hero_str_decref(h7_own7);
-#line 22 "examples/spreadsheet/main.hero"
-#line 473 "main.c"
     hero_str_decref(h8_own8);
     return;
 bb5:
@@ -479,11 +458,11 @@ bb5:
     t15 = t14.as.err;
 #line 30 "examples/spreadsheet/main.hero"
     t33 = h2_e;
-#line 483 "main.c"
+#line 462 "main.c"
     hero_failure_retain(&t15);
 #line 30 "examples/spreadsheet/main.hero"
     h2_e = t15;
-#line 487 "main.c"
+#line 466 "main.c"
     hero_failure_release(&t33);
 #line 30 "examples/spreadsheet/main.hero"
     t16 = HERO_STR_LIT(hero_str_2d78c599);
@@ -499,7 +478,7 @@ bb5:
     t34 = h6_own6;
 #line 30 "examples/spreadsheet/main.hero"
     h6_own6 = t20;
-#line 503 "main.c"
+#line 482 "main.c"
     hero_str_decref(t34);
 #line 30 "examples/spreadsheet/main.hero"
     t21 = HERO_STR_LIT(hero_str_1dce);
@@ -509,7 +488,7 @@ bb5:
     t35 = h7_own7;
 #line 30 "examples/spreadsheet/main.hero"
     h7_own7 = t22;
-#line 513 "main.c"
+#line 492 "main.c"
     hero_str_decref(t35);
 #line 30 "examples/spreadsheet/main.hero"
     t23 = h2_e;
@@ -521,7 +500,7 @@ bb5:
     t36 = h8_own8;
 #line 30 "examples/spreadsheet/main.hero"
     h8_own8 = t25;
-#line 525 "main.c"
+#line 504 "main.c"
     hero_str_decref(t36);
 #line 30 "examples/spreadsheet/main.hero"
     h_main_stop(t25);
@@ -529,17 +508,16 @@ bb5:
     goto bb4;
 #line 30 "examples/spreadsheet/main.hero"
 bb6:
-#line 31 "examples/spreadsheet/main.hero"
     t26 = h1_s0;
 #line 31 "examples/spreadsheet/main.hero"
     t27 = t26.as.ok;
 #line 31 "examples/spreadsheet/main.hero"
     t37 = h3_text;
-#line 539 "main.c"
+#line 517 "main.c"
     hero_str_incref(t27);
 #line 31 "examples/spreadsheet/main.hero"
     h3_text = t27;
-#line 543 "main.c"
+#line 521 "main.c"
     hero_str_decref(t37);
 #line 31 "examples/spreadsheet/main.hero"
     t28 = h3_text;
@@ -547,12 +525,12 @@ bb6:
     h_main_evaluate(t28);
 #line 31 "examples/spreadsheet/main.hero"
     goto bb4;
-#line 551 "main.c"
+#line 529 "main.c"
 }
 
 #line 33 "examples/spreadsheet/main.hero"
 void h_main_stop(HeroStr h0_message) {
-#line 556 "main.c"
+#line 534 "main.c"
     HeroStr t1;
     int64_t t2;
     goto bb0;
@@ -563,18 +541,17 @@ bb0:
     hero_print_str(t1);
 #line 34 "examples/spreadsheet/main.hero"
     hero_print_end();
-#line 35 "examples/spreadsheet/main.hero"
     t2 = INT64_C(1);
 #line 35 "examples/spreadsheet/main.hero"
     h_library_exit(t2);
 #line 35 "examples/spreadsheet/main.hero"
     return;
-#line 573 "main.c"
+#line 550 "main.c"
 }
 
 #line 37 "examples/spreadsheet/main.hero"
 void h_main_evaluate(HeroStr h0_text) {
-#line 578 "main.c"
+#line 555 "main.c"
     h_0opt_2bbbbbdd h1_s0 = {0};
     HeroFailure h2_e = {0};
     h_sheet_Sheet h3_s = {0};
@@ -613,15 +590,15 @@ bb0:
     t17 = h4_own4;
 #line 38 "examples/spreadsheet/main.hero"
     h4_own4 = t2;
-#line 617 "main.c"
+#line 594 "main.c"
     h_0opt_2bbbbbdd_release(&t17);
 #line 38 "examples/spreadsheet/main.hero"
     t18 = h1_s0;
-#line 621 "main.c"
+#line 598 "main.c"
     h_0opt_2bbbbbdd_retain(&t2);
 #line 38 "examples/spreadsheet/main.hero"
     h1_s0 = t2;
-#line 625 "main.c"
+#line 602 "main.c"
     h_0opt_2bbbbbdd_release(&t18);
 #line 38 "examples/spreadsheet/main.hero"
     t3 = h1_s0;
@@ -639,23 +616,12 @@ bb0:
     }
 #line 38 "examples/spreadsheet/main.hero"
 bb1:
-#line 37 "examples/spreadsheet/main.hero"
-#line 644 "main.c"
+#line 620 "main.c"
     h_0opt_2bbbbbdd_release(&h1_s0);
-#line 37 "examples/spreadsheet/main.hero"
-#line 647 "main.c"
     hero_failure_release(&h2_e);
-#line 37 "examples/spreadsheet/main.hero"
-#line 650 "main.c"
     h_sheet_Sheet_release(&h3_s);
-#line 37 "examples/spreadsheet/main.hero"
-#line 653 "main.c"
     h_0opt_2bbbbbdd_release(&h4_own4);
-#line 37 "examples/spreadsheet/main.hero"
-#line 656 "main.c"
     hero_str_decref(h5_own5);
-#line 37 "examples/spreadsheet/main.hero"
-#line 659 "main.c"
     hero_str_decref(h6_own6);
     return;
 bb2:
@@ -665,11 +631,11 @@ bb2:
     t6 = t5.as.err;
 #line 39 "examples/spreadsheet/main.hero"
     t19 = h2_e;
-#line 669 "main.c"
+#line 635 "main.c"
     hero_failure_retain(&t6);
 #line 39 "examples/spreadsheet/main.hero"
     h2_e = t6;
-#line 673 "main.c"
+#line 639 "main.c"
     hero_failure_release(&t19);
 #line 39 "examples/spreadsheet/main.hero"
     t7 = h2_e;
@@ -683,7 +649,7 @@ bb2:
     t20 = h5_own5;
 #line 39 "examples/spreadsheet/main.hero"
     h5_own5 = t10;
-#line 687 "main.c"
+#line 653 "main.c"
     hero_str_decref(t20);
 #line 39 "examples/spreadsheet/main.hero"
     t11 = h2_e;
@@ -695,7 +661,7 @@ bb2:
     t21 = h6_own6;
 #line 39 "examples/spreadsheet/main.hero"
     h6_own6 = t13;
-#line 699 "main.c"
+#line 665 "main.c"
     hero_str_decref(t21);
 #line 39 "examples/spreadsheet/main.hero"
     h_main_stop(t13);
@@ -703,17 +669,16 @@ bb2:
     goto bb1;
 #line 39 "examples/spreadsheet/main.hero"
 bb3:
-#line 40 "examples/spreadsheet/main.hero"
     t14 = h1_s0;
 #line 40 "examples/spreadsheet/main.hero"
     t15 = t14.as.ok;
 #line 40 "examples/spreadsheet/main.hero"
     t22 = h3_s;
-#line 713 "main.c"
+#line 678 "main.c"
     h_sheet_Sheet_retain(&t15);
 #line 40 "examples/spreadsheet/main.hero"
     h3_s = t15;
-#line 717 "main.c"
+#line 682 "main.c"
     h_sheet_Sheet_release(&t22);
 #line 40 "examples/spreadsheet/main.hero"
     t16 = h3_s;
@@ -721,12 +686,12 @@ bb3:
     h_main_report(t16);
 #line 40 "examples/spreadsheet/main.hero"
     goto bb1;
-#line 725 "main.c"
+#line 690 "main.c"
 }
 
 #line 42 "examples/spreadsheet/main.hero"
 void h_main_report(h_sheet_Sheet h0_s) {
-#line 730 "main.c"
+#line 695 "main.c"
     int64_t h1_broken;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -819,15 +784,15 @@ bb0:
     t50 = h8_own8;
 #line 45 "examples/spreadsheet/main.hero"
     h8_own8 = t3;
-#line 823 "main.c"
+#line 788 "main.c"
     hero_array_decref(t50);
 #line 45 "examples/spreadsheet/main.hero"
     t51 = h2_xs0;
-#line 827 "main.c"
+#line 792 "main.c"
     hero_array_incref(t3);
 #line 45 "examples/spreadsheet/main.hero"
     h2_xs0 = t3;
-#line 831 "main.c"
+#line 796 "main.c"
     hero_array_decref(t51);
 #line 45 "examples/spreadsheet/main.hero"
     t4 = INT64_C(0);
@@ -857,11 +822,11 @@ bb2:
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 45 "examples/spreadsheet/main.hero"
     t52 = h4_name;
-#line 861 "main.c"
+#line 826 "main.c"
     hero_str_incref(t11);
 #line 45 "examples/spreadsheet/main.hero"
     h4_name = t11;
-#line 865 "main.c"
+#line 830 "main.c"
     hero_str_decref(t52);
 #line 46 "examples/spreadsheet/main.hero"
     t12 = h0_s;
@@ -873,7 +838,7 @@ bb2:
     t53 = h9_own9;
 #line 46 "examples/spreadsheet/main.hero"
     h9_own9 = t14;
-#line 877 "main.c"
+#line 842 "main.c"
     hero_array_decref(t53);
 #line 46 "examples/spreadsheet/main.hero"
     t15 = h_formula_value_of(t12, t13, t14);
@@ -881,15 +846,15 @@ bb2:
     t54 = h10_own10;
 #line 46 "examples/spreadsheet/main.hero"
     h10_own10 = t15;
-#line 885 "main.c"
+#line 850 "main.c"
     h_0opt_db92a83_release(&t54);
 #line 46 "examples/spreadsheet/main.hero"
     t55 = h5_s0;
-#line 889 "main.c"
+#line 854 "main.c"
     h_0opt_db92a83_retain(&t15);
 #line 46 "examples/spreadsheet/main.hero"
     h5_s0 = t15;
-#line 893 "main.c"
+#line 858 "main.c"
     h_0opt_db92a83_release(&t55);
 #line 46 "examples/spreadsheet/main.hero"
     t16 = h5_s0;
@@ -927,7 +892,7 @@ bb4:
     t56 = h11_own11;
 #line 53 "examples/spreadsheet/main.hero"
     h11_own11 = t39;
-#line 931 "main.c"
+#line 896 "main.c"
     hero_array_decref(t56);
 #line 53 "examples/spreadsheet/main.hero"
     t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
@@ -937,7 +902,7 @@ bb4:
     t57 = h12_own12;
 #line 53 "examples/spreadsheet/main.hero"
     h12_own12 = t41;
-#line 941 "main.c"
+#line 906 "main.c"
     hero_str_decref(t57);
 #line 53 "examples/spreadsheet/main.hero"
     t42 = HERO_STR_LIT(hero_str_7ff60447);
@@ -949,7 +914,7 @@ bb4:
     t58 = h13_own13;
 #line 53 "examples/spreadsheet/main.hero"
     h13_own13 = t44;
-#line 953 "main.c"
+#line 918 "main.c"
     hero_str_decref(t58);
 #line 53 "examples/spreadsheet/main.hero"
     t45 = HERO_STR_LIT(hero_str_3f10996a);
@@ -983,7 +948,6 @@ bb6:
     t19 = t18.as.ok;
 #line 47 "examples/spreadsheet/main.hero"
     h6_v = t19;
-#line 48 "examples/spreadsheet/main.hero"
     t20 = h4_name;
 #line 48 "examples/spreadsheet/main.hero"
     t21 = h_main_padded(t20);
@@ -991,7 +955,7 @@ bb6:
     t59 = h14_own14;
 #line 48 "examples/spreadsheet/main.hero"
     h14_own14 = t21;
-#line 995 "main.c"
+#line 959 "main.c"
     hero_str_decref(t59);
 #line 48 "examples/spreadsheet/main.hero"
     t22 = HERO_STR_LIT(hero_str_88077);
@@ -1003,7 +967,7 @@ bb6:
     t60 = h15_own15;
 #line 48 "examples/spreadsheet/main.hero"
     h15_own15 = t24;
-#line 1007 "main.c"
+#line 971 "main.c"
     hero_str_decref(t60);
 #line 48 "examples/spreadsheet/main.hero"
     hero_print_str(t21);
@@ -1017,17 +981,16 @@ bb6:
     goto bb5;
 #line 48 "examples/spreadsheet/main.hero"
 bb7:
-#line 49 "examples/spreadsheet/main.hero"
     t25 = h5_s0;
 #line 49 "examples/spreadsheet/main.hero"
     t26 = t25.as.err;
 #line 49 "examples/spreadsheet/main.hero"
     t61 = h7_e;
-#line 1027 "main.c"
+#line 990 "main.c"
     hero_failure_retain(&t26);
 #line 49 "examples/spreadsheet/main.hero"
     h7_e = t26;
-#line 1031 "main.c"
+#line 994 "main.c"
     hero_failure_release(&t61);
 #line 50 "examples/spreadsheet/main.hero"
     t27 = h1_broken;
@@ -1037,7 +1000,6 @@ bb7:
     if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
 #line 50 "examples/spreadsheet/main.hero"
     h1_broken = t29;
-#line 51 "examples/spreadsheet/main.hero"
     t30 = h4_name;
 #line 51 "examples/spreadsheet/main.hero"
     t31 = h_main_padded(t30);
@@ -1045,7 +1007,7 @@ bb7:
     t62 = h16_own16;
 #line 51 "examples/spreadsheet/main.hero"
     h16_own16 = t31;
-#line 1049 "main.c"
+#line 1011 "main.c"
     hero_str_decref(t62);
 #line 51 "examples/spreadsheet/main.hero"
     t32 = HERO_STR_LIT(hero_str_87223);
@@ -1065,44 +1027,19 @@ bb7:
     goto bb5;
 #line 51 "examples/spreadsheet/main.hero"
 bb8:
-#line 42 "examples/spreadsheet/main.hero"
-#line 1070 "main.c"
+#line 1031 "main.c"
     hero_array_decref(h2_xs0);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1073 "main.c"
     hero_str_decref(h4_name);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1076 "main.c"
     h_0opt_db92a83_release(&h5_s0);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1079 "main.c"
     hero_failure_release(&h7_e);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1082 "main.c"
     hero_array_decref(h8_own8);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1085 "main.c"
     hero_array_decref(h9_own9);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1088 "main.c"
     h_0opt_db92a83_release(&h10_own10);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1091 "main.c"
     hero_array_decref(h11_own11);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1094 "main.c"
     hero_str_decref(h12_own12);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1097 "main.c"
     hero_str_decref(h13_own13);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1100 "main.c"
     hero_str_decref(h14_own14);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1103 "main.c"
     hero_str_decref(h15_own15);
-#line 42 "examples/spreadsheet/main.hero"
-#line 1106 "main.c"
     hero_str_decref(h16_own16);
     return;
 bb9:
@@ -1116,12 +1053,12 @@ bb9:
 bb10:
 #line 56 "examples/spreadsheet/main.hero"
     goto bb8;
-#line 1120 "main.c"
+#line 1057 "main.c"
 }
 
 #line 61 "examples/spreadsheet/main.hero"
 HeroStr h_main_padded(HeroStr h0_name) {
-#line 1125 "main.c"
+#line 1062 "main.c"
     HeroStr h1_out = {0};
     HeroStr h2_own2 = {0};
     HeroStr t1;
@@ -1142,11 +1079,11 @@ bb0:
     t1 = h0_name;
 #line 62 "examples/spreadsheet/main.hero"
     t10 = h1_out;
-#line 1146 "main.c"
+#line 1083 "main.c"
     hero_str_incref(t1);
 #line 62 "examples/spreadsheet/main.hero"
     h1_out = t1;
-#line 1150 "main.c"
+#line 1087 "main.c"
     hero_str_decref(t10);
     goto bb1;
 bb1:
@@ -1162,7 +1099,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 64 "examples/spreadsheet/main.hero"
 bb2:
-#line 65 "examples/spreadsheet/main.hero"
     t6 = h1_out;
 #line 65 "examples/spreadsheet/main.hero"
     t7 = HERO_STR_LIT(hero_str_20);
@@ -1172,138 +1108,134 @@ bb2:
     t11 = h2_own2;
 #line 65 "examples/spreadsheet/main.hero"
     h2_own2 = t8;
-#line 1176 "main.c"
+#line 1112 "main.c"
     hero_str_decref(t11);
 #line 65 "examples/spreadsheet/main.hero"
     t12 = h1_out;
-#line 1180 "main.c"
+#line 1116 "main.c"
     hero_str_incref(t8);
 #line 65 "examples/spreadsheet/main.hero"
     h1_out = t8;
-#line 1184 "main.c"
+#line 1120 "main.c"
     hero_str_decref(t12);
     goto bb1;
 bb3:
 #line 67 "examples/spreadsheet/main.hero"
     t9 = h1_out;
-#line 1190 "main.c"
+#line 1126 "main.c"
     hero_str_incref(t9);
-#line 67 "examples/spreadsheet/main.hero"
-#line 1193 "main.c"
     hero_str_decref(h1_out);
-#line 67 "examples/spreadsheet/main.hero"
-#line 1196 "main.c"
     hero_str_decref(h2_own2);
     return t9;
 }
 
 #line 22 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_CIRCULAR_REFERENCE(void) {
-#line 1203 "main.c"
+#line 1135 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 23 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_3253dd13);
-#line 1209 "main.c"
+#line 1141 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 25 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_DIVISION_BY_ZERO(void) {
-#line 1216 "main.c"
+#line 1148 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 26 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_3dbf07bc);
-#line 1222 "main.c"
+#line 1154 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 28 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_EXPECTED_PAREN(void) {
-#line 1229 "main.c"
+#line 1161 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 29 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_3f28650a);
-#line 1235 "main.c"
+#line 1167 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 31 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_TRAILING_INPUT(void) {
-#line 1242 "main.c"
+#line 1174 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 32 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_1ab4f50e);
-#line 1248 "main.c"
+#line 1180 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 34 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNCLOSED_PAREN(void) {
-#line 1255 "main.c"
+#line 1187 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 35 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_7b0b513f);
-#line 1261 "main.c"
+#line 1193 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 37 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNEXPECTED_CHARACTER(void) {
-#line 1268 "main.c"
+#line 1200 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 38 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_70ef3fbe);
-#line 1274 "main.c"
+#line 1206 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 40 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNEXPECTED_END(void) {
-#line 1281 "main.c"
+#line 1213 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 41 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_7423baed);
-#line 1287 "main.c"
+#line 1219 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 43 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNKNOWN_NAME(void) {
-#line 1294 "main.c"
+#line 1226 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 44 "examples/spreadsheet/formula.hero"
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 1300 "main.c"
+#line 1232 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 50 "examples/spreadsheet/formula.hero"
 bool h_formula_at_end(h_formula_Parse h0_p) {
-#line 1307 "main.c"
+#line 1239 "main.c"
     h_formula_Parse t1;
     int64_t t2;
     h_formula_Parse t3;
@@ -1326,12 +1258,12 @@ bb0:
     t6 = t2 >= t5;
 #line 51 "examples/spreadsheet/formula.hero"
     return t6;
-#line 1330 "main.c"
+#line 1262 "main.c"
 }
 
 #line 53 "examples/spreadsheet/formula.hero"
 uint8_t h_formula_here(h_formula_Parse h0_p) {
-#line 1335 "main.c"
+#line 1267 "main.c"
     h_formula_Parse t1;
     HeroStr t2;
     h_formula_Parse t3;
@@ -1351,12 +1283,12 @@ bb0:
     t5 = hero_str_byte(t2, t4);
 #line 54 "examples/spreadsheet/formula.hero"
     return t5;
-#line 1355 "main.c"
+#line 1287 "main.c"
 }
 
 #line 56 "examples/spreadsheet/formula.hero"
 void h_formula_advance(h_formula_Parse *ph0_p) {
-#line 1360 "main.c"
+#line 1292 "main.c"
     h_formula_Parse t1;
     int64_t t2;
     int64_t t3;
@@ -1375,12 +1307,12 @@ bb0:
     (*ph0_p).f_pos = t4;
 #line 57 "examples/spreadsheet/formula.hero"
     return;
-#line 1379 "main.c"
+#line 1311 "main.c"
 }
 
 #line 59 "examples/spreadsheet/formula.hero"
 void h_formula_skip_space(h_formula_Parse *ph0_p) {
-#line 1384 "main.c"
+#line 1316 "main.c"
     bool h1_b0;
     bool h2_b1;
     h_formula_Parse t1;
@@ -1412,7 +1344,6 @@ bb1:
     if (t3) goto bb4; else goto bb5;
 #line 60 "examples/spreadsheet/formula.hero"
 bb2:
-#line 61 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
 #line 61 "examples/spreadsheet/formula.hero"
     goto bb1;
@@ -1462,12 +1393,12 @@ bb7:
     h1_b0 = t12;
 #line 60 "examples/spreadsheet/formula.hero"
     goto bb5;
-#line 1466 "main.c"
+#line 1397 "main.c"
 }
 
 #line 63 "examples/spreadsheet/formula.hero"
 bool h_formula_contains(HeroArrayHeader * h0_known, HeroStr h1_name) {
-#line 1471 "main.c"
+#line 1402 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     HeroStr h4_one = {0};
@@ -1498,11 +1429,11 @@ bb0:
     t1 = h0_known;
 #line 64 "examples/spreadsheet/formula.hero"
     t19 = h2_xs0;
-#line 1502 "main.c"
+#line 1433 "main.c"
     hero_array_incref(t1);
 #line 64 "examples/spreadsheet/formula.hero"
     h2_xs0 = t1;
-#line 1506 "main.c"
+#line 1437 "main.c"
     hero_array_decref(t19);
 #line 64 "examples/spreadsheet/formula.hero"
     t2 = INT64_C(0);
@@ -1532,11 +1463,11 @@ bb2:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 64 "examples/spreadsheet/formula.hero"
     t20 = h4_one;
-#line 1536 "main.c"
+#line 1467 "main.c"
     hero_str_incref(t9);
 #line 64 "examples/spreadsheet/formula.hero"
     h4_one = t9;
-#line 1540 "main.c"
+#line 1471 "main.c"
     hero_str_decref(t20);
 #line 65 "examples/spreadsheet/formula.hero"
     t10 = h4_one;
@@ -1584,19 +1515,16 @@ bb7:
     goto bb5;
 #line 66 "examples/spreadsheet/formula.hero"
 bb8:
-#line 66 "examples/spreadsheet/formula.hero"
+#line 1519 "main.c"
     t18 = h5_ret0;
-#line 1590 "main.c"
     hero_array_decref(h2_xs0);
-#line 66 "examples/spreadsheet/formula.hero"
-#line 1593 "main.c"
     hero_str_decref(h4_one);
     return t18;
 }
 
 #line 74 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_value_of(h_sheet_Sheet h0_s, HeroStr h1_name, HeroArrayHeader * h2_visiting) {
-#line 1600 "main.c"
+#line 1528 "main.c"
     h_0opt_f87774a h3_f0 = {0};
     HeroStr h4_r0 = {0};
     HeroStr h5_source = {0};
@@ -1741,15 +1669,15 @@ bb1:
     t60 = h10_own10;
 #line 77 "examples/spreadsheet/formula.hero"
     h10_own10 = t14;
-#line 1745 "main.c"
+#line 1673 "main.c"
     h_0opt_f87774a_release(&t60);
 #line 77 "examples/spreadsheet/formula.hero"
     t61 = h3_f0;
-#line 1749 "main.c"
+#line 1677 "main.c"
     h_0opt_f87774a_retain(&t14);
 #line 77 "examples/spreadsheet/formula.hero"
     h3_f0 = t14;
-#line 1753 "main.c"
+#line 1681 "main.c"
     h_0opt_f87774a_release(&t61);
 #line 77 "examples/spreadsheet/formula.hero"
     t15 = h3_f0;
@@ -1769,7 +1697,7 @@ bb2:
     t62 = h11_own11;
 #line 76 "examples/spreadsheet/formula.hero"
     h11_own11 = t4;
-#line 1773 "main.c"
+#line 1701 "main.c"
     hero_str_decref(t62);
 #line 76 "examples/spreadsheet/formula.hero"
     t5 = HERO_STR_LIT(hero_str_57729eb7);
@@ -1781,7 +1709,7 @@ bb2:
     t63 = h12_own12;
 #line 76 "examples/spreadsheet/formula.hero"
     h12_own12 = t7;
-#line 1785 "main.c"
+#line 1713 "main.c"
     hero_str_decref(t63);
 #line 76 "examples/spreadsheet/formula.hero"
     t8 = HERO_STR_LIT(hero_str_63f4e19a);
@@ -1791,13 +1719,9 @@ bb2:
     t64 = h13_own13;
 #line 76 "examples/spreadsheet/formula.hero"
     h13_own13 = t9;
-#line 1795 "main.c"
+#line 1723 "main.c"
     hero_str_decref(t64);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 1798 "main.c"
     hero_str_incref(t4);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 1801 "main.c"
     hero_str_incref(t9);
 #line 76 "examples/spreadsheet/formula.hero"
     t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t9}};
@@ -1805,7 +1729,7 @@ bb2:
     t65 = h14_own14;
 #line 76 "examples/spreadsheet/formula.hero"
     h14_own14 = t10;
-#line 1809 "main.c"
+#line 1733 "main.c"
     h_0opt_db92a83_release(&t65);
 #line 76 "examples/spreadsheet/formula.hero"
     h9_ret0 = t10;
@@ -1817,17 +1741,16 @@ bb3:
     goto bb1;
 #line 76 "examples/spreadsheet/formula.hero"
 bb4:
-#line 77 "examples/spreadsheet/formula.hero"
     t19 = h3_f0;
 #line 77 "examples/spreadsheet/formula.hero"
     t20 = t19.as.ok;
 #line 77 "examples/spreadsheet/formula.hero"
     t66 = h4_r0;
-#line 1827 "main.c"
+#line 1750 "main.c"
     hero_str_incref(t20);
 #line 77 "examples/spreadsheet/formula.hero"
     h4_r0 = t20;
-#line 1831 "main.c"
+#line 1754 "main.c"
     hero_str_decref(t66);
     goto bb6;
 bb5:
@@ -1835,11 +1758,11 @@ bb5:
     t21 = HERO_STR_LIT(hero_str_0);
 #line 77 "examples/spreadsheet/formula.hero"
     t67 = h4_r0;
-#line 1839 "main.c"
+#line 1762 "main.c"
     hero_str_incref(t21);
 #line 77 "examples/spreadsheet/formula.hero"
     h4_r0 = t21;
-#line 1843 "main.c"
+#line 1766 "main.c"
     hero_str_decref(t67);
     goto bb6;
 bb6:
@@ -1847,11 +1770,11 @@ bb6:
     t22 = h4_r0;
 #line 77 "examples/spreadsheet/formula.hero"
     t68 = h5_source;
-#line 1851 "main.c"
+#line 1774 "main.c"
     hero_str_incref(t22);
 #line 77 "examples/spreadsheet/formula.hero"
     h5_source = t22;
-#line 1855 "main.c"
+#line 1778 "main.c"
     hero_str_decref(t68);
 #line 79 "examples/spreadsheet/formula.hero"
     t23 = h5_source;
@@ -1867,7 +1790,7 @@ bb7:
     t28 = h5_source;
 #line 81 "examples/spreadsheet/formula.hero"
     t29 = INT64_C(0);
-#line 1871 "main.c"
+#line 1794 "main.c"
     hero_str_incref(t28);
 #line 81 "examples/spreadsheet/formula.hero"
     t30 = (h_formula_Parse){.f_text = t28, .f_pos = t29};
@@ -1875,15 +1798,15 @@ bb7:
     t69 = h15_own15;
 #line 81 "examples/spreadsheet/formula.hero"
     h15_own15 = t30;
-#line 1879 "main.c"
+#line 1802 "main.c"
     h_formula_Parse_release(&t69);
 #line 81 "examples/spreadsheet/formula.hero"
     t70 = h6_p;
-#line 1883 "main.c"
+#line 1806 "main.c"
     h_formula_Parse_retain(&t30);
 #line 81 "examples/spreadsheet/formula.hero"
     h6_p = t30;
-#line 1887 "main.c"
+#line 1810 "main.c"
     h_formula_Parse_release(&t70);
 #line 82 "examples/spreadsheet/formula.hero"
     t31 = h0_s;
@@ -1897,7 +1820,7 @@ bb7:
     t71 = h16_own16;
 #line 82 "examples/spreadsheet/formula.hero"
     h16_own16 = t34;
-#line 1901 "main.c"
+#line 1824 "main.c"
     hero_array_decref(t71);
 #line 82 "examples/spreadsheet/formula.hero"
     t35 = h_formula_expression(&h6_p, t31, t34);
@@ -1905,15 +1828,15 @@ bb7:
     t72 = h17_own17;
 #line 82 "examples/spreadsheet/formula.hero"
     h17_own17 = t35;
-#line 1909 "main.c"
+#line 1832 "main.c"
     h_0opt_db92a83_release(&t72);
 #line 82 "examples/spreadsheet/formula.hero"
     t73 = h7_f1;
-#line 1913 "main.c"
+#line 1836 "main.c"
     h_0opt_db92a83_retain(&t35);
 #line 82 "examples/spreadsheet/formula.hero"
     h7_f1 = t35;
-#line 1917 "main.c"
+#line 1840 "main.c"
     h_0opt_db92a83_release(&t73);
 #line 82 "examples/spreadsheet/formula.hero"
     t36 = h7_f1;
@@ -1935,7 +1858,7 @@ bb8:
     t74 = h18_own18;
 #line 80 "examples/spreadsheet/formula.hero"
     h18_own18 = t27;
-#line 1939 "main.c"
+#line 1862 "main.c"
     h_0opt_db92a83_release(&t74);
 #line 80 "examples/spreadsheet/formula.hero"
     h9_ret0 = t27;
@@ -1953,7 +1876,6 @@ bb10:
     t44 = t43.as.ok;
 #line 82 "examples/spreadsheet/formula.hero"
     h8_v = t44;
-#line 83 "examples/spreadsheet/formula.hero"
     h_formula_skip_space(&h6_p);
 #line 85 "examples/spreadsheet/formula.hero"
     t45 = h6_p;
@@ -1969,7 +1891,7 @@ bb11:
     t40 = h7_f1;
 #line 82 "examples/spreadsheet/formula.hero"
     t41 = t40.as.err;
-#line 1973 "main.c"
+#line 1895 "main.c"
     hero_failure_retain(&t41);
 #line 82 "examples/spreadsheet/formula.hero"
     t42 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t41};
@@ -1977,7 +1899,7 @@ bb11:
     t75 = h19_own19;
 #line 82 "examples/spreadsheet/formula.hero"
     h19_own19 = t42;
-#line 1981 "main.c"
+#line 1903 "main.c"
     h_0opt_db92a83_release(&t75);
 #line 82 "examples/spreadsheet/formula.hero"
     h9_ret0 = t42;
@@ -1993,7 +1915,7 @@ bb12:
     t76 = h20_own20;
 #line 87 "examples/spreadsheet/formula.hero"
     h20_own20 = t58;
-#line 1997 "main.c"
+#line 1919 "main.c"
     h_0opt_db92a83_release(&t76);
 #line 87 "examples/spreadsheet/formula.hero"
     h9_ret0 = t58;
@@ -2007,7 +1929,7 @@ bb13:
     t77 = h21_own21;
 #line 86 "examples/spreadsheet/formula.hero"
     h21_own21 = t48;
-#line 2011 "main.c"
+#line 1933 "main.c"
     hero_str_decref(t77);
 #line 86 "examples/spreadsheet/formula.hero"
     t49 = h1_name;
@@ -2019,7 +1941,7 @@ bb13:
     t78 = h22_own22;
 #line 86 "examples/spreadsheet/formula.hero"
     h22_own22 = t51;
-#line 2023 "main.c"
+#line 1945 "main.c"
     hero_str_decref(t78);
 #line 86 "examples/spreadsheet/formula.hero"
     t52 = h6_p;
@@ -2031,7 +1953,7 @@ bb13:
     t79 = h23_own23;
 #line 86 "examples/spreadsheet/formula.hero"
     h23_own23 = t54;
-#line 2035 "main.c"
+#line 1957 "main.c"
     hero_str_decref(t79);
 #line 86 "examples/spreadsheet/formula.hero"
     t55 = hero_str_concat(t51, t54);
@@ -2039,13 +1961,9 @@ bb13:
     t80 = h24_own24;
 #line 86 "examples/spreadsheet/formula.hero"
     h24_own24 = t55;
-#line 2043 "main.c"
+#line 1965 "main.c"
     hero_str_decref(t80);
-#line 86 "examples/spreadsheet/formula.hero"
-#line 2046 "main.c"
     hero_str_incref(t48);
-#line 86 "examples/spreadsheet/formula.hero"
-#line 2049 "main.c"
     hero_str_incref(t55);
 #line 86 "examples/spreadsheet/formula.hero"
     t56 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t48, .msg = t55}};
@@ -2053,7 +1971,7 @@ bb13:
     t81 = h25_own25;
 #line 86 "examples/spreadsheet/formula.hero"
     h25_own25 = t56;
-#line 2057 "main.c"
+#line 1975 "main.c"
     h_0opt_db92a83_release(&t81);
 #line 86 "examples/spreadsheet/formula.hero"
     h9_ret0 = t56;
@@ -2065,79 +1983,36 @@ bb14:
     goto bb12;
 #line 86 "examples/spreadsheet/formula.hero"
 bb15:
-#line 76 "examples/spreadsheet/formula.hero"
+#line 1987 "main.c"
     t59 = h9_ret0;
-#line 2071 "main.c"
     h_0opt_db92a83_retain(&t59);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2074 "main.c"
     h_0opt_f87774a_release(&h3_f0);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2077 "main.c"
     hero_str_decref(h4_r0);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2080 "main.c"
     hero_str_decref(h5_source);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2083 "main.c"
     h_formula_Parse_release(&h6_p);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2086 "main.c"
     h_0opt_db92a83_release(&h7_f1);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2089 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2092 "main.c"
     hero_str_decref(h11_own11);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2095 "main.c"
     hero_str_decref(h12_own12);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2098 "main.c"
     hero_str_decref(h13_own13);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2101 "main.c"
     h_0opt_db92a83_release(&h14_own14);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2104 "main.c"
     h_formula_Parse_release(&h15_own15);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2107 "main.c"
     hero_array_decref(h16_own16);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2110 "main.c"
     h_0opt_db92a83_release(&h17_own17);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2113 "main.c"
     h_0opt_db92a83_release(&h18_own18);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2116 "main.c"
     h_0opt_db92a83_release(&h19_own19);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2119 "main.c"
     h_0opt_db92a83_release(&h20_own20);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2122 "main.c"
     hero_str_decref(h21_own21);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2125 "main.c"
     hero_str_decref(h22_own22);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2128 "main.c"
     hero_str_decref(h23_own23);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2131 "main.c"
     hero_str_decref(h24_own24);
-#line 76 "examples/spreadsheet/formula.hero"
-#line 2134 "main.c"
     h_0opt_db92a83_release(&h25_own25);
     return t59;
 }
 
 #line 91 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_expression(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
-#line 2141 "main.c"
+#line 2016 "main.c"
     h_0opt_db92a83 h3_f0 = {0};
     double h4_total;
     bool h5_more;
@@ -2237,15 +2112,15 @@ bb0:
     t63 = h11_own11;
 #line 92 "examples/spreadsheet/formula.hero"
     h11_own11 = t3;
-#line 2241 "main.c"
+#line 2116 "main.c"
     h_0opt_db92a83_release(&t63);
 #line 92 "examples/spreadsheet/formula.hero"
     t64 = h3_f0;
-#line 2245 "main.c"
+#line 2120 "main.c"
     h_0opt_db92a83_retain(&t3);
 #line 92 "examples/spreadsheet/formula.hero"
     h3_f0 = t3;
-#line 2249 "main.c"
+#line 2124 "main.c"
     h_0opt_db92a83_release(&t64);
 #line 92 "examples/spreadsheet/formula.hero"
     t4 = h3_f0;
@@ -2265,7 +2140,6 @@ bb1:
     t12 = t11.as.ok;
 #line 92 "examples/spreadsheet/formula.hero"
     h4_total = t12;
-#line 93 "examples/spreadsheet/formula.hero"
     t13 = true;
 #line 93 "examples/spreadsheet/formula.hero"
     h5_more = t13;
@@ -2277,7 +2151,7 @@ bb2:
     t8 = h3_f0;
 #line 92 "examples/spreadsheet/formula.hero"
     t9 = t8.as.err;
-#line 2281 "main.c"
+#line 2155 "main.c"
     hero_failure_retain(&t9);
 #line 92 "examples/spreadsheet/formula.hero"
     t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t9};
@@ -2285,7 +2159,7 @@ bb2:
     t65 = h12_own12;
 #line 92 "examples/spreadsheet/formula.hero"
     h12_own12 = t10;
-#line 2289 "main.c"
+#line 2163 "main.c"
     h_0opt_db92a83_release(&t65);
 #line 92 "examples/spreadsheet/formula.hero"
     h10_ret0 = t10;
@@ -2299,7 +2173,6 @@ bb3:
     if (t14) goto bb4; else goto bb5;
 #line 95 "examples/spreadsheet/formula.hero"
 bb4:
-#line 96 "examples/spreadsheet/formula.hero"
     h_formula_skip_space(&(*ph0_p));
 #line 98 "examples/spreadsheet/formula.hero"
     t15 = (*ph0_p);
@@ -2321,7 +2194,7 @@ bb5:
     t66 = h13_own13;
 #line 107 "examples/spreadsheet/formula.hero"
     h13_own13 = t61;
-#line 2325 "main.c"
+#line 2198 "main.c"
     h_0opt_db92a83_release(&t66);
 #line 107 "examples/spreadsheet/formula.hero"
     h10_ret0 = t61;
@@ -2353,9 +2226,7 @@ bb8:
     if (t22) goto bb9; else goto bb10;
 #line 98 "examples/spreadsheet/formula.hero"
 bb9:
-#line 99 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 100 "examples/spreadsheet/formula.hero"
     t23 = h4_total;
 #line 100 "examples/spreadsheet/formula.hero"
     t24 = h1_s;
@@ -2367,15 +2238,15 @@ bb9:
     t67 = h14_own14;
 #line 100 "examples/spreadsheet/formula.hero"
     h14_own14 = t26;
-#line 2371 "main.c"
+#line 2242 "main.c"
     h_0opt_db92a83_release(&t67);
 #line 100 "examples/spreadsheet/formula.hero"
     t68 = h7_f1;
-#line 2375 "main.c"
+#line 2246 "main.c"
     h_0opt_db92a83_retain(&t26);
 #line 100 "examples/spreadsheet/formula.hero"
     h7_f1 = t26;
-#line 2379 "main.c"
+#line 2250 "main.c"
     h_0opt_db92a83_release(&t68);
 #line 100 "examples/spreadsheet/formula.hero"
     t27 = h7_f1;
@@ -2389,7 +2260,6 @@ bb9:
     if (t30) goto bb11; else goto bb12;
 #line 100 "examples/spreadsheet/formula.hero"
 bb10:
-#line 101 "examples/spreadsheet/formula.hero"
     t37 = (*ph0_p);
 #line 101 "examples/spreadsheet/formula.hero"
     t38 = h_formula_at_end(t37);
@@ -2417,7 +2287,7 @@ bb12:
     t31 = h7_f1;
 #line 100 "examples/spreadsheet/formula.hero"
     t32 = t31.as.err;
-#line 2421 "main.c"
+#line 2291 "main.c"
     hero_failure_retain(&t32);
 #line 100 "examples/spreadsheet/formula.hero"
     t33 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t32};
@@ -2425,7 +2295,7 @@ bb12:
     t69 = h15_own15;
 #line 100 "examples/spreadsheet/formula.hero"
     h15_own15 = t33;
-#line 2429 "main.c"
+#line 2299 "main.c"
     h_0opt_db92a83_release(&t69);
 #line 100 "examples/spreadsheet/formula.hero"
     h10_ret0 = t33;
@@ -2433,7 +2303,6 @@ bb12:
     goto bb19;
 #line 100 "examples/spreadsheet/formula.hero"
 bb13:
-#line 101 "examples/spreadsheet/formula.hero"
     t40 = (*ph0_p);
 #line 101 "examples/spreadsheet/formula.hero"
     t41 = h_formula_here(t40);
@@ -2453,9 +2322,7 @@ bb14:
     if (t44) goto bb15; else goto bb16;
 #line 101 "examples/spreadsheet/formula.hero"
 bb15:
-#line 102 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 103 "examples/spreadsheet/formula.hero"
     t45 = h4_total;
 #line 103 "examples/spreadsheet/formula.hero"
     t46 = h1_s;
@@ -2467,15 +2334,15 @@ bb15:
     t70 = h16_own16;
 #line 103 "examples/spreadsheet/formula.hero"
     h16_own16 = t48;
-#line 2471 "main.c"
+#line 2338 "main.c"
     h_0opt_db92a83_release(&t70);
 #line 103 "examples/spreadsheet/formula.hero"
     t71 = h9_f2;
-#line 2475 "main.c"
+#line 2342 "main.c"
     h_0opt_db92a83_retain(&t48);
 #line 103 "examples/spreadsheet/formula.hero"
     h9_f2 = t48;
-#line 2479 "main.c"
+#line 2346 "main.c"
     h_0opt_db92a83_release(&t71);
 #line 103 "examples/spreadsheet/formula.hero"
     t49 = h9_f2;
@@ -2513,7 +2380,7 @@ bb18:
     t53 = h9_f2;
 #line 103 "examples/spreadsheet/formula.hero"
     t54 = t53.as.err;
-#line 2517 "main.c"
+#line 2384 "main.c"
     hero_failure_retain(&t54);
 #line 103 "examples/spreadsheet/formula.hero"
     t55 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t54};
@@ -2521,7 +2388,7 @@ bb18:
     t72 = h17_own17;
 #line 103 "examples/spreadsheet/formula.hero"
     h17_own17 = t55;
-#line 2525 "main.c"
+#line 2392 "main.c"
     h_0opt_db92a83_release(&t72);
 #line 103 "examples/spreadsheet/formula.hero"
     h10_ret0 = t55;
@@ -2529,46 +2396,25 @@ bb18:
     goto bb19;
 #line 103 "examples/spreadsheet/formula.hero"
 bb19:
-#line 92 "examples/spreadsheet/formula.hero"
+#line 2400 "main.c"
     t62 = h10_ret0;
-#line 2535 "main.c"
     h_0opt_db92a83_retain(&t62);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2538 "main.c"
     h_0opt_db92a83_release(&h3_f0);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2541 "main.c"
     h_0opt_db92a83_release(&h7_f1);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2544 "main.c"
     h_0opt_db92a83_release(&h9_f2);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2547 "main.c"
     h_0opt_db92a83_release(&h11_own11);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2550 "main.c"
     h_0opt_db92a83_release(&h12_own12);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2553 "main.c"
     h_0opt_db92a83_release(&h13_own13);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2556 "main.c"
     h_0opt_db92a83_release(&h14_own14);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2559 "main.c"
     h_0opt_db92a83_release(&h15_own15);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2562 "main.c"
     h_0opt_db92a83_release(&h16_own16);
-#line 92 "examples/spreadsheet/formula.hero"
-#line 2565 "main.c"
     h_0opt_db92a83_release(&h17_own17);
     return t62;
 }
 
 #line 109 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_term(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
-#line 2572 "main.c"
+#line 2418 "main.c"
     h_0opt_db92a83 h3_f0 = {0};
     double h4_total;
     bool h5_more;
@@ -2680,15 +2526,15 @@ bb0:
     t70 = h12_own12;
 #line 110 "examples/spreadsheet/formula.hero"
     h12_own12 = t3;
-#line 2684 "main.c"
+#line 2530 "main.c"
     h_0opt_db92a83_release(&t70);
 #line 110 "examples/spreadsheet/formula.hero"
     t71 = h3_f0;
-#line 2688 "main.c"
+#line 2534 "main.c"
     h_0opt_db92a83_retain(&t3);
 #line 110 "examples/spreadsheet/formula.hero"
     h3_f0 = t3;
-#line 2692 "main.c"
+#line 2538 "main.c"
     h_0opt_db92a83_release(&t71);
 #line 110 "examples/spreadsheet/formula.hero"
     t4 = h3_f0;
@@ -2708,7 +2554,6 @@ bb1:
     t12 = t11.as.ok;
 #line 110 "examples/spreadsheet/formula.hero"
     h4_total = t12;
-#line 111 "examples/spreadsheet/formula.hero"
     t13 = true;
 #line 111 "examples/spreadsheet/formula.hero"
     h5_more = t13;
@@ -2720,7 +2565,7 @@ bb2:
     t8 = h3_f0;
 #line 110 "examples/spreadsheet/formula.hero"
     t9 = t8.as.err;
-#line 2724 "main.c"
+#line 2569 "main.c"
     hero_failure_retain(&t9);
 #line 110 "examples/spreadsheet/formula.hero"
     t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t9};
@@ -2728,7 +2573,7 @@ bb2:
     t72 = h13_own13;
 #line 110 "examples/spreadsheet/formula.hero"
     h13_own13 = t10;
-#line 2732 "main.c"
+#line 2577 "main.c"
     h_0opt_db92a83_release(&t72);
 #line 110 "examples/spreadsheet/formula.hero"
     h11_ret0 = t10;
@@ -2742,7 +2587,6 @@ bb3:
     if (t14) goto bb4; else goto bb5;
 #line 113 "examples/spreadsheet/formula.hero"
 bb4:
-#line 114 "examples/spreadsheet/formula.hero"
     h_formula_skip_space(&(*ph0_p));
 #line 116 "examples/spreadsheet/formula.hero"
     t15 = (*ph0_p);
@@ -2764,7 +2608,7 @@ bb5:
     t73 = h14_own14;
 #line 129 "examples/spreadsheet/formula.hero"
     h14_own14 = t68;
-#line 2768 "main.c"
+#line 2612 "main.c"
     h_0opt_db92a83_release(&t73);
 #line 129 "examples/spreadsheet/formula.hero"
     h11_ret0 = t68;
@@ -2796,9 +2640,7 @@ bb8:
     if (t22) goto bb9; else goto bb10;
 #line 116 "examples/spreadsheet/formula.hero"
 bb9:
-#line 117 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 118 "examples/spreadsheet/formula.hero"
     t23 = h4_total;
 #line 118 "examples/spreadsheet/formula.hero"
     t24 = h1_s;
@@ -2810,15 +2652,15 @@ bb9:
     t74 = h15_own15;
 #line 118 "examples/spreadsheet/formula.hero"
     h15_own15 = t26;
-#line 2814 "main.c"
+#line 2656 "main.c"
     h_0opt_db92a83_release(&t74);
 #line 118 "examples/spreadsheet/formula.hero"
     t75 = h7_f1;
-#line 2818 "main.c"
+#line 2660 "main.c"
     h_0opt_db92a83_retain(&t26);
 #line 118 "examples/spreadsheet/formula.hero"
     h7_f1 = t26;
-#line 2822 "main.c"
+#line 2664 "main.c"
     h_0opt_db92a83_release(&t75);
 #line 118 "examples/spreadsheet/formula.hero"
     t27 = h7_f1;
@@ -2832,7 +2674,6 @@ bb9:
     if (t30) goto bb11; else goto bb12;
 #line 118 "examples/spreadsheet/formula.hero"
 bb10:
-#line 119 "examples/spreadsheet/formula.hero"
     t37 = (*ph0_p);
 #line 119 "examples/spreadsheet/formula.hero"
     t38 = h_formula_at_end(t37);
@@ -2860,7 +2701,7 @@ bb12:
     t31 = h7_f1;
 #line 118 "examples/spreadsheet/formula.hero"
     t32 = t31.as.err;
-#line 2864 "main.c"
+#line 2705 "main.c"
     hero_failure_retain(&t32);
 #line 118 "examples/spreadsheet/formula.hero"
     t33 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t32};
@@ -2868,7 +2709,7 @@ bb12:
     t76 = h16_own16;
 #line 118 "examples/spreadsheet/formula.hero"
     h16_own16 = t33;
-#line 2872 "main.c"
+#line 2713 "main.c"
     h_0opt_db92a83_release(&t76);
 #line 118 "examples/spreadsheet/formula.hero"
     h11_ret0 = t33;
@@ -2876,7 +2717,6 @@ bb12:
     goto bb22;
 #line 118 "examples/spreadsheet/formula.hero"
 bb13:
-#line 119 "examples/spreadsheet/formula.hero"
     t40 = (*ph0_p);
 #line 119 "examples/spreadsheet/formula.hero"
     t41 = h_formula_here(t40);
@@ -2896,9 +2736,7 @@ bb14:
     if (t44) goto bb15; else goto bb16;
 #line 119 "examples/spreadsheet/formula.hero"
 bb15:
-#line 120 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 121 "examples/spreadsheet/formula.hero"
     t45 = h1_s;
 #line 121 "examples/spreadsheet/formula.hero"
     t46 = h2_visiting;
@@ -2908,15 +2746,15 @@ bb15:
     t77 = h17_own17;
 #line 121 "examples/spreadsheet/formula.hero"
     h17_own17 = t47;
-#line 2912 "main.c"
+#line 2750 "main.c"
     h_0opt_db92a83_release(&t77);
 #line 121 "examples/spreadsheet/formula.hero"
     t78 = h9_f2;
-#line 2916 "main.c"
+#line 2754 "main.c"
     h_0opt_db92a83_retain(&t47);
 #line 121 "examples/spreadsheet/formula.hero"
     h9_f2 = t47;
-#line 2920 "main.c"
+#line 2758 "main.c"
     h_0opt_db92a83_release(&t78);
 #line 121 "examples/spreadsheet/formula.hero"
     t48 = h9_f2;
@@ -2958,7 +2796,7 @@ bb18:
     t52 = h9_f2;
 #line 121 "examples/spreadsheet/formula.hero"
     t53 = t52.as.err;
-#line 2962 "main.c"
+#line 2800 "main.c"
     hero_failure_retain(&t53);
 #line 121 "examples/spreadsheet/formula.hero"
     t54 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t53};
@@ -2966,7 +2804,7 @@ bb18:
     t79 = h18_own18;
 #line 121 "examples/spreadsheet/formula.hero"
     h18_own18 = t54;
-#line 2970 "main.c"
+#line 2808 "main.c"
     h_0opt_db92a83_release(&t79);
 #line 121 "examples/spreadsheet/formula.hero"
     h11_ret0 = t54;
@@ -2992,14 +2830,12 @@ bb20:
     t80 = h19_own19;
 #line 124 "examples/spreadsheet/formula.hero"
     h19_own19 = t60;
-#line 2996 "main.c"
+#line 2834 "main.c"
     hero_str_decref(t80);
 #line 124 "examples/spreadsheet/formula.hero"
     t61 = HERO_STR_LIT(hero_str_6a75581a);
-#line 3000 "main.c"
+#line 2838 "main.c"
     hero_str_incref(t60);
-#line 124 "examples/spreadsheet/formula.hero"
-#line 3003 "main.c"
     hero_str_incref(t61);
 #line 124 "examples/spreadsheet/formula.hero"
     t62 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t60, .msg = t61}};
@@ -3007,7 +2843,7 @@ bb20:
     t81 = h20_own20;
 #line 124 "examples/spreadsheet/formula.hero"
     h20_own20 = t62;
-#line 3011 "main.c"
+#line 2847 "main.c"
     h_0opt_db92a83_release(&t81);
 #line 124 "examples/spreadsheet/formula.hero"
     h11_ret0 = t62;
@@ -3019,52 +2855,27 @@ bb21:
     goto bb19;
 #line 124 "examples/spreadsheet/formula.hero"
 bb22:
-#line 110 "examples/spreadsheet/formula.hero"
+#line 2859 "main.c"
     t69 = h11_ret0;
-#line 3025 "main.c"
     h_0opt_db92a83_retain(&t69);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3028 "main.c"
     h_0opt_db92a83_release(&h3_f0);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3031 "main.c"
     h_0opt_db92a83_release(&h7_f1);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3034 "main.c"
     h_0opt_db92a83_release(&h9_f2);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3037 "main.c"
     h_0opt_db92a83_release(&h12_own12);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3040 "main.c"
     h_0opt_db92a83_release(&h13_own13);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3043 "main.c"
     h_0opt_db92a83_release(&h14_own14);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3046 "main.c"
     h_0opt_db92a83_release(&h15_own15);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3049 "main.c"
     h_0opt_db92a83_release(&h16_own16);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3052 "main.c"
     h_0opt_db92a83_release(&h17_own17);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3055 "main.c"
     h_0opt_db92a83_release(&h18_own18);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3058 "main.c"
     hero_str_decref(h19_own19);
-#line 110 "examples/spreadsheet/formula.hero"
-#line 3061 "main.c"
     h_0opt_db92a83_release(&h20_own20);
     return t69;
 }
 
 #line 131 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_factor(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
-#line 3068 "main.c"
+#line 2879 "main.c"
     uint8_t h3_c;
     h_0opt_db92a83 h4_f0 = {0};
     double h5_inner;
@@ -3215,14 +3026,12 @@ bb2:
     t73 = h9_own9;
 #line 135 "examples/spreadsheet/formula.hero"
     h9_own9 = t3;
-#line 3219 "main.c"
+#line 3030 "main.c"
     hero_str_decref(t73);
 #line 135 "examples/spreadsheet/formula.hero"
     t4 = HERO_STR_LIT(hero_str_70d55d6e);
-#line 3223 "main.c"
+#line 3034 "main.c"
     hero_str_incref(t3);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3226 "main.c"
     hero_str_incref(t4);
 #line 135 "examples/spreadsheet/formula.hero"
     t5 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t3, .msg = t4}};
@@ -3230,7 +3039,7 @@ bb2:
     t74 = h10_own10;
 #line 135 "examples/spreadsheet/formula.hero"
     h10_own10 = t5;
-#line 3234 "main.c"
+#line 3043 "main.c"
     h_0opt_db92a83_release(&t74);
 #line 135 "examples/spreadsheet/formula.hero"
     h8_ret0 = t5;
@@ -3254,7 +3063,6 @@ bb4:
 bb5:
 #line 139 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 140 "examples/spreadsheet/formula.hero"
     t11 = h1_s;
 #line 140 "examples/spreadsheet/formula.hero"
     t12 = h2_visiting;
@@ -3264,15 +3072,15 @@ bb5:
     t75 = h11_own11;
 #line 140 "examples/spreadsheet/formula.hero"
     h11_own11 = t13;
-#line 3268 "main.c"
+#line 3076 "main.c"
     h_0opt_db92a83_release(&t75);
 #line 140 "examples/spreadsheet/formula.hero"
     t76 = h4_f0;
-#line 3272 "main.c"
+#line 3080 "main.c"
     h_0opt_db92a83_retain(&t13);
 #line 140 "examples/spreadsheet/formula.hero"
     h4_f0 = t13;
-#line 3276 "main.c"
+#line 3084 "main.c"
     h_0opt_db92a83_release(&t76);
 #line 140 "examples/spreadsheet/formula.hero"
     t14 = h4_f0;
@@ -3296,7 +3104,6 @@ bb7:
     t22 = t21.as.ok;
 #line 140 "examples/spreadsheet/formula.hero"
     h5_inner = t22;
-#line 141 "examples/spreadsheet/formula.hero"
     h_formula_skip_space(&(*ph0_p));
 #line 143 "examples/spreadsheet/formula.hero"
     t23 = (*ph0_p);
@@ -3312,7 +3119,7 @@ bb8:
     t18 = h4_f0;
 #line 140 "examples/spreadsheet/formula.hero"
     t19 = t18.as.err;
-#line 3316 "main.c"
+#line 3123 "main.c"
     hero_failure_retain(&t19);
 #line 140 "examples/spreadsheet/formula.hero"
     t20 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t19};
@@ -3320,7 +3127,7 @@ bb8:
     t77 = h12_own12;
 #line 140 "examples/spreadsheet/formula.hero"
     h12_own12 = t20;
-#line 3324 "main.c"
+#line 3131 "main.c"
     h_0opt_db92a83_release(&t77);
 #line 140 "examples/spreadsheet/formula.hero"
     h8_ret0 = t20;
@@ -3330,7 +3137,6 @@ bb8:
 bb9:
 #line 145 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 146 "examples/spreadsheet/formula.hero"
     t37 = h5_inner;
 #line 146 "examples/spreadsheet/formula.hero"
     t38 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t37};
@@ -3338,7 +3144,7 @@ bb9:
     t78 = h13_own13;
 #line 146 "examples/spreadsheet/formula.hero"
     h13_own13 = t38;
-#line 3342 "main.c"
+#line 3148 "main.c"
     h_0opt_db92a83_release(&t78);
 #line 146 "examples/spreadsheet/formula.hero"
     h8_ret0 = t38;
@@ -3366,13 +3172,12 @@ bb11:
     if (t29) goto bb12; else goto bb13;
 #line 143 "examples/spreadsheet/formula.hero"
 bb12:
-#line 144 "examples/spreadsheet/formula.hero"
     t30 = h_formula_ERR_UNCLOSED_PAREN();
 #line 144 "examples/spreadsheet/formula.hero"
     t79 = h14_own14;
 #line 144 "examples/spreadsheet/formula.hero"
     h14_own14 = t30;
-#line 3376 "main.c"
+#line 3181 "main.c"
     hero_str_decref(t79);
 #line 144 "examples/spreadsheet/formula.hero"
     t31 = HERO_STR_LIT(hero_str_5256ed94);
@@ -3386,7 +3191,7 @@ bb12:
     t80 = h15_own15;
 #line 144 "examples/spreadsheet/formula.hero"
     h15_own15 = t34;
-#line 3390 "main.c"
+#line 3195 "main.c"
     hero_str_decref(t80);
 #line 144 "examples/spreadsheet/formula.hero"
     t35 = hero_str_concat(t31, t34);
@@ -3394,13 +3199,9 @@ bb12:
     t81 = h16_own16;
 #line 144 "examples/spreadsheet/formula.hero"
     h16_own16 = t35;
-#line 3398 "main.c"
+#line 3203 "main.c"
     hero_str_decref(t81);
-#line 144 "examples/spreadsheet/formula.hero"
-#line 3401 "main.c"
     hero_str_incref(t30);
-#line 144 "examples/spreadsheet/formula.hero"
-#line 3404 "main.c"
     hero_str_incref(t35);
 #line 144 "examples/spreadsheet/formula.hero"
     t36 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t30, .msg = t35}};
@@ -3408,7 +3209,7 @@ bb12:
     t82 = h17_own17;
 #line 144 "examples/spreadsheet/formula.hero"
     h17_own17 = t36;
-#line 3412 "main.c"
+#line 3213 "main.c"
     h_0opt_db92a83_release(&t82);
 #line 144 "examples/spreadsheet/formula.hero"
     h8_ret0 = t36;
@@ -3430,7 +3231,6 @@ bb14:
 bb15:
 #line 149 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 150 "examples/spreadsheet/formula.hero"
     t42 = h1_s;
 #line 150 "examples/spreadsheet/formula.hero"
     t43 = h2_visiting;
@@ -3440,15 +3240,15 @@ bb15:
     t83 = h18_own18;
 #line 150 "examples/spreadsheet/formula.hero"
     h18_own18 = t44;
-#line 3444 "main.c"
+#line 3244 "main.c"
     h_0opt_db92a83_release(&t83);
 #line 150 "examples/spreadsheet/formula.hero"
     t84 = h7_f1;
-#line 3448 "main.c"
+#line 3248 "main.c"
     h_0opt_db92a83_retain(&t44);
 #line 150 "examples/spreadsheet/formula.hero"
     h7_f1 = t44;
-#line 3452 "main.c"
+#line 3252 "main.c"
     h_0opt_db92a83_release(&t84);
 #line 150 "examples/spreadsheet/formula.hero"
     t45 = h7_f1;
@@ -3478,7 +3278,7 @@ bb17:
     t85 = h19_own19;
 #line 150 "examples/spreadsheet/formula.hero"
     h19_own19 = t55;
-#line 3482 "main.c"
+#line 3282 "main.c"
     h_0opt_db92a83_release(&t85);
 #line 150 "examples/spreadsheet/formula.hero"
     h8_ret0 = t55;
@@ -3490,7 +3290,7 @@ bb18:
     t49 = h7_f1;
 #line 150 "examples/spreadsheet/formula.hero"
     t50 = t49.as.err;
-#line 3494 "main.c"
+#line 3294 "main.c"
     hero_failure_retain(&t50);
 #line 150 "examples/spreadsheet/formula.hero"
     t51 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t50};
@@ -3498,7 +3298,7 @@ bb18:
     t86 = h20_own20;
 #line 150 "examples/spreadsheet/formula.hero"
     h20_own20 = t51;
-#line 3502 "main.c"
+#line 3302 "main.c"
     h_0opt_db92a83_release(&t86);
 #line 150 "examples/spreadsheet/formula.hero"
     h8_ret0 = t51;
@@ -3522,7 +3322,7 @@ bb20:
     t87 = h21_own21;
 #line 153 "examples/spreadsheet/formula.hero"
     h21_own21 = t59;
-#line 3526 "main.c"
+#line 3326 "main.c"
     h_0opt_db92a83_release(&t87);
 #line 153 "examples/spreadsheet/formula.hero"
     h8_ret0 = t59;
@@ -3540,7 +3340,7 @@ bb22:
     t88 = h22_own22;
 #line 157 "examples/spreadsheet/formula.hero"
     h22_own22 = t65;
-#line 3544 "main.c"
+#line 3344 "main.c"
     hero_str_decref(t88);
 #line 157 "examples/spreadsheet/formula.hero"
     t66 = HERO_STR_LIT(hero_str_2611b207);
@@ -3554,7 +3354,7 @@ bb22:
     t89 = h23_own23;
 #line 157 "examples/spreadsheet/formula.hero"
     h23_own23 = t69;
-#line 3558 "main.c"
+#line 3358 "main.c"
     hero_str_decref(t89);
 #line 157 "examples/spreadsheet/formula.hero"
     t70 = hero_str_concat(t66, t69);
@@ -3562,13 +3362,9 @@ bb22:
     t90 = h24_own24;
 #line 157 "examples/spreadsheet/formula.hero"
     h24_own24 = t70;
-#line 3566 "main.c"
+#line 3366 "main.c"
     hero_str_decref(t90);
-#line 157 "examples/spreadsheet/formula.hero"
-#line 3569 "main.c"
     hero_str_incref(t65);
-#line 157 "examples/spreadsheet/formula.hero"
-#line 3572 "main.c"
     hero_str_incref(t70);
 #line 157 "examples/spreadsheet/formula.hero"
     t71 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t65, .msg = t70}};
@@ -3576,7 +3372,7 @@ bb22:
     t91 = h25_own25;
 #line 157 "examples/spreadsheet/formula.hero"
     h25_own25 = t71;
-#line 3580 "main.c"
+#line 3376 "main.c"
     h_0opt_db92a83_release(&t91);
 #line 157 "examples/spreadsheet/formula.hero"
     h8_ret0 = t71;
@@ -3594,7 +3390,7 @@ bb23:
     t92 = h26_own26;
 #line 156 "examples/spreadsheet/formula.hero"
     h26_own26 = t64;
-#line 3598 "main.c"
+#line 3394 "main.c"
     h_0opt_db92a83_release(&t92);
 #line 156 "examples/spreadsheet/formula.hero"
     h8_ret0 = t64;
@@ -3606,76 +3402,35 @@ bb24:
     goto bb22;
 #line 156 "examples/spreadsheet/formula.hero"
 bb25:
-#line 135 "examples/spreadsheet/formula.hero"
+#line 3406 "main.c"
     t72 = h8_ret0;
-#line 3612 "main.c"
     h_0opt_db92a83_retain(&t72);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3615 "main.c"
     h_0opt_db92a83_release(&h4_f0);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3618 "main.c"
     h_0opt_db92a83_release(&h7_f1);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3621 "main.c"
     hero_str_decref(h9_own9);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3624 "main.c"
     h_0opt_db92a83_release(&h10_own10);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3627 "main.c"
     h_0opt_db92a83_release(&h11_own11);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3630 "main.c"
     h_0opt_db92a83_release(&h12_own12);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3633 "main.c"
     h_0opt_db92a83_release(&h13_own13);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3636 "main.c"
     hero_str_decref(h14_own14);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3639 "main.c"
     hero_str_decref(h15_own15);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3642 "main.c"
     hero_str_decref(h16_own16);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3645 "main.c"
     h_0opt_db92a83_release(&h17_own17);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3648 "main.c"
     h_0opt_db92a83_release(&h18_own18);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3651 "main.c"
     h_0opt_db92a83_release(&h19_own19);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3654 "main.c"
     h_0opt_db92a83_release(&h20_own20);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3657 "main.c"
     h_0opt_db92a83_release(&h21_own21);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3660 "main.c"
     hero_str_decref(h22_own22);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3663 "main.c"
     hero_str_decref(h23_own23);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3666 "main.c"
     hero_str_decref(h24_own24);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3669 "main.c"
     h_0opt_db92a83_release(&h25_own25);
-#line 135 "examples/spreadsheet/formula.hero"
-#line 3672 "main.c"
     h_0opt_db92a83_release(&h26_own26);
     return t72;
 }
 
 #line 161 "examples/spreadsheet/formula.hero"
 double h_formula_number(h_formula_Parse *ph0_p) {
-#line 3679 "main.c"
+#line 3434 "main.c"
     double h1_whole;
     bool h2_b0;
     h_0opt_e201354 h3_f0 = {0};
@@ -3775,7 +3530,6 @@ bb1:
     if (t4) goto bb4; else goto bb5;
 #line 164 "examples/spreadsheet/formula.hero"
 bb2:
-#line 165 "examples/spreadsheet/formula.hero"
     t9 = h1_whole;
 #line 165 "examples/spreadsheet/formula.hero"
     t10 = 0x1.4p+3;
@@ -3795,15 +3549,15 @@ bb2:
     t65 = h8_own8;
 #line 165 "examples/spreadsheet/formula.hero"
     h8_own8 = t16;
-#line 3799 "main.c"
+#line 3553 "main.c"
     h_0opt_e201354_release(&t65);
 #line 165 "examples/spreadsheet/formula.hero"
     t66 = h3_f0;
-#line 3803 "main.c"
+#line 3557 "main.c"
     h_0opt_e201354_retain(&t16);
 #line 165 "examples/spreadsheet/formula.hero"
     h3_f0 = t16;
-#line 3807 "main.c"
+#line 3561 "main.c"
     h_0opt_e201354_release(&t66);
 #line 165 "examples/spreadsheet/formula.hero"
     t17 = h3_f0;
@@ -3847,7 +3601,6 @@ bb5:
     if (t8) goto bb2; else goto bb3;
 #line 164 "examples/spreadsheet/formula.hero"
 bb6:
-#line 165 "examples/spreadsheet/formula.hero"
     t23 = h3_f0;
 #line 165 "examples/spreadsheet/formula.hero"
     t24 = t23.as.ok;
@@ -3857,7 +3610,6 @@ bb6:
     t26 = t11 + t25;
 #line 165 "examples/spreadsheet/formula.hero"
     h1_whole = t26;
-#line 166 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
 #line 166 "examples/spreadsheet/formula.hero"
     goto bb1;
@@ -3867,22 +3619,16 @@ bb7:
     t21 = h3_f0;
 #line 165 "examples/spreadsheet/formula.hero"
     t22 = t21.as.err;
-#line 3871 "main.c"
+#line 3623 "main.c"
     hero_panic_must(t22);
     hero_unreachable();
 bb8:
 #line 176 "examples/spreadsheet/formula.hero"
     t64 = h1_whole;
-#line 3877 "main.c"
+#line 3629 "main.c"
     h_0opt_e201354_release(&h3_f0);
-#line 176 "examples/spreadsheet/formula.hero"
-#line 3880 "main.c"
     h_0opt_e201354_release(&h7_f1);
-#line 176 "examples/spreadsheet/formula.hero"
-#line 3883 "main.c"
     h_0opt_e201354_release(&h8_own8);
-#line 176 "examples/spreadsheet/formula.hero"
-#line 3886 "main.c"
     h_0opt_e201354_release(&h9_own9);
     return t64;
 bb9:
@@ -3906,9 +3652,7 @@ bb10:
     if (t34) goto bb11; else goto bb12;
 #line 168 "examples/spreadsheet/formula.hero"
 bb11:
-#line 169 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 170 "examples/spreadsheet/formula.hero"
     t35 = 0x1p+0;
 #line 170 "examples/spreadsheet/formula.hero"
     h5_scale = t35;
@@ -3932,7 +3676,6 @@ bb13:
     if (t38) goto bb16; else goto bb17;
 #line 172 "examples/spreadsheet/formula.hero"
 bb14:
-#line 173 "examples/spreadsheet/formula.hero"
     t43 = h5_scale;
 #line 173 "examples/spreadsheet/formula.hero"
     t44 = 0x1.4p+3;
@@ -3940,7 +3683,6 @@ bb14:
     t45 = t43 / t44;
 #line 173 "examples/spreadsheet/formula.hero"
     h5_scale = t45;
-#line 174 "examples/spreadsheet/formula.hero"
     t46 = h1_whole;
 #line 174 "examples/spreadsheet/formula.hero"
     t47 = (*ph0_p);
@@ -3956,15 +3698,15 @@ bb14:
     t67 = h9_own9;
 #line 174 "examples/spreadsheet/formula.hero"
     h9_own9 = t51;
-#line 3960 "main.c"
+#line 3702 "main.c"
     h_0opt_e201354_release(&t67);
 #line 174 "examples/spreadsheet/formula.hero"
     t68 = h7_f1;
-#line 3964 "main.c"
+#line 3706 "main.c"
     h_0opt_e201354_retain(&t51);
 #line 174 "examples/spreadsheet/formula.hero"
     h7_f1 = t51;
-#line 3968 "main.c"
+#line 3710 "main.c"
     h_0opt_e201354_release(&t68);
 #line 174 "examples/spreadsheet/formula.hero"
     t52 = h7_f1;
@@ -4014,7 +3756,6 @@ bb18:
     t63 = t46 + t62;
 #line 174 "examples/spreadsheet/formula.hero"
     h1_whole = t63;
-#line 175 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
 #line 175 "examples/spreadsheet/formula.hero"
     goto bb13;
@@ -4024,14 +3765,14 @@ bb19:
     t56 = h7_f1;
 #line 174 "examples/spreadsheet/formula.hero"
     t57 = t56.as.err;
-#line 4028 "main.c"
+#line 3769 "main.c"
     hero_panic_must(t57);
     hero_unreachable();
 }
 
 #line 179 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_named(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
-#line 4035 "main.c"
+#line 3776 "main.c"
     HeroStr h3_word = {0};
     h_0opt_db92a83 h4_ret0 = {0};
     HeroStr h5_own5 = {0};
@@ -4079,15 +3820,15 @@ bb0:
     t23 = h5_own5;
 #line 180 "examples/spreadsheet/formula.hero"
     h5_own5 = t1;
-#line 4083 "main.c"
+#line 3824 "main.c"
     hero_str_decref(t23);
 #line 180 "examples/spreadsheet/formula.hero"
     t24 = h3_word;
-#line 4087 "main.c"
+#line 3828 "main.c"
     hero_str_incref(t1);
 #line 180 "examples/spreadsheet/formula.hero"
     h3_word = t1;
-#line 4091 "main.c"
+#line 3832 "main.c"
     hero_str_decref(t24);
 #line 182 "examples/spreadsheet/formula.hero"
     t2 = h3_word;
@@ -4119,7 +3860,7 @@ bb2:
     t25 = h6_own6;
 #line 183 "examples/spreadsheet/formula.hero"
     h6_own6 = t7;
-#line 4123 "main.c"
+#line 3864 "main.c"
     h_0opt_db92a83_release(&t25);
 #line 183 "examples/spreadsheet/formula.hero"
     h4_ret0 = t7;
@@ -4143,7 +3884,7 @@ bb4:
     t26 = h7_own7;
 #line 187 "examples/spreadsheet/formula.hero"
     h7_own7 = t21;
-#line 4147 "main.c"
+#line 3888 "main.c"
     h_0opt_db92a83_release(&t26);
 #line 187 "examples/spreadsheet/formula.hero"
     h4_ret0 = t21;
@@ -4157,7 +3898,7 @@ bb5:
     t27 = h8_own8;
 #line 186 "examples/spreadsheet/formula.hero"
     h8_own8 = t11;
-#line 4161 "main.c"
+#line 3902 "main.c"
     hero_str_decref(t27);
 #line 186 "examples/spreadsheet/formula.hero"
     t12 = HERO_STR_LIT(hero_str_60);
@@ -4169,7 +3910,7 @@ bb5:
     t28 = h9_own9;
 #line 186 "examples/spreadsheet/formula.hero"
     h9_own9 = t14;
-#line 4173 "main.c"
+#line 3914 "main.c"
     hero_str_decref(t28);
 #line 186 "examples/spreadsheet/formula.hero"
     t15 = HERO_STR_LIT(hero_str_f59f0be);
@@ -4179,13 +3920,9 @@ bb5:
     t29 = h10_own10;
 #line 186 "examples/spreadsheet/formula.hero"
     h10_own10 = t16;
-#line 4183 "main.c"
+#line 3924 "main.c"
     hero_str_decref(t29);
-#line 186 "examples/spreadsheet/formula.hero"
-#line 4186 "main.c"
     hero_str_incref(t11);
-#line 186 "examples/spreadsheet/formula.hero"
-#line 4189 "main.c"
     hero_str_incref(t16);
 #line 186 "examples/spreadsheet/formula.hero"
     t17 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t16}};
@@ -4193,7 +3930,7 @@ bb5:
     t30 = h11_own11;
 #line 186 "examples/spreadsheet/formula.hero"
     h11_own11 = t17;
-#line 4197 "main.c"
+#line 3934 "main.c"
     h_0opt_db92a83_release(&t30);
 #line 186 "examples/spreadsheet/formula.hero"
     h4_ret0 = t17;
@@ -4205,40 +3942,23 @@ bb6:
     goto bb4;
 #line 186 "examples/spreadsheet/formula.hero"
 bb7:
-#line 183 "examples/spreadsheet/formula.hero"
+#line 3946 "main.c"
     t22 = h4_ret0;
-#line 4211 "main.c"
     h_0opt_db92a83_retain(&t22);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4214 "main.c"
     hero_str_decref(h3_word);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4217 "main.c"
     hero_str_decref(h5_own5);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4220 "main.c"
     h_0opt_db92a83_release(&h6_own6);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4223 "main.c"
     h_0opt_db92a83_release(&h7_own7);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4226 "main.c"
     hero_str_decref(h8_own8);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4229 "main.c"
     hero_str_decref(h9_own9);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4232 "main.c"
     hero_str_decref(h10_own10);
-#line 183 "examples/spreadsheet/formula.hero"
-#line 4235 "main.c"
     h_0opt_db92a83_release(&h11_own11);
     return t22;
 }
 
 #line 189 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_word_at(h_formula_Parse *ph0_p) {
-#line 4242 "main.c"
+#line 3962 "main.c"
     int64_t h1_start;
     bool h2_b0;
     bool h3_b1;
@@ -4287,7 +4007,6 @@ bb1:
     if (t5) goto bb4; else goto bb5;
 #line 192 "examples/spreadsheet/formula.hero"
 bb2:
-#line 193 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
 #line 193 "examples/spreadsheet/formula.hero"
     goto bb1;
@@ -4309,13 +4028,9 @@ bb3:
     t20 = h4_own4;
 #line 195 "examples/spreadsheet/formula.hero"
     h4_own4 = t19;
-#line 4313 "main.c"
+#line 4032 "main.c"
     hero_str_decref(t20);
-#line 195 "examples/spreadsheet/formula.hero"
-#line 4316 "main.c"
     hero_str_incref(t19);
-#line 195 "examples/spreadsheet/formula.hero"
-#line 4319 "main.c"
     hero_str_decref(h4_own4);
     return t19;
 bb4:
@@ -4355,12 +4070,12 @@ bb7:
     h2_b0 = t12;
 #line 192 "examples/spreadsheet/formula.hero"
     goto bb5;
-#line 4359 "main.c"
+#line 4074 "main.c"
 }
 
 #line 199 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_sum_of(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
-#line 4364 "main.c"
+#line 4079 "main.c"
     bool h3_b0;
     int64_t h4_start;
     bool h5_b1;
@@ -4485,7 +4200,6 @@ bb0:
 bb1:
 #line 204 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 205 "examples/spreadsheet/formula.hero"
     t11 = (*ph0_p);
 #line 205 "examples/spreadsheet/formula.hero"
     t12 = t11.f_pos;
@@ -4515,20 +4229,17 @@ bb3:
     if (t7) goto bb4; else goto bb5;
 #line 202 "examples/spreadsheet/formula.hero"
 bb4:
-#line 203 "examples/spreadsheet/formula.hero"
     t8 = h_formula_ERR_EXPECTED_PAREN();
 #line 203 "examples/spreadsheet/formula.hero"
     t73 = h14_own14;
 #line 203 "examples/spreadsheet/formula.hero"
     h14_own14 = t8;
-#line 4525 "main.c"
+#line 4238 "main.c"
     hero_str_decref(t73);
 #line 203 "examples/spreadsheet/formula.hero"
     t9 = HERO_STR_LIT(hero_str_13b59efe);
-#line 4529 "main.c"
+#line 4242 "main.c"
     hero_str_incref(t8);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4532 "main.c"
     hero_str_incref(t9);
 #line 203 "examples/spreadsheet/formula.hero"
     t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t9}};
@@ -4536,7 +4247,7 @@ bb4:
     t74 = h15_own15;
 #line 203 "examples/spreadsheet/formula.hero"
     h15_own15 = t10;
-#line 4540 "main.c"
+#line 4251 "main.c"
     h_0opt_db92a83_release(&t74);
 #line 203 "examples/spreadsheet/formula.hero"
     h13_ret0 = t10;
@@ -4560,7 +4271,6 @@ bb6:
     if (t15) goto bb9; else goto bb10;
 #line 207 "examples/spreadsheet/formula.hero"
 bb7:
-#line 208 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
 #line 208 "examples/spreadsheet/formula.hero"
     goto bb6;
@@ -4610,19 +4320,18 @@ bb11:
     t75 = h16_own16;
 #line 212 "examples/spreadsheet/formula.hero"
     h16_own16 = t31;
-#line 4614 "main.c"
+#line 4324 "main.c"
     hero_str_decref(t75);
 #line 212 "examples/spreadsheet/formula.hero"
     t76 = h6_inside;
-#line 4618 "main.c"
+#line 4328 "main.c"
     hero_str_incref(t31);
 #line 212 "examples/spreadsheet/formula.hero"
     h6_inside = t31;
-#line 4622 "main.c"
+#line 4332 "main.c"
     hero_str_decref(t76);
 #line 213 "examples/spreadsheet/formula.hero"
     h_formula_advance(&(*ph0_p));
-#line 214 "examples/spreadsheet/formula.hero"
     t32 = 0x0p+0;
 #line 214 "examples/spreadsheet/formula.hero"
     h7_total = t32;
@@ -4634,15 +4343,15 @@ bb11:
     t77 = h17_own17;
 #line 216 "examples/spreadsheet/formula.hero"
     h17_own17 = t34;
-#line 4638 "main.c"
+#line 4347 "main.c"
     h_0opt_5a58f2ca_release(&t77);
 #line 216 "examples/spreadsheet/formula.hero"
     t78 = h8_f0;
-#line 4642 "main.c"
+#line 4351 "main.c"
     h_0opt_5a58f2ca_retain(&t34);
 #line 216 "examples/spreadsheet/formula.hero"
     h8_f0 = t34;
-#line 4646 "main.c"
+#line 4355 "main.c"
     h_0opt_5a58f2ca_release(&t78);
 #line 216 "examples/spreadsheet/formula.hero"
     t35 = h8_f0;
@@ -4662,14 +4371,12 @@ bb12:
     t79 = h18_own18;
 #line 211 "examples/spreadsheet/formula.hero"
     h18_own18 = t23;
-#line 4666 "main.c"
+#line 4375 "main.c"
     hero_str_decref(t79);
 #line 211 "examples/spreadsheet/formula.hero"
     t24 = HERO_STR_LIT(hero_str_4ac41a5);
-#line 4670 "main.c"
+#line 4379 "main.c"
     hero_str_incref(t23);
-#line 211 "examples/spreadsheet/formula.hero"
-#line 4673 "main.c"
     hero_str_incref(t24);
 #line 211 "examples/spreadsheet/formula.hero"
     t25 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t24}};
@@ -4677,7 +4384,7 @@ bb12:
     t80 = h19_own19;
 #line 211 "examples/spreadsheet/formula.hero"
     h19_own19 = t25;
-#line 4681 "main.c"
+#line 4388 "main.c"
     h_0opt_db92a83_release(&t80);
 #line 211 "examples/spreadsheet/formula.hero"
     h13_ret0 = t25;
@@ -4695,11 +4402,11 @@ bb14:
     t43 = t42.as.ok;
 #line 216 "examples/spreadsheet/formula.hero"
     t81 = h9_xs0;
-#line 4699 "main.c"
+#line 4406 "main.c"
     hero_array_incref(t43);
 #line 216 "examples/spreadsheet/formula.hero"
     h9_xs0 = t43;
-#line 4703 "main.c"
+#line 4410 "main.c"
     hero_array_decref(t81);
 #line 216 "examples/spreadsheet/formula.hero"
     t44 = INT64_C(0);
@@ -4713,7 +4420,7 @@ bb15:
     t39 = h8_f0;
 #line 216 "examples/spreadsheet/formula.hero"
     t40 = t39.as.err;
-#line 4717 "main.c"
+#line 4424 "main.c"
     hero_failure_retain(&t40);
 #line 216 "examples/spreadsheet/formula.hero"
     t41 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t40};
@@ -4721,7 +4428,7 @@ bb15:
     t82 = h20_own20;
 #line 216 "examples/spreadsheet/formula.hero"
     h20_own20 = t41;
-#line 4725 "main.c"
+#line 4432 "main.c"
     h_0opt_db92a83_release(&t82);
 #line 216 "examples/spreadsheet/formula.hero"
     h13_ret0 = t41;
@@ -4749,11 +4456,11 @@ bb17:
     t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]);
 #line 216 "examples/spreadsheet/formula.hero"
     t83 = h11_name;
-#line 4753 "main.c"
+#line 4460 "main.c"
     hero_str_incref(t51);
 #line 216 "examples/spreadsheet/formula.hero"
     h11_name = t51;
-#line 4757 "main.c"
+#line 4464 "main.c"
     hero_str_decref(t83);
 #line 217 "examples/spreadsheet/formula.hero"
     t52 = h7_total;
@@ -4769,15 +4476,15 @@ bb17:
     t84 = h21_own21;
 #line 217 "examples/spreadsheet/formula.hero"
     h21_own21 = t56;
-#line 4773 "main.c"
+#line 4480 "main.c"
     h_0opt_db92a83_release(&t84);
 #line 217 "examples/spreadsheet/formula.hero"
     t85 = h12_f1;
-#line 4777 "main.c"
+#line 4484 "main.c"
     h_0opt_db92a83_retain(&t56);
 #line 217 "examples/spreadsheet/formula.hero"
     h12_f1 = t56;
-#line 4781 "main.c"
+#line 4488 "main.c"
     h_0opt_db92a83_release(&t85);
 #line 217 "examples/spreadsheet/formula.hero"
     t57 = h12_f1;
@@ -4811,7 +4518,7 @@ bb19:
     t86 = h22_own22;
 #line 219 "examples/spreadsheet/formula.hero"
     h22_own22 = t71;
-#line 4815 "main.c"
+#line 4522 "main.c"
     h_0opt_db92a83_release(&t86);
 #line 219 "examples/spreadsheet/formula.hero"
     h13_ret0 = t71;
@@ -4835,7 +4542,7 @@ bb21:
     t61 = h12_f1;
 #line 217 "examples/spreadsheet/formula.hero"
     t62 = t61.as.err;
-#line 4839 "main.c"
+#line 4546 "main.c"
     hero_failure_retain(&t62);
 #line 217 "examples/spreadsheet/formula.hero"
     t63 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = t62};
@@ -4843,7 +4550,7 @@ bb21:
     t87 = h23_own23;
 #line 217 "examples/spreadsheet/formula.hero"
     h23_own23 = t63;
-#line 4847 "main.c"
+#line 4554 "main.c"
     h_0opt_db92a83_release(&t87);
 #line 217 "examples/spreadsheet/formula.hero"
     h13_ret0 = t63;
@@ -4851,61 +4558,30 @@ bb21:
     goto bb22;
 #line 217 "examples/spreadsheet/formula.hero"
 bb22:
-#line 203 "examples/spreadsheet/formula.hero"
+#line 4562 "main.c"
     t72 = h13_ret0;
-#line 4857 "main.c"
     h_0opt_db92a83_retain(&t72);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4860 "main.c"
     hero_str_decref(h6_inside);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4863 "main.c"
     h_0opt_5a58f2ca_release(&h8_f0);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4866 "main.c"
     hero_array_decref(h9_xs0);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4869 "main.c"
     hero_str_decref(h11_name);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4872 "main.c"
     h_0opt_db92a83_release(&h12_f1);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4875 "main.c"
     hero_str_decref(h14_own14);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4878 "main.c"
     h_0opt_db92a83_release(&h15_own15);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4881 "main.c"
     hero_str_decref(h16_own16);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4884 "main.c"
     h_0opt_5a58f2ca_release(&h17_own17);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4887 "main.c"
     hero_str_decref(h18_own18);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4890 "main.c"
     h_0opt_db92a83_release(&h19_own19);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4893 "main.c"
     h_0opt_db92a83_release(&h20_own20);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4896 "main.c"
     h_0opt_db92a83_release(&h21_own21);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4899 "main.c"
     h_0opt_db92a83_release(&h22_own22);
-#line 203 "examples/spreadsheet/formula.hero"
-#line 4902 "main.c"
     h_0opt_db92a83_release(&h23_own23);
     return t72;
 }
 
 #line 268 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_code_of(h_sheet_Sheet h0_s, HeroStr h1_name) {
-#line 4909 "main.c"
+#line 4585 "main.c"
     h_0opt_db92a83 h2_s0 = {0};
     HeroStr h3_r0 = {0};
     HeroFailure h4_e = {0};
@@ -4941,7 +4617,7 @@ bb0:
     t13 = h5_own5;
 #line 269 "examples/spreadsheet/formula.hero"
     h5_own5 = t3;
-#line 4945 "main.c"
+#line 4621 "main.c"
     hero_array_decref(t13);
 #line 269 "examples/spreadsheet/formula.hero"
     t4 = h_formula_value_of(t1, t2, t3);
@@ -4949,15 +4625,15 @@ bb0:
     t14 = h6_own6;
 #line 269 "examples/spreadsheet/formula.hero"
     h6_own6 = t4;
-#line 4953 "main.c"
+#line 4629 "main.c"
     h_0opt_db92a83_release(&t14);
 #line 269 "examples/spreadsheet/formula.hero"
     t15 = h2_s0;
-#line 4957 "main.c"
+#line 4633 "main.c"
     h_0opt_db92a83_retain(&t4);
 #line 269 "examples/spreadsheet/formula.hero"
     h2_s0 = t4;
-#line 4961 "main.c"
+#line 4637 "main.c"
     h_0opt_db92a83_release(&t15);
 #line 269 "examples/spreadsheet/formula.hero"
     t5 = h2_s0;
@@ -4977,22 +4653,12 @@ bb0:
 bb1:
 #line 269 "examples/spreadsheet/formula.hero"
     t12 = h3_r0;
-#line 4981 "main.c"
+#line 4657 "main.c"
     hero_str_incref(t12);
-#line 269 "examples/spreadsheet/formula.hero"
-#line 4984 "main.c"
     h_0opt_db92a83_release(&h2_s0);
-#line 269 "examples/spreadsheet/formula.hero"
-#line 4987 "main.c"
     hero_str_decref(h3_r0);
-#line 269 "examples/spreadsheet/formula.hero"
-#line 4990 "main.c"
     hero_failure_release(&h4_e);
-#line 269 "examples/spreadsheet/formula.hero"
-#line 4993 "main.c"
     hero_array_decref(h5_own5);
-#line 269 "examples/spreadsheet/formula.hero"
-#line 4996 "main.c"
     h_0opt_db92a83_release(&h6_own6);
     return t12;
 bb2:
@@ -5000,11 +4666,11 @@ bb2:
     t7 = HERO_STR_LIT(hero_str_7b992235);
 #line 269 "examples/spreadsheet/formula.hero"
     t16 = h3_r0;
-#line 5004 "main.c"
+#line 4670 "main.c"
     hero_str_incref(t7);
 #line 269 "examples/spreadsheet/formula.hero"
     h3_r0 = t7;
-#line 5008 "main.c"
+#line 4674 "main.c"
     hero_str_decref(t16);
     goto bb1;
 bb3:
@@ -5014,11 +4680,11 @@ bb3:
     t9 = t8.as.err;
 #line 271 "examples/spreadsheet/formula.hero"
     t17 = h4_e;
-#line 5018 "main.c"
+#line 4684 "main.c"
     hero_failure_retain(&t9);
 #line 271 "examples/spreadsheet/formula.hero"
     h4_e = t9;
-#line 5022 "main.c"
+#line 4688 "main.c"
     hero_failure_release(&t17);
 #line 271 "examples/spreadsheet/formula.hero"
     t10 = h4_e;
@@ -5026,70 +4692,70 @@ bb3:
     t11 = t10.code;
 #line 269 "examples/spreadsheet/formula.hero"
     t18 = h3_r0;
-#line 5030 "main.c"
+#line 4696 "main.c"
     hero_str_incref(t11);
 #line 269 "examples/spreadsheet/formula.hero"
     h3_r0 = t11;
-#line 5034 "main.c"
+#line 4700 "main.c"
     hero_str_decref(t18);
     goto bb1;
 }
 
 #line 17 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_BAD_CELL_NAME(void) {
-#line 5041 "main.c"
+#line 4707 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 18 "examples/spreadsheet/sheet.hero"
     t1 = HERO_STR_LIT(hero_str_267d64cc);
-#line 5047 "main.c"
+#line 4713 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 20 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_BAD_RANGE(void) {
-#line 5054 "main.c"
+#line 4720 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 21 "examples/spreadsheet/sheet.hero"
     t1 = HERO_STR_LIT(hero_str_df3d626);
-#line 5060 "main.c"
+#line 4726 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 23 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_NO_ASSIGNMENT(void) {
-#line 5067 "main.c"
+#line 4733 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 24 "examples/spreadsheet/sheet.hero"
     t1 = HERO_STR_LIT(hero_str_e72c1af);
-#line 5073 "main.c"
+#line 4739 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 26 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_LETTERS(void) {
-#line 5080 "main.c"
+#line 4746 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 27 "examples/spreadsheet/sheet.hero"
     t1 = HERO_STR_LIT(hero_str_15cf97f9);
-#line 5086 "main.c"
+#line 4752 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 36 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_letter(uint8_t h0_c) {
-#line 5093 "main.c"
+#line 4759 "main.c"
     bool h1_b0;
     uint8_t t1;
     uint8_t t2;
@@ -5128,12 +4794,12 @@ bb2:
     t7 = h1_b0;
 #line 37 "examples/spreadsheet/sheet.hero"
     return t7;
-#line 5132 "main.c"
+#line 4798 "main.c"
 }
 
 #line 39 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_digit(uint8_t h0_c) {
-#line 5137 "main.c"
+#line 4803 "main.c"
     bool h1_b0;
     uint8_t t1;
     uint8_t t2;
@@ -5172,12 +4838,12 @@ bb2:
     t7 = h1_b0;
 #line 40 "examples/spreadsheet/sheet.hero"
     return t7;
-#line 5176 "main.c"
+#line 4842 "main.c"
 }
 
 #line 42 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_space(uint8_t h0_c) {
-#line 5181 "main.c"
+#line 4847 "main.c"
     bool h1_b0;
     bool h2_b1;
     uint8_t t1;
@@ -5241,12 +4907,12 @@ bb4:
     t11 = h1_b0;
 #line 43 "examples/spreadsheet/sheet.hero"
     return t11;
-#line 5245 "main.c"
+#line 4911 "main.c"
 }
 
 #line 45 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_trimmed(HeroStr h0_line) {
-#line 5250 "main.c"
+#line 4916 "main.c"
     int64_t h1_from;
     bool h2_b0;
     int64_t h3_to;
@@ -5309,7 +4975,6 @@ bb1:
     if (t5) goto bb4; else goto bb5;
 #line 48 "examples/spreadsheet/sheet.hero"
 bb2:
-#line 49 "examples/spreadsheet/sheet.hero"
     t11 = h1_from;
 #line 49 "examples/spreadsheet/sheet.hero"
     t12 = INT64_C(1);
@@ -5363,7 +5028,6 @@ bb6:
     if (t18) goto bb9; else goto bb10;
 #line 53 "examples/spreadsheet/sheet.hero"
 bb7:
-#line 54 "examples/spreadsheet/sheet.hero"
     t26 = h3_to;
 #line 54 "examples/spreadsheet/sheet.hero"
     t27 = INT64_C(1);
@@ -5387,13 +5051,9 @@ bb8:
     t33 = h5_own5;
 #line 56 "examples/spreadsheet/sheet.hero"
     h5_own5 = t32;
-#line 5391 "main.c"
+#line 5055 "main.c"
     hero_str_decref(t33);
-#line 56 "examples/spreadsheet/sheet.hero"
-#line 5394 "main.c"
     hero_str_incref(t32);
-#line 56 "examples/spreadsheet/sheet.hero"
-#line 5397 "main.c"
     hero_str_decref(h5_own5);
     return t32;
 bb9:
@@ -5419,12 +5079,12 @@ bb10:
     t25 = h4_b1;
 #line 53 "examples/spreadsheet/sheet.hero"
     if (t25) goto bb7; else goto bb8;
-#line 5423 "main.c"
+#line 5083 "main.c"
 }
 
 #line 58 "examples/spreadsheet/sheet.hero"
 HeroArrayHeader * h_sheet_split_lines(HeroStr h0_text) {
-#line 5428 "main.c"
+#line 5088 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_start;
     int64_t h3_i;
@@ -5475,21 +5135,20 @@ bb0:
     t37 = h4_own4;
 #line 59 "examples/spreadsheet/sheet.hero"
     h4_own4 = t1;
-#line 5479 "main.c"
+#line 5139 "main.c"
     hero_array_decref(t37);
 #line 59 "examples/spreadsheet/sheet.hero"
     t38 = h1_out;
-#line 5483 "main.c"
+#line 5143 "main.c"
     hero_array_incref(t1);
 #line 59 "examples/spreadsheet/sheet.hero"
     h1_out = t1;
-#line 5487 "main.c"
+#line 5147 "main.c"
     hero_array_decref(t38);
 #line 60 "examples/spreadsheet/sheet.hero"
     t2 = INT64_C(0);
 #line 60 "examples/spreadsheet/sheet.hero"
     h2_start = t2;
-#line 61 "examples/spreadsheet/sheet.hero"
     t3 = INT64_C(0);
 #line 61 "examples/spreadsheet/sheet.hero"
     h3_i = t3;
@@ -5509,7 +5168,6 @@ bb1:
     if (t7) goto bb2; else goto bb3;
 #line 63 "examples/spreadsheet/sheet.hero"
 bb2:
-#line 64 "examples/spreadsheet/sheet.hero"
     t8 = h0_text;
 #line 64 "examples/spreadsheet/sheet.hero"
     t9 = h3_i;
@@ -5559,11 +5217,10 @@ bb5:
     t39 = h5_own5;
 #line 65 "examples/spreadsheet/sheet.hero"
     h5_own5 = t17;
-#line 5563 "main.c"
+#line 5221 "main.c"
     hero_str_decref(t39);
 #line 65 "examples/spreadsheet/sheet.hero"
     hero_array_push_owned(&h1_out, &t17);
-#line 66 "examples/spreadsheet/sheet.hero"
     t19 = h3_i;
 #line 66 "examples/spreadsheet/sheet.hero"
     t20 = INT64_C(1);
@@ -5581,19 +5238,11 @@ bb6:
 bb7:
 #line 71 "examples/spreadsheet/sheet.hero"
     t36 = h1_out;
-#line 5585 "main.c"
+#line 5242 "main.c"
     hero_array_incref(t36);
-#line 71 "examples/spreadsheet/sheet.hero"
-#line 5588 "main.c"
     hero_array_decref(h1_out);
-#line 71 "examples/spreadsheet/sheet.hero"
-#line 5591 "main.c"
     hero_array_decref(h4_own4);
-#line 71 "examples/spreadsheet/sheet.hero"
-#line 5594 "main.c"
     hero_str_decref(h5_own5);
-#line 71 "examples/spreadsheet/sheet.hero"
-#line 5597 "main.c"
     hero_str_decref(h6_own6);
     return t36;
 bb8:
@@ -5611,7 +5260,7 @@ bb8:
     t40 = h6_own6;
 #line 70 "examples/spreadsheet/sheet.hero"
     h6_own6 = t34;
-#line 5615 "main.c"
+#line 5264 "main.c"
     hero_str_decref(t40);
 #line 70 "examples/spreadsheet/sheet.hero"
     hero_array_push_owned(&h1_out, &t34);
@@ -5621,12 +5270,12 @@ bb8:
 bb9:
 #line 70 "examples/spreadsheet/sheet.hero"
     goto bb7;
-#line 5625 "main.c"
+#line 5274 "main.c"
 }
 
 #line 76 "examples/spreadsheet/sheet.hero"
 h_0opt_605417d4 h_sheet_cell_of(HeroStr h0_name) {
-#line 5630 "main.c"
+#line 5279 "main.c"
     bool h1_b0;
     int64_t h2_row;
     int64_t h3_i;
@@ -5769,7 +5418,6 @@ bb1:
     t18 = INT64_C(0);
 #line 79 "examples/spreadsheet/sheet.hero"
     h2_row = t18;
-#line 80 "examples/spreadsheet/sheet.hero"
     t19 = INT64_C(1);
 #line 80 "examples/spreadsheet/sheet.hero"
     h3_i = t19;
@@ -5799,13 +5447,12 @@ bb3:
     if (t10) goto bb4; else goto bb5;
 #line 77 "examples/spreadsheet/sheet.hero"
 bb4:
-#line 78 "examples/spreadsheet/sheet.hero"
     t11 = h_sheet_ERR_BAD_CELL_NAME();
 #line 78 "examples/spreadsheet/sheet.hero"
     t85 = h7_own7;
 #line 78 "examples/spreadsheet/sheet.hero"
     h7_own7 = t11;
-#line 5809 "main.c"
+#line 5456 "main.c"
     hero_str_decref(t85);
 #line 78 "examples/spreadsheet/sheet.hero"
     t12 = HERO_STR_LIT(hero_str_60);
@@ -5817,7 +5464,7 @@ bb4:
     t86 = h8_own8;
 #line 78 "examples/spreadsheet/sheet.hero"
     h8_own8 = t14;
-#line 5821 "main.c"
+#line 5468 "main.c"
     hero_str_decref(t86);
 #line 78 "examples/spreadsheet/sheet.hero"
     t15 = HERO_STR_LIT(hero_str_30d275f8);
@@ -5827,13 +5474,9 @@ bb4:
     t87 = h9_own9;
 #line 78 "examples/spreadsheet/sheet.hero"
     h9_own9 = t16;
-#line 5831 "main.c"
+#line 5478 "main.c"
     hero_str_decref(t87);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 5834 "main.c"
     hero_str_incref(t11);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 5837 "main.c"
     hero_str_incref(t16);
 #line 78 "examples/spreadsheet/sheet.hero"
     t17 = (h_0opt_605417d4){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t16}};
@@ -5841,7 +5484,7 @@ bb4:
     t88 = h10_own10;
 #line 78 "examples/spreadsheet/sheet.hero"
     h10_own10 = t17;
-#line 5845 "main.c"
+#line 5488 "main.c"
     h_0opt_605417d4_release(&t88);
 #line 78 "examples/spreadsheet/sheet.hero"
     h6_ret0 = t17;
@@ -5865,7 +5508,6 @@ bb6:
     if (t23) goto bb7; else goto bb8;
 #line 82 "examples/spreadsheet/sheet.hero"
 bb7:
-#line 83 "examples/spreadsheet/sheet.hero"
     t24 = h0_name;
 #line 83 "examples/spreadsheet/sheet.hero"
     t25 = h3_i;
@@ -5911,15 +5553,15 @@ bb9:
     t89 = h11_own11;
 #line 85 "examples/spreadsheet/sheet.hero"
     h11_own11 = t44;
-#line 5915 "main.c"
+#line 5557 "main.c"
     h_0opt_e201354_release(&t89);
 #line 85 "examples/spreadsheet/sheet.hero"
     t90 = h4_f0;
-#line 5919 "main.c"
+#line 5561 "main.c"
     h_0opt_e201354_retain(&t44);
 #line 85 "examples/spreadsheet/sheet.hero"
     h4_f0 = t44;
-#line 5923 "main.c"
+#line 5565 "main.c"
     h_0opt_e201354_release(&t90);
 #line 85 "examples/spreadsheet/sheet.hero"
     t45 = h4_f0;
@@ -5939,7 +5581,7 @@ bb10:
     t91 = h12_own12;
 #line 84 "examples/spreadsheet/sheet.hero"
     h12_own12 = t29;
-#line 5943 "main.c"
+#line 5585 "main.c"
     hero_str_decref(t91);
 #line 84 "examples/spreadsheet/sheet.hero"
     t30 = HERO_STR_LIT(hero_str_60);
@@ -5951,7 +5593,7 @@ bb10:
     t92 = h13_own13;
 #line 84 "examples/spreadsheet/sheet.hero"
     h13_own13 = t32;
-#line 5955 "main.c"
+#line 5597 "main.c"
     hero_str_decref(t92);
 #line 84 "examples/spreadsheet/sheet.hero"
     t33 = HERO_STR_LIT(hero_str_30d275f8);
@@ -5961,13 +5603,9 @@ bb10:
     t93 = h14_own14;
 #line 84 "examples/spreadsheet/sheet.hero"
     h14_own14 = t34;
-#line 5965 "main.c"
+#line 5607 "main.c"
     hero_str_decref(t93);
-#line 84 "examples/spreadsheet/sheet.hero"
-#line 5968 "main.c"
     hero_str_incref(t29);
-#line 84 "examples/spreadsheet/sheet.hero"
-#line 5971 "main.c"
     hero_str_incref(t34);
 #line 84 "examples/spreadsheet/sheet.hero"
     t35 = (h_0opt_605417d4){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t34}};
@@ -5975,7 +5613,7 @@ bb10:
     t94 = h15_own15;
 #line 84 "examples/spreadsheet/sheet.hero"
     h15_own15 = t35;
-#line 5979 "main.c"
+#line 5617 "main.c"
     h_0opt_605417d4_release(&t94);
 #line 84 "examples/spreadsheet/sheet.hero"
     h6_ret0 = t35;
@@ -5987,7 +5625,6 @@ bb11:
     goto bb9;
 #line 84 "examples/spreadsheet/sheet.hero"
 bb12:
-#line 85 "examples/spreadsheet/sheet.hero"
     t51 = h4_f0;
 #line 85 "examples/spreadsheet/sheet.hero"
     t52 = t51.as.ok;
@@ -5995,7 +5632,6 @@ bb12:
     if (__builtin_add_overflow(t38, t52, &t53)) hero_panic_overflow();
 #line 85 "examples/spreadsheet/sheet.hero"
     h2_row = t53;
-#line 86 "examples/spreadsheet/sheet.hero"
     t54 = h3_i;
 #line 86 "examples/spreadsheet/sheet.hero"
     t55 = INT64_C(1);
@@ -6011,7 +5647,7 @@ bb13:
     t49 = h4_f0;
 #line 85 "examples/spreadsheet/sheet.hero"
     t50 = t49.as.err;
-#line 6015 "main.c"
+#line 5651 "main.c"
     hero_panic_must(t50);
     hero_unreachable();
 bb14:
@@ -6031,15 +5667,15 @@ bb14:
     t95 = h16_own16;
 #line 90 "examples/spreadsheet/sheet.hero"
     h16_own16 = t72;
-#line 6035 "main.c"
+#line 5671 "main.c"
     h_0opt_e201354_release(&t95);
 #line 90 "examples/spreadsheet/sheet.hero"
     t96 = h5_f1;
-#line 6039 "main.c"
+#line 5675 "main.c"
     h_0opt_e201354_retain(&t72);
 #line 90 "examples/spreadsheet/sheet.hero"
     h5_f1 = t72;
-#line 6043 "main.c"
+#line 5679 "main.c"
     h_0opt_e201354_release(&t96);
 #line 90 "examples/spreadsheet/sheet.hero"
     t73 = h5_f1;
@@ -6059,7 +5695,7 @@ bb15:
     t97 = h17_own17;
 #line 89 "examples/spreadsheet/sheet.hero"
     h17_own17 = t60;
-#line 6063 "main.c"
+#line 5699 "main.c"
     hero_str_decref(t97);
 #line 89 "examples/spreadsheet/sheet.hero"
     t61 = HERO_STR_LIT(hero_str_60);
@@ -6071,7 +5707,7 @@ bb15:
     t98 = h18_own18;
 #line 89 "examples/spreadsheet/sheet.hero"
     h18_own18 = t63;
-#line 6075 "main.c"
+#line 5711 "main.c"
     hero_str_decref(t98);
 #line 89 "examples/spreadsheet/sheet.hero"
     t64 = HERO_STR_LIT(hero_str_3a8f3948);
@@ -6081,13 +5717,9 @@ bb15:
     t99 = h19_own19;
 #line 89 "examples/spreadsheet/sheet.hero"
     h19_own19 = t65;
-#line 6085 "main.c"
+#line 5721 "main.c"
     hero_str_decref(t99);
-#line 89 "examples/spreadsheet/sheet.hero"
-#line 6088 "main.c"
     hero_str_incref(t60);
-#line 89 "examples/spreadsheet/sheet.hero"
-#line 6091 "main.c"
     hero_str_incref(t65);
 #line 89 "examples/spreadsheet/sheet.hero"
     t66 = (h_0opt_605417d4){.tag = INT64_C(1), .as.err = {.code = t60, .msg = t65}};
@@ -6095,7 +5727,7 @@ bb15:
     t100 = h20_own20;
 #line 89 "examples/spreadsheet/sheet.hero"
     h20_own20 = t66;
-#line 6099 "main.c"
+#line 5731 "main.c"
     h_0opt_605417d4_release(&t100);
 #line 89 "examples/spreadsheet/sheet.hero"
     h6_ret0 = t66;
@@ -6107,7 +5739,6 @@ bb16:
     goto bb14;
 #line 89 "examples/spreadsheet/sheet.hero"
 bb17:
-#line 90 "examples/spreadsheet/sheet.hero"
     t79 = h5_f1;
 #line 90 "examples/spreadsheet/sheet.hero"
     t80 = t79.as.ok;
@@ -6121,7 +5752,7 @@ bb17:
     t101 = h21_own21;
 #line 90 "examples/spreadsheet/sheet.hero"
     h21_own21 = t83;
-#line 6125 "main.c"
+#line 5756 "main.c"
     h_0opt_605417d4_release(&t101);
 #line 90 "examples/spreadsheet/sheet.hero"
     h6_ret0 = t83;
@@ -6133,71 +5764,35 @@ bb18:
     t77 = h5_f1;
 #line 90 "examples/spreadsheet/sheet.hero"
     t78 = t77.as.err;
-#line 6137 "main.c"
+#line 5768 "main.c"
     hero_panic_must(t78);
     hero_unreachable();
 bb19:
-#line 78 "examples/spreadsheet/sheet.hero"
     t84 = h6_ret0;
-#line 6143 "main.c"
     h_0opt_605417d4_retain(&t84);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6146 "main.c"
     h_0opt_e201354_release(&h4_f0);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6149 "main.c"
     h_0opt_e201354_release(&h5_f1);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6152 "main.c"
     hero_str_decref(h7_own7);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6155 "main.c"
     hero_str_decref(h8_own8);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6158 "main.c"
     hero_str_decref(h9_own9);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6161 "main.c"
     h_0opt_605417d4_release(&h10_own10);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6164 "main.c"
     h_0opt_e201354_release(&h11_own11);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6167 "main.c"
     hero_str_decref(h12_own12);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6170 "main.c"
     hero_str_decref(h13_own13);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6173 "main.c"
     hero_str_decref(h14_own14);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6176 "main.c"
     h_0opt_605417d4_release(&h15_own15);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6179 "main.c"
     h_0opt_e201354_release(&h16_own16);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6182 "main.c"
     hero_str_decref(h17_own17);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6185 "main.c"
     hero_str_decref(h18_own18);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6188 "main.c"
     hero_str_decref(h19_own19);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6191 "main.c"
     h_0opt_605417d4_release(&h20_own20);
-#line 78 "examples/spreadsheet/sheet.hero"
-#line 6194 "main.c"
     h_0opt_605417d4_release(&h21_own21);
     return t84;
 }
 
 #line 94 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_name_of(h_sheet_Cell h0_c) {
-#line 6201 "main.c"
+#line 5796 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -6226,7 +5821,7 @@ bb0:
     t13 = h1_own1;
 #line 95 "examples/spreadsheet/sheet.hero"
     h1_own1 = t1;
-#line 6230 "main.c"
+#line 5825 "main.c"
     hero_str_decref(t13);
 #line 95 "examples/spreadsheet/sheet.hero"
     t2 = h0_c;
@@ -6246,7 +5841,7 @@ bb0:
     t14 = h2_own2;
 #line 95 "examples/spreadsheet/sheet.hero"
     h2_own2 = t8;
-#line 6250 "main.c"
+#line 5845 "main.c"
     hero_str_decref(t14);
 #line 95 "examples/spreadsheet/sheet.hero"
     t9 = h0_c;
@@ -6258,7 +5853,7 @@ bb0:
     t15 = h3_own3;
 #line 95 "examples/spreadsheet/sheet.hero"
     h3_own3 = t11;
-#line 6262 "main.c"
+#line 5857 "main.c"
     hero_str_decref(t15);
 #line 95 "examples/spreadsheet/sheet.hero"
     t12 = hero_str_concat(t8, t11);
@@ -6266,29 +5861,19 @@ bb0:
     t16 = h4_own4;
 #line 95 "examples/spreadsheet/sheet.hero"
     h4_own4 = t12;
-#line 6270 "main.c"
+#line 5865 "main.c"
     hero_str_decref(t16);
-#line 95 "examples/spreadsheet/sheet.hero"
-#line 6273 "main.c"
     hero_str_incref(t12);
-#line 95 "examples/spreadsheet/sheet.hero"
-#line 6276 "main.c"
     hero_str_decref(h1_own1);
-#line 95 "examples/spreadsheet/sheet.hero"
-#line 6279 "main.c"
     hero_str_decref(h2_own2);
-#line 95 "examples/spreadsheet/sheet.hero"
-#line 6282 "main.c"
     hero_str_decref(h3_own3);
-#line 95 "examples/spreadsheet/sheet.hero"
-#line 6285 "main.c"
     hero_str_decref(h4_own4);
     return t12;
 }
 
 #line 97 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_name(HeroStr h0_word) {
-#line 6292 "main.c"
+#line 5877 "main.c"
     h_0opt_605417d4 h1_f0 = {0};
     h_0opt_605417d4 h2_own2 = {0};
     HeroStr t1;
@@ -6310,15 +5895,15 @@ bb0:
     t8 = h2_own2;
 #line 98 "examples/spreadsheet/sheet.hero"
     h2_own2 = t2;
-#line 6314 "main.c"
+#line 5899 "main.c"
     h_0opt_605417d4_release(&t8);
 #line 98 "examples/spreadsheet/sheet.hero"
     t9 = h1_f0;
-#line 6318 "main.c"
+#line 5903 "main.c"
     h_0opt_605417d4_retain(&t2);
 #line 98 "examples/spreadsheet/sheet.hero"
     h1_f0 = t2;
-#line 6322 "main.c"
+#line 5907 "main.c"
     h_0opt_605417d4_release(&t9);
 #line 98 "examples/spreadsheet/sheet.hero"
     t3 = h1_f0;
@@ -6330,17 +5915,15 @@ bb0:
     t6 = t4 == t5;
 #line 98 "examples/spreadsheet/sheet.hero"
     t7 = !t6;
-#line 6334 "main.c"
+#line 5919 "main.c"
     h_0opt_605417d4_release(&h1_f0);
-#line 98 "examples/spreadsheet/sheet.hero"
-#line 6337 "main.c"
     h_0opt_605417d4_release(&h2_own2);
     return t7;
 }
 
 #line 105 "examples/spreadsheet/sheet.hero"
 h_0opt_5a58f2ca h_sheet_expand(HeroStr h0_text) {
-#line 6344 "main.c"
+#line 5927 "main.c"
     int64_t h1_at;
     h_0opt_605417d4 h2_f0 = {0};
     h_sheet_Cell h3_from;
@@ -6515,7 +6098,7 @@ bb1:
     t93 = h14_own14;
 #line 110 "examples/spreadsheet/sheet.hero"
     h14_own14 = t17;
-#line 6519 "main.c"
+#line 6102 "main.c"
     hero_str_decref(t93);
 #line 110 "examples/spreadsheet/sheet.hero"
     t18 = h_sheet_trimmed(t17);
@@ -6523,7 +6106,7 @@ bb1:
     t94 = h15_own15;
 #line 110 "examples/spreadsheet/sheet.hero"
     h15_own15 = t18;
-#line 6527 "main.c"
+#line 6110 "main.c"
     hero_str_decref(t94);
 #line 110 "examples/spreadsheet/sheet.hero"
     t19 = h_sheet_cell_of(t18);
@@ -6531,15 +6114,15 @@ bb1:
     t95 = h16_own16;
 #line 110 "examples/spreadsheet/sheet.hero"
     h16_own16 = t19;
-#line 6535 "main.c"
+#line 6118 "main.c"
     h_0opt_605417d4_release(&t95);
 #line 110 "examples/spreadsheet/sheet.hero"
     t96 = h2_f0;
-#line 6539 "main.c"
+#line 6122 "main.c"
     h_0opt_605417d4_retain(&t19);
 #line 110 "examples/spreadsheet/sheet.hero"
     h2_f0 = t19;
-#line 6543 "main.c"
+#line 6126 "main.c"
     h_0opt_605417d4_release(&t96);
 #line 110 "examples/spreadsheet/sheet.hero"
     t20 = h2_f0;
@@ -6559,7 +6142,7 @@ bb2:
     t97 = h17_own17;
 #line 109 "examples/spreadsheet/sheet.hero"
     h17_own17 = t7;
-#line 6563 "main.c"
+#line 6146 "main.c"
     hero_str_decref(t97);
 #line 109 "examples/spreadsheet/sheet.hero"
     t8 = HERO_STR_LIT(hero_str_60);
@@ -6571,7 +6154,7 @@ bb2:
     t98 = h18_own18;
 #line 109 "examples/spreadsheet/sheet.hero"
     h18_own18 = t10;
-#line 6575 "main.c"
+#line 6158 "main.c"
     hero_str_decref(t98);
 #line 109 "examples/spreadsheet/sheet.hero"
     t11 = HERO_STR_LIT(hero_str_3e1d2a75);
@@ -6581,13 +6164,9 @@ bb2:
     t99 = h19_own19;
 #line 109 "examples/spreadsheet/sheet.hero"
     h19_own19 = t12;
-#line 6585 "main.c"
+#line 6168 "main.c"
     hero_str_decref(t99);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6588 "main.c"
     hero_str_incref(t7);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6591 "main.c"
     hero_str_incref(t12);
 #line 109 "examples/spreadsheet/sheet.hero"
     t13 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t12}};
@@ -6595,7 +6174,7 @@ bb2:
     t100 = h20_own20;
 #line 109 "examples/spreadsheet/sheet.hero"
     h20_own20 = t13;
-#line 6599 "main.c"
+#line 6178 "main.c"
     h_0opt_5a58f2ca_release(&t100);
 #line 109 "examples/spreadsheet/sheet.hero"
     h13_ret0 = t13;
@@ -6607,13 +6186,11 @@ bb3:
     goto bb1;
 #line 109 "examples/spreadsheet/sheet.hero"
 bb4:
-#line 110 "examples/spreadsheet/sheet.hero"
     t27 = h2_f0;
 #line 110 "examples/spreadsheet/sheet.hero"
     t28 = t27.as.ok;
 #line 110 "examples/spreadsheet/sheet.hero"
     h3_from = t28;
-#line 111 "examples/spreadsheet/sheet.hero"
     t29 = h0_text;
 #line 111 "examples/spreadsheet/sheet.hero"
     t30 = h1_at;
@@ -6631,7 +6208,7 @@ bb4:
     t101 = h21_own21;
 #line 111 "examples/spreadsheet/sheet.hero"
     h21_own21 = t35;
-#line 6635 "main.c"
+#line 6212 "main.c"
     hero_str_decref(t101);
 #line 111 "examples/spreadsheet/sheet.hero"
     t36 = h_sheet_trimmed(t35);
@@ -6639,7 +6216,7 @@ bb4:
     t102 = h22_own22;
 #line 111 "examples/spreadsheet/sheet.hero"
     h22_own22 = t36;
-#line 6643 "main.c"
+#line 6220 "main.c"
     hero_str_decref(t102);
 #line 111 "examples/spreadsheet/sheet.hero"
     t37 = h_sheet_cell_of(t36);
@@ -6647,15 +6224,15 @@ bb4:
     t103 = h23_own23;
 #line 111 "examples/spreadsheet/sheet.hero"
     h23_own23 = t37;
-#line 6651 "main.c"
+#line 6228 "main.c"
     h_0opt_605417d4_release(&t103);
 #line 111 "examples/spreadsheet/sheet.hero"
     t104 = h4_f1;
-#line 6655 "main.c"
+#line 6232 "main.c"
     h_0opt_605417d4_retain(&t37);
 #line 111 "examples/spreadsheet/sheet.hero"
     h4_f1 = t37;
-#line 6659 "main.c"
+#line 6236 "main.c"
     h_0opt_605417d4_release(&t104);
 #line 111 "examples/spreadsheet/sheet.hero"
     t38 = h4_f1;
@@ -6673,7 +6250,7 @@ bb5:
     t24 = h2_f0;
 #line 110 "examples/spreadsheet/sheet.hero"
     t25 = t24.as.err;
-#line 6677 "main.c"
+#line 6254 "main.c"
     hero_failure_retain(&t25);
 #line 110 "examples/spreadsheet/sheet.hero"
     t26 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t25};
@@ -6681,7 +6258,7 @@ bb5:
     t105 = h24_own24;
 #line 110 "examples/spreadsheet/sheet.hero"
     h24_own24 = t26;
-#line 6685 "main.c"
+#line 6262 "main.c"
     h_0opt_5a58f2ca_release(&t105);
 #line 110 "examples/spreadsheet/sheet.hero"
     h13_ret0 = t26;
@@ -6689,27 +6266,25 @@ bb5:
     goto bb16;
 #line 110 "examples/spreadsheet/sheet.hero"
 bb6:
-#line 111 "examples/spreadsheet/sheet.hero"
     t45 = h4_f1;
 #line 111 "examples/spreadsheet/sheet.hero"
     t46 = t45.as.ok;
 #line 111 "examples/spreadsheet/sheet.hero"
     h5_to = t46;
-#line 112 "examples/spreadsheet/sheet.hero"
     t47 = hero_array_new(&hero_desc_str, 1);
 #line 112 "examples/spreadsheet/sheet.hero"
     t106 = h25_own25;
 #line 112 "examples/spreadsheet/sheet.hero"
     h25_own25 = t47;
-#line 6705 "main.c"
+#line 6280 "main.c"
     hero_array_decref(t106);
 #line 112 "examples/spreadsheet/sheet.hero"
     t107 = h6_out;
-#line 6709 "main.c"
+#line 6284 "main.c"
     hero_array_incref(t47);
 #line 112 "examples/spreadsheet/sheet.hero"
     h6_out = t47;
-#line 6713 "main.c"
+#line 6288 "main.c"
     hero_array_decref(t107);
 #line 114 "examples/spreadsheet/sheet.hero"
     t48 = h3_from;
@@ -6729,15 +6304,15 @@ bb6:
     t108 = h26_own26;
 #line 114 "examples/spreadsheet/sheet.hero"
     h26_own26 = t54;
-#line 6733 "main.c"
+#line 6308 "main.c"
     hero_array_decref(t108);
 #line 114 "examples/spreadsheet/sheet.hero"
     t109 = h7_xs0;
-#line 6737 "main.c"
+#line 6312 "main.c"
     hero_array_incref(t54);
 #line 114 "examples/spreadsheet/sheet.hero"
     h7_xs0 = t54;
-#line 6741 "main.c"
+#line 6316 "main.c"
     hero_array_decref(t109);
 #line 114 "examples/spreadsheet/sheet.hero"
     t55 = INT64_C(0);
@@ -6751,7 +6326,7 @@ bb7:
     t42 = h4_f1;
 #line 111 "examples/spreadsheet/sheet.hero"
     t43 = t42.as.err;
-#line 6755 "main.c"
+#line 6330 "main.c"
     hero_failure_retain(&t43);
 #line 111 "examples/spreadsheet/sheet.hero"
     t44 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t43};
@@ -6759,7 +6334,7 @@ bb7:
     t110 = h27_own27;
 #line 111 "examples/spreadsheet/sheet.hero"
     h27_own27 = t44;
-#line 6763 "main.c"
+#line 6338 "main.c"
     h_0opt_5a58f2ca_release(&t110);
 #line 111 "examples/spreadsheet/sheet.hero"
     h13_ret0 = t44;
@@ -6787,7 +6362,6 @@ bb9:
     t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t60 + 1))[t61]);
 #line 114 "examples/spreadsheet/sheet.hero"
     h9_row = t62;
-#line 115 "examples/spreadsheet/sheet.hero"
     t63 = h3_from;
 #line 115 "examples/spreadsheet/sheet.hero"
     t64 = t63.f_column;
@@ -6805,15 +6379,15 @@ bb9:
     t111 = h28_own28;
 #line 115 "examples/spreadsheet/sheet.hero"
     h28_own28 = t69;
-#line 6809 "main.c"
+#line 6383 "main.c"
     hero_array_decref(t111);
 #line 115 "examples/spreadsheet/sheet.hero"
     t112 = h10_xs1;
-#line 6813 "main.c"
+#line 6387 "main.c"
     hero_array_incref(t69);
 #line 115 "examples/spreadsheet/sheet.hero"
     h10_xs1 = t69;
-#line 6817 "main.c"
+#line 6391 "main.c"
     hero_array_decref(t112);
 #line 115 "examples/spreadsheet/sheet.hero"
     t70 = INT64_C(0);
@@ -6837,7 +6411,7 @@ bb10:
 bb11:
 #line 118 "examples/spreadsheet/sheet.hero"
     t90 = h6_out;
-#line 6841 "main.c"
+#line 6415 "main.c"
     hero_array_incref(t90);
 #line 118 "examples/spreadsheet/sheet.hero"
     t91 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t90};
@@ -6845,7 +6419,7 @@ bb11:
     t113 = h29_own29;
 #line 118 "examples/spreadsheet/sheet.hero"
     h29_own29 = t91;
-#line 6849 "main.c"
+#line 6423 "main.c"
     h_0opt_5a58f2ca_release(&t113);
 #line 118 "examples/spreadsheet/sheet.hero"
     h13_ret0 = t91;
@@ -6873,7 +6447,6 @@ bb13:
     t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t75 + 1))[t76]);
 #line 115 "examples/spreadsheet/sheet.hero"
     h12_column = t77;
-#line 116 "examples/spreadsheet/sheet.hero"
     t79 = h12_column;
 #line 116 "examples/spreadsheet/sheet.hero"
     t80 = h9_row;
@@ -6885,7 +6458,7 @@ bb13:
     t114 = h30_own30;
 #line 116 "examples/spreadsheet/sheet.hero"
     h30_own30 = t82;
-#line 6889 "main.c"
+#line 6462 "main.c"
     hero_str_decref(t114);
 #line 116 "examples/spreadsheet/sheet.hero"
     hero_array_push_owned(&h6_out, &t82);
@@ -6909,82 +6482,37 @@ bb15:
     goto bb10;
 #line 115 "examples/spreadsheet/sheet.hero"
 bb16:
-#line 109 "examples/spreadsheet/sheet.hero"
+#line 6486 "main.c"
     t92 = h13_ret0;
-#line 6915 "main.c"
     h_0opt_5a58f2ca_retain(&t92);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6918 "main.c"
     h_0opt_605417d4_release(&h2_f0);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6921 "main.c"
     h_0opt_605417d4_release(&h4_f1);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6924 "main.c"
     hero_array_decref(h6_out);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6927 "main.c"
     hero_array_decref(h7_xs0);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6930 "main.c"
     hero_array_decref(h10_xs1);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6933 "main.c"
     hero_str_decref(h14_own14);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6936 "main.c"
     hero_str_decref(h15_own15);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6939 "main.c"
     h_0opt_605417d4_release(&h16_own16);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6942 "main.c"
     hero_str_decref(h17_own17);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6945 "main.c"
     hero_str_decref(h18_own18);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6948 "main.c"
     hero_str_decref(h19_own19);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6951 "main.c"
     h_0opt_5a58f2ca_release(&h20_own20);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6954 "main.c"
     hero_str_decref(h21_own21);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6957 "main.c"
     hero_str_decref(h22_own22);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6960 "main.c"
     h_0opt_605417d4_release(&h23_own23);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6963 "main.c"
     h_0opt_5a58f2ca_release(&h24_own24);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6966 "main.c"
     hero_array_decref(h25_own25);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6969 "main.c"
     hero_array_decref(h26_own26);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6972 "main.c"
     h_0opt_5a58f2ca_release(&h27_own27);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6975 "main.c"
     hero_array_decref(h28_own28);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6978 "main.c"
     h_0opt_5a58f2ca_release(&h29_own29);
-#line 109 "examples/spreadsheet/sheet.hero"
-#line 6981 "main.c"
     hero_str_decref(h30_own30);
     return t92;
 }
 
 #line 120 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_index_of(HeroStr h0_text, uint8_t h1_c) {
-#line 6988 "main.c"
+#line 6516 "main.c"
     int64_t h2_i;
     int64_t h3_ret0;
     int64_t t1;
@@ -7027,7 +6555,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 123 "examples/spreadsheet/sheet.hero"
 bb2:
-#line 124 "examples/spreadsheet/sheet.hero"
     t6 = h0_text;
 #line 124 "examples/spreadsheet/sheet.hero"
     t7 = h2_i;
@@ -7077,16 +6604,14 @@ bb6:
     goto bb4;
 #line 125 "examples/spreadsheet/sheet.hero"
 bb7:
-#line 125 "examples/spreadsheet/sheet.hero"
+#line 6608 "main.c"
     t18 = h3_ret0;
-#line 125 "examples/spreadsheet/sheet.hero"
     return t18;
-#line 7085 "main.c"
 }
 
 #line 133 "examples/spreadsheet/sheet.hero"
 h_0opt_2bbbbbdd h_sheet_read(HeroStr h0_text) {
-#line 7090 "main.c"
+#line 6615 "main.c"
     HeroMapHeader * h1_cells = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -7209,15 +6734,15 @@ bb0:
     t67 = h10_own10;
 #line 134 "examples/spreadsheet/sheet.hero"
     h10_own10 = t1;
-#line 7213 "main.c"
+#line 6738 "main.c"
     hero_map_decref(t67);
 #line 134 "examples/spreadsheet/sheet.hero"
     t68 = h1_cells;
-#line 7217 "main.c"
+#line 6742 "main.c"
     hero_map_incref(t1);
 #line 134 "examples/spreadsheet/sheet.hero"
     h1_cells = t1;
-#line 7221 "main.c"
+#line 6746 "main.c"
     hero_map_decref(t68);
 #line 136 "examples/spreadsheet/sheet.hero"
     t2 = h0_text;
@@ -7227,15 +6752,15 @@ bb0:
     t69 = h11_own11;
 #line 136 "examples/spreadsheet/sheet.hero"
     h11_own11 = t3;
-#line 7231 "main.c"
+#line 6756 "main.c"
     hero_array_decref(t69);
 #line 136 "examples/spreadsheet/sheet.hero"
     t70 = h2_xs0;
-#line 7235 "main.c"
+#line 6760 "main.c"
     hero_array_incref(t3);
 #line 136 "examples/spreadsheet/sheet.hero"
     h2_xs0 = t3;
-#line 7239 "main.c"
+#line 6764 "main.c"
     hero_array_decref(t70);
 #line 136 "examples/spreadsheet/sheet.hero"
     t4 = INT64_C(0);
@@ -7265,11 +6790,11 @@ bb2:
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
 #line 136 "examples/spreadsheet/sheet.hero"
     t71 = h4_line;
-#line 7269 "main.c"
+#line 6794 "main.c"
     hero_str_incref(t11);
 #line 136 "examples/spreadsheet/sheet.hero"
     h4_line = t11;
-#line 7273 "main.c"
+#line 6798 "main.c"
     hero_str_decref(t71);
 #line 137 "examples/spreadsheet/sheet.hero"
     t12 = h4_line;
@@ -7279,15 +6804,15 @@ bb2:
     t72 = h12_own12;
 #line 137 "examples/spreadsheet/sheet.hero"
     h12_own12 = t13;
-#line 7283 "main.c"
+#line 6808 "main.c"
     hero_str_decref(t72);
 #line 137 "examples/spreadsheet/sheet.hero"
     t73 = h5_head;
-#line 7287 "main.c"
+#line 6812 "main.c"
     hero_str_incref(t13);
 #line 137 "examples/spreadsheet/sheet.hero"
     h5_head = t13;
-#line 7291 "main.c"
+#line 6816 "main.c"
     hero_str_decref(t73);
 #line 139 "examples/spreadsheet/sheet.hero"
     t14 = h5_head;
@@ -7315,7 +6840,7 @@ bb3:
 bb4:
 #line 151 "examples/spreadsheet/sheet.hero"
     t63 = h1_cells;
-#line 7319 "main.c"
+#line 6844 "main.c"
     hero_map_incref(t63);
 #line 151 "examples/spreadsheet/sheet.hero"
     t64 = (h_sheet_Sheet){.f_cells = t63};
@@ -7323,10 +6848,8 @@ bb4:
     t74 = h13_own13;
 #line 151 "examples/spreadsheet/sheet.hero"
     h13_own13 = t64;
-#line 7327 "main.c"
+#line 6852 "main.c"
     h_sheet_Sheet_release(&t74);
-#line 151 "examples/spreadsheet/sheet.hero"
-#line 7330 "main.c"
     h_sheet_Sheet_retain(&t64);
 #line 151 "examples/spreadsheet/sheet.hero"
     t65 = (h_0opt_2bbbbbdd){.tag = INT64_C(0), .as.ok = t64};
@@ -7334,7 +6857,7 @@ bb4:
     t75 = h14_own14;
 #line 151 "examples/spreadsheet/sheet.hero"
     h14_own14 = t65;
-#line 7338 "main.c"
+#line 6861 "main.c"
     h_0opt_2bbbbbdd_release(&t75);
 #line 151 "examples/spreadsheet/sheet.hero"
     h9_ret0 = t65;
@@ -7402,7 +6925,7 @@ bb10:
     t76 = h15_own15;
 #line 145 "examples/spreadsheet/sheet.hero"
     h15_own15 = t39;
-#line 7406 "main.c"
+#line 6929 "main.c"
     hero_str_decref(t76);
 #line 145 "examples/spreadsheet/sheet.hero"
     t40 = h_sheet_trimmed(t39);
@@ -7410,15 +6933,15 @@ bb10:
     t77 = h16_own16;
 #line 145 "examples/spreadsheet/sheet.hero"
     h16_own16 = t40;
-#line 7414 "main.c"
+#line 6937 "main.c"
     hero_str_decref(t77);
 #line 145 "examples/spreadsheet/sheet.hero"
     t78 = h8_name;
-#line 7418 "main.c"
+#line 6941 "main.c"
     hero_str_incref(t40);
 #line 145 "examples/spreadsheet/sheet.hero"
     h8_name = t40;
-#line 7422 "main.c"
+#line 6945 "main.c"
     hero_str_decref(t78);
 #line 147 "examples/spreadsheet/sheet.hero"
     t41 = h8_name;
@@ -7436,7 +6959,7 @@ bb11:
     t79 = h17_own17;
 #line 144 "examples/spreadsheet/sheet.hero"
     h17_own17 = t29;
-#line 7440 "main.c"
+#line 6963 "main.c"
     hero_str_decref(t79);
 #line 144 "examples/spreadsheet/sheet.hero"
     t30 = HERO_STR_LIT(hero_str_60);
@@ -7448,7 +6971,7 @@ bb11:
     t80 = h18_own18;
 #line 144 "examples/spreadsheet/sheet.hero"
     h18_own18 = t32;
-#line 7452 "main.c"
+#line 6975 "main.c"
     hero_str_decref(t80);
 #line 144 "examples/spreadsheet/sheet.hero"
     t33 = HERO_STR_LIT(hero_str_4c698ffa);
@@ -7458,13 +6981,9 @@ bb11:
     t81 = h19_own19;
 #line 144 "examples/spreadsheet/sheet.hero"
     h19_own19 = t34;
-#line 7462 "main.c"
+#line 6985 "main.c"
     hero_str_decref(t81);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7465 "main.c"
     hero_str_incref(t29);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7468 "main.c"
     hero_str_incref(t34);
 #line 144 "examples/spreadsheet/sheet.hero"
     t35 = (h_0opt_2bbbbbdd){.tag = INT64_C(1), .as.err = {.code = t29, .msg = t34}};
@@ -7472,7 +6991,7 @@ bb11:
     t82 = h20_own20;
 #line 144 "examples/spreadsheet/sheet.hero"
     h20_own20 = t35;
-#line 7476 "main.c"
+#line 6995 "main.c"
     h_0opt_2bbbbbdd_release(&t82);
 #line 144 "examples/spreadsheet/sheet.hero"
     h9_ret0 = t35;
@@ -7504,7 +7023,7 @@ bb13:
     t83 = h21_own21;
 #line 149 "examples/spreadsheet/sheet.hero"
     h21_own21 = t58;
-#line 7508 "main.c"
+#line 7027 "main.c"
     hero_str_decref(t83);
 #line 149 "examples/spreadsheet/sheet.hero"
     t59 = h_sheet_trimmed(t58);
@@ -7512,10 +7031,8 @@ bb13:
     t84 = h22_own22;
 #line 149 "examples/spreadsheet/sheet.hero"
     h22_own22 = t59;
-#line 7516 "main.c"
+#line 7035 "main.c"
     hero_str_decref(t84);
-#line 149 "examples/spreadsheet/sheet.hero"
-#line 7519 "main.c"
     hero_str_incref(t59);
 #line 149 "examples/spreadsheet/sheet.hero"
     hero_map_set(&(h1_cells), &t51, &t59);
@@ -7529,7 +7046,7 @@ bb14:
     t85 = h23_own23;
 #line 148 "examples/spreadsheet/sheet.hero"
     h23_own23 = t44;
-#line 7533 "main.c"
+#line 7050 "main.c"
     hero_str_decref(t85);
 #line 148 "examples/spreadsheet/sheet.hero"
     t45 = HERO_STR_LIT(hero_str_60);
@@ -7541,7 +7058,7 @@ bb14:
     t86 = h24_own24;
 #line 148 "examples/spreadsheet/sheet.hero"
     h24_own24 = t47;
-#line 7545 "main.c"
+#line 7062 "main.c"
     hero_str_decref(t86);
 #line 148 "examples/spreadsheet/sheet.hero"
     t48 = HERO_STR_LIT(hero_str_59af7519);
@@ -7551,13 +7068,9 @@ bb14:
     t87 = h25_own25;
 #line 148 "examples/spreadsheet/sheet.hero"
     h25_own25 = t49;
-#line 7555 "main.c"
+#line 7072 "main.c"
     hero_str_decref(t87);
-#line 148 "examples/spreadsheet/sheet.hero"
-#line 7558 "main.c"
     hero_str_incref(t44);
-#line 148 "examples/spreadsheet/sheet.hero"
-#line 7561 "main.c"
     hero_str_incref(t49);
 #line 148 "examples/spreadsheet/sheet.hero"
     t50 = (h_0opt_2bbbbbdd){.tag = INT64_C(1), .as.err = {.code = t44, .msg = t49}};
@@ -7565,7 +7078,7 @@ bb14:
     t88 = h26_own26;
 #line 148 "examples/spreadsheet/sheet.hero"
     h26_own26 = t50;
-#line 7569 "main.c"
+#line 7082 "main.c"
     h_0opt_2bbbbbdd_release(&t88);
 #line 148 "examples/spreadsheet/sheet.hero"
     h9_ret0 = t50;
@@ -7577,82 +7090,37 @@ bb15:
     goto bb13;
 #line 148 "examples/spreadsheet/sheet.hero"
 bb16:
-#line 144 "examples/spreadsheet/sheet.hero"
+#line 7094 "main.c"
     t66 = h9_ret0;
-#line 7583 "main.c"
     h_0opt_2bbbbbdd_retain(&t66);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7586 "main.c"
     hero_map_decref(h1_cells);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7589 "main.c"
     hero_array_decref(h2_xs0);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7592 "main.c"
     hero_str_decref(h4_line);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7595 "main.c"
     hero_str_decref(h5_head);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7598 "main.c"
     hero_str_decref(h8_name);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7601 "main.c"
     hero_map_decref(h10_own10);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7604 "main.c"
     hero_array_decref(h11_own11);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7607 "main.c"
     hero_str_decref(h12_own12);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7610 "main.c"
     h_sheet_Sheet_release(&h13_own13);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7613 "main.c"
     h_0opt_2bbbbbdd_release(&h14_own14);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7616 "main.c"
     hero_str_decref(h15_own15);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7619 "main.c"
     hero_str_decref(h16_own16);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7622 "main.c"
     hero_str_decref(h17_own17);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7625 "main.c"
     hero_str_decref(h18_own18);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7628 "main.c"
     hero_str_decref(h19_own19);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7631 "main.c"
     h_0opt_2bbbbbdd_release(&h20_own20);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7634 "main.c"
     hero_str_decref(h21_own21);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7637 "main.c"
     hero_str_decref(h22_own22);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7640 "main.c"
     hero_str_decref(h23_own23);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7643 "main.c"
     hero_str_decref(h24_own24);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7646 "main.c"
     hero_str_decref(h25_own25);
-#line 144 "examples/spreadsheet/sheet.hero"
-#line 7649 "main.c"
     h_0opt_2bbbbbdd_release(&h26_own26);
     return t66;
 }
 
 #line 156 "examples/spreadsheet/sheet.hero"
 HeroArrayHeader * h_sheet_names(h_sheet_Sheet h0_s) {
-#line 7656 "main.c"
+#line 7124 "main.c"
     HeroArrayHeader * h1_known = {0};
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
@@ -7746,7 +7214,7 @@ bb0:
     t54 = h11_own11;
 #line 157 "examples/spreadsheet/sheet.hero"
     h11_own11 = t3;
-#line 7750 "main.c"
+#line 7218 "main.c"
     hero_array_decref(t54);
 #line 157 "examples/spreadsheet/sheet.hero"
     t4 = hero_array_sort(t3);
@@ -7754,15 +7222,15 @@ bb0:
     t55 = h12_own12;
 #line 157 "examples/spreadsheet/sheet.hero"
     h12_own12 = t4;
-#line 7758 "main.c"
+#line 7226 "main.c"
     hero_array_decref(t55);
 #line 157 "examples/spreadsheet/sheet.hero"
     t56 = h1_known;
-#line 7762 "main.c"
+#line 7230 "main.c"
     hero_array_incref(t4);
 #line 157 "examples/spreadsheet/sheet.hero"
     h1_known = t4;
-#line 7766 "main.c"
+#line 7234 "main.c"
     hero_array_decref(t56);
 #line 158 "examples/spreadsheet/sheet.hero"
     t5 = hero_array_new(&hero_desc_str, 1);
@@ -7770,15 +7238,15 @@ bb0:
     t57 = h13_own13;
 #line 158 "examples/spreadsheet/sheet.hero"
     h13_own13 = t5;
-#line 7774 "main.c"
+#line 7242 "main.c"
     hero_array_decref(t57);
 #line 158 "examples/spreadsheet/sheet.hero"
     t58 = h2_out;
-#line 7778 "main.c"
+#line 7246 "main.c"
     hero_array_incref(t5);
 #line 158 "examples/spreadsheet/sheet.hero"
     h2_out = t5;
-#line 7782 "main.c"
+#line 7250 "main.c"
     hero_array_decref(t58);
 #line 160 "examples/spreadsheet/sheet.hero"
     t6 = INT64_C(1);
@@ -7796,15 +7264,15 @@ bb0:
     t59 = h14_own14;
 #line 160 "examples/spreadsheet/sheet.hero"
     h14_own14 = t11;
-#line 7800 "main.c"
+#line 7268 "main.c"
     hero_array_decref(t59);
 #line 160 "examples/spreadsheet/sheet.hero"
     t60 = h3_xs0;
-#line 7804 "main.c"
+#line 7272 "main.c"
     hero_array_incref(t11);
 #line 160 "examples/spreadsheet/sheet.hero"
     h3_xs0 = t11;
-#line 7808 "main.c"
+#line 7276 "main.c"
     hero_array_decref(t60);
 #line 160 "examples/spreadsheet/sheet.hero"
     t12 = INT64_C(0);
@@ -7834,7 +7302,6 @@ bb2:
     t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 160 "examples/spreadsheet/sheet.hero"
     h5_row = t19;
-#line 161 "examples/spreadsheet/sheet.hero"
     t20 = INT64_C(0);
 #line 161 "examples/spreadsheet/sheet.hero"
     t21 = INT64_C(26);
@@ -7844,15 +7311,15 @@ bb2:
     t61 = h15_own15;
 #line 161 "examples/spreadsheet/sheet.hero"
     h15_own15 = t22;
-#line 7848 "main.c"
+#line 7315 "main.c"
     hero_array_decref(t61);
 #line 161 "examples/spreadsheet/sheet.hero"
     t62 = h6_xs1;
-#line 7852 "main.c"
+#line 7319 "main.c"
     hero_array_incref(t22);
 #line 161 "examples/spreadsheet/sheet.hero"
     h6_xs1 = t22;
-#line 7856 "main.c"
+#line 7323 "main.c"
     hero_array_decref(t62);
 #line 161 "examples/spreadsheet/sheet.hero"
     t23 = INT64_C(0);
@@ -7876,46 +7343,20 @@ bb3:
 bb4:
 #line 167 "examples/spreadsheet/sheet.hero"
     t53 = h2_out;
-#line 7880 "main.c"
+#line 7347 "main.c"
     hero_array_incref(t53);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7883 "main.c"
     hero_array_decref(h1_known);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7886 "main.c"
     hero_array_decref(h2_out);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7889 "main.c"
     hero_array_decref(h3_xs0);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7892 "main.c"
     hero_array_decref(h6_xs1);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7895 "main.c"
     hero_str_decref(h9_name);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7898 "main.c"
     h_0opt_f87774a_release(&h10_f0);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7901 "main.c"
     hero_array_decref(h11_own11);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7904 "main.c"
     hero_array_decref(h12_own12);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7907 "main.c"
     hero_array_decref(h13_own13);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7910 "main.c"
     hero_array_decref(h14_own14);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7913 "main.c"
     hero_array_decref(h15_own15);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7916 "main.c"
     hero_str_decref(h16_own16);
-#line 167 "examples/spreadsheet/sheet.hero"
-#line 7919 "main.c"
     h_0opt_f87774a_release(&h17_own17);
     return t53;
 bb5:
@@ -7939,7 +7380,6 @@ bb6:
     t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t28 + 1))[t29]);
 #line 161 "examples/spreadsheet/sheet.hero"
     h8_column = t30;
-#line 162 "examples/spreadsheet/sheet.hero"
     t31 = h8_column;
 #line 162 "examples/spreadsheet/sheet.hero"
     t32 = h5_row;
@@ -7951,15 +7391,15 @@ bb6:
     t63 = h16_own16;
 #line 162 "examples/spreadsheet/sheet.hero"
     h16_own16 = t34;
-#line 7955 "main.c"
+#line 7395 "main.c"
     hero_str_decref(t63);
 #line 162 "examples/spreadsheet/sheet.hero"
     t64 = h9_name;
-#line 7959 "main.c"
+#line 7399 "main.c"
     hero_str_incref(t34);
 #line 162 "examples/spreadsheet/sheet.hero"
     h9_name = t34;
-#line 7963 "main.c"
+#line 7403 "main.c"
     hero_str_decref(t64);
 #line 164 "examples/spreadsheet/sheet.hero"
     t35 = h0_s;
@@ -7989,15 +7429,15 @@ bb6:
     t65 = h17_own17;
 #line 164 "examples/spreadsheet/sheet.hero"
     h17_own17 = t38;
-#line 7993 "main.c"
+#line 7433 "main.c"
     h_0opt_f87774a_release(&t65);
 #line 164 "examples/spreadsheet/sheet.hero"
     t66 = h10_f0;
-#line 7997 "main.c"
+#line 7437 "main.c"
     h_0opt_f87774a_retain(&t38);
 #line 164 "examples/spreadsheet/sheet.hero"
     h10_f0 = t38;
-#line 8001 "main.c"
+#line 7441 "main.c"
     h_0opt_f87774a_release(&t66);
 #line 164 "examples/spreadsheet/sheet.hero"
     t39 = h10_f0;
@@ -8043,12 +7483,12 @@ bb10:
 bb11:
 #line 165 "examples/spreadsheet/sheet.hero"
     goto bb9;
-#line 8047 "main.c"
+#line 7487 "main.c"
 }
 
 #line 169 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_highest_row(HeroArrayHeader * h0_known) {
-#line 8052 "main.c"
+#line 7492 "main.c"
     int64_t h1_best;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -8094,11 +7534,11 @@ bb0:
     t2 = h0_known;
 #line 172 "examples/spreadsheet/sheet.hero"
     t25 = h2_xs0;
-#line 8098 "main.c"
+#line 7538 "main.c"
     hero_array_incref(t2);
 #line 172 "examples/spreadsheet/sheet.hero"
     h2_xs0 = t2;
-#line 8102 "main.c"
+#line 7542 "main.c"
     hero_array_decref(t25);
 #line 172 "examples/spreadsheet/sheet.hero"
     t3 = INT64_C(0);
@@ -8128,11 +7568,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 172 "examples/spreadsheet/sheet.hero"
     t26 = h4_name;
-#line 8132 "main.c"
+#line 7572 "main.c"
     hero_str_incref(t10);
 #line 172 "examples/spreadsheet/sheet.hero"
     h4_name = t10;
-#line 8136 "main.c"
+#line 7576 "main.c"
     hero_str_decref(t26);
 #line 173 "examples/spreadsheet/sheet.hero"
     t11 = h4_name;
@@ -8142,15 +7582,15 @@ bb2:
     t27 = h7_own7;
 #line 173 "examples/spreadsheet/sheet.hero"
     h7_own7 = t12;
-#line 8146 "main.c"
+#line 7586 "main.c"
     h_0opt_605417d4_release(&t27);
 #line 173 "examples/spreadsheet/sheet.hero"
     t28 = h5_s0;
-#line 8150 "main.c"
+#line 7590 "main.c"
     h_0opt_605417d4_retain(&t12);
 #line 173 "examples/spreadsheet/sheet.hero"
     h5_s0 = t12;
-#line 8154 "main.c"
+#line 7594 "main.c"
     h_0opt_605417d4_release(&t28);
 #line 173 "examples/spreadsheet/sheet.hero"
     t13 = h5_s0;
@@ -8182,16 +7622,10 @@ bb3:
 bb4:
 #line 177 "examples/spreadsheet/sheet.hero"
     t24 = h1_best;
-#line 8186 "main.c"
+#line 7626 "main.c"
     hero_array_decref(h2_xs0);
-#line 177 "examples/spreadsheet/sheet.hero"
-#line 8189 "main.c"
     hero_str_decref(h4_name);
-#line 177 "examples/spreadsheet/sheet.hero"
-#line 8192 "main.c"
     h_0opt_605417d4_release(&h5_s0);
-#line 177 "examples/spreadsheet/sheet.hero"
-#line 8195 "main.c"
     h_0opt_605417d4_release(&h7_own7);
     return t24;
 bb5:
@@ -8219,12 +7653,12 @@ bb6:
 bb7:
 #line 174 "examples/spreadsheet/sheet.hero"
     goto bb3;
-#line 8223 "main.c"
+#line 7657 "main.c"
 }
 
 #line 179 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_larger(int64_t h0_a, int64_t h1_b) {
-#line 8228 "main.c"
+#line 7662 "main.c"
     int64_t h2_ret0;
     int64_t t1;
     int64_t t2;
@@ -8264,16 +7698,14 @@ bb3:
     goto bb1;
 #line 181 "examples/spreadsheet/sheet.hero"
 bb4:
-#line 181 "examples/spreadsheet/sheet.hero"
+#line 7702 "main.c"
     t6 = h2_ret0;
-#line 181 "examples/spreadsheet/sheet.hero"
     return t6;
-#line 8272 "main.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 8277 "main.c"
+#line 7709 "main.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -8297,15 +7729,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 8301 "main.c"
+#line 7733 "main.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 8305 "main.c"
+#line 7737 "main.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 8309 "main.c"
+#line 7741 "main.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -8315,7 +7747,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -8325,11 +7756,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -8341,46 +7770,41 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 8347 "main.c"
+#line 7775 "main.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 8350 "main.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 8353 "main.c"
     hero_array_decref(h4_own4);
     return t12;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 8360 "main.c"
+#line 7784 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 8366 "main.c"
+#line 7790 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 8372 "main.c"
+#line 7796 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 8378 "main.c"
+#line 7802 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 8384 "main.c"
+#line 7808 "main.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -8450,7 +7874,6 @@ bb0:
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
-#line 169 "<heroes library>"
     t2 = h0_path;
 #line 169 "<heroes library>"
     hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status");
@@ -8460,15 +7883,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 8464 "main.c"
+#line 7887 "main.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 8468 "main.c"
+#line 7891 "main.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 8472 "main.c"
+#line 7895 "main.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -8492,7 +7915,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 8496 "main.c"
+#line 7919 "main.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -8500,7 +7923,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 8504 "main.c"
+#line 7927 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -8526,10 +7949,8 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 8530 "main.c"
+#line 7953 "main.c"
     hero_str_incref(t12);
-#line 175 "<heroes library>"
-#line 8533 "main.c"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -8537,7 +7958,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 8541 "main.c"
+#line 7962 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -8571,13 +7992,9 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 8575 "main.c"
+#line 7996 "main.c"
     hero_str_decref(t43);
-#line 177 "<heroes library>"
-#line 8578 "main.c"
     hero_str_incref(t18);
-#line 177 "<heroes library>"
-#line 8581 "main.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -8585,7 +8002,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 8589 "main.c"
+#line 8006 "main.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -8609,13 +8026,9 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 8613 "main.c"
+#line 8030 "main.c"
     hero_str_decref(t45);
-#line 183 "<heroes library>"
-#line 8616 "main.c"
     hero_str_incref(t33);
-#line 183 "<heroes library>"
-#line 8619 "main.c"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -8623,7 +8036,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 8627 "main.c"
+#line 8040 "main.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -8643,7 +8056,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 8647 "main.c"
+#line 8060 "main.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -8653,13 +8066,9 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 8657 "main.c"
+#line 8070 "main.c"
     hero_str_decref(t48);
-#line 182 "<heroes library>"
-#line 8660 "main.c"
     hero_str_incref(t26);
-#line 182 "<heroes library>"
-#line 8663 "main.c"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -8667,7 +8076,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 8671 "main.c"
+#line 8080 "main.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -8679,42 +8088,19 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 171 "<heroes library>"
+#line 8092 "main.c"
     t38 = h3_ret0;
-#line 8685 "main.c"
     h_0opt_f87774a_retain(&t38);
-#line 171 "<heroes library>"
-#line 8688 "main.c"
     hero_str_decref(h2_text);
-#line 171 "<heroes library>"
-#line 8691 "main.c"
     hero_str_decref(h4_own4);
-#line 171 "<heroes library>"
-#line 8694 "main.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 171 "<heroes library>"
-#line 8697 "main.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 171 "<heroes library>"
-#line 8700 "main.c"
     hero_str_decref(h7_own7);
-#line 171 "<heroes library>"
-#line 8703 "main.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 171 "<heroes library>"
-#line 8706 "main.c"
     hero_str_decref(h9_own9);
-#line 171 "<heroes library>"
-#line 8709 "main.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 171 "<heroes library>"
-#line 8712 "main.c"
     hero_str_decref(h11_own11);
-#line 171 "<heroes library>"
-#line 8715 "main.c"
     hero_str_decref(h12_own12);
-#line 171 "<heroes library>"
-#line 8718 "main.c"
     h_0opt_f87774a_release(&h13_own13);
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
@@ -8723,7 +8109,7 @@ bb13:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 8727 "main.c"
+#line 8113 "main.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -8750,15 +8136,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 8754 "main.c"
+#line 8140 "main.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 8758 "main.c"
+#line 8144 "main.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 8762 "main.c"
+#line 8148 "main.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -8768,7 +8154,6 @@ bb0:
     goto bb1;
 #line 198 "<heroes library>"
 bb1:
-#line 199 "<heroes library>"
     t3 = h1_i;
 #line 199 "<heroes library>"
     t4 = hero_args_count();
@@ -8778,7 +8163,6 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 199 "<heroes library>"
 bb2:
-#line 200 "<heroes library>"
     t7 = h1_i;
 #line 200 "<heroes library>"
     t8 = hero_args_at(t7);
@@ -8786,11 +8170,10 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 8790 "main.c"
+#line 8174 "main.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
-#line 201 "<heroes library>"
     t10 = h1_i;
 #line 201 "<heroes library>"
     t11 = INT64_C(1);
@@ -8802,25 +8185,18 @@ bb2:
     goto bb1;
 #line 201 "<heroes library>"
 bb3:
-#line 202 "<heroes library>"
     t13 = h0_out;
-#line 8808 "main.c"
+#line 8190 "main.c"
     hero_array_incref(t13);
-#line 202 "<heroes library>"
-#line 8811 "main.c"
     hero_array_decref(h0_out);
-#line 202 "<heroes library>"
-#line 8814 "main.c"
     hero_array_decref(h2_own2);
-#line 202 "<heroes library>"
-#line 8817 "main.c"
     hero_str_decref(h3_own3);
     return t13;
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 8824 "main.c"
+#line 8200 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -8830,7 +8206,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 8834 "main.c"
+#line 8210 "main.c"
 }
 HERO_TU_LOCAL void h_formula_Parse_retain(const h_formula_Parse *v) {
     hero_str_incref(v->f_text);

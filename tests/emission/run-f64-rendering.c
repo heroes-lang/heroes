@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "f64rendering.c"
+#line 77 "f64rendering.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_f64rendering_main(void);
 
 #line 19 "tests/golden/run/f64-rendering.hero"
 void h_f64rendering_main(void) {
-#line 96 "f64rendering.c"
+#line 93 "f64rendering.c"
     HeroStr h0_own0 = {0};
     double t1;
     double t2;
@@ -119,13 +116,11 @@ bb0:
     hero_print_f64(t1);
 #line 20 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 21 "tests/golden/run/f64-rendering.hero"
     t2 = 0x1p+0;
 #line 21 "tests/golden/run/f64-rendering.hero"
     hero_print_f64(t2);
 #line 21 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 22 "tests/golden/run/f64-rendering.hero"
     t3 = 0x1.999999999999ap-4;
 #line 22 "tests/golden/run/f64-rendering.hero"
     t4 = 0x1.999999999999ap-3;
@@ -135,7 +130,6 @@ bb0:
     hero_print_f64(t5);
 #line 22 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 23 "tests/golden/run/f64-rendering.hero"
     t6 = 0x1.8p+1;
 #line 23 "tests/golden/run/f64-rendering.hero"
     t7 = 0x1.cp+2;
@@ -145,7 +139,6 @@ bb0:
     hero_print_f64(t8);
 #line 23 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 24 "tests/golden/run/f64-rendering.hero"
     t9 = 0x0p+0;
 #line 24 "tests/golden/run/f64-rendering.hero"
     t10 = 0x1p+0;
@@ -155,7 +148,6 @@ bb0:
     hero_print_f64(t11);
 #line 24 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 25 "tests/golden/run/f64-rendering.hero"
     t12 = 0x1p+1;
 #line 25 "tests/golden/run/f64-rendering.hero"
     t13 = 0x1p-1;
@@ -165,7 +157,6 @@ bb0:
     hero_print_f64(t14);
 #line 25 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 26 "tests/golden/run/f64-rendering.hero"
     t15 = 0x1p+0;
 #line 26 "tests/golden/run/f64-rendering.hero"
     t16 = hero_f64_to_str(t15);
@@ -173,13 +164,13 @@ bb0:
     t17 = h0_own0;
 #line 26 "tests/golden/run/f64-rendering.hero"
     h0_own0 = t16;
-#line 177 "f64rendering.c"
+#line 168 "f64rendering.c"
     hero_str_decref(t17);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_str(t16);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 183 "f64rendering.c"
+#line 174 "f64rendering.c"
     hero_str_decref(h0_own0);
     return;
 }

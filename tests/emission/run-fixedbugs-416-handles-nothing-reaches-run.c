@@ -69,17 +69,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "fixedbugs416handlesnothingreachesrun.c"
+#line 80 "fixedbugs416handlesnothingreachesrun.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs416handlesnothingreachesrun_ByTag_eq(struct only_tag * const *a, struct only_tag * const *b);
@@ -99,7 +96,7 @@ void h_fixedbugs416handlesnothingreachesrun_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
 void h_fixedbugs416handlesnothingreachesrun_main(void) {
-#line 103 "fixedbugs416handlesnothingreachesrun.c"
+#line 100 "fixedbugs416handlesnothingreachesrun.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -111,7 +108,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
     return;
-#line 115 "fixedbugs416handlesnothingreachesrun.c"
+#line 112 "fixedbugs416handlesnothingreachesrun.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs416handlesnothingreachesrun_ByTag_eq(struct only_tag * const *a, struct only_tag * const *b) {
     return hero_handle_eq(*a, *b);

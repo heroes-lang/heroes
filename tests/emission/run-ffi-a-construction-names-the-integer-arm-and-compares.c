@@ -14,11 +14,9 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)->kind) == sizeof(int32_t) && (_Generic(((SA *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA kind");
-#line 14 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(((SA *)0)->i) == 1 && sizeof(((SA *)0)->i) == sizeof(int32_t) && (_Generic(((SA *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA i");
-#line 15 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x) == sizeof(int32_t) && (_Generic(((SA *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA x");
-#line 22 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 20 "ffiaconstructionnamestheintegerarmandcompares.c"
 
 #line 12 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13, "heroes-ffi-union SA kind i x");
@@ -28,7 +26,7 @@ _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->kind
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->i) == sizeof(SA), "heroes-ffi-union-narrow SA i");
 #line 12 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->x) == sizeof(SA), "heroes-ffi-union-narrow SA x");
-#line 32 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 30 "ffiaconstructionnamestheintegerarmandcompares.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -93,21 +91,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 17 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamestheintegerarmandcompares_sa_f(SA a0) { (void)(sa_f)(a0); }
-#line 18 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamestheintegerarmandcompares_sa_x(SA a0) { (void)(sa_x)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 105 "ffiaconstructionnamestheintegerarmandcompares.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b);
@@ -125,7 +119,7 @@ void h_ffiaconstructionnamestheintegerarmandcompares_main(void);
 
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void) {
-#line 129 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 123 "ffiaconstructionnamestheintegerarmandcompares.c"
     SA h0_m;
     SA h1_b;
     SA h2_p;
@@ -152,7 +146,6 @@ bb0:
     t1 = make_sa();
 #line 21 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h0_m = t1;
-#line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t2 = h0_m;
 #line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t3 = t2.i;
@@ -160,7 +153,6 @@ bb0:
     hero_print_int(t3);
 #line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
-#line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t4 = INT64_C(2);
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t5 = INT64_C(1069547520);
@@ -170,7 +162,6 @@ bb0:
     t7 = (SA){.kind = t4, .i = t5, .x = t6};
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h1_b = t7;
-#line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t8 = h1_b;
 #line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t9 = sa_f(t8);
@@ -178,7 +169,6 @@ bb0:
     hero_print_f32(t9);
 #line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
-#line 25 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t10 = h1_b;
 #line 25 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t11 = sa_x(t10);
@@ -186,15 +176,12 @@ bb0:
     hero_print_int(t11);
 #line 25 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
-#line 26 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t12 = make_sa();
 #line 26 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h2_p = t12;
-#line 27 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t13 = make_sa();
 #line 27 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h3_q = t13;
-#line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t14 = h2_p;
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t15 = h3_q;
@@ -206,7 +193,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     return;
-#line 210 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 197 "ffiaconstructionnamestheintegerarmandcompares.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

@@ -73,17 +73,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "aliteralarmtakesthewidthitmatches.c"
+#line 84 "aliteralarmtakesthewidthitmatches.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -105,7 +102,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 11 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 HeroStr h_aliteralarmtakesthewidthitmatches_byte_class(uint8_t h0_b) {
-#line 109 "aliteralarmtakesthewidthitmatches.c"
+#line 106 "aliteralarmtakesthewidthitmatches.c"
     uint8_t h1_s0;
     HeroStr h2_r0 = {0};
     uint8_t t1;
@@ -150,7 +147,6 @@ bb0:
     h1_s0 = t1;
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t2 = h1_s0;
-#line 13 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t3 = UINT64_C(97);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t4 = t2 == t3;
@@ -160,10 +156,8 @@ bb0:
 bb1:
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t30 = h2_r0;
-#line 164 "aliteralarmtakesthewidthitmatches.c"
+#line 160 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t30);
-#line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 167 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(h2_r0);
     return t30;
 bb2:
@@ -171,17 +165,16 @@ bb2:
     t26 = HERO_STR_LIT(hero_str_26510ce5);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t31 = h2_r0;
-#line 175 "aliteralarmtakesthewidthitmatches.c"
+#line 169 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t26);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t26;
-#line 179 "aliteralarmtakesthewidthitmatches.c"
+#line 173 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t31);
     goto bb1;
 bb3:
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t5 = h1_s0;
-#line 13 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t6 = UINT64_C(101);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t7 = t5 == t6;
@@ -191,7 +184,6 @@ bb3:
 bb4:
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t8 = h1_s0;
-#line 13 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t9 = UINT64_C(105);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t10 = t8 == t9;
@@ -201,7 +193,6 @@ bb4:
 bb5:
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t11 = h1_s0;
-#line 13 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t12 = UINT64_C(111);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t13 = t11 == t12;
@@ -211,7 +202,6 @@ bb5:
 bb6:
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t14 = h1_s0;
-#line 13 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t15 = UINT64_C(117);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t16 = t14 == t15;
@@ -233,11 +223,11 @@ bb8:
     t27 = HERO_STR_LIT(hero_str_71c473b9);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t32 = h2_r0;
-#line 237 "aliteralarmtakesthewidthitmatches.c"
+#line 227 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t27);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t27;
-#line 241 "aliteralarmtakesthewidthitmatches.c"
+#line 231 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t32);
     goto bb1;
 bb9:
@@ -255,11 +245,11 @@ bb10:
     t28 = HERO_STR_LIT(hero_str_da302c5);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t33 = h2_r0;
-#line 259 "aliteralarmtakesthewidthitmatches.c"
+#line 249 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t28);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t28;
-#line 263 "aliteralarmtakesthewidthitmatches.c"
+#line 253 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t33);
     goto bb1;
 bb11:
@@ -281,18 +271,18 @@ bb13:
     t29 = HERO_STR_LIT(hero_str_2c18a733);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t34 = h2_r0;
-#line 285 "aliteralarmtakesthewidthitmatches.c"
+#line 275 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t29);
 #line 12 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t29;
-#line 289 "aliteralarmtakesthewidthitmatches.c"
+#line 279 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t34);
     goto bb1;
 }
 
 #line 18 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_narrow(int32_t h0_n) {
-#line 296 "aliteralarmtakesthewidthitmatches.c"
+#line 286 "aliteralarmtakesthewidthitmatches.c"
     int32_t h1_s0;
     int64_t h2_r0;
     int32_t t1;
@@ -314,7 +304,6 @@ bb0:
     h1_s0 = t1;
 #line 19 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t2 = h1_s0;
-#line 20 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t3 = INT64_C(-2147483648);
 #line 19 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t4 = t2 == t3;
@@ -328,7 +317,6 @@ bb1:
     return t11;
 #line 19 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb2:
-#line 20 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t8 = INT64_C(1);
 #line 19 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t8;
@@ -364,12 +352,12 @@ bb6:
     h2_r0 = t10;
 #line 19 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     goto bb1;
-#line 368 "aliteralarmtakesthewidthitmatches.c"
+#line 356 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 24 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_wide(uint64_t h0_n) {
-#line 373 "aliteralarmtakesthewidthitmatches.c"
+#line 361 "aliteralarmtakesthewidthitmatches.c"
     uint64_t h1_s0;
     int64_t h2_r0;
     uint64_t t1;
@@ -391,7 +379,6 @@ bb0:
     h1_s0 = t1;
 #line 25 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t2 = h1_s0;
-#line 26 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t3 = UINT64_C(18446744073709551615);
 #line 25 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t4 = t2 == t3;
@@ -405,7 +392,6 @@ bb1:
     return t11;
 #line 25 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb2:
-#line 26 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t8 = INT64_C(1);
 #line 25 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t8;
@@ -441,12 +427,12 @@ bb6:
     h2_r0 = t10;
 #line 25 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     goto bb1;
-#line 445 "aliteralarmtakesthewidthitmatches.c"
+#line 431 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 30 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_signed_edge(int64_t h0_n) {
-#line 450 "aliteralarmtakesthewidthitmatches.c"
+#line 436 "aliteralarmtakesthewidthitmatches.c"
     int64_t h1_s0;
     int64_t h2_r0;
     int64_t t1;
@@ -468,7 +454,6 @@ bb0:
     h1_s0 = t1;
 #line 31 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t2 = h1_s0;
-#line 32 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t3 = INT64_MIN;
 #line 31 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t4 = t2 == t3;
@@ -482,7 +467,6 @@ bb1:
     return t11;
 #line 31 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb2:
-#line 32 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t8 = INT64_C(1);
 #line 31 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t8;
@@ -518,12 +502,12 @@ bb6:
     h2_r0 = t10;
 #line 31 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     goto bb1;
-#line 522 "aliteralarmtakesthewidthitmatches.c"
+#line 506 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 36 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_small(int8_t h0_n) {
-#line 527 "aliteralarmtakesthewidthitmatches.c"
+#line 511 "aliteralarmtakesthewidthitmatches.c"
     int8_t h1_s0;
     int64_t h2_r0;
     int8_t t1;
@@ -549,7 +533,6 @@ bb0:
     h1_s0 = t1;
 #line 37 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t2 = h1_s0;
-#line 38 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t3 = INT64_C(-128);
 #line 37 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t4 = t2 == t3;
@@ -563,7 +546,6 @@ bb1:
     return t15;
 #line 37 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb2:
-#line 38 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t11 = INT64_C(1);
 #line 37 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_r0 = t11;
@@ -617,12 +599,12 @@ bb8:
     h2_r0 = t14;
 #line 37 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     goto bb1;
-#line 621 "aliteralarmtakesthewidthitmatches.c"
+#line 603 "aliteralarmtakesthewidthitmatches.c"
 }
 
 #line 43 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 void h_aliteralarmtakesthewidthitmatches_main(void) {
-#line 626 "aliteralarmtakesthewidthitmatches.c"
+#line 608 "aliteralarmtakesthewidthitmatches.c"
     HeroStr h0_text = {0};
     HeroArrayHeader * h1_classes = {0};
     HeroArrayHeader * h2_xs0 = {0};
@@ -704,11 +686,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_6548112e);
 #line 44 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t58 = h0_text;
-#line 708 "aliteralarmtakesthewidthitmatches.c"
+#line 690 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t1);
 #line 44 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h0_text = t1;
-#line 712 "aliteralarmtakesthewidthitmatches.c"
+#line 694 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t58);
 #line 45 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
@@ -716,15 +698,15 @@ bb0:
     t59 = h5_own5;
 #line 45 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h5_own5 = t2;
-#line 720 "aliteralarmtakesthewidthitmatches.c"
+#line 702 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(t59);
 #line 45 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t60 = h1_classes;
-#line 724 "aliteralarmtakesthewidthitmatches.c"
+#line 706 "aliteralarmtakesthewidthitmatches.c"
     hero_array_incref(t2);
 #line 45 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h1_classes = t2;
-#line 728 "aliteralarmtakesthewidthitmatches.c"
+#line 710 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(t60);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t3 = INT64_C(0);
@@ -738,15 +720,15 @@ bb0:
     t61 = h6_own6;
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h6_own6 = t6;
-#line 742 "aliteralarmtakesthewidthitmatches.c"
+#line 724 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(t61);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t62 = h2_xs0;
-#line 746 "aliteralarmtakesthewidthitmatches.c"
+#line 728 "aliteralarmtakesthewidthitmatches.c"
     hero_array_incref(t6);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h2_xs0 = t6;
-#line 750 "aliteralarmtakesthewidthitmatches.c"
+#line 732 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(t62);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t7 = INT64_C(0);
@@ -776,7 +758,6 @@ bb2:
     t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]);
 #line 47 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h4_i = t14;
-#line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t16 = h0_text;
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t17 = h4_i;
@@ -788,7 +769,7 @@ bb2:
     t63 = h7_own7;
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h7_own7 = t19;
-#line 792 "aliteralarmtakesthewidthitmatches.c"
+#line 773 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t63);
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_array_push_owned(&h1_classes, &t19);
@@ -818,13 +799,12 @@ bb4:
     t64 = h8_own8;
 #line 50 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h8_own8 = t26;
-#line 822 "aliteralarmtakesthewidthitmatches.c"
+#line 803 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t64);
 #line 50 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_str(t26);
 #line 50 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
-#line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t27 = UINT64_C(255);
 #line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t28 = h_aliteralarmtakesthewidthitmatches_byte_class(t27);
@@ -832,7 +812,7 @@ bb4:
     t65 = h9_own9;
 #line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h9_own9 = t28;
-#line 836 "aliteralarmtakesthewidthitmatches.c"
+#line 816 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t65);
 #line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t29 = HERO_STR_LIT(hero_str_20);
@@ -844,7 +824,7 @@ bb4:
     t66 = h10_own10;
 #line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     h10_own10 = t31;
-#line 848 "aliteralarmtakesthewidthitmatches.c"
+#line 828 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(t66);
 #line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_str(t28);
@@ -854,7 +834,6 @@ bb4:
     hero_print_str(t31);
 #line 51 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
-#line 52 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t32 = INT64_C(-2147483648);
 #line 52 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t33 = h_aliteralarmtakesthewidthitmatches_narrow(t32);
@@ -874,7 +853,6 @@ bb4:
     hero_print_int(t37);
 #line 52 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
-#line 53 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t38 = UINT64_C(18446744073709551615);
 #line 53 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t39 = h_aliteralarmtakesthewidthitmatches_wide(t38);
@@ -894,7 +872,6 @@ bb4:
     hero_print_int(t43);
 #line 53 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
-#line 54 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t44 = INT64_MIN;
 #line 54 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t45 = h_aliteralarmtakesthewidthitmatches_signed_edge(t44);
@@ -914,7 +891,6 @@ bb4:
     hero_print_int(t49);
 #line 54 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t50 = INT64_C(-128);
 #line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t51 = h_aliteralarmtakesthewidthitmatches_small(t50);
@@ -940,38 +916,22 @@ bb4:
     hero_print_int(t57);
 #line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
-#line 944 "aliteralarmtakesthewidthitmatches.c"
+#line 920 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(h0_text);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 947 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(h1_classes);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 950 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(h2_xs0);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 953 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(h5_own5);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 956 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(h6_own6);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 959 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(h7_own7);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 962 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(h8_own8);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 965 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(h9_own9);
-#line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-#line 968 "aliteralarmtakesthewidthitmatches.c"
     hero_str_decref(h10_own10);
     return;
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 975 "aliteralarmtakesthewidthitmatches.c"
+#line 935 "aliteralarmtakesthewidthitmatches.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -995,15 +955,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 999 "aliteralarmtakesthewidthitmatches.c"
+#line 959 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 1003 "aliteralarmtakesthewidthitmatches.c"
+#line 963 "aliteralarmtakesthewidthitmatches.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 1007 "aliteralarmtakesthewidthitmatches.c"
+#line 967 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -1013,7 +973,6 @@ bb0:
     goto bb1;
 #line 28 "<heroes library>"
 bb1:
-#line 29 "<heroes library>"
     t3 = h3_i;
 #line 29 "<heroes library>"
     t4 = h1_to;
@@ -1023,11 +982,9 @@ bb1:
     if (t5) goto bb2; else goto bb3;
 #line 29 "<heroes library>"
 bb2:
-#line 30 "<heroes library>"
     t7 = h3_i;
 #line 30 "<heroes library>"
     hero_array_push_owned(&h2_out, &t7);
-#line 31 "<heroes library>"
     t9 = h3_i;
 #line 31 "<heroes library>"
     t10 = INT64_C(1);
@@ -1039,15 +996,10 @@ bb2:
     goto bb1;
 #line 31 "<heroes library>"
 bb3:
-#line 32 "<heroes library>"
     t12 = h2_out;
-#line 1045 "aliteralarmtakesthewidthitmatches.c"
+#line 1001 "aliteralarmtakesthewidthitmatches.c"
     hero_array_incref(t12);
-#line 32 "<heroes library>"
-#line 1048 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(h2_out);
-#line 32 "<heroes library>"
-#line 1051 "aliteralarmtakesthewidthitmatches.c"
     hero_array_decref(h4_own4);
     return t12;
 }

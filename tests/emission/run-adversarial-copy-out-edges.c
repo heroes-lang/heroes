@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "adversarialcopyoutedges.c"
+#line 77 "adversarialcopyoutedges.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,7 +90,7 @@ void h_adversarialcopyoutedges_main(void);
 
 #line 12 "tests/golden/run/adversarial-copy-out-edges.hero"
 bool h_adversarialcopyoutedges_walk(int64_t *ph0_n, int64_t *ph1_steps) {
-#line 97 "adversarialcopyoutedges.c"
+#line 94 "adversarialcopyoutedges.c"
     bool h2_ret0;
     int64_t t1;
     int64_t t2;
@@ -124,7 +121,6 @@ bb1:
     if (t3) goto bb2; else goto bb3;
 #line 13 "tests/golden/run/adversarial-copy-out-edges.hero"
 bb2:
-#line 14 "tests/golden/run/adversarial-copy-out-edges.hero"
     t4 = (*ph1_steps);
 #line 14 "tests/golden/run/adversarial-copy-out-edges.hero"
     t5 = INT64_C(1);
@@ -132,7 +128,6 @@ bb2:
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 14 "tests/golden/run/adversarial-copy-out-edges.hero"
     (*ph1_steps) = t6;
-#line 15 "tests/golden/run/adversarial-copy-out-edges.hero"
     t7 = (*ph0_n);
 #line 15 "tests/golden/run/adversarial-copy-out-edges.hero"
     t8 = INT64_C(1);
@@ -174,16 +169,14 @@ bb6:
     goto bb4;
 #line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
 bb7:
-#line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
+#line 173 "adversarialcopyoutedges.c"
     t15 = h2_ret0;
-#line 18 "tests/golden/run/adversarial-copy-out-edges.hero"
     return t15;
-#line 182 "adversarialcopyoutedges.c"
 }
 
 #line 22 "tests/golden/run/adversarial-copy-out-edges.hero"
 void h_adversarialcopyoutedges_main(void) {
-#line 187 "adversarialcopyoutedges.c"
+#line 180 "adversarialcopyoutedges.c"
     int64_t h0_n;
     int64_t h1_steps;
     bool h2_hit;
@@ -206,53 +199,43 @@ bb0:
     t1 = INT64_C(5);
 #line 23 "tests/golden/run/adversarial-copy-out-edges.hero"
     h0_n = t1;
-#line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
     t2 = INT64_C(0);
 #line 24 "tests/golden/run/adversarial-copy-out-edges.hero"
     h1_steps = t2;
-#line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
     t3 = h_adversarialcopyoutedges_walk(&h0_n, &h1_steps);
 #line 25 "tests/golden/run/adversarial-copy-out-edges.hero"
     h2_hit = t3;
-#line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
     t4 = h2_hit;
 #line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_bool(t4);
 #line 26 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
     t5 = h0_n;
 #line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t5);
 #line 27 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
     t6 = h1_steps;
 #line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t6);
 #line 28 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
     t7 = INT64_C(0);
 #line 29 "tests/golden/run/adversarial-copy-out-edges.hero"
     h3_m = t7;
-#line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
     t8 = INT64_C(0);
 #line 30 "tests/golden/run/adversarial-copy-out-edges.hero"
     h4_taken = t8;
-#line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
     t9 = h_adversarialcopyoutedges_walk(&h3_m, &h4_taken);
 #line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_bool(t9);
 #line 31 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 32 "tests/golden/run/adversarial-copy-out-edges.hero"
     t10 = h3_m;
 #line 32 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t10);
 #line 32 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_end();
-#line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     t11 = h4_taken;
 #line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     hero_print_int(t11);
@@ -260,7 +243,7 @@ bb0:
     hero_print_end();
 #line 33 "tests/golden/run/adversarial-copy-out-edges.hero"
     return;
-#line 264 "adversarialcopyoutedges.c"
+#line 247 "adversarialcopyoutedges.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

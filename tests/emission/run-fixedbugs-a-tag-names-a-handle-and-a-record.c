@@ -13,13 +13,12 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 30 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(((struct addrinfo *)0)->ai_family) == 1 && sizeof(((struct addrinfo *)0)->ai_family) == sizeof(int32_t) && (_Generic(((struct addrinfo *)0)->ai_family, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Hints ai_family");
-#line 31 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(((struct addrinfo *)0)->ai_socktype) == 1 && sizeof(((struct addrinfo *)0)->ai_socktype) == sizeof(int32_t) && (_Generic(((struct addrinfo *)0)->ai_socktype, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Hints ai_socktype");
-#line 19 "fixedbugsatagnamesahandleandarecord.c"
+#line 18 "fixedbugsatagnamesahandleandarecord.c"
 
 #line 29 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(*(struct addrinfo *)0) != 13, "heroes-ffi-union Hints ai_family ai_socktype");
-#line 23 "fixedbugsatagnamesahandleandarecord.c"
+#line 22 "fixedbugsatagnamesahandleandarecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -84,21 +83,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 32 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagnamesahandleandarecord_getaddrinfo(const char * a0, void * a1, struct addrinfo * a2, struct addrinfo * * a3) { (void)(getaddrinfo)(a0, a1, a2, a3); }
-#line 33 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagnamesahandleandarecord_freeaddrinfo(struct addrinfo * a0) { (void)(freeaddrinfo)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugsatagnamesahandleandarecord.c"
+#line 97 "fixedbugsatagnamesahandleandarecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -118,7 +113,7 @@ void h_fixedbugsatagnamesahandleandarecord_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 void h_fixedbugsatagnamesahandleandarecord_main(void) {
-#line 122 "fixedbugsatagnamesahandleandarecord.c"
+#line 117 "fixedbugsatagnamesahandleandarecord.c"
     struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h");
 #define h0_h (*hero_lend_h0_h)
     struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r");
@@ -144,11 +139,9 @@ bb0:
     t3 = (struct addrinfo){.ai_family = t1, .ai_socktype = t2};
 #line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     h0_h = t3;
-#line 37 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t4 = ((void *)0);
 #line 37 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     h1_r = t4;
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t5 = HERO_STR_LIT(hero_str_69fd5e8e);
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t6 = hero_str_lend(t5);
@@ -164,13 +157,11 @@ bb0:
     hero_handle_acquired(h1_r, "freeaddrinfo");
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     h2_rc = t8;
-#line 39 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t9 = h2_rc;
 #line 39 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_print_int(t9);
 #line 39 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_print_end();
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t10 = h1_r;
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     {
@@ -190,7 +181,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_h);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 194 "fixedbugsatagnamesahandleandarecord.c"
+#line 185 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

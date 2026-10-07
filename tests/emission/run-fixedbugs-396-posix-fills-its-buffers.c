@@ -14,15 +14,13 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 
 #line 24 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->fd) == 1 && sizeof(((struct pollfd *)0)->fd) == sizeof(int32_t) && (_Generic(((struct pollfd *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd fd");
-#line 25 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->events) == 1 && sizeof(((struct pollfd *)0)->events) == sizeof(int16_t) && (_Generic(((struct pollfd *)0)->events, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd events");
-#line 26 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->revents) == 1 && sizeof(((struct pollfd *)0)->revents) == sizeof(int16_t) && (_Generic(((struct pollfd *)0)->revents, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd revents");
-#line 22 "fixedbugs396posixfillsitsbuffers.c"
+#line 20 "fixedbugs396posixfillsitsbuffers.c"
 
 #line 23 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(*(struct pollfd *)0) != 13, "heroes-ffi-union PollFd fd events revents");
-#line 26 "fixedbugs396posixfillsitsbuffers.c"
+#line 24 "fixedbugs396posixfillsitsbuffers.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -104,29 +102,22 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 14 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_pipe(int32_t * a0) { (void)(pipe)((void *)a0); }
-#line 15 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_write(int32_t a0, const char * a1, uint64_t a2) { (void)(write)(a0, a1, a2); }
-#line 16 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_read(int32_t a0, uint8_t * a1, uint64_t a2) { (void)(read)(a0, (void *)a1, a2); }
-#line 17 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_close(int32_t a0) { (void)(close)(a0); }
-#line 18 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_gethostname(int8_t * a0, uint64_t a1) { (void)(gethostname)((void *)a0, a1); }
 #line 27 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_poll(struct pollfd * a0, uint32_t a1, int32_t a2) { (void)(poll)((void *)a0, a1, a2); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugs396posixfillsitsbuffers.c"
+#line 121 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396posixfillsitsbuffers_PollFd_eq(const struct pollfd *a, const struct pollfd *b);
@@ -167,19 +158,19 @@ void h_fixedbugs396posixfillsitsbuffers_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
-#line 171 "fixedbugs396posixfillsitsbuffers.c"
+#line 162 "fixedbugs396posixfillsitsbuffers.c"
     return POLLIN;
 }
 
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
-#line 177 "fixedbugs396posixfillsitsbuffers.c"
+#line 168 "fixedbugs396posixfillsitsbuffers.c"
     return POLLOUT;
 }
 
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 void h_fixedbugs396posixfillsitsbuffers_main(void) {
-#line 183 "fixedbugs396posixfillsitsbuffers.c"
+#line 174 "fixedbugs396posixfillsitsbuffers.c"
     HeroArrayHeader * h0_fds = {0};
     h_0opt_e1ec52d h1_f0 = {0};
     h_0opt_e1ec52d h2_f1 = {0};
@@ -351,15 +342,15 @@ bb0:
     t132 = h8_own8;
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h8_own8 = t1;
-#line 355 "fixedbugs396posixfillsitsbuffers.c"
+#line 346 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t132);
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t133 = h0_fds;
-#line 359 "fixedbugs396posixfillsitsbuffers.c"
+#line 350 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t1);
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h0_fds = t1;
-#line 363 "fixedbugs396posixfillsitsbuffers.c"
+#line 354 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t133);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     {
@@ -409,7 +400,6 @@ bb0:
     hero_print_bool(t13);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t14 = h0_fds;
 #line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t15 = INT64_C(1);
@@ -449,15 +439,15 @@ bb0:
     t134 = h9_own9;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h9_own9 = t25;
-#line 453 "fixedbugs396posixfillsitsbuffers.c"
+#line 443 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t134);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t135 = h1_f0;
-#line 457 "fixedbugs396posixfillsitsbuffers.c"
+#line 447 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t25);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h1_f0 = t25;
-#line 461 "fixedbugs396posixfillsitsbuffers.c"
+#line 451 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t135);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t26 = h1_f0;
@@ -479,7 +469,6 @@ bb1:
     t34 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t35 = (struct pollfd){.fd = t23, .events = t33, .revents = t34};
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t36 = h0_fds;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t37 = INT64_C(1);
@@ -501,15 +490,15 @@ bb1:
     t136 = h10_own10;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h10_own10 = t40;
-#line 505 "fixedbugs396posixfillsitsbuffers.c"
+#line 494 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t136);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t137 = h2_f1;
-#line 509 "fixedbugs396posixfillsitsbuffers.c"
+#line 498 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t40);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h2_f1 = t40;
-#line 513 "fixedbugs396posixfillsitsbuffers.c"
+#line 502 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t137);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t41 = h2_f1;
@@ -527,7 +516,7 @@ bb2:
     t30 = h1_f0;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t31 = t30.as.err;
-#line 531 "fixedbugs396posixfillsitsbuffers.c"
+#line 520 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
@@ -549,15 +538,15 @@ bb3:
     t138 = h11_own11;
 #line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h11_own11 = t51;
-#line 553 "fixedbugs396posixfillsitsbuffers.c"
+#line 542 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t138);
 #line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t139 = h3_watched;
-#line 557 "fixedbugs396posixfillsitsbuffers.c"
+#line 546 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t51);
 #line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h3_watched = t51;
-#line 561 "fixedbugs396posixfillsitsbuffers.c"
+#line 550 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t139);
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t52 = UINT64_C(2);
@@ -577,15 +566,11 @@ bb3:
     h3_watched = hero_lend_give(h3_watched, hero_lend_b23_0, hero_lend_e23_0);
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     }
-#line 39 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t55 = HERO_STR_LIT(hero_str_20);
-#line 40 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t56 = h3_watched;
 #line 40 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t57 = ((void)(t56 == NULL ? ((void)hero_array_len(t56), hero_unreachable()) : (void)0), t56->len);
-#line 41 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t58 = HERO_STR_LIT(hero_str_20);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t59 = h3_watched;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t60 = INT64_C(0);
@@ -609,15 +594,15 @@ bb3:
     t140 = h12_own12;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h12_own12 = t64;
-#line 613 "fixedbugs396posixfillsitsbuffers.c"
+#line 598 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t140);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t141 = h4_f2;
-#line 617 "fixedbugs396posixfillsitsbuffers.c"
+#line 602 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t64);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h4_f2 = t64;
-#line 621 "fixedbugs396posixfillsitsbuffers.c"
+#line 606 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t141);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t65 = h4_f2;
@@ -635,7 +620,7 @@ bb4:
     t45 = h2_f1;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t46 = t45.as.err;
-#line 639 "fixedbugs396posixfillsitsbuffers.c"
+#line 624 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
@@ -645,9 +630,7 @@ bb5:
     t72 = t71.as.ok;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t73 = t62 == t72;
-#line 43 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t74 = HERO_STR_LIT(hero_str_20);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t75 = h3_watched;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t76 = INT64_C(1);
@@ -671,15 +654,15 @@ bb5:
     t142 = h13_own13;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h13_own13 = t80;
-#line 675 "fixedbugs396posixfillsitsbuffers.c"
+#line 658 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t142);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t143 = h5_f3;
-#line 679 "fixedbugs396posixfillsitsbuffers.c"
+#line 662 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t80);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h5_f3 = t80;
-#line 683 "fixedbugs396posixfillsitsbuffers.c"
+#line 666 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t143);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t81 = h5_f3;
@@ -697,7 +680,7 @@ bb6:
     t69 = h4_f2;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t70 = t69.as.err;
-#line 701 "fixedbugs396posixfillsitsbuffers.c"
+#line 684 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
@@ -729,15 +712,15 @@ bb7:
     t144 = h14_own14;
 #line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h14_own14 = t90;
-#line 733 "fixedbugs396posixfillsitsbuffers.c"
+#line 716 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t144);
 #line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t145 = h6_buf;
-#line 737 "fixedbugs396posixfillsitsbuffers.c"
+#line 720 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t90);
 #line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h6_buf = t90;
-#line 741 "fixedbugs396posixfillsitsbuffers.c"
+#line 724 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t145);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t91 = h0_fds;
@@ -811,7 +794,6 @@ bb7:
     hero_print_int(t110);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t111 = h0_fds;
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t112 = INT64_C(0);
@@ -837,21 +819,20 @@ bb7:
     hero_print_int(t119);
 #line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t120 = hero_array_new(&hero_desc_i8, 1);
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t146 = h15_own15;
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h15_own15 = t120;
-#line 847 "fixedbugs396posixfillsitsbuffers.c"
+#line 828 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t146);
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t147 = h7_name;
-#line 851 "fixedbugs396posixfillsitsbuffers.c"
+#line 832 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t120);
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h7_name = t120;
-#line 855 "fixedbugs396posixfillsitsbuffers.c"
+#line 836 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t147);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t121 = UINT64_C(256);
@@ -899,52 +880,22 @@ bb7:
     hero_print_bool(t131);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 903 "fixedbugs396posixfillsitsbuffers.c"
+#line 884 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h0_fds);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 906 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h1_f0);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 909 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h2_f1);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 912 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h3_watched);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 915 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h4_f2);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 918 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h5_f3);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 921 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h6_buf);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 924 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h7_name);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 927 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h8_own8);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 930 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h9_own9);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 933 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h10_own10);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 936 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h11_own11);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 939 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h12_own12);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 942 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&h13_own13);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 945 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h14_own14);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-#line 948 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(h15_own15);
     return;
 bb8:
@@ -952,7 +903,7 @@ bb8:
     t85 = h5_f3;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t86 = t85.as.err;
-#line 956 "fixedbugs396posixfillsitsbuffers.c"
+#line 907 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }

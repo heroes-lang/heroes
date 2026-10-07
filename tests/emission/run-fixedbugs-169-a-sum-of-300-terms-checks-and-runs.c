@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs169asumof300termschecksandruns.c"
+#line 77 "fixedbugs169asumof300termschecksandruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_fixedbugs169asumof300termschecksandruns_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-169-a-sum-of-300-terms-checks-and-runs.hero"
 void h_fixedbugs169asumof300termschecksandruns_main(void) {
-#line 96 "fixedbugs169asumof300termschecksandruns.c"
+#line 93 "fixedbugs169asumof300termschecksandruns.c"
     int64_t h0_total;
     int64_t t1;
     int64_t t2;
@@ -1896,7 +1893,6 @@ bb0:
     if (__builtin_add_overflow(t597, t598, &t599)) hero_panic_overflow();
 #line 15 "tests/golden/run/fixedbugs-169-a-sum-of-300-terms-checks-and-runs.hero"
     h0_total = t599;
-#line 16 "tests/golden/run/fixedbugs-169-a-sum-of-300-terms-checks-and-runs.hero"
     t600 = h0_total;
 #line 16 "tests/golden/run/fixedbugs-169-a-sum-of-300-terms-checks-and-runs.hero"
     hero_print_int(t600);
@@ -1904,7 +1900,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-169-a-sum-of-300-terms-checks-and-runs.hero"
     return;
-#line 1908 "fixedbugs169asumof300termschecksandruns.c"
+#line 1904 "fixedbugs169asumof300termschecksandruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

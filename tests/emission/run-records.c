@@ -76,17 +76,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "records.c"
+#line 87 "records.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b);
@@ -108,7 +105,7 @@ void h_records_main(void);
 
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
-#line 112 "records.c"
+#line 109 "records.c"
     int64_t h2_dx;
     int64_t h3_dy;
     h_records_Point t1;
@@ -142,7 +139,6 @@ bb0:
     if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow();
 #line 19 "tests/golden/run/records.hero"
     h2_dx = t5;
-#line 20 "tests/golden/run/records.hero"
     t6 = h0_a;
 #line 20 "tests/golden/run/records.hero"
     t7 = t6.f_y;
@@ -154,7 +150,6 @@ bb0:
     if (__builtin_sub_overflow(t7, t9, &t10)) hero_panic_overflow();
 #line 20 "tests/golden/run/records.hero"
     h3_dy = t10;
-#line 21 "tests/golden/run/records.hero"
     t11 = h2_dx;
 #line 21 "tests/golden/run/records.hero"
     t12 = h2_dx;
@@ -170,12 +165,12 @@ bb0:
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
     return t17;
-#line 174 "records.c"
+#line 169 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
-#line 179 "records.c"
+#line 174 "records.c"
     h_records_Point t1;
     int64_t t2;
     int64_t t3;
@@ -201,12 +196,12 @@ bb0:
     t7 = (h_records_Point){.f_x = t4, .f_y = t6};
 #line 24 "tests/golden/run/records.hero"
     return t7;
-#line 205 "records.c"
+#line 200 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
-#line 210 "records.c"
+#line 205 "records.c"
     h_records_Point h0_p;
     h_records_Point h1_q;
     h_records_Pair h2_both;
@@ -263,7 +258,6 @@ bb0:
     t3 = (h_records_Point){.f_x = t1, .f_y = t2};
 #line 27 "tests/golden/run/records.hero"
     h0_p = t3;
-#line 28 "tests/golden/run/records.hero"
     t4 = INT64_C(3);
 #line 28 "tests/golden/run/records.hero"
     t5 = INT64_C(4);
@@ -271,7 +265,6 @@ bb0:
     t6 = (h_records_Point){.f_x = t4, .f_y = t5};
 #line 28 "tests/golden/run/records.hero"
     h1_q = t6;
-#line 29 "tests/golden/run/records.hero"
     t7 = h0_p;
 #line 29 "tests/golden/run/records.hero"
     t8 = h1_q;
@@ -281,7 +274,6 @@ bb0:
     hero_print_int(t9);
 #line 29 "tests/golden/run/records.hero"
     hero_print_end();
-#line 30 "tests/golden/run/records.hero"
     t10 = h0_p;
 #line 30 "tests/golden/run/records.hero"
     t11 = h1_q;
@@ -303,7 +295,6 @@ bb0:
     hero_print_bool(t17);
 #line 30 "tests/golden/run/records.hero"
     hero_print_end();
-#line 31 "tests/golden/run/records.hero"
     t18 = h0_p;
 #line 31 "tests/golden/run/records.hero"
     t19 = h1_q;
@@ -311,7 +302,6 @@ bb0:
     t20 = (h_records_Pair){.f_one = t18, .f_two = t19};
 #line 31 "tests/golden/run/records.hero"
     h2_both = t20;
-#line 32 "tests/golden/run/records.hero"
     t21 = h2_both;
 #line 32 "tests/golden/run/records.hero"
     t22 = t21.f_two;
@@ -321,7 +311,6 @@ bb0:
     hero_print_int(t23);
 #line 32 "tests/golden/run/records.hero"
     hero_print_end();
-#line 33 "tests/golden/run/records.hero"
     t24 = h2_both;
 #line 33 "tests/golden/run/records.hero"
     t25 = h0_p;
@@ -339,7 +328,6 @@ bb0:
     t29 = h0_p;
 #line 36 "tests/golden/run/records.hero"
     h3_r = t29;
-#line 37 "tests/golden/run/records.hero"
     t30 = h3_r;
 #line 37 "tests/golden/run/records.hero"
     t31 = h_records_moved(t30);
@@ -353,7 +341,6 @@ bb0:
     hero_print_int(t33);
 #line 42 "tests/golden/run/records.hero"
     hero_print_end();
-#line 43 "tests/golden/run/records.hero"
     t34 = h0_p;
 #line 43 "tests/golden/run/records.hero"
     t35 = t34.f_x;
@@ -381,7 +368,7 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/records.hero"
     return;
-#line 385 "records.c"
+#line 372 "records.c"
 }
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

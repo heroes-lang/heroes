@@ -68,17 +68,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 79 "fixedbugsadiscardedbindingwarnsinc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +92,7 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 int64_t h_fixedbugsadiscardedbindingwarnsinc_twice(int64_t h0_n) {
-#line 99 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 96 "fixedbugsadiscardedbindingwarnsinc.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -109,12 +106,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     return t3;
-#line 113 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 110 "fixedbugsadiscardedbindingwarnsinc.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
-#line 118 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 115 "fixedbugsadiscardedbindingwarnsinc.c"
     __attribute__((unused)) int64_t h0_v;
     HeroStr h1_s = {0};
     int64_t h2_kept;
@@ -131,18 +128,16 @@ bb0:
     t1 = INT64_C(41);
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h0_v = t1;
-#line 35 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t3 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t10 = h1_s;
-#line 140 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 136 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_incref(t3);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h1_s = t3;
-#line 144 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 140 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(t10);
-#line 39 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 #line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t5 = INT64_C(3);
 #line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
@@ -153,13 +148,12 @@ bb0:
     t8 = h_fixedbugsadiscardedbindingwarnsinc_twice(t7);
 #line 45 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h2_kept = t8;
-#line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t9 = h2_kept;
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_int(t9);
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_end();
-#line 163 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 157 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_decref(h1_s);
     return;
 }

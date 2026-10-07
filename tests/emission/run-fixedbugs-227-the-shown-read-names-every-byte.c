@@ -100,25 +100,20 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs227theshownreadnameseverybyte_fopen(const char * a0, const char * a1) { (void)(fopen)(a0, a1); }
-#line 14 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs227theshownreadnameseverybyte_fputc(int32_t a0, void * a1) { (void)(fputc)(a0, a1); }
-#line 15 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs227theshownreadnameseverybyte_fclose(void * a0) { (void)(fclose)(a0); }
 #line 18 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs227theshownreadnameseverybyte_hero_file_read_shown(const char * a0, int64_t * a1, int64_t * a2) { (void)(hero_file_read_shown)(a0, (void *)a1, (void *)a2); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "fixedbugs227theshownreadnameseverybyte.c"
+#line 117 "fixedbugs227theshownreadnameseverybyte.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -145,51 +140,51 @@ void h_fixedbugs227theshownreadnameseverybyte_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(void) {
-#line 149 "fixedbugs227theshownreadnameseverybyte.c"
+#line 144 "fixedbugs227theshownreadnameseverybyte.c"
     return HERO_OS_OK;
 }
 
 #line 20 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(void) {
-#line 155 "fixedbugs227theshownreadnameseverybyte.c"
+#line 150 "fixedbugs227theshownreadnameseverybyte.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 21 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_TEXT(void) {
-#line 161 "fixedbugs227theshownreadnameseverybyte.c"
+#line 156 "fixedbugs227theshownreadnameseverybyte.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 23 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 HeroStr h_fixedbugs227theshownreadnameseverybyte_NOT_TEXT(void) {
-#line 167 "fixedbugs227theshownreadnameseverybyte.c"
+#line 162 "fixedbugs227theshownreadnameseverybyte.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 24 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t1 = HERO_STR_LIT(hero_str_7d88d4f7);
-#line 173 "fixedbugs227theshownreadnameseverybyte.c"
+#line 168 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 26 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 HeroStr h_fixedbugs227theshownreadnameseverybyte_IS_TEXT(void) {
-#line 180 "fixedbugs227theshownreadnameseverybyte.c"
+#line 175 "fixedbugs227theshownreadnameseverybyte.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 27 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t1 = HERO_STR_LIT(hero_str_1e3ef7a5);
-#line 186 "fixedbugs227theshownreadnameseverybyte.c"
+#line 181 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bool h_fixedbugs227theshownreadnameseverybyte_put(HeroStr h0_path, HeroArrayHeader * h1_bytes) {
-#line 193 "fixedbugs227theshownreadnameseverybyte.c"
+#line 188 "fixedbugs227theshownreadnameseverybyte.c"
     void * h2_handle;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -263,11 +258,11 @@ bb1:
     t10 = h1_bytes;
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t38 = h3_xs0;
-#line 267 "fixedbugs227theshownreadnameseverybyte.c"
+#line 262 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_incref(t10);
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h3_xs0 = t10;
-#line 271 "fixedbugs227theshownreadnameseverybyte.c"
+#line 266 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(t38);
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t11 = INT64_C(0);
@@ -309,7 +304,6 @@ bb5:
     t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
 #line 35 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h5_b = t18;
-#line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t19 = h5_b;
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     if (t19 >= -2147483648LL && t19 <= 2147483647LL) {
@@ -325,15 +319,15 @@ bb5:
     t39 = h8_own8;
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h8_own8 = t20;
-#line 329 "fixedbugs227theshownreadnameseverybyte.c"
+#line 323 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_release(&t39);
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t40 = h6_f0;
-#line 333 "fixedbugs227theshownreadnameseverybyte.c"
+#line 327 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_retain(&t20);
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h6_f0 = t20;
-#line 337 "fixedbugs227theshownreadnameseverybyte.c"
+#line 331 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_release(&t40);
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t21 = h6_f0;
@@ -363,7 +357,6 @@ bb7:
     t34 = h2_handle;
 #line 38 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     (void)fclose(t34);
-#line 39 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t36 = true;
 #line 39 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h7_ret0 = t36;
@@ -387,26 +380,20 @@ bb9:
     t25 = h6_f0;
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t26 = t25.as.err;
-#line 391 "fixedbugs227theshownreadnameseverybyte.c"
+#line 384 "fixedbugs227theshownreadnameseverybyte.c"
     hero_panic_must(t26);
     hero_unreachable();
 bb10:
-#line 33 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t37 = h7_ret0;
-#line 397 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(h3_xs0);
-#line 33 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 400 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_release(&h6_f0);
-#line 33 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 403 "fixedbugs227theshownreadnameseverybyte.c"
     h_0opt_e1f4933_release(&h8_own8);
     return t37;
 }
 
 #line 41 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 void h_fixedbugs227theshownreadnameseverybyte_said(HeroStr h0_path) {
-#line 410 "fixedbugs227theshownreadnameseverybyte.c"
+#line 397 "fixedbugs227theshownreadnameseverybyte.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "status");
 #define h1_status (*hero_lend_h1_status)
     int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "marks");
@@ -460,11 +447,9 @@ bb0:
     t1 = INT64_C(0);
 #line 42 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h1_status = t1;
-#line 43 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t2 = INT64_C(0);
 #line 43 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h2_marks = t2;
-#line 44 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t3 = h0_path;
 #line 44 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t4 = hero_str_lend(t3);
@@ -478,15 +463,15 @@ bb0:
     t36 = h4_own4;
 #line 44 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h4_own4 = t5;
-#line 482 "fixedbugs227theshownreadnameseverybyte.c"
+#line 467 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t36);
 #line 44 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t37 = h3_got;
-#line 486 "fixedbugs227theshownreadnameseverybyte.c"
+#line 471 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t5);
 #line 44 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h3_got = t5;
-#line 490 "fixedbugs227theshownreadnameseverybyte.c"
+#line 475 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t37);
 #line 45 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t6 = HERO_STR_LIT(hero_str_5a8e78fd);
@@ -526,7 +511,6 @@ bb0:
     hero_print_bool(t17);
 #line 45 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     hero_print_end();
-#line 46 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t18 = HERO_STR_LIT(hero_str_1cc0b081);
 #line 46 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t19 = h3_got;
@@ -540,7 +524,7 @@ bb0:
     t38 = h5_own5;
 #line 46 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h5_own5 = t22;
-#line 544 "fixedbugs227theshownreadnameseverybyte.c"
+#line 528 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t38);
 #line 46 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t23 = HERO_STR_LIT(hero_str_5d);
@@ -552,7 +536,6 @@ bb0:
     hero_print_str(t23);
 #line 46 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     hero_print_end();
-#line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t24 = HERO_STR_LIT(hero_str_750df7b9);
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t25 = h3_got;
@@ -568,7 +551,7 @@ bb0:
     t39 = h6_own6;
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h6_own6 = t29;
-#line 572 "fixedbugs227theshownreadnameseverybyte.c"
+#line 555 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t39);
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t30 = HERO_STR_LIT(hero_str_2fb7);
@@ -594,16 +577,10 @@ bb0:
     hero_print_str(t35);
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     hero_print_end();
-#line 598 "fixedbugs227theshownreadnameseverybyte.c"
+#line 581 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h3_got);
-#line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 601 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h4_own4);
-#line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 604 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h5_own5);
-#line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 607 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h6_own6);
     hero_lend_local_give(hero_lend_h2_marks);
     hero_lend_local_give(hero_lend_h1_status);
@@ -614,7 +591,7 @@ bb0:
 
 #line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 void h_fixedbugs227theshownreadnameseverybyte_main(void) {
-#line 618 "fixedbugs227theshownreadnameseverybyte.c"
+#line 595 "fixedbugs227theshownreadnameseverybyte.c"
     HeroStr h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -661,7 +638,7 @@ bb0:
     t27 = h0_own0;
 #line 52 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h0_own0 = t1;
-#line 665 "fixedbugs227theshownreadnameseverybyte.c"
+#line 642 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t27);
 #line 52 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t2 = INT64_C(97);
@@ -701,7 +678,7 @@ bb0:
     t28 = h1_own1;
 #line 52 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h1_own1 = t10;
-#line 705 "fixedbugs227theshownreadnameseverybyte.c"
+#line 682 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(t28);
 #line 52 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t11 = h_fixedbugs227theshownreadnameseverybyte_put(t1, t10);
@@ -717,7 +694,7 @@ bb1:
     t29 = h2_own2;
 #line 56 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h2_own2 = t14;
-#line 721 "fixedbugs227theshownreadnameseverybyte.c"
+#line 698 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t29);
 #line 56 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h_fixedbugs227theshownreadnameseverybyte_said(t14);
@@ -727,7 +704,7 @@ bb1:
     t30 = h3_own3;
 #line 59 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h3_own3 = t15;
-#line 731 "fixedbugs227theshownreadnameseverybyte.c"
+#line 708 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t30);
 #line 59 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t16 = INT64_C(99);
@@ -755,7 +732,7 @@ bb1:
     t31 = h4_own4;
 #line 59 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h4_own4 = t21;
-#line 759 "fixedbugs227theshownreadnameseverybyte.c"
+#line 736 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(t31);
 #line 59 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t22 = h_fixedbugs227theshownreadnameseverybyte_put(t15, t21);
@@ -785,11 +762,10 @@ bb4:
     t32 = h5_own5;
 #line 63 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h5_own5 = t25;
-#line 789 "fixedbugs227theshownreadnameseverybyte.c"
+#line 766 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(t32);
 #line 63 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h_fixedbugs227theshownreadnameseverybyte_said(t25);
-#line 64 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t26 = HERO_STR_LIT(hero_str_49656b13);
 #line 64 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     h_fixedbugs227theshownreadnameseverybyte_said(t26);
@@ -811,23 +787,12 @@ bb6:
     goto bb4;
 #line 60 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb7:
-#line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 816 "fixedbugs227theshownreadnameseverybyte.c"
+#line 791 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h0_own0);
-#line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 819 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(h1_own1);
-#line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 822 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h2_own2);
-#line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 825 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h3_own3);
-#line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 828 "fixedbugs227theshownreadnameseverybyte.c"
     hero_array_decref(h4_own4);
-#line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-#line 831 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_decref(h5_own5);
     return;
 }

@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "printcontract.c"
+#line 77 "printcontract.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ void h_printcontract_main(void);
 
 #line 6 "tests/golden/run/print-contract.hero"
 void h_printcontract_main(void) {
-#line 96 "printcontract.c"
+#line 93 "printcontract.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -115,7 +112,6 @@ bb0:
     hero_print_int(t3);
 #line 7 "tests/golden/run/print-contract.hero"
     hero_print_end();
-#line 8 "tests/golden/run/print-contract.hero"
     t4 = true;
 #line 8 "tests/golden/run/print-contract.hero"
     t5 = false;
@@ -125,9 +121,7 @@ bb0:
     hero_print_bool(t5);
 #line 8 "tests/golden/run/print-contract.hero"
     hero_print_end();
-#line 9 "tests/golden/run/print-contract.hero"
     hero_print_end();
-#line 10 "tests/golden/run/print-contract.hero"
     t6 = INT64_C(0);
 #line 10 "tests/golden/run/print-contract.hero"
     hero_print_int(t6);
@@ -135,7 +129,7 @@ bb0:
     hero_print_end();
 #line 10 "tests/golden/run/print-contract.hero"
     return;
-#line 139 "printcontract.c"
+#line 133 "printcontract.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

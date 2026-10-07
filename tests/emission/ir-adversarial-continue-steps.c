@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "adversarialcontinuesteps.c"
+#line 77 "adversarialcontinuesteps.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +89,7 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs);
 
 #line 7 "tests/golden/ir/adversarial-continue-steps.hero"
 int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
-#line 96 "adversarialcontinuesteps.c"
+#line 93 "adversarialcontinuesteps.c"
     int64_t h1_count;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -130,11 +127,11 @@ bb0:
     t2 = h0_xs;
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t23 = h2_xs0;
-#line 134 "adversarialcontinuesteps.c"
+#line 131 "adversarialcontinuesteps.c"
     hero_array_incref(t2);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h2_xs0 = t2;
-#line 138 "adversarialcontinuesteps.c"
+#line 135 "adversarialcontinuesteps.c"
     hero_array_decref(t23);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t3 = INT64_C(0);
@@ -164,7 +161,6 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h4_x = t10;
-#line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t11 = h4_x;
 #line 11 "tests/golden/ir/adversarial-continue-steps.hero"
     t12 = INT64_C(2);
@@ -196,7 +192,7 @@ bb3:
 bb4:
 #line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t22 = h1_count;
-#line 200 "adversarialcontinuesteps.c"
+#line 196 "adversarialcontinuesteps.c"
     hero_array_decref(h2_xs0);
     return t22;
 bb5:
@@ -218,7 +214,7 @@ bb6:
 bb7:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb5;
-#line 222 "adversarialcontinuesteps.c"
+#line 218 "adversarialcontinuesteps.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

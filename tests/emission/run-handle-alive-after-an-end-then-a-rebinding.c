@@ -75,23 +75,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 7 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handlealiveafteranendthenarebinding_node_new(int64_t a0) { (void)(node_new)(a0); }
-#line 8 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handlealiveafteranendthenarebinding_node_free(node * a0) { (void)(node_free)(a0); }
-#line 9 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_handlealiveafteranendthenarebinding_node_peek(node * a0) { (void)(node_peek)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 95 "handlealiveafteranendthenarebinding.c"
+#line 90 "handlealiveafteranendthenarebinding.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b);
@@ -109,7 +104,7 @@ void h_handlealiveafteranendthenarebinding_main(void);
 
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 void h_handlealiveafteranendthenarebinding_main(void) {
-#line 113 "handlealiveafteranendthenarebinding.c"
+#line 108 "handlealiveafteranendthenarebinding.c"
     node * h0_n;
     int64_t t1;
     node * t2;
@@ -130,7 +125,6 @@ bb0:
     hero_handle_acquired(t2, "node_free");
 #line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     h0_n = t2;
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t3 = h0_n;
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     {
@@ -144,7 +138,6 @@ bb0:
     if (hero_handle_ended(t3, hero_life_0_0) && h0_n == t3) h0_n = hero_handle_dead();
 #line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     }
-#line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t4 = INT64_C(2);
 #line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t5 = node_new(t4);
@@ -152,7 +145,6 @@ bb0:
     hero_handle_acquired(t5, "node_free");
 #line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     h0_n = t5;
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t6 = HERO_STR_LIT(hero_str_6f955e8a);
 #line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t7 = h0_n;
@@ -166,7 +158,6 @@ bb0:
     hero_print_int(t8);
 #line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     hero_print_end();
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t9 = h0_n;
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     {
@@ -182,7 +173,7 @@ bb0:
     }
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     return;
-#line 186 "handlealiveafteranendthenarebinding.c"
+#line 177 "handlealiveafteranendthenarebinding.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

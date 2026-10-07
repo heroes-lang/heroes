@@ -17,13 +17,11 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((BF *)0)->kind) == 1 && sizeof(((BF *)0)->kind) == sizeof(int32_t) && (_Generic(((BF *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field BF kind");
 #line 13 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((UNNAMED *)0)->a) == 1 && sizeof(((UNNAMED *)0)->a) == sizeof(int32_t) && (_Generic(((UNNAMED *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UNNAMED a");
-#line 14 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((UNNAMED *)0)->b) == 1 && sizeof(((UNNAMED *)0)->b) == sizeof(int32_t) && (_Generic(((UNNAMED *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UNNAMED b");
 #line 16 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->a) == 1 && sizeof(((ZEROW *)0)->a) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW a");
-#line 17 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->b) == 1 && sizeof(((ZEROW *)0)->b) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW b");
-#line 27 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 25 "fixedbugs156recordsbesidebitfieldsbuild.c"
 
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union UNNAMED a b");
@@ -31,7 +29,7 @@ _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union U
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->a) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED a");
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->b) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED b");
-#line 35 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 33 "fixedbugs156recordsbesidebitfieldsbuild.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -98,17 +96,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 112 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 107 "fixedbugs156recordsbesidebitfieldsbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b);
@@ -130,7 +125,7 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
-#line 134 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 129 "fixedbugs156recordsbesidebitfieldsbuild.c"
     BF h0_built;
     UNNAMED h1_u;
     BF t1;
@@ -161,13 +156,11 @@ bb0:
     hero_print_int(t2);
 #line 23 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t3 = INT64_C(9);
 #line 24 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t4 = (BF){.kind = t3};
 #line 24 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     h0_built = t4;
-#line 25 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t5 = h0_built;
 #line 25 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t6 = t5.kind;
@@ -175,7 +168,6 @@ bb0:
     hero_print_int(t6);
 #line 25 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     hero_print_end();
-#line 26 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t7 = INT64_C(1);
 #line 26 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t8 = INT64_C(2);
@@ -183,7 +175,6 @@ bb0:
     t9 = (UNNAMED){.a = t7, .b = t8};
 #line 26 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     h1_u = t9;
-#line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t10 = h1_u;
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t11 = make_unnamed();
@@ -211,7 +202,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     return;
-#line 215 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 206 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq: a partial record has no structural equality");

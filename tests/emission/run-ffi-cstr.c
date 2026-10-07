@@ -77,17 +77,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fficstr_puts(const char * a0) { (void)(puts)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fficstr.c"
+#line 88 "fficstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -104,7 +101,7 @@ void h_fficstr_main(void);
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 108 "fficstr.c"
+#line 105 "fficstr.c"
     HeroStr h1_own1 = {0};
     HeroStr t1;
     HeroStr t2;
@@ -122,20 +119,16 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 126 "fficstr.c"
+#line 123 "fficstr.c"
     hero_str_decref(t4);
-#line 16 "tests/golden/run/ffi-cstr.hero"
-#line 129 "fficstr.c"
     hero_str_incref(t3);
-#line 16 "tests/golden/run/ffi-cstr.hero"
-#line 132 "fficstr.c"
     hero_str_decref(h1_own1);
     return t3;
 }
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 139 "fficstr.c"
+#line 132 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1;
     const char * t2;
@@ -160,19 +153,18 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 164 "fficstr.c"
+#line 157 "fficstr.c"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_lend(t5);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     (void)puts(hero_cstr_nonnull(t6));
-#line 25 "tests/golden/run/ffi-cstr.hero"
     t8 = HERO_STR_LIT(hero_str_6251eb62);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 176 "fficstr.c"
+#line 168 "fficstr.c"
     hero_str_decref(h0_own0);
     return;
 }

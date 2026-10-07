@@ -73,17 +73,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
+#line 84 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -99,7 +96,7 @@ void h_fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
 void h_fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot_main(void) {
-#line 103 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
+#line 100 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
     HeroStr t1;
     HeroStr t2;
     goto bb0;
@@ -110,9 +107,7 @@ bb0:
     hero_print_str(t1);
 #line 16 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     hero_print_end();
-#line 17 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     (void)give_up();
-#line 18 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     t2 = HERO_STR_LIT(hero_str_4414937d);
 #line 18 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     hero_print_str(t2);
@@ -120,7 +115,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     return;
-#line 124 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
+#line 119 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

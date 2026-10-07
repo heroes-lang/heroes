@@ -82,17 +82,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "sugarvariantcase.c"
+#line 93 "sugarvariantcase.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b);
@@ -113,7 +110,7 @@ h_sugarvariantcase_Token h_sugarvariantcase_one(void);
 
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) {
-#line 117 "sugarvariantcase.c"
+#line 114 "sugarvariantcase.c"
     h_sugarvariantcase_Token h1_s0;
     int64_t h2_r0;
     h_sugarvariantcase_Token_c_num h3_n;
@@ -154,7 +151,6 @@ bb1:
     return t9;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
 bb2:
-#line 11 "tests/golden/ir/sugar-variant-case.hero"
     t4 = h1_s0;
 #line 11 "tests/golden/ir/sugar-variant-case.hero"
     t5 = t4.as.c_num;
@@ -176,12 +172,12 @@ bb3:
     h2_r0 = t8;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
     goto bb1;
-#line 180 "sugarvariantcase.c"
+#line 176 "sugarvariantcase.c"
 }
 
 #line 14 "tests/golden/ir/sugar-variant-case.hero"
 h_sugarvariantcase_Token h_sugarvariantcase_one(void) {
-#line 185 "sugarvariantcase.c"
+#line 181 "sugarvariantcase.c"
     int64_t t1;
     h_sugarvariantcase_Token t2;
     goto bb0;
@@ -192,7 +188,7 @@ bb0:
     t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_Token_tag_num, .as.c_num = {.f_v = t1}};
 #line 15 "tests/golden/ir/sugar-variant-case.hero"
     return t2;
-#line 196 "sugarvariantcase.c"
+#line 192 "sugarvariantcase.c"
 }
 HERO_TU_LOCAL bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;

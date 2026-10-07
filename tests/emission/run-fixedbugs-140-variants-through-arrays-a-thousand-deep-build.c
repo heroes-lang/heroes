@@ -16066,17 +16066,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 16080 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 16077 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_c_a_eq(const h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_c_a *a, const h_fixedbugs140variantsthrougharraysathousanddeepbuild_R0_c_a *b);
@@ -24106,7 +24103,7 @@ void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void);
 
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) {
-#line 24110 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24107 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroMapHeader * h1_m = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -24132,15 +24129,15 @@ bb0:
     t10 = h2_own2;
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h2_own2 = t1;
-#line 24136 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24133 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(t10);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t11 = h0_xs;
-#line 24140 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24137 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_incref(t1);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 24144 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24141 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(t11);
 #line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t2 = h0_xs;
@@ -24150,7 +24147,6 @@ bb0:
     hero_print_int(t3);
 #line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_print_end();
-#line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t4 = h0_xs;
 #line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t5 = h0_xs;
@@ -24160,21 +24156,20 @@ bb0:
     hero_print_bool(t6);
 #line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_print_end();
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t7 = hero_map_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, &hero_desc_int, 0);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t12 = h3_own3;
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h3_own3 = t7;
-#line 24170 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24165 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(t12);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t13 = h1_m;
-#line 24174 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24169 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_incref(t7);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h1_m = t7;
-#line 24178 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24173 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(t13);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t8 = h1_m;
@@ -24184,16 +24179,10 @@ bb0:
     hero_print_int(t9);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_print_end();
-#line 24188 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24183 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(h0_xs);
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-#line 24191 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(h1_m);
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-#line 24194 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_decref(h2_own2);
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-#line 24197 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_map_decref(h3_own3);
     return;
 }

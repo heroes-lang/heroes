@@ -78,23 +78,18 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 14 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereadbycatafieldpastthefirst_ob_far_cell(ob * * a0) { (void)(ob_far_cell)(a0); }
-#line 15 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereadbycatafieldpastthefirst_ob_put(ob * a0) { (void)(ob_put)(a0); }
-#line 16 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereadbycatafieldpastthefirst_ob_refs(ob * a0) { (void)(ob_refs)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "deadhandlereadbycatafieldpastthefirst.c"
+#line 93 "deadhandlereadbycatafieldpastthefirst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadbycatafieldpastthefirst_X509_eq(ob * const *a, ob * const *b);
@@ -112,7 +107,7 @@ void h_deadhandlereadbycatafieldpastthefirst_main(void);
 
 #line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 void h_deadhandlereadbycatafieldpastthefirst_main(void) {
-#line 116 "deadhandlereadbycatafieldpastthefirst.c"
+#line 111 "deadhandlereadbycatafieldpastthefirst.c"
     ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatafieldpastthefirst.main", "cert");
 #define h0_cert (*hero_lend_h0_cert)
     ob * t1;
@@ -209,8 +204,7 @@ bb4:
     return;
 #line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 bb5:
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-#line 214 "deadhandlereadbycatafieldpastthefirst.c"
+#line 208 "deadhandlereadbycatafieldpastthefirst.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

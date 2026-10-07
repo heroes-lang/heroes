@@ -79,17 +79,14 @@ typedef struct h_0opt_f87774a {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 90 "fixedbugsadiscardedtemporarywarnsinc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -111,7 +108,7 @@ void h_fixedbugsadiscardedtemporarywarnsinc_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 h_0opt_e201354 h_fixedbugsadiscardedtemporarywarnsinc_risky(int64_t h0_n) {
-#line 115 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 112 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354 h1_ret0 = {0};
     h_0opt_e201354 h2_own2 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -152,7 +149,7 @@ bb1:
     t12 = h2_own2;
 #line 38 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h2_own2 = t10;
-#line 156 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 153 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&t12);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h1_ret0 = t10;
@@ -164,10 +161,8 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_2cc761e);
 #line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t5 = HERO_STR_LIT(hero_str_1ad3678f);
-#line 168 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 165 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_incref(t4);
-#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 171 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_incref(t5);
 #line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -175,7 +170,7 @@ bb2:
     t13 = h3_own3;
 #line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h3_own3 = t6;
-#line 179 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 174 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&t13);
 #line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h1_ret0 = t6;
@@ -187,22 +182,17 @@ bb3:
     goto bb1;
 #line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb4:
-#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 186 "fixedbugsadiscardedtemporarywarnsinc.c"
     t11 = h1_ret0;
-#line 193 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_retain(&t11);
-#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 196 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&h2_own2);
-#line 37 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 199 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&h3_own3);
     return t11;
 }
 
 #line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 h_0opt_a8ea2 h_fixedbugsadiscardedtemporarywarnsinc_unit_risky(int64_t h0_n) {
-#line 206 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 196 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2 h1_ret0 = {0};
     h_0opt_a8ea2 h2_own2 = {0};
     h_0opt_a8ea2 h3_own3 = {0};
@@ -234,7 +224,7 @@ bb1:
     t9 = h2_own2;
 #line 43 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h2_own2 = t7;
-#line 238 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 228 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&t9);
 #line 43 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h1_ret0 = t7;
@@ -246,10 +236,8 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_2cc761e);
 #line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t5 = HERO_STR_LIT(hero_str_1ad3678f);
-#line 250 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 240 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_incref(t4);
-#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 253 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_incref(t5);
 #line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t6 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -257,7 +245,7 @@ bb2:
     t10 = h3_own3;
 #line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h3_own3 = t6;
-#line 261 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 249 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&t10);
 #line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h1_ret0 = t6;
@@ -269,22 +257,17 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb4:
-#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
+#line 261 "fixedbugsadiscardedtemporarywarnsinc.c"
     t8 = h1_ret0;
-#line 275 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_retain(&t8);
-#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 278 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&h2_own2);
-#line 42 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 281 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&h3_own3);
     return t8;
 }
 
 #line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 void h_fixedbugsadiscardedtemporarywarnsinc_main(void) {
-#line 288 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 271 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354 h0_f0 = {0};
     h_0opt_a8ea2 h1_f1 = {0};
     HeroStr h2_a = {0};
@@ -356,15 +339,15 @@ bb0:
     t38 = h6_own6;
 #line 48 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h6_own6 = t4;
-#line 360 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 343 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&t38);
 #line 48 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t39 = h0_f0;
-#line 364 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 347 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_retain(&t4);
 #line 48 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h0_f0 = t4;
-#line 368 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 351 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&t39);
 #line 48 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t5 = h0_f0;
@@ -374,7 +357,6 @@ bb0:
     t7 = INT64_C(1);
 #line 48 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t8 = t6 == t7;
-#line 49 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t9 = INT64_C(0);
 #line 49 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t10 = INT64_C(1);
@@ -386,15 +368,15 @@ bb0:
     t40 = h7_own7;
 #line 49 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h7_own7 = t12;
-#line 390 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 372 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&t40);
 #line 49 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t41 = h1_f1;
-#line 394 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 376 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_retain(&t12);
 #line 49 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h1_f1 = t12;
-#line 398 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 380 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&t41);
 #line 49 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t13 = h1_f1;
@@ -408,21 +390,21 @@ bb0:
     t17 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 54 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t42 = h2_a;
-#line 412 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 394 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_incref(t17);
 #line 54 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h2_a = t17;
-#line 416 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 398 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_decref(t42);
 #line 55 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t18 = HERO_STR_LIT(hero_str_47b33001);
 #line 55 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t43 = h3_b;
-#line 422 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 404 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_incref(t18);
 #line 55 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h3_b = t18;
-#line 426 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 408 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_decref(t43);
 #line 56 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t19 = h2_a;
@@ -430,7 +412,6 @@ bb0:
     t20 = h3_b;
 #line 56 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t21 = hero_str_eq(t19, t20);
-#line 57 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t22 = INT64_C(1);
 #line 57 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t23 = INT64_C(2);
@@ -444,15 +425,15 @@ bb0:
     t44 = h8_own8;
 #line 57 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h8_own8 = t24;
-#line 448 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 429 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(t44);
 #line 57 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t45 = h4_xs;
-#line 452 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 433 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_incref(t24);
 #line 57 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h4_xs = t24;
-#line 456 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 437 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(t45);
 #line 58 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t25 = INT64_C(1);
@@ -468,15 +449,15 @@ bb0:
     t46 = h9_own9;
 #line 58 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h9_own9 = t27;
-#line 472 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 453 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(t46);
 #line 58 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t47 = h5_ys;
-#line 476 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 457 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_incref(t27);
 #line 58 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     h5_ys = t27;
-#line 480 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 461 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(t47);
 #line 59 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     t28 = h4_xs;
@@ -500,35 +481,16 @@ bb0:
     if (t36) goto bb2; else goto bb3;
 #line 66 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb1:
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 505 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 485 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&h0_f0);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 508 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&h1_f1);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 511 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_decref(h2_a);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 514 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_str_decref(h3_b);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 517 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(h4_xs);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 520 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(h5_ys);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 523 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_e201354_release(&h6_own6);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 526 "fixedbugsadiscardedtemporarywarnsinc.c"
     h_0opt_a8ea2_release(&h7_own7);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 529 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(h8_own8);
-#line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-#line 532 "fixedbugsadiscardedtemporarywarnsinc.c"
     hero_array_decref(h9_own9);
     return;
 bb2:
@@ -544,7 +506,7 @@ bb2:
 bb3:
 #line 67 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
     goto bb1;
-#line 548 "fixedbugsadiscardedtemporarywarnsinc.c"
+#line 510 "fixedbugsadiscardedtemporarywarnsinc.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

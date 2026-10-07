@@ -70,17 +70,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "premiseslicenevershares.c"
+#line 81 "premiseslicenevershares.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +93,7 @@ void h_premiseslicenevershares_main(void);
 
 #line 21 "tests/golden/run/premise-slice-never-shares.hero"
 void h_premiseslicenevershares_main(void) {
-#line 100 "premiseslicenevershares.c"
+#line 97 "premiseslicenevershares.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_part = {0};
     HeroStr h2_s = {0};
@@ -176,15 +173,15 @@ bb0:
     t40 = h5_own5;
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     h5_own5 = t5;
-#line 180 "premiseslicenevershares.c"
+#line 177 "premiseslicenevershares.c"
     hero_array_decref(t40);
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     t41 = h0_xs;
-#line 184 "premiseslicenevershares.c"
+#line 181 "premiseslicenevershares.c"
     hero_array_incref(t5);
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     h0_xs = t5;
-#line 188 "premiseslicenevershares.c"
+#line 185 "premiseslicenevershares.c"
     hero_array_decref(t41);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t6 = h0_xs;
@@ -198,15 +195,15 @@ bb0:
     t42 = h6_own6;
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     h6_own6 = t9;
-#line 202 "premiseslicenevershares.c"
+#line 199 "premiseslicenevershares.c"
     hero_array_decref(t42);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t43 = h1_part;
-#line 206 "premiseslicenevershares.c"
+#line 203 "premiseslicenevershares.c"
     hero_array_incref(t9);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     h1_part = t9;
-#line 210 "premiseslicenevershares.c"
+#line 207 "premiseslicenevershares.c"
     hero_array_decref(t43);
 #line 25 "tests/golden/run/premise-slice-never-shares.hero"
     t10 = INT64_C(1);
@@ -214,13 +211,11 @@ bb0:
     t11 = INT64_C(99);
 #line 25 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_set(&(h0_xs), t10, &t11);
-#line 26 "tests/golden/run/premise-slice-never-shares.hero"
     t12 = INT64_C(2);
 #line 26 "tests/golden/run/premise-slice-never-shares.hero"
     t13 = INT64_C(98);
 #line 26 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_set(&(h0_xs), t12, &t13);
-#line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t14 = h1_part;
 #line 27 "tests/golden/run/premise-slice-never-shares.hero"
     t15 = INT64_C(0);
@@ -246,7 +241,6 @@ bb0:
     t22 = INT64_C(50);
 #line 30 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_push_owned(&h0_xs, &t22);
-#line 31 "tests/golden/run/premise-slice-never-shares.hero"
     t24 = h1_part;
 #line 31 "tests/golden/run/premise-slice-never-shares.hero"
     t25 = ((void)(t24 == NULL ? ((void)hero_array_len(t24), hero_unreachable()) : (void)0), t24->len);
@@ -268,11 +262,11 @@ bb0:
     t29 = HERO_STR_LIT(hero_str_12becefb);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     t44 = h2_s;
-#line 272 "premiseslicenevershares.c"
+#line 266 "premiseslicenevershares.c"
     hero_str_incref(t29);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     h2_s = t29;
-#line 276 "premiseslicenevershares.c"
+#line 270 "premiseslicenevershares.c"
     hero_str_decref(t44);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t30 = h2_s;
@@ -286,15 +280,15 @@ bb0:
     t45 = h7_own7;
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     h7_own7 = t33;
-#line 290 "premiseslicenevershares.c"
+#line 284 "premiseslicenevershares.c"
     hero_str_decref(t45);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t46 = h3_mid;
-#line 294 "premiseslicenevershares.c"
+#line 288 "premiseslicenevershares.c"
     hero_str_incref(t33);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     h3_mid = t33;
-#line 298 "premiseslicenevershares.c"
+#line 292 "premiseslicenevershares.c"
     hero_str_decref(t46);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t34 = h2_s;
@@ -306,15 +300,15 @@ bb0:
     t47 = h8_own8;
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     h8_own8 = t36;
-#line 310 "premiseslicenevershares.c"
+#line 304 "premiseslicenevershares.c"
     hero_str_decref(t47);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t48 = h4_joined;
-#line 314 "premiseslicenevershares.c"
+#line 308 "premiseslicenevershares.c"
     hero_str_incref(t36);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     h4_joined = t36;
-#line 318 "premiseslicenevershares.c"
+#line 312 "premiseslicenevershares.c"
     hero_str_decref(t48);
 #line 39 "tests/golden/run/premise-slice-never-shares.hero"
     t37 = h3_mid;
@@ -330,31 +324,15 @@ bb0:
     hero_print_str(t39);
 #line 39 "tests/golden/run/premise-slice-never-shares.hero"
     hero_print_end();
-#line 334 "premiseslicenevershares.c"
+#line 328 "premiseslicenevershares.c"
     hero_array_decref(h0_xs);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 337 "premiseslicenevershares.c"
     hero_array_decref(h1_part);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 340 "premiseslicenevershares.c"
     hero_str_decref(h2_s);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 343 "premiseslicenevershares.c"
     hero_str_decref(h3_mid);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 346 "premiseslicenevershares.c"
     hero_str_decref(h4_joined);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 349 "premiseslicenevershares.c"
     hero_array_decref(h5_own5);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 352 "premiseslicenevershares.c"
     hero_array_decref(h6_own6);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 355 "premiseslicenevershares.c"
     hero_str_decref(h7_own7);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
-#line 358 "premiseslicenevershares.c"
     hero_str_decref(h8_own8);
     return;
 }

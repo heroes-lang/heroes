@@ -82,17 +82,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "main.c"
+#line 93 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_geompoint_Point_eq(const h_geompoint_Point *a, const h_geompoint_Point *b);
@@ -123,7 +120,7 @@ int64_t h_scale_factor(void);
 
 #line 25 "examples/shapes/main.hero"
 void h_main_main(void) {
-#line 127 "main.c"
+#line 124 "main.c"
     h_geompoint_Point h0_corner;
     h_geompoint_Point h1_far;
     HeroStr h2_own2 = {0};
@@ -161,7 +158,6 @@ bb0:
     t3 = (h_geompoint_Point){.f_x = t1, .f_y = t2};
 #line 26 "examples/shapes/main.hero"
     h0_corner = t3;
-#line 27 "examples/shapes/main.hero"
     t4 = INT64_C(4);
 #line 27 "examples/shapes/main.hero"
     t5 = INT64_C(3);
@@ -169,7 +165,6 @@ bb0:
     t6 = (h_geompoint_Point){.f_x = t4, .f_y = t5};
 #line 27 "examples/shapes/main.hero"
     h1_far = t6;
-#line 28 "examples/shapes/main.hero"
     t7 = h0_corner;
 #line 28 "examples/shapes/main.hero"
     t8 = h1_far;
@@ -179,7 +174,6 @@ bb0:
     hero_print_int(t9);
 #line 28 "examples/shapes/main.hero"
     hero_print_end();
-#line 29 "examples/shapes/main.hero"
     t10 = h0_corner;
 #line 29 "examples/shapes/main.hero"
     t11 = h1_far;
@@ -189,7 +183,6 @@ bb0:
     hero_print_int(t12);
 #line 29 "examples/shapes/main.hero"
     hero_print_end();
-#line 30 "examples/shapes/main.hero"
     t13 = h0_corner;
 #line 30 "examples/shapes/main.hero"
     t14 = h1_far;
@@ -201,13 +194,12 @@ bb0:
     t22 = h2_own2;
 #line 30 "examples/shapes/main.hero"
     h2_own2 = t16;
-#line 205 "main.c"
+#line 198 "main.c"
     hero_str_decref(t22);
 #line 30 "examples/shapes/main.hero"
     hero_print_str(t16);
 #line 30 "examples/shapes/main.hero"
     hero_print_end();
-#line 31 "examples/shapes/main.hero"
     t17 = INT64_C(3);
 #line 31 "examples/shapes/main.hero"
     t18 = INT64_C(2);
@@ -217,7 +209,7 @@ bb0:
     t23 = h3_own3;
 #line 31 "examples/shapes/main.hero"
     h3_own3 = t19;
-#line 221 "main.c"
+#line 213 "main.c"
     hero_str_decref(t23);
 #line 31 "examples/shapes/main.hero"
     hero_print_str(t19);
@@ -229,23 +221,20 @@ bb0:
     hero_print_int(t20);
 #line 38 "examples/shapes/main.hero"
     hero_print_end();
-#line 39 "examples/shapes/main.hero"
     t21 = h_renderscale_factor();
 #line 39 "examples/shapes/main.hero"
     hero_print_int(t21);
 #line 39 "examples/shapes/main.hero"
     hero_print_end();
-#line 239 "main.c"
+#line 230 "main.c"
     hero_str_decref(h2_own2);
-#line 39 "examples/shapes/main.hero"
-#line 242 "main.c"
     hero_str_decref(h3_own3);
     return;
 }
 
 #line 14 "examples/shapes/geom/point.hero"
 int64_t h_geompoint_span(h_geompoint_Point h0_from, h_geompoint_Point h1_to) {
-#line 249 "main.c"
+#line 238 "main.c"
     int64_t h2_dx;
     int64_t h3_ret0;
     h_geompoint_Point t1;
@@ -309,16 +298,14 @@ bb3:
     goto bb1;
 #line 18 "examples/shapes/geom/point.hero"
 bb4:
-#line 18 "examples/shapes/geom/point.hero"
+#line 302 "main.c"
     t13 = h3_ret0;
-#line 18 "examples/shapes/geom/point.hero"
     return t13;
-#line 317 "main.c"
 }
 
 #line 10 "examples/shapes/geom/area.hero"
 int64_t h_geomarea_rect(h_geompoint_Point h0_a, h_geompoint_Point h1_b) {
-#line 322 "main.c"
+#line 309 "main.c"
     h_geompoint_Point t1;
     h_geompoint_Point t2;
     int64_t t3;
@@ -344,12 +331,12 @@ bb0:
     if (__builtin_mul_overflow(t3, t6, &t7)) hero_panic_overflow();
 #line 11 "examples/shapes/geom/area.hero"
     return t7;
-#line 348 "main.c"
+#line 335 "main.c"
 }
 
 #line 13 "examples/shapes/geom/area.hero"
 int64_t h_geomarea_perimeter(h_geompoint_Point h0_a, h_geompoint_Point h1_b) {
-#line 353 "main.c"
+#line 340 "main.c"
     int64_t t1;
     h_geompoint_Point t2;
     h_geompoint_Point t3;
@@ -381,12 +368,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t8, &t9)) hero_panic_overflow();
 #line 14 "examples/shapes/geom/area.hero"
     return t9;
-#line 385 "main.c"
+#line 372 "main.c"
 }
 
 #line 18 "examples/shapes/geom/area.hero"
 int64_t h_geomarea_height(h_geompoint_Point h0_a, h_geompoint_Point h1_b) {
-#line 390 "main.c"
+#line 377 "main.c"
     h_geompoint_Point h2_swapped_a;
     h_geompoint_Point h3_swapped_b;
     h_geompoint_Point t1;
@@ -416,7 +403,6 @@ bb0:
     t5 = (h_geompoint_Point){.f_x = t2, .f_y = t4};
 #line 19 "examples/shapes/geom/area.hero"
     h2_swapped_a = t5;
-#line 20 "examples/shapes/geom/area.hero"
     t6 = h1_b;
 #line 20 "examples/shapes/geom/area.hero"
     t7 = t6.f_y;
@@ -428,7 +414,6 @@ bb0:
     t10 = (h_geompoint_Point){.f_x = t7, .f_y = t9};
 #line 20 "examples/shapes/geom/area.hero"
     h3_swapped_b = t10;
-#line 21 "examples/shapes/geom/area.hero"
     t11 = h2_swapped_a;
 #line 21 "examples/shapes/geom/area.hero"
     t12 = h3_swapped_b;
@@ -436,12 +421,12 @@ bb0:
     t13 = h_geompoint_span(t11, t12);
 #line 21 "examples/shapes/geom/area.hero"
     return t13;
-#line 440 "main.c"
+#line 425 "main.c"
 }
 
 #line 14 "examples/shapes/render/ascii.hero"
 HeroStr h_renderascii_bar(int64_t h0_width) {
-#line 445 "main.c"
+#line 430 "main.c"
     h_geompoint_Point h1_origin;
     h_geompoint_Point h2_tip;
     h_0opt_fbbb698 h3_f0 = {0};
@@ -480,7 +465,6 @@ bb0:
     t3 = (h_geompoint_Point){.f_x = t1, .f_y = t2};
 #line 15 "examples/shapes/render/ascii.hero"
     h1_origin = t3;
-#line 16 "examples/shapes/render/ascii.hero"
     t4 = h0_width;
 #line 16 "examples/shapes/render/ascii.hero"
     t5 = INT64_C(0);
@@ -488,7 +472,6 @@ bb0:
     t6 = (h_geompoint_Point){.f_x = t4, .f_y = t5};
 #line 16 "examples/shapes/render/ascii.hero"
     h2_tip = t6;
-#line 17 "examples/shapes/render/ascii.hero"
     t7 = HERO_STR_LIT(hero_str_23);
 #line 17 "examples/shapes/render/ascii.hero"
     t8 = h1_origin;
@@ -510,15 +493,15 @@ bb0:
     t21 = h4_own4;
 #line 17 "examples/shapes/render/ascii.hero"
     h4_own4 = t11;
-#line 514 "main.c"
+#line 497 "main.c"
     h_0opt_fbbb698_release(&t21);
 #line 17 "examples/shapes/render/ascii.hero"
     t22 = h3_f0;
-#line 518 "main.c"
+#line 501 "main.c"
     h_0opt_fbbb698_retain(&t11);
 #line 17 "examples/shapes/render/ascii.hero"
     h3_f0 = t11;
-#line 522 "main.c"
+#line 505 "main.c"
     h_0opt_fbbb698_release(&t22);
 #line 17 "examples/shapes/render/ascii.hero"
     t12 = h3_f0;
@@ -542,19 +525,11 @@ bb1:
     t23 = h5_own5;
 #line 17 "examples/shapes/render/ascii.hero"
     h5_own5 = t20;
-#line 546 "main.c"
+#line 529 "main.c"
     hero_str_decref(t23);
-#line 17 "examples/shapes/render/ascii.hero"
-#line 549 "main.c"
     hero_str_incref(t20);
-#line 17 "examples/shapes/render/ascii.hero"
-#line 552 "main.c"
     h_0opt_fbbb698_release(&h3_f0);
-#line 17 "examples/shapes/render/ascii.hero"
-#line 555 "main.c"
     h_0opt_fbbb698_release(&h4_own4);
-#line 17 "examples/shapes/render/ascii.hero"
-#line 558 "main.c"
     hero_str_decref(h5_own5);
     return t20;
 bb2:
@@ -562,14 +537,14 @@ bb2:
     t16 = h3_f0;
 #line 17 "examples/shapes/render/ascii.hero"
     t17 = t16.as.err;
-#line 566 "main.c"
+#line 541 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
 
 #line 19 "examples/shapes/render/ascii.hero"
 HeroStr h_renderascii_frame(int64_t h0_width, int64_t h1_height) {
-#line 573 "main.c"
+#line 548 "main.c"
     HeroArrayHeader * h2_rows = {0};
     int64_t h3_at;
     HeroStr h4_own4 = {0};
@@ -606,7 +581,7 @@ bb0:
     t18 = h4_own4;
 #line 20 "examples/shapes/render/ascii.hero"
     h4_own4 = t2;
-#line 610 "main.c"
+#line 585 "main.c"
     hero_str_decref(t18);
 #line 20 "examples/shapes/render/ascii.hero"
     t3 = hero_array_new(&hero_desc_str, 1);
@@ -616,15 +591,15 @@ bb0:
     t19 = h5_own5;
 #line 20 "examples/shapes/render/ascii.hero"
     h5_own5 = t3;
-#line 620 "main.c"
+#line 595 "main.c"
     hero_array_decref(t19);
 #line 20 "examples/shapes/render/ascii.hero"
     t20 = h2_rows;
-#line 624 "main.c"
+#line 599 "main.c"
     hero_array_incref(t3);
 #line 20 "examples/shapes/render/ascii.hero"
     h2_rows = t3;
-#line 628 "main.c"
+#line 603 "main.c"
     hero_array_decref(t20);
 #line 21 "examples/shapes/render/ascii.hero"
     t4 = INT64_C(1);
@@ -644,7 +619,6 @@ bb1:
     if (t7) goto bb2; else goto bb3;
 #line 23 "examples/shapes/render/ascii.hero"
 bb2:
-#line 24 "examples/shapes/render/ascii.hero"
     t9 = h0_width;
 #line 24 "examples/shapes/render/ascii.hero"
     t10 = h_renderascii_bar(t9);
@@ -652,11 +626,10 @@ bb2:
     t21 = h6_own6;
 #line 24 "examples/shapes/render/ascii.hero"
     h6_own6 = t10;
-#line 656 "main.c"
+#line 630 "main.c"
     hero_str_decref(t21);
 #line 24 "examples/shapes/render/ascii.hero"
     hero_array_push_owned(&h2_rows, &t10);
-#line 25 "examples/shapes/render/ascii.hero"
     t12 = h3_at;
 #line 25 "examples/shapes/render/ascii.hero"
     t13 = INT64_C(1);
@@ -678,32 +651,20 @@ bb3:
     t22 = h7_own7;
 #line 27 "examples/shapes/render/ascii.hero"
     h7_own7 = t17;
-#line 682 "main.c"
+#line 655 "main.c"
     hero_str_decref(t22);
-#line 27 "examples/shapes/render/ascii.hero"
-#line 685 "main.c"
     hero_str_incref(t17);
-#line 27 "examples/shapes/render/ascii.hero"
-#line 688 "main.c"
     hero_array_decref(h2_rows);
-#line 27 "examples/shapes/render/ascii.hero"
-#line 691 "main.c"
     hero_str_decref(h4_own4);
-#line 27 "examples/shapes/render/ascii.hero"
-#line 694 "main.c"
     hero_array_decref(h5_own5);
-#line 27 "examples/shapes/render/ascii.hero"
-#line 697 "main.c"
     hero_str_decref(h6_own6);
-#line 27 "examples/shapes/render/ascii.hero"
-#line 700 "main.c"
     hero_str_decref(h7_own7);
     return t17;
 }
 
 #line 35 "examples/shapes/render/ascii.hero"
 int64_t h_renderascii_scaled(int64_t h0_width) {
-#line 707 "main.c"
+#line 668 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -717,12 +678,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "examples/shapes/render/ascii.hero"
     return t3;
-#line 721 "main.c"
+#line 682 "main.c"
 }
 
 #line 12 "examples/shapes/render/scale.hero"
 int64_t h_renderscale_factor(void) {
-#line 726 "main.c"
+#line 687 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -730,12 +691,12 @@ bb0:
     t1 = INT64_C(3);
 #line 13 "examples/shapes/render/scale.hero"
     return t1;
-#line 734 "main.c"
+#line 695 "main.c"
 }
 
 #line 19 "examples/shapes/scale.hero"
 int64_t h_scale_factor(void) {
-#line 739 "main.c"
+#line 700 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -743,7 +704,7 @@ bb0:
     t1 = INT64_C(10);
 #line 20 "examples/shapes/scale.hero"
     return t1;
-#line 747 "main.c"
+#line 708 "main.c"
 }
 HERO_TU_LOCAL bool h_geompoint_Point_eq(const h_geompoint_Point *a, const h_geompoint_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

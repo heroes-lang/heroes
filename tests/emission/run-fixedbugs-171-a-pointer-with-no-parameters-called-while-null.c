@@ -73,17 +73,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 84 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -99,7 +96,7 @@ void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
 void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void) {
-#line 103 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 100 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
     HeroStr t1;
     HeroStr t2;
     goto bb0;
@@ -110,9 +107,7 @@ bb0:
     hero_print_str(t1);
 #line 11 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     hero_print_end();
-#line 12 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     (void)tick();
-#line 13 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     t2 = HERO_STR_LIT(hero_str_347b94b5);
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     hero_print_str(t2);
@@ -120,7 +115,7 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     return;
-#line 124 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 119 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -87,17 +87,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 98 "fixedbugs382aliteralconstantisonestaticblock.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs382aliteralconstantisonestaticblock_Mark_c_count_eq(const h_fixedbugs382aliteralconstantisonestaticblock_Mark_c_count *a, const h_fixedbugs382aliteralconstantisonestaticblock_Mark_c_count *b);
@@ -142,14 +139,14 @@ void h_fixedbugs382aliteralconstantisonestaticblock_main(void);
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_DIGITS_4, int64_t, &hero_desc_int, 3, INT64_C(3), INT64_C(-1), INT64_C(4));
 #line 16 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_DIGITS(void) {
-#line 146 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 143 "fixedbugs382aliteralconstantisonestaticblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_DIGITS_4);
 }
 #else
 
 #line 16 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_DIGITS(void) {
-#line 153 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 150 "fixedbugs382aliteralconstantisonestaticblock.c"
     HeroArrayHeader * h0_own0 = {0};
     int64_t t1;
     int64_t t2;
@@ -176,13 +173,9 @@ bb0:
     t5 = h0_own0;
 #line 17 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h0_own0 = t4;
-#line 180 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 177 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t5);
-#line 17 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 183 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_incref(t4);
-#line 17 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 186 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h0_own0);
     return t4;
 }
@@ -193,14 +186,14 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_WORDS_3, HeroStr, &hero_desc_str, 2, HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_eb4ac31));
 #line 19 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_WORDS(void) {
-#line 197 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 190 "fixedbugs382aliteralconstantisonestaticblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_WORDS_3);
 }
 #else
 
 #line 19 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_WORDS(void) {
-#line 204 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 197 "fixedbugs382aliteralconstantisonestaticblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroStr t1;
     HeroStr t2;
@@ -222,13 +215,9 @@ bb0:
     t4 = h0_own0;
 #line 20 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h0_own0 = t3;
-#line 226 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 219 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t4);
-#line 20 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 229 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_incref(t3);
-#line 20 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 232 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h0_own0);
     return t3;
 }
@@ -243,14 +232,14 @@ HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382aliteralconstantisonestaticb
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_GRID_5, HeroArrayHeader *, &hero_desc_array, 2, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_GRID_3), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_GRID_4));
 #line 22 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_GRID(void) {
-#line 247 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 236 "fixedbugs382aliteralconstantisonestaticblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_GRID_5);
 }
 #else
 
 #line 22 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_GRID(void) {
-#line 254 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 243 "fixedbugs382aliteralconstantisonestaticblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -278,7 +267,7 @@ bb0:
     t6 = h0_own0;
 #line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h0_own0 = t3;
-#line 282 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 271 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t6);
 #line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t4 = hero_array_new(&hero_desc_int, 1);
@@ -286,7 +275,7 @@ bb0:
     t7 = h1_own1;
 #line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h1_own1 = t4;
-#line 290 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 279 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t7);
 #line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t5 = hero_array_new(&hero_desc_array, 2);
@@ -298,19 +287,11 @@ bb0:
     t8 = h2_own2;
 #line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h2_own2 = t5;
-#line 302 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 291 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t8);
-#line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 305 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_incref(t5);
-#line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 308 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h0_own0);
-#line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 311 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h1_own1);
-#line 23 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 314 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h2_own2);
     return t5;
 }
@@ -321,14 +302,14 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_MARKS_4, h_fixedbugs382aliteralconstantisonestaticblock_Mark, &h_fixedbugs382aliteralconstantisonestaticblock_Mark_desc, 2, (h_fixedbugs382aliteralconstantisonestaticblock_Mark){.tag = h_fixedbugs382aliteralconstantisonestaticblock_Mark_tag_plain}, (h_fixedbugs382aliteralconstantisonestaticblock_Mark){.tag = h_fixedbugs382aliteralconstantisonestaticblock_Mark_tag_count, .as.c_count = {.f_n = INT64_C(5)}});
 #line 25 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_MARKS(void) {
-#line 325 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 306 "fixedbugs382aliteralconstantisonestaticblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aliteralconstantisonestaticblock_MARKS_4);
 }
 #else
 
 #line 25 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_MARKS(void) {
-#line 332 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 313 "fixedbugs382aliteralconstantisonestaticblock.c"
     HeroArrayHeader * h0_own0 = {0};
     h_fixedbugs382aliteralconstantisonestaticblock_Mark t1;
     int64_t t2;
@@ -353,13 +334,9 @@ bb0:
     t5 = h0_own0;
 #line 26 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h0_own0 = t4;
-#line 357 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 338 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t5);
-#line 26 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 360 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_incref(t4);
-#line 26 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 363 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h0_own0);
     return t4;
 }
@@ -367,7 +344,7 @@ bb0:
 
 #line 28 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aliteralconstantisonestaticblock_SHOUT(void) {
-#line 371 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 348 "fixedbugs382aliteralconstantisonestaticblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -391,7 +368,7 @@ bb0:
     t8 = h0_own0;
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h0_own0 = t1;
-#line 395 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 372 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t8);
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t2 = INT64_C(0);
@@ -403,7 +380,7 @@ bb0:
     t9 = h1_own1;
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h1_own1 = t4;
-#line 407 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 384 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_str_decref(t9);
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t5 = HERO_STR_LIT(hero_str_21);
@@ -413,7 +390,7 @@ bb0:
     t10 = h2_own2;
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h2_own2 = t6;
-#line 417 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 394 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_str_decref(t10);
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t7 = hero_array_new(&hero_desc_str, 1);
@@ -423,29 +400,19 @@ bb0:
     t11 = h3_own3;
 #line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h3_own3 = t7;
-#line 427 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 404 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t11);
-#line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 430 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_incref(t7);
-#line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 433 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h0_own0);
-#line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 436 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_str_decref(h1_own1);
-#line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 439 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_str_decref(h2_own2);
-#line 29 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 442 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h3_own3);
     return t7;
 }
 
 #line 31 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
 void h_fixedbugs382aliteralconstantisonestaticblock_main(void) {
-#line 449 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 416 "fixedbugs382aliteralconstantisonestaticblock.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -484,7 +451,7 @@ bb0:
     t21 = h0_own0;
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h0_own0 = t1;
-#line 488 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 455 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t21);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t2 = INT64_C(1);
@@ -498,7 +465,7 @@ bb0:
     t22 = h1_own1;
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h1_own1 = t5;
-#line 502 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 469 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t22);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t6 = INT64_C(1);
@@ -512,7 +479,7 @@ bb0:
     t23 = h2_own2;
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h2_own2 = t9;
-#line 516 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 483 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t23);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t10 = INT64_C(0);
@@ -530,7 +497,7 @@ bb0:
     t24 = h3_own3;
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h3_own3 = t15;
-#line 534 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 501 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t24);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
@@ -542,7 +509,7 @@ bb0:
     t25 = h4_own4;
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     h4_own4 = t18;
-#line 546 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 513 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t25);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     t19 = INT64_C(0);
@@ -568,19 +535,11 @@ bb0:
     hero_print_str(t20);
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     hero_print_end();
-#line 572 "fixedbugs382aliteralconstantisonestaticblock.c"
+#line 539 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h0_own0);
-#line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 575 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h1_own1);
-#line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 578 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h2_own2);
-#line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 581 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h3_own3);
-#line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
-#line 584 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(h4_own4);
     return;
 }

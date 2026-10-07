@@ -66,17 +66,14 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 77 "fixedbugs169oneoperandruns2000longbuildandrun.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +92,7 @@ void h_fixedbugs169oneoperandruns2000longbuildandrun_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
 int64_t h_fixedbugs169oneoperandruns2000longbuildandrun_minus(void) {
-#line 99 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 96 "fixedbugs169oneoperandruns2000longbuildandrun.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -6100,12 +6097,12 @@ bb0:
     if (__builtin_sub_overflow(INT64_C(0), t1999, &t2000)) hero_panic_overflow();
 #line 15 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     return t2000;
-#line 6104 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 6101 "fixedbugs169oneoperandruns2000longbuildandrun.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
 bool h_fixedbugs169oneoperandruns2000longbuildandrun_nots(void) {
-#line 6109 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 6106 "fixedbugs169oneoperandruns2000longbuildandrun.c"
     bool t1;
     bool t2;
     bool t3;
@@ -12113,12 +12110,12 @@ bb0:
     t2001 = !t2000;
 #line 18 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     return t2001;
-#line 12117 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 12114 "fixedbugs169oneoperandruns2000longbuildandrun.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
 int64_t h_fixedbugs169oneoperandruns2000longbuildandrun_tildes(void) {
-#line 12122 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 12119 "fixedbugs169oneoperandruns2000longbuildandrun.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -18126,12 +18123,12 @@ bb0:
     t2001 = ~t2000;
 #line 21 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     return t2001;
-#line 18130 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 18127 "fixedbugs169oneoperandruns2000longbuildandrun.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
 void h_fixedbugs169oneoperandruns2000longbuildandrun_main(void) {
-#line 18135 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 18132 "fixedbugs169oneoperandruns2000longbuildandrun.c"
     int64_t t1;
     bool t2;
     int64_t t3;
@@ -18143,13 +18140,11 @@ bb0:
     hero_print_int(t1);
 #line 24 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     hero_print_end();
-#line 25 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     t2 = h_fixedbugs169oneoperandruns2000longbuildandrun_nots();
 #line 25 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     hero_print_bool(t2);
 #line 25 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     hero_print_end();
-#line 26 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     t3 = h_fixedbugs169oneoperandruns2000longbuildandrun_tildes();
 #line 26 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     hero_print_int(t3);
@@ -18157,7 +18152,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-169-one-operand-runs-2000-long-build-and-run.hero"
     return;
-#line 18161 "fixedbugs169oneoperandruns2000longbuildandrun.c"
+#line 18156 "fixedbugs169oneoperandruns2000longbuildandrun.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

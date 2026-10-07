@@ -15,9 +15,8 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-flex Slot nsap");
 #line 17 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 _Static_assert(_Generic(&((Slot *)0)->nsap, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot nsap");
-#line 18 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 21 "ffialentfieldreadsthroughconst.c"
+#line 20 "ffialentfieldreadsthroughconst.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -80,21 +79,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 20 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffialentfieldreadsthroughconst_slot_sum(void * a0, int64_t a1) { (void)(slot_sum)(a0, a1); }
-#line 21 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffialentfieldreadsthroughconst_slot_fill(void * a0, int64_t a1) { (void)(slot_fill)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "ffialentfieldreadsthroughconst.c"
+#line 93 "ffialentfieldreadsthroughconst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffialentfieldreadsthroughconst_Slot_eq(const Slot *a, const Slot *b);
@@ -113,7 +108,7 @@ void h_ffialentfieldreadsthroughconst_main(void);
 
 #line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 int64_t h_ffialentfieldreadsthroughconst_total(Slot h0_s) {
-#line 117 "ffialentfieldreadsthroughconst.c"
+#line 112 "ffialentfieldreadsthroughconst.c"
     const void * t3;
     int64_t t4;
     int64_t t5;
@@ -131,12 +126,12 @@ bb0:
     t5 = slot_sum(t3, t4);
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return t5;
-#line 135 "ffialentfieldreadsthroughconst.c"
+#line 130 "ffialentfieldreadsthroughconst.c"
 }
 
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 void h_ffialentfieldreadsthroughconst_main(void) {
-#line 140 "ffialentfieldreadsthroughconst.c"
+#line 135 "ffialentfieldreadsthroughconst.c"
     Slot h0_t;
     __attribute__((unused)) Slot h1_u;
     Slot t1;
@@ -162,7 +157,6 @@ bb0:
     t1 = slot_make();
 #line 29 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     h0_t = t1;
-#line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t4 = (const void *)(h0_t.nsap);
 #line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t5 = INT64_C(8);
@@ -176,7 +170,6 @@ bb0:
     hero_print_int(t6);
 #line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     hero_print_end();
-#line 31 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t7 = h0_t;
 #line 31 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t8 = h_ffialentfieldreadsthroughconst_total(t7);
@@ -188,7 +181,6 @@ bb0:
     t9 = slot_make();
 #line 35 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     h1_u = t9;
-#line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t12 = (void *)(h1_u.nsap);
 #line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t13 = INT64_C(8);
@@ -198,7 +190,6 @@ bb0:
     _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h1_u.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 1680 1692 1697 1698 8 void *");
 #line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     (void)slot_fill(t12, t13);
-#line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t16 = (void *)(h1_u.nsap);
 #line 37 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t17 = INT64_C(8);
@@ -226,7 +217,6 @@ bb0:
     hero_print_int(t23);
 #line 40 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     hero_print_end();
-#line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t24 = h0_t;
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t25 = t24.id;
@@ -236,7 +226,7 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return;
-#line 240 "ffialentfieldreadsthroughconst.c"
+#line 230 "ffialentfieldreadsthroughconst.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldreadsthroughconst_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;

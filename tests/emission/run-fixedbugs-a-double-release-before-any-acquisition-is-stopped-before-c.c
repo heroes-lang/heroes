@@ -77,17 +77,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_g_close(gg * a0) { (void)(g_close)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 91 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 88 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_G_eq(gg * const *a, gg * const *b);
@@ -105,7 +102,7 @@ void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
 void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void) {
-#line 109 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 106 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
     gg * h0_a;
     gg * h1_twice;
     gg * t1;
@@ -122,17 +119,14 @@ bb0:
     hero_handle_lent(t1);
 #line 26 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     h0_a = t1;
-#line 27 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t2 = HERO_STR_LIT(hero_str_4a02223e);
 #line 27 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     hero_print_str(t2);
 #line 27 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t3 = h0_a;
 #line 28 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     h1_twice = t3;
-#line 29 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t4 = h0_a;
 #line 29 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     {
@@ -146,7 +140,6 @@ bb0:
     if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead();
 #line 29 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     }
-#line 30 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t5 = h1_twice;
 #line 30 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     {
@@ -160,7 +153,6 @@ bb0:
     if (hero_handle_ended(t5, hero_life_0_0) && h1_twice == t5) h1_twice = hero_handle_dead();
 #line 30 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     }
-#line 31 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t6 = HERO_STR_LIT(hero_str_73bdf5b2);
 #line 31 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     hero_print_str(t6);
@@ -168,7 +160,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     return;
-#line 172 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 164 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_G_eq(gg * const *a, gg * const *b) {
     return hero_handle_eq(*a, *b);
