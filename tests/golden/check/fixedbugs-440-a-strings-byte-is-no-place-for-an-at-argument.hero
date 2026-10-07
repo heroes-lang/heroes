@@ -1,0 +1,47 @@
+# fixedbugs, defect 440, lane b13-land-addr, 2026-10-07 (found beside defect
+# 413's repair, panel 196's R1, and filed by the coordinator). Symptom:
+# `f(@s[0])` over a `str` passed `heroes check` at exit 0 and `heroes build`
+# exited 2, clang refusing the generated C: an internal error on a program the
+# specification forbids, which `check` could have told the author. `spec § 3`
+# calls a `str` an immutable UTF-8 string, and an `@` argument is a place the
+# call writes back into, so a string's byte is no more a place for it than for
+# `s[0] @ 65`, which `str_element_write` has refused since defect 052. Cause:
+# that refusal was asked of the store statement alone, and a call's marked
+# argument never reached it. Repair: the call asks it of every marked argument
+# once the argument is typed (`selfhost/check/walk.hero`, `check/access.hero`).
+#
+# One line per shape: a Heroes function's `@` parameter; an `extern`'s; through
+# UFCS, the byte after the receiver; a `str` field's byte; a byte of a `str`
+# inside an array; a generic function's `@` parameter. Each is the one
+# mistake, told once. Their legal neighbours, a `[u8]`'s element, a `str`
+# lent whole, an element of a `[str]`, are
+# `tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero`.
+extern "fixedbugs-440-bytes.h"
+    function bump(@n: u8)
+
+record Named
+    name: str
+
+function f(@n: u8)
+    n @ n + 1
+
+function add(k: i64, @n: u8)
+    n @ n + 1
+    print(k)
+
+function put<T>(@x: T, y: T)
+    x @ y
+
+function main()
+    s: str @ "ab"
+    f(@s[0])  #~ str_element_write
+    bump(@s[1])  #~ str_element_write
+    k = 3
+    k.add(@s[0])  #~ str_element_write
+    r: Named @ Named(name: "cd")
+    f(@r.name[1])  #~ str_element_write
+    xs: [str] @ ["ef"]
+    f(@xs[0][1])  #~ str_element_write
+    b: u8 = 66
+    put(x: @s[0], y: b)  #~ str_element_write
+    print(s, r.name, xs[0])
