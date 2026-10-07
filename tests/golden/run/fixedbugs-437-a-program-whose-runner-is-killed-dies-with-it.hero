@@ -1,0 +1,155 @@
+# Defect 437, 2026-10-07. Symptom: a `heroes` ended by SIGKILL left the
+# program it ran still running, its parent 1: measured on Linux arm64 with the
+# runtime's own door, a `sleep 30` run through `hero_run_go` outlived its
+# runner's `kill -9`. Cause: no process can catch SIGKILL, so defect 425's
+# handler, which ends every child for the four signals a process can answer,
+# never runs, and the child is in a process group of its own. Now on Linux the
+# child asks before exec to be sent SIGKILL when the thread that started it
+# ends (`PR_SET_PDEATHSIG`), and ends itself if its parent is already gone
+# (`runtime/parts/run.c`, `hero_run_child`). Darwin has no such request, and
+# Windows' job object dies with its last handle; so the case binds
+# `sys/prctl.h`, a header of Linux alone, and is skipped elsewhere by its
+# build's own words, which is where the defect is closed and nowhere else.
+#
+# The program is its own three generations, through the door every `heroes`
+# verb goes through. The first runs the second under a watchdog. The second
+# writes down the signal its parent's death would send it, then runs the
+# third. The third beats once, kills the second with SIGKILL, and beats on, a
+# beat a new empty file in a directory of its own, for ten seconds at most so a
+# runtime without the request leaves no endless orphan. The first reads the
+# second's answer and its end, counts the beats, waits a second, and counts
+# again: the same count, the third ended with the one that ran it. `build/`
+# for the directory, `edges-file-args-exit.hero`'s reason.
+
+extern "sys/prctl.h"
+    constant PR_GET_PDEATHSIG: i32
+    function prctl(option: i32, @signal: i32) -> i32
+
+extern "signal.h"
+    constant SIGKILL: i32
+    function kill(pid: i32, sig: i32) -> i32
+
+extern "unistd.h"
+    function getppid() -> i32
+
+extern "time.h"
+    function time(at: ptr) -> i64
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+    function hero_os_pid() -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_DIR_FILES: i64
+
+# How long the third generation beats before it ends by itself, in seconds:
+# the bound on an orphan where the request is missing.
+constant LIFE: i64
+    10
+
+function itself() -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+# This program run again with `words`, under a watchdog of `seconds`, 0 for
+# none: the code it answered.
+function again(words: [str], seconds: i64) -> i64
+    program = itself()
+    hero_run_reset()
+    hero_run_arg(word: program)
+
+    for word in words
+        hero_run_arg(word: word)
+
+    hero_run_limit(seconds: seconds)
+    status: i64 @ 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    return code
+
+# How many beats `dir` holds.
+function beats(dir: str) -> i64
+    count = hero_dir_scan(root: dir.cstr(), want: HERO_DIR_FILES, recursive: 0)
+    hero_dir_release()
+    return count
+
+# The second generation: the signal it was asked to be sent, written down,
+# then the third, which kills it.
+function second(dir: str)
+    asked: i32 @ 0
+    _ = prctl(option: PR_GET_PDEATHSIG, signal: @asked)
+
+    if write_file(path: dir + "/asked", text: asked.to_str()).is_err()
+        return
+    _ = again(["third", dir], seconds: 0)
+
+# The third generation: a beat, its parent killed, and beats on, one every
+# 2^20 turns, until something ends it or LIFE seconds have passed.
+function third(dir: str)
+    if write_file(path: dir + "/beats/0", text: "").is_err()
+        return
+    _ = kill(pid: getppid(), sig: SIGKILL)
+    born = time(at: nullptr)
+    n: i64 @ 0
+    k: i64 @ 0
+
+    while time(at: nullptr) - born < LIFE
+        n @ n + 1
+
+        if n % 1048576 == 0
+            k @ k + 1
+
+            # A beat that cannot be written is the next one's to make.
+            if write_file(path: dir + "/beats/" + k.to_str(), text: "").is_err()
+                k @ k - 1
+
+# A loop the watchdog ends, which is how the first generation waits.
+function spin() -> i64
+    n: i64 @ 0
+
+    while true
+        n @ n + 1
+
+        if n == 1000000000
+            n @ 0
+
+    return n
+
+function first()
+    dir = "build/heroes-golden-437-" + hero_os_pid().to_str()
+    _ = hero_fs_mkdir_all(path: (dir + "/beats").cstr())
+    code = again(["second", dir], seconds: 30)
+    print("the second generation was killed by SIGKILL: ", code == 128 + SIGKILL.to_i64().must())
+    asked = read_file(dir + "/asked").default("(none)")
+    print("it was to be sent SIGKILL when its runner ended: ", asked == SIGKILL.to_str())
+    before = beats(dir + "/beats")
+
+    if before < 1
+        print("the third generation never beat")
+    else
+        _ = again(["nap"], seconds: 1)
+
+        if beats(dir + "/beats") == before
+            print("the third generation ended with it")
+        else
+            print("the third generation outlived the one that ran it")
+    _ = hero_dir_remove_tree(path: dir.cstr())
+
+function main()
+    words = args()
+
+    if words.len() == 0
+        first()
+    else if words[0] == "second"
+        second(words[1])
+    else if words[0] == "third"
+        third(words[1])
+    else
+        print(spin())

@@ -543,7 +543,14 @@ int64_t hero_file_stage(const char *staged, HeroStr text, const char *like) {
     }
     return step;
 #else
-    int fd = open(staged, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);
+    /* **Its owner's alone until it is given `like`'s mode** (defect 438). The
+     * bytes are written before the mode is carried, so a copy made at 0666
+     * under the umask stood readable by others while a 0600 file's new text
+     * went into it: measured 2026-10-07 on this Mac, a 0600 file's copy seen at
+     * 644 during a 64 MB stage, 600 only at its end, where an open made in
+     * that window keeps reading. A new name, `like` "", is made as `fopen`
+     * makes one. */
+    int fd = open(staged, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, like[0] != '\0' ? 0600 : 0666);
     if (fd < 0) {
         hero_fs_why_code = (int64_t)errno;
         return HERO_STAGE_CREATE;
