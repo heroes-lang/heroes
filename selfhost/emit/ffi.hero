@@ -35,6 +35,7 @@ use emit/ffi_incomplete
 use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
+use emit/ffi_read_only
 use emit/ffi_lend
 use emit/ffi_extent
 use emit/ffi_unit
@@ -254,6 +255,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !writable.is_err()
             found @ ffi_lookup.add_once(found, d: writable.must())
+
+        # A function the header declares with no prototype (defect 426): the
+        # pointee check's own line, which no question above has a type to ask.
+        bare = ffi_read_only.no_prototype(s, decls, p, line: line)
+
+        if !bare.is_err()
+            found @ ffi_lookup.add_once(found, d: bare.must())
 
         # The same clang phrase at a CALL's line rather than a probe's: a
         # `ptr` lend from a name the program may not write, handed to a
