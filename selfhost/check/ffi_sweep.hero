@@ -36,14 +36,17 @@ use check/state
 use check/lower
 use check/ffi
 use check/fixed_repairs
-use check/fixed_judged
 use ffi_errors
 
 # It asks the value, not the world: the legal set is built by reading the
 # declarations in hand, so a position added later is refused by default.
 # And it walks `written_types`, never the syntax — panel 061's `map_keys`
 # walked `TypeKind` nodes and missed every type a literal interned.
-function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+#
+# It answers the type nodes it refused, each heading a refusal of the whole
+# node, told here or already told at that place by another rule: the
+# checker types the program again with them repaired (defects 423 and 432).
+function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: bool}
     owned: {i64: bool} @ {}
 
     for decl in decls
@@ -110,10 +113,7 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
             scanned @ true
         fixed_repairs.told(@c, s, decls, ty: ty, span: span, into: built[node])
 
-    # A value the walk judged against a type refused here was told twice,
-    # once for the type and once for the judgement (defect 423).
-    if refused.len() > 0
-        fixed_judged.withdraw(@c, a, r, s, decls, refused)
+    return refused
 
 function is_fixed(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
@@ -315,5 +315,5 @@ function swept(text: str) -> [diag.Diagnostic]
         _ = lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
 
-    fixed_only_in_a_group(@c, p.tree, out, s, p.decls)
+    _ = fixed_only_in_a_group(@c, p.tree, out, s, p.decls)
     return c.out.diagnostics

@@ -32,6 +32,7 @@ use check/decls as check_decls
 use check/map_keys
 use check/type_labels
 use check/ffi_sweep
+use check/fixed_judged
 use check/rest_zero
 use check/marks
 use check/acquiring
@@ -46,36 +47,22 @@ use check/freer_marks
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
 function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> state.Checked
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: a.exprs.len())
-
-    # The `owned <freer>` marks by name, once, before any body: every call
-    # to a declared function asks the table (defect 111).
-    c.out.freers @ freer_marks.marks(decls, s)
-
-    # Sizes first, and it needs no expression types.
-    sizes = sized.order_and_cycles(a, r, s, decls)
-    c.out.type_order @ sizes.order
-
-    for d in sizes.diagnostics
-        state.push_diagnostic(@c, d)
-
-    check_decls.file(@c, a, r, s, decls)
-
-    # After the declarations, because it reads written_type — the table
-    # the lowering fills. Asking first is silent: it finds nothing and
-    # passes.
-    map_keys.check(@c, a, s, decls)
-
-    # §4.9 through a function VALUE (defect 026): the same table, the same
-    # reason it is asked after the declarations, and the same shape of rule —
-    # a hazard that lives in a TYPE, written once in an annotation.
-    type_labels.check(@c, a, s, decls)
+    c: state.Checker @ typed(a, r, s, decls)
 
     # Same reason, same table, and the same defect one milestone apart:
     # panel 062 wired its rule to one call site and three other positions
     # shipped. It reads the resolver's answers to name the construction a
     # refused array is built into (defect 408).
-    ffi_sweep.fixed_only_in_a_group(@c, a, r, s, decls)
+    refused = ffi_sweep.fixed_only_in_a_group(@c, a, r, s, decls)
+
+    # What a refused fixed array set off (defects 423, 432, 433): the program
+    # is typed again as the refusal repairs it, each refused `T[N]` written as
+    # its `[T]`, and a message the repaired program does not tell, at its
+    # place and with its code, was the refused type's and is withdrawn. Only
+    # a program already refused pays for the second typing.
+    if refused.len() > 0
+        again = typed(fixed_judged.repaired(a, refused), r, s, decls)
+        c.out.diagnostics @ fixed_judged.reproduced(told: c.out.diagnostics, again: again.out.diagnostics)
 
     # Each construction of a group's record ending with `rest: zero`, marked
     # (panel 194); a misuse of the words is the resolver's (defect 401).
@@ -143,6 +130,37 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # a type after it without saying so.
     c.out.counted @ counted.build(c.out.types, decls, c.out.written_types)
     return c.out
+
+# The typing every later rule reads: the freer marks, the sizes, the
+# declarations with their bodies, and the two rules that ask the types they
+# wrote. One function, so a program typed again (defect 432) goes through
+# the same stages in the same order.
+function typed(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> state.Checker
+    c: state.Checker @ state.new_checker(out_of: r, expr_count: a.exprs.len())
+
+    # The `owned <freer>` marks by name, once, before any body: every call
+    # to a declared function asks the table (defect 111).
+    c.out.freers @ freer_marks.marks(decls, s)
+
+    # Sizes first, and it needs no expression types.
+    sizes = sized.order_and_cycles(a, r, s, decls)
+    c.out.type_order @ sizes.order
+
+    for d in sizes.diagnostics
+        state.push_diagnostic(@c, d)
+
+    check_decls.file(@c, a, r, s, decls)
+
+    # After the declarations, because it reads written_type — the table
+    # the lowering fills. Asking first is silent: it finds nothing and
+    # passes.
+    map_keys.check(@c, a, s, decls)
+
+    # §4.9 through a function VALUE (defect 026): the same table, the same
+    # reason it is asked after the declarations, and the same shape of rule —
+    # a hazard that lives in a TYPE, written once in an annotation.
+    type_labels.check(@c, a, s, decls)
+    return c
 
 ## Tests
 
