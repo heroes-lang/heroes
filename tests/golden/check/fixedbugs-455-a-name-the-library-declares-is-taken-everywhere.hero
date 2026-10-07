@@ -1,0 +1,39 @@
+# fixedbugs, defect 455, lane b14-resolve, 2026-10-07, filed by the
+# coordinator from lane b14-runtime's report.
+#
+# SYMPTOM, as filed: a function named `bytes` was accepted where one named
+# `print` or `len` is refused `builtin_name_taken`. `bytes` is no built-in,
+# in spec § 11 or in any table of the compiler, so nothing refuses it, and
+# its `s.bytes()` is `bytes(s)`, the function calling itself: that program
+# is told nothing at the name stage today either. What the enumeration of
+# every built-in found is this: `args_checked`, which § 11 lists beside
+# `args` and the library declares, was missing from the names the check
+# refuses, so a program's own was accepted at the top level and took every
+# call, and a parameter, a type parameter or a local of that name took its
+# scope.
+#
+# CAUSE: the check read the inventory alone, and the library, whose every
+# declaration each module reads unqualified, declares a name it lacks.
+#
+# FIX: the check reads the library's own declarations beside the inventory
+# (`resolve/builtin_names.hero`), externs and the one name left free by a
+# written decision, `validated`, aside. The two `not_a_type` beside the type
+# parameter are the shape every built-in's name takes there, `len` and
+# `range` alike, reported apart.
+
+function args_checked() -> [str?]  #~ builtin_name_taken
+    return []
+
+function f(args_checked: i64) -> i64  #~ builtin_name_taken
+    return args_checked
+
+function g<args_checked>(x: args_checked) -> args_checked  #~ builtin_name_taken not_a_type not_a_type
+    return x
+
+function main()
+    args_checked = 2  #~ builtin_name_taken
+    print(f(args_checked: args_checked))
+    print(g(1))
+
+function h()
+    args_checked @ 1  #~ no_mutable_globals
