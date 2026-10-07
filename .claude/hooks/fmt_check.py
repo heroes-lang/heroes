@@ -43,10 +43,23 @@ exits (CL-025), and a hook that edited a file under a running suite would be the
 same defect this project already paid for once. Exit 2 puts the reason in front
 of the assistant, which then repairs the file itself.
 
+**The file is judged in the tree it stands in, since 2026-10-07** (defect 254,
+`trees.py`): the nearest directory above it holding `seed/heroes.c` and a
+`.git` entry, so a lane under `.claude/worktrees/<lane>/` is judged by its own
+compiler with its paths read from its own root, whatever the session's
+directory. Until that day the session's directory was the tree: a lane's module
+written by a session on the trunk was formatted by the trunk's compiler and
+read as `.claude/worktrees/<lane>/selfhost/...`, which is not `selfhost/`, so
+neither the whole compiler's check nor the ceiling was asked of it. A file
+outside every tree is still a program: the session's tree's compiler says
+whether it parses and is canonical, and nothing a tree owns is asked of it.
+
 Contract with the harness: the tool call arrives as JSON on stdin and the path
-is `tool_input.file_path`. Missing compiler, missing file, or anything
-unexpected means exit 0 and no opinion: this hook never blocks work over its own
-inability to run.
+is `tool_input.file_path`. A missing file, or anything unexpected, means exit 0
+and no opinion: this hook never blocks work over its own inability to run. A
+tree with no compiler built is the one absence it names (exit 2, which after a
+write is a notice and blocks nothing): its file was not judged, and silence
+would read as a pass.
 """
 
 import json
@@ -56,8 +69,30 @@ import subprocess
 import sys
 
 import ceiling
+import trees
 
 LAYER = "(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
+
+
+class Place:
+    """Where a written file stands: its tree, the compiler that judges it, its
+    path as that tree reads it, and its name as the session should read it."""
+
+    def __init__(self, path, session):
+        self.path = path
+        self.tree = trees.tree_of(path)
+        session_tree = trees.tree_of(session)
+        self.home = self.tree or session_tree or os.path.abspath(session)
+        self.compiler = trees.compiler_of(self.home)
+        # None for a file outside every tree, so no question a tree owns
+        # (`selfhost/`, `tests/harness/`, `tests/golden/`) is asked of it.
+        self.rel = os.path.relpath(path, self.tree) if self.tree else None
+        # Short where the tree is the session's own, whole where it is not, so
+        # a lane's file is never read as the trunk's.
+        self.shown = self.rel if self.tree is not None and self.tree == session_tree else path
+
+    def under(self, prefix):
+        return self.rel is not None and self.rel.startswith(prefix)
 
 
 def run(compiler, args, root):
@@ -84,35 +119,44 @@ def main():
     if not isinstance(path, str) or not (path.endswith(".hero") or path.endswith(".expected")):
         return 0
 
-    root = payload.get("cwd") or os.getcwd()
-    compiler = os.path.join(root, "heroes")
-    if not (os.path.isfile(compiler) and os.access(compiler, os.X_OK)):
-        return 0
+    session = payload.get("cwd") or os.getcwd()
+    path = os.path.abspath(os.path.join(session, path))
     if not os.path.isfile(path):
         return 0
-    rel = os.path.relpath(os.path.abspath(path), root)
+    place = Place(path, session)
+    if not trees.runnable(place.compiler):
+        if place.tree is None:
+            return 0
+        print(
+            place.shown + " was not judged: its tree, " + place.tree + ", has no compiler "
+            "built, so nothing asked whether it parses, is canonical or checks. Build it "
+            "there: `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`.\n" + LAYER,
+            file=sys.stderr,
+        )
+        return 2
+    compiler = place.compiler
 
     # An expectation written is judged against its case's marks, and nothing
     # else here reads it.
     if path.endswith(".expected"):
-        return marks_against_expectation(compiler, root, rel)
+        return marks_against_expectation(compiler, place)
 
     # 1. The file parses, and it is canonical. `heroes fmt <file>` prints the
     #    canonical form and writes nothing; a file that does not parse makes it
     #    exit non-zero with the diagnostic on stderr.
-    fmt = run(compiler, ["fmt", path], root)
+    fmt = run(compiler, ["fmt", path], place.home)
     if fmt is None:
         return 0
-    if fmt.returncode != 0 and rel.startswith("tests/golden/") and has_marks(path):
+    if fmt.returncode != 0 and place.under("tests/golden/") and has_marks(path):
         # A golden case whose `#~` marks claim diagnostics is refused by `fmt`
         # on purpose: its diagnostics are its subject (defect 272, 2026-10-05).
         # This hook said *does not parse* of every such case, a false alarm
         # that teaches its reader to pass it by; the marks are judged against
         # the expectation instead, which is the question the case asks.
-        return marks_against_expectation(compiler, root, rel)
+        return marks_against_expectation(compiler, place)
     if fmt.returncode != 0:
         print(
-            rel + " does not parse; the compiler says:\n" + head(fmt.stderr) + "\n" + LAYER,
+            place.shown + " does not parse; the compiler says:\n" + head(fmt.stderr) + "\n" + LAYER,
             file=sys.stderr,
         )
         return 2
@@ -123,7 +167,7 @@ def main():
         return 0
     if fmt.stdout != on_disk:
         print(
-            rel + " is not canonical: run `heroes fmt " + path + " --in-place`.\n"
+            place.shown + " is not canonical: run `heroes fmt " + path + " --in-place`.\n"
             "The `canonical` suite fails on it otherwise, and design.md §4.15 "
             "rests on a textual difference meaning a semantic one "
             "(CLAUDE.md § Verification).",
@@ -132,13 +176,13 @@ def main():
         return 2
 
     # 2. Names and types: the whole compiler for one of its modules, the one
-    #    file for a harness module.
-    if rel.startswith("selfhost/"):
-        check = run(compiler, ["check", "selfhost/main.hero"], root)
-        subject = "selfhost/main.hero, with " + rel + " as written,"
-    elif rel.startswith("tests/harness/"):
-        check = run(compiler, ["check", rel], root)
-        subject = rel
+    #    file for a harness module, each in the tree the file stands in.
+    if place.under("selfhost/"):
+        check = run(compiler, ["check", "selfhost/main.hero"], place.tree)
+        subject = "selfhost/main.hero, with " + place.shown + " as written,"
+    elif place.under("tests/harness/"):
+        check = run(compiler, ["check", place.rel], place.tree)
+        subject = place.shown
     else:
         check = None
         subject = ""
@@ -150,13 +194,14 @@ def main():
         return 2
 
     # 3. The line ceiling, by the mirror; the `layout` suite is the judge.
-    over = ceiling.verdict(root, rel)
-    if over is not None:
-        print(over, file=sys.stderr)
-        return 2
+    if place.rel is not None:
+        over = ceiling.verdict(place.tree, place.rel)
+        if over is not None:
+            print(over, file=sys.stderr)
+            return 2
 
     # 4. A golden case's marks against its expectation.
-    return marks_against_expectation(compiler, root, rel)
+    return marks_against_expectation(compiler, place)
 
 
 def has_marks(path):
@@ -171,14 +216,17 @@ def has_marks(path):
     return re.search(r"#~v? [a-z_]+", text) is not None
 
 
-def marks_against_expectation(compiler, root, rel):
-    """The `annotations` suite narrowed to the case `rel` names (defect 286).
+def marks_against_expectation(compiler, place):
+    """The `annotations` suite narrowed to the case `place` names (defect 286),
+    run in the case's own tree with that tree's compiler.
 
     Exit 2 with the suite's own words where it fails THIS case; no opinion
     where the case is not a golden one, has no `.hero` or no `.expected` yet,
     is not one the suite selects, or the run could not be made."""
-    if not rel.startswith("tests/golden/"):
+    if not place.under("tests/golden/"):
         return 0
+    root = place.tree
+    rel = place.rel
     stem = rel[: rel.rfind(".")]
     if not (os.path.isfile(os.path.join(root, stem + ".hero")) and os.path.isfile(os.path.join(root, stem + ".expected"))):
         return 0
@@ -197,7 +245,7 @@ def marks_against_expectation(compiler, root, rel):
             break
         rows.append(row)
     print(
-        stem + "'s marks and its expectation disagree; the `annotations` suite says:\n"
+        place.shown[: place.shown.rfind(".")] + "'s marks and its expectation disagree; the `annotations` suite says:\n"
         + "\n".join(rows) + "\n"
         "Change whichever side is wrong; if the `.expected` is being rewritten "
         "next, this clears when it is.\n" + LAYER,

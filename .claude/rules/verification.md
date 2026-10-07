@@ -73,6 +73,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** `unseen` |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
 | `docs/**`, `issues/**`, `CLAUDE.md`, `.claude/**` | `records` `unseen` |
+| `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
 
@@ -595,7 +596,13 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   until 2026-10-05** (defect 286): since then the hook asks the `annotations`
   suite itself, narrowed to the case, on a write of its `.hero` or its
   `.expected`, and a golden case whose `#~` marks claim diagnostics is no
-  longer told it does not parse (defect 272).
+  longer told it does not parse (defect 272). **Since 2026-10-07 the file is
+  judged in the tree it stands in** (defect 254, `.claude/hooks/trees.py`): the
+  nearest directory above it holding `seed/heroes.c` and a `.git` entry, so a
+  lane's file is judged by the lane's compiler with its paths read from the
+  lane's root, whatever the session's directory; a file outside every tree is
+  asked only whether it parses and is canonical, by the session's tree's
+  compiler; and a tree with no compiler built is told so, its file not judged.
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets
