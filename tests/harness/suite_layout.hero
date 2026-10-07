@@ -457,6 +457,14 @@ constant CEILING: i64
 # **370**, what it measures in this suite's unit once lane b14-check split
 # defect 259's memo out into `check/type_fit.hero` (`b2be2c9c`): a ceiling
 # left above what its file measures is room for growth nobody sees.
+#
+# **One arrived on 2026-10-07, for defect 333.** `print/brackets.hero` at
+# **315**: an empty call past the width no longer breaks as `.must(` over `)`,
+# which made nothing shorter, and the bracket that holds nothing is printed by
+# `shut`, a new member of the knot the module doc maps (`broken` the entry,
+# `spread`, `opened`, `shut`, `one_line`, `part` and `element` calling
+# `spread` again), which Heroes refuses to cut into two modules (lane
+# b14-text, `f38c25b2`).
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -477,6 +485,7 @@ constant DECIDED: [str]
         "selfhost/ir.hero 315"
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
+        "selfhost/print/brackets.hero 315"
     ]
 
 # THE PARSER'S MODULES HAVE A BUDGET, and not only each file a ceiling
@@ -499,9 +508,17 @@ constant DECIDED: [str]
 # lines only along a seam, code that reads no parse: the lane that wrote this
 # row paid defect 203's 21 lines so, `head_lines`' three margin readers to
 # `text_lines`, which reads every line of a text.
+#
+# **Raised 2026-10-07, 8696 -> 8699, for defect 456 (`blocking`).** `heroes
+# check` exited 134 on a parenthesised type broken across lines at a body's
+# end: `parse/brace_habit.hero`'s `a_closer_too_many` and `stray_run` read one
+# token past a body cursor's last (lane b14-text, `428a5cfd`). The bound is
+# five lines in the file that reads past the end, and the row had two lines
+# of room at lane b14-parse's close (8,694): a crash in the parser is repaired
+# where the read is, never moved elsewhere to fit a count.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8696"
+        "selfhost/parse/ 8699"
     ]
 
 # The floor is the Rust's own idea —
@@ -1053,7 +1070,11 @@ test "the ceiling is per file, and a decided file keeps its own"
     # **18 -> 19 on 2026-09-14**, M-cleanup-verdict step 1: `emit/structural.hero`
     # arrives for defect 032's repair, an ADDITION, which is the direction this
     # assert exists to make somebody type. The reason is above DECIDED.
-    assert DECIDED.len() == 18
+    #
+    # **18 -> 19 on 2026-10-07**, batch 14: `print/brackets.hero` arrives for
+    # defect 333's `shut`, an ADDITION, a knot the module doc maps. The reason
+    # is above DECIDED.
+    assert DECIDED.len() == 19
 
 # DEFECT 209, held as a test (2026-10-04): a narrowed walk that selects no
 # module records nothing, where it read one pass, and one that selects a module
