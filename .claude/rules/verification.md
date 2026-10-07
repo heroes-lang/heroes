@@ -633,6 +633,10 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   bare commit while it stands, is refused when the index holds a file it did
   not bring; and a command behind an assignment, a wrapper (`env`, `time`,
   `caffeinate`, `timeout`) or a shell's `-c` is read as the shell runs it.
+  And a commit's, a merge's or a tag's message, `-m` or `-F` and the heredoc
+  `-F -` reads, is refused where it holds a character the `unseen` suite
+  refuses in a document, named by its code point, line and column, the list
+  being that suite's `REFUSED`, read from it (defect 378).
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.

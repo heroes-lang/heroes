@@ -78,30 +78,101 @@ function known() -> [Found]
 
 ## The characters
 
+# WHAT IS REFUSED, as data: each row the first and the last code point of a
+# run, in decimal, the rows in order and apart. It is the ONE list. The commit
+# guard reads a commit's message against these rows, from this file
+# (`.claude/hooks/unseen.py`, defect 378), so a message and a document are
+# refused the same characters and no second copy can drift from this one.
+constant REFUSED: [str]
+    [
+        # C0 but the tab and the line feed
+        "0 8"
+        "11 31"
+        # DEL and C1
+        "127 159"
+        # U+00AD SOFT HYPHEN
+        "173 173"
+        # U+061C ARABIC LETTER MARK
+        "1564 1564"
+        # U+115F and U+1160, the Hangul choseong and jungseong fillers
+        "4447 4448"
+        # U+180E MONGOLIAN VOWEL SEPARATOR
+        "6158 6158"
+        # U+200B ZERO WIDTH SPACE
+        "8203 8203"
+        # U+200E LRM and U+200F RLM
+        "8206 8207"
+        # U+2028, U+2029, and U+202A LRE to U+202E RLO
+        "8232 8238"
+        # U+2060 WORD JOINER and the invisible operators to U+2064
+        "8288 8292"
+        # U+2066 LRI to U+2069 PDI
+        "8294 8297"
+        # U+3164 HANGUL FILLER
+        "12644 12644"
+        # U+FEFF BYTE ORDER MARK
+        "65279 65279"
+        # U+FFA0 HALFWIDTH HANGUL FILLER
+        "65440 65440"
+    ]
+
+# The rows of `REFUSED` as numbers, each run's first and last in turn, read
+# once a walk. A row that does not read as two numbers reads as nothing here,
+# and the test below holds every row to its shape and its order.
+function refused_runs() -> [i64]
+    out: [i64] @ []
+
+    for row in REFUSED
+        parts = strings.words(row)
+
+        if parts.len() == 2
+            first = strings.to_number(parts[0])
+            last = strings.to_number(parts[1])
+
+            if !first.is_err() && !last.is_err()
+                out @ out.push(first.must())
+                out @ out.push(last.must())
+
+    return out
+
+# Whether a document refuses `code` written as itself, `runs` being
+# `refused_runs()`: the runs are in order, so the first that starts past
+# `code` ends the search.
+function refused_in(code: i64, runs: [i64]) -> bool
+    at: i64 @ 0
+
+    while at + 1 < runs.len()
+        if code < runs[at]
+            return false
+
+        if code <= runs[at + 1]
+            return true
+        at @ at + 2
+
+    return false
+
 # Whether a document refuses `code` written as itself.
 function refused(code: i64) -> bool
-    if code < 32
-        return code != 9 && code != 10
+    return refused_in(code, runs: refused_runs())
 
-    if code < 127
-        return false
+# Which of the 128 ASCII codes `runs` refuses, by index, asked once a walk:
+# nearly every byte of a document is ASCII, and a byte asked by its index
+# costs what the comparisons this list replaced did, where a search of the
+# runs at every byte cost the walk three quarters more (41.7 billion
+# instructions against 23.9, measured 2026-10-07).
+function ascii_refused(runs: [i64]) -> [bool]
+    out: [bool] @ []
 
-    if code < 160
-        return true
+    for code in range(from: 0, to: 128)
+        out @ out.push(refused_in(code, runs: runs))
 
-    if code < 8192
-        return code == 173 || code == 1564 || code == 4447 || code == 4448 || code == 6158
-
-    # U+200B, LRM and RLM, U+2028 to RLO, the word joiner and the invisible
-    # operators, and LRI to PDI.
-    if code <= 8297
-        return code == 8203 || code == 8206 || code == 8207 || code >= 8232 && code <= 8238 || code >= 8288 && code <= 8292 || code >= 8294
-    return code == 12644 || code == 65279 || code == 65440
+    return out
 
 # The characters of `text` a document refuses, each at its line, `path`
-# left for the caller. ASCII is asked byte by byte and anything above it
-# decoded, a `str` being well-formed UTF-8 (spec § 3).
-function found_in(text: str) -> [Found]
+# left for the caller, `runs` being `refused_runs()` and `ascii` its
+# `ascii_refused`. ASCII is asked byte by byte and anything above it decoded,
+# a `str` being well-formed UTF-8 (spec § 3).
+function found_in(text: str, runs: [i64], ascii: [bool]) -> [Found]
     out: [Found] @ []
     line: i64 @ 1
     at: i64 @ 0
@@ -115,14 +186,14 @@ function found_in(text: str) -> [Found]
             continue
 
         if b < 128
-            if refused(to_i64(b).must())
+            if ascii[to_i64(b).must()]
                 out @ out.push(Found(path: "", line: line, code: to_i64(b).must()))
             at @ at + 1
             continue
         width = width_of(b)
         code = decoded(text, at: at, width: width)
 
-        if refused(code)
+        if refused_in(code, runs: runs)
             out @ out.push(Found(path: "", line: line, code: code))
         at @ at + width
 
@@ -189,6 +260,8 @@ function run_all(scratch: str) -> report.Report?
     files = shell.project_files(scratch)?
     documents: i64 @ 0
     found: [Found] @ []
+    held = refused_runs()
+    ascii = ascii_refused(held)
 
     for path in files
         if exempt(path)
@@ -199,7 +272,7 @@ function run_all(scratch: str) -> report.Report?
             continue
         documents @ documents + 1
 
-        for one in found_in(text.must())
+        for one in found_in(text.must(), runs: held, ascii: ascii)
             found @ found.push(Found(path: path, line: one.line, code: one.code))
 
     excused = known()
@@ -251,7 +324,7 @@ test "a document refuses a control character, a bidirectional one and the zero-w
 
 test "a character is found at its line and named by its code"
     text = "one\ntwo " + of([226, 128, 139]) + "\nthree " + of([226, 128, 174]) + " and " + of([27]) + "\n" + of([240, 159, 145, 168, 226, 128, 141, 240, 159, 146, 187]) + "\n"
-    got = found_in(text)
+    got = found_in(text, runs: refused_runs(), ascii: ascii_refused(refused_runs()))
     assert got.len() == 3
     assert got[0].line == 2
     assert got[0].code == 8203
@@ -261,6 +334,24 @@ test "a character is found at its line and named by its code"
     assert named(8203) == "U+200B"
     assert named(27) == "U+001B"
     assert named(917601) == "U+E0061"
+
+test "the refused runs are two numbers each, in order and apart, so the search may stop early"
+    held = refused_runs()
+    assert held.len() == REFUSED.len() * 2
+    at: i64 @ 0
+
+    while at + 1 < held.len()
+        assert held[at] <= held[at + 1]
+
+        if at + 2 < held.len()
+            assert held[at + 1] < held[at + 2]
+        at @ at + 2
+
+    ascii = ascii_refused(held)
+    assert ascii.len() == 128
+
+    for code in range(from: 0, to: 128)
+        assert ascii[code] == refused(code)
 
 test "a case's tree is exempt and a document is not"
     assert exempt("tests/golden/check/fixedbugs-283-x.hero")

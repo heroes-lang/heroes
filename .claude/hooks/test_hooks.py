@@ -496,6 +496,57 @@ class Pathspec(unittest.TestCase):
         self.passed("git -C . add CLAUDE.md")
 
 
+REPO = os.path.dirname(os.path.dirname(HOOKS))
+ZWSP = chr(0x200B)
+RLO = chr(0x202E)
+ESC = chr(0x1B)
+ZWJ = chr(0x200D)
+
+
+class Message(unittest.TestCase):
+    """Defect 378: a commit's message is read for the characters the `unseen`
+    suite refuses in a document, from that suite's own list."""
+
+    def setUp(self):
+        self.top = fresh("hooks-378-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        with open(os.path.join(REPO, "tests", "harness", "suite_unseen.hero"), encoding="utf-8") as handle:
+            write(os.path.join(self.tree, "tests", "harness", "suite_unseen.hero"), handle.read())
+
+    def said(self, command):
+        return guard_bash.verdict(command, self.tree)
+
+    def test_a_message_file_holding_a_zero_width_space_is_refused_with_its_place(self):
+        write(os.path.join(self.tree, "msg.txt"), "Subject\n\nA body with" + ZWSP + " one.\n")
+        said = self.said("git commit -F msg.txt -- a.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("U+200B at line 3, column 12 of `msg.txt`", said)
+
+    def test_a_message_given_with_m_is_read(self):
+        said = self.said("git commit -m 'abc" + RLO + "def' -- a.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("U+202E", said)
+        self.assertIsNotNone(self.said("git commit --message='x" + ESC + "' -- a.hero"))
+        self.assertIsNotNone(self.said("git commit -Fmsg.txt -m ok -m 'y" + ZWSP + "' -- a.hero"))
+
+    def test_a_message_read_from_stdin_or_a_substitution_is_read_in_the_heredoc(self):
+        self.assertIsNotNone(self.said("git commit -F - -- a.hero <<'EOF'\nSubject" + ZWSP + "\nEOF"))
+        self.assertIsNotNone(self.said("git commit -m \"$(cat <<'EOF'\nSubject\n\nbody" + ESC + "\nEOF\n)\" -- a.hero"))
+
+    def test_a_merge_and_a_tag_message_are_read(self):
+        self.assertIsNotNone(self.said("git merge -m 'm" + ZWSP + "' lane-x"))
+        self.assertIsNotNone(self.said("git tag -a v0 -m 't" + ZWSP + "'"))
+
+    def test_a_clean_message_and_what_text_spells_with_pass(self):
+        write(os.path.join(self.tree, "msg.txt"), "Subject\n\n\tA tab, a joiner " + ZWJ + " and an é.\n")
+        self.assertIsNone(self.said("git commit -F msg.txt -- a.hero"))
+
+    def test_the_list_is_the_suite_s_own(self):
+        write(os.path.join(self.tree, "tests", "harness", "suite_unseen.hero"), 'constant REFUSED: [str]\n    [\n        "88 88"\n    ]\n')
+        self.assertIsNotNone(self.said("git commit -m 'aXb' -- a.hero"))
+        self.assertIsNone(self.said("git commit -m 'a" + ZWSP + "b' -- a.hero"))
+
+
 ANNOTATIONS = '''constant DIRECTORIES: [str]
     [
         "tests/golden/check"
