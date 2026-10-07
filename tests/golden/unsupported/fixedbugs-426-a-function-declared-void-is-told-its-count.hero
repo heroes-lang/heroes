@@ -1,0 +1,24 @@
+# FIXED DEFECT 426, found beside defect 411 by lane b13-w411 on 2026-10-06 and
+# repaired there on 2026-10-07.
+#
+# SYMPTOM: `int32_t kr_write();`, a header declaration with no prototype, bound
+# `kr_write(p: cstr lent)` and lent a `str` the program shared: exit 0, and C
+# wrote it (`Zbc`). There was no parameter type to ask, and the call converted
+# nothing.
+#
+# CAUSE: the pointee check reads such a function with no parameter, as it
+# reads `int f(void)`, and asked nothing of it. FIX: a function the declaration
+# gives a parameter, and the dump none, is asked whether its header gives a
+# prototype at all (`emit/ffi_read_only.hero`), and one declared with none is
+# refused on the declaration, naming the prototype a header of the author's
+# own can give it.
+#
+# THIS SHAPE: `int32_t kr_void(void)` is a prototype that names no
+# parameter, and a binding that declares one is told its count, never that
+# the prototype is missing.
+
+extern "fixedbugs-426-no-prototype.h"
+    function kr_void(n: i32) -> i32  #~ ffi_call_shape
+
+function main()
+    print(kr_void(n: 1))

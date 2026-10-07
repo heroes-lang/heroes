@@ -120,6 +120,8 @@ function writable_pointee(s: source.Source, decls: [ast.Decl], p: containers.Pro
 
 # The line the check unit writes for one answered ask of this file's.
 function question(asked: pointee_ask.Pointee, header_type: str) -> str
+    if asked.declared == pointee_ask.ARITY
+        return prototype_assertion(asked)
     return read_only_assertion(asked, header_type: header_type)
 
 # The question, as the line the check unit writes for one parameter whose
@@ -131,6 +133,67 @@ function question(asked: pointee_ask.Pointee, header_type: str) -> str
 # question holds and the probe's call says what is wrong with the binding.
 function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> str
     return "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + asked.name + " " + asked.param + " " + header_type + "\");"
+
+## A header that gives no prototype
+
+# The contract between the check unit's prototype question and its reader.
+constant PROTOTYPE_MARKER: str
+    "heroes-ffi-no-prototype "
+
+# **A function the header declares with no prototype is refused** (defect 426,
+# 2026-10-07). `int32_t kr_write();` names no parameter, so clang converts
+# nothing a call hands it and no question in this file or the probe has a type
+# to ask of: `kr_write(p: cstr lent)` built at exit 0 and C wrote the `str` a
+# copy shared. The dump reads such a function with no parameter, as it reads
+# `int f(void)`, and C11 tells the two apart: a function declared with no
+# prototype is compatible with `R (void *)`, as with any prototype whose
+# parameters promotion leaves alone, and `R (void)` is compatible with no type
+# that takes a parameter. `(name)()` names `R`, a call either declaration
+# takes, and `*name` reads a function pointer the header declares as what it
+# points at, as the dump does.
+function prototype_assertion(asked: pointee_ask.Pointee) -> str
+    name = asked.name
+    return "_Static_assert(!__builtin_types_compatible_p(__typeof__(*" + name + "), __typeof__((" + name + ")()) (void *)), \"" + PROTOTYPE_MARKER + name + " " + asked.index.to_str() + "\");"
+
+# `heroes-ffi-no-prototype <name> <count>` failed, at the author's declaration.
+# It is `ffi_parameter_type`'s class: a parameter held to the header's own
+# type, where the header gives none.
+function no_prototype(s: source.Source, decls: [ast.Decl], p: containers.Program, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: PROTOTYPE_MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not a prototype assertion")
+    parts = ffi_lookup.words(text: rest.must())
+    at = ffi_site.location(s, line: line)
+
+    if parts.len() < 2 || at.is_err()
+        return fail(code: "none", msg: "the marker's tail or its place is not ours")
+    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
+    declared = ffi_lookup.declaration(s, decls, name: parts[0])
+
+    if found.is_err() || found.must().name != parts[0] || declared.is_err()
+        return fail(code: "none", msg: "no extern of that name is declared at that line")
+    count = ffi_pointee.trim_quote(parts[1])
+    words: str @ count + " parameters"
+
+    if count == "1"
+        words @ "1 parameter"
+    name = parts[0]
+    header = declared.must().header
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + name + "` is declared with " + words + ", and `" + header + "` declares it with no prototype — clang read the header, and a call converts nothing it hands C, so no parameter can be held to the header's own type",
+        span: decls[found.must().f.decl].span
+    )
+    d.notes @ d.notes.push(
+        "§4.19: every parameter of an `extern` is held to the header's own type, and a declaration such as `int " + name + "();` names none: C takes whatever a call hands it, and may write through any pointer among it"
+    )
+    d.notes @ d.notes.push(
+        "write a header of your own that includes `" + header + "` and declares the prototype the library's documentation gives, `<result> " + name + "(<its parameters>);`, and name that header in this group"
+    )
+    return ok(d)
 
 # `out`, then every read-only ask's answer the dump allows. **A function whose
 # header takes another number of parameters than the declaration gives is
@@ -151,6 +214,16 @@ function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee]
     kept: [pointee_ask.Answered] @ out
 
     for one in wanted
+        if one.declared == pointee_ask.ARITY
+            # A function the dump reads with no parameter, and the declaration
+            # gives one: `int f(void)` or a declaration with no prototype at
+            # all, which `prototype_assertion` tells apart (defect 426).
+            bare = types[one.name]
+
+            if !bare.is_err() && bare.must().len() == 0 && one.index > 0
+                kept @ kept.push(pointee_ask.Answered(asked: one, header_type: "", pointee: ""))
+            continue
+
         if one.declared != pointee_ask.READ
             continue
         params = types[one.name]
@@ -349,6 +422,41 @@ test "a read-only lend is asked only where the header's parameters line up with 
     assert agreed[0].header_type == "unsigned char *"
     assert lend_answers(none, [read, three], types: types, sugar: sugar).len() == 0
     assert lend_answers(none, [read], types: types, sugar: sugar).len() == 0
+
+# Defect 426: a function the dump reads with no parameter, where the
+# declaration gives one, is asked whether the header gives a prototype at all,
+# and the answer is read back onto the declaration.
+test "a function the header declares with no prototype is asked so, and told on its declaration (defect 426)"
+    arity = pointee_ask.Pointee(
+        name: "kr_write",
+        param: "",
+        index: 1,
+        declared: pointee_ask.ARITY,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    assert question(arity, header_type: "") == "_Static_assert(!__builtin_types_compatible_p(__typeof__(*kr_write), __typeof__((kr_write)()) (void *)), \"heroes-ffi-no-prototype kr_write 1\");"
+    types: {str: [str]} @ {}
+    types["kr_write"] @ []
+    none: [pointee_ask.Answered] = []
+    sugar: {str: [str]} = {}
+    assert lend_answers(none, [arity], types: types, sugar: sugar).len() == 1
+    types["kr_write"] @ ["unsigned char *"]
+    assert lend_answers(none, [arity], types: types, sugar: sugar).len() == 0
+    text = "extern \"kr.h\"\n    function kr_write(p: cstr lent) -> i32\n\nfunction main()\n    print(kr_write(p: \"a\".cstr()))\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    line = "t.hero:2:1: error: static assertion failed due to requirement '!__builtin_types_compatible_p(int (), int (void *))': heroes-ffi-no-prototype kr_write 1"
+    d = no_prototype(s, parsed.decls, low.program, line: line)
+    assert d.must().code == "ffi_parameter_type"
+    assert d.must().message == "`kr_write` is declared with 1 parameter, and `kr.h` declares it with no prototype — clang read the header, and a call converts nothing it hands C, so no parameter can be held to the header's own type"
+    assert no_prototype(s, parsed.decls, low.program, line: "t.hero:2:1: error: static assertion failed: heroes-ffi-writable kr_write p char *").is_err(
+    )
 
 test "a qualifier after the pointer's last star is the callee's, and nothing else is cut"
     assert unqualified("char *restrict") == "char *"

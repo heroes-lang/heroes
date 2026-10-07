@@ -1,0 +1,6 @@
+error[ffi_call_shape]: `kr_void` is declared with 1 parameters, and `fixedbugs-426-no-prototype.h` gives it 0 — clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-426-a-function-declared-void-is-told-its-count.hero:21:5
+     |
+  21 |     function kr_void(n: i32) -> i32  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with

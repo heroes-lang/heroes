@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `kr_double` is declared with 1 parameter, and `fixedbugs-426-no-prototype.h` declares it with no prototype — clang read the header, and a call converts nothing it hands C, so no parameter can be held to the header's own type
+  at tests/golden/unsupported/fixedbugs-426-a-number-to-a-function-with-no-prototype-is-refused.hero:20:5
+     |
+  20 |     function kr_double(n: i32) -> i32  #~ ffi_parameter_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: every parameter of an `extern` is held to the header's own type, and a declaration such as `int kr_double();` names none: C takes whatever a call hands it, and may write through any pointer among it
+  note: write a header of your own that includes `fixedbugs-426-no-prototype.h` and declares the prototype the library's documentation gives, `<result> kr_double(<its parameters>);`, and name that header in this group

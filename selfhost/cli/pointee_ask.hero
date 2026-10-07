@@ -37,9 +37,10 @@ constant WHOLE: str
 constant READ: str
     "read"
 
-# How many parameters the declaration gives, in `index`, asked of a function
-# with a `READ` ask: its parameters stand for the header's only where the two
-# counts agree (`emit/ffi_read_only.hero`).
+# How many parameters the declaration gives, in `index`, asked of every
+# function with one: its parameters stand for the header's only where the two
+# counts agree, and a header that gives the function no prototype is refused
+# (`emit/ffi_read_only.hero`, defects 411 and 426).
 constant ARITY: str
     "arity"
 
