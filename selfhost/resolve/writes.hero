@@ -33,6 +33,7 @@ use token
 use source
 use inventory
 use resolve/state
+use resolve/did_you_mean
 use resolve/errors
 use resolve/qualified
 use resolve/names
@@ -72,7 +73,7 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         )
         return
     candidates = names.value_candidates(@r)
-    near = state.near_names(@r, text, candidates)
+    near = did_you_mean.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_name(text, near, span))
 
 # The root of an `@` argument, held to the rule of the left of `@`. The

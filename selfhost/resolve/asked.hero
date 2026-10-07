@@ -1,0 +1,152 @@
+# What the did-you-mean has answered, kept so a question asked again is
+# answered without being worked again (design.md §4.17; defect 386).
+#
+# `near_names.nearest_in` depends on the name and its candidate lists and
+# on nothing else. A program that writes one unknown name many times asks it
+# again at each, and a rename's trial readings (`rename_fit.hero`) resolve
+# the whole program sixteen times more, asking every question the first
+# trial asked: on one line of 2,000 `totl` with `total` in scope, the
+# did-you-mean was two thirds of `check`; over 400 names each a slip of a
+# different local, nine tenths.
+#
+# **An answer is never handed to another question**: a question is its name
+# and its lists, each list read by its value. Every list met is numbered
+# once, by a map whose key is the list itself, so two lists share a number
+# only where they hold the same names in the same order; and an answer is
+# kept under the name and the numbers of its lists. So the memo is exact for
+# the reason `nearest_in` is a function, and it holds one copy of each list
+# however many questions read it: a scope's locals, read by every name
+# nothing answers in it, are held once. A list the question before read in
+# the same place, those locals above all, is found by comparing the two
+# lists, one pass; any other by its hash and a comparison, two.
+#
+# `resolve.resolve_asking` hands one `Asking` from reading to reading, so
+# the trials of one name stage ask each question once between them.
+
+use resolve/near_names
+
+# One question: the name, and the numbers of its lists in the order read.
+record Question
+    name: str
+    lists: [i64]
+
+record Asking
+    # Each list met, by its value, and its number: the count before it.
+    numbers: {[str]: i64}
+    count: i64
+    answers: {Question: [str]}
+    # The lists of the question before, and their numbers.
+    last: [[str]]
+    last_numbers: [i64]
+
+function new_asking() -> Asking
+    numbers: {[str]: i64} = {}
+    answers: {Question: [str]} = {}
+    last: [[str]] = []
+    last_numbers: [i64] = []
+    return Asking(numbers: numbers, count: 0, answers: answers, last: last, last_numbers: last_numbers)
+
+# The names near `name` among `lists`, as `near_names.nearest_in` answers:
+# the answer kept where the same question was asked before, and worked and
+# kept where it was not.
+function nearest(@asking: Asking, name: str, lists: [[str]]) -> [str]
+    numbered: [i64] @ []
+    k: i64 @ 0
+
+    for list in lists
+        if k < asking.last.len() && asking.last[k] == list
+            numbered @ numbered.push(asking.last_numbers[k])
+        else
+            numbered @ numbered.push(number_of(@asking, list))
+        k @ k + 1
+
+    asking.last @ lists
+    asking.last_numbers @ numbered
+    question = Question(name: name, lists: numbered)
+    held = asking.answers[question]
+
+    if !held.is_err()
+        return held.must()
+    near = near_names.nearest_in(name, lists)
+    asking.answers[question] @ near
+    return near
+
+function number_of(@asking: Asking, list: [str]) -> i64
+    held = asking.numbers[list]
+
+    if !held.is_err()
+        return held.must()
+    asking.numbers[list] @ asking.count
+    asking.count @ asking.count + 1
+    return asking.count - 1
+
+## Tests
+
+# The answers are `nearest_in`'s, asked once or again, in any order, with a
+# list that holds the same names built anew, and never another question's:
+# the same name over other lists, other lists over the same name, a list one
+# name longer, and the same names in another order.
+test "an answer kept is the one worked, and only for its own question"
+    asking: Asking @ new_asking()
+    locals: [str] = ["total", "count"]
+    values: [str] = ["print", "sort", "len"]
+    first = nearest(@asking, "totl", [locals, values])
+    assert first == ["total"]
+    again: [str] @ ["total"]
+    again @ again.push("count")
+    assert nearest(@asking, "totl", [again, values]) == ["total"]
+    assert asking.count == 2
+    assert keys(asking.answers).len() == 1
+    other: [str] = ["totals", "count"]
+    assert nearest(@asking, "totl", [other, values]) == near_names.nearest_in("totl", [other, values])
+    assert nearest(@asking, "sotr", [locals, values]) == ["sort"]
+    longer: [str] = ["total", "count", "tot"]
+    assert nearest(@asking, "totl", [longer, values]) == near_names.nearest_in("totl", [longer, values])
+    turned: [str] = ["count", "total"]
+    assert nearest(@asking, "cuont", [turned, values]) == near_names.nearest_in("cuont", [turned, values])
+    assert nearest(@asking, "cuont", [locals, values]) == near_names.nearest_in("cuont", [locals, values])
+    split: [str] = ["total"]
+    rest: [str] = ["count"]
+    assert nearest(@asking, "totl", [split, rest, values]) == ["total"]
+
+# Every word of up to three bytes over `a`, `b` and `A` asked of every list
+# of up to two of them, each question asked twice and the memo shared
+# through all: each answer is the one `nearest_in` gives.
+test "a memo shared by every question answers each as nearest_in does"
+    words: [str] @ [""]
+    last: [str] @ [""]
+    size: i64 @ 0
+
+    while size < 3
+        longer: [str] @ []
+
+        for word in last
+            for letter in ["a", "b", "A"]
+                longer @ longer.push(word + letter)
+
+        for word in longer
+            words @ words.push(word)
+
+        last @ longer
+        size @ size + 1
+
+    empty: [str] = []
+    lists: [[str]] @ [empty]
+
+    for one in words
+        lists @ lists.push([one])
+
+        for two in ["a", "bA", "ab"]
+            lists @ lists.push([one, two])
+
+    asking: Asking @ new_asking()
+    asked_twice: i64 @ 0
+
+    while asked_twice < 2
+        for name in words
+            for list in lists
+                assert nearest(@asking, name, [list, ["b", "aa"]]) == near_names.nearest_in(name, [list, ["b", "aa"]])
+
+        asked_twice @ asked_twice + 1
+
+    assert keys(asking.answers).len() == words.len() * lists.len()
