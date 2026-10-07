@@ -61,6 +61,14 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
 
     if windows.len() > 0
         return windows_said(code: "unwritable_name", reason: windows, spelled: spelled, span: span, what: what)
+
+    # A library's and a package's own (defect 252): a header's `>` and `\` are
+    # told above, and its `"` is panel 188's `undefined_header_name`.
+    if what != "header"
+        library = head_windows.library_unwritable(value: value, what: what, rooted: rooted(value))
+
+        if library.len() > 0
+            return windows_said(code: "unwritable_name", reason: library, spelled: spelled, span: span, what: what)
     return fail(code: "none", msg: "a name every tool carries whole")
 
 # What the tool carries and the language still refuses, each a thesis rule.
@@ -377,7 +385,6 @@ test "an escape is no root, and a rooted value is one (panels 055 and 188)"
 
 test "a library's name shares the first classes and none of a header's"
     assert said(spelled: "\"m\"", what: "link") == ""
-    assert said(spelled: "\"a>b\"", what: "link") == ""
     assert said(spelled: "\"a'b\"", what: "link") == ""
     assert said(spelled: "\"a b\"", what: "link") == ""
     assert said(spelled: "\"\"", what: "link") == "unwritable_name"
@@ -395,7 +402,8 @@ test "a package's string names one package (panel 188)"
     assert said(spelled: "\"zlib,sqlite3\"", what: "package") == "unwritable_name"
     assert said(spelled: "\"zlib >= 1\"", what: "package") == "unwritable_name"
     assert said(spelled: "\"zlib\\tx\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"zlib>=1\"", what: "package") == "package_comparison"
+    assert said(spelled: "\"zlib>=1\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"zlib=1\"", what: "package") == "package_comparison"
     assert said(spelled: "\"a!b\"", what: "package") == "package_comparison"
     assert said(spelled: "\"seven.pc\"", what: "package") == "machine_locked_path"
     assert said(spelled: "\"seven.PC\"", what: "package") == "machine_locked_path"
@@ -439,3 +447,25 @@ test "what Windows stores as another file is unwritable, and what depends on the
     assert said(spelled: "\"x~1\"", what: "package") == "machine_locked_path"
     assert said(spelled: "\"con\"", what: "package") == "unwritable_name"
     assert said(spelled: "\"sub/seven\"", what: "package") == ""
+
+# Defect 252, measured on the Windows box: `>` and `"` stand in no file's name
+# there, a `\` is a directory to lld-link and a byte to ld64 and GNU ld, and a
+# `link`'s `/` a directory each linker places apart. A rooted value keeps its
+# own message, and a header keeps panel 188's.
+test "a library's and a package's name holds no `>`, `\"` or `\\`, and a library's no `/` (defect 252)"
+    assert said(spelled: "\"a>b\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"a\\\"b\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"a\\\\b\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"sub/m\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"p>q\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"p\\\"q\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"p\\\\q\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"/opt/foo/lib/libfoo.a\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"C:\\\\side\\\\m\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"C:/side/lp188\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"a\\\"b.h\"", what: "header") == "undefined_header_name"
+    assert said(spelled: "\"sub/m.h\"", what: "header") == ""
+    slash = judged(spelled: "\"sub/m\"", span: token.Span(start: 0, end: 7), what: "link").must()
+    assert slash.message == "this library's name holds `/`, which every linker reads as a directory and not the same one, `sub/m.lib` on Windows and `libsub/m` on macOS and Linux, so `sub/m` does not name one file on every machine: write the name without it, as `link \"m\"`"
+    quote = judged(spelled: "\"a\\\"b\"", span: token.Span(start: 0, end: 6), what: "link").must()
+    assert quote.message == "this library's name holds `\"`, which no file's name on Windows can hold, so `a\\\"b` does not name one file on every machine: write the name without it, as `link \"m\"`"
