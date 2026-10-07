@@ -75,13 +75,16 @@ constant LEAST_FIXTURES: i64
 # The golden tree's own answer, with the directory and the floor as
 # parameters so the tests below can point it at a tree they built.
 # `only` narrows the single-file half to the cases whose name holds it, and
-# skips the fixtures and the names, which are not cases; a narrowed run asks
-# no floor.
+# the fixtures to the cases whose directory's name, or one of whose files'
+# names, holds it, each judged whole (defect 485: until 2026-10-07 a narrowed
+# run skipped the fixtures, so `fixes <fixture>` selected nothing and exited
+# 2); it skips the names, which are not cases, and asks no floor.
 function run_default(scratch: str, compiler: str, only: str) -> report.Report?
     single = run_cases(scratch: scratch, compiler: compiler, dir: CHECK_DIR, least: LEAST, only: only)?
 
     if only != ""
-        return ok(single)
+        named_fixtures = fixtures_named(scratch: scratch, compiler: compiler, dir: FIXTURES_DIR, least: LEAST_FIXTURES, only: only)?
+        return ok(report.tally(one: single, two: named_fixtures))
     multi = run_fixtures(scratch: scratch, compiler: compiler, dir: FIXTURES_DIR, least: LEAST_FIXTURES)?
 
     # **The TEXT of a fix, which nothing watched until 2026-09-16.** This
@@ -317,11 +320,21 @@ function judge_untouched(@r: report.Report, label: str, source: str, out: str)
 # whose `certain` fix lives in another module (`applyx/main.hero`, which is
 # left as it is, while `applyx/geom.hero` is judged as its own root).
 function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> report.Report?
+    return fixtures_named(scratch: scratch, compiler: compiler, dir: dir, least: least, only: "")
+
+# The fixtures `only` names, every one where it is empty: a case whose
+# directory's name holds it, or the name of one of its files without its
+# extension, judged whole, every root of it, as the whole run judges it; the
+# floor asked only of the whole.
+function fixtures_named(scratch: str, compiler: str, dir: str, least: i64, only: str) -> report.Report?
     r: report.Report @ report.empty()
     seen: i64 @ 0
 
     for case_dir in shell.list_directories(scratch: scratch, dir: dir)?
         entries = shell.list_entries(scratch: scratch, dir: case_dir)?
+
+        if only != "" && !names_a_case(case_dir: case_dir, entries: entries, only: only)
+            continue
         present: {str: bool} @ {}
         roots: i64 @ 0
 
@@ -383,13 +396,28 @@ function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> repo
                 present: present
             )
 
-    if seen < least
+    if only == "" && seen < least
         report.keep_failure(
             @r,
             label: "fixes/fixtures",
             detail: "  only " + seen.to_str() + " fixture(s) carry a `.fixed`, and there were " + least.to_str() + " — the module class of §8's promise is tested by these and nothing else"
         )
     return ok(r)
+
+# Whether `only` names the fixture case at `case_dir`: the directory's own
+# name holds it, or one of its files' names, its extension left out.
+function names_a_case(case_dir: str, entries: [str], only: str) -> bool
+    if strings.contains(text: strings.base_name(path: case_dir), needle: only)
+        return true
+
+    for entry in entries
+        name = strings.base_name(path: entry)
+        stem = strings.split_on(text: name, byte: '.')[0]
+
+        if strings.contains(text: stem, needle: only)
+            return true
+
+    return false
 
 # One root of a fixture: its `.fixed` as it has always been judged, its
 # `.applied`, or the promise that no `certain` fix applies. The copy is put
@@ -856,6 +884,45 @@ test "a fixture root with no answer is applied in a copy of its whole case and m
 # are such directories; with the copy asked of every directory, this reads
 # `cannot copy the case`. The bytes are written by `/bin/sh`, since a `str`
 # cannot hold them, so the case steps aside where no POSIX shell runs.
+# DEFECT 485 in this suite, held as a test (2026-10-07): a narrowed run judges
+# the fixture cases its word names, by their directory or by one of their
+# files, every root of each, and none other; then the tree's own `qualifytypo`
+# and its two roots. Until that day a narrowed run judged no fixture, and
+# `fixes qualifytypo` exited 2.
+test "fixedbugs: a narrowed run judges each fixture case its word names, whole (defect 485)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/fixtures-485"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/typo485").is_err()
+    assert !shell.mkdir_all(tree + "/other485").is_err()
+    plain = "function main()\n    print(1)\n"
+    assert !write_file(path: tree + "/typo485/main.hero", text: "use geom\n\nfunction main()\n    print(geom.two())\n").is_err()
+    assert !write_file(path: tree + "/typo485/geom.hero", text: "function two() -> i64\n    return 2\n").is_err()
+    assert !write_file(path: tree + "/other485/lone.hero", text: plain).is_err()
+    compiler = shell.some_compiler().must()
+    by_name = fixtures_named(scratch: scratch, compiler: compiler, dir: tree, least: 9, only: "typo485")
+    assert !by_name.is_err()
+    assert by_name.must().passed == 2
+    assert by_name.must().failed == 0
+    by_file = fixtures_named(scratch: scratch, compiler: compiler, dir: tree, least: 9, only: "lone")
+    assert !by_file.is_err()
+    assert by_file.must().passed == 1
+    assert by_file.must().failed == 0
+    neither = fixtures_named(scratch: scratch, compiler: compiler, dir: tree, least: 9, only: "gamma")
+    assert !neither.is_err()
+    assert neither.must().passed + neither.must().failed == 0
+
+    # The floor of nine no tree here reaches is the whole run's question.
+    whole = run_fixtures(scratch: scratch, compiler: compiler, dir: tree, least: 9)
+    assert !whole.is_err()
+    assert whole.must().passed == 3
+    assert whole.must().failed == 1
+    real = run_default(scratch: scratch, compiler: compiler, only: "qualifytypo")
+    assert !real.is_err()
+    assert real.must().passed == 2
+    assert real.must().failed == 0
+    assert !shell.remove_tree(scratch).is_err()
+
 test "a fixture directory with no root is not copied, so its bytes that are not UTF-8 fail nothing"
     if !shell.can_run_scripts()
         return

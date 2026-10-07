@@ -219,9 +219,10 @@ constant LEAST: i64
 constant RUN_LEAST: i64
     132
 
-# `only` narrows the sweep to the cases whose name holds it (cases.matching);
-# a narrowed run asks neither the thesis witnesses, nor the groups, nor the
-# floor, which are questions about the whole.
+# `only` narrows the sweep to the cases whose name holds it (cases.matching),
+# and to the run roots' groups it names (`asked_groups`, defect 485); a
+# narrowed run asks neither the thesis witnesses nor the floors, which are
+# questions about the whole.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @ report.empty()
     annotated: i64 @ 0
@@ -258,6 +259,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                     report.keep_pass(@r)
 
     if only != ""
+        asked_groups(@r, scratch: scratch, compiler: compiler, roots: RUN_ROOTS, only: only)?
         return ok(r)
     every_thesis_rule_has_a_witness(@r, witnessed: witnessed)
     run = run_roots(@r, scratch: scratch, compiler: compiler, roots: RUN_ROOTS)?
@@ -279,6 +281,40 @@ function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str])
         marks @ marks + one_group(@r, scratch: scratch, compiler: compiler, group: group, @stepped)
 
     return ok(Asked(marks: marks, stepped: stepped))
+
+# The groups of `roots` a narrowed sweep asks (defect 485, 2026-10-07): each
+# whose directory's name, or the name of one of its files without its
+# extension, holds `only`, asked WHOLE, as the whole sweep asks it, so a
+# narrowed verdict on a group is the whole sweep's. A group is the unit marks
+# are compared over, a module's marks being the programs' that reach it
+# (defect 319), so no part of one is asked alone. Until that day a narrowed
+# sweep returned before the run roots, and a fixture's or a `fixedbugs/`
+# program's marks were judged by the whole suite alone: `annotations
+# qualifytypo` selected nothing and exited 2.
+function asked_groups(@r: report.Report, scratch: str, compiler: str, roots: [str], only: str) -> ()?
+    stepped: i64 @ 0
+
+    for group in groups(scratch: scratch, roots: roots)?
+        entries = shell.list_entries(scratch: scratch, dir: group)?
+
+        if names_a_group(group: group, entries: entries, only: only)
+            _ = one_group(@r, scratch: scratch, compiler: compiler, group: group, @stepped)
+
+    return ok()
+
+# Whether `only` names the group at `group`: the directory's own name holds
+# it, or one of its files' names, its extension left out.
+function names_a_group(group: str, entries: [str], only: str) -> bool
+    if strings.contains(text: strings.base_name(path: group), needle: only)
+        return true
+
+    for entry in entries
+        stem = strings.split_on(text: strings.base_name(path: entry), byte: '.')[0]
+
+        if strings.contains(text: stem, needle: only)
+            return true
+
+    return false
 
 # The floor, and what a machine that cannot ask owes it.
 #
@@ -1017,6 +1053,45 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
         text: lone.got.failures[0],
         needle: "1 annotations here and no program with a `main` to provoke them"
     )
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 485, held as a test (2026-10-07): a narrowed sweep asks the run
+# roots' groups its word names, by their directory or by one of their files,
+# each whole, and nothing of a word naming neither. Two groups a stand-in
+# answers: `alpha`, whose one program's mark holds, and `beta`, whose second
+# program's mark the stand-in leaves unreported. Then the tree's own fixture
+# `qualifytypo`, its one group asked of the compiler this net judges. Until
+# that day each word below selected nothing.
+test "fixedbugs: a narrowed sweep asks each run-root group its word names, whole (defect 485)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    root = scratch + "/annotations-485"
+    assert !shell.remove_tree(root).is_err()
+    stand_in = absence.said_stub(scratch).must()
+    judged = MARKED_STDIO + "\nfunction main()\n    print(seven())\n"
+    assert !plant(path: root + "/alpha/first.hero", source: judged, said: wrong_type(root + "/alpha/first.hero")).is_err()
+    assert !plant(path: root + "/beta/second.hero", source: judged, said: wrong_type(root + "/beta/second.hero")).is_err()
+    assert !plant(path: root + "/beta/third.hero", source: judged, said: "").is_err()
+    by_name: report.Report @ report.empty()
+    assert !asked_groups(@by_name, scratch: scratch, compiler: stand_in, roots: [root], only: "alpha").is_err()
+    assert by_name.passed == 1
+    assert by_name.failed == 0
+
+    # A file's name asks its whole group: `second`'s mark holds, `third`'s
+    # does not, and the group is one verdict.
+    by_file: report.Report @ report.empty()
+    assert !asked_groups(@by_file, scratch: scratch, compiler: stand_in, roots: [root], only: "third").is_err()
+    assert by_file.passed == 0
+    assert by_file.failed == 1
+    assert strings.starts_with(text: by_file.failures[0], prefix: "FAIL annotations/" + root + "/beta\n")
+    neither: report.Report @ report.empty()
+    assert !asked_groups(@neither, scratch: scratch, compiler: stand_in, roots: [root], only: "gamma").is_err()
+    assert neither.passed + neither.failed == 0
+    tree = run_all(scratch: scratch, compiler: shell.some_compiler().must(), only: "qualifytypo")
+    assert !tree.is_err()
+    assert tree.must().passed == 1
+    assert tree.must().failed == 0
     assert !shell.remove_tree(scratch).is_err()
 
 test "a `use` line names its path, and a program reaches the modules its uses name, from its own directory"
