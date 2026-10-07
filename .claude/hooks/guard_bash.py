@@ -20,18 +20,15 @@ import json
 import os
 import re
 import shlex
-import subprocess
 import sys
 
-import ceiling
+import commits
+import staged
+import trees
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
 HARNESS = "tests/harness/main.hero"
-# What the compiler that judges must be newer than: the seed it is built from
-# and every source the seed is emitted from (`.claude/rules/verification.md`
-# § The compiler that judges is a build artifact).
-SOURCES = ("seed/heroes.c", "selfhost", "runtime")
 
 # The one endpoint the Anthropic key is in `.env` for, and the clients that can
 # actually reach it. A python one-liner is a client; `grep` is a reader.
@@ -136,6 +133,73 @@ def segments(command):
     return [s.strip() for s in out if s.strip()]
 
 
+# What a shell runs a command THROUGH, each with its options that take a value:
+# `GIT_EDITOR=true git merge --continue`, `caffeinate -i git ...` and
+# `/usr/bin/time -p git ...` are git commands, and until 2026-10-07 this guard
+# read their first word and saw none (defect 403's route of 2026-10-06 began
+# with an assignment).
+WRAPPERS = {
+    "env": frozenset({"-u", "--unset", "-C", "--chdir"}),
+    "command": frozenset(),
+    "builtin": frozenset(),
+    "exec": frozenset({"-a"}),
+    "nohup": frozenset(),
+    "time": frozenset(),
+    "nice": frozenset({"-n"}),
+    "caffeinate": frozenset({"-w", "-t"}),
+    "timeout": frozenset({"-s", "--signal", "-k", "--kill-after"}),
+    "xargs": frozenset({"-P", "-n", "-I", "-L", "-s", "-E", "-d", "-a"}),
+}
+ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+# The shells whose `-c` script is a command line of its own, and `eval`.
+SHELLS = frozenset({"bash", "sh", "zsh", "dash", "ksh"})
+
+
+def command_words(w):
+    """`w` from the command it runs: the assignments before it and the
+    wrappers it runs through, with their options, left out."""
+    i = 0
+    while i < len(w):
+        if ASSIGNMENT.match(w[i]):
+            i += 1
+            continue
+        base = os.path.basename(w[i])
+        if base not in WRAPPERS:
+            break
+        takes = WRAPPERS[base]
+        i += 1
+        while i < len(w) and w[i].startswith("-") and w[i] != "-":
+            if w[i] == "--":
+                i += 1
+                break
+            i += 2 if w[i] in takes else 1
+        if base == "timeout" and i < len(w):
+            i += 1  # its duration
+    return w[i:]
+
+
+def script_of(w):
+    """The command line a shell's `-c` or `eval` runs, or None. Lanes are told
+    to run a list of paths through `bash -c` under zsh, and every rule here was
+    blind inside one until 2026-10-07 (defect 403)."""
+    if not w:
+        return None
+    base = os.path.basename(w[0])
+    if base == "eval":
+        return " ".join(w[1:])
+    if base not in SHELLS:
+        return None
+    i = 1
+    while i < len(w) and w[i][:1] in ("-", "+") and w[i] != "--":
+        if w[i] in ("-o", "+o", "-O", "+O"):
+            i += 2
+            continue
+        if not w[i].startswith("--") and "c" in w[i][1:]:
+            return w[i + 1] if i + 1 < len(w) else None
+        i += 1
+    return None
+
+
 def words(segment):
     try:
         return shlex.split(segment)
@@ -143,6 +207,30 @@ def words(segment):
         # An unbalanced quote is not our business to fix; fall back to a coarse
         # split so a malformed line cannot slip a forbidden verb past us.
         return segment.split()
+
+
+def git_dir(w, here):
+    """The directory a `git` command runs in: `here`, moved by each `-C` in
+    turn as git moves it; None where the text cannot tell. Defect 287: the
+    staged files of a `git -C <lane> commit` are the lane's."""
+    if not w or os.path.basename(w[0]) != "git":
+        return here
+    i = 1
+    while i < len(w) and w[i].startswith("-"):
+        if w[i] == "-C" and i + 1 < len(w):
+            target = w[i + 1]
+            if "$" in target or "`" in target:
+                here = None
+            elif os.path.isabs(target):
+                here = os.path.normpath(target)
+            elif target and here is not None:
+                here = os.path.normpath(os.path.join(here, target))
+            i += 2
+        elif w[i] in ("-c", "--git-dir", "--work-tree", "--namespace"):
+            i += 2
+        else:
+            i += 1
+    return here
 
 
 def git_args(w, *verbs):
@@ -153,7 +241,7 @@ def git_args(w, *verbs):
     belongs to `-C`, and reading the whole word list saw `git add .` and refused
     a legitimate command. Measured against that case on 2026-09-07.
     """
-    if not w or w[0] != "git":
+    if not w or os.path.basename(w[0]) != "git":
         return None
     i = 1
     while i < len(w) and w[i].startswith("-"):
@@ -176,8 +264,11 @@ def short_flags(w):
 
 
 def is_harness_run(w):
-    """`heroes run tests/harness/main.hero -- <compiler> ...`, whatever the binary is called."""
-    return HARNESS in w and "run" in w
+    """`heroes run tests/harness/main.hero -- <compiler> ...`, whatever the
+    binary is called and whether the harness is named from the tree's root or
+    by its whole path (defect 348's shape beside it, 2026-10-07)."""
+    named = any(t == HARNESS or t.endswith("/" + HARNESS) for t in w)
+    return named and "run" in w
 
 
 def is_gate(w):
@@ -187,31 +278,63 @@ def is_gate(w):
     return len(w) > 2 and w[1] == "test" and os.path.basename(w[0]).startswith("heroes")
 
 
-def newest_source(cwd):
-    """The newest mtime under the sources the judging compiler is built from, and its path."""
-    newest, where = 0.0, None
-    for entry in SOURCES:
-        top = os.path.join(cwd, entry)
-        if os.path.isfile(top):
-            candidates = [top]
-        elif os.path.isdir(top):
-            candidates = []
-            for base, _dirs, files in os.walk(top):
-                candidates.extend(os.path.join(base, f) for f in files)
-        else:
+def bare(w):
+    """`w` without the brackets of a subshell around it, `(cd x` read as `cd x`."""
+    out = list(w)
+    if out and out[0].startswith("("):
+        out[0] = out[0][1:]
+        if not out[0]:
+            out = out[1:]
+    if out and out[-1].endswith(")"):
+        out[-1] = out[-1][:-1]
+        if not out[-1]:
+            out = out[:-1]
+    return out
+
+
+def moved_to(w, here):
+    """Where the directory stands after the segment `w`, run in `here`: a
+    `cd` or `pushd` moves it, anything else leaves it. None when the text
+    cannot tell, a variable this hook does not hold or `cd -`, so a question
+    about the tree is not answered with the wrong one."""
+    w = bare(w)
+    if not w or w[0] not in ("cd", "pushd", "popd"):
+        return here
+    if w[0] == "popd":
+        return None
+    named = [a for a in w[1:] if not (a.startswith("-") and a != "-")]
+    target = named[0] if named else "~"
+    if target == "-":
+        return None
+    target = os.path.expandvars(os.path.expanduser(target))
+    if "$" in target or "`" in target:
+        return None
+    if os.path.isabs(target):
+        return os.path.normpath(target)
+    if here is None:
+        return None
+    return os.path.normpath(os.path.join(here, target))
+
+
+def placed(command, cwd):
+    """Each segment's words with the directory it runs in, `None` where the
+    text cannot tell. Until 2026-10-07 every segment was read in the session's
+    directory, so `cd <lane> && ./heroes run ...` was judged in the trunk
+    (defect 348)."""
+    here = os.path.abspath(cwd) if cwd else None
+    out = []
+    for segment in segments(command):
+        w = words(segment)
+        if not w:
             continue
-        for path in candidates:
-            try:
-                stamp = os.path.getmtime(path)
-            except OSError:
-                continue
-            if stamp > newest:
-                newest, where = stamp, os.path.relpath(path, cwd)
-    return newest, where
+        out.append((w, here, segment))
+        here = moved_to(w, here)
+    return out
 
 
-def stale_compiler(w, cwd):
-    """The refusal when a harness run names a compiler older than the tree, else None.
+def stale_compiler(w, here):
+    """The refusal when a harness run names a compiler older than the tree it
+    runs in, else None.
 
     **Added 2026-09-29 (CL-079).** On 2026-09-18 the full net was judged by a
     binary built at 02:08 against a HEAD of 18:17: 1862 passed, 23 failed, none
@@ -219,73 +342,45 @@ def stale_compiler(w, cwd):
     information (`.claude/rules/verification.md` § The compiler that judges is a
     build artifact). Rebuilding costs seconds; this asks for it before the gate.
     `heroes test <file>` is not touched: it compiles the source it is given.
+
+    **The tree is the one the run stands in, since 2026-10-07** (defect 348,
+    `trees.py`): the nearest directory above the segment's own directory, its
+    `cd` read, holding `seed/heroes.c` and a `.git` entry, or above the
+    compiler's own path where the directory cannot be told. The harness reads
+    the tree from its working directory, so that is the tree being judged.
+    Until that day the session's directory was asked, and a lane's run from a
+    session on the trunk was refused for the trunk's age while the lane's
+    compiler was newer than every file of the lane.
     """
     if not is_harness_run(w) or "--" not in w:
         return None
     at = w.index("--")
     if at + 1 >= len(w):
         return None
-    compiler = os.path.join(cwd, w[at + 1])
+    named = w[at + 1]
+    if os.path.isabs(named):
+        compiler = named
+    elif here is not None:
+        compiler = os.path.join(here, named)
+    else:
+        return None
     if not os.path.isfile(compiler):
         return None
-    try:
-        built = os.path.getmtime(compiler)
-    except OSError:
+    tree = trees.tree_of(here) if here is not None else None
+    if tree is None:
+        tree = trees.tree_of(compiler)
+    if tree is None:
         return None
-    newest, where = newest_source(cwd)
-    if where is None or newest <= built + 1.0:
+    old = trees.older_than_tree(compiler, tree)
+    if old is None:
         return None
+    where, built, wrote = old
     return (
-        "refused: " + w[at + 1] + " was built before " + where + " was written, so the net "
-        "would judge with a compiler older than the tree. Build it first "
-        "(`clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, or "
-        "`./heroes build selfhost/main.hero -o heroes-next` for the source as it stands). "
-        + LAST_JUDGE
+        "refused: " + named + " was built at " + trees.stamp(built) + ", before " + where
+        + " was written at " + trees.stamp(wrote) + " in the tree this run judges, " + tree
+        + ", so the net would judge with a compiler older than the tree. Build it first, "
+        "there: " + trees.rebuild_hint(where) + ". " + LAST_JUDGE
     )
-
-
-def staged_hero_files(cwd):
-    try:
-        out = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=AM", "--", "*.hero"],
-            capture_output=True, timeout=30, cwd=cwd, text=True,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return []
-    if out.returncode != 0:
-        return []
-    return [line.strip() for line in out.stdout.split("\n") if line.strip()]
-
-
-def staged_offences(cwd):
-    """Staged `.hero` files that are not canonical or are over their ceiling.
-
-    The write-time hook sees a file written through Edit or Write; a file that
-    reached the tree any other way is seen here, at the commit, which is the
-    last moment before a suite would have to find it (CL-079).
-    """
-    compiler = os.path.join(cwd, "heroes")
-    can_fmt = os.path.isfile(compiler) and os.access(compiler, os.X_OK)
-    found = []
-    for rel in staged_hero_files(cwd):
-        path = os.path.join(cwd, rel)
-        if not os.path.isfile(path):
-            continue
-        if can_fmt:
-            try:
-                run = subprocess.run([compiler, "fmt", rel], capture_output=True, timeout=120, cwd=cwd)
-                with open(path, "rb") as handle:
-                    on_disk = handle.read()
-            except (OSError, subprocess.SubprocessError):
-                run = None
-            if run is not None and run.returncode != 0:
-                found.append(rel + " does not parse")
-            elif run is not None and run.stdout != on_disk:
-                found.append(rel + " is not canonical (`heroes fmt " + rel + " --in-place`)")
-        over = ceiling.verdict(cwd, rel)
-        if over is not None:
-            found.append(over.split("\n")[0])
-    return found
 
 
 def verdict(command, cwd=None):
@@ -298,7 +393,7 @@ def verdict(command, cwd=None):
     # Twice in one week a commit went past a red `records` because the chain
     # read the exit status of the pipe's last command (journal 061, `f22c8baf`,
     # `efaf5564`). The gate's line is read, then the commit is its own command.
-    if any(is_gate(w) for w in parsed) and any(git_args(w, "commit") is not None for w in parsed):
+    if any(is_gate(w) for w in parsed) and any(git_args(command_words(bare(w)), "commit") is not None for w in parsed):
         return (
             "refused: a gate and a `git commit` on one command line, so the commit "
             "cannot wait for the gate's line to be read. Run the gate, read its "
@@ -315,15 +410,32 @@ def verdict(command, cwd=None):
             "whole file, or read the terminal as it is. " + LAST_JUDGE
         )
 
-    for w in parsed:
-        stale = stale_compiler(w, cwd)
+    steps = placed(command, cwd)
+    for w, here, _segment in steps:
+        stale = stale_compiler(w, here)
         if stale is not None:
             return stale
 
-    for segment in segments(command):
-        w = words(segment)
+    for raw, here, segment in steps:
+        # **A bare dump** is read before the wrappers are left out, `env`
+        # being one of them (its rule is below, with its story).
+        if raw[0] in DUMPERS and len(raw) == 1:
+            return (
+                "refused: a bare `" + raw[0] + "` prints every variable in the "
+                "environment, the live keys included. Name the one you want. "
+                "`.env.example`"
+            )
+        w = command_words(bare(raw))
         if not w:
             continue
+
+        script = script_of(w)
+        if script is not None:
+            inner = verdict(script, here or cwd)
+            if inner is not None:
+                return inner
+            continue
+        where = git_dir(w, here)
 
         rest = git_args(w, "add")
         if rest is not None:
@@ -356,16 +468,38 @@ def verdict(command, cwd=None):
         # for exactly what this prevents and its own procedure could not deliver
         # it. The pathspec is the only thing that limits a commit, so this guard
         # asks for the pathspec rather than for care.
+        #
+        # **One route takes no pathspec, and it is checked by its index**
+        # (defect 403, 2026-10-07): a merge, a cherry-pick or a revert that
+        # stopped on a conflict is concluded with the whole index, git refusing
+        # a partial commit while it stands, so a bare commit then is allowed
+        # when the index holds no file the operation did not bring
+        # (`commits.concluded`).
         if rest is not None and "--" not in rest:
-            return (
-                "refused: `git commit` with no `--` takes the WHOLE index, "
-                "including whatever a parallel session has staged in this "
-                "shared checkout. Naming the paths to `git add` does not limit "
-                "the commit; only the pathspec does. Write "
-                "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
-            )
+            sequence = commits.concluded(where, None)
+            if sequence:
+                return sequence
+            if sequence is None:
+                return (
+                    "refused: `git commit` with no `--` takes the WHOLE index, "
+                    "including whatever a parallel session has staged in this "
+                    "shared checkout. Naming the paths to `git add` does not limit "
+                    "the commit; only the pathspec does. Write "
+                    "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
+                )
         if rest is not None:
-            offences = staged_offences(cwd)
+            said = commits.pathspec(rest, where)
+            if said is not None:
+                return said
+        for name, _head in commits.OPERATIONS:
+            more = git_args(w, name)
+            if more is not None and "--continue" in more:
+                said = commits.concluded(where, name)
+                if said:
+                    return said
+                rest = more
+        if rest is not None:
+            offences = staged.offences(where)
             if offences:
                 return (
                     "refused: a staged `.hero` file would reach the suites with what a "
@@ -391,7 +525,7 @@ def verdict(command, cwd=None):
         # An ASSIGNMENT, not the bare word: `grep -rn UPDATE_GOLDEN .` is how
         # somebody checks the rule still holds, and refusing that would be a
         # guard that punishes reading.
-        if any(t.startswith("UPDATE_GOLDEN=") for t in w):
+        if any(t.startswith("UPDATE_GOLDEN=") for t in raw):
             return (
                 "refused: UPDATE_GOLDEN does not exist and must not; a red "
                 "golden is read and repaired, never regenerated. " + CONTRACT
@@ -439,12 +573,8 @@ def verdict(command, cwd=None):
         # asking what the guard actually costs, 2026-09-09. A dump with
         # ARGUMENTS is somebody's legitimate `env FOO=1 cmd` prefix or
         # `printenv PATH`, so only the bare form goes.
-        if w[0] in DUMPERS and len(w) == 1:
-            return (
-                "refused: a bare `" + w[0] + "` prints every variable in the "
-                "environment, the live keys included. Name the one you want. "
-                "`.env.example`"
-            )
+        # Performed at the top of this loop, on the words as written, since
+        # `env` is also a wrapper the words above are read through.
         if w[0] in READERS and any(t == ".env" or t.endswith("/.env") for t in w):
             return (
                 "refused: `.env` holds the live keys. `.env.example` is the "

@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-05
-commit: none
+commit: 79064ed118c110c5b4a1353b0a6e393c6f61317c
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b11-misc, 2026-10-05 (its final report, *Found beside*).
 
     **Class: improvement**, 2026-10-05 (`.claude/rules/verification.md` § Bounded discovery): a guard that refuses a run it should allow, and could allow one it should refuse where the two trees disagree the other way; no program is judged wrong by it, and the absolute path is the workaround.
+
+    Repaired at `79064ed1`, 2026-10-07 (lane b14-hooks), gated by its cases, the hooks' own tests; the net is owed at the batch's close. `.claude/hooks/guard_bash.py` reads each segment in the directory the command's own `cd` leaves it in and judges a harness run's compiler against the tree that directory stands in (`.claude/hooks/trees.py`), a directory the text cannot tell giving no opinion; eight cases in `.claude/hooks/test_hooks.py`, six red on the base, and a scratch trunk older than its sources beside a fresh nested lane read the lane's run refused on the base guard and allowed on the repaired one.
