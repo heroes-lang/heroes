@@ -1,0 +1,15 @@
+# Defect 294, 2026-10-07: a line of refused characters is cut under each
+# of its messages to a window around the character it names, where it was
+# printed whole under each, about 32 KB a message for 4,000 of them. Below,
+# a tab and a `$` past it on a long line, the caret's padding copying the
+# tab; a tab after 130 spaces at a short line's end, which the excerpt drops
+# and its caret was padded across; then a line of 300 alternating control
+# characters, told to the file's eight, each written by its code and as wide
+# as it. This file holds tabs and control characters on purpose.
+
+function main()
+    x = 1 + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y + y	$ + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z   #~ tab_in_line unexpected_character
+    #~v tab_in_line
+    y = 2                                                                                                                                  	
+      #~ unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character
+    print(x)

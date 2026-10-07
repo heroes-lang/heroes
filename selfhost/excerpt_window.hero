@@ -1,0 +1,249 @@
+# The excerpt of a line too wide to print whole: a window of it around the
+# span, each side it cuts marked (defect 294, design.md §4.17).
+#
+# Under every message `diag_render.render` prints the line the span starts
+# on, and printed whole a line of 4,000 refused characters was about 32 KB
+# under each of its messages, eight of them since defect 282: 258,876 bytes
+# for one file, where what each message names is one character. What a
+# reader needs from the excerpt is the span and what stands around it, so a
+# line wider than `SHOWN` columns is cut to a window of them: up to `BEFORE`
+# columns before the span's first character, the rest after it, and `CUT`
+# where the line goes on past either side. A line within `SHOWN`, every
+# line `fmt` writes where it can break one, is printed as it always was.
+#
+# **A column is what `diag_render.caret` counts**: a character `shown_char`
+# writes by its code is as wide as that code, a tab is one and is copied
+# into the caret's padding, so a terminal expands both alike, and any other
+# character is one. The caret is padded under the mark too, and stops where
+# the window does.
+#
+# | entry | called by |
+# |---|---|
+# | `wider`, `window` | `diag_render.excerpt` |
+
+use token
+use source
+use diag
+use bytes
+use shown_char
+
+# The widest line an excerpt prints whole, in columns: `print/fmt`'s
+# `WIDTH`, the width of every line the formatter writes where it can break.
+constant SHOWN: i64
+    120
+
+# How many columns of the line a window keeps before the span's first
+# character, where the line has them.
+constant BEFORE: i64
+    40
+
+# Where the line goes on past a side of the window.
+constant CUT: str
+    "…"
+
+# An excerpt's two rows, the line as shown and the caret under it.
+record Excerpt
+    line: str
+    caret: str
+
+# Whether the bytes of `text` from `from` to `to` are wider than `SHOWN`
+# columns, read only as far as that: the line `diag_render` prints, or the
+# stretch of it before the span, which a caret pads past the line where the
+# span starts in the spaces and tabs it drops after its last character.
+function wider(text: str, from: i64, to: i64) -> bool
+    columns: i64 @ 0
+    at: i64 @ from
+
+    while at < to && at < text.len()
+        ch = bytes.char_at(text, at)
+        columns @ columns + shown_char.width(ch)
+
+        if columns > SHOWN
+            return true
+        at @ at + ch.len()
+
+    return false
+
+# The window of the line from `start` to `end`, the bytes `diag_render`
+# prints, around the span of `d`, which starts on that line; `col` is the
+# span's column as the message's `at` line names it. A span that starts in
+# the spaces and tabs `diag_render` drops after the line's last character
+# has its caret past the line, as it always had, those dropped from the
+# line it shows, and counted in the window's columns before the span.
+function window(s: source.Source, d: diag.Diagnostic, start: i64, end: i64, col: i64) -> Excerpt
+    text = s.text
+    at = d.span.start
+    lo: i64 @ at
+    before: i64 @ 0
+
+    while lo > start
+        back = char_before(text, at: lo, floor: start)
+        w = shown_char.width(bytes.char_at(text, back))
+
+        if before + w > BEFORE
+            break
+        before @ before + w
+        lo @ back
+
+    # Both marks are paid for, so a window is never wider than `SHOWN`, the
+    # spaces and tabs a caret is padded across past the line counted too.
+    room = SHOWN - 2
+    limit: i64 @ end
+
+    if at > limit
+        limit @ at
+    hi: i64 @ lo
+    used: i64 @ 0
+
+    while hi < limit
+        ch = bytes.char_at(text, hi)
+
+        if used + shown_char.width(ch) > room
+            break
+        used @ used + shown_char.width(ch)
+        hi @ hi + ch.len()
+
+    # A window that reaches the line's end takes the room left before it.
+    while hi >= limit && lo > start
+        back = char_before(text, at: lo, floor: start)
+        w = shown_char.width(bytes.char_at(text, back))
+
+        if used + w > room
+            break
+        used @ used + w
+        lo @ back
+
+    stop: i64 @ hi
+
+    if stop > end
+        stop @ end
+
+    if stop < lo
+        stop @ lo
+    shown: str @ text.slice(from: lo, to: stop)
+    padding: [str] @ []
+
+    if lo > start
+        shown @ CUT + shown
+        padding @ padding.push(" ")
+
+    if hi < end
+        shown @ shown + CUT
+    p: i64 @ lo
+
+    while p < at
+        ch = bytes.char_at(text, p)
+
+        if ch == "\t"
+            padding @ padding.push("\t")
+        else
+            padding @ padding.push(" ".repeat(shown_char.width(ch).to_u64().must()))
+        p @ p + ch.len()
+
+    # The caret stops where the window is cut, and runs as far as the span
+    # does where it is not.
+    to: i64 @ d.span.end
+
+    if hi < end
+        to @ hi
+    return Excerpt(
+        line: shown,
+        caret: padding.join("") + "^".repeat(underlined(s, d, col: col, to: to).to_u64().must())
+    )
+
+# How many columns the caret underlines: the span's characters up to `to`
+# where it ends on its own line past its start, as `diag_render.caret`
+# counts them, and one otherwise or where none of them is in the window.
+function underlined(s: source.Source, d: diag.Diagnostic, col: i64, to: i64) -> i64
+    end_pos = source.line_col(s, d.span.end)
+
+    if end_pos.line != source.line_of(s, d.span.start) || end_pos.col <= col
+        return 1
+    width: i64 @ 0
+    p: i64 @ d.span.start
+
+    while p < d.span.end && p < to
+        ch = bytes.char_at(s.text, p)
+        width @ width + shown_char.width(ch)
+        p @ p + ch.len()
+
+    if width == 0
+        return 1
+    return width
+
+# The first byte of the character before the one at `at`, no further back
+# than `floor`: a byte from 0x80 to 0xBF continues a character (spec § 3).
+function char_before(text: str, at: i64, floor: i64) -> i64
+    back: i64 @ at - 1
+
+    while back > floor && text[back] >= 128 && text[back] < 192
+        back @ back - 1
+
+    return back
+
+## Tests
+
+# `text` written `n` times.
+function times(text: str, n: i64) -> str
+    return text.repeat(n.to_u64().must())
+
+function wider_line(line: str) -> bool
+    return wider(line, from: 0, to: line.len())
+
+function excerpt_of(text: str, start: i64, end: i64) -> Excerpt
+    s = source.new_source(name: "t.hero", text: text)
+    d = diag.new_diagnostic(code: "x", message: "m", span: token.Span(start: start, end: end))
+    line_end: i64 @ text.len()
+
+    while line_end > 0 && (text[line_end - 1] == '\n' || text[line_end - 1] == ' ')
+        line_end @ line_end - 1
+
+    return window(s, d, start: 0, end: line_end, col: source.locate(s, start).col)
+
+test "a line within the bound is not cut, and one past it is"
+    assert !wider_line(times("x", SHOWN))
+    assert wider_line(times("x", SHOWN + 1))
+
+    # A character written by its code counts by its code's width.
+    assert wider_line(times("\u{1}", SHOWN / 8 + 1))
+    assert !wider_line(times("\u{1}", SHOWN / 8))
+
+test "a window keeps the span, marks each side it cuts, and the caret stands under it"
+    line = times("a", 300) + "$" + times("b", 300) + "\n"
+    got = excerpt_of(line, start: 300, end: 301)
+    assert got.line == CUT + times("a", BEFORE) + "$" + times("b", SHOWN - 3 - BEFORE) + CUT
+    assert got.caret == " " + times(" ", BEFORE) + "^"
+
+    # At the line's start no mark before it, at its end none after it, and
+    # the window takes the room the other side leaves.
+    first = excerpt_of(line, start: 0, end: 1)
+    assert first.line == times("a", SHOWN - 2) + CUT
+    assert first.caret == "^"
+    last = excerpt_of(line, start: 600, end: 601)
+    assert last.line == CUT + times("b", SHOWN - 2)
+    assert last.caret == " " + times(" ", SHOWN - 3) + "^"
+
+    # A span in the spaces after the line's last character has its caret
+    # past the line, the spaces dropped from it and counted before the span.
+    spaced = excerpt_of(times("a", 300) + "   \n", start: 302, end: 303)
+    assert spaced.line == CUT + times("a", SHOWN - 4)
+    assert spaced.caret == " " + times(" ", SHOWN - 2) + "^"
+
+    # And one far past it, only spaces in its window, its padding bounded.
+    far = excerpt_of("a" + times(" ", 500) + "\n", start: 400, end: 401)
+    assert far.line == CUT
+    assert far.caret == " " + times(" ", SHOWN - 2) + "^"
+
+test "a tab in the window is copied into the caret's padding"
+    got = excerpt_of(times("x", 200) + "\t$" + times("y", 200) + "\n", start: 201, end: 202)
+    assert got.line == CUT + times("x", BEFORE - 1) + "\t$" + times("y", SHOWN - 3 - BEFORE) + CUT
+    assert got.caret == " " + times(" ", BEFORE - 1) + "\t^"
+
+test "a span past the window's end is underlined to it, and a code and a character above ASCII keep the caret right"
+    line = times("x", 200) + "€" + "\u{1}" + times("y", 400) + "\n"
+    at = 200 + "€".len()
+    got = excerpt_of(line, start: at, end: line.len() - 1)
+    assert got.caret == " " + times(" ", BEFORE) + times("^", SHOWN - 2 - BEFORE)
+    assert got.line.chars()[BEFORE] == "€"
+    assert got.line.chars()[BEFORE + 1] == "\u{1}"
+    assert got.line.chars().len() == 1 + BEFORE + 1 + (SHOWN - 2 - BEFORE - 8) + 1

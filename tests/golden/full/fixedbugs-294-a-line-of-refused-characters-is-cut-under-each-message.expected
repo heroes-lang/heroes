@@ -1,0 +1,60 @@
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:11:170
+     |
+  11 | … + y + y + y + y + y + y + y + y + y + y	$ + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z…
+     |                                          ^
+
+error[unexpected_character]: `$` is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:11:171
+     |
+  11 | …+ y + y + y + y + y + y + y + y + y + y	$ + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z …
+     |                                         	^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:13:140
+     |
+  13 | …
+     |                                                                                                                        ^
+
+error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:5
+     |
+  14 |     <U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002>…
+     |     ^^^^^^^^
+
+error[unexpected_character]: the control character U+0002 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:6
+     |
+  14 |     <U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002>…
+     |             ^^^^^^^^
+
+error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:7
+     |
+  14 |     <U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002>…
+     |                     ^^^^^^^^
+
+error[unexpected_character]: the control character U+0002 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:8
+     |
+  14 |     <U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002>…
+     |                             ^^^^^^^^
+
+error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:9
+     |
+  14 |     <U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002>…
+     |                                     ^^^^^^^^
+
+error[unexpected_character]: the control character U+0002 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:10
+     |
+  14 | …<U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002>…
+     |                                          ^^^^^^^^
+
+error[unexpected_character]: the control character U+0001 is not part of the language's syntax
+  at tests/golden/full/fixedbugs-294-a-line-of-refused-characters-is-cut-under-each-message.hero:14:11
+     |
+  14 | …<U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001><U+0002><U+0001>…
+     |                                          ^^^^^^^^
+  note: 293 more characters of this file are not part of the language's syntax either, not told one by one
