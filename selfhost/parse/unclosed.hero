@@ -257,7 +257,7 @@ function end_arguments(@c: cursor.Cursor, text: str, open: i64)
 # last token's where the `[` is never closed.
 function end_index(@c: cursor.Cursor, text: str, open: i64) -> token.Span
     if never_closed(c, text, open: open)
-        close = cursor.previous_significant_span(c)
+        close = cursor.previous_significant_span(@c)
         past_what_goes_on(@c, text: text, holds: .one_value)
         return close
     cursor.skip_terminators(@c)
@@ -278,7 +278,7 @@ function end_index(@c: cursor.Cursor, text: str, open: i64) -> token.Span
 # named and no line end is crossed: the type ends at its last token.
 function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
     if never_closed(c, text, open: open)
-        return cursor.previous_significant_span(c)
+        return cursor.previous_significant_span(@c)
     kind = token.closer_of(c.tokens[open].kind)
     what: str @ "`)` to close the function type"
     code: str @ "expected_function_type_close"

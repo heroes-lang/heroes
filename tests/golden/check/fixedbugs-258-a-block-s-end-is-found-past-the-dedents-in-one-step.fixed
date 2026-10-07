@@ -1,0 +1,83 @@
+# Fixed defect 258, 2026-10-07 (lane b14-parse; batch 8's emit lane counted
+# it). Symptom: where blocks nested N deep close, the parse cost the square of
+# N: `match` nested 1,000 deep asked `cursor.is_invisible` 4,014,396 times,
+# 250 deep 253,896, and `if`, `while` and comments between the dedents alike.
+# Cause: a construct's extent ends at the last token a reader can see, which
+# `cursor.previous_significant_span` found by walking back over the line ends
+# and dedents behind the cursor, and each block's end walked back over the
+# dedent of every block closed inside it. Repair: the last visible token
+# before each is a table made once a stream (`stream_tables`), and a `:` the
+# colon habit lays out as an indent since is passed over where the table
+# names it visible (`stream_tables.relaid`, the parser's one write to its
+# stream). The shape below nests `if`, `while` and `match` 48 deep, three of
+# its heads ending in the colon habit, with comments between the dedents:
+# told as on the base, each `:` dropped by its certain fix.
+
+function deep(x: i64) -> i64
+    if x > 0
+        while x < 1001
+            match x
+                _ =>
+                    if x != 3  #~ trailing_colon
+                        if x > 4
+                            while x < 1005
+                                match x
+                                    _ =>
+                                        if x != 7
+                                            if x > 8
+                                                while x < 1009
+                                                    match x
+                                                        _ =>
+                                                            if x != 11
+                                                                if x > 12
+                                                                    while x < 1013
+                                                                        match x
+                                                                            _ =>
+                                                                                if x != 15
+                                                                                    if x > 16
+                                                                                        while x < 1017
+                                                                                            match x
+                                                                                                _ =>
+                                                                                                    if x != 19  #~ trailing_colon
+                                                                                                        if x > 20
+                                                                                                            while x < 1021
+                                                                                                                match x
+                                                                                                                    _ =>
+                                                                                                                        if x != 23
+                                                                                                                            if x > 24
+                                                                                                                                while x < 1025
+                                                                                                                                    match x
+                                                                                                                                        _ =>
+                                                                                                                                            if x != 27
+                                                                                                                                                if x > 28
+                                                                                                                                                    while x < 1029
+                                                                                                                                                        match x
+                                                                                                                                                            _ =>
+                                                                                                                                                                if x != 31
+                                                                                                                                                                    if x > 32
+                                                                                                                                                                        while x < 1033
+                                                                                                                                                                            match x
+                                                                                                                                                                                _ =>
+                                                                                                                                                                                    if x != 35  #~ trailing_colon
+                                                                                                                                                                                        if x > 36
+                                                                                                                                                                                            while x < 1037
+                                                                                                                                                                                                match x
+                                                                                                                                                                                                    _ =>
+                                                                                                                                                                                                        if x != 39
+                                                                                                                                                                                                            if x > 40
+                                                                                                                                                                                                                while x < 1041
+                                                                                                                                                                                                                    match x
+                                                                                                                                                                                                                        _ =>
+                                                                                                                                                                                                                            if x != 43
+                                                                                                                                                                                                                                if x > 44
+                                                                                                                                                                                                                                    while x < 1045
+                                                                                                                                                                                                                                        match x
+                                                                                                                                                                                                                                            _ =>
+                                                                                                                                                                                                                                                if x != 47
+                                                                                                                                                                                                                                                    return x
+        # a note under the second level, where every block above it ends
+    # and one at the first
+    return 0
+
+function main()
+    print(deep(1))

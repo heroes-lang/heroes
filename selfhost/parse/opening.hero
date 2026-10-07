@@ -136,7 +136,7 @@ variant Body
 # table above applied; the cursor stands on the body's first token, or on its
 # indent, when the answer is not `.none`.
 function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, missing: Missing) -> Body
-    crossed = head_lines.crossed_a_line(c, text, from: head.pos)
+    crossed = head_lines.crossed_a_line(@c, text, from: head.pos)
     brace: i64 @ -1
 
     if missing.braces

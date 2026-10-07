@@ -54,8 +54,8 @@ use text_outline
 # popped them: an opener one of those closed has no closer the parser can
 # take.
 function paired_closer(c: cursor.Cursor, text: str, open: i64) -> i64
-    if c.pairs.len() == c.tokens.len() && opens(c.tokens[open].kind)
-        return c.pairs[open]
+    if c.tables.pairs.len() == c.tokens.len() && opens(c.tokens[open].kind)
+        return c.tables.pairs[open]
     return walked_closer(c, text, open: open)
 
 # The walk from the opener at token `open` alone, `paired_closer`'s answer
@@ -141,11 +141,11 @@ function paired_by_kinds(c: cursor.Cursor, text: str, open: i64) -> i64
 
 ## Every opener at once
 
-# Pairs every opener of the cursor's stream (`Cursor.pairs`), so that
+# Pairs every opener of the cursor's stream (`stream_tables.Tables`), so that
 # `paired_closer` is a lookup. A cursor this did not pair, a view or a test's,
 # holds no table, and each opener is walked from.
 function pair_all(@c: cursor.Cursor, text: str)
-    c.pairs @ table(c, text)
+    c.tables.pairs @ table(c, text)
 
 # The closer of every opener by token index, -1 for one none closes and for
 # every token that opens nothing: the lexer's stack kept over the stream once.

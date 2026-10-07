@@ -1,0 +1,148 @@
+# What the parser looks up in its token stream by a token's index, and keeps
+# between lookups (design.md §4.17: recovery reads both at every bracket and
+# at every construct's end): each opener's closer (`pairing.pair_all`), and
+# the last walk back to a token a reader can see, where a construct's extent
+# ends (`cursor.previous_significant_span`).
+#
+# N blocks closing at one line are N dedents in a row, and each block's end
+# walked back from where it stood over every dedent and line end behind it,
+# the dedent of every block closed inside it among them: the square of the
+# depth (defect 258, `match` nested 1,000 deep asking `is_invisible`
+# 4,014,396 times). So the last walk is kept, and one that meets the token it
+# began at goes on from where it ended: a walk passes over the tokens the
+# cursor moved over since the last, once. A table of every token's answer,
+# made as each stream is, cost 1.2% more instructions to `parse` the
+# compiler's own source, and keeping the last walk costs 0.16% (2026-10-07).
+#
+# **Its premise, a falsifiable claim**: once a stream is made, the parser
+# writes a token only to lay a line out again, as a line end, an indent or a
+# dedent (`relaid`, which refuses any other kind), so the tokens a kept walk
+# passed over are passed over still, and the one it ended at is asked again.
+# A write of a kind a reader sees fails `relaid`'s assertion.
+#
+# A leaf: it reads tokens and nothing of the parser.
+#
+# | entry | called by |
+# |---|---|
+# | `none`, `seen_before`, `walked`, `is_invisible` | `cursor` |
+# | `relaid` | `parse/colon_habit`, `parse/margin_arms`, `parse/orphans` |
+
+use token
+
+record Tables
+    # Each opener's closer by token index, -1 for one none closes and for
+    # every token that opens nothing, once `pairing.pair_all` ran; empty
+    # before, where each opener is walked from (a test's cursor).
+    pairs: [i64]
+    # The last walk back: from the token at `walked_from`, the last a reader
+    # can see is at `walked_to`; -1 before any.
+    walked_from: i64
+    walked_to: i64
+
+# The tables of a stream just made: nothing paired, nothing walked.
+function none() -> Tables
+    return Tables(pairs: [], walked_from: -1, walked_to: -1)
+
+# Layout, which a reader does not see: a comment, a line end, an indent, a
+# dedent.
+function is_invisible(kind: token.TokenKind) -> bool
+    return kind == .comment || kind == .terminator || kind == .indent || kind == .dedent
+
+# The last token at or before `at` that a reader can see, and its span.
+record Seen
+    at: i64
+    span: token.Span
+
+# The last token at or before `at` that a reader can see, the stream's first
+# where none is: walked back, and where the walk meets the token the kept walk
+# began at, on from the one it ended at (the premise above).
+function seen_before(tokens: [token.Token], t: Tables, at: i64) -> Seen
+    i: i64 @ 0
+    from = t.walked_from
+    to = t.walked_to
+
+    if at > 0
+        i @ at
+
+    while i > 0 && is_invisible(tokens[i].kind)
+        if i == from && to < i
+            i @ to
+        else
+            i @ i - 1
+
+    return Seen(at: i, span: tokens[i].span)
+
+# The walk back from `from`, which ended at `to`, kept where it passed over
+# any token.
+function walked(@t: Tables, from: i64, to: i64)
+    if to < from
+        t.walked_from @ from
+        t.walked_to @ to
+
+# The token at `at` laid out again as a `kind` at `span`, a line end, an
+# indent or a dedent, the one write the parser makes to its stream (the
+# premise above).
+function relaid(@tokens: [token.Token], at: i64, kind: token.TokenKind, span: token.Span)
+    assert is_invisible(kind)
+    tokens[at] @ token.Token(kind: kind, span: span)
+
+## Tests
+
+function made(kinds: [token.TokenKind]) -> [token.Token]
+    out: [token.Token] @ []
+    at: i64 @ 0
+
+    for k in kinds
+        out @ out.push(token.Token(kind: k, span: token.Span(start: at, end: at + 1)))
+        at @ at + 2
+
+    return out
+
+# The walk back with no walk kept: the token at or before `at` a reader sees.
+function walked_back(tokens: [token.Token], at: i64) -> i64
+    i: i64 @ 0
+
+    if at > 0
+        i @ at
+
+    while i > 0 && is_invisible(tokens[i].kind)
+        i @ i - 1
+
+    return i
+
+# Defect 258: with each walk kept, and with any one kept from anywhere in the
+# stream, the answer is the walk's, at every token of a stream that opens with
+# layout, holds runs of dedents and comments, and ends with one.
+test "a kept walk answers what the walk back answers, from any token"
+    tokens = made(
+        [.indent, .ident, .terminator, .indent, .kw_return, .int_lit, .terminator, .dedent, .comment, .dedent, .ident, .terminator, .dedent, .dedent, .eof]
+    )
+
+    for kept in range(from: -1, to: tokens.len())
+        for at in range(from: -1, to: tokens.len())
+            t: Tables @ none()
+
+            if kept >= 0
+                walked(@t, from: kept, to: walked_back(tokens, at: kept))
+            assert seen_before(tokens, t, at: at).at == walked_back(tokens, at: at)
+
+    # And walking on from each token, as the parser does, keeping each walk.
+    t: Tables @ none()
+
+    for at in range(from: -1, to: tokens.len())
+        seen = seen_before(tokens, t, at: at)
+        assert seen.at == walked_back(tokens, at: at)
+        assert seen.span == tokens[seen.at].span
+        walked(@t, from: at, to: seen.at)
+
+# A token laid out invisible after a walk passed it is passed over, as
+# `parse/colon_habit` lays a `:` out as an indent: the kept walk ended at
+# it, and the answer is the one before it.
+test "a token laid out invisible since a walk ended at it is passed over"
+    tokens: [token.Token] @ made([.ident, .colon, .terminator, .dedent, .eof])
+    t: Tables @ none()
+    walked(@t, from: 3, to: seen_before(tokens, t, at: 3).at)
+    assert t.walked_from == 3 && t.walked_to == 1
+    relaid(@tokens, at: 1, kind: .indent, span: token.Span(start: 3, end: 3))
+    assert seen_before(tokens, t, at: 3).at == 0
+    assert seen_before(tokens, t, at: 2).at == 0
