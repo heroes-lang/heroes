@@ -17,6 +17,7 @@ import os
 import subprocess
 
 import ceiling
+import marks
 import trees
 
 
@@ -59,6 +60,17 @@ def offences(where):
     as the file's fault (defect 384's shape, here at the commit): the commit is
     still refused, since nothing could judge the file, and the line says what
     to rebuild.
+
+    **A golden case whose marks claim diagnostics is judged by its marks, not
+    by `fmt`** (defect 334, 2026-10-07): `fmt` refuses it on purpose. Every
+    such case a narrowed `annotations` run judges is asked of that suite in ONE
+    run (`marks.py`, which has the run's price), and a case it fails is an
+    offence with the suite's words; one under the suite's run roots, whose
+    marks only the whole suite asks by compiling each program, is left to the
+    batch's gate, as the write-time hook leaves it. A marked case elsewhere, a
+    `run/` or `emit/` program, keeps `fmt`'s verdict: such a program parses.
+    And a run that cannot answer gives no opinion: this guard never refuses
+    over its own inability to judge.
     """
     top = toplevel(where)
     if top is None:
@@ -66,6 +78,7 @@ def offences(where):
     compiler = trees.compiler_of(top)
     can_fmt = trees.runnable(compiler)
     found = []
+    marked = []
     for rel in staged_hero_files(top):
         path = os.path.join(top, rel)
         if not os.path.isfile(path):
@@ -78,6 +91,12 @@ def offences(where):
             except (OSError, subprocess.SubprocessError):
                 run = None
             said = None
+            if run is not None and run.returncode != 0 and rel.startswith("tests/golden/") and marks.has_marks(path):
+                if marks.judged_narrowed(top, rel):
+                    marked.append(rel)
+                    continue
+                if marks.in_run_roots(top, rel):
+                    continue
             if run is not None and run.returncode != 0:
                 said = rel + " does not parse"
             elif run is not None and run.stdout != on_disk:
@@ -87,6 +106,14 @@ def offences(where):
         over = ceiling.verdict(top, rel)
         if over is not None:
             found.append(over.split("\n")[0])
+    if marked:
+        names = {os.path.basename(rel)[: -len(".hero")]: rel for rel in marked}
+        told = marks.disagreements(compiler, top, sorted(names))
+        for name, rows in sorted((told or {}).items()):
+            found.append(
+                names[name] + "'s marks and its expectation disagree; the `annotations` suite says:\n      "
+                + "\n      ".join(rows)
+            )
     return found
 
 

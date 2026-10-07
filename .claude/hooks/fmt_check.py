@@ -64,11 +64,11 @@ would read as a pass.
 
 import json
 import os
-import re
 import subprocess
 import sys
 
 import ceiling
+import marks
 import trees
 
 LAYER = "(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
@@ -178,7 +178,7 @@ def main():
     fmt = run(compiler, ["fmt", path], place.home)
     if fmt is None:
         return 0
-    if fmt.returncode != 0 and place.under("tests/golden/") and has_marks(path):
+    if fmt.returncode != 0 and place.under("tests/golden/") and marks.has_marks(path):
         # A golden case whose `#~` marks claim diagnostics is refused by `fmt`
         # on purpose: its diagnostics are its subject (defect 272, 2026-10-05).
         # This hook said *does not parse* of every such case, a false alarm
@@ -227,52 +227,32 @@ def main():
     return marks_against_expectation(compiler, place)
 
 
-def has_marks(path):
-    """Whether the case claims a diagnostic with a `#~` or `#~v` mark. A mark
-    quoted in prose reads as one here, and costs only the marks' question being
-    asked of the suite, which reads marks exactly (`mark_readers.hero`)."""
-    try:
-        with open(path, "rb") as handle:
-            text = handle.read().decode("utf-8", errors="replace")
-    except OSError:
-        return False
-    return re.search(r"#~v? [a-z_]+", text) is not None
-
-
 def marks_against_expectation(compiler, place):
     """The `annotations` suite narrowed to the case `place` names (defect 286),
-    run in the case's own tree with that tree's compiler.
+    run in the case's own tree with that tree's compiler (`marks.py`, which
+    the commit guard asks through too).
 
     Exit 2 with the suite's own words where it fails THIS case; no opinion
-    where the case is not a golden one, has no `.hero` or no `.expected` yet,
-    is not one the suite selects, or the run could not be made."""
+    where the case is not one a narrowed run judges (a `.hero` of the suite's
+    `DIRECTORIES` with its `.expected` beside it), or the run could not be
+    made. Until 2026-10-07 the run was made for any golden case with an
+    `.expected` and its answer, *no case matches*, read as no opinion: the
+    same verdict, at the price of a harness run (`marks.py` has the price)."""
     if not place.under("tests/golden/"):
         return 0
-    root = place.tree
-    rel = place.rel
-    stem = rel[: rel.rfind(".")]
-    if not (os.path.isfile(os.path.join(root, stem + ".hero")) and os.path.isfile(os.path.join(root, stem + ".expected"))):
+    stem = place.rel[: place.rel.rfind(".")]
+    if not marks.judged_narrowed(place.tree, stem + ".hero"):
         return 0
     name = os.path.basename(stem)
-    judged = run(compiler, ["run", "tests/harness/main.hero", "--", "./heroes", "annotations", name], root)
-    if judged is None or judged.returncode != 1:
+    found = marks.disagreements(compiler, place.tree, [name])
+    if not found or name not in found:
         return 0
-    said = judged.stdout.decode("utf-8", errors="replace").split("\n")
-    failed = "FAIL annotations/" + name
-    if failed not in said:
-        return 0
-    at = said.index(failed)
-    rows = [failed]
-    for row in said[at + 1:]:
-        if row.startswith("FAIL ") or row.startswith("harness:") or not row.startswith("  "):
-            break
-        rows.append(row)
     return refused(
         place,
         place.shown[: place.shown.rfind(".")] + "'s marks and its expectation disagree. "
         "Change whichever side is wrong; if the `.expected` is being rewritten "
         "next, this clears when it is",
-        "\n".join(rows),
+        "\n".join(found[name]),
     )
 
 
