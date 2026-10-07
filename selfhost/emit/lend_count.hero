@@ -24,6 +24,7 @@ use emit/aggregate
 use emit/literal
 use emit/mangle
 use widths
+use digits
 
 # For each parameter of the extern, the position of the sibling its
 # `counted_by` names, or -1: the pointer at position k is counted by the
@@ -49,6 +50,60 @@ function counted_siblings(s: source.Source, decls: [ast.Decl], decl: i64) -> [i6
             _ = 0
 
     return out
+
+# An extent the declaration states (panel 196's R5): `written` as the author
+# wrote it, for a message, and `c_text` as C reads it — a group constant's
+# macro by its own name, a literal as its decimal value, since C has neither
+# `_` between digits nor `0o`.
+record Stated
+    written: str
+    c_text: str
+
+# The extent the parameter at `index` states, or absent where its `counted_by`
+# names a sibling or there is none. The checker has held a name that is no
+# sibling to a constant of the group and a number to at least one, so what
+# reaches here is one of the two.
+function stated_text(s: source.Source, decls: [ast.Decl], decl: i64, index: i64) -> Stated?
+    match decls[decl].kind
+        .function_decl fd =>
+            if index >= fd.value.params.len() || fd.value.params[index].counted_by.is_err()
+                return fail(code: "none", msg: "no extent here")
+            written = source.span_text(s, fd.value.params[index].counted_by.must())
+
+            for other in fd.value.params
+                if source.span_text(s, other.name) == written
+                    return fail(code: "none", msg: "a sibling carries the count")
+
+            if written.len() > 0 && written[0] >= '0' && written[0] <= '9'
+                value = digits.decode_int(digits.canonical_int(written))?
+                return ok(Stated(written: written, c_text: value.to_str()))
+            return ok(Stated(written: written, c_text: written))
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
+
+    return fail(code: "none", msg: "unreached")
+
+# The element of the buffer the parameter at `index` is (panel 196's R4): an
+# array lent through `@`, which the checker admits only as a buffer of numbers
+# or group records with an extent. Absent for every other parameter, whose
+# lend, if any, is a place and not a buffer.
+function buffer_element(c: state.Checked, decls: [ast.Decl], decl: i64, index: i64) -> i64?
+    match decls[decl].kind
+        .function_decl fd =>
+            if index >= fd.value.params.len() || !fd.value.params[index].mutable
+                return fail(code: "none", msg: "not an @ parameter")
+            written = c.written_types[fd.value.params[index].ty]?
+
+            match table.get(c.types, written)
+                .array x => return ok(x.element)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+                    code: "none",
+                    msg: "not an array"
+                )
+                .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not an array")
+                .case_ty | .failure | .generic | .error           => return fail(code: "none", msg: "not an array")
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
+
+    return fail(code: "none", msg: "unreached")
 
 function param_names(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
     out: [str] @ []

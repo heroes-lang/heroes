@@ -1,0 +1,39 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4 with two
+# threads filling buffers at once. The one guarded region per process the
+# sitting prototyped gave 26 and 89 wrong digests at exit 0 under two threads
+# (its completeness critic, `gp_threads.c`); the regions are the calling
+# thread's, so three threads, each 2000 slow fills of 32 seeded bytes, read
+# every byte back as its own seed wrote it and count no wrong one.
+extern "fixedbugs-396-buffers.h"
+    function stamp32(@md: [u8] counted_by 32 lent, seed: u64)
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function expected(seed: i64, at: i64) -> u8
+    return ((seed * 31 + at * 17 + 63) % 256).to_u8().must()
+
+function worker(seed: i64) -> i64
+    wrong: i64 @ 0
+    round: i64 @ 0
+
+    while round < 2000
+        md: [u8] @ []
+        stamp32(@md, seed: seed.to_u64().must())
+        at: i64 @ 0
+
+        while at < 32
+            if md[at] != expected(seed: seed, at: at)
+                wrong @ wrong + 1
+            at @ at + 1
+
+        round @ round + 1
+
+    return wrong
+
+function main()
+    a = hero_thread_spawn(body: worker, arg: 1)
+    b = hero_thread_spawn(body: worker, arg: 2)
+    here = worker(3)
+    print(hero_thread_join(handle: a), " ", hero_thread_join(handle: b), " ", here)

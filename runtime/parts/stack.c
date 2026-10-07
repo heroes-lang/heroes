@@ -182,6 +182,24 @@ __attribute__((unused)) static int hero_handle_dead_at(uintptr_t addr, uintptr_t
     return 1;
 }
 
+/* THE THIRD WITNESS: A GUARD PAGE OF A BUFFER LENT TO C (panel 196's R4;
+ * defect 396). `@md: [u8] counted_by 32 lent` hands C a buffer that ends where
+ * a page with no access begins, so C reaching past the extent its declaration
+ * states faults there, and both handlers below ask `parts/lend.c`, which owns
+ * the calling thread's regions, whether the address is on one of those pages.
+ * The address alone is the witness and it cannot be confused with the two
+ * above: the page is a mapping of its own, which no stack, no null window and
+ * no dead region shares. Declared here because `lend.c` comes later in this
+ * one translation unit, after the array it copies. */
+typedef struct HeroLendFault {
+    const char *callee;
+    const char *param;
+    int64_t extent;
+    int returned;
+} HeroLendFault;
+static int hero_lend_fault_at(uintptr_t addr, HeroLendFault *out);
+static void hero_lend_tell(const HeroLendFault *f, void (*say)(const char *));
+
 /* An address as `0x…` and a terminating NUL, into `buf`, with no call at all:
  * a signal handler may not call `snprintf`, and neither may a vectored
  * exception handler running on the faulting thread. The offset is in both
@@ -478,6 +496,13 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
             hero_stack_say_heroes_name(who);
         }
         hero_stack_say("\n");
+        hero_abort();
+    }
+
+    /* C past a buffer it was lent (the third witness, declared above). */
+    HeroLendFault lend;
+    if (hero_lend_fault_at(addr, &lend)) {
+        hero_lend_tell(&lend, hero_stack_say);
         hero_abort();
     }
 
@@ -782,6 +807,16 @@ static LONG WINAPI hero_stack_veh(EXCEPTION_POINTERS *ep) {
      * OFFSET, and marked the arm unrun; the box then printed the line without
      * `at offset 0x0` and `run/`'s golden for it went red there alone. No
      * `called from`, for the frame walk's reason at the head of this file. */
+    /* C past a buffer it was lent, the POSIX arm's third witness, at the
+     * address Windows names as the one touched; `[0]` would say read or write,
+     * and the sentence covers both, as it must on POSIX. */
+    HeroLendFault lend;
+    if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
+        && ep->ExceptionRecord->NumberParameters >= 2
+        && hero_lend_fault_at((uintptr_t)ep->ExceptionRecord->ExceptionInformation[1], &lend)) {
+        hero_lend_tell(&lend, hero_stack_veh_say);
+        hero_abort();
+    }
     uintptr_t dead_offset = 0;
     if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
         && ep->ExceptionRecord->NumberParameters >= 2

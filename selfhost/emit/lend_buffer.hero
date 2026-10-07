@@ -1,0 +1,229 @@
+# The buffer C fills, as C (design.md §4.19, §1.12; panel 196's R4, ratified
+# 2026-10-06; defect 396): `@md: [u8] counted_by 32 lent`, an array lent
+# through `@` with the extent its declaration states.
+#
+# WHAT IS WRITTEN AROUND THE CALL, in a block of its own:
+# - the extent, as `int64_t`: a number as itself, a group constant through
+#   `hero_lend_count_u64` (the header's macro may be any integer type, and a
+#   value past `INT64_MAX` is refused by name), a sibling's value as the call
+#   hands it, signed as itself and unsigned through the same refusal;
+# - one assertion that the header's pointer points at what the buffer holds,
+#   in C's own arithmetic on the header's own type, read back onto the
+#   parameter (`emit/ffi_extent.hero`): a number of the same width and sign,
+#   the group's record that IS the struct, or, for `[u8]` alone, `void`;
+# - `hero_lend_take`, which copies the array's first `min(len, extent)`
+#   elements into a region of the calling thread ending at a page nothing may
+#   touch, zeros after, and hands back the buffer C is given;
+# - after the call, `hero_lend_give`, which makes the array exactly the
+#   buffer's `extent` elements and gives the region back, in the reverse of
+#   the order the buffers were taken (`runtime/parts/lend.c`).
+#
+# WHAT IS NOT COPIED: nothing but numbers and group records, which hold no
+# reference the runtime counts, so a copy is their bytes. A record lent WHOLE
+# with `@` is never a buffer: C gets the place itself (panel 196's R1, and the
+# ffi-pragmatist's veto of any copy of a record).
+
+use ast
+use source
+use check/state
+use check/table
+use ir
+use ir/containers
+use emit/writer
+use emit/ctype
+use emit/aggregate
+use emit/lend_count
+use emit/lend_extent
+use emit/extern_probe
+use widths
+
+# The contract between this writer and `emit/ffi_extent.hero`'s reader.
+constant MARKER: str
+    "heroes-ffi-buffer "
+
+# One buffer of one call: the argument it stands for, the C names of the
+# buffer and its extent, the extent's C text, the place the array lives in,
+# and the assertion about the header's pointee.
+record Buffer
+    index: i64
+    name: str
+    extent_name: str
+    extent: str
+    place: str
+    callee: str
+    param: str
+    check: str
+
+# Every buffer one extern call lends, in argument order.
+function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64) -> [Buffer]
+    out: [Buffer] @ []
+    given = containers.args_of(f, run)
+    params = lend_count.param_names(s, decls, decl: decl)
+    callee = source.span_text(s, decls[decl].name)
+    index: i64 @ 0
+
+    for arg in given
+        element = lend_count.buffer_element(c, decls, decl: decl, index: index)
+
+        if !element.is_err() && index < params.len()
+            match arg
+                .inout_arg io =>
+                    tag = run.start.to_str() + "_" + index.to_str()
+                    out @ out.push(
+                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index), place: aggregate.place(c, s, decls, f, at: io.place), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()))
+                    )
+                .value_arg => index @ index
+        index @ index + 1
+
+    return out
+
+# The extent as an `int64_t` C expression.
+function extent_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, given: [ir.Arg], decl: i64, index: i64) -> str
+    names = lend_count.quoted(source.span_text(s, decls[decl].name)) + ", " + lend_count.quoted(lend_count.param_names(s, decls, decl: decl)[index])
+    stated = lend_count.stated_text(s, decls, decl: decl, index: index)
+
+    if !stated.is_err()
+        if stated.must().written.len() > 0 && stated.must().written[0] >= '0' && stated.must().written[0] <= '9'
+            return "INT64_C(" + stated.must().c_text + ")"
+        return "hero_lend_count_u64((uint64_t)(" + stated.must().c_text + "), " + names + ")"
+    counted = lend_count.counted_siblings(s, decls, decl: decl)
+
+    if index >= counted.len() || counted[index] < 0 || counted[index] >= given.len()
+        return "hero_lend_count_u64((uint64_t)0 - 1, " + names + ")"
+    n = lend_count.count_of(c, s, decls, f, arg: given[counted[index]])
+
+    if lend_count.signed_int(c, n.ty)
+        return "(int64_t)(" + n.text + ")"
+    return "hero_lend_count_u64((uint64_t)(" + n.text + "), " + names + ")"
+
+# The assertion that the header's pointer points at what the buffer holds.
+# Written only in forms C leaves unevaluated, `__typeof__` and
+# `__builtin_types_compatible_p` against the integer types of the right sign
+# and size, because a cast or a `sizeof` of the pointee is a hard error or a
+# warning where the header says `void` or names a struct, measured: the check
+# has to be FALSE there, never ill-formed.
+function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, index: i64, element: i64) -> str
+    callee = source.span_text(s, decls[decl].name)
+    params = lend_count.param_names(s, decls, decl: decl)
+    header = names.lend_units[callee + " " + index.to_str()]
+
+    if header.is_err()
+        return "_Static_assert(0, \"" + lend_extent.UNASKED_MARKER + callee + " " + params[index] + ": the pointee check read no unit for this counted parameter\");"
+    pointee = "__typeof__(*(" + header.must() + ")0)"
+    spelled = extern_probe.c_type_of(names, c, ty: element)
+
+    if spelled.is_err()
+        return ""
+    candidates: [str] @ []
+    void_too: bool @ false
+
+    match table.get(c.types, element)
+        .int_ty ik =>
+            if widths.int_signed(ik.kind)
+                candidates @ ["signed char", "short", "int", "long", "long long"]
+            else
+                candidates @ ["unsigned char", "unsigned short", "unsigned int", "unsigned long", "unsigned long long"]
+                void_too @ ik.kind == .u8
+        .float_ty                                         => candidates @ ["float", "double", "long double"]
+        .named                                            => candidates @ [spelled.must()]
+        .bool | .str | .ptr | .cstr | .unit | .error      => candidates @ candidates
+        .array | .fixed | .map | .fallible | .function_ty => candidates @ candidates
+        .case_ty | .failure | .generic                    => candidates @ candidates
+
+    alternatives: [str] @ []
+
+    for one in candidates
+        alternatives @ alternatives.push(
+            "(__builtin_types_compatible_p(" + pointee + ", " + one + ") && sizeof(" + one + ") == sizeof(" + spelled.must() + "))"
+        )
+
+    # Plain `char` is one of the three character types and its sign is the
+    # platform's; `-fsigned-char` makes it signed on all three today, and the
+    # condition reads the sign rather than assuming it.
+    match table.get(c.types, element)
+        .int_ty ik =>
+            if ik.kind == .i8
+                alternatives @ alternatives.push(
+                    "(__builtin_types_compatible_p(" + pointee + ", char) && (char)-1 < 0)"
+                )
+
+            if ik.kind == .u8
+                alternatives @ alternatives.push(
+                    "(__builtin_types_compatible_p(" + pointee + ", char) && (char)-1 > 0)"
+                )
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .error   => _ = 0
+        .array | .fixed | .map | .fallible | .function_ty | .named => _ = 0
+        .case_ty | .failure | .generic                             => _ = 0
+
+    if void_too
+        alternatives @ alternatives.push("__builtin_types_compatible_p(" + pointee + ", void)")
+
+    if alternatives.len() == 0
+        alternatives @ ["0"]
+    at = decl_param_span(decls, decl: decl, index: index)
+    element_name = heroes_name(c, s, decls, element: element)
+    return "_Static_assert(" + alternatives.join(" || ") + ", \"" + MARKER + callee + " " + params[index] + " " + at + " " + element_name + " " + header.must() + "\");"
+
+# The element as the declaration writes it, for the message: a width's
+# name or the record's.
+function heroes_name(c: state.Checked, s: source.Source, decls: [ast.Decl], element: i64) -> str
+    match table.get(c.types, element)
+        .int_ty ik                                        => return widths.int_name(ik.kind)
+        .float_ty fk                                      => return widths.float_name(fk.kind)
+        .named n                                          => return source.span_text(s, decls[n.decl].name)
+        .bool | .str | .ptr | .cstr | .unit | .error      => return "?"
+        .array | .fixed | .map | .fallible | .function_ty => return "?"
+        .case_ty | .failure | .generic                    => return "?"
+
+    return "?"
+
+# The declaration's parameter name as `<start> <end>`, where the reader puts
+# the diagnostic: the call is right and the declaration is wrong about C.
+function decl_param_span(decls: [ast.Decl], decl: i64, index: i64) -> str
+    match decls[decl].kind
+        .function_decl fd =>
+            if index < fd.value.params.len()
+                at = fd.value.params[index].name
+                return at.start.to_str() + " " + at.end.to_str()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return "0 0"
+
+    return "0 0"
+
+# Before the call: a block opens, each buffer is taken in argument order, and
+# its argument becomes the buffer.
+function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
+    if held.len() == 0
+        return arguments
+    writer.line(@w, text: "    {")
+    out: [str] @ arguments
+
+    for b in held
+        if b.check != ""
+            writer.line(@w, text: "    " + b.check)
+        writer.line(@w, text: "    int64_t " + b.extent_name + " = " + b.extent + ";")
+        writer.line(
+            @w,
+            text: "    void *" + b.name + " = hero_lend_take(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ");"
+        )
+
+        if b.index < out.len()
+            out[b.index] @ b.name
+
+    return out
+
+# After the call: each array becomes its buffer, the last taken first, and
+# the block closes.
+function after(@w: writer.Writer, held: [Buffer])
+    if held.len() == 0
+        return
+    at: i64 @ held.len() - 1
+
+    while at >= 0
+        b = held[at]
+        writer.line(
+            @w,
+            text: "    " + b.place + " = hero_lend_give(" + b.place + ", " + b.name + ", " + b.extent_name + ");"
+        )
+        at @ at - 1
+
+    writer.line(@w, text: "    }")

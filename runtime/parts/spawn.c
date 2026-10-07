@@ -217,6 +217,9 @@ static pthread_mutex_t hero_spawn_lock = PTHREAD_MUTEX_INITIALIZER;
  * must let a Heroes function run on it. Claiming before the body and not inside
  * it is deliberate — the body is the author's Heroes function and it must not
  * have to know that any of this exists. */
+/* `parts/lend.c`, later in this translation unit: the thread's lend regions. */
+static void hero_lend_thread_leave(void);
+
 static void hero_spawn_enter(HeroSpawnSlot *slot) {
     hero_thread_claim();
     /* AND THE STACK GUARD IS CLAIMED HERE TOO, which is the whole of
@@ -266,7 +269,11 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
     slot->result = slot->body(slot->arg);
     /* The alternate stack goes back to the OS with the thread that took it: a
      * slot is reused (a bound on threads ALIVE, above), so a mapping kept per
-     * spawn would grow without bound in a program that spawns in a loop. */
+     * spawn would grow without bound in a program that spawns in a loop. And
+     * the regions its buffers were lent from (panel 196's R4), for the same
+     * reason and under the sanitizer too, where the guard's two doors are
+     * empty and these mappings are still the thread's. */
+    hero_lend_thread_leave();
     hero_stack_guard_leave();
 }
 

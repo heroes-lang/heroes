@@ -13,6 +13,12 @@
 # `out_parameter` below is quiet since, and the first two messages name the
 # record lent whole and the cell beside the `ptr` and the value.
 #
+# **Corrected 2026-10-07, panel 196's R5 (lane b13-land-buf):** the mark may
+# also name a `constant` of the group or state a number, so `no_such_sibling`'s
+# message names the three things an extent may be; it is refused as before.
+# And since panel 196's R4 an array lent through `@` is the third thing a
+# `counted_by` may stand on, so `not_a_pointer`'s message names the three.
+#
 # AND A LEND MUST LAND ON A MARKED PARAMETER. Absence is a refusal, never
 # silence: a check that applies only where somebody wrote the mark would leave
 # defect 063 standing wherever nobody did (panel 166's compiler-engineer's

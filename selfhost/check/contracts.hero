@@ -157,10 +157,17 @@ function param_key(s: source.Source, fd: ast.FunctionDecl, p: ast.Param) -> str
     if p.mutable
         parts @ parts.push("@")
 
+    # An extent the declaration states (panel 196's R5), a constant of the
+    # group or a number, names no sibling and is compared by its own text, so
+    # two declarations stating 16 and 32 for one C pointer disagree.
     if !p.counted_by.is_err()
-        parts @ parts.push(
-            "counted_by #" + sibling_index(s, fd, named: source.span_text(s, p.counted_by.must())).to_str()
-        )
+        named = source.span_text(s, p.counted_by.must())
+        at = sibling_index(s, fd, named: named)
+
+        if at < 0
+            parts @ parts.push("counted_by =" + named)
+        else
+            parts @ parts.push("counted_by #" + at.to_str())
 
     if p.lent
         parts @ parts.push("lent")

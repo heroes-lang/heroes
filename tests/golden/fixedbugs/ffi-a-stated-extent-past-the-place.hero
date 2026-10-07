@@ -1,0 +1,32 @@
+# Panel 196's R5, the refused half (lane b13-land-buf, 2026-10-07): an extent
+# the DECLARATION states, held in C before the call to the place the call
+# lends, and refused at the build where the place is shorter.
+#
+# FOUR SHAPES, one per way the extent is spelled or counted: a literal, 32
+# bytes over a field of 16; the group's constant, the header's macro, over the
+# same field, which C compares by the macro's own value; 8 `int32_t`s over 16
+# bytes, the unit wider than a byte; and a record lent whole with `@`, 2 of
+# it where the program has one. The message lands on the lend, since the
+# declaration is the author's word about C and the place is what is short,
+# and it offers no fix: no number written for the author can be right in
+# both directions (panel 196's R8).
+extern "ffi-a-stated-extent-past-the-place.h"
+    constant DIGEST_LEN: i64
+    record ShortOne tag short_one
+        buf: u8[16]
+        after: i64
+    record Small tag small
+        a: i32
+    function digest32(p: ptr counted_by 32 lent)
+    function digest_const(p: ptr counted_by DIGEST_LEN lent)
+    function fill_ints8(p: ptr counted_by 8 lent)
+    function two_smalls(@p: Small counted_by 2)
+
+function main()
+    h: ShortOne @ ShortOne(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    digest32(p: h.buf.ptr())  #~ field_lend_extent
+    digest_const(p: h.buf.ptr())  #~ field_lend_extent
+    fill_ints8(p: h.buf.ptr())  #~ field_lend_extent
+    s: Small @ Small(a: 0)
+    two_smalls(@s)  #~ record_lend_extent
+    print(h.after, " ", s.a)
