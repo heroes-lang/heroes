@@ -117,6 +117,26 @@ def fresh(prefix):
     return os.path.realpath(tempfile.mkdtemp(prefix=prefix))
 
 
+def make_lane(trunk, name, built=T0 + 100):
+    """A worktree of the repository `trunk` under `.claude/worktrees/<name>`,
+    as a lane is made, with a compiler of its own built at `built`."""
+    lane = os.path.join(trunk, ".claude", "worktrees", name)
+    git(trunk, "worktree", "add", "-q", "-b", "lane-" + name, lane)
+    for part in ("seed/heroes.c", "selfhost/main.hero", "runtime/runtime.c"):
+        date(os.path.join(lane, part), T0)
+    heroes = write(os.path.join(lane, "heroes"), FAKE)
+    os.chmod(heroes, 0o755)
+    date(heroes, built)
+    return lane
+
+
+def staged(tree, rel, text, at=None):
+    """`rel` written in `tree` and staged in that tree's index."""
+    path = write(os.path.join(tree, rel), text, at)
+    git(tree, "add", "--", rel)
+    return path
+
+
 def calls(tree):
     try:
         with open(os.path.join(tree, "calls.log"), encoding="utf-8") as handle:
@@ -323,6 +343,57 @@ class HarnessTree(unittest.TestCase):
         self.age(self.trunk)
         said = guard_bash.verdict("./heroes run tests/harness/main.hero -- ./heroes", self.trunk)
         self.assertIsNotNone(said)
+
+
+class CommitTree(unittest.TestCase):
+    """Defect 287: the staged-file check reads the index of the tree the commit
+    runs in, `git -C` or the command's `cd`, never the session's."""
+
+    def setUp(self):
+        self.top = fresh("hooks-287-")
+        self.trunk = make_tree(os.path.join(self.top, "trunk"), repo=True)
+        self.lane = make_lane(self.trunk, "lane")
+
+    def test_a_lane_commit_after_cd_reads_the_lane_index(self):
+        staged(self.lane, "examples/x.hero", "BROKEN\n")
+        said = guard_bash.verdict("cd " + self.lane + " && git commit -F m -- examples/x.hero", self.trunk)
+        self.assertIsNotNone(said)
+        self.assertIn("examples/x.hero does not parse", said)
+        self.assertIn(self.lane + "|fmt examples/x.hero", calls(self.lane))
+        self.assertEqual(calls(self.trunk), [])
+
+    def test_a_lane_commit_by_git_c_reads_the_lane_index(self):
+        staged(self.lane, "examples/x.hero", "UNCANONICAL\n")
+        said = guard_bash.verdict("git -C " + self.lane + " commit -F m -- examples/x.hero", self.trunk)
+        self.assertIsNotNone(said)
+        self.assertIn("examples/x.hero is not canonical", said)
+
+    def test_the_session_index_does_not_refuse_a_lane_commit(self):
+        staged(self.trunk, "examples/t.hero", "BROKEN\n")
+        said = guard_bash.verdict("cd " + self.lane + " && git commit -F m -- examples/y.hero", self.trunk)
+        self.assertIsNone(said)
+
+    def test_a_commit_from_a_subdirectory_reads_the_whole_index(self):
+        staged(self.lane, "selfhost/x.hero", "BROKEN\n")
+        staged(self.lane, "examples/z.hero", "BROKEN\n")
+        said = guard_bash.verdict("cd " + os.path.join(self.lane, "selfhost") + " && git commit -F m -- x.hero", self.trunk)
+        self.assertIsNotNone(said)
+        self.assertIn("selfhost/x.hero does not parse", said)
+        self.assertIn("examples/z.hero does not parse", said)
+
+    def test_an_older_compiler_refusing_a_staged_file_is_told_as_its_age(self):
+        write(os.path.join(self.lane, "selfhost", "lexer.hero"), "# moved\n", T0 + 200)
+        staged(self.lane, "examples/x.hero", "BROKEN\n")
+        said = guard_bash.verdict("cd " + self.lane + " && git commit -F m -- examples/x.hero", self.trunk)
+        self.assertIsNotNone(said)
+        self.assertNotIn("does not parse", said)
+        self.assertIn("older than", said)
+        self.assertIn("selfhost/lexer.hero", said)
+
+    def test_a_canonical_staged_file_passes(self):
+        staged(self.lane, "examples/x.hero", "fine\n")
+        said = guard_bash.verdict("cd " + self.lane + " && git commit -F m -- examples/x.hero", self.trunk)
+        self.assertIsNone(said)
 
 
 if __name__ == "__main__":

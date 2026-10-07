@@ -20,10 +20,9 @@ import json
 import os
 import re
 import shlex
-import subprocess
 import sys
 
-import ceiling
+import staged
 import trees
 
 CONTRACT = "CLAUDE.md § Hard stops"
@@ -142,6 +141,30 @@ def words(segment):
         return segment.split()
 
 
+def git_dir(w, here):
+    """The directory a `git` command runs in: `here`, moved by each `-C` in
+    turn as git moves it; None where the text cannot tell. Defect 287: the
+    staged files of a `git -C <lane> commit` are the lane's."""
+    if not w or w[0] != "git":
+        return here
+    i = 1
+    while i < len(w) and w[i].startswith("-"):
+        if w[i] == "-C" and i + 1 < len(w):
+            target = w[i + 1]
+            if "$" in target or "`" in target:
+                here = None
+            elif os.path.isabs(target):
+                here = os.path.normpath(target)
+            elif target and here is not None:
+                here = os.path.normpath(os.path.join(here, target))
+            i += 2
+        elif w[i] in ("-c", "--git-dir", "--work-tree", "--namespace"):
+            i += 2
+        else:
+            i += 1
+    return here
+
+
 def git_args(w, *verbs):
     """The arguments AFTER `git <verb>`, or None when this is not that command.
 
@@ -236,7 +259,7 @@ def placed(command, cwd):
         w = words(segment)
         if not w:
             continue
-        out.append((w, here))
+        out.append((w, here, segment))
         here = moved_to(w, here)
     return out
 
@@ -292,50 +315,6 @@ def stale_compiler(w, here):
     )
 
 
-def staged_hero_files(cwd):
-    try:
-        out = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=AM", "--", "*.hero"],
-            capture_output=True, timeout=30, cwd=cwd, text=True,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return []
-    if out.returncode != 0:
-        return []
-    return [line.strip() for line in out.stdout.split("\n") if line.strip()]
-
-
-def staged_offences(cwd):
-    """Staged `.hero` files that are not canonical or are over their ceiling.
-
-    The write-time hook sees a file written through Edit or Write; a file that
-    reached the tree any other way is seen here, at the commit, which is the
-    last moment before a suite would have to find it (CL-079).
-    """
-    compiler = os.path.join(cwd, "heroes")
-    can_fmt = os.path.isfile(compiler) and os.access(compiler, os.X_OK)
-    found = []
-    for rel in staged_hero_files(cwd):
-        path = os.path.join(cwd, rel)
-        if not os.path.isfile(path):
-            continue
-        if can_fmt:
-            try:
-                run = subprocess.run([compiler, "fmt", rel], capture_output=True, timeout=120, cwd=cwd)
-                with open(path, "rb") as handle:
-                    on_disk = handle.read()
-            except (OSError, subprocess.SubprocessError):
-                run = None
-            if run is not None and run.returncode != 0:
-                found.append(rel + " does not parse")
-            elif run is not None and run.stdout != on_disk:
-                found.append(rel + " is not canonical (`heroes fmt " + rel + " --in-place`)")
-        over = ceiling.verdict(cwd, rel)
-        if over is not None:
-            found.append(over.split("\n")[0])
-    return found
-
-
 def verdict(command, cwd=None):
     """Return a refusal string, or None to stay out of the way."""
     cwd = cwd or os.getcwd()
@@ -363,15 +342,13 @@ def verdict(command, cwd=None):
             "whole file, or read the terminal as it is. " + LAST_JUDGE
         )
 
-    for w, here in placed(command, cwd):
+    steps = placed(command, cwd)
+    for w, here, _segment in steps:
         stale = stale_compiler(w, here)
         if stale is not None:
             return stale
 
-    for segment in segments(command):
-        w = words(segment)
-        if not w:
-            continue
+    for w, here, segment in steps:
 
         rest = git_args(w, "add")
         if rest is not None:
@@ -413,7 +390,7 @@ def verdict(command, cwd=None):
                 "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
             )
         if rest is not None:
-            offences = staged_offences(cwd)
+            offences = staged.offences(git_dir(w, here))
             if offences:
                 return (
                     "refused: a staged `.hero` file would reach the suites with what a "
