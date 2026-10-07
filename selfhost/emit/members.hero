@@ -23,6 +23,7 @@ use ir/phases
 use emit
 use emit/ctype
 use emit/types
+use emit/callback_guard
 use ir/instances
 
 # The tables every TU shares, built ONCE for the whole build.
@@ -52,6 +53,10 @@ record Whole
     # deep as it goes, 8.9 million steps in the compiler's own build
     # (defect 229).
     kinds: [i64]
+    # Which functions C may call back, and whether any can be: asked of the
+    # whole program here, where every TU asked it twice of the whole program
+    # until defect 497 (2026-10-07).
+    callbacks: callback_guard.Callbacks
 
 # `lend_units` is what the round's pointee check read of each counted
 # parameter (`emit.emit_told`'s, panel 194's R7).
@@ -68,7 +73,13 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
             by_decl[f.decl] @ index
         index @ index + 1
 
-    return Whole(names: names, shown: emit.shown_fused(p, s), by_decl: by_decl, kinds: phases.type_kinds(c))
+    return Whole(
+        names: names,
+        shown: emit.shown_fused(p, s),
+        by_decl: by_decl,
+        kinds: phases.type_kinds(c),
+        callbacks: callback_guard.callbacks_of(p, c, decls)
+    )
 
 # What one TU emits, and what it merely declares.
 #

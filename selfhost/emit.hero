@@ -291,15 +291,16 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     )
 
     # Which functions C may call back, computed ONCE for the whole unit
-    # (panel 111 R9). Empty for every program that hands C no function,
-    # which is this compiler and all 45 corpus programs.
-    guarded_decls = callback_guard.guarded(p, c, decls)
+    # (panel 111 R9), the table and every body reading the one answer
+    # (defect 497). Empty for every program that hands C no function.
+    callbacks = callback_guard.callbacks_of(p, c, decls)
+    guarded_decls = callbacks.decls
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             signature.prototype(@w, p.functions[at], c, names, s, decls)
 
-    callback_thunk.lookup_table(@w, p, c, names, s, decls)
+    callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: callbacks)
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
