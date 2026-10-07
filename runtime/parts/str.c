@@ -127,24 +127,68 @@ static HeroStrHeader *hero_str_hdr_checked(HeroStr s) {
  * `atomic_fetch_sub_explicit` answers with the count BEFORE the subtraction, so
  * `== 1` is "this call took it to zero" — the same test the plain `-= 1`
  * followed by `== 0` was making, in one operation instead of two. */
+/* **A RELEASED BLOCK IS NEVER READ AS LIVE, whatever the allocator does with
+ * it** (defect 314, 2026-10-07). The mark is the check every release and
+ * every new reference passes, and it was read in a block already given back:
+ * it saw a release after the last only where the allocator had written over
+ * the block's first bytes. Darwin's and glibc's do for a small block; the
+ * Windows box's did not, and panel 190's control, one string released twice,
+ * exited 0 there with the right output; this Mac's allocator does not either
+ * for a block of 20,000 bytes or more, and the same release exited 0 here
+ * (measured at `dad2da47`, 5,000 bytes named, 20,000 to 4,000,000 not). A
+ * count found at 0 was then taken to -1 in freed memory. So the runtime
+ * writes the mark over itself before the block goes, and a count of 0 or
+ * below is refused by name; what the allocator writes over it afterwards is
+ * no mark either. One store a release, and one test a reference that was
+ * already a load.
+ *
+ * What it cannot see is a block the allocator has already handed to a new
+ * string, which carries a true mark and a true count again; that is ASan's,
+ * which `--sanitize` turns on. And the overwritten mark is "HERODEAD" and not
+ * a word a message tells apart, because whether it survives to be read is the
+ * allocator's choice (`hero_held_release`'s note on a first draft that tried). */
+#define HERO_STR_RELEASED UINT64_C(0x4845524f44454144) /* "HERODEAD" */
+
+_Noreturn static void hero_str_overreleased(void) {
+    hero_panic("a str released after its last reference: its count was already 0. "
+               "Two things do this: C releasing a string this program still holds, which "
+               "an `extern` mark that is not true of its function lets happen (`owned`, "
+               "`consumes`); or a compiler bug, which is worth reporting");
+}
+
 void hero_str_incref(HeroStr s) {
     if (s.ptr == NULL) return;
     HeroStrHeader *h = hero_str_hdr_checked(s);
     /* A static literal's count never moves, so reading it relaxed is enough —
      * and its block is `const` in read-only memory, which is why the assert in
      * the header demands a lock-free 64-bit atomic: a load that took a lock
-     * would be a write to a page nobody may write. */
-    if (atomic_load_explicit(&h->refcount, memory_order_relaxed) < 0) return;
+     * would be a write to a page nobody may write. A count of -1 is a static
+     * literal's (`HERO_STR_STATIC`, the empty block); any other below 1 is a
+     * block this runtime no longer holds. */
+    int64_t seen = atomic_load_explicit(&h->refcount, memory_order_relaxed);
+    if (seen < 1) {
+        if (seen == -1) return;
+        hero_str_overreleased();
+    }
     atomic_fetch_add_explicit(&h->refcount, 1, memory_order_relaxed);
 }
 
 void hero_str_decref(HeroStr s) {
     if (s.ptr == NULL) return; /* the zero-init non-value: a no-op */
     HeroStrHeader *h = hero_str_hdr_checked(s);
-    if (atomic_load_explicit(&h->refcount, memory_order_relaxed) < 0) return; /* static literal */
-    if (atomic_fetch_sub_explicit(&h->refcount, 1, memory_order_acq_rel) == 1) {
-        hero_release_block(h);
+    int64_t seen = atomic_load_explicit(&h->refcount, memory_order_relaxed);
+    if (seen < 1) {
+        if (seen == -1) return; /* static literal */
+        hero_str_overreleased();
     }
+    /* `> 1` on the count BEFORE the subtraction: another holder remains. At 1
+     * this call took the last reference. Below 1 two releases raced for one
+     * reference, and the second is refused rather than freeing again. */
+    int64_t before = atomic_fetch_sub_explicit(&h->refcount, 1, memory_order_acq_rel);
+    if (before > 1) return;
+    if (before < 1) hero_str_overreleased();
+    h->magic = HERO_STR_RELEASED;
+    hero_release_block(h);
 }
 
 /* **`repeat(s, n)` — one allocation where a loop makes n** (panel 054; design.md

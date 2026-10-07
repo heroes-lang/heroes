@@ -76,7 +76,18 @@ HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {
  * memory.
  *
  * Written out in both entry points rather than called: at -O0, where the
- * compiler itself runs, a call per count costs what the test does not. */
+ * compiler itself runs, a call per count costs what the test does not.
+ *
+ * **AND THE RUNTIME WRITES THE BLOCK DEAD ITSELF** (defect 314, 2026-10-07):
+ * a freed block's first word being the allocator's, a release after the last
+ * passed wherever the allocator wrote a pointer there, measured at
+ * `dad2da47` on this Mac at 1, 4 and 32 elements (exit 0, the block freed
+ * twice), where the Windows heap stopped it as heap corruption with no word
+ * of the runtime's. So the element descriptor, which a live array always has
+ * (`hero_array_new` refuses none, a constant's block names its own), is set
+ * to none before the block goes, and both entry points refuse an array
+ * without one, by the same words; the allocator writes its own words at the
+ * block's start, and this one is the fourth. */
 _Noreturn static void hero_array_overreleased(void) {
     hero_panic("an array released after its last reference — a compiler bug, please report it");
 }
@@ -90,6 +101,7 @@ void hero_array_incref(HeroArrayHeader *a) {
         if (seen == -1) return; /* a constant's static block */
         hero_array_overreleased();
     }
+    if (a->elem == NULL) hero_array_overreleased();
     atomic_fetch_add_explicit(&a->refcount, 1, memory_order_relaxed);
 }
 
@@ -107,6 +119,7 @@ void hero_array_decref(HeroArrayHeader *a) {
         if (seen == -1) return; /* a constant's static block */
         hero_array_overreleased();
     }
+    if (a->elem == NULL) hero_array_overreleased();
     /* `> 1` on the count BEFORE the subtraction: another holder remains. At 1
      * this call took the last reference and the block is doomed. Below 1 two
      * releases raced for one reference. */
@@ -130,6 +143,7 @@ static void hero_array_release_contents(HeroArrayHeader *a) {
     for (int64_t i = 0; i < a->len; i++) {
         a->elem->drop(data + (size_t)i * a->elem->size);
     }
+    a->elem = NULL;
     hero_release_block(a);
 }
 

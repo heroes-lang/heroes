@@ -124,9 +124,24 @@ HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t en
     return m;
 }
 
+/* **A map released after its last reference is refused by name**, as an
+ * array is (defect 314, 2026-10-07): until then a second release here freed
+ * the block again, taking a count of 0 to -1 in memory already given back,
+ * which this Mac's allocator answered with its own trap at 4 and 32 entries
+ * (exit 133, no word of the runtime's) and passed at 1 (exit 0), and the
+ * Windows heap stopped as heap corruption with nothing said. The count is
+ * asked first, and the key descriptor, which a live map always has
+ * (`hero_map_new` refuses none), is set to none before the block goes, so a
+ * release that finds the allocator's word where the count was is still
+ * refused. There is no constant map, so no count of -1 to pass. */
+_Noreturn static void hero_map_overreleased(void) {
+    hero_panic("a map released after its last reference — a compiler bug, please report it");
+}
+
 /* The same two orders as `str.c` and `array.c`, for the same reason. */
 void hero_map_incref(HeroMapHeader *m) {
     if (m == NULL) return;
+    if (atomic_load_explicit(&m->refcount, memory_order_relaxed) < 1 || m->key == NULL) hero_map_overreleased();
     atomic_fetch_add_explicit(&m->refcount, 1, memory_order_relaxed);
 }
 
@@ -135,7 +150,10 @@ void hero_map_incref(HeroMapHeader *m) {
  * entries recursively would put the frames back that `drop.c` exists to remove. */
 void hero_map_decref(HeroMapHeader *m) {
     if (m == NULL) return;
-    if (atomic_fetch_sub_explicit(&m->refcount, 1, memory_order_acq_rel) > 1) return;
+    if (atomic_load_explicit(&m->refcount, memory_order_relaxed) < 1 || m->key == NULL) hero_map_overreleased();
+    int64_t before = atomic_fetch_sub_explicit(&m->refcount, 1, memory_order_acq_rel);
+    if (before > 1) return;
+    if (before < 1) hero_map_overreleased();
     if (hero_drop_running) {
         hero_drop_push_map(m);
         return;
@@ -153,6 +171,7 @@ static void hero_map_release_contents(HeroMapHeader *m) {
         m->key->drop(hero_map_key_at(m, i));
         m->val->drop(hero_map_val_at(m, i));
     }
+    m->key = NULL;
     hero_release_block(m);
 }
 

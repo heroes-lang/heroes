@@ -1,0 +1,23 @@
+# Defect 314, 2026-10-07, the map beside its string. Symptom: a map released
+# once more than it was held was freed twice, the runtime asking nothing: on
+# this Mac the allocator's own trap at 4 and 32 entries (exit 133, no word of
+# the runtime's), its abort at 1,000, and nothing at all at 1 (exit 0),
+# measured at `dad2da47`; the Windows heap stopped it as heap corruption with
+# nothing said. Cause: the map's release took a count of 0 to -1 in freed
+# memory and released the block again, the array's check never written for
+# it. Now the count is asked as an array's is, and the key descriptor, which
+# a live map always has, is set to none before the block goes, so a release
+# finding the allocator's word where the count was is refused too
+# (`runtime/parts/map.c`).
+#
+# The map is the C's own, made through the runtime and released twice by a
+# function of the program's own header: a map does not cross to C, and the
+# compiler never releases one twice. AddressSanitizer names the read of the
+# freed block.
+
+extern "fixedbugs-314-a-map-released-twice-is-named.h"
+    function release_twice(entries: i64)
+
+function main()
+    print("four entries, released twice")
+    release_twice(entries: 4)

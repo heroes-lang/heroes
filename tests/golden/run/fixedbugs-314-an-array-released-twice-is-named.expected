@@ -1,0 +1,3 @@
+four elements, released twice
+!sanitizer: heap-use-after-free
+!panic: an array released after its last reference
