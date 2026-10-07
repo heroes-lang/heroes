@@ -1,0 +1,50 @@
+# FIXED DEFECT 419, 2026-10-07 (lane b14-emit): a handle's union assertion
+# could never fail.
+#
+# SYMPTOM, in the C and not in the program: `==` on a handle wrote
+# `_Static_assert(__builtin_classify_type(*(Cell * *)0) != 13, ...)`. A
+# handle's C type is a POINTER, `Cell *`, so the assertion classified a
+# pointer and held for every handle, this one over a union included: a
+# check that asked C nothing, and the premise-death pair beside it rode
+# along on its account.
+#
+# WHY IT WAS NOT MADE TO ASK THE POINTEE: `__builtin_classify_type(*(Cell
+# *)0) != 13` does fire on this header, measured (clang: *static assertion
+# failed ... 13 != 13*), and it would refuse this program, which is right.
+# A handle's `==` and hash read the address and never a member's bytes,
+# the reading panel 186's R3 exists to stop; and `ffi_tag_is_a_union`'s note
+# tells the author to reach a union by its typedef's name, as here.
+#
+# FIX: `emit/extern_union.hero` writes no assertion for a compared handle.
+# A record with fields is asked as before, field by field.
+
+extern "fixedbugs-419-a-handle-over-a-union-compares-as-an-address.h"
+    record Cell tag Cell
+    function cell_at(i: i64) -> Cell
+    function cell_none() -> Cell
+    function cell_int(c: Cell) -> i64
+
+# A handle as the field of a plain Heroes record, whose `==` reaches the
+# handle's one level down.
+record Held
+    h: Cell
+    name: str
+
+function main()
+    a = cell_at(i: 0)
+    b = cell_at(i: 1)
+    n = cell_none()
+
+    # Two real cells, so the comparisons below ask about two addresses.
+    print(cell_int(c: a))
+    print(cell_int(c: b))
+
+    print(a == n)
+    print(a != n)
+    print(a == b)
+    print(a == a)
+    print(n == nullptr)
+    print(Held(h: a, name: "x") == Held(h: b, name: "x"))
+    print(Held(h: a, name: "x") == Held(h: a, name: "x"))
+    print([a] == [b])
+    print([a] == [a])
