@@ -39,6 +39,9 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <time.h>
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 #endif
 
 /* The argument list being built. Bounded rather than grown: the longest line
@@ -256,9 +259,14 @@ static HeroStr hero_run_win_command_line(void) {
  * A child is given its dispositions back before exec, and the mask the
  * launch blocked, so a program never starts with a signal held.
  *
- * SIGKILL is not among them, and no process can be: a `heroes` killed with it
- * still leaves its child, which only a watchdog that ends with SIGTERM first
- * avoids (`HERO_RUN_WATCHDOG_GRACE_MS`). */
+ * SIGKILL is not among them, and no process can catch it. On Linux the child
+ * asks before exec to be sent SIGKILL when the thread that started it ends
+ * (defect 437, `hero_run_child`), so a `heroes` killed with it takes its child
+ * along; the Windows arm's job object is closed with the last handle a killed
+ * process held, which is the same end by another road (its design, not run
+ * against a killed caller here). Darwin has no such request, and there a
+ * `heroes` killed with SIGKILL still leaves its child, which only a watchdog
+ * that ends with SIGTERM first avoids (`HERO_RUN_WATCHDOG_GRACE_MS`). */
 
 /* How long a child forwarded the signal ending this process has to end before
  * SIGKILL. */
@@ -611,7 +619,29 @@ static pid_t hero_run_reap(pid_t child, int slot, int *wait_status, int nohang,
 static void hero_run_child(const char *program, int report, int tty,
                            const char *in_path, const char *out_path,
                            const char *err_path, int64_t write_limit,
-                           const sigset_t *before) {
+                           const sigset_t *before, pid_t parent) {
+#if defined(__linux__)
+    /* **AND IT DIES WITH THIS PROCESS, SIGKILL INCLUDED** (defect 437,
+     * 2026-10-07). A signal this process can catch reaches the child through
+     * `hero_run_ended`; SIGKILL cannot be caught, and a `heroes` killed with
+     * it left its program running with parent 1 (measured on Linux arm64: a
+     * `sleep 30` run through `hero_run_go` outlived its runner's `kill -9`).
+     * Linux sends a child the signal it asks for when the THREAD that forked
+     * it ends, and that thread waits here in `hero_run_go` until the child is
+     * reaped, so its end is this process's. Asked before exec, which keeps the
+     * request (a set-user-ID program's exec clears it); and the parent asked
+     * for again after it, because a parent that died first left nobody whose
+     * end could send it, so the child ends itself the same way. A refusal
+     * leaves the child unguarded rather than not run, as the Windows arm
+     * treats its job. Every child this runtime starts asks the same, so a
+     * chain of them, a `heroes` running a `heroes` running a program, ends
+     * link by link; what a program starts by other means is its own. */
+    (void)prctl(PR_SET_PDEATHSIG, SIGKILL);
+    if (getppid() != parent) raise(SIGKILL);
+#else
+    (void)parent;
+#endif
+
     /* Between fork and exec is the only place this can go. The parent cannot
      * know the pid soon enough to win the race against the child's own first
      * spawn, so both sides set it and whichever runs first wins — the
@@ -1098,6 +1128,9 @@ int64_t hero_run_go(const char *program, const char *in_path,
         return -1;
     }
 
+    /* Asked before the fork, so the child compares its parent with this
+     * process and not with whatever adopted it (defect 437). */
+    pid_t parent = getpid();
     pid_t child = fork();
     if (child < 0) {
         hero_run_why_code = (int64_t)errno;
@@ -1110,7 +1143,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     }
     if (child == 0) {
         close(report[0]);
-        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit, &before);
+        hero_run_child(program, report[1], tty_holder != -1, in_path, out_path, err_path, write_limit, &before, parent);
     }
 
     /* The other half of the race: EACCES here means the child has already
